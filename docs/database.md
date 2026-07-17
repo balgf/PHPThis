@@ -1,0 +1,52 @@
+# Database design
+
+The database layer deliberately exposes SQL. Its job is limited to connection policy, typed parameter binding, predictable fetching, transactions, statement counting, and bounded query tracing.
+
+## Why no ORM or query builder
+
+Lazy relationships can perform I/O during property access, while fluent query APIs can obscure the SQL shape and encourage broad reusable abstractions. Both increase the context an AI needs to reason about cost. PHPThis keeps the statement at the behavior boundary.
+
+This is not an argument that every ORM query is slow or that raw SQL is automatically fast. An AI can still put an explicit query in a loop. That is why the framework also requires query budgets, loop rules, bounded reads, and scale tests.
+
+## Parameter policy
+
+Only named parameters are accepted. `Connection` binds strings, integers, booleans, and null with explicit PDO parameter types. Arrays and objects must be transformed by application code before execution.
+
+## Transaction policy
+
+Transactions are manual: begin, execute, commit. Catch the relevant failure, roll back if active, and rethrow. PHPThis will not add a callback helper that hides this control flow.
+
+## Query trace policy
+
+Each request constructs one `QueryTrace` with an explicit retained-fingerprint limit and passes it to `Connection` beside the `QueryBudget`. The trace performs no file or network I/O. It aggregates a SHA-256 fingerprint of each exact SQL string with execution count, failure count, and prepare/bind/execute duration in integer microseconds.
+
+The trace never retains SQL text, parameter names or values, DSNs, credentials, exception messages, driver details, or stack traces. Different bindings for the same SQL therefore produce one fingerprint without exposing the bindings. When the fingerprint bound is full, global counts and timing continue while `truncated` and `untracked_statements` make the missing detail explicit.
+
+`QueryTrace::snapshot()` is a versioned JSON-compatible record. Tests inspect it in memory. A request boundary may later add request metadata and emit the record once; `Connection` never writes one log entry per statement. Calls rejected by `QueryBudget` are absent because PDO was never attempted. Timing does not include fetch or row conversion.
+
+```json
+{
+  "schema_version": 1,
+  "event": "database.query_summary",
+  "statements": 2,
+  "failures": 0,
+  "tracked_fingerprints": 1,
+  "repeated_fingerprints": 1,
+  "maximum_executions_per_fingerprint": 2,
+  "total_execute_duration_us": 420,
+  "slowest_execute_duration_us": 230,
+  "truncated": false,
+  "untracked_statements": 0,
+  "queries": [
+    {
+      "fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "executions": 2,
+      "failures": 0,
+      "total_execute_duration_us": 420,
+      "max_execute_duration_us": 230
+    }
+  ]
+}
+```
+
+Every key is present even when its value is zero or the query list is empty. Query aggregates remain in first-seen order, making the output deterministic for the same execution path.

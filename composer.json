@@ -1,0 +1,48 @@
+{
+    "name": "phpthis/framework",
+    "description": "A checked PHP profile and minimal web framework for AI-authored code.",
+    "keywords": [
+        "ai-assisted-development",
+        "php",
+        "static-analysis",
+        "web-framework"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "ext-pdo": "*"
+    },
+    "require-dev": {
+        "ext-pdo_sqlite": "*",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPThis\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Example\\": "example/src/"
+        }
+    },
+    "scripts": {
+        "analyse": "phpstan analyse --configuration=phpstan.neon --no-progress",
+        "benchmark:routing": "php tools/benchmark-routing.php",
+        "guard": "php tools/guardrails.php",
+        "test": "php tests/run.php",
+        "test:profile": "php tools/test-strict-profile.php",
+        "check": [
+            "@guard",
+            "@analyse",
+            "@test:profile",
+            "@test"
+        ]
+    },
+    "config": {
+        "allow-plugins": false,
+        "sort-packages": true
+    }
+}

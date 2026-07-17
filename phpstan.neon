@@ -1,0 +1,18 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - tools/phpstan/extension.php
+
+parameters:
+    level: max
+    strictRules:
+        allRules: true
+    paths:
+        - autoload.php
+        - src
+        - example
+        - tests
+        - tools
+    tmpDir: tmp/phpstan
+    checkUninitializedProperties: true
+    reportUnmatchedIgnoredErrors: true
+    treatPhpDocTypesAsCertain: true
