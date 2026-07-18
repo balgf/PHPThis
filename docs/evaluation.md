@@ -26,6 +26,12 @@ The negative control returns the same data by selecting users once and then coun
 
 The `POST /users` tests provide the transaction evidence. Empty and 500-user fixtures both require two writes. With a budget of 1, the event write is rejected and the preceding user insert is rolled back.
 
+## Database transport certification
+
+`composer test:database-drivers` runs the same narrow PDO transport probe for every driver selected by `PHPTHIS_DATABASE_TEST_DRIVERS`. Local and complete repository checks default to SQLite. The dedicated CI job supplies real SQLite, MySQL 8.4, and PostgreSQL 17 drivers and services; an unavailable requested driver or missing DSN fails rather than skips.
+
+The probe proves native connection, unique named string/integer/boolean/null bindings, associative one-row and collection fetches, one-row insert and delete counts, commit, rollback, visibility from a second connection, independent traces, budget rejection before PDO, and rethrown database failures recorded by the trace. Its SQL deliberately uses only the tiny common subset needed to exercise transport. It is not a dialect translation layer.
+
 ## Future AI comparison
 
 The current proof compares programming patterns; it does not yet prove that one AI model, prompt, or context strategy outperforms another.
@@ -58,6 +64,8 @@ A passing answer must be correct for the installed revision, supported by access
 ## Limits
 
 - SQLite proves the execution shape used by the repository tests, not plans or locking behavior on another database.
+- The cross-driver transport probe does not prove application SQL, DDL, generated identifiers, scalar representations, update row counts, error translation, isolation, locking, plans, charset, timezone, TLS, or timeout behavior on any engine.
+- Multiple certified connections remain independent; the probe does not provide distributed transactions or cross-database atomicity.
 - Statement budgets do not bound rows scanned or event-history fan-out; this proof detects query-count growth, not total database cost.
 - The aggregate read can observe concurrent changes according to the target database's isolation rules; production evaluation must choose that policy explicitly.
 - The read returns only the first 50 users; pagination and continuation are not implemented yet.

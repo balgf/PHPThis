@@ -40,6 +40,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - A completed change reports its behavior, evidence, resource cost, and any consequential decision that still belongs to a human.
 - The request path can be traced in four application hops: route, handler, database, response.
 - Database tests compare small and large fixtures and assert a constant query count.
+- The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.

@@ -38,3 +38,63 @@ jobs:
 
       - name: Run validity gate
         run: composer check
+
+  database-transport:
+    name: PDO transport (SQLite, MySQL 8.4, PostgreSQL 17)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: phpthis
+          MYSQL_USER: phpthis
+          MYSQL_PASSWORD: phpthis
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: phpthis
+          POSTGRES_USER: phpthis
+          POSTGRES_PASSWORD: phpthis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U phpthis -d phpthis"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up PHP database drivers
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, pdo_mysql, pdo_pgsql
+          coverage: none
+          tools: composer:v2
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Certify PDO base transport
+        run: composer test:database-drivers
+        env:
+          PHPTHIS_DATABASE_TEST_DRIVERS: sqlite,mysql,pgsql
+          PHPTHIS_MYSQL_DSN: 'mysql:host=127.0.0.1;port=3306;dbname=phpthis;charset=utf8mb4'
+          PHPTHIS_MYSQL_USERNAME: phpthis
+          PHPTHIS_MYSQL_PASSWORD: phpthis
+          PHPTHIS_PGSQL_DSN: 'pgsql:host=127.0.0.1;port=5432;dbname=phpthis'
+          PHPTHIS_PGSQL_USERNAME: phpthis
+          PHPTHIS_PGSQL_PASSWORD: phpthis

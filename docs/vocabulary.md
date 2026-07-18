@@ -5,6 +5,8 @@
 | route | HTTP method, literal path, handler | endpoint definition, action map |
 | handler | object with `handle(Request): Response` | controller, action, responder |
 | connection | instrumented PDO boundary | DB facade, query builder |
+| PDO transport | native-driver connection, binding, fetch, transaction, budget, and trace behavior certified without SQL translation | database abstraction, portable dialect |
+| application-owned SQL dialect | complete engine-specific SQL and database semantics recorded and tested by the consuming application | framework query language, automatic dialect selection |
 | query budget | maximum statements for one connection/request | throttle, limiter |
 | projection | final readonly typed value parsed from a selected database row | model, entity, active record |
 | command | final readonly typed input parsed at an external boundary | request array, payload bag |

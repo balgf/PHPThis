@@ -97,6 +97,24 @@ final readonly class Connection
      */
     private function run(string $sql, array $parameters): PDOStatement
     {
+        /** @var list<array{placeholder: non-empty-string, value: bool|int|string|null}> $bindings */
+        $bindings = [];
+        $normalizedPlaceholders = [];
+
+        foreach ($parameters as $name => $value) {
+            $parameterName = $this->parameterName($name);
+            $placeholder = $parameterName[0] === ':' ? $parameterName : ':' . $parameterName;
+
+            if (isset($normalizedPlaceholders[$placeholder])) {
+                throw new InvalidArgumentException("SQL parameter name resolves to a duplicate placeholder: {$placeholder}.");
+            }
+            $normalizedPlaceholders[$placeholder] = true;
+            $bindings[] = [
+                'placeholder' => $placeholder,
+                'value' => $value,
+            ];
+        }
+
         $this->queryBudget->recordStatement();
         $startedAt = (float) hrtime(true);
         $failed = true;
@@ -104,10 +122,12 @@ final readonly class Connection
         try {
             $statement = $this->pdo->prepare($sql);
 
-            foreach ($parameters as $name => $value) {
-                $parameterName = $this->parameterName($name);
-                $placeholder = $parameterName[0] === ':' ? $parameterName : ':' . $parameterName;
-                $statement->bindValue($placeholder, $value, $this->parameterType($value));
+            foreach ($bindings as $binding) {
+                $statement->bindValue(
+                    $binding['placeholder'],
+                    $binding['value'],
+                    $this->parameterType($binding['value']),
+                );
             }
 
             $statement->execute();
@@ -139,10 +159,16 @@ final readonly class Connection
         return $associativeRow;
     }
 
+    /** @return non-empty-string */
     private function parameterName(mixed $name): string
     {
-        if (!is_string($name) || $name === '') {
-            throw new InvalidArgumentException('SQL parameter names must be non-empty strings.');
+        if (
+            !is_string($name)
+            || preg_match('/\A:?[A-Za-z_][A-Za-z0-9_]*\z/D', $name) !== 1
+        ) {
+            throw new InvalidArgumentException(
+                'SQL parameter names may use one leading colon and must otherwise start with a letter or underscore and contain only letters, digits, and underscores.',
+            );
         }
 
         return $name;

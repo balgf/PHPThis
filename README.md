@@ -24,7 +24,7 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 ## What makes it different
 
 - No ORM, Active Record, lazy loading, query builder, facades, global helpers, autowiring, route discovery, or runtime macros.
-- SQL stays visible and uses named parameters through a thin PDO boundary.
+- SQL stays visible and engine-specific behind a thin PDO transport boundary; the base connection contract is exercised with SQLite locally, and dedicated CI is configured to certify the same contract against SQLite, MySQL, and PostgreSQL.
 - Every database connection has an explicit query budget that fails before an excessive statement executes.
 - Every database connection has a bounded query trace that reports repeated SQL fingerprints, execution timing, and failures without retaining SQL or parameters.
 - External database and JSON values are parsed once into concrete final readonly projections and commands before entering typed code.

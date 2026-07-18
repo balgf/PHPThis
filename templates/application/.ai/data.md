@@ -4,9 +4,17 @@ If this application has no database, replace this file with one explicit stateme
 
 ## Systems and schema authority
 
-- Database engine and supported version: {{DATABASE_ENGINE_AND_VERSION}}
-- Schema source of truth: `{{SCHEMA_SOURCE_PATH}}`
-- Migration command and policy: `{{MIGRATION_COMMAND_AND_POLICY}}`
+| Connection name | Engine and supported version | PDO driver | Required Composer extension | Non-secret configuration source | Schema authority |
+| --- | --- | --- | --- | --- | --- |
+| `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_ENGINE_AND_VERSION}} | `{{CONNECTION_1_PDO_DRIVER}}` | `{{CONNECTION_1_PDO_EXTENSION}}` | `{{CONNECTION_1_CONFIG_REFERENCE}}` | `{{CONNECTION_1_SCHEMA_SOURCE}}` |
+| `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_ENGINE_AND_VERSION_OR_NOT_APPLICABLE}} | `{{CONNECTION_2_PDO_DRIVER_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_PDO_EXTENSION_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_CONFIG_REFERENCE_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_SCHEMA_SOURCE_OR_NOT_APPLICABLE}}` |
+
+## Per-connection engine policy
+
+| Connection name | SQL dialect authority and version assumptions | Migration command and policy | Engine integration-test command | Driver, session, charset, timezone, TLS, and timeout policy source |
+| --- | --- | --- | --- | --- |
+| `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_SQL_DIALECT_POLICY}} | `{{CONNECTION_1_MIGRATION_COMMAND_AND_POLICY}}` | `{{CONNECTION_1_DATABASE_INTEGRATION_TEST_COMMAND}}` | `{{CONNECTION_1_DATABASE_CONNECTION_POLICY_SOURCE}}` |
+| `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_SQL_DIALECT_POLICY_OR_NOT_APPLICABLE}} | `{{CONNECTION_2_MIGRATION_COMMAND_AND_POLICY_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_DATABASE_INTEGRATION_TEST_COMMAND_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_DATABASE_CONNECTION_POLICY_SOURCE_OR_NOT_APPLICABLE}}` |
 
 ## Scale-sensitive data
 
@@ -17,10 +25,10 @@ If this application has no database, replace this file with one explicit stateme
 
 ## Per-operation database limits
 
-| Route or operation | Statement budget | Trace fingerprint bound | Result bound | Rationale |
-| --- | ---: | ---: | --- | --- |
-| `{{DATABASE_OPERATION_1}}` | {{DATABASE_OPERATION_1_QUERY_BUDGET}} | {{DATABASE_OPERATION_1_TRACE_BOUND}} | {{DATABASE_OPERATION_1_RESULT_BOUND}} | {{DATABASE_OPERATION_1_RATIONALE}} |
-| `{{DATABASE_OPERATION_2}}` | {{DATABASE_OPERATION_2_QUERY_BUDGET}} | {{DATABASE_OPERATION_2_TRACE_BOUND}} | {{DATABASE_OPERATION_2_RESULT_BOUND}} | {{DATABASE_OPERATION_2_RATIONALE}} |
+| Route or operation | Connection | Statement budget | Trace fingerprint bound | Result bound | Rationale |
+| --- | --- | ---: | ---: | --- | --- |
+| `{{DATABASE_OPERATION_1}}` | `{{DATABASE_OPERATION_1_CONNECTION}}` | {{DATABASE_OPERATION_1_QUERY_BUDGET}} | {{DATABASE_OPERATION_1_TRACE_BOUND}} | {{DATABASE_OPERATION_1_RESULT_BOUND}} | {{DATABASE_OPERATION_1_RATIONALE}} |
+| `{{DATABASE_OPERATION_2}}` | `{{DATABASE_OPERATION_2_CONNECTION}}` | {{DATABASE_OPERATION_2_QUERY_BUDGET}} | {{DATABASE_OPERATION_2_TRACE_BOUND}} | {{DATABASE_OPERATION_2_RESULT_BOUND}} | {{DATABASE_OPERATION_2_RATIONALE}} |
 
 Database timeout policy: {{DATABASE_TIMEOUT_POLICY}}.
 
@@ -29,8 +37,9 @@ Every database behavior must choose its own budget deliberately. Test small and 
 ## Transaction and operational constraints
 
 - Transaction isolation assumptions: {{TRANSACTION_ISOLATION_ASSUMPTIONS}}
+- Cross-connection atomicity policy: {{CROSS_CONNECTION_ATOMICITY_POLICY}}
 - Locking or online-change constraints: {{LOCKING_CONSTRAINTS}}
 - Retention, deletion, or residency rules: {{DATA_LIFECYCLE_RULES}}
 - Sensitive fields and required handling: {{SENSITIVE_FIELD_RULES}}
 
-Do not place credentials, connection strings, production rows, or customer data in this file.
+Do not place credentials, DSNs, connection strings, production rows, or customer data in this file. Record configuration key names or secret references, never their values.

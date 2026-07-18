@@ -12,7 +12,7 @@ Framework contracts define what is supported. Human-approved application decisio
 | Start or validate an application | `docs/getting-started.md`, `docs/consumer-contract.md`, `docs/guardrails.md` | application `composer.json`, `AGENTS.md`, `.ai/`, tests, and `bin/phpthis` |
 | Add or explain a route or handler | `docs/architecture.md`, `docs/request-handling.md` | `src/Routing/`, `src/Http/RequestHandler.php`, application route manifest, handler, and tests |
 | Read runtime request data or return a response | `docs/request-handling.md`, `docs/errors.md`, `docs/logging.md` | `src/Http/`, application front controller, composition root, and boundary tests |
-| Read or write database data | `docs/database.md`, `docs/performance.md`, `docs/logging.md` | `src/Database/`, application composition root, SQL path, projections, and scale tests |
+| Connect to, read, or write a database | `docs/database.md`, `docs/decisions/012-pdo-transport-application-owned-dialects.md`, `docs/performance.md`, `docs/logging.md` | `src/Database/`, application `.ai/data.md`, composition root, engine-specific SQL path, projections, integration tests, and scale tests |
 | Parse JSON, database rows, or other external values | `docs/type-safety.md`, `docs/static-analysis.md` | named command or projection factory and adversarial tests |
 | Explain or repair a `PHT` diagnostic | `docs/strict-profile.md`, `docs/static-analysis.md` | named rule implementation, failing file, and nearest passing framework pattern |
 | Change project-specific architecture, data, integrations, or operations | `docs/consumer-contract.md`, `docs/decisions/009-project-owned-ai-context.md` | the matching application `.ai/` guide, accepted decisions, concrete source, and tests |

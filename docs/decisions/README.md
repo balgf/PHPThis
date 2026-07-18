@@ -15,3 +15,4 @@ Accepted records:
 - `009-project-owned-ai-context.md`
 - `010-framework-owned-consumer-check.md`
 - `011-ai-first-authoring.md`
+- `012-pdo-transport-application-owned-dialects.md`

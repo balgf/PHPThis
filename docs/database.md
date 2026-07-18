@@ -4,6 +4,16 @@ The database layer deliberately exposes SQL. Its job is limited to connection po
 
 Applications create this boundary with `Connection::connect` in their composition root. `PHT005` resolves names and types and rejects application-owned construction of `PDO` or its subclasses so query budgets and traces cannot be bypassed with an alias, typed class-string, or anonymous subclass.
 
+## Driver and dialect policy
+
+PHPThis provides PDO transport, not portable SQL. `Connection::connect` accepts a native PDO DSN, optional credentials, and additional driver options. The framework keeps `ext-pdo` as its only runtime database requirement. An application declares the actual runtime extension for every engine it uses, such as `ext-pdo_sqlite`, `ext-pdo_mysql`, or `ext-pdo_pgsql`.
+
+The base transport certification covers SQLite, MySQL, and PostgreSQL. It proves native connection, named scalar and null binding, associative fetching, deliberate single-row DML counts, local commit and rollback, independent connections, query budgeting, query tracing, and PDO failure propagation. The PHPThis framework repository runs SQLite in its maintainer `composer check`; dedicated framework CI services run all three through its `composer test:database-drivers` script. Dependency scripts are not inherited by consuming applications, which own their engine-specific integration command.
+
+Certification does not make SQL dialects interchangeable. Complete SQL, DDL, schema and migration policy, identifier quoting, generated identifiers, returned scalar representations, error translation, isolation, locking, execution plans, charset, timezone, TLS, and timeouts remain application-owned and engine-specific. Other PDO drivers may be passed to the same connection API, but PHPThis does not call them certified until they pass the reviewed base harness.
+
+An application using multiple databases constructs separately named `Connection` objects in its composition root. Connections do not participate in a distributed transaction. Give each connection an explicit budget and a distinct trace: a query trace contains no connection identity, so sharing one across engines could merge identical SQL fingerprints. A deliberately shared request-wide budget is valid only when the application records that combined limit.
+
 ## Why no ORM or query builder
 
 Lazy relationships can perform I/O during property access, while fluent query APIs can obscure the SQL shape and encourage broad reusable abstractions. Both increase the context an AI needs to reason about cost. PHPThis keeps the statement at the behavior boundary.
@@ -12,11 +22,17 @@ This is not an argument that every ORM query is slow or that raw SQL is automati
 
 ## Parameter policy
 
-Only named parameters are accepted. `Connection` binds strings, integers, booleans, and null with explicit PDO parameter types. Arrays and objects must be transformed by application code before execution.
+Only named parameters are accepted. Names use an optional leading colon followed by a letter or underscore and then letters, digits, or underscores. Invalid names and inputs containing both prefixed and unprefixed forms of the same name fail before a query budget or trace records database work. Each placeholder occurrence in a statement uses a distinct name because repeated named placeholders behave differently across native PDO drivers.
+
+`Connection` binds strings, integers, booleans, and null with explicit PDO parameter types. Arrays and objects must be transformed by application code before execution. Selected columns and expressions must have unique names or aliases because associative fetching cannot preserve duplicate keys. Raw driver values remain `mixed` and are parsed immediately by an application projection because engines can return different scalar representations.
+
+`executeStatement` returns PDO's affected-row count. PHPThis certifies exact counts only for unambiguous single-row inserts and deletes. Do not use affected-row counts for reads, and test any update matched-versus-changed semantics against the selected engine.
 
 ## Transaction policy
 
 Transactions are manual: begin, execute, and commit inside `try`; in `finally`, roll back if the transaction remains active. This preserves normal exception propagation while making cleanup visible. PHPThis will not add a callback helper that hides this control flow.
+
+A transaction belongs to one PDO connection. Work across two connections or engines is not atomic, even when both local transactions commit successfully.
 
 The sample `POST /users` path performs two writes: one user row and one `user.created` event selected through the unique email. Both affected-row counts must be one. The handler prepares its success response before beginning, commits only after both writes, and rolls back when a failure or query-budget rejection leaves the transaction active.
 
@@ -24,7 +40,7 @@ The sample `GET /users` path selects at most 50 users with event counts in one a
 
 ## Query trace policy
 
-Each request constructs one `QueryTrace` with an explicit retained-fingerprint limit and passes it to `Connection` beside the `QueryBudget`. The trace performs no file or network I/O. It aggregates a SHA-256 fingerprint of each exact SQL string with execution count, failure count, and prepare/bind/execute duration in integer microseconds.
+Each request constructs one `QueryTrace` per connection with an explicit retained-fingerprint limit and passes it to `Connection` beside the `QueryBudget`. The trace performs no file or network I/O. It aggregates a SHA-256 fingerprint of each exact SQL string with execution count, failure count, and prepare/bind/execute duration in integer microseconds.
 
 The trace never retains SQL text, parameter names or values, DSNs, credentials, exception messages, driver details, or stack traces. Different bindings for the same SQL therefore produce one fingerprint without exposing the bindings. When the fingerprint bound is full, global counts and timing continue while `truncated` and `untracked_statements` make the missing detail explicit.
 

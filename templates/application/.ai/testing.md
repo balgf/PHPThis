@@ -23,7 +23,7 @@ Focused commands shorten feedback but never replace the complete validity gate.
 - Every change covers the expected success and failure behavior.
 - Boundary parsing covers missing, unknown, wrongly typed, coercive, and oversized input as applicable.
 - Authorization-sensitive behavior proves both allowed and denied outcomes.
-- Database behavior compares small and materially larger fixtures, asserts equal statement counts, inspects bounded query traces, and tests query-budget rejection.
+- Database behavior runs against every recorded engine and version it relies on, compares small and materially larger fixtures, asserts equal statement counts, inspects distinct bounded traces per connection, and tests query-budget rejection.
 - Transaction tests prove rollback after the last allowed statement fails.
 - External integrations test timeout, malformed response, idempotency, and retry ownership without contacting production systems.
 

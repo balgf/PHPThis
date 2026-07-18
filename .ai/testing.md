@@ -11,6 +11,8 @@ Every behavior test should name one outcome and arrange dependencies directly. F
 - an assertion that query fingerprints do not repeat unexpectedly;
 - the query-budget failure path.
 
+`composer test:database-drivers` certifies the narrow PDO transport boundary. It defaults to SQLite; the dedicated CI job sets `PHPTHIS_DATABASE_TEST_DRIVERS=sqlite,mysql,pgsql` and supplies real services. Do not treat an unconfigured driver as a pass or fold driver-specific SQL into a runtime dialect abstraction.
+
 Inspect the in-memory query trace directly and print its redacted JSON snapshot only when useful for a focused failure. Do not write every query during the full test suite.
 
 Boundary factories require adversarial tests for missing and unknown fields, null, arrays, objects, coercive strings, numeric overflow, malformed JSON, invalid UTF-8, and excessive nesting as applicable.

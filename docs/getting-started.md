@@ -75,7 +75,7 @@ PHPThis already defines framework mechanics. The application context should add 
 
 - the product purpose, users, accountable human decision roles, non-goals, and canonical domain vocabulary;
 - the actual composition root, route manifest, source boundaries, and dependency direction;
-- database engines, large or sensitive tables, result bounds, query budgets, index expectations, and transaction constraints;
+- every database connection's engine and version, PDO extension, non-secret configuration source, schema and dialect ownership, large or sensitive tables, result bounds, query budgets, index expectations, integration command, and connection-local transaction constraints;
 - external services, timeouts, idempotency requirements, retry ownership, and observable side effects;
 - authentication and authorization boundaries;
 - runtime, deployment, worker, logging, and incident-response assumptions;

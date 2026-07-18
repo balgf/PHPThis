@@ -22,6 +22,7 @@
 - Complete: consumer contract v1 with a framework-owned, non-configurable application profile checker.
 - Complete: separately packageable runnable skeleton and isolated consumer-install proof.
 - Complete: AI-first authoring and human-accountability contract with an installed framework knowledge map instead of a traditional manual.
+- Complete: PDO base-transport contract and certification harness, with local SQLite proof and a dedicated SQLite/MySQL/PostgreSQL CI gate without a dialect abstraction.
 - Current: specify typed path parameters before implementing dynamic routes.
 
 ## Phase 2: type-aware AI guardrails

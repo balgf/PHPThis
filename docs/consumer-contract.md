@@ -82,16 +82,21 @@ Do not add route discovery, automatic input binding, middleware pipelines, facad
 
 When an application uses a database:
 
+- require the matching runtime PDO extension in the application Composer package and record the connection's engine, version, configuration source, schema authority, and dialect assumptions in `.ai/data.md`;
 - create the request connection with `PHPThis\Database\Connection::connect` in the composition root and execute visible SQL through that connection with named parameters; `PHT005` rejects application-owned construction of `PDO` or its subclasses, including aliases and anonymous subclasses;
+- treat `Connection` as PDO transport, not a portable SQL abstraction; write each query for the selected engine and never infer that SQLite evidence proves MySQL or PostgreSQL behavior;
+- use a distinct portable name for every placeholder occurrence and a unique column name or alias for every selected expression;
 - give every request connection an explicit `QueryBudget` and bounded `QueryTrace`;
+- give separately named connections explicit budgets and distinct traces, document any deliberately shared request-wide budget, and do not claim atomicity across connections;
 - name selected columns and bound every collection read;
 - never execute a database statement from a loop or recursive traversal;
 - parse selected rows immediately into concrete projections;
 - keep transactions explicit and preserve the original failure;
 - test materially different fixture sizes and prove that statement count stays constant;
+- run integration tests against every engine and version whose SQL, returned values, errors, isolation, locking, or plans the application relies on;
 - treat query budgets as backstops, not proof of an efficient SQL shape.
 
-Production-specific table sizes, indexes, locking constraints, retention rules, and query limits belong in the application's `.ai/data.md`, not in the framework contract.
+Production-specific table sizes, indexes, scalar representations, locking constraints, retention rules, driver/session options, and query limits belong in the application's `.ai/data.md`, not in the framework contract.
 
 ## Project-owned AI context
 

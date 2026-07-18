@@ -920,6 +920,47 @@ $tests['connection binds named values and enforces its budget'] = static functio
     }
 };
 
+$tests['connection accepts portable parameter names and rejects invalid or duplicate names before database work'] = static function (): void {
+    $budget = new QueryBudget(1);
+    $trace = new QueryTrace(1);
+    $connection = Connection::connect('sqlite::memory:', $budget, $trace);
+    $requireInvalidName = static function (Connection $checkedConnection, string $invalidName): void {
+        try {
+            $checkedConnection->selectOneRow('SELECT :value AS value', [$invalidName => 7]);
+        } catch (InvalidArgumentException) {
+            return;
+        }
+
+        throw new RuntimeException("Expected nonportable SQL parameter name to be rejected: {$invalidName}.");
+    };
+
+    $requireInvalidName($connection, '');
+    $requireInvalidName($connection, ':');
+    $requireInvalidName($connection, '1value');
+    $requireInvalidName($connection, 'user-id');
+    $requireInvalidName($connection, 'user id');
+
+    try {
+        $connection->selectOneRow(
+            'SELECT :value AS value',
+            ['value' => 1, ':value' => 2],
+        );
+        throw new RuntimeException('Expected normalized duplicate SQL parameter names to be rejected.');
+    } catch (InvalidArgumentException) {
+    }
+
+    if ($budget->used() !== 0 || $trace->snapshot()['statements'] !== 0) {
+        throw new RuntimeException('Invalid and duplicate parameter names must fail before database work is counted or traced.');
+    }
+
+    $row = $connection->selectOneRow('SELECT :value AS value', [':value' => 7]);
+    $value = $row['value'] ?? null;
+
+    if ($value !== 7 && $value !== '7') {
+        throw new RuntimeException('Expected an optional leading colon and portable parameter identifier.');
+    }
+};
+
 $tests['query trace detects repetition without exposing SQL or parameters'] = static function (): void {
     $budget = new QueryBudget(4);
     $trace = new QueryTrace(4);

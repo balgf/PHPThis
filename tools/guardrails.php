@@ -33,10 +33,12 @@ if (!is_string($phpstanConfig)) {
 }
 
 $requiredRepositoryFiles = [
+    '.github/workflows/ci.yml',
     'docs/consumer-contract.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
     'docs/decisions/011-ai-first-authoring.md',
+    'docs/decisions/012-pdo-transport-application-owned-dialects.md',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
@@ -77,12 +79,48 @@ $requiredRepositoryFiles = [
     'verification/phpstan/MixedScalarCoercionRule.php',
     'verification/phpstan/extension.php',
     'tools/package-files.txt',
+    'tools/test-database-drivers.php',
 ];
 
 foreach ($requiredRepositoryFiles as $requiredRepositoryFile) {
     if (!is_file($root . '/' . $requiredRepositoryFile)) {
         $failures[] = "Required repository file is missing: {$requiredRepositoryFile}.";
     }
+}
+
+$composerPath = $root . '/composer.json';
+$composerContents = file_get_contents($composerPath);
+
+if (!is_string($composerContents)) {
+    $failures[] = 'Cannot read composer.json.';
+} else {
+    $composer = json_decode($composerContents, true);
+    $scripts = is_array($composer) ? ($composer['scripts'] ?? null) : null;
+    $check = is_array($scripts) ? ($scripts['check'] ?? null) : null;
+
+    if (!is_array($scripts) || ($scripts['test:database-drivers'] ?? null) !== 'php tools/test-database-drivers.php') {
+        $failures[] = 'composer.json must define the canonical database-driver certification script.';
+    }
+
+    if (!is_array($check) || !in_array('@test:database-drivers', $check, true)) {
+        $failures[] = 'composer check must include database-driver certification.';
+    }
+}
+
+$ciPath = $root . '/.github/workflows/ci.yml';
+$ciContents = file_get_contents($ciPath);
+
+if (!is_string($ciContents)) {
+    $failures[] = 'Cannot read .github/workflows/ci.yml.';
+} elseif (
+    !str_contains($ciContents, 'PHPTHIS_DATABASE_TEST_DRIVERS: sqlite,mysql,pgsql')
+    || !str_contains($ciContents, 'image: mysql:8.4')
+    || !str_contains($ciContents, 'image: postgres:17')
+    || !str_contains($ciContents, 'run: composer test:database-drivers')
+    || !str_contains($ciContents, "PHPTHIS_MYSQL_DSN: 'mysql:")
+    || !str_contains($ciContents, "PHPTHIS_PGSQL_DSN: 'pgsql:")
+) {
+    $failures[] = 'CI must preserve SQLite, MySQL, and PostgreSQL PDO transport certification.';
 }
 
 $consumerContractPath = $root . '/docs/consumer-contract.md';

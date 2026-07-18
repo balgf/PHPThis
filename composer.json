@@ -38,6 +38,7 @@
         "guard": "php tools/guardrails.php",
         "test": "php tests/run.php",
         "test:consumer": "php tools/test-consumer-project.php",
+        "test:database-drivers": "php tools/test-database-drivers.php",
         "test:query-scaling": "php tools/test-query-scaling.php",
         "test:profile": "php tools/test-strict-profile.php",
         "check": [
@@ -45,6 +46,7 @@
             "@analyse",
             "@test:profile",
             "@test:consumer",
+            "@test:database-drivers",
             "@test:query-scaling",
             "@test"
         ]

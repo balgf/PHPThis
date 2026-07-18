@@ -11,6 +11,7 @@
 - PHP superglobals are read only in `example/public/index.php`;
 - the consumer contract, installed knowledge map, and every required application context template file remain present;
 - the vision, consumer contract, skeleton, and application template preserve the AI authoring and human-accountability route;
+- the canonical check and CI workflow preserve the SQLite, MySQL, and PostgreSQL PDO transport certification path;
 - Markdown files outnumber PHP files;
 - core source stays within 900 physical lines during Phase 1;
 - PHPStan baseline files are absent;
@@ -21,6 +22,8 @@ Runtime query budgets enforce a separate limit before each statement executes. R
 PHPStan runs separately at maximum level with strict rules. It owns static type correctness; `PHT005` resolves literal, imported, aliased, fully qualified, and typed dynamic PDO construction so the framework connection remains the sole boundary. The repository guardrail retains only lightweight structure checks until equivalent type-aware PHPStan rules exist.
 
 `php tools/test-strict-profile.php` exercises passing and failing fixtures against the same syntax guard and PHPStan extension used by the canonical check. PHPThis-owned rule IDs are permanent and have no suppression mechanism.
+
+`php tools/test-database-drivers.php` defaults to a temporary SQLite database and fails when any explicitly requested driver or connection configuration is unavailable. The dedicated CI job requests SQLite, MySQL, and PostgreSQL against real services. Its deliberately narrow common SQL proves PDO transport behavior without creating a runtime dialect abstraction; application SQL remains engine-specific.
 
 Consuming applications use `vendor/bin/phpthis check`. It discovers PHP across the application rather than accepting a fixed list of conventional source roots, rejects symlinked checked source, and passes one manifest to both syntax guardrails and a temporary framework-owned PHPStan configuration. Normal runs use a persistent profile-owned cache and parallelize when the host allows PHPStan's loopback coordinator; restricted hosts fall back to serial analysis. `PHT004` rejects consumer PHPStan configuration, baselines, and inline PHPStan ignores before analysis.
 

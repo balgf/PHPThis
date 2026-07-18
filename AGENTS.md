@@ -22,7 +22,9 @@ The human supplies intent and remains accountable for the outcome. Surface missi
 - Use `RequestHandler::handle`; do not make handlers invokable.
 - Keep routes in an explicit list. Do not add discovery, attributes, reflection, or string class resolution.
 - Keep SQL in the handler or its narrowly named query object. Use `Connection` with named parameters.
+- Treat `Connection` as native PDO transport, not a dialect abstraction; keep SQL visibly specific to the recorded engine and give every placeholder occurrence a distinct portable name.
 - Give every request an explicit `QueryBudget` and bounded `QueryTrace`; do not write one log line per query.
+- Give separately named connections explicit budgets and distinct traces; never imply cross-connection transaction atomicity.
 - Parse external `mixed` data once through a named factory into a concrete final readonly projection or command.
 - Reject missing and unknown fields and validate before conversion; never use a scalar cast as validation.
 - Treat `composer check` as the PHPThis validity gate and repair diagnostics by their stable profile rule or PHPStan identifier.
