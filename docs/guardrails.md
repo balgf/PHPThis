@@ -20,4 +20,6 @@ PHPStan runs separately at maximum level with strict rules. It owns static type 
 
 `php tools/test-strict-profile.php` exercises passing and failing fixtures against the same syntax guard and PHPStan extension used by the canonical check. PHPThis-owned rule IDs are permanent and have no suppression mechanism.
 
+`php tools/test-query-scaling.php` verifies that the accepted read remains constant at one query and explicitly submits its `.php.fixture` N+1 negative control to `PHT003`. The fixture is not accepted repository PHP; proving its rejection is part of the test.
+
 The loop check is deliberately narrow and syntax-aware. It covers the canonical database methods; review still has to reject aliases, dynamic calls, and inefficient single statements. Guardrails should remain deterministic, fast, and locally runnable.

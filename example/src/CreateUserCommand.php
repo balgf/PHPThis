@@ -9,6 +9,8 @@ use UnexpectedValueException;
 
 final readonly class CreateUserCommand
 {
+    private const int MAX_JSON_BYTES = 2_048;
+
     /**
      * @param non-empty-string $name
      * @param non-empty-string $email
@@ -21,6 +23,10 @@ final readonly class CreateUserCommand
 
     public static function fromJson(string $json): self
     {
+        if (strlen($json) > self::MAX_JSON_BYTES) {
+            throw new UnexpectedValueException('Create-user input exceeds the 2048-byte limit.');
+        }
+
         $decoded = json_decode($json, false, 16, JSON_THROW_ON_ERROR);
 
         if (!$decoded instanceof stdClass) {

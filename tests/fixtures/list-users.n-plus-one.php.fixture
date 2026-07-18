@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+use Example\UserActivitySummary;
+use Example\UserSummary;
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryBudgetExceeded;
+use PHPThis\Database\QueryTrace;
+
+$root = $argv[1] ?? null;
+$databasePath = $argv[2] ?? null;
+$budgetValue = $argv[3] ?? null;
+
+if (!is_string($root) || !is_string($databasePath) || !is_string($budgetValue)) {
+    throw new RuntimeException('N+1 fixture requires root, database path, and query budget arguments.');
+}
+
+if (preg_match('/^[1-9][0-9]*$/D', $budgetValue) !== 1) {
+    throw new RuntimeException('N+1 fixture query budget must be a positive integer.');
+}
+
+$budgetLimit = filter_var($budgetValue, FILTER_VALIDATE_INT);
+
+if (!is_int($budgetLimit) || $budgetLimit < 1) {
+    throw new RuntimeException('N+1 fixture query budget is outside the supported integer range.');
+}
+
+require $root . '/autoload.php';
+
+$budget = new QueryBudget($budgetLimit);
+$trace = new QueryTrace(2);
+$connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
+$rows = $connection->selectAllRows(
+    'SELECT users.id, users.name FROM users ORDER BY users.id LIMIT :user_limit',
+    ['user_limit' => 50],
+);
+$users = [];
+$budgetExceeded = false;
+
+try {
+    foreach ($rows as $row) {
+        $user = UserSummary::fromDatabaseRow($row);
+        $eventRow = $connection->selectOneRow(
+            <<<'SQL'
+                SELECT COUNT(user_events.id) AS event_count
+                FROM user_events
+                WHERE user_events.user_id = :user_id
+                SQL,
+            ['user_id' => $user->id],
+        );
+
+        if ($eventRow === null) {
+            throw new RuntimeException('N+1 fixture aggregate query returned no row.');
+        }
+
+        $activity = UserActivitySummary::fromDatabaseRow([
+            'id' => $user->id,
+            'name' => $user->name,
+            'event_count' => $eventRow['event_count'] ?? null,
+        ]);
+        $users[] = [
+            'id' => $activity->id,
+            'name' => $activity->name,
+            'event_count' => $activity->eventCount,
+        ];
+    }
+} catch (QueryBudgetExceeded) {
+    $budgetExceeded = true;
+}
+
+$body = json_encode(['users' => $users], JSON_THROW_ON_ERROR) . "\n";
+
+fwrite(STDOUT, json_encode([
+    'body' => $body,
+    'budget_exceeded' => $budgetExceeded,
+    'trace' => $trace->snapshot(),
+], JSON_THROW_ON_ERROR));

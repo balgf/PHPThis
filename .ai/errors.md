@@ -8,4 +8,4 @@ Failures must cross named boundaries as exceptions or explicit response values.
 - Let unknown failures reach the top-level exception handler and be logged once.
 - Never include SQL credentials, parameter values, stack traces, or internal messages in public responses.
 
-The error registry is intentionally not implemented in Phase 0; unhandled exceptions remain visible during development.
+The error registry is the next Phase 1 mechanism; unhandled exceptions remain visible during development.

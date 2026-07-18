@@ -31,13 +31,16 @@
     "scripts": {
         "analyse": "phpstan analyse --configuration=phpstan.neon --no-progress",
         "benchmark:routing": "php tools/benchmark-routing.php",
+        "example:setup": "php tools/setup-example.php",
         "guard": "php tools/guardrails.php",
         "test": "php tests/run.php",
+        "test:query-scaling": "php tools/test-query-scaling.php",
         "test:profile": "php tools/test-strict-profile.php",
         "check": [
             "@guard",
             "@analyse",
             "@test:profile",
+            "@test:query-scaling",
             "@test"
         ]
     },

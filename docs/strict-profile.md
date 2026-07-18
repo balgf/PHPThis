@@ -4,7 +4,7 @@ Profile version: 0
 
 PHPThis runs as ordinary PHP 8.4. The profile is a smaller set of accepted programs enforced during development; it is not a PHP fork, transpiler, runtime wrapper, or second language.
 
-`composer check` is the compiler-like gate. It runs repository guardrails, PHPStan at maximum level with strict and PHPThis-owned rules, strict-profile fixture tests, and behavior tests. A program that skips this gate may be valid PHP but is not verified PHPThis.
+`composer check` is the compiler-like gate. It runs repository guardrails, PHPStan at maximum level with strict and PHPThis-owned rules, strict-profile fixture tests, the query-scaling proof, and behavior tests. A program that skips this gate may be valid PHP but is not verified PHPThis.
 
 ## PHPThis-owned rule catalogue
 
@@ -12,7 +12,7 @@ PHPThis runs as ordinary PHP 8.4. The profile is a smaller set of accepted progr
 | --- | --- | --- | --- |
 | `PHT001` | Scalar coercion from `mixed` is forbidden. This covers `(int)`, `(float)`, `(string)`, `(bool)`, `intval`, `floatval`, `doubleval`, `strval`, `boolval`, and `settype`, including template-mixed inputs. | Non-ignorable, type-aware PHPStan rule `phpthis.pht001`. | Check the runtime type and accepted representation first, then convert only the narrowed value. Known-type internal conversions remain valid. |
 | `PHT002` | Every named class in repository-owned PHP is `final`; abstract classes also fail. | Token-aware repository guardrail. | Mark the class final or expose an interface as the explicit extension point. Anonymous classes, interfaces, traits, and enums are not rejected. |
-| `PHT003` | `selectAllRows`, `selectOneRow`, and `executeStatement` cannot occur lexically in a `for`, `foreach`, `while`, or `do` header or body, including a nested closure. | Token-aware repository guardrail. | Replace per-item I/O with one set-based query before the loop. Recursive query execution remains a review limitation. |
+| `PHT003` | `selectAllRows`, `selectOneRow`, and `executeStatement` cannot occur lexically in a `for`, `foreach`, `while`, or `do` header or body, including a nested closure. | Token-aware repository guardrail plus the executable N+1 negative control in `composer test:query-scaling`. | Replace per-item I/O with one set-based query before the loop. Recursive query execution remains a review limitation. |
 
 PHT identifiers are permanent. Wording may become clearer, but a materially different or broader rule receives a new identifier or a new profile version. Profile rules have no inline suppression, baseline, wildcard exclusion, or comment-based exemption mechanism.
 

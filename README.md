@@ -25,7 +25,9 @@ Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis comb
 
 **Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
-This is a zero third-party runtime-dependency foundation. The first slice supports exact-path routing, request/response values, explicit handlers, and instrumented PDO access.
+This is a zero third-party runtime-dependency foundation. The first proof slice supports exact-path routing, request/response values, explicit handlers, and instrumented PDO access. Its sample application includes a bounded `GET /users` aggregate read and a transactional `POST /users` write.
+
+The executable query-scaling proof holds the accepted read at one statement as its fixture grows from 2 to 50 users. An isolated N+1 negative control produces the same JSON response body while growing from 3 to 51 statements; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
 ```text
 Request -> Router -> Handler -> Connection -> Response
@@ -40,8 +42,13 @@ git clone https://github.com/balgf/PHPThis.git
 cd PHPThis
 composer install
 composer check
+composer example:setup
 php -S 127.0.0.1:8080 -t example/public
 curl -i http://127.0.0.1:8080/health
+curl -i http://127.0.0.1:8080/users
+curl -i -X POST http://127.0.0.1:8080/users \
+  -H 'Content-Type: application/json' \
+  --data '{"name":"Katherine Johnson","email":"katherine@example.com"}'
 ```
 
 ## Read next
@@ -49,6 +56,7 @@ curl -i http://127.0.0.1:8080/health
 - [Vision](VISION.md) explains the hypothesis and success measures.
 - [Architecture](docs/architecture.md) traces the request path.
 - [Strict Profile](docs/strict-profile.md) defines the accepted PHP subset and permanent rule catalogue.
+- [Evaluation](docs/evaluation.md) describes the executable scaling proof and future AI comparison protocol.
 - [Roadmap](ROADMAP.md) describes the maturity plan.
 - [Contributing](CONTRIBUTING.md) defines the contribution gate.
 - [AI context index](.ai/README.md) routes an AI to task-specific instructions.

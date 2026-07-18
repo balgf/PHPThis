@@ -14,7 +14,11 @@ Only named parameters are accepted. `Connection` binds strings, integers, boolea
 
 ## Transaction policy
 
-Transactions are manual: begin, execute, commit. Catch the relevant failure, roll back if active, and rethrow. PHPThis will not add a callback helper that hides this control flow.
+Transactions are manual: begin, execute, and commit inside `try`; in `finally`, roll back if the transaction remains active. This preserves normal exception propagation while making cleanup visible. PHPThis will not add a callback helper that hides this control flow.
+
+The sample `POST /users` path performs two writes: one user row and one `user.created` event selected through the unique email. Both affected-row counts must be one. The handler prepares its success response before beginning, commits only after both writes, and rolls back when a failure or query-budget rejection leaves the transaction active.
+
+The sample `GET /users` path selects at most 50 users with event counts in one aggregate statement. The derived user selection applies the bound before joining events, and `user_events.user_id` is indexed in the sample schema. Equivalent small and large fixtures must both use exactly one statement.
 
 ## Query trace policy
 

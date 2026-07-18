@@ -17,6 +17,7 @@ Then read only what the task needs:
 | Read or write database data | `.ai/database.md` | `src/Database/`, relevant handler |
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php` |
 | Add tests | `.ai/testing.md` | `tests/run.php` |
+| Change the development-pattern proof | `.ai/testing.md`, `.ai/database.md` | `tools/test-query-scaling.php`, `tests/fixtures/` |
 | Map failures | `.ai/errors.md` | handler and application boundary |
 | Change types or analysis rules | `.ai/static-analysis.md` | `phpstan.neon`, affected PHP files |
 | Parse database, JSON, or other external values | `.ai/types.md` | boundary factory and adversarial tests |

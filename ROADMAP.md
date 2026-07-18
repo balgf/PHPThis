@@ -1,6 +1,6 @@
 # Roadmap
 
-## Phase 0: foundation - current
+## Phase 0: foundation - complete
 
 - Product principles and AI context map.
 - Exact-path router and explicit handler interface.
@@ -14,10 +14,10 @@
 
 ## Phase 1: prove the development pattern
 
-- Build one read endpoint and one transactional write endpoint against a sample schema.
-- Add dataset-size query-count tests that demonstrate a failing N+1 implementation.
-- Add an explicit error-to-response registry.
-- Specify typed path parameters before implementing dynamic routes.
+- Complete: one bounded aggregate read endpoint and one transactional write endpoint against a sample schema.
+- Complete: dataset-size query-count tests and an executable N+1 negative control rejected by `PHT003`.
+- Current: add an explicit error-to-response registry.
+- Next: specify typed path parameters before implementing dynamic routes.
 
 ## Phase 2: type-aware AI guardrails
 
