@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/strict-profile.php';
+require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+
+use PHPThis\Verification\SyntaxProfile;
 
 $root = dirname(__DIR__);
 $phpFiles = [];
@@ -17,7 +19,7 @@ if (!is_string($phpstanConfig)) {
         $failures[] = 'phpstan.neon must include PHPStan strict rules.';
     }
 
-    if (!str_contains($phpstanConfig, 'tools/phpstan/extension.php')) {
+    if (!str_contains($phpstanConfig, 'verification/phpstan/extension.php')) {
         $failures[] = 'phpstan.neon must include PHPThis Strict Profile rules.';
     }
 
@@ -30,13 +32,7 @@ if (!is_string($phpstanConfig)) {
     }
 }
 
-foreach (['phpstan-baseline.neon', 'phpstan-baseline.php'] as $baselineFile) {
-    if (is_file($root . '/' . $baselineFile)) {
-        $failures[] = "PHPStan baseline files are forbidden: {$baselineFile}.";
-    }
-}
-
-$requiredApplicationContextFiles = [
+$requiredRepositoryFiles = [
     'docs/consumer-contract.md',
     'docs/getting-started.md',
     'templates/application/AGENTS.md',
@@ -50,11 +46,40 @@ $requiredApplicationContextFiles = [
     'templates/application/.ai/rules.md',
     'templates/application/.ai/testing.md',
     'templates/application/docs/decisions/README.md',
+    'skeleton/AGENTS.md',
+    'skeleton/.gitignore',
+    'skeleton/.github/workflows/ci.yml',
+    'skeleton/LICENSE',
+    'skeleton/README.md',
+    'skeleton/.ai/README.md',
+    'skeleton/.ai/architecture.md',
+    'skeleton/.ai/change-workflow.md',
+    'skeleton/.ai/data.md',
+    'skeleton/.ai/integrations.md',
+    'skeleton/.ai/operations.md',
+    'skeleton/.ai/project.md',
+    'skeleton/.ai/rules.md',
+    'skeleton/.ai/testing.md',
+    'skeleton/bootstrap.php',
+    'skeleton/composer.json',
+    'skeleton/docs/decisions/README.md',
+    'skeleton/public/index.php',
+    'skeleton/src/HealthHandler.php',
+    'skeleton/src/HealthRoutes.php',
+    'skeleton/src/Routes.php',
+    'skeleton/tests/run.php',
+    'bin/phpthis',
+    'verification/ApplicationChecker.php',
+    'verification/SyntaxProfile.php',
+    'verification/phpstan/DirectPdoConstructionRule.php',
+    'verification/phpstan/MixedScalarCoercionRule.php',
+    'verification/phpstan/extension.php',
+    'tools/package-files.txt',
 ];
 
-foreach ($requiredApplicationContextFiles as $requiredApplicationContextFile) {
-    if (!is_file($root . '/' . $requiredApplicationContextFile)) {
-        $failures[] = "Required application context file is missing: {$requiredApplicationContextFile}.";
+foreach ($requiredRepositoryFiles as $requiredRepositoryFile) {
+    if (!is_file($root . '/' . $requiredRepositoryFile)) {
+        $failures[] = "Required repository file is missing: {$requiredRepositoryFile}.";
     }
 }
 
@@ -65,8 +90,20 @@ if (is_file($consumerContractPath)) {
 
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
-    } elseif (preg_match('/^Contract version: 0$/m', $consumerContract) !== 1) {
-        $failures[] = 'docs/consumer-contract.md must declare contract version 0.';
+    } elseif (preg_match('/^Contract version: 1$/m', $consumerContract) !== 1) {
+        $failures[] = 'docs/consumer-contract.md must declare contract version 1.';
+    }
+}
+
+$strictProfilePath = $root . '/docs/strict-profile.md';
+
+if (is_file($strictProfilePath)) {
+    $strictProfile = file_get_contents($strictProfilePath);
+
+    if (!is_string($strictProfile)) {
+        $failures[] = 'Cannot read docs/strict-profile.md.';
+    } elseif (preg_match('/^Profile version: 1$/m', $strictProfile) !== 1) {
+        $failures[] = 'docs/strict-profile.md must declare profile version 1.';
     }
 }
 
@@ -101,7 +138,19 @@ foreach ($iterator as $file) {
         continue;
     }
 
-    if ($file->getExtension() === 'php') {
+    $normalizedBasename = strtolower($file->getBasename());
+
+    if (
+        $relativePath !== 'phpstan.neon'
+        && (
+            preg_match('/\Aphpstan[a-z0-9._-]*\.neon(?:\.dist)?\z/', $normalizedBasename) === 1
+            || preg_match('/\Aphpstan[a-z0-9._-]*baseline[a-z0-9._-]*\.php\z/', $normalizedBasename) === 1
+        )
+    ) {
+        $failures[] = "PHT004 alternate PHPStan configuration is forbidden: {$relativePath}.";
+    }
+
+    if ($file->getExtension() === 'php' || $relativePath === 'bin/phpthis') {
         $phpFiles[$relativePath] = $path;
     }
 
@@ -118,16 +167,12 @@ foreach ($phpFiles as $relativePath => $path) {
         continue;
     }
 
-    if (preg_match('/^<\\?php\\s+declare\\(strict_types=1\\);/', $contents) !== 1) {
+    $strictTypesPattern = $relativePath === 'bin/phpthis'
+        ? '/^#!\/usr\/bin\/env php\R<\\?php\\s+declare\\(strict_types=1\\);/'
+        : '/^<\\?php\\s+declare\\(strict_types=1\\);/';
+
+    if (preg_match($strictTypesPattern, $contents) !== 1) {
         $failures[] = "{$relativePath} must declare strict types immediately after <?php.";
-    }
-
-    preg_match_all('/function\\s+(__[A-Za-z0-9_]+)/', $contents, $magicMatches);
-
-    foreach ($magicMatches[1] as $magicMethod) {
-        if ($magicMethod !== '__construct') {
-            $failures[] = "{$relativePath} defines forbidden magic method {$magicMethod}.";
-        }
     }
 
     if (preg_match('/\\beval\\s*\\(/', $contents) === 1) {
@@ -138,12 +183,8 @@ foreach ($phpFiles as $relativePath => $path) {
         $failures[] = "{$relativePath} uses a variable variable.";
     }
 
-    foreach (PHPThisStrictProfile::syntaxFailures($contents, $relativePath) as $profileFailure) {
+    foreach (SyntaxProfile::failures($contents, $relativePath) as $profileFailure) {
         $failures[] = $profileFailure;
-    }
-
-    if ($relativePath !== 'src/Database/Connection.php' && preg_match('/new\\s+PDO\\s*\\(/', $contents) === 1) {
-        $failures[] = "{$relativePath} constructs PDO outside Connection.";
     }
 
     $tokens = token_get_all($contents);
@@ -161,7 +202,7 @@ foreach ($phpFiles as $relativePath => $path) {
         $tokenText = is_array($token) ? $token[1] : $token;
 
         if (
-            $relativePath !== 'example/public/index.php'
+            !in_array($relativePath, ['example/public/index.php', 'skeleton/public/index.php'], true)
             && $tokenId === T_VARIABLE
             && in_array(
                 $tokenText,
@@ -171,6 +212,17 @@ foreach ($phpFiles as $relativePath => $path) {
         ) {
             $failures[] = sprintf(
                 '%s:%d reads a PHP superglobal outside the front controller.',
+                $relativePath,
+                $token[2],
+            );
+        }
+
+        if (
+            in_array($tokenId, [T_COMMENT, T_DOC_COMMENT], true)
+            && preg_match('/@phpstan-ignore[A-Za-z0-9_-]*/i', $tokenText) === 1
+        ) {
+            $failures[] = sprintf(
+                'PHT004 %s:%d PHPStan comment suppressions are forbidden.',
                 $relativePath,
                 $token[2],
             );

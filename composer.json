@@ -28,20 +28,43 @@
             "Example\\": "example/src/"
         }
     },
+    "bin": [
+        "bin/phpthis"
+    ],
     "scripts": {
-        "analyse": "phpstan analyse --configuration=phpstan.neon --no-progress",
+        "analyse": "php -d disable_functions=proc_open vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress",
         "benchmark:routing": "php tools/benchmark-routing.php",
         "example:setup": "php tools/setup-example.php",
         "guard": "php tools/guardrails.php",
         "test": "php tests/run.php",
+        "test:consumer": "php tools/test-consumer-project.php",
         "test:query-scaling": "php tools/test-query-scaling.php",
         "test:profile": "php tools/test-strict-profile.php",
         "check": [
             "@guard",
             "@analyse",
             "@test:profile",
+            "@test:consumer",
             "@test:query-scaling",
             "@test"
+        ]
+    },
+    "archive": {
+        "exclude": [
+            "/.ai",
+            "/.github",
+            "/.gitattributes",
+            "/.gitignore",
+            "/AGENTS.md",
+            "/autoload.php",
+            "/composer.lock",
+            "/example",
+            "/phpstan.neon",
+            "/skeleton",
+            "/tests",
+            "/tmp",
+            "/tools",
+            "/vendor"
         ]
     },
     "config": {

@@ -10,7 +10,9 @@ PHP permits coercion, dynamic mechanisms, broad arrays, and runtime-only failure
 
 PHPThis defines a versioned, checked subset of ordinary PHP. `composer check` is the compiler-like validity gate. PHPThis-owned rules use permanent `PHT` identifiers, one enforcement owner, deterministic repairs, and positive and negative fixtures.
 
-Profile v0 contains `PHT001` for mixed scalar coercion, `PHT002` for final named classes, and `PHT003` for database calls in loops. Existing PHPStan strict rules continue to own loose comparisons, boolean conditions, ambiguous shorthand, and strict standard-library calls.
+Profile v0 contains `PHT001` for mixed scalar coercion, `PHT002` for final named classes, and `PHT003` for database calls in loops. Profile v1 carries those rules forward and adds `PHT004`, which prevents consuming applications from replacing or suppressing the framework-owned analysis configuration, and `PHT005`, which resolves constructed class names and keeps direct PDO construction inside the framework `Connection` boundary. Existing PHPStan strict rules continue to own loose comparisons, boolean conditions, ambiguous shorthand, and strict standard-library calls.
+
+The installed package exposes one public `phpthis check` binary for consumer static validity. It discovers application source and owns the PHPStan configuration. Applications compose that stage with their own behavior-test command under `composer check`.
 
 The runtime remains plain PHP. PHPThis does not introduce a fork, transpiler, runtime reflection layer, universal result or collection abstraction, or another language in the normal request path.
 
@@ -20,4 +22,4 @@ Some legal PHP programs are intentionally invalid PHPThis. Static-analysis and g
 
 ## Reconsider when
 
-Real applications demonstrate that a rule blocks a necessary explicit design, or PHP gains a native guarantee that fully replaces a profile rule. A public `phpthis check` binary may be added when the profile is consumed outside this repository; until then, the Composer command remains the single entry point.
+Real applications demonstrate that a rule blocks a necessary explicit design, or PHP gains a native guarantee that fully replaces a profile rule. Validated additive analysis configuration may be considered only after a real consumer need cannot be expressed through typed source or tests.

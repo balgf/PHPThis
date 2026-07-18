@@ -13,5 +13,7 @@ Rules:
 - Prefer a tested custom PHPStan rule over a text-based exception for framework architecture.
 - Give every PHPThis-owned rule a permanent `PHT` identifier and positive and negative fixtures.
 - Make PHPThis-owned PHPStan findings non-ignorable; do not duplicate a rule already owned by PHPStan strict-rules.
+- Consumer applications run the installed `phpthis check` binary; they do not own a PHPStan configuration, baseline, or inline suppression path.
+- The consumer checker must build one application-file manifest and pass that same manifest to syntax checks and PHPStan.
 
 PHPStan proves static type and code-shape properties. Runtime query budgets and database integration tests remain mandatory because static analysis cannot prove actual statement counts or SQL plans.

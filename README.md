@@ -14,6 +14,7 @@ The working rule is simple: if a behavior cannot be found by following ordinary 
 - Every database connection has a bounded query trace that reports repeated SQL fingerprints, execution timing, and failures without retaining SQL or parameters.
 - External database and JSON values are parsed once into concrete final readonly projections and commands before entering typed code.
 - A versioned Strict Profile rejects legal-but-unsafe PHP with stable, repair-oriented `PHT` diagnostics.
+- Consuming applications run one installed `phpthis check` binary whose maximum-level PHPStan configuration cannot be weakened by project files.
 - Handlers implement one visible `handle` method and receive dependencies through normal constructors.
 - Routes are explicit method, path, and already-constructed handler objects, composed from named route-area lists into one visible manifest.
 - One request boundary normalizes bounded PHP runtime input and maps only explicitly registered exception classes.
@@ -54,16 +55,16 @@ curl -i -X POST http://127.0.0.1:8080/users \
 
 ## Start an application
 
-PHPThis does not yet publish an installable application skeleton. This repository provides a versioned consumer contract and a documentation-only application context template while the application shape is being proven.
+The independently checked `phpthis/skeleton` package source now lives under `skeleton/`. It contains a runnable health application, project-owned AI context, the installed profile gate, behavior tests, and CI. The separate Composer package will be published with the first alpha; until then, [the getting-started guide](docs/getting-started.md) describes source evaluation without pretending `composer create-project` is already available.
 
-Every application should own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
+Every application must own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
 
-Read [Starting a PHPThis application](docs/getting-started.md) and [the consumer contract](docs/consumer-contract.md) before using the template under `templates/application/`.
+Read [Starting a PHPThis application](docs/getting-started.md) and [the consumer contract](docs/consumer-contract.md). Existing applications can still adopt the documentation-only context under `templates/application/` deliberately.
 
 ## Read next
 
 - [Vision](VISION.md) explains the hypothesis and success measures.
-- [Starting an application](docs/getting-started.md) explains the project-owned AI context template and its current limitations.
+- [Starting an application](docs/getting-started.md) explains the checked skeleton, the pre-alpha publication boundary, and adoption by existing projects.
 - [Consumer contract](docs/consumer-contract.md) defines the portable application validity floor.
 - [Architecture](docs/architecture.md) traces the request path.
 - [Request handling](docs/request-handling.md) defines runtime normalization and bounds.

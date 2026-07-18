@@ -1,18 +1,51 @@
 # Starting a PHPThis application
 
-PHPThis is experimental pre-alpha software and does not yet publish an installable application skeleton. The repository currently provides the framework library, a proof application under `example/`, a versioned consumer contract, and a project-owned AI context template.
+PHPThis is experimental pre-alpha software. The repository contains the independently checked `phpthis/skeleton` package source under `skeleton/`; publication as a separate Composer package follows the first alpha tag.
 
 The template establishes how an AI learns the application before feature work begins. It is documentation scaffolding, not generated knowledge: every placeholder must be replaced with a verified project fact.
 
-## Create the application context
+## Start from the checked skeleton
 
-For a new application:
+After `phpthis/skeleton` is published, the canonical installation path will be:
 
-1. Add PHPThis as a project dependency using the installation method appropriate to the version being evaluated.
+```bash
+composer create-project --stability=alpha phpthis/skeleton my-app
+cd my-app
+composer check
+```
+
+During pre-alpha source evaluation, use the public repository's `skeleton/` directory:
+
+```bash
+git clone https://github.com/balgf/PHPThis.git phpthis-source
+cp -R phpthis-source/skeleton my-app
+cd my-app
+composer install
+composer check
+```
+
+Do not copy the framework-maintainer root, `example/`, `tests/`, or root `.ai/` directory into the application.
+
+The skeleton supplies:
+
+- a Composer project with explicit runtime and development dependencies;
+- one bootstrap, front controller, root route manifest, health route, and handler;
+- project-owned `AGENTS.md` and `.ai/` context with no unresolved template tokens;
+- the framework-owned `phpthis check` profile stage and application-owned behavior tests;
+- a CI workflow that calls the installed checker directly and runs behavior tests.
+
+Replace the skeleton's generic project facts with verified product, architecture, data, integration, authorization, and operational facts before feature work.
+
+## Add context to an existing application
+
+For an existing application adopting only the context template:
+
+1. Add PHPThis plus `phpstan/phpstan:^2.1` and `phpstan/phpstan-strict-rules:^2.0` as development dependencies using the installation method appropriate to the version being evaluated.
 2. Copy the contents of `vendor/phpthis/framework/templates/application/` into the new application root, preserving the hidden `.ai/` directory. When evaluating from a PHPThis source checkout instead, use its `templates/application/` directory.
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
-5. Commit the completed application context before asking an AI to implement the first feature.
+5. Use the contract-version-1 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, and run `composer check`.
+6. Commit the completed application context before asking an AI to implement the first feature.
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.
 
@@ -56,6 +89,6 @@ Do not restate ordinary PHP syntax or copy the framework repository's maintainer
 
 The application owns these files. Framework upgrades may update the consumer contract, but they must never replace project-specific instructions automatically.
 
-## Current limitation
+## Pre-alpha publication boundary
 
-The template does not yet provide a complete application tree or a consumer-project validity runner. Until those are shipped, adopters must configure their own autoloading, PHPStan paths, profile enforcement, guardrails, and tests according to the consumer contract. A separate `phpthis/skeleton` package is planned only after this application shape has been exercised in real projects.
+The skeleton source and its isolated install proof now exist, but neither `phpthis/framework` nor `phpthis/skeleton` has an alpha Composer tag. The VCS constraint and `repositories` override remain a pre-alpha bootstrap, so source evaluation is intentionally moving: record the evaluated Git commit and commit the generated application lockfile. For alpha publication, export `skeleton/` as the root of its separate package repository, remove that VCS override, replace `dev-main` with the alpha constraint resolved from Packagist, and commit the skeleton lockfile. After both prerelease packages are indexed, install the actual Packagist-preferred dist, compare its framework inventory with `tools/package-files.txt`, and prove the exact `composer create-project --stability=alpha` command in a clean project before announcing the release. Do not represent that future public command as available before these gates pass. The shorter command without `--stability=alpha` belongs to a future stable release.

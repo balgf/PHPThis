@@ -2,17 +2,88 @@
 
 declare(strict_types=1);
 
-final class PHPThisStrictProfile
+namespace PHPThis\Verification;
+
+final class SyntaxProfile
 {
     /** @return list<string> */
-    public static function syntaxFailures(string $contents, string $relativePath): array
+    public static function failures(string $contents, string $relativePath): array
     {
         $tokens = token_get_all($contents);
 
         return [
             ...self::nonFinalClassFailures($tokens, $relativePath),
             ...self::databaseLoopFailures($tokens, $relativePath),
+            ...self::magicMethodFailures($tokens, $relativePath),
         ];
+    }
+
+    /**
+     * @param array<int, array{int, string, int}|string> $tokens
+     * @return list<string>
+     */
+    private static function magicMethodFailures(array $tokens, string $relativePath): array
+    {
+        $failures = [];
+
+        foreach ($tokens as $index => $token) {
+            if (!is_array($token) || $token[0] !== T_FUNCTION) {
+                continue;
+            }
+
+            $magicMethod = self::magicMethodAfter($tokens, $index);
+
+            if ($magicMethod !== null && $magicMethod['name'] !== '__construct') {
+                $failures[] = sprintf(
+                    '%s:%d defines forbidden magic method %s.',
+                    $relativePath,
+                    $magicMethod['line'],
+                    $magicMethod['name'],
+                );
+            }
+        }
+
+        return $failures;
+    }
+
+    /**
+     * @param array<int, array{int, string, int}|string> $tokens
+     * @return array{name: string, line: int}|null
+     */
+    private static function magicMethodAfter(array $tokens, int $index): ?array
+    {
+        for ($cursor = $index + 1, $count = count($tokens); $cursor < $count; $cursor++) {
+            $candidate = $tokens[$cursor];
+
+            if (
+                is_array($candidate)
+                && in_array(
+                    $candidate[0],
+                    [
+                        T_WHITESPACE,
+                        T_COMMENT,
+                        T_DOC_COMMENT,
+                        T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG,
+                        T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG,
+                    ],
+                    true,
+                )
+            ) {
+                continue;
+            }
+
+            if (!is_array($candidate) || $candidate[0] !== T_STRING) {
+                return null;
+            }
+
+            $name = strtolower($candidate[1]);
+
+            return str_starts_with($name, '__')
+                ? ['name' => $name, 'line' => $candidate[2]]
+                : null;
+        }
+
+        return null;
     }
 
     /**
@@ -160,9 +231,7 @@ final class PHPThisStrictProfile
         return $failures;
     }
 
-    /**
-     * @param array<int, array{int, string, int}|string> $tokens
-     */
+    /** @param array<int, array{int, string, int}|string> $tokens */
     private static function isClassConstant(array $tokens, int $index): bool
     {
         for ($cursor = $index - 1; $cursor >= 0; $cursor--) {

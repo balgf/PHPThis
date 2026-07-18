@@ -13,3 +13,4 @@ Accepted records:
 - `007-checked-php-profile.md`
 - `008-explicit-request-boundary.md`
 - `009-project-owned-ai-context.md`
+- `010-framework-owned-consumer-check.md`

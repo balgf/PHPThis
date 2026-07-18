@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 0
+Contract version: 1
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -24,19 +24,34 @@ Files under `vendor/` belong to installed dependencies. Do not edit them to cust
 A PHPThis application must:
 
 - run on PHP 8.4 and declare strict types in every application-owned PHP file;
-- run PHPStan at maximum level with every installed strict rule enabled;
-- include the PHPThis PHPStan extension and enforce the Strict Profile version selected by the installed package;
+- require `phpstan/phpstan` at `^2.1` and `phpstan/phpstan-strict-rules` at `^2.0` as development dependencies, then run the framework-owned analysis configuration at maximum level;
+- use the installed `phpthis check` binary to enforce Strict Profile version 1;
 - expose one documented project check command that runs static analysis, profile checks, and behavior tests;
 - keep every application-owned named class final and expose an interface when an extension point is required;
 - use ordinary constructors and a visible composition root instead of runtime discovery or service location;
 - keep one canonical spelling and execution pattern for each framework operation;
-- fix findings at their cause rather than adding baselines, broad ignores, or comment suppressions.
+- own every required application-context file listed below and resolve every template placeholder before feature work;
+- fix findings at their cause rather than adding baselines, broad ignores, consumer PHPStan configuration, or comment suppressions.
 
-The framework repository's `composer check` verifies the framework and example application, not an arbitrary consuming repository. Composer does not inherit a dependency's root scripts or development dependencies, and the current repository guardrail scans the framework checkout rather than consumer code. Contract version 0 therefore does not yet ship a complete consumer-project check runner. Until an installable application skeleton supplies that runner, an application must wire equivalent checks itself and must not claim full PHPThis verification without them.
+Composer does not inherit a dependency's root scripts or development dependencies. An application therefore declares `phpstan/phpstan`, `phpstan/phpstan-strict-rules`, its behavior-test command, and this canonical sequence itself:
+
+```json
+{
+  "scripts": {
+    "profile": "phpthis check",
+    "test": "php tests/run.php",
+    "check": ["@profile", "@test"]
+  }
+}
+```
+
+`phpthis check` discovers every application-owned PHP file, runs structural profile checks, and invokes PHPStan with a temporary framework-owned configuration. The same discovered file manifest drives both stages. It excludes only the resolved Composer dependency directory and version-control metadata; source under `config/`, `bin/`, migrations, hidden directories, or `tmp/` remains application-owned and checked. PHP files use the `.php` extension; extensionless executables beginning with `<?php` or `#!/usr/bin/env php` followed by `<?php` are also checked. A canonical PHP opening prefix under another extension is rejected rather than silently excluded. Symlinked source directories and checked source files are rejected instead of silently skipped.
+
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization is deliberately unsupported in contract version 1.
 
 ## HTTP and application flow
 
-- One front controller reads PHP runtime globals and passes them to one bounded request boundary.
+- `public/index.php` is the one front controller permitted to read PHP runtime globals and pass them to one bounded request boundary.
 - Requests and responses are immutable values.
 - Routes are explicit method, literal path, and already-constructed handler objects.
 - A root route manifest combines named route-area lists; request-time route lookup remains indexed.
@@ -50,7 +65,7 @@ Do not add route discovery, automatic input binding, middleware pipelines, facad
 
 When an application uses a database:
 
-- execute visible SQL through `PHPThis\Database\Connection` with named parameters;
+- create the request connection with `PHPThis\Database\Connection::connect` in the composition root and execute visible SQL through that connection with named parameters; `PHT005` rejects application-owned construction of `PDO` or its subclasses, including aliases and anonymous subclasses;
 - give every request connection an explicit `QueryBudget` and bounded `QueryTrace`;
 - name selected columns and bound every collection read;
 - never execute a database statement from a loop or recursive traversal;
@@ -63,7 +78,7 @@ Production-specific table sizes, indexes, locking constraints, retention rules, 
 
 ## Project-owned AI context
 
-Every application should commit:
+Every application must complete and commit:
 
 ```text
 AGENTS.md
@@ -89,3 +104,5 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 ## Contract evolution
 
 Clarifications may update wording without changing the contract version. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+
+Contract version 1 replaces consumer-owned PHPStan configuration with the installed checker and adds the runnable skeleton. Existing contract-version-0 applications must complete the required project-owned context, remove their PHPStan configuration and copied guard runner, add the canonical Composer scripts above, and run `composer check` before adopting version 1.

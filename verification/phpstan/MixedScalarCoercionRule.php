@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PHPThis\StaticAnalysis;
+namespace PHPThis\Verification\PHPStan;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;

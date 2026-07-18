@@ -2,6 +2,8 @@
 
 The database layer deliberately exposes SQL. Its job is limited to connection policy, typed parameter binding, predictable fetching, transactions, statement counting, and bounded query tracing.
 
+Applications create this boundary with `Connection::connect` in their composition root. `PHT005` resolves names and types and rejects application-owned construction of `PDO` or its subclasses so query budgets and traces cannot be bypassed with an alias, typed class-string, or anonymous subclass.
+
 ## Why no ORM or query builder
 
 Lazy relationships can perform I/O during property access, while fluent query APIs can obscure the SQL shape and encourage broad reusable abstractions. Both increase the context an AI needs to reason about cost. PHPThis keeps the statement at the behavior boundary.

@@ -1,0 +1,12 @@
+/tmp/
+/vendor/
+/.phpunit.cache/
+/.DS_Store
+.env
+.env.*
+!.env.example
+/auth.json
+*.pem
+*.key
+*.p12
+*.pfx

@@ -19,6 +19,8 @@
 - Complete: one bounded PHP runtime request reader with immutable normalized headers.
 - Complete: one exact-class error-to-response registry and generic unknown-failure boundary.
 - Complete: consumer contract v0 and a project-owned application AI context template.
+- Complete: consumer contract v1 with a framework-owned, non-configurable application profile checker.
+- Complete: separately packageable runnable skeleton and isolated consumer-install proof.
 - Current: specify typed path parameters before implementing dynamic routes.
 
 ## Phase 2: type-aware AI guardrails
@@ -28,7 +30,8 @@
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.
 - Produce a machine-readable route report from the same explicit route list.
 - Measure how many files and tokens common changes require.
-- Exercise the application context template in real projects, then ship a separate `phpthis/skeleton` with reusable consumer-project checks.
+- Export `skeleton/` as its own package root, remove the pre-alpha VCS repository override, replace `dev-main` with the Packagist alpha constraint, commit its lockfile, and publish both prerelease packages.
+- Install the actual Packagist-preferred framework dist, compare it with `tools/package-files.txt`, and prove the documented `composer create-project --stability=alpha` path before announcing alpha.
 
 ## Phase 3: production evaluation
 

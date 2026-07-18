@@ -1,0 +1,27 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Verification\ApplicationChecker;
+
+require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+require_once dirname(__DIR__) . '/verification/ApplicationChecker.php';
+
+if (
+    !in_array($argc, [2, 3], true)
+    || $argv[1] !== 'check'
+    || ($argc === 3 && $argv[2] !== '--debug')
+) {
+    fwrite(STDERR, "Usage: phpthis check [--debug]\n");
+    exit(2);
+}
+
+$projectRoot = getcwd();
+
+if (!is_string($projectRoot)) {
+    fwrite(STDERR, "FAIL Cannot determine the Composer project root.\n");
+    exit(1);
+}
+
+exit((new ApplicationChecker())->check($projectRoot, $argc === 3));

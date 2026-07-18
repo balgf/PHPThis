@@ -9,7 +9,9 @@ use PHPThis\Database\QueryTrace;
 use PHPThis\Http\Request;
 
 require dirname(__DIR__) . '/autoload.php';
-require_once __DIR__ . '/strict-profile.php';
+require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+
+use PHPThis\Verification\SyntaxProfile;
 
 $root = dirname(__DIR__);
 $fixtureRelativePath = 'tests/fixtures/list-users.n-plus-one.php.fixture';
@@ -20,7 +22,7 @@ if (!is_string($fixtureSource)) {
     throw new RuntimeException('Unable to read the N+1 negative-control fixture.');
 }
 
-$profileFailures = PHPThisStrictProfile::syntaxFailures($fixtureSource, $fixtureRelativePath);
+$profileFailures = SyntaxProfile::failures($fixtureSource, $fixtureRelativePath);
 $expectedProfileFailures = [
     'PHT003 tests/fixtures/list-users.n-plus-one.php.fixture:45 calls a database method inside a loop.',
 ];

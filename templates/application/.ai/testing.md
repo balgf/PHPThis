@@ -8,13 +8,12 @@ Run from the application root:
 {{PROJECT_CHECK_COMMAND}}
 ```
 
-This command must cover maximum-level PHPStan analysis, the PHPThis Strict Profile, application guardrails, and behavior tests. Record its exact definition at `{{PROJECT_CHECK_DEFINITION_PATH}}`.
+This command must call the installed `phpthis check` profile stage and then run application behavior tests. Record its exact definition at `{{PROJECT_CHECK_DEFINITION_PATH}}`. Do not add an application-owned PHPStan configuration, baseline, or inline suppression path.
 
 ## Focused commands
 
 - Unit or behavior tests: `{{FOCUSED_TEST_COMMAND}}`
-- Static analysis: `{{STATIC_ANALYSIS_COMMAND}}`
-- Profile and architecture guardrails: `{{GUARDRAIL_COMMAND}}`
+- Framework-owned profile and static analysis: `vendor/bin/phpthis check`
 - Database integration tests: `{{DATABASE_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 
 Focused commands shorten feedback but never replace the complete validity gate.

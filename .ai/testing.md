@@ -19,6 +19,8 @@ Boundary factories require adversarial tests for missing and unknown fields, nul
 
 A Strict Profile rule requires at least one failing fixture, one passing fixture, and assertions for its permanent identifier and source line. Type-aware fixtures run through PHPStan; syntax guard fixtures call the same token-aware implementation used by the repository guardrail.
 
+The consumer proof must install a mirrored framework package into a fresh temporary project, run the public checker and application behavior tests, execute the real front controller, and submit adversarial files outside conventional source roots. It must also prove that consumer PHPStan configuration, baselines, and inline ignores cannot weaken the profile. The local package-archive proof must compare the complete Composer and Git export inventory with the explicit release allowlist. Alpha publication separately verifies the actual Packagist-preferred dist because a local archive cannot prove hosting-provider output.
+
 An intentionally invalid performance control uses a `.php.fixture` suffix so it cannot be mistaken for accepted repository PHP. A proof must pass its source to the real Strict Profile checker, assert the stable rejection, execute it only in an isolated subprocess, and compare its output with the accepted implementation. Never exclude an invalid `.php` file from guardrails.
 
 Do not mock fluent APIs or framework internals. Prefer real value objects and an in-memory database when its behavior matches the production database feature under test. Database-specific SQL still requires integration tests against that database.

@@ -10,11 +10,11 @@ The framework repository already has a root `AGENTS.md` and `.ai/` directory. Th
 
 ## Decision
 
-Every PHPThis application should own and commit a thin root `AGENTS.md` plus a root `.ai/` directory. `AGENTS.md` defines the read order. `.ai/README.md` routes a task to the smallest relevant application guide. Detailed rationale and accepted decisions remain under the application's `docs/decisions/` directory.
+Every PHPThis application must own and commit a thin root `AGENTS.md` plus a root `.ai/` directory. `AGENTS.md` defines the read order. `.ai/README.md` routes a task to the smallest relevant application guide. Detailed rationale and accepted decisions remain under the application's `docs/decisions/` directory.
 
 The installed framework package supplies one versioned consumer contract. It is the portable validity floor. Application instructions add verified project facts and may strengthen the contract, but cannot weaken or suppress it. Framework upgrades never overwrite application-owned context.
 
-PHPThis publishes a documentation-only template under `templates/application/`. Its placeholders must be resolved from real project evidence before feature work begins. It is separate from the framework-maintainer `.ai/` directory and does not claim to be a complete application skeleton or validity runner.
+PHPThis publishes a documentation-only template under `templates/application/`. Its placeholders must be resolved from real project evidence before feature work begins. It remains separate from the framework-maintainer `.ai/` directory. ADR 010 adds a separately packageable runnable skeleton without changing ownership of application context.
 
 The canonical term is `application AI context`. "Harness" remains available for executable test and evaluation infrastructure.
 
@@ -22,7 +22,7 @@ The canonical term is `application AI context`. "Harness" remains available for 
 
 An AI receives both a stable framework contract and local application facts without loading the entire documentation tree. Projects must maintain their context as architecture and operational assumptions change. Incorrect context becomes an explicit project defect rather than hidden conversational knowledge.
 
-The first template contains only documentation. Consuming projects must still configure their own autoloading, PHPStan paths, reusable profile enforcement, guardrails, and tests. A future skeleton may automate that only after the application shape is proven.
+The first template remains documentation-only for deliberate adoption by existing projects. The later `skeleton/` source supplies autoloading, profile enforcement, and tests for new projects while keeping its copied AI context application-owned.
 
 ## Reconsider when
 

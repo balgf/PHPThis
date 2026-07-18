@@ -6,7 +6,6 @@
 - every named repository class is final (`PHT002`);
 - magic methods other than constructors are absent;
 - dangerous dynamic mechanisms such as `eval` and variable variables are absent;
-- PDO construction occurs only inside the connection boundary;
 - calls to `selectAllRows`, `selectOneRow`, and `executeStatement` do not occur inside loop headers or bodies (`PHT003`);
 - exact route matching and allowed-method lookup do not contain request-time loops;
 - PHP superglobals are read only in `example/public/index.php`;
@@ -18,9 +17,15 @@
 
 Runtime query budgets enforce a separate limit before each statement executes. Request-scoped query traces add bounded, redacted evidence about executed statement shapes, repetition, timing, and failures.
 
-PHPStan runs separately at maximum level with strict rules. It owns static type correctness; the repository guardrail retains only lightweight structure checks until equivalent type-aware PHPStan rules exist.
+PHPStan runs separately at maximum level with strict rules. It owns static type correctness; `PHT005` resolves literal, imported, aliased, fully qualified, and typed dynamic PDO construction so the framework connection remains the sole boundary. The repository guardrail retains only lightweight structure checks until equivalent type-aware PHPStan rules exist.
 
 `php tools/test-strict-profile.php` exercises passing and failing fixtures against the same syntax guard and PHPStan extension used by the canonical check. PHPThis-owned rule IDs are permanent and have no suppression mechanism.
+
+Consuming applications use `vendor/bin/phpthis check`. It discovers PHP across the application rather than accepting a fixed list of conventional source roots, rejects symlinked checked source, and passes one manifest to both syntax guardrails and a temporary framework-owned PHPStan configuration. Normal runs use a persistent profile-owned cache and parallelize when the host allows PHPStan's loopback coordinator; restricted hosts fall back to serial analysis. `PHT004` rejects consumer PHPStan configuration, baselines, and inline PHPStan ignores before analysis.
+
+`php tools/test-consumer-project.php` builds the real framework release archive, compares every entry with `tools/package-files.txt`, installs that archive into a fresh temporary copy of `skeleton/`, and runs both the installed profile and application behavior stages. Composer and Git export-exclusion policies must be identical; a clean Git checkout also archives `HEAD` and compares that complete inventory. Its controls cover unconventional and extensionless source paths, unsupported PHP suffixes, obscured magic methods, PHT001, PHT002, PHT004, PHT005 construction forms, dependency exclusion, configuration symlinks, source symlinks, Composer-gate drift, persistent normal-mode caching, explicit debug output, and the pre-alpha-to-tagged skeleton repository boundary. Inventory failure prevents maintainer dependencies, cache data, examples, or harness files from silently entering the consumer package.
+
+That local proof establishes the source-controlled Composer and Git export policies; it does not claim that an uncreated hosting-provider archive is identical. The alpha release gate must install the actual Packagist-preferred dist artifact, compare its complete framework inventory with `tools/package-files.txt`, and run the public skeleton creation command before the release is announced.
 
 `php tools/test-query-scaling.php` verifies that the accepted read remains constant at one query and explicitly submits its `.php.fixture` N+1 negative control to `PHT003`. The fixture is not accepted repository PHP; proving its rejection is part of the test.
 
