@@ -9,8 +9,9 @@
 - PDO construction occurs only inside the connection boundary;
 - calls to `selectAllRows`, `selectOneRow`, and `executeStatement` do not occur inside loop headers or bodies (`PHT003`);
 - exact route matching and allowed-method lookup do not contain request-time loops;
+- PHP superglobals are read only in `example/public/index.php`;
 - Markdown files outnumber PHP files;
-- core source stays within 550 physical lines;
+- core source stays within 900 physical lines during Phase 1;
 - PHPStan baseline files are absent.
 - `phpstan.neon` keeps strict-rules, every strict rule, and the PHPThis extension enabled without `ignoreErrors`.
 

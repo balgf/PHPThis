@@ -13,9 +13,16 @@ use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryBudgetExceeded;
 use PHPThis\Database\QueryTrace;
+use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\Request;
+use PHPThis\Http\RequestBodyTooLarge;
+use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\RequestHandler;
+use PHPThis\Http\RequestReader;
 use PHPThis\Http\Response;
+use PHPThis\Http\UnsupportedMediaType;
+use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Route;
 use PHPThis\Routing\Router;
 
@@ -69,6 +76,260 @@ $tests['application distinguishes 404 and 405'] = static function (): void {
 
     if ($notFound->status !== 404) {
         throw new RuntimeException('Expected 404 for an unknown path.');
+    }
+};
+
+$tests['request reader normalizes one bounded PHP runtime request'] = static function (): void {
+    $body = '{"name":"Ada"}';
+    $reader = requestReaderForBody($body, strlen($body));
+    $request = $reader->read(
+        [
+            'REQUEST_METHOD' => 'post',
+            'REQUEST_URI' => '/users?active=1',
+            'CONTENT_TYPE' => 'application/json; charset=utf-8',
+            'HTTP_CONTENT_TYPE' => 'application/json; charset=utf-8',
+            'CONTENT_LENGTH' => (string) strlen($body),
+            'HTTP_CONTENT_LENGTH' => (string) strlen($body),
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_REQUEST_SOURCE' => 'test-suite',
+            'SERVER_PROTOCOL' => ['ignored', 'because it is not a header'],
+        ],
+        ['page' => '1', 'filter' => ['active' => '1']],
+    );
+
+    if (
+        $request->method !== 'POST'
+        || $request->path !== '/users'
+        || $request->body !== $body
+        || $request->query !== ['page' => '1', 'filter' => ['active' => '1']]
+        || $request->headers !== [
+            'content-type' => 'application/json; charset=utf-8',
+            'content-length' => (string) strlen($body),
+            'accept' => 'application/json',
+            'x-request-source' => 'test-suite',
+        ]
+    ) {
+        throw new RuntimeException('Expected one normalized immutable request from PHP runtime values.');
+    }
+};
+
+$tests['request reader rejects malformed runtime metadata'] = static function (): void {
+    $tooManyQueryParameters = [];
+
+    for ($index = 0; $index < 65; $index++) {
+        $tooManyQueryParameters['parameter_' . $index] = 'value';
+    }
+
+    $tooManyHeaders = [
+        'REQUEST_METHOD' => 'GET',
+        'REQUEST_URI' => '/',
+    ];
+
+    for ($index = 0; $index < 65; $index++) {
+        $tooManyHeaders['HTTP_X_TEST_' . $index] = 'value';
+    }
+
+    $cases = [
+        [[], []],
+        [['REQUEST_METHOD' => [], 'REQUEST_URI' => '/'], []],
+        [['REQUEST_METHOD' => 'GET ', 'REQUEST_URI' => '/'], []],
+        [['REQUEST_METHOD' => 'GET'], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => []], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => 'relative'], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/items#fragment'], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/' . str_repeat('a', 8_192)], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/'], [0 => 'value']],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/'], $tooManyQueryParameters],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/', 'HTTP_ACCEPT' => []], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/', 'HTTP_' => 'value'], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/', 'HTTP_X_TEST' => "ok\nbad"], []],
+        [[
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/',
+            'HTTP_X_TEST' => str_repeat('a', 8_193),
+        ], []],
+        [[
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/',
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_CONTENT_TYPE' => 'text/plain',
+        ], []],
+        [['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/', 'CONTENT_LENGTH' => '01'], []],
+        [$tooManyHeaders, []],
+    ];
+    $reader = requestReaderForBody('', 8);
+
+    foreach ($cases as [$server, $query]) {
+        try {
+            $reader->read($server, $query);
+        } catch (InvalidRequest) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected malformed PHP runtime metadata to be rejected.');
+    }
+};
+
+$tests['request reader enforces declared and actual body bounds'] = static function (): void {
+    foreach ([0, -1, PHP_INT_MAX] as $invalidLimit) {
+        try {
+            new RequestReader($invalidLimit, 'php://input');
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected an unsafe body limit to be rejected at composition time.');
+    }
+
+    $emptyInputUriRejected = false;
+
+    try {
+        new RequestReader(1, '');
+    } catch (InvalidArgumentException) {
+        $emptyInputUriRejected = true;
+    }
+
+    if (!$emptyInputUriRejected) {
+        throw new RuntimeException('Expected an empty input URI to be rejected at composition time.');
+    }
+
+    $exactBody = '1234';
+    $exactRequest = requestReaderForBody($exactBody, 4)->read(
+        [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/',
+            'CONTENT_LENGTH' => '4',
+        ],
+        [],
+    );
+
+    if ($exactRequest->body !== $exactBody) {
+        throw new RuntimeException('Expected a body exactly at the configured limit.');
+    }
+
+    $oversizedReaders = [
+        requestReaderForBody('12345', 4),
+        new RequestReader(4, __DIR__ . '/../tmp/request-bodies/not-read.body'),
+        new RequestReader(4, __DIR__ . '/../tmp/request-bodies/not-read.body'),
+    ];
+    $servers = [
+        ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/'],
+        ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/', 'CONTENT_LENGTH' => '5'],
+        [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/',
+            'CONTENT_LENGTH' => (string) PHP_INT_MAX . '0',
+        ],
+    ];
+
+    foreach ($oversizedReaders as $index => $reader) {
+        try {
+            $reader->read($servers[$index], []);
+        } catch (RequestBodyTooLarge) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected declared and actual oversized bodies to be rejected.');
+    }
+
+    try {
+        requestReaderForBody('1234', 8)->read(
+            ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/', 'CONTENT_LENGTH' => '3'],
+            [],
+        );
+    } catch (InvalidRequest) {
+        return;
+    }
+
+    throw new RuntimeException('Expected a mismatched declared body length to be rejected.');
+};
+
+$tests['request boundary maps exact known failures and rethrows unknown failures'] = static function (): void {
+    $knownResponse = new Response(
+        400,
+        ['Content-Type' => 'application/json; charset=utf-8'],
+        "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+    );
+    $registry = new ErrorResponseRegistry([InvalidRequest::class => $knownResponse]);
+    $handler = new class implements RequestHandler {
+        public bool $called = false;
+
+        public function handle(Request $request): Response
+        {
+            $this->called = true;
+            return new Response(204, [], '');
+        }
+    };
+    $knownBoundary = new RequestBoundary(requestReaderForBody('', 8), $handler, $registry);
+    $mapped = $knownBoundary->handle(['REQUEST_METHOD' => [], 'REQUEST_URI' => '/'], []);
+
+    if (
+        $mapped !== $knownResponse
+        || $handler->called
+        || $registry->responseFor(new UnexpectedValueException('internal projection failure')) !== null
+        || $registry->responseFor(new QueryBudgetExceeded('internal query limit')) !== null
+    ) {
+        throw new RuntimeException('Expected exact known-error mapping without broad exception matches.');
+    }
+
+    $unknownFailure = new RuntimeException('internal failure');
+    $failingHandler = new class ($unknownFailure) implements RequestHandler {
+        public function __construct(private RuntimeException $failure)
+        {
+        }
+
+        public function handle(Request $request): Response
+        {
+            throw $this->failure;
+        }
+    };
+    $unknownBoundary = new RequestBoundary(requestReaderForBody('', 8), $failingHandler, $registry);
+
+    try {
+        $unknownBoundary->handle(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/'], []);
+    } catch (RuntimeException $failure) {
+        if ($failure === $unknownFailure) {
+            return;
+        }
+    }
+
+    throw new RuntimeException('Expected an unregistered failure to escape unchanged.');
+};
+
+$tests['unknown failure boundary logs once and returns one generic response'] = static function (): void {
+    $logPath = __DIR__ . '/../tmp/unknown-failure.log';
+
+    if (is_file($logPath) && !unlink($logPath)) {
+        throw new RuntimeException('Unable to reset the unknown-failure test log.');
+    }
+
+    $previousErrorLog = ini_get('error_log');
+
+    if (ini_set('error_log', $logPath) === false) {
+        throw new RuntimeException('Unable to redirect the unknown-failure test log.');
+    }
+
+    try {
+        $response = (new UnknownFailureBoundary())->logAndRespond(
+            new RuntimeException('private failure message'),
+        );
+    } finally {
+        if (is_string($previousErrorLog)) {
+            ini_set('error_log', $previousErrorLog);
+        }
+    }
+
+    $log = file_get_contents($logPath);
+
+    if (
+        !is_string($log)
+        || substr_count($log, 'phpthis.request.unhandled exception=RuntimeException') !== 1
+        || str_contains($log, 'private failure message')
+        || $response->status !== 500
+        || $response->headers !== ['Content-Type' => 'application/json; charset=utf-8']
+        || $response->body !== "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n"
+    ) {
+        throw new RuntimeException('Expected one redacted unknown-failure log and generic 500 response.');
     }
 };
 
@@ -314,11 +575,95 @@ $tests['HTTP command rejects malformed coercive and unknown input'] = static fun
     foreach ($invalidBodies as $body) {
         try {
             CreateUserCommand::fromJson($body);
-        } catch (JsonException | UnexpectedValueException) {
+        } catch (InvalidRequest | RequestBodyTooLarge) {
             continue;
         }
 
         throw new RuntimeException('Expected malformed or coercive JSON input to be rejected.');
+    }
+};
+
+$tests['example request boundary maps client failures before database work'] = static function (): void {
+    $databasePath = createUserDatabaseFixture('request-client-failures', 0, false);
+    $readBudget = new QueryBudget(1);
+    $writeBudget = new QueryBudget(2);
+    $writeTrace = new QueryTrace(2);
+    $dsn = 'sqlite:' . $databasePath;
+    $application = new Application(new Router(Routes::create(
+        Connection::connect($dsn, $readBudget, new QueryTrace(1)),
+        Connection::connect($dsn, $writeBudget, $writeTrace),
+    )));
+    $registry = exampleErrorResponseRegistry();
+    $invalidBody = '{"name":"Ada"}';
+    $invalidResponse = (new RequestBoundary(
+        requestReaderForBody($invalidBody, 8_192),
+        $application,
+        $registry,
+    ))->handle(
+        [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/users',
+            'CONTENT_TYPE' => 'application/json',
+            'CONTENT_LENGTH' => (string) strlen($invalidBody),
+        ],
+        [],
+    );
+    $validBody = '{"name":"Ada","email":"ada@example.com"}';
+    $unsupportedResponse = (new RequestBoundary(
+        requestReaderForBody($validBody, 8_192),
+        $application,
+        $registry,
+    ))->handle(
+        [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/users',
+            'CONTENT_LENGTH' => (string) strlen($validBody),
+        ],
+        [],
+    );
+    $endpointOversizeBody = str_repeat('x', 2_049);
+    $tooLargeResponse = (new RequestBoundary(
+        requestReaderForBody($endpointOversizeBody, 8_192),
+        $application,
+        $registry,
+    ))->handle(
+        [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/users',
+            'CONTENT_TYPE' => 'application/json',
+            'CONTENT_LENGTH' => (string) strlen($endpointOversizeBody),
+        ],
+        [],
+    );
+    $outerTooLargeResponse = (new RequestBoundary(
+        new RequestReader(8_192, __DIR__ . '/../tmp/request-bodies/not-read.body'),
+        $application,
+        $registry,
+    ))->handle(
+        [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/users',
+            'CONTENT_TYPE' => 'application/json',
+            'CONTENT_LENGTH' => '8193',
+        ],
+        [],
+    );
+
+    if (
+        $invalidResponse->status !== 400
+        || $invalidResponse->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
+        || str_contains($invalidResponse->body, 'exactly name and email')
+        || $unsupportedResponse->status !== 415
+        || $unsupportedResponse->body !== "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n"
+        || $tooLargeResponse->status !== 413
+        || $tooLargeResponse->body !== "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n"
+        || $outerTooLargeResponse->status !== 413
+        || $outerTooLargeResponse->body !== $tooLargeResponse->body
+        || $readBudget->used() !== 0
+        || $writeBudget->used() !== 0
+        || $writeTrace->snapshot()['statements'] !== 0
+    ) {
+        throw new RuntimeException('Expected explicit public client failures before database work.');
     }
 };
 
@@ -338,6 +683,7 @@ $tests['user routes execute one read and one transactional write end to end'] = 
         'POST',
         '/users',
         body: '{"name":"Ada Lovelace","email":"ada@example.com"}',
+        headers: ['content-type' => 'application/json'],
     ));
     $listed = $application->handle(new Request('GET', '/users'));
 
@@ -424,6 +770,7 @@ $tests['transactional user creation rolls back when its budget rejects the event
             'POST',
             '/users',
             body: '{"name":"Ada","email":"ada@example.com"}',
+            headers: ['content-type' => 'application/json'],
         ));
     } catch (QueryBudgetExceeded) {
         $budgetFailed = true;
@@ -478,6 +825,7 @@ $tests['transactional user creation rolls back when the event statement fails'] 
             'POST',
             '/users',
             body: '{"name":"Ada","email":"ada@example.com"}',
+            headers: ['content-type' => 'application/json'],
         ));
     } catch (PDOException) {
         $statementFailed = true;
@@ -514,8 +862,13 @@ $tests['transactional user creation rejects invalid input before database work']
     $inputFailed = false;
 
     try {
-        $handler->handle(new Request('POST', '/users', body: '{"name":"Ada"}'));
-    } catch (UnexpectedValueException) {
+        $handler->handle(new Request(
+            'POST',
+            '/users',
+            body: '{"name":"Ada"}',
+            headers: ['content-type' => 'application/json'],
+        ));
+    } catch (InvalidRequest) {
         $inputFailed = true;
     }
 
@@ -660,6 +1013,47 @@ $tests['query trace bounds retained fingerprint details'] = static function (): 
     }
 };
 
+function requestReaderForBody(string $body, int $maximumBodyBytes): RequestReader
+{
+    $directory = __DIR__ . '/../tmp/request-bodies';
+
+    if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
+        throw new RuntimeException('Unable to create the request-body fixture directory.');
+    }
+
+    $path = $directory . '/' . hash('sha256', $body) . '.body';
+    $writtenBytes = file_put_contents($path, $body, LOCK_EX);
+
+    if (!is_int($writtenBytes) || $writtenBytes !== strlen($body)) {
+        throw new RuntimeException('Unable to write the complete request-body fixture.');
+    }
+
+    return new RequestReader($maximumBodyBytes, $path);
+}
+
+function exampleErrorResponseRegistry(): ErrorResponseRegistry
+{
+    $headers = ['Content-Type' => 'application/json; charset=utf-8'];
+
+    return new ErrorResponseRegistry([
+        InvalidRequest::class => new Response(
+            400,
+            $headers,
+            "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+        ),
+        RequestBodyTooLarge::class => new Response(
+            413,
+            $headers,
+            "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n",
+        ),
+        UnsupportedMediaType::class => new Response(
+            415,
+            $headers,
+            "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n",
+        ),
+    ]);
+}
+
 /**
  * @return array{status: int, body: string, used: int, statements: int, repeated_fingerprints: int, maximum_executions: int, created_users: int, created_events: int}
  */
@@ -675,6 +1069,7 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
         'POST',
         '/users',
         body: '{"name":"New User","email":"new@example.com"}',
+        headers: ['content-type' => 'application/json'],
     ));
     $verification = Connection::connect(
         'sqlite:' . $databasePath,

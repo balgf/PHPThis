@@ -15,6 +15,8 @@ Inspect the in-memory query trace directly and print its redacted JSON snapshot 
 
 Boundary factories require adversarial tests for missing and unknown fields, null, arrays, objects, coercive strings, numeric overflow, malformed JSON, invalid UTF-8, and excessive nesting as applicable.
 
+`RequestReader` tests must cover method/path normalization, header normalization and collisions, non-string runtime values, query-key and metadata-count bounds, an exact-limit body, an oversized declared body, an oversized actual body, and a mismatched `Content-Length`. Error-boundary tests must prove exact-class mapping, public-message non-disclosure, zero side effects for rejected client input, and unchanged rethrowing of unknown failures.
+
 A Strict Profile rule requires at least one failing fixture, one passing fixture, and assertions for its permanent identifier and source line. Type-aware fixtures run through PHPStan; syntax guard fixtures call the same token-aware implementation used by the repository guardrail.
 
 An intentionally invalid performance control uses a `.php.fixture` suffix so it cannot be mistaken for accepted repository PHP. A proof must pass its source to the real Strict Profile checker, assert the stable rejection, execute it only in an isolated subprocess, and compare its output with the accepted implementation. Never exclude an invalid `.php` file from guardrails.

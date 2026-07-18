@@ -14,6 +14,8 @@ A convenience API is rejected when it can hide:
 
 Optimize after measurement, but install cheap limits early. Query budgets and explicit collection bounds are correctness constraints, not micro-optimizations.
 
+`RequestReader` bounds body materialization at the configured maximum plus one detection byte. It also bounds request-target bytes, top-level query count, header count, and each header value. These are allocation guards, not complete request-latency or denial-of-service protection; the web server must enforce compatible transport limits before PHP.
+
 ## Database observability
 
 `QueryTrace` performs monotonic timing and one bounded in-memory aggregate update per PDO attempt. It does not perform logging I/O. Repeated exact-SQL fingerprints reveal indirect N+1 behavior that remains under a generous query budget, while fixture-size tests still provide the proof that query count is constant.

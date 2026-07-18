@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Example;
 
+use JsonException;
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\RequestBodyTooLarge;
 use stdClass;
-use UnexpectedValueException;
 
 final readonly class CreateUserCommand
 {
@@ -24,13 +26,17 @@ final readonly class CreateUserCommand
     public static function fromJson(string $json): self
     {
         if (strlen($json) > self::MAX_JSON_BYTES) {
-            throw new UnexpectedValueException('Create-user input exceeds the 2048-byte limit.');
+            throw new RequestBodyTooLarge('Create-user input exceeds the 2048-byte limit.');
         }
 
-        $decoded = json_decode($json, false, 16, JSON_THROW_ON_ERROR);
+        try {
+            $decoded = json_decode($json, false, 16, JSON_THROW_ON_ERROR);
+        } catch (JsonException $failure) {
+            throw new InvalidRequest('Create-user input must be valid JSON.', previous: $failure);
+        }
 
         if (!$decoded instanceof stdClass) {
-            throw new UnexpectedValueException('Create-user input must be a JSON object.');
+            throw new InvalidRequest('Create-user input must be a JSON object.');
         }
 
         $values = get_object_vars($decoded);
@@ -40,18 +46,18 @@ final readonly class CreateUserCommand
             || !array_key_exists('name', $values)
             || !array_key_exists('email', $values)
         ) {
-            throw new UnexpectedValueException('Create-user input must contain exactly name and email.');
+            throw new InvalidRequest('Create-user input must contain exactly name and email.');
         }
 
         $name = $values['name'];
         $email = $values['email'];
 
         if (!is_string($name) || $name === '' || trim($name) !== $name) {
-            throw new UnexpectedValueException('Create-user name must be a non-empty trimmed string.');
+            throw new InvalidRequest('Create-user name must be a non-empty trimmed string.');
         }
 
         if (!is_string($email) || filter_var($email, FILTER_VALIDATE_EMAIL) !== $email) {
-            throw new UnexpectedValueException('Create-user email must be a valid unmodified string.');
+            throw new InvalidRequest('Create-user email must be a valid unmodified string.');
         }
 
         return new self($name, $email);

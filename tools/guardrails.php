@@ -111,6 +111,22 @@ foreach ($phpFiles as $relativePath => $path) {
         $tokenId = is_array($token) ? $token[0] : null;
         $tokenText = is_array($token) ? $token[1] : $token;
 
+        if (
+            $relativePath !== 'example/public/index.php'
+            && $tokenId === T_VARIABLE
+            && in_array(
+                $tokenText,
+                ['$_SERVER', '$_GET', '$_POST', '$_COOKIE', '$_FILES', '$_ENV', '$_REQUEST'],
+                true,
+            )
+        ) {
+            $failures[] = sprintf(
+                '%s:%d reads a PHP superglobal outside the front controller.',
+                $relativePath,
+                $token[2],
+            );
+        }
+
         if ($relativePath === 'src/Routing/Router.php' && $tokenId === T_FUNCTION) {
             for ($next = $index + 1, $count = count($tokens); $next < $count; $next++) {
                 $nextToken = $tokens[$next];
@@ -219,8 +235,8 @@ foreach ($phpFiles as $relativePath => $path) {
     $coreLines += is_array($lines) ? count($lines) : 0;
 }
 
-if ($coreLines > 550) {
-    $failures[] = "Core source has {$coreLines} physical lines; the Phase 0 limit is 550.";
+if ($coreLines > 900) {
+    $failures[] = "Core source has {$coreLines} physical lines; the Phase 1 limit is 900.";
 }
 
 if ($failures !== []) {

@@ -11,3 +11,4 @@ Accepted records:
 - `005-bounded-query-tracing.md`
 - `006-strict-boundary-parsing.md`
 - `007-checked-php-profile.md`
+- `008-explicit-request-boundary.md`

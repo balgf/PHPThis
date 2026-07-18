@@ -8,6 +8,7 @@ use PHPThis\Database\Connection;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
+use PHPThis\Http\UnsupportedMediaType;
 use RuntimeException;
 
 final class CreateUserHandler implements RequestHandler
@@ -18,6 +19,21 @@ final class CreateUserHandler implements RequestHandler
 
     public function handle(Request $request): Response
     {
+        $contentType = $request->headers['content-type'] ?? null;
+
+        if ($contentType === null) {
+            throw new UnsupportedMediaType('Create user requires a Content-Type header.');
+        }
+
+        $parameterPosition = strpos($contentType, ';');
+        $mediaType = $parameterPosition === false
+            ? $contentType
+            : substr($contentType, 0, $parameterPosition);
+
+        if (strtolower(trim($mediaType)) !== 'application/json') {
+            throw new UnsupportedMediaType('Create user requires application/json.');
+        }
+
         $command = CreateUserCommand::fromJson($request->body);
         $responseBody = json_encode(
             ['user' => ['name' => $command->name, 'email' => $command->email]],

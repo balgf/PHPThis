@@ -16,8 +16,9 @@
 
 - Complete: one bounded aggregate read endpoint and one transactional write endpoint against a sample schema.
 - Complete: dataset-size query-count tests and an executable N+1 negative control rejected by `PHT003`.
-- Current: add an explicit error-to-response registry.
-- Next: specify typed path parameters before implementing dynamic routes.
+- Complete: one bounded PHP runtime request reader with immutable normalized headers.
+- Complete: one exact-class error-to-response registry and generic unknown-failure boundary.
+- Current: specify typed path parameters before implementing dynamic routes.
 
 ## Phase 2: type-aware AI guardrails
 
@@ -29,7 +30,7 @@
 
 ## Phase 3: production evaluation
 
-- Define request-level log emission, security headers, streaming, uploads, and worker behavior explicitly.
+- Define request IDs, structured request/query-summary log emission, security headers, streaming, uploads, and worker behavior explicitly.
 - Benchmark routing and database boundaries against equivalent base PHP.
 - Run the same endpoint tasks across several AI models and classify mistakes.
 - Stabilize the public API only after evidence from real applications.

@@ -16,8 +16,9 @@ The working rule is simple: if a behavior cannot be found by following ordinary 
 - A versioned Strict Profile rejects legal-but-unsafe PHP with stable, repair-oriented `PHT` diagnostics.
 - Handlers implement one visible `handle` method and receive dependencies through normal constructors.
 - Routes are explicit method, path, and already-constructed handler objects, composed from named route-area lists into one visible manifest.
+- One request boundary normalizes bounded PHP runtime input and maps only explicitly registered exception classes.
 - Markdown is part of the framework interface. The guardrail command requires more Markdown files than PHP files.
-- The core is intentionally capped at 550 physical lines under the accepted bounded-query-tracing decision.
+- The core is intentionally capped at 900 physical lines for Phase 1 under the explicit-request-boundary decision.
 
 Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis combines visible SQL with query budgets and scale-sensitive tests so that query count cannot silently grow with result size.
 
@@ -25,12 +26,12 @@ Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis comb
 
 **Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
-This is a zero third-party runtime-dependency foundation. The first proof slice supports exact-path routing, request/response values, explicit handlers, and instrumented PDO access. Its sample application includes a bounded `GET /users` aggregate read and a transactional `POST /users` write.
+This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers, exact error mapping, exact-path routing, explicit handlers, and instrumented PDO access. Its sample application includes a bounded `GET /users` aggregate read and a transactional `POST /users` write.
 
 The executable query-scaling proof holds the accepted read at one statement as its fixture grows from 2 to 50 users. An isolated N+1 negative control produces the same JSON response body while growing from 3 to 51 statements; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
 ```text
-Request -> Router -> Handler -> Connection -> Response
+PHP runtime -> RequestBoundary -> Application -> Router -> Handler -> Response
 ```
 
 ## Try it
@@ -55,6 +56,9 @@ curl -i -X POST http://127.0.0.1:8080/users \
 
 - [Vision](VISION.md) explains the hypothesis and success measures.
 - [Architecture](docs/architecture.md) traces the request path.
+- [Request handling](docs/request-handling.md) defines runtime normalization and bounds.
+- [Errors](docs/errors.md) defines exact public failure mapping.
+- [Logging](docs/logging.md) defines the minimal redacted unknown-failure event.
 - [Strict Profile](docs/strict-profile.md) defines the accepted PHP subset and permanent rule catalogue.
 - [Evaluation](docs/evaluation.md) describes the executable scaling proof and future AI comparison protocol.
 - [Roadmap](ROADMAP.md) describes the maturity plan.

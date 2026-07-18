@@ -11,6 +11,8 @@
 | Strict Profile | versioned subset of PHP accepted by the complete check gate | style guide, optional lint |
 | composition root | file that manually constructs the object graph | provider, container config |
 | request | immutable normalized HTTP input | context, payload |
+| request boundary | one bounded runtime-reader, handler, and exact error-map sequence | middleware, pipeline |
+| error response registry | exact exception-class to immutable response map | global exception helper |
 | response | immutable HTTP output | result, reply |
 
 Stable vocabulary narrows AI search and reduces duplicate abstractions.

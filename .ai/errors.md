@@ -4,8 +4,9 @@ Failures must cross named boundaries as exceptions or explicit response values.
 
 - Do not catch `Throwable` in handlers unless the handler can fully recover.
 - Do not convert database failures to empty arrays, `null`, or success responses.
-- Map known domain exceptions to HTTP responses in one visible application-level registry.
+- Map only deliberately named exception classes to immutable responses in one visible `ErrorResponseRegistry` at the composition root.
+- Use exact class matching. Never register broad built-ins such as `Throwable`, `RuntimeException`, `PDOException`, `JsonException`, or `UnexpectedValueException`.
 - Let unknown failures reach the top-level exception handler and be logged once.
 - Never include SQL credentials, parameter values, stack traces, or internal messages in public responses.
 
-The error registry is the next Phase 1 mechanism; unhandled exceptions remain visible during development.
+The sample maps `InvalidRequest` to 400, `RequestBodyTooLarge` to 413, and `UnsupportedMediaType` to 415. Unknown failures are logged once by class name without their message and receive a generic 500 response. Add a new mapping only with a named failure, exact public response, and tests proving that internal messages do not escape.

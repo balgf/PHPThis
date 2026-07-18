@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace PHPThis;
 
 use PHPThis\Http\Request;
+use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
 use PHPThis\Routing\Router;
 
-final readonly class Application
+final readonly class Application implements RequestHandler
 {
     public function __construct(private Router $router)
     {

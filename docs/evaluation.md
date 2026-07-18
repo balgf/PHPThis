@@ -44,5 +44,5 @@ Record the prompt hash, model identifier, repository revision, generated diff, v
 - Statement budgets do not bound rows scanned or event-history fan-out; this proof detects query-count growth, not total database cost.
 - The aggregate read can observe concurrent changes according to the target database's isolation rules; production evaluation must choose that policy explicitly.
 - The read returns only the first 50 users; pagination and continuation are not implemented yet.
-- The request type does not yet carry headers, so the sample cannot enforce JSON `Content-Type`.
-- Known input and conflict failures are not mapped to public HTTP responses until the Phase 1 error registry exists.
+- The sample enforces JSON `Content-Type` and maps malformed input, unsupported media, and oversized bodies; database conflicts remain generic 500 failures until a reliable named translation is designed.
+- The unknown-failure log is deliberately minimal and has no request ID or query-trace summary yet.
