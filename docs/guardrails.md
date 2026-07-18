@@ -9,10 +9,11 @@
 - calls to `selectAllRows`, `selectOneRow`, and `executeStatement` do not occur inside loop headers or bodies (`PHT003`);
 - exact route matching and allowed-method lookup do not contain request-time loops;
 - PHP superglobals are read only in `example/public/index.php`;
-- the consumer contract and every required application context template file remain present;
+- the consumer contract, installed knowledge map, and every required application context template file remain present;
+- the vision, consumer contract, skeleton, and application template preserve the AI authoring and human-accountability route;
 - Markdown files outnumber PHP files;
 - core source stays within 900 physical lines during Phase 1;
-- PHPStan baseline files are absent.
+- PHPStan baseline files are absent;
 - `phpstan.neon` keeps strict-rules, every strict rule, and the PHPThis extension enabled without `ignoreErrors`.
 
 Runtime query budgets enforce a separate limit before each statement executes. Request-scoped query traces add bounded, redacted evidence about executed statement shapes, repetition, timing, and failures.

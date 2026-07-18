@@ -39,4 +39,4 @@ Logs must not contain credentials, tokens, request bodies, SQL parameters, custo
 - {{PROHIBITED_OPERATION_1}}
 - {{PROHIBITED_OPERATION_2}}
 
-An AI may inspect documented local state and run project checks. It must not deploy, migrate shared data, rotate credentials, contact users, or mutate external systems unless the user explicitly authorizes that exact action.
+An AI may inspect documented local state and run project checks. It must not deploy, migrate shared data, rotate credentials, contact users, or mutate external systems unless the accountable human explicitly authorizes that exact action.

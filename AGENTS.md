@@ -1,5 +1,11 @@
 # Instructions for AI coding agents
 
+## Authoring model
+
+You are the primary code author and knowledge interface for work in this repository. Answer questions from the current checkout: inspect the relevant contract, decision, source, and tests, and name that evidence. Do not rely on remembered PHPThis behavior or present a proposal as an existing feature.
+
+The human supplies intent and remains accountable for the outcome. Surface missing facts and consequential product, architecture, security, data, release, and operational choices for human judgment. You may draft a decision record, but only an accountable human may accept such a decision.
+
 ## Read order
 
 1. Read `VISION.md`.
@@ -25,6 +31,7 @@
 - Do not add an ORM, Active Record, lazy loading, query builder, service container, facade, global helper, macro system, or dynamic proxy.
 - Do not use magic methods other than `__construct`.
 - Do not introduce a second way to perform an existing framework task.
+- Do not invent product intent, approval, or unsupported PHPThis behavior when evidence is missing.
 - Update the relevant Markdown guide with any public behavior change.
 - Keep PHPStan at `level: max`; do not add a baseline, broad ignore pattern, or weaker analysis level.
 

@@ -1,6 +1,6 @@
 # Application AI context index
 
-This directory is owned by the consuming application. Replace its generic starter facts with verified project facts before adding product behavior. Keep it committed, current, concise, and free of secrets.
+This directory is owned by the consuming application. It grounds the AI that explains and authors this project; it is not a framework manual. Replace its generic starter facts with verified project facts before adding product behavior. Keep it committed, current, concise, and free of secrets.
 
 Always read:
 
@@ -12,6 +12,7 @@ Then read only what the task needs:
 
 | Task | Read | Inspect |
 | --- | --- | --- |
+| Explain framework or application behavior | installed PHPThis knowledge map, matching application guide | installed framework source, application execution path, and tests |
 | Change structure or dependencies | `.ai/architecture.md` | `bootstrap.php` and the affected source boundary |
 | Add or change a route | `.ai/architecture.md` | `src/Routes.php`, the route area, handler, and tests |
 | Add data access | `.ai/data.md` | the schema authority, query path, and scale tests |
@@ -19,4 +20,4 @@ Then read only what the task needs:
 | Change runtime or logging | `.ai/operations.md` | `public/index.php`, `bootstrap.php`, and operational tests |
 | Add or change tests | `.ai/testing.md` | `tests/run.php` and `composer check` |
 
-Accepted architectural decisions live in `docs/decisions/`.
+Accepted architectural decisions live in `docs/decisions/`. AI may draft and update a decision record, but acceptance requires explicit approval from an accountable human.

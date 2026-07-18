@@ -21,5 +21,6 @@
 - Reflection hydration, generic domain collections, and unvalidated arrays crossing a boundary.
 - Aliases or shortcuts that provide a second spelling for existing behavior.
 - Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
+- Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.
 
 If a task appears to require a forbidden mechanism, stop and propose a decision record describing the concrete need and a more explicit alternative.

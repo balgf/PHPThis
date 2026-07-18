@@ -15,5 +15,8 @@
 | error response registry | exact exception-class to immutable response map | global exception helper |
 | response | immutable HTTP output | result, reply |
 | application AI context | project-owned root `AGENTS.md` and task-routed `.ai/` guides | framework maintainer context, evaluation harness |
+| AI-first authoring | workflow in which AI is the expected primary code author under human direction | autonomous approval, AI-only development |
+| AI knowledge interface | AI grounded in the installed contract, knowledge map, application context, source, and tests | model memory, framework manual replacement without evidence |
+| human accountability | human ownership of intent, consequential decisions, authorization, and outcomes | manual authorship of every line, responsibility delegated to AI |
 
 Stable vocabulary narrows AI search and reduces duplicate abstractions.

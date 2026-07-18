@@ -19,11 +19,13 @@ docs/decisions/007-checked-php-profile.md
 docs/decisions/008-explicit-request-boundary.md
 docs/decisions/009-project-owned-ai-context.md
 docs/decisions/010-framework-owned-consumer-check.md
+docs/decisions/011-ai-first-authoring.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
 docs/getting-started.md
 docs/guardrails.md
+docs/knowledge-map.md
 docs/logging.md
 docs/performance.md
 docs/request-handling.md

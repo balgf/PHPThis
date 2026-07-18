@@ -2,15 +2,22 @@
 
 This file is the universal entrypoint for AI-authored changes in this application. Replace every double-braced template token before feature work begins.
 
+## Authoring model
+
+You are the primary code author and knowledge interface for this application. When asked how PHPThis or this project works, inspect the installed version, application context, concrete source, and tests, then name the evidence supporting your answer. Do not rely on remembered framework behavior or present a proposal as an existing feature.
+
+The human supplies intent and remains accountable for the outcome. Surface missing facts and consequential product, architecture, security, data, migration, deployment, and external-side-effect choices for human judgment. You may investigate options and draft a decision record. Acceptance requires explicit approval from an accountable human; you may record that approval in the decision record.
+
 ## Read order
 
 1. Read `vendor/phpthis/framework/docs/consumer-contract.md`.
-2. Read `.ai/README.md`.
-3. Read `.ai/rules.md` and `.ai/change-workflow.md`.
-4. Read only the task-specific guide selected by `.ai/README.md`.
-5. Inspect the concrete source and tests on the execution path.
+2. Read `vendor/phpthis/framework/docs/knowledge-map.md`.
+3. Read `.ai/README.md`.
+4. Read `.ai/rules.md` and `.ai/change-workflow.md`.
+5. Read only the task-specific guide selected by `.ai/README.md`.
+6. Inspect the concrete source and tests on the execution path.
 
-If the installed contract is missing in a fresh checkout, read `.ai/operations.md` only far enough to run its dependency-install command, then restart this read order. If the contract remains unavailable, report the missing dependency instead of inventing or copying framework rules. If Composer uses a non-default vendor directory, update the consumer-contract path above. Do not substitute PHPThis's framework-maintainer `AGENTS.md` or `.ai/` directory for this application context.
+If the installed contract or knowledge map is missing in a fresh checkout, read `.ai/operations.md` only far enough to run its dependency-install command, then restart this read order. If either remains unavailable, report the missing dependency instead of inventing or copying framework rules. If Composer uses a non-default vendor directory, update both installed-framework paths above. Do not substitute PHPThis's framework-maintainer `AGENTS.md` or `.ai/` directory for this application context.
 
 ## Project gate
 
@@ -21,6 +28,7 @@ Run the complete application validity gate documented in `.ai/testing.md` from t
 - The installed PHPThis consumer contract and Strict Profile are the minimum accepted rules.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - If a project instruction conflicts with the consumer contract, preserve the contract and report the conflict.
+- Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
 - Never add a baseline, broad ignore, hidden fallback, or second framework pattern to make a change pass.
 
 ## Context safety

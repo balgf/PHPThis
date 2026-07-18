@@ -4,7 +4,9 @@
 
 This starter application exists to provide a verified PHPThis composition root and one checked health endpoint before product-specific behavior is introduced.
 
-Primary users: the people and AI agents adapting this skeleton into an application.
+Primary users: the humans directing and reviewing the application and the AI authoring it.
+
+Accountable human decision owner: the person or team adapting this skeleton; replace this generic role before product work.
 
 ## Non-goals
 

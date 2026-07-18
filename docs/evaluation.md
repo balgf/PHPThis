@@ -2,6 +2,8 @@
 
 PHPThis needs executable evidence, not a claim that visible SQL or AI-oriented documentation automatically prevents mistakes.
 
+The current harness proves specific code and execution properties. It does not yet prove that an AI will answer every framework question correctly, use the installed version instead of model memory, or surface every decision that belongs to a human.
+
 ## Current proof
 
 Run:
@@ -38,6 +40,21 @@ A model comparison must use:
 
 Record the prompt hash, model identifier, repository revision, generated diff, validity-gate output, small and large statement counts, repair turns, and token use. The primary metric is the percentage of functionally correct submissions that also keep query count constant and pass every boundary and rollback check. Timing is secondary because this SQLite fixture is a correctness experiment, not a production benchmark.
 
+## Future knowledge-interface evaluation
+
+Evaluate the no-traditional-manual claim separately from code generation. Freeze a set of framework explanation and implementation-planning questions across at least two installed PHPThis revisions, including questions about unsupported capabilities and deliberate version differences. Give the AI only the repository and normal project instructions.
+
+For each answer, record:
+
+- the exact framework revision and application-context revision;
+- every cited contract, decision, source file, symbol, test, and diagnostic;
+- whether the answer separates installed behavior, application policy, and proposals;
+- unsupported claims, invented APIs, missed conflicts, and unjustified certainty;
+- consequential choices correctly surfaced for human judgment;
+- files loaded, tokens used, and repair turns after holdout review.
+
+A passing answer must be correct for the installed revision, supported by accessible repository evidence, explicit about missing authority, and free of invented framework behavior. Human reviewers score semantic correctness; automated checks verify cited paths and symbols where practical.
+
 ## Limits
 
 - SQLite proves the execution shape used by the repository tests, not plans or locking behavior on another database.
@@ -46,3 +63,4 @@ Record the prompt hash, model identifier, repository revision, generated diff, v
 - The read returns only the first 50 users; pagination and continuation are not implemented yet.
 - The sample enforces JSON `Content-Type` and maps malformed input, unsupported media, and oversized bodies; database conflicts remain generic 500 failures until a reliable named translation is designed.
 - The unknown-failure log is deliberately minimal and has no request ID or query-trace summary yet.
+- The project-owned AI context and installed knowledge map define a grounding strategy, not proof that every model will follow it; grounded-answer trials remain future work.

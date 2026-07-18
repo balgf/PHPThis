@@ -11,13 +11,30 @@ The root `AGENTS.md` and `.ai/` directory in the PHPThis framework repository ar
 For application work:
 
 1. Read this contract from the installed PHPThis package.
-2. Read the application's root `AGENTS.md` and `.ai/README.md`.
-3. Read only the application guide relevant to the task.
-4. Inspect the concrete source and tests on the execution path.
+2. Use the installed `docs/knowledge-map.md` to route the framework question or task.
+3. Read the application's root `AGENTS.md` and `.ai/README.md`.
+4. Read only the application guide relevant to the task.
+5. Inspect the concrete source and tests on the execution path.
 
 The PHPThis Strict Profile and executable application checks are the hard floor. Tests demonstrate behavior but do not authorize a contract violation. When application instructions conflict with this contract, preserve the contract and report the conflict.
 
 Files under `vendor/` belong to installed dependencies. Do not edit them to customize application behavior or silence a finding; change application-owned code or propose an upstream framework change.
+
+## AI authoring and human accountability
+
+AI is the expected primary code author and knowledge interface for a PHPThis application. This does not make AI output authoritative and does not exclude human-authored contributions. When asked how PHPThis works or how application code should be written, the AI must inspect the installed version, this contract, the matching application context, and the relevant source and tests. Model memory alone is not evidence.
+
+An answer must distinguish:
+
+- behavior and constraints supplied by the installed PHPThis version;
+- policy and facts owned by this application;
+- a proposed capability or decision that does not exist yet.
+
+Name the supporting paths, symbols, diagnostics, or check output. Report missing or conflicting evidence instead of inventing framework behavior, product intent, schema meaning, authorization policy, production limits, or external contracts.
+
+Humans direct the work and remain accountable for outcomes. Consequential product, architecture, security, data, migration, deployment, and external-side-effect choices must be made visible for human judgment. An AI may investigate options and draft a decision record, but it cannot approve its own consequential choice or infer authorization from silence. After explicit accountable-human approval, the AI may record the decision as accepted.
+
+PHPThis therefore has no traditional framework manual as its canonical knowledge interface. Its contracts, knowledge map, decisions, source, diagnostics, and tests remain readable by humans, but are structured primarily to ground the AI working in the repository.
 
 ## Program validity
 
@@ -97,12 +114,12 @@ docs/
     README.md
 ```
 
-The application context records facts the framework cannot infer: domain vocabulary, real source paths, architectural boundaries, data scale, resource limits, external side effects, runtime assumptions, verification commands, and prohibited operations.
+The application context records facts the framework cannot infer: domain vocabulary, accountable human decision roles, real source paths, architectural boundaries, data scale, resource limits, external side effects, runtime assumptions, verification commands, and prohibited operations.
 
 Keep the context compact and route tasks through `.ai/README.md`; do not load every guide for every change. Do not store credentials, tokens, private keys, customer data, production payloads, or other secrets in AI instructions. Detailed rationale and decision history belong in the application's `docs/decisions/` directory.
 
 ## Contract evolution
 
-Clarifications may update wording without changing the contract version. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
 
 Contract version 1 replaces consumer-owned PHPStan configuration with the installed checker and adds the runnable skeleton. Existing contract-version-0 applications must complete the required project-owned context, remove their PHPStan configuration and copied guard runner, add the canonical Composer scripts above, and run `composer check` before adopting version 1.

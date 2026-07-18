@@ -35,6 +35,8 @@ if (!is_string($phpstanConfig)) {
 $requiredRepositoryFiles = [
     'docs/consumer-contract.md',
     'docs/getting-started.md',
+    'docs/knowledge-map.md',
+    'docs/decisions/011-ai-first-authoring.md',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
@@ -90,8 +92,30 @@ if (is_file($consumerContractPath)) {
 
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
-    } elseif (preg_match('/^Contract version: 1$/m', $consumerContract) !== 1) {
-        $failures[] = 'docs/consumer-contract.md must declare contract version 1.';
+    } else {
+        if (preg_match('/^Contract version: 1$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 1.';
+        }
+
+        if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
+            $failures[] = 'docs/consumer-contract.md must define the AI authoring and human accountability contract.';
+        }
+
+        if (!str_contains($consumerContract, 'docs/knowledge-map.md')) {
+            $failures[] = 'docs/consumer-contract.md must route framework questions through docs/knowledge-map.md.';
+        }
+    }
+}
+
+$visionPath = $root . '/VISION.md';
+
+if (is_file($visionPath)) {
+    $vision = file_get_contents($visionPath);
+
+    if (!is_string($vision)) {
+        $failures[] = 'Cannot read VISION.md.';
+    } elseif (!str_contains($vision, 'AI-first authoring with human accountability')) {
+        $failures[] = 'VISION.md must preserve AI-first authoring with human accountability as the north star.';
     }
 }
 
@@ -114,11 +138,44 @@ if (is_file($applicationAgentInstructionsPath)) {
 
     if (!is_string($applicationAgentInstructions)) {
         $failures[] = 'Cannot read templates/application/AGENTS.md.';
-    } elseif (!str_contains(
-        $applicationAgentInstructions,
-        'vendor/phpthis/framework/docs/consumer-contract.md',
-    )) {
-        $failures[] = 'Application AGENTS.md must point to the installed PHPThis consumer contract.';
+    } else {
+        if (!str_contains(
+            $applicationAgentInstructions,
+            'vendor/phpthis/framework/docs/consumer-contract.md',
+        )) {
+            $failures[] = 'Application AGENTS.md must point to the installed PHPThis consumer contract.';
+        }
+
+        if (!str_contains(
+            $applicationAgentInstructions,
+            'vendor/phpthis/framework/docs/knowledge-map.md',
+        )) {
+            $failures[] = 'Application AGENTS.md must point to the installed PHPThis knowledge map.';
+        }
+
+        if (!str_contains($applicationAgentInstructions, 'primary code author and knowledge interface')) {
+            $failures[] = 'Application AGENTS.md must define the AI authoring role.';
+        }
+
+        if (!str_contains($applicationAgentInstructions, 'explicit approval from an accountable human')) {
+            $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
+        }
+    }
+}
+
+$skeletonAgentInstructionsPath = $root . '/skeleton/AGENTS.md';
+
+if (is_file($skeletonAgentInstructionsPath)) {
+    $skeletonAgentInstructions = file_get_contents($skeletonAgentInstructionsPath);
+
+    if (!is_string($skeletonAgentInstructions)) {
+        $failures[] = 'Cannot read skeleton/AGENTS.md.';
+    } elseif (
+        !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
+        || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
+        || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
+    ) {
+        $failures[] = 'Skeleton AGENTS.md must preserve the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 

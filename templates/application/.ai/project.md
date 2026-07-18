@@ -6,6 +6,8 @@
 
 Primary users: {{PRIMARY_USERS}}.
 
+Accountable human decision owners: {{ACCOUNTABLE_HUMAN_ROLES}}.
+
 ## Non-goals
 
 - {{NON_GOAL_1}}

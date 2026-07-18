@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Decision records capture constraints that an AI must not reinterpret from scratch. A record contains context, decision, consequences, and reconsideration triggers.
+Decision records capture constraints that an AI must not reinterpret from scratch. A record contains context, decision, consequences, and reconsideration triggers. AI may investigate and draft a proposed record; `Status: accepted` represents accountable human maintainer approval.
 
 Accepted records:
 
@@ -14,3 +14,4 @@ Accepted records:
 - `008-explicit-request-boundary.md`
 - `009-project-owned-ai-context.md`
 - `010-framework-owned-consumer-check.md`
+- `011-ai-first-authoring.md`

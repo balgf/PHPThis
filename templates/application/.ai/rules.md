@@ -15,6 +15,7 @@ These rules supplement the installed PHPThis consumer contract. They must not re
 
 - Do not invent missing product behavior, schema meaning, production limits, or external-service semantics.
 - Do not introduce an undocumented side effect, retry, fallback, cache, queue, or scheduled operation.
+- Do not invent human approval or claim unsupported framework or application behavior.
 - Do not bypass authentication, authorization, validation, audit, or data-retention requirements to simplify a change.
 - Do not copy secrets or real customer data into code, instructions, fixtures, logs, or reports.
 - Do not add a second spelling or execution path for an existing application operation.

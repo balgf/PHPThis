@@ -26,3 +26,7 @@
 - Query summaries are `NOT_APPLICABLE(no database)`.
 
 Logs must not contain credentials, tokens, request bodies, SQL parameters, customer data, or unknown exception messages.
+
+## Prohibited operational actions
+
+The skeleton authorizes no deployment, shared-data migration, credential rotation, user contact, or external-system mutation. An AI may inspect documented local state and run project checks, but it must not perform any of those actions unless the human explicitly authorizes that exact action after the application records the relevant operational policy.

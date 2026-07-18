@@ -1,6 +1,6 @@
 # AI context index
 
-This directory is the task router for AI context. Do not load every document by default.
+This directory is the task router for AI context. Do not load every document by default. Framework questions and changes must be answered from this checkout, not model memory.
 
 Always read:
 
@@ -13,6 +13,7 @@ Then read only what the task needs:
 
 | Task | Read | Inspect |
 | --- | --- | --- |
+| Explain PHPThis behavior or answer a usage question | `VISION.md`, `docs/knowledge-map.md`, relevant contract or decision | current framework source, tests, and application pattern |
 | Add or change a route | `.ai/routing.md` | `example/src/Routes.php`, `src/Routing/` |
 | Read or write database data | `.ai/database.md` | `src/Database/`, relevant handler |
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php` |
@@ -25,4 +26,4 @@ Then read only what the task needs:
 | Parse database, JSON, or other external values | `.ai/types.md` | boundary factory and adversarial tests |
 | Add or change a strict-profile rule | `.ai/strict-profile.md`, `.ai/static-analysis.md` | rule implementation and positive/negative fixtures |
 
-The detailed human-facing rationale lives in `docs/`. The `.ai/` files are compact operational contracts.
+Durable framework knowledge and decision rationale live in `docs/`. The `.ai/` files are compact operational routing contracts. Both remain human-auditable, but neither is a traditional tutorial manual.

@@ -1,8 +1,14 @@
-# Starting a PHPThis application
+# PHPThis application bootstrap contract
 
 PHPThis is experimental pre-alpha software. The repository contains the independently checked `phpthis/skeleton` package source under `skeleton/`; publication as a separate Composer package follows the first alpha tag.
 
-The template establishes how an AI learns the application before feature work begins. It is documentation scaffolding, not generated knowledge: every placeholder must be replaced with a verified project fact.
+This file defines reproducible setup and application-context requirements. It is not a framework programming manual. After bootstrap, the normal learning and authoring interface is the AI working in the application, grounded by `AGENTS.md`, `.ai/`, the installed PHPThis contract and knowledge map, source, and tests.
+
+The template establishes how that AI learns the application before feature work begins. It is context scaffolding, not generated knowledge: every placeholder must be replaced with a verified project fact.
+
+The intended first request is:
+
+> Bootstrap this PHPThis application. Read `AGENTS.md`, inspect the installed PHPThis version, replace generic application context only with facts supported by this project, run the complete check, and report any product or operational decisions that require my approval.
 
 ## Start from the checked skeleton
 
@@ -45,7 +51,7 @@ For an existing application adopting only the context template:
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
 5. Use the contract-version-1 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, and run `composer check`.
-6. Commit the completed application context before asking an AI to implement the first feature.
+6. Commit the completed application context before asking the project AI to implement the first feature.
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.
 
@@ -67,7 +73,7 @@ rg -n '\{\{[A-Z0-9_]+\}\}' AGENTS.md .ai
 
 PHPThis already defines framework mechanics. The application context should add only facts that alter implementation decisions:
 
-- the product purpose, users, non-goals, and canonical domain vocabulary;
+- the product purpose, users, accountable human decision roles, non-goals, and canonical domain vocabulary;
 - the actual composition root, route manifest, source boundaries, and dependency direction;
 - database engines, large or sensitive tables, result bounds, query budgets, index expectations, and transaction constraints;
 - external services, timeouts, idempotency requirements, retry ownership, and observable side effects;
@@ -88,6 +94,17 @@ Do not restate ordinary PHP syntax or copy the framework repository's maintainer
 - Remove stale statements promptly; incorrect context is worse than absent context.
 
 The application owns these files. Framework upgrades may update the consumer contract, but they must never replace project-specific instructions automatically.
+
+## Learn and build by asking the project AI
+
+After setup, ask the AI to inspect the current application rather than teach from a remembered framework API. For example:
+
+- `Explain the complete request path in this application and name every PHPThis and application file involved.`
+- `Show the canonical pattern in this checkout for adding a route, then implement GET /status with tests.`
+- `Explain this PHT diagnostic from the installed profile and repair its cause.`
+- `Does this installed PHPThis version provide authentication? If not, identify the decision we need instead of inventing a framework feature.`
+
+The AI should cite concrete paths, distinguish existing behavior from proposals, run `composer check` after changes, and surface consequential choices for human judgment. The accountable human approves accepted application decisions and owns the resulting system.
 
 ## Pre-alpha publication boundary
 

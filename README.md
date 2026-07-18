@@ -1,10 +1,25 @@
 # PHPThis
 
-PHPThis is an experimental, checked PHP profile and minimal web framework designed for PHP code authored by AI under human direction. It stays close to ordinary PHP and favors code that is local, literal, typed, bounded, and easy to verify over APIs optimized for typing speed.
+PHPThis is an experimental, checked PHP profile and minimal web framework for **AI-first authoring with human accountability**. AI is the primary code author and knowledge interface. Humans provide intent, decide consequential tradeoffs, and remain accountable for the resulting software.
+
+It stays close to ordinary PHP and favors code that is local, literal, typed, bounded, and easy to verify over APIs optimized for typing speed.
 
 PHPThis does not provide AI or LLM APIs. "AI" refers to the code-authoring workflow.
 
 The working rule is simple: if a behavior cannot be found by following ordinary PHP definitions, it does not belong in the framework.
+
+## Ask the project AI
+
+PHPThis has no traditional framework manual. To learn how to code something, explain an existing path, or repair a diagnostic, ask the AI working in the application. Its first job is to inspect the installed PHPThis version, the application's `AGENTS.md` and `.ai/` context, and the concrete source and tests.
+
+Useful requests include:
+
+- `Explain how this application handles a request. Cite the installed PHPThis files and this project's wiring.`
+- `Add a bounded database read using this application's canonical PHPThis pattern and prove its query count stays constant.`
+- `Explain PHT005, show where this project violates it, and repair the cause.`
+- `Does PHPThis currently support middleware? Check the installed version and distinguish existing behavior from a proposal.`
+
+The versioned Markdown in this repository is not a linear tutorial. It is compact framework authority that an AI can route and a human can audit. Human-approved intent and decisions define desired application behavior; source, tests, and the complete check provide executable evidence of what was implemented.
 
 ## What makes it different
 
@@ -15,6 +30,7 @@ The working rule is simple: if a behavior cannot be found by following ordinary 
 - External database and JSON values are parsed once into concrete final readonly projections and commands before entering typed code.
 - A versioned Strict Profile rejects legal-but-unsafe PHP with stable, repair-oriented `PHT` diagnostics.
 - Consuming applications run one installed `phpthis check` binary whose maximum-level PHPStan configuration cannot be weakened by project files.
+- An installed knowledge map routes framework questions to the relevant contract, decision, source, and test instead of relying on model memory.
 - Handlers implement one visible `handle` method and receive dependencies through normal constructors.
 - Routes are explicit method, path, and already-constructed handler objects, composed from named route-area lists into one visible manifest.
 - One request boundary normalizes bounded PHP runtime input and maps only explicitly registered exception classes.
@@ -59,22 +75,18 @@ The independently checked `phpthis/skeleton` package source now lives under `ske
 
 Every application must own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
 
-Read [Starting a PHPThis application](docs/getting-started.md) and [the consumer contract](docs/consumer-contract.md). Existing applications can still adopt the documentation-only context under `templates/application/` deliberately.
+Ask the project AI to follow the [application bootstrap contract](docs/getting-started.md), the installed [consumer contract](docs/consumer-contract.md), and the [knowledge map](docs/knowledge-map.md). Existing applications can still adopt the documentation-only context under `templates/application/` deliberately.
 
-## Read next
+## Authority and project status
 
-- [Vision](VISION.md) explains the hypothesis and success measures.
-- [Starting an application](docs/getting-started.md) explains the checked skeleton, the pre-alpha publication boundary, and adoption by existing projects.
-- [Consumer contract](docs/consumer-contract.md) defines the portable application validity floor.
-- [Architecture](docs/architecture.md) traces the request path.
-- [Request handling](docs/request-handling.md) defines runtime normalization and bounds.
-- [Errors](docs/errors.md) defines exact public failure mapping.
-- [Logging](docs/logging.md) defines the minimal redacted unknown-failure event.
-- [Strict Profile](docs/strict-profile.md) defines the accepted PHP subset and permanent rule catalogue.
-- [Evaluation](docs/evaluation.md) describes the executable scaling proof and future AI comparison protocol.
-- [Roadmap](ROADMAP.md) describes the maturity plan.
-- [Contributing](CONTRIBUTING.md) defines the contribution gate.
-- [Maintainer AI context index](.ai/README.md) routes work on PHPThis itself; applications use their own `.ai/` directory.
+- [Vision](VISION.md) defines AI-first authoring with human accountability.
+- [Consumer contract](docs/consumer-contract.md) is the portable application validity floor.
+- [Knowledge map](docs/knowledge-map.md) routes an AI to the smallest relevant installed source of authority.
+- [Architecture decisions](docs/decisions/README.md) preserve accepted rationale and reconsideration triggers.
+- [Evaluation](docs/evaluation.md) defines evidence and future AI-comparison work.
+- [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the pre-alpha project's current boundaries.
+
+The maintainer [AI context index](.ai/README.md) routes changes to PHPThis itself. It is not copied into applications.
 
 ## License
 
