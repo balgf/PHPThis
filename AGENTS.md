@@ -20,6 +20,9 @@ The human supplies intent and remains accountable for the outcome. Surface missi
 - Make classes `final` unless a documented extension point requires otherwise.
 - Use ordinary constructor injection wired manually in a composition root.
 - Use `RequestHandler::handle`; do not make handlers invokable.
+- Represent response cookies with `ResponseCookie`; do not encode `Set-Cookie` in the ordinary header map.
+- Keep optional session state behind narrowly named typed services over one `SessionLifecycle`; give them explicit non-overlapping keys and do not access `$_SESSION`, native session calls, or generic session helpers from application code.
+- Keep session mutation callbacks bounded and free of I/O or external side effects; complete fallible domain work before the final immediately committed session mutation.
 - Keep routes in an explicit list. Do not add discovery, attributes, reflection, or string class resolution.
 - Keep SQL in the handler or its narrowly named query object and execute it only through direct `Connection` calls.
 - Treat `Connection` as native PDO transport, not a dialect abstraction; keep SQL visibly specific to the recorded engine, bind every data value, and give every placeholder occurrence a distinct portable name.

@@ -18,6 +18,7 @@ Rules:
 - Keep the CRUD reference profile optional application structure. Consumers may record one coherent alternate placement and naming rule, but cannot weaken the installed consumer contract or Strict Profile.
 - Route consumer CRUD work through installed `vendor/phpthis/framework/docs/crud.md`, never the maintainer-only `.ai/crud.md`.
 - Require application context to record identifier and route policy, pagination, create identity and conflicts, `PUT`/`PATCH` and concurrency, missing behavior, delete and retention, authorization, and audit ownership.
+- When sessions are adopted, require application context to record typed service boundaries and key ownership, cookie policy, native file-storage topology, cleanup, verified PHP settings, and each applicable authentication, regeneration, expiry, logout, revocation, and CSRF policy; mark absent concerns explicitly not applicable.
 - Do not add a generic CRUD runtime, discovery mechanism, filesystem enforcement, or checker rule for directories and names.
 - Require `.ai/data.md` to name every connection's engine/version, PDO extension, non-secret configuration source, schema/dialect authority, integration command, and lack of cross-connection atomicity.
 - Never place credentials, tokens, private keys, customer data, production payloads, runtime dumps, or chat transcripts in the template.

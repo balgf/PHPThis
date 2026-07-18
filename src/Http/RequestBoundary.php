@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPThis\Http;
 
+use PHPThis\Session\SessionLifecycle;
 use Throwable;
 
 final readonly class RequestBoundary
@@ -12,6 +13,7 @@ final readonly class RequestBoundary
         private RequestReader $reader,
         private RequestHandler $handler,
         private ErrorResponseRegistry $errorResponses,
+        private ?SessionLifecycle $sessions = null,
     ) {
     }
 
@@ -21,17 +23,30 @@ final readonly class RequestBoundary
      */
     public function handle(array $server, array $query): Response
     {
+        $sessions = $this->sessions;
+        $sessionBegun = false;
+
         try {
             $request = $this->reader->read($server, $query);
-            return $this->handler->handle($request);
+
+            if ($sessions !== null) {
+                $sessions->begin($request);
+                $sessionBegun = true;
+            }
+
+            $response = $this->handler->handle($request);
         } catch (Throwable $failure) {
             $response = $this->errorResponses->responseFor($failure);
 
-            if ($response !== null) {
-                return $response;
-            }
+            if ($response === null) {
+                if ($sessionBegun && $sessions !== null) {
+                    $sessions->abort();
+                }
 
-            throw $failure;
+                throw $failure;
+            }
         }
+
+        return $sessionBegun && $sessions !== null ? $sessions->finish($response) : $response;
     }
 }

@@ -20,6 +20,7 @@ Dependencies may point only in the direction shown above. Document every deliber
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `{{HTTP_BOUNDARY_PATH}}` | {{HTTP_BOUNDARY_RESPONSIBILITY}} |
+| Typed session services | `{{SESSION_SERVICE_PATHS_OR_NOT_APPLICABLE}}` | {{SESSION_SERVICE_KEY_OWNERSHIP_OR_NOT_APPLICABLE}} |
 | Database | `{{DATABASE_BOUNDARY_PATH_OR_NOT_APPLICABLE}}` | {{DATABASE_BOUNDARY_RESPONSIBILITY}} |
 | External services | `{{INTEGRATION_BOUNDARY_PATH_OR_NOT_APPLICABLE}}` | {{INTEGRATION_BOUNDARY_RESPONSIBILITY}} |
 
@@ -27,6 +28,11 @@ Dependencies may point only in the direction shown above. Document every deliber
 
 - Identity source and representation: {{IDENTITY_SOURCE_AND_REPRESENTATION}}
 - Authentication boundary: `{{AUTHENTICATION_BOUNDARY_PATH}}`
+- Session adoption and allowed key schema: {{SESSION_ADOPTION_AND_KEY_SCHEMA_OR_NOT_APPLICABLE}}
+- Authentication and privilege-regeneration points: {{SESSION_REGENERATION_POINTS_OR_NOT_APPLICABLE}}
+- Idle and absolute expiry: {{SESSION_EXPIRY_POLICY_OR_NOT_APPLICABLE}}
+- Logout and account-wide revocation: {{SESSION_LOGOUT_AND_REVOCATION_POLICY_OR_NOT_APPLICABLE}}
+- CSRF owner, token lifecycle, and protected methods: {{CSRF_POLICY_OR_NOT_APPLICABLE}}
 - Authorization owner and check location: `{{AUTHORIZATION_OWNER_AND_PATH}}`
 - Tenant boundary: {{TENANT_BOUNDARY_OR_NOT_APPLICABLE}}
 - Deny-by-default rule: {{DENY_BY_DEFAULT_RULE}}
@@ -48,4 +54,4 @@ The installed `vendor/phpthis/framework/docs/crud.md` profile recommends structu
 - Routes are grouped by `{{ROUTE_AREA_RULE}}`.
 - Handlers are placed at `{{HANDLER_PATH_RULE}}`.
 - Commands and projections are placed at `{{BOUNDARY_VALUE_PATH_RULE}}`.
-- Cross-cutting application behavior requires an accepted decision record; do not invent providers, middleware, discovery, or helper layers.
+- Cross-cutting application behavior requires an accepted decision record; do not invent providers, middleware, discovery, helper layers, or a generic session repository.

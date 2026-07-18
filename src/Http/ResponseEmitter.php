@@ -11,7 +11,11 @@ final class ResponseEmitter
         http_response_code($response->status);
 
         foreach ($response->headers as $name => $value) {
-            header($name . ': ' . $value);
+            header($name . ': ' . $value, true);
+        }
+
+        foreach ($response->cookies as $cookie) {
+            header('Set-Cookie: ' . $cookie->headerValue(), false);
         }
 
         echo $response->body;

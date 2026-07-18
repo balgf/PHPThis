@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 2
+Contract version: 3
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -41,6 +41,7 @@ PHPThis therefore has no traditional framework manual as its canonical knowledge
 A PHPThis application must:
 
 - run on PHP 8.4 and declare strict types in every application-owned PHP file;
+- provide `ext-session` required by the installed framework, even when the application does not configure session state;
 - require `phpstan/phpstan` at `^2.1` and `phpstan/phpstan-strict-rules` at `^2.0` as development dependencies, then run the framework-owned analysis configuration at maximum level;
 - use the installed `phpthis check` binary to enforce Strict Profile version 2;
 - expose one documented project check command that runs static analysis, profile checks, and behavior tests;
@@ -64,7 +65,7 @@ Composer does not inherit a dependency's root scripts or development dependencie
 
 `phpthis check` discovers every application-owned PHP file, runs structural profile checks, and invokes PHPStan with a temporary framework-owned configuration. The same discovered file manifest drives both stages. It excludes only the resolved Composer dependency directory and version-control metadata; source under `config/`, `bin/`, migrations, hidden directories, or `tmp/` remains application-owned and checked. PHP files use the `.php` extension; extensionless executables beginning with `<?php` or `#!/usr/bin/env php` followed by `<?php` are also checked. A canonical PHP opening prefix under another extension is rejected rather than silently excluded. Symlinked source directories and checked source files are rejected instead of silently skipped.
 
-Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 2.
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 3.
 
 ## HTTP and application flow
 
@@ -75,8 +76,31 @@ Applications must not add PHPStan configuration artifacts named `phpstan*.neon`,
 - Handlers implement `RequestHandler::handle` and receive dependencies through constructors.
 - External `mixed` input is parsed once into a concrete final readonly command or projection before it enters typed application behavior.
 - Known public failures use named exception classes and exact-class response registration. Unknown failures remain generic externally and are logged once by exception class without the exception message or sensitive request or database data.
+- Response cookies use validated `ResponseCookie` values and remain separate from the ordinary single-value header map; application code does not manually encode `Set-Cookie`.
 
 Do not add route discovery, automatic input binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
+
+## Optional session state
+
+PHPThis provides one optional lazy `SessionLifecycle` over PHP 8.4's native file session handler. It is session transport, not authentication, authorization, expiry, or CSRF policy.
+
+When an application adopts session state, it must:
+
+- construct one `SessionConfiguration` and `SessionLifecycle` in the composition root, pass that lifecycle to `RequestBoundary`, and inject the single lifecycle only into narrowly named typed services with explicit non-overlapping key ownership;
+- make each typed service start mutation from the supplied snapshot, change or remove only its owned keys, and preserve every unowned key because the returned snapshot replaces the complete session state;
+- keep session state out of `Request`, handlers' direct global access, helpers, middleware, and generic key-value repositories;
+- call `read()` for a closed immutable snapshot, `update()` for ordinary callback-scoped mutation, `regenerateAndUpdate()` before committing authenticated identity or another privilege elevation, and terminal `invalidate()` for logout or revocation; after invalidation, every later session operation in that request raises `LogicException`;
+- surface `SessionUnavailable` as a deterministic stale-state response without retrying session mutation in that request; explicitly authenticated regeneration may replace rejected input with a fresh server-generated identifier, while an explicit client-requested restart may use terminal invalidation to expire malformed or collected anonymous state;
+- keep mutation callbacks bounded, synchronous, and side-effect-free, with no database, network, filesystem, logging, or nested session operation; finish fallible domain and external work before the final small session mutation because a successful mutation commits immediately and is not atomic with another resource or the rest of the request;
+- store only the bounded scalar or `null` values accepted by `SessionSnapshot`, then narrow the allowed keys and meanings further in their owning typed services;
+- treat a stored identity as input to a current authorization decision, never as authorization itself;
+- record the applicable identity, authentication, authorization, expiry, logout, revocation, CSRF, cookie, storage, garbage-collection, and concurrency policies in application context, marking each absent concern explicitly not applicable;
+- validate and date the deployed PHP session settings and prove that the configured effective save path is isolated to this application as described in `docs/sessions.md`;
+- test mandatory transport behavior: anonymous stateless access, invalid, duplicated, attacker-selected, stale, and obsolete identifiers, complete state bounds, callback rollback, lock release, unissued-ID cleanup, delayed-response cookie safety, explicit invalidation, cookie attributes, save-path mismatch, and concurrent requests; additionally test authentication-time regeneration, expiry, CSRF, authorization, and revocation when each policy applies.
+
+Application-owned PHP must not read or write `$_SESSION`, call or dynamically reference native `session_*` functions, parse the framework session cookie, implement `SessionHandlerInterface`, or emit its cookie manually. The installed check rejects `$_SESSION`, direct and imported native session calls, and literal indirect references in every application file, including the front controller; dynamically obscuring a call remains a contract violation rather than an escape hatch. Custom session handlers, Redis or database stores, alternate identifier shapes, and unsupported shared-storage topologies require a separate accepted framework decision; application context cannot silently substitute them.
+
+Applications that do not use sessions record the session transport and session-backed policy fields as `NOT_APPLICABLE`. Stateless authentication, authorization, credential expiry, revocation, and CSRF decisions remain independent application facts and must not be erased merely because `SessionLifecycle` is absent. Configuring `SessionLifecycle` alone must not create storage, issue a cookie, or acquire a native lock for a stateless handler.
 
 ## Optional CRUD reference structure
 
@@ -146,6 +170,8 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 
 Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
 
-Contract version 2 carries contract version 1 forward and adds Strict Profile version 2 with PHT006, explicit SQL data-versus-structure rules, adversarial binding evidence, and application-owned database-authority requirements. Before adopting version 2, audit every canonical `Connection` call, replace arbitrary SQL strings and indirect invocation with finite direct constant-string choices, bind every data value, record runtime and migration credential separation, add the required tests, and run `composer check`.
+Contract version 3 carries contract version 2 and Strict Profile version 2 forward unchanged. It adds explicit response cookies and the optional native-file session lifecycle. Before adopting version 3, ensure unconditional `ext-session` availability and replace manually encoded response cookies. When adopting session state, also verify the fixed PHP 8.4 settings and an application-isolated save path, record applicable policy or explicit non-applicability, place state behind narrowly named typed services over the single lifecycle, and add the required transport and application-policy tests. Then run the complete application gate.
 
-Contract version 1 replaced consumer-owned PHPStan configuration with the installed checker and added the runnable skeleton. A contract-version-0 application must complete that version-1 migration before applying the version-2 steps above.
+Contract version 2 carried contract version 1 forward and added Strict Profile version 2 with PHT006, explicit SQL data-versus-structure rules, adversarial binding evidence, and application-owned database-authority requirements. A version-1 application must complete that migration before applying the version-3 steps above: audit every canonical `Connection` call, replace arbitrary SQL strings and indirect invocation with finite direct constant-string choices, bind every data value, record runtime and migration credential separation, add the required tests, and run the complete application gate.
+
+Contract version 1 replaced consumer-owned PHPStan configuration with the installed checker and added the runnable skeleton. A contract-version-0 application must complete that version-1 migration before applying later migrations.

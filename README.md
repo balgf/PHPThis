@@ -36,8 +36,9 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 - Routes are explicit method, path, and already-constructed handler objects, composed from named route-area lists into one visible manifest.
 - An optional feature-first [CRUD reference profile](docs/crud.md) gives AI-authored Create and List work one compartmentalized default without adding a generic CRUD runtime or enforcing application directories.
 - One request boundary normalizes bounded PHP runtime input and maps only explicitly registered exception classes.
+- Optional session state uses one lazy native-PHP lifecycle with bounded scalar snapshots, explicit secure response cookies, short lock duration, and no session helper or session field on the request.
 - Markdown is part of the framework interface. The guardrail command requires more Markdown files than PHP files.
-- The core is intentionally capped at 900 physical lines for Phase 1 under the explicit-request-boundary decision.
+- The core is intentionally capped at 1,700 physical lines for Phase 1 after security and concurrency review of the accepted cookie and native-session decision; that margin does not pre-authorize another mechanism.
 
 Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis combines visible SQL with query budgets and scale-sensitive tests so that query count cannot silently grow with result size.
 
@@ -47,17 +48,17 @@ Finite SQL and parameter binding do not prove authorization or least privilege. 
 
 **Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
-This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers, exact error mapping, exact-path routing, explicit handlers, and instrumented PDO access. Its sample application includes a bounded `GET /users` List operation and a transactional `POST /users` Create operation. Get, Update, and Delete are not yet claimed; item operations wait for typed path parameters and application-owned policy decisions.
+This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, exact-path routing, explicit handlers, and instrumented PDO access. Its sample application includes a bounded `GET /users` List operation and a transactional `POST /users` Create operation. Get, Update, and Delete are not yet claimed; item operations wait for typed path parameters and application-owned policy decisions. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
 
 The executable query-scaling proof holds the accepted read at one statement as its fixture grows from 2 to 50 users. An isolated N+1 negative control produces the same JSON response body while growing from 3 to 51 statements; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
 ```text
-PHP runtime -> RequestBoundary -> Application -> Router -> Handler -> Response
+PHP runtime -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> Handler -> Response
 ```
 
 ## Try it
 
-PHP 8.4 with PDO, PDO SQLite, and Composer are required for the complete development checks. PHPStan and the PHPThis Strict Profile are mandatory development components and do not affect the framework runtime.
+PHP 8.4 with PDO, PDO SQLite, ext-session, and Composer are required for the complete development checks. PHPStan and the PHPThis Strict Profile are mandatory development components and do not affect the framework runtime.
 
 ```bash
 git clone https://github.com/balgf/PHPThis.git
@@ -88,6 +89,7 @@ Ask the project AI to follow the [application bootstrap contract](docs/getting-s
 - [Knowledge map](docs/knowledge-map.md) routes an AI to the smallest relevant installed source of authority.
 - [CRUD reference profile](docs/crud.md) defines the optional feature-first application structure and its current evidence boundary.
 - [Security baseline](docs/security.md) defines SQL data/structure separation, least-privilege obligations, and the limits of automated proof.
+- [Session state](docs/sessions.md) defines the optional native lifecycle, explicit cookie contract, deployment requirements, and application-policy boundary.
 - [Architecture decisions](docs/decisions/README.md) preserve accepted rationale and reconsideration triggers.
 - [Evaluation](docs/evaluation.md) defines evidence and future AI-comparison work.
 - [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the pre-alpha project's current boundaries.

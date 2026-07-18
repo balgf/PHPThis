@@ -14,7 +14,18 @@
 - Web runtime: {{WEB_RUNTIME}}
 - Worker runtime: {{WORKER_RUNTIME_OR_NOT_APPLICABLE}}
 - Scheduler: {{SCHEDULER_OR_NOT_APPLICABLE}}
-- Required extensions: {{REQUIRED_PHP_EXTENSIONS}}
+- Required extensions: `ext-session` plus {{ADDITIONAL_REQUIRED_PHP_EXTENSIONS_OR_NONE}}
+
+## Session runtime
+
+- Adoption: {{SESSION_ADOPTION_OR_NOT_APPLICABLE}}
+- Native handler, exact effective save path, ownership, and application isolation: {{SESSION_NATIVE_FILE_STORAGE_POLICY_OR_NOT_APPLICABLE}}
+- Required PHP session settings and dated verification source: {{SESSION_PHP_SETTINGS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
+- Cookie name, `Secure`, SameSite, and environment policy: {{SESSION_COOKIE_POLICY_OR_NOT_APPLICABLE}}
+- Deployment topology, concurrent-request evidence, and lock assumptions: {{SESSION_TOPOLOGY_AND_CONCURRENCY_POLICY_OR_NOT_APPLICABLE}}
+- Garbage collection and obsolete-file cleanup: {{SESSION_GARBAGE_COLLECTION_POLICY_OR_NOT_APPLICABLE}}
+
+`ext-session` is an installed-framework requirement even when session state is not adopted. Adoption additionally requires the native `files` handler, an exact save path proven isolated to this application identity, the fixed runtime settings, and cleanup retention beyond the absolute session lifetime described in installed `vendor/phpthis/framework/docs/sessions.md`. Do not copy session IDs, cookie values, CSRF tokens, or snapshots into this file.
 
 ## Environments and deployment
 
@@ -32,7 +43,7 @@
 - Health and readiness paths: {{HEALTH_AND_READINESS_PATHS}}
 - Alert or incident reference: `{{INCIDENT_REFERENCE}}`
 
-Logs must not contain credentials, tokens, request bodies, SQL parameters, customer data, or unknown exception messages. A separately reviewed logging contract may permit only explicitly safe structured fields that do not copy an unknown exception message.
+Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, request bodies, SQL parameters, customer data, or unknown exception messages. A separately reviewed logging contract may permit only explicitly safe structured fields that do not copy an unknown exception message.
 
 ## Prohibited operational actions
 

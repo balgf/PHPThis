@@ -20,6 +20,11 @@
 | request boundary | one bounded runtime-reader, handler, and exact error-map sequence | middleware, pipeline |
 | error response registry | exact exception-class to immutable response map | global exception helper |
 | response | immutable HTTP output | result, reply |
+| response cookie | validated cookie value emitted as its own `Set-Cookie` field | encoded header string, cookie array convention |
+| session lifecycle | one lazy request-scoped boundary over PHP's certified native file session engine | helper, middleware, session repository |
+| session snapshot | bounded immutable scalar or `null` state returned by the lifecycle | session bag, domain object store |
+| session unavailable | explicit stale-mutation failure that emits no competing cookie | automatic anonymous replacement, silent retry |
+| typed application session service | one narrowly named application-owned meaning and non-overlapping key set placed in front of the single `SessionLifecycle` | generic key-value helper, authentication framework |
 | application AI context | project-owned root `AGENTS.md` and task-routed `.ai/` guides | framework maintainer context, evaluation harness |
 | AI-first authoring | workflow in which AI is the expected primary code author under human direction | autonomous approval, AI-only development |
 | AI knowledge interface | AI grounded in the installed contract, knowledge map, application context, source, and tests | model memory, framework manual replacement without evidence |

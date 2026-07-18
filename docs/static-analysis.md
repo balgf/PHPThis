@@ -16,7 +16,7 @@ This is a greenfield project. A generated baseline would turn known violations i
 
 ## Consumer configuration ownership
 
-Contract-version-2 applications do not own `phpstan.neon`. `vendor/bin/phpthis check` discovers all application PHP, creates a temporary maximum-level configuration with strict rules and the installed PHPThis extension, runs PHPStan, and removes the configuration. The application cannot weaken that command with a baseline, `ignoreErrors`, an alternate level, or an inline suppression; `PHT004` rejects those paths.
+Contract-version-3 applications do not own `phpstan.neon`. `vendor/bin/phpthis check` discovers all application PHP, creates a temporary maximum-level configuration with strict rules and the installed PHPThis extension, runs PHPStan, and removes the configuration. The application cannot weaken that command with a baseline, `ignoreErrors`, an alternate level, or an inline suppression; `PHT004` rejects those paths.
 
 Normal checks reuse a profile-owned PHPStan cache under the resolved Composer dependency directory and use PHPStan parallel workers when the host permits a local loopback coordinator. Restricted hosts fall back to the same analysis serially. `phpthis check --debug` is an explicit diagnostic mode that prints analyzed paths and intentionally bypasses normal incremental behavior; it is not the canonical project gate.
 
@@ -29,6 +29,7 @@ The framework repository retains its reviewed `phpstan.neon` because it verifies
 - `PHT005` owns non-ignorable, type- and name-aware detection of application PDO or PDO-subclass construction.
 - `PHT006` owns non-ignorable detection of non-finite, blank, annotation-only, unpacked, or indirectly invoked SQL at the three canonical `Connection` database methods.
 - `tools/guardrails.php` owns small repository invariants that are not yet PHPStan extensions.
+- The application checker's structural stage owns Contract version 3's rejection of `$_SESSION`, direct/imported native session calls, and literal indirect references in consumer code; dynamically obscured calls remain a contract violation. This carries Strict Profile version 2 forward without adding a `PHT` rule.
 - `QueryBudget` owns actual runtime statement limits.
 - `QueryTrace` owns bounded runtime query fingerprints, execution timing, and failure counts without logging I/O.
 - Integration tests own database-specific behavior and query-count invariance.

@@ -50,7 +50,7 @@ For an existing application adopting only the context template:
 2. Copy the contents of `vendor/phpthis/framework/templates/application/` into the new application root, preserving the hidden `.ai/` directory. When evaluating from a PHPThis source checkout instead, use its `templates/application/` directory.
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
-5. Use the contract-version-2 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, and run `composer check`.
+5. Use the contract-version-3 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, record session policy as verified or not applicable, and run `composer check`.
 6. Commit the completed application context before asking the project AI to implement the first feature.
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.
@@ -81,6 +81,7 @@ PHPThis already defines framework mechanics. The application context should add 
 - each runtime connection's required objects and actions, explicitly unavailable schema or administrative authority, privilege-verification source and date, and separation from migration credentials;
 - external services, timeouts, idempotency requirements, retry ownership, and observable side effects;
 - authentication and authorization boundaries;
+- session adoption or explicit non-adoption, typed state schema and key ownership, cookie policy, isolated native file-storage ownership and cleanup, deployment topology, concurrent-request evidence, and each applicable regeneration, expiry, logout, revocation, and CSRF policy with absent concerns explicitly not applicable;
 - runtime, deployment, worker, logging, and incident-response assumptions;
 - the one complete check command and any focused verification commands.
 
@@ -107,7 +108,7 @@ After setup, ask the AI to inspect the current application rather than teach fro
 - `Inspect the installed CRUD reference profile and this application's structure policy, then show where a new Create operation belongs.`
 - `Audit this database path for PHT006, unique bound data, finite SQL structure, runtime least privilege, and migration-credential separation; cite the installed contract and application evidence.`
 - `Explain this PHT diagnostic from the installed profile and repair its cause.`
-- `Does this installed PHPThis version provide authentication? If not, identify the decision we need instead of inventing a framework feature.`
+- `Explain the installed session lifecycle, then identify the authentication, authorization, expiry, revocation, and CSRF decisions this application still owns.`
 
 The AI should cite concrete paths, distinguish existing behavior from proposals, run `composer check` after changes, and surface consequential choices for human judgment. The accountable human approves accepted application decisions and owns the resulting system.
 

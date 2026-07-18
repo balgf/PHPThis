@@ -25,6 +25,7 @@
 - Complete: PDO base-transport contract and certification harness, with local SQLite proof and a dedicated SQLite/MySQL/PostgreSQL CI gate without a dialect abstraction.
 - Complete: optional feature-first CRUD reference profile with a documented application-owned alternative and no runtime or filesystem enforcement.
 - Complete: Consumer Contract and Strict Profile version 2 with PHT006 finite direct SQL, adversarial bound-data evidence, and explicit application-owned database-authority policy.
+- Complete: Consumer Contract version 3 with explicit response cookies and one optional lazy native-file session lifecycle; authentication, authorization, expiry, revocation, and CSRF remain application policy.
 - Current: specify typed path parameters before implementing dynamic routes.
 - After typed item routes: prove Get, Update, and Delete only after the example records pagination, concurrency, deletion, authorization, and conflict decisions.
 
@@ -48,4 +49,4 @@
 
 ## Deferred by design
 
-Middleware, caching, queues, templating, validation, migrations, and dependency packages are not accepted merely because conventional frameworks include them. Each needs a problem statement, an explicit execution path, a cost model, and a decision record.
+Authentication, authorization, CSRF policy, custom or shared session storage, middleware, caching, queues, templating, validation, migrations, and dependency packages are not accepted merely because conventional frameworks include them. Each needs a problem statement, an explicit execution path, a cost model, and a decision record. The accepted native session transport does not imply those adjacent capabilities.

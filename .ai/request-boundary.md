@@ -1,6 +1,6 @@
 # Request boundary contract
 
-`RequestBoundary` is the one outer transport boundary. It calls `RequestReader`, delegates the resulting immutable request to one `RequestHandler`, and consults `ErrorResponseRegistry` only when a failure crosses that path.
+`RequestBoundary` is the one outer transport boundary. It calls `RequestReader`, optionally begins one `SessionLifecycle`, delegates the resulting immutable request to one `RequestHandler`, and consults `ErrorResponseRegistry` only when a failure crosses that path.
 
 Rules:
 
@@ -12,5 +12,7 @@ Rules:
 - Preserve query values as `mixed`; an endpoint-specific named boundary must parse any values it uses.
 - Keep error registration literal and exact-class-only. Unknown failures must be rethrown to the front controller.
 - Pass an unknown failure to `UnknownFailureBoundary`; it logs once without the message, SQL, parameters, or trace, then returns the generic 500 response.
+- When sessions are configured, call `SessionLifecycle::begin` only after successful request parsing, finish normal and registered-error responses, and abort before rethrowing an unknown failure.
+- Beginning a lifecycle records the cookie header only. Do not start native storage or emit a cookie unless application code explicitly reads or mutates session state.
 
-Do not turn this boundary into middleware, an event pipeline, a request helper bag, automatic input binding, or a service locator.
+Do not put session state on `Request` or turn this boundary into middleware, an event pipeline, a request helper bag, automatic input binding, or a service locator.

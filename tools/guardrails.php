@@ -10,6 +10,31 @@ $root = dirname(__DIR__);
 $phpFiles = [];
 $markdownFiles = [];
 $failures = [];
+$nativeSessionFunctions = [
+    'session_abort',
+    'session_cache_expire',
+    'session_cache_limiter',
+    'session_commit',
+    'session_create_id',
+    'session_decode',
+    'session_destroy',
+    'session_encode',
+    'session_gc',
+    'session_get_cookie_params',
+    'session_id',
+    'session_module_name',
+    'session_name',
+    'session_regenerate_id',
+    'session_register_shutdown',
+    'session_reset',
+    'session_save_path',
+    'session_set_cookie_params',
+    'session_set_save_handler',
+    'session_start',
+    'session_status',
+    'session_unset',
+    'session_write_close',
+];
 $phpstanConfig = file_get_contents($root . '/phpstan.neon');
 
 if (!is_string($phpstanConfig)) {
@@ -36,15 +61,18 @@ $requiredRepositoryFiles = [
     '.github/workflows/ci.yml',
     '.ai/crud.md',
     '.ai/database.md',
+    '.ai/session.md',
     'docs/consumer-contract.md',
     'docs/crud.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
     'docs/security.md',
+    'docs/sessions.md',
     'docs/decisions/011-ai-first-authoring.md',
     'docs/decisions/012-pdo-transport-application-owned-dialects.md',
     'docs/decisions/013-optional-crud-reference-profile.md',
     'docs/decisions/014-sql-data-and-finite-structure.md',
+    'docs/decisions/015-explicit-native-session-lifecycle.md',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
@@ -88,6 +116,12 @@ $requiredRepositoryFiles = [
     'verification/phpstan/DirectPdoConstructionRule.php',
     'verification/phpstan/MixedScalarCoercionRule.php',
     'verification/phpstan/extension.php',
+    'src/Http/CookieSameSite.php',
+    'src/Http/ResponseCookie.php',
+    'src/Session/SessionConfiguration.php',
+    'src/Session/SessionLifecycle.php',
+    'src/Session/SessionSnapshot.php',
+    'src/Session/SessionUnavailable.php',
     'tools/package-files.txt',
     'tools/test-database-drivers.php',
 ];
@@ -95,6 +129,25 @@ $requiredRepositoryFiles = [
 foreach ($requiredRepositoryFiles as $requiredRepositoryFile) {
     if (!is_file($root . '/' . $requiredRepositoryFile)) {
         $failures[] = "Required repository file is missing: {$requiredRepositoryFile}.";
+    }
+}
+
+$sessionContractMarkers = [
+    '.ai/README.md' => '`.ai/session.md`',
+    'docs/knowledge-map.md' => '`docs/sessions.md`',
+    'templates/application/.ai/architecture.md' => '{{SESSION_ADOPTION_AND_KEY_SCHEMA_OR_NOT_APPLICABLE}}',
+    'templates/application/.ai/operations.md' => '{{SESSION_NATIVE_FILE_STORAGE_POLICY_OR_NOT_APPLICABLE}}',
+    'templates/application/.ai/testing.md' => 'Adopted session transport',
+    'skeleton/.ai/README.md' => 'vendor/phpthis/framework/docs/sessions.md',
+    'skeleton/.ai/operations.md' => 'ext-session',
+    'skeleton/.ai/testing.md' => 'NOT_APPLICABLE(SESSION_EVIDENCE)',
+];
+
+foreach ($sessionContractMarkers as $relativePath => $marker) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents) || !str_contains($contents, $marker)) {
+        $failures[] = "Session contract route or application-context field is missing from {$relativePath}.";
     }
 }
 
@@ -141,8 +194,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 2$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 2.';
+        if (preg_match('/^Contract version: 3$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 3.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -364,25 +417,124 @@ foreach ($phpFiles as $relativePath => $path) {
     $routeLookupMethodPending = null;
     $routeLookupMethod = null;
     $routeLookupMethodBraceDepth = null;
+    $functionImportPending = false;
+    $insideFunctionImport = false;
 
     foreach ($tokens as $index => $token) {
         $tokenId = is_array($token) ? $token[0] : null;
         $tokenText = is_array($token) ? $token[1] : $token;
+        $isSignificant = !is_array($token)
+            || !in_array($tokenId, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true);
+
+        if ($functionImportPending && $isSignificant) {
+            $insideFunctionImport = $tokenId === T_FUNCTION;
+            $functionImportPending = false;
+        }
+
+        if ($tokenId === T_USE) {
+            $functionImportPending = true;
+        } elseif ($insideFunctionImport && $tokenText === ';') {
+            $insideFunctionImport = false;
+        }
+
+        if ($tokenId === T_VARIABLE) {
+            $isCanonicalSessionState = $relativePath === 'src/Session/SessionLifecycle.php'
+                && $tokenText === '$_SESSION';
+            $isFrontControllerInput = in_array(
+                $relativePath,
+                ['example/public/index.php', 'skeleton/public/index.php'],
+                true,
+            ) && $tokenText !== '$_SESSION';
+
+            if (
+                !$isCanonicalSessionState
+                && !$isFrontControllerInput
+                && in_array(
+                    $tokenText,
+                    ['$_SERVER', '$_GET', '$_POST', '$_COOKIE', '$_FILES', '$_SESSION', '$_ENV', '$_REQUEST'],
+                    true,
+                )
+            ) {
+                $boundary = $tokenText === '$_SESSION'
+                    ? 'the canonical session boundary'
+                    : 'the front controller';
+                $failures[] = sprintf(
+                    '%s:%d reads a PHP superglobal outside %s.',
+                    $relativePath,
+                    $token[2],
+                    $boundary,
+                );
+            }
+        }
+
+        $nativeSessionFunction = strtolower(ltrim($tokenText, '\\'));
 
         if (
-            !in_array($relativePath, ['example/public/index.php', 'skeleton/public/index.php'], true)
-            && $tokenId === T_VARIABLE
-            && in_array(
-                $tokenText,
-                ['$_SERVER', '$_GET', '$_POST', '$_COOKIE', '$_FILES', '$_ENV', '$_REQUEST'],
-                true,
-            )
+            $relativePath !== 'src/Session/SessionLifecycle.php'
+            && in_array($tokenId, [T_STRING, T_NAME_FULLY_QUALIFIED], true)
+            && in_array($nativeSessionFunction, $nativeSessionFunctions, true)
         ) {
-            $failures[] = sprintf(
-                '%s:%d reads a PHP superglobal outside the front controller.',
-                $relativePath,
-                $token[2],
-            );
+            $nextSignificantToken = null;
+
+            for ($next = $index + 1, $count = count($tokens); $next < $count; $next++) {
+                $candidate = $tokens[$next];
+
+                if (is_array($candidate) && in_array($candidate[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                $nextSignificantToken = $candidate;
+                break;
+            }
+
+            $previousSignificantToken = null;
+
+            for ($previous = $index - 1; $previous >= 0; $previous--) {
+                $candidate = $tokens[$previous];
+
+                if (is_array($candidate) && in_array($candidate[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                $previousSignificantToken = $candidate;
+                break;
+            }
+
+            $previousTokenId = is_array($previousSignificantToken) ? $previousSignificantToken[0] : null;
+
+            if (
+                ($nextSignificantToken === '(' || $insideFunctionImport)
+                && !in_array(
+                    $previousTokenId,
+                    [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON],
+                    true,
+                )
+            ) {
+                $failures[] = sprintf(
+                    '%s:%d %s native session function %s outside the canonical session boundary.',
+                    $relativePath,
+                    $token[2],
+                    $insideFunctionImport ? 'imports' : 'calls',
+                    $nativeSessionFunction,
+                );
+            }
+        }
+
+        if (
+            !in_array($relativePath, ['tools/guardrails.php', 'verification/ApplicationChecker.php'], true)
+            && $tokenId === T_CONSTANT_ENCAPSED_STRING
+            && strlen($tokenText) >= 2
+        ) {
+            $literalFunction = strtolower(ltrim(stripcslashes(substr($tokenText, 1, -1)), '\\'));
+
+            if (in_array($literalFunction, $nativeSessionFunctions, true)) {
+                $failures[] = sprintf(
+                    '%s:%d references native session function %s indirectly outside the canonical session boundary.',
+                    $relativePath,
+                    $token[2],
+                    $literalFunction,
+                );
+            }
         }
 
         if (
@@ -504,8 +656,8 @@ foreach ($phpFiles as $relativePath => $path) {
     $coreLines += is_array($lines) ? count($lines) : 0;
 }
 
-if ($coreLines > 900) {
-    $failures[] = "Core source has {$coreLines} physical lines; the Phase 1 limit is 900.";
+if ($coreLines > 1_700) {
+    $failures[] = "Core source has {$coreLines} physical lines; the Phase 1 limit is 1700.";
 }
 
 if ($failures !== []) {

@@ -20,12 +20,14 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `public/index.php` | Read PHP runtime globals, invoke the request boundary, map unknown failures, and emit one response. |
+| Typed session services | `NOT_APPLICABLE` | The starter does not configure session state. |
 | Database | `NOT_APPLICABLE` | The starter application has no database. |
 | External services | `NOT_APPLICABLE` | The starter application has no external integrations. |
 
 ## Identity and authorization
 
 - Identity, authentication, authorization, and tenant boundaries: `NOT_APPLICABLE(public liveness route only)`.
+- Session state, authentication regeneration, idle or absolute expiry, logout, revocation, and CSRF: `NOT_APPLICABLE(public liveness route only)`.
 - Deny-by-default rule: only explicit routes are accepted; other paths return `404`, and unsupported methods on a known path return `405`.
 
 ## Optional CRUD reference profile

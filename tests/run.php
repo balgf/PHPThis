@@ -14,6 +14,7 @@ use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryBudgetExceeded;
 use PHPThis\Database\QueryTrace;
 use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\CookieSameSite;
 use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestBodyTooLarge;
@@ -21,6 +22,7 @@ use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\RequestReader;
 use PHPThis\Http\Response;
+use PHPThis\Http\ResponseCookie;
 use PHPThis\Http\UnsupportedMediaType;
 use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Route;
@@ -294,6 +296,100 @@ $tests['request boundary maps exact known failures and rethrows unknown failures
     }
 
     throw new RuntimeException('Expected an unregistered failure to escape unchanged.');
+};
+
+$tests['response cookies are explicit validated values'] = static function (): void {
+    $live = new ResponseCookie(
+        '__Host-PHPThisSession',
+        str_repeat('a', 32),
+        '/',
+        true,
+        true,
+        CookieSameSite::Lax,
+    );
+    $expired = new ResponseCookie(
+        '__Host-PHPThisSession',
+        '',
+        '/',
+        true,
+        true,
+        CookieSameSite::Lax,
+        1,
+        0,
+    );
+
+    if (
+        $live->headerValue() !== '__Host-PHPThisSession=' . str_repeat('a', 32)
+            . '; Path=/; Secure; HttpOnly; SameSite=Lax'
+        || $expired->headerValue() !== '__Host-PHPThisSession=; Path=/'
+            . '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; Secure; HttpOnly; SameSite=Lax'
+    ) {
+        throw new RuntimeException('Expected deterministic secure cookie serialization.');
+    }
+
+    $invalidCookies = [
+        static fn(): ResponseCookie => new ResponseCookie('bad name', 'value', '/', true, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', "bad;value", '/', true, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', 'relative', true, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('__Host-name', 'value', '/', false, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, true, CookieSameSite::None),
+    ];
+
+    foreach ($invalidCookies as $invalidCookie) {
+        try {
+            $invalidCookie();
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected an invalid response cookie to be rejected.');
+    }
+
+    try {
+        new Response(200, [], '', [$live, $expired]);
+    } catch (InvalidArgumentException) {
+        try {
+            new Response(200, ['Set-Cookie' => 'manual=value'], '');
+        } catch (InvalidArgumentException) {
+            return;
+        }
+    }
+
+    throw new RuntimeException('Expected duplicate or manually encoded response cookies to be rejected.');
+};
+
+$tests['response emitter preserves repeated Set-Cookie fields'] = static function (): void {
+    $result = runIsolatedPhpTest(__DIR__ . '/response-emitter.php');
+
+    if ($result['exit_code'] !== 0) {
+        throw new RuntimeException('Response emitter subprocess failed: ' . $result['stderr']);
+    }
+
+    $decoded = json_decode($result['stdout'], true, 32, JSON_THROW_ON_ERROR);
+
+    if (
+        !is_array($decoded)
+        || ($decoded['status'] ?? null) !== 201
+        || ($decoded['body'] ?? null) !== 'created'
+        || ($decoded['headers'] ?? null) !== [
+            ['line' => 'Content-Type: text/plain', 'replace' => true],
+            ['line' => 'Set-Cookie: first=one; Path=/; Secure; HttpOnly; SameSite=Lax', 'replace' => false],
+            ['line' => 'Set-Cookie: second=two; Path=/; Secure; HttpOnly; SameSite=Strict', 'replace' => false],
+        ]
+    ) {
+        throw new RuntimeException('Expected ordinary replacement headers and repeated cookie fields.');
+    }
+};
+
+$tests['session lifecycle is lazy strict scoped and fixation resistant'] = static function (): void {
+    $result = runIsolatedPhpTest(__DIR__ . '/session-lifecycle.php');
+
+    if (
+        $result['exit_code'] !== 0
+        || $result['stdout'] !== "PASS isolated native session lifecycle\n"
+    ) {
+        throw new RuntimeException('Native session lifecycle proof failed: ' . $result['stderr'] . $result['stdout']);
+    }
 };
 
 $tests['unknown failure boundary logs once and returns one generic response'] = static function (): void {
@@ -1272,6 +1368,40 @@ function createUserDatabaseFixture(string $name, int $userCount, bool $seedEvent
     }
 
     return $databasePath;
+}
+
+/** @return array{exit_code: int, stdout: string, stderr: string} */
+function runIsolatedPhpTest(string $path): array
+{
+    $process = proc_open(
+        [PHP_BINARY, $path],
+        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+        $pipes,
+        dirname(__DIR__),
+        null,
+        ['bypass_shell' => true],
+    );
+
+    if (!is_resource($process)) {
+        throw new RuntimeException('Unable to start isolated PHP test process.');
+    }
+
+    fclose($pipes[0]);
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $exitCode = proc_close($process);
+
+    if (!is_string($stdout) || !is_string($stderr)) {
+        throw new RuntimeException('Unable to read isolated PHP test output.');
+    }
+
+    return [
+        'exit_code' => $exitCode >= 0 ? $exitCode : 1,
+        'stdout' => $stdout,
+        'stderr' => $stderr,
+    ];
 }
 
 $failures = 0;

@@ -15,10 +15,19 @@ AI-oriented explicitness does not replace security review.
 - Log an unknown failure once without its message, SQL, parameters, or stack, then return the generic 500 response.
 - Keep superglobal reads in the front controller and enforce body, request-target, query-count, header-count, and header-value bounds in `RequestReader`.
 - Query traces contain only SHA-256 SQL fingerprints and aggregate metrics; never add SQL, parameters, credentials, exception messages, or driver details.
-- Add CSRF, authentication, authorization, rate limiting, and security headers as explicit application policies when required.
+- Keep application code out of `$_SESSION` and native `session_*` calls. Access optional session state through narrowly named typed services with non-overlapping key ownership over one `SessionLifecycle`.
+- Regenerate the session identifier before committing authenticated identity or another privilege elevation, invalidate it at logout, and reject malformed, attacker-selected, and obsolete identifiers.
+- Keep session cookies `HttpOnly`, use the environment's explicit `Secure` and SameSite policy, omit Domain, and emit them only as validated `ResponseCookie` values.
+- Add CSRF, authentication, authorization, idle and absolute session expiry, rate limiting, and security headers as explicit application policies when required. `SameSite` is not a replacement for CSRF validation.
 - Do not deserialize untrusted PHP values or execute generated PHP.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
+
+## Session limits
+
+The optional session boundary certifies only PHP 8.4's native file handler with fixed identifier settings and an exact application-isolated save path. It bounds stored values and shortens native lock duration, but it does not authenticate a principal, authorize an operation, select expiry windows, revoke every session for an account, or prove a multi-node storage topology. Applications record and test applicable choices and must not treat possession of stored identity as current authorization.
+
+Session identifiers, cookie fields, CSRF tokens, and complete snapshots are sensitive and do not enter logs, query traces, exception messages, or public errors. See [Session state](sessions.md) and [ADR 015](decisions/015-explicit-native-session-lifecycle.md).
 
 ## SQL data and structure
 

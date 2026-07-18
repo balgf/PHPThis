@@ -13,7 +13,11 @@
 - Supported PHP version: 8.4
 - Web runtime: PHP's built-in server for local verification only.
 - Worker and scheduler: `NOT_APPLICABLE`.
-- Required extensions: `ext-pdo` through the installed framework; the starter application opens no connection.
+- Required extensions: `ext-pdo` and `ext-session` through the installed framework; the starter application opens no database connection and configures no session lifecycle.
+
+## Session runtime
+
+`NOT_APPLICABLE`: the starter does not construct `SessionLifecycle` or create session storage. PHP 8.4 `ext-session` remains an installed framework platform requirement. Before adoption, record the native file handler and save-path ownership, exact PHP settings and dated source, cookie policy, deployment topology and concurrency evidence, and garbage collection in this section.
 
 ## Deployment
 
@@ -25,7 +29,7 @@
 - `GET /health` is the starter liveness path; no readiness path exists.
 - Query summaries are `NOT_APPLICABLE(no database)`.
 
-Logs must not contain credentials, tokens, request bodies, SQL parameters, customer data, or unknown exception messages.
+Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, request bodies, SQL parameters, customer data, or unknown exception messages.
 
 ## Prohibited operational actions
 

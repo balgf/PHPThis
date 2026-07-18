@@ -11,7 +11,7 @@
 - Map external SQL-structure selectors to finite reviewed code-owned choices and reject unknown selectors before database work.
 - Pass the complete Strict Profile; PHP execution without `composer check` is not sufficient verification.
 - Add a test for success, expected failure, and resource bounds when relevant.
-- Use one stable term for each concept: route, handler, connection, request, response, query budget, query trace.
+- Use one stable term for each concept: route, handler, connection, request, response, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace.
 
 ## Forbidden
 
@@ -23,6 +23,7 @@
 - Scalar casts or conversion functions used as validation for `mixed` input.
 - Reflection hydration, generic domain collections, and unvalidated arrays crossing a boundary.
 - Aliases or shortcuts that provide a second spelling for existing behavior.
+- Direct application access to `$_SESSION`, native `session_*` calls, generic session helpers, or authentication state stored without a typed application boundary.
 - Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
 - Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.
 

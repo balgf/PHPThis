@@ -38,6 +38,32 @@ final class ApplicationChecker
         '$_ENV',
     ];
 
+    private const NATIVE_SESSION_FUNCTIONS = [
+        'session_abort',
+        'session_cache_expire',
+        'session_cache_limiter',
+        'session_commit',
+        'session_create_id',
+        'session_decode',
+        'session_destroy',
+        'session_encode',
+        'session_gc',
+        'session_get_cookie_params',
+        'session_id',
+        'session_module_name',
+        'session_name',
+        'session_regenerate_id',
+        'session_register_shutdown',
+        'session_reset',
+        'session_save_path',
+        'session_set_cookie_params',
+        'session_set_save_handler',
+        'session_start',
+        'session_status',
+        'session_unset',
+        'session_write_close',
+    ];
+
     private const VCS_DIRECTORIES = [
         '.git',
         '.hg',
@@ -379,11 +405,26 @@ final class ApplicationChecker
 
         $tokens = token_get_all($contents);
         $line = 1;
+        $functionImportPending = false;
+        $insideFunctionImport = false;
 
-        foreach ($tokens as $token) {
+        foreach ($tokens as $index => $token) {
             $tokenId = is_array($token) ? $token[0] : null;
             $tokenText = is_array($token) ? $token[1] : $token;
             $tokenLine = is_array($token) ? $token[2] : $line;
+            $isSignificant = !is_array($token)
+                || !in_array($tokenId, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true);
+
+            if ($functionImportPending && $isSignificant) {
+                $insideFunctionImport = $tokenId === T_FUNCTION;
+                $functionImportPending = false;
+            }
+
+            if ($tokenId === T_USE) {
+                $functionImportPending = true;
+            } elseif ($insideFunctionImport && $tokenText === ';') {
+                $insideFunctionImport = false;
+            }
 
             if ($tokenId === T_EVAL) {
                 $failures[] = "{$relativePath}:{$tokenLine} uses eval.";
@@ -394,11 +435,33 @@ final class ApplicationChecker
             }
 
             if (
-                $relativePath !== 'public/index.php'
-                && $tokenId === T_VARIABLE
+                $tokenId === T_VARIABLE
                 && in_array($tokenText, self::SUPERGLOBALS, true)
+                && ($tokenText === '$_SESSION' || $relativePath !== 'public/index.php')
             ) {
-                $failures[] = "{$relativePath}:{$tokenLine} reads a PHP superglobal outside public/index.php.";
+                $boundary = $tokenText === '$_SESSION'
+                    ? 'PHPThis\\Session\\SessionLifecycle'
+                    : 'public/index.php';
+                $failures[] = "{$relativePath}:{$tokenLine} reads a PHP superglobal outside {$boundary}.";
+            }
+
+            $nativeSessionFunction = strtolower(ltrim($tokenText, '\\'));
+
+            if (
+                in_array($tokenId, [T_STRING, T_NAME_FULLY_QUALIFIED], true)
+                && in_array($nativeSessionFunction, self::NATIVE_SESSION_FUNCTIONS, true)
+                && ($insideFunctionImport || $this->isFunctionCall($tokens, $index))
+            ) {
+                $action = $insideFunctionImport ? 'imports' : 'calls';
+                $failures[] = "{$relativePath}:{$tokenLine} {$action} native session function {$nativeSessionFunction}; use PHPThis\\Session\\SessionLifecycle.";
+            }
+
+            if ($tokenId === T_CONSTANT_ENCAPSED_STRING && strlen($tokenText) >= 2) {
+                $literalFunction = strtolower(ltrim(stripcslashes(substr($tokenText, 1, -1)), '\\'));
+
+                if (in_array($literalFunction, self::NATIVE_SESSION_FUNCTIONS, true)) {
+                    $failures[] = "{$relativePath}:{$tokenLine} references native session function {$literalFunction} indirectly; use PHPThis\\Session\\SessionLifecycle.";
+                }
             }
 
             if (
@@ -412,6 +475,45 @@ final class ApplicationChecker
         }
 
         return $failures;
+    }
+
+    /** @param list<array{int, string, int}|string> $tokens */
+    private function isFunctionCall(array $tokens, int $index): bool
+    {
+        $nextSignificantToken = null;
+
+        for ($next = $index + 1, $count = count($tokens); $next < $count; $next++) {
+            $candidate = $tokens[$next];
+
+            if (is_array($candidate) && in_array($candidate[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            $nextSignificantToken = $candidate;
+            break;
+        }
+
+        if ($nextSignificantToken !== '(') {
+            return false;
+        }
+
+        for ($previous = $index - 1; $previous >= 0; $previous--) {
+            $candidate = $tokens[$previous];
+
+            if (is_array($candidate) && in_array($candidate[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            $previousTokenId = is_array($candidate) ? $candidate[0] : null;
+
+            return !in_array(
+                $previousTokenId,
+                [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON],
+                true,
+            );
+        }
+
+        return true;
     }
 
     /** @param list<string> $phpFiles */

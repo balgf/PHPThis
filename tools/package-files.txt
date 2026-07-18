@@ -24,6 +24,7 @@ docs/decisions/011-ai-first-authoring.md
 docs/decisions/012-pdo-transport-application-owned-dialects.md
 docs/decisions/013-optional-crud-reference-profile.md
 docs/decisions/014-sql-data-and-finite-structure.md
+docs/decisions/015-explicit-native-session-lifecycle.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -34,6 +35,7 @@ docs/logging.md
 docs/performance.md
 docs/request-handling.md
 docs/security.md
+docs/sessions.md
 docs/static-analysis.md
 docs/strict-profile.md
 docs/type-safety.md
@@ -43,6 +45,7 @@ src/Database/Connection.php
 src/Database/QueryBudget.php
 src/Database/QueryBudgetExceeded.php
 src/Database/QueryTrace.php
+src/Http/CookieSameSite.php
 src/Http/ErrorResponseRegistry.php
 src/Http/InvalidRequest.php
 src/Http/Request.php
@@ -51,11 +54,16 @@ src/Http/RequestBoundary.php
 src/Http/RequestHandler.php
 src/Http/RequestReader.php
 src/Http/Response.php
+src/Http/ResponseCookie.php
 src/Http/ResponseEmitter.php
 src/Http/UnknownFailureBoundary.php
 src/Http/UnsupportedMediaType.php
 src/Routing/Route.php
 src/Routing/Router.php
+src/Session/SessionConfiguration.php
+src/Session/SessionLifecycle.php
+src/Session/SessionSnapshot.php
+src/Session/SessionUnavailable.php
 templates/application/.ai/README.md
 templates/application/.ai/architecture.md
 templates/application/.ai/change-workflow.md

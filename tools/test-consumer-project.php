@@ -123,6 +123,7 @@ try {
     proveDependencyDirectoryIsExcluded($project, $profileCommand, $environment);
     proveMixedCoercionIsRejected($project, $profileCommand, $environment);
     proveDirectPdoConstructionIsRejected($project, $profileCommand, $environment);
+    proveNativeSessionAccessIsRejected($project, $profileCommand, $environment);
     proveDynamicSqlIsRejected($project, $profileCommand, $environment);
     proveConfigurationCannotReplaceProfile($project, $profileCommand, $environment);
     proveBaselinesAndInlineIgnoresAreRejected($project, $profileCommand, $environment);
@@ -811,6 +812,81 @@ PHP;
         }
     } finally {
         unlink($path);
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveNativeSessionAccessIsRejected(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $path = $project . '/src/DirectSession.php';
+    $source = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use function session_destroy as destroy_session;
+
+final class DirectSession
+{
+    public function start(): void
+    {
+        session_start();
+        destroy_session();
+        call_user_func('session_write_close');
+        $_SESSION['identity_id'] = 1;
+    }
+}
+PHP;
+    writeFile($path, $source . "\n");
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'Direct native session access unexpectedly passed.');
+        requireOutputContains($result, 'calls native session function session_start');
+        requireOutputContains($result, 'imports native session function session_destroy');
+        requireOutputContains($result, 'references native session function session_write_close indirectly');
+        requireOutputContains($result, 'reads a PHP superglobal outside PHPThis\\Session\\SessionLifecycle');
+    } finally {
+        unlink($path);
+    }
+
+    $frontControllerPath = $project . '/public/index.php';
+    $originalFrontController = file_get_contents($frontControllerPath);
+
+    if (!is_string($originalFrontController)) {
+        throw new RuntimeException('Unable to read the consumer front controller session control.');
+    }
+
+    $frontControllerSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+session_start();
+$_SESSION['identity_id'] = 1;
+PHP;
+    writeFile($frontControllerPath, $frontControllerSource . "\n");
+
+    try {
+        $frontControllerResult = runProcess($profileCommand, $project, $environment);
+        requireFailure($frontControllerResult, 'Native session access in public/index.php unexpectedly passed.');
+        requireOutputContains($frontControllerResult, 'calls native session function session_start');
+        requireOutputContains(
+            $frontControllerResult,
+            'public/index.php:6 reads a PHP superglobal outside PHPThis\\Session\\SessionLifecycle',
+        );
+    } finally {
+        if (file_put_contents($frontControllerPath, $originalFrontController, LOCK_EX) !== strlen($originalFrontController)) {
+            throw new RuntimeException('Unable to restore the consumer front controller session control.');
+        }
     }
 }
 
