@@ -2,7 +2,10 @@
 
 AI-oriented explicitness does not replace security review.
 
-- Bind all SQL values with named parameters.
+- Separate SQL data from SQL structure. Bind every application or external data value with a unique named parameter, even after validation.
+- Keep SQL passed to the three canonical direct `Connection` calls within the finite non-blank compile-time constant-string set enforced by `PHT006`.
+- Keep statements static by default. Map a genuine structural choice to finite, code-owned, operation-specific reviewed statements and reject unknown choices before database work.
+- Do not interpolate data or use a generic SQL sanitizer, escaping helper, identifier validator, query builder, or SQL template engine to turn arbitrary input into structure.
 - Validate untrusted input before domain or database use.
 - Reject unknown fields and coercive values at the boundary; do not cast malformed input into an accepted type.
 - Enforce `PHT001` so scalar conversion cannot silently turn unresolved `mixed` input into a trusted value.
@@ -16,3 +19,21 @@ AI-oriented explicitness does not replace security review.
 - Do not deserialize untrusted PHP values or execute generated PHP.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
+
+## SQL data and structure
+
+PDO placeholders represent complete data literals. They cannot stand for identifiers, keywords, operators, ordering directions, or arbitrary fragments. A validated value is still data and remains bound; validation is not permission to interpolate it. See the [PHP `PDO::prepare` contract](https://www.php.net/manual/en/pdo.prepare.php) and [PHP SQL-injection guidance](https://www.php.net/manual/en/security.database.sql-injection.php).
+
+When an operation needs variable structure, prefer mapping a typed choice to complete constant statements. A finite constant fragment is acceptable only when it is code-owned, local to that operation, and every resulting statement remains a compile-time constant-string choice. Unknown external choices fail rather than being stripped, escaped, or silently converted to a default. OWASP likewise recommends parameterized queries, finite allowlisting where binding cannot represent structure, and least privilege; it warns that generic table validation can be unsafe across different query contexts. See the [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html).
+
+Tests use valid domain values containing quotes, semicolons, SQL comment markers, and Unicode and prove exact round-trip through parameters without a changed statement fingerprint or leaked trace value. Every variable structural option has success evidence, and malformed or unknown choices fail before the query budget or trace records work. These adversarial examples test a separation property; they are not a blacklist of forbidden characters.
+
+## Database authority
+
+Each runtime connection uses only the database objects and actions its process needs. The web runtime does not receive schema-owner, migration, role-management, grant-management, or administrative credentials. Migrations and administration run through a separately authorized path whose credentials are unavailable to request handling. The application records and verifies these engine-specific grants in `.ai/data.md`; SQLite applications record the equivalent file ownership and process boundary.
+
+Least privilege limits impact but does not replace application authorization. A permitted statement can still expose another tenant's data or perform the wrong domain action.
+
+## Proof limits
+
+PHT006 recognizes only the three direct canonical `Connection` calls and the native finite string type passed to them. It does not parse SQL, review statement intent, inspect stored procedures or server-side dynamic SQL, validate grants, or cover reflection and non-canonical invocation. A finite statement may still be destructive, logically incorrect, overprivileged, or unsafe inside the database. Parameterization, static analysis, runtime tests, authorization review, least-privilege verification, and engine-specific integration tests are complementary evidence.

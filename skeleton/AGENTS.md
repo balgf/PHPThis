@@ -27,11 +27,13 @@ Run `composer check` from the application root. A task is not complete until it 
 
 ## Authority
 
-- The installed PHPThis consumer contract and Strict Profile are the minimum accepted rules.
+- The installed PHPThis Consumer Contract v2 and Strict Profile v2 are the minimum accepted rules, including PHT006 finite compile-time-constant SQL.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - Preserve the installed contract when a project instruction conflicts with it, and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
 - Never add a baseline, suppression, hidden fallback, or second framework pattern to make a change pass.
+
+`NOT_APPLICABLE(DATABASE)`: before introducing database work, replace `.ai/data.md` with verified SQL-structure and bounded-list choices, least-privileged runtime authority and prohibited capabilities, isolated migration or administrative authority, and verification sources and dates.
 
 ## Context safety
 

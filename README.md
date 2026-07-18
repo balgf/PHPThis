@@ -25,6 +25,7 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 
 - No ORM, Active Record, lazy loading, query builder, facades, global helpers, autowiring, route discovery, or runtime macros.
 - SQL stays visible and engine-specific behind a thin PDO transport boundary; the base connection contract is exercised with SQLite locally, and dedicated CI is configured to certify the same contract against SQLite, MySQL, and PostgreSQL.
+- Strict Profile version 2 keeps data in unique named parameters and limits direct `Connection` SQL to finite, non-blank compile-time constant statements; application-owned structural choices map to reviewed statements rather than a sanitizer or query builder.
 - Every database connection has an explicit query budget that fails before an excessive statement executes.
 - Every database connection has a bounded query trace that reports repeated SQL fingerprints, execution timing, and failures without retaining SQL or parameters.
 - External database and JSON values are parsed once into concrete final readonly projections and commands before entering typed code.
@@ -39,6 +40,8 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 - The core is intentionally capped at 900 physical lines for Phase 1 under the explicit-request-boundary decision.
 
 Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis combines visible SQL with query budgets and scale-sensitive tests so that query count cannot silently grow with result size.
+
+Finite SQL and parameter binding do not prove authorization or least privilege. Consuming applications record and verify the objects and actions available to each runtime connection and keep schema-owner, migration, and administrative credentials outside the web runtime.
 
 ## Current state
 
@@ -84,6 +87,7 @@ Ask the project AI to follow the [application bootstrap contract](docs/getting-s
 - [Consumer contract](docs/consumer-contract.md) is the portable application validity floor.
 - [Knowledge map](docs/knowledge-map.md) routes an AI to the smallest relevant installed source of authority.
 - [CRUD reference profile](docs/crud.md) defines the optional feature-first application structure and its current evidence boundary.
+- [Security baseline](docs/security.md) defines SQL data/structure separation, least-privilege obligations, and the limits of automated proof.
 - [Architecture decisions](docs/decisions/README.md) preserve accepted rationale and reconsideration triggers.
 - [Evaluation](docs/evaluation.md) defines evidence and future AI-comparison work.
 - [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the pre-alpha project's current boundaries.

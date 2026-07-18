@@ -87,8 +87,17 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
         $configuration['username'],
         $configuration['password'],
     );
-    $table = databaseCertificationTableName();
-    $missingTable = $table . '_missing';
+    $table = match ($driver) {
+        'sqlite' => 'phpthis_transport_sqlite',
+        'mysql' => 'phpthis_transport_mysql',
+        'pgsql' => 'phpthis_transport_pgsql',
+    };
+    $missingTable = match ($driver) {
+        'sqlite' => 'phpthis_transport_sqlite_missing',
+        'mysql' => 'phpthis_transport_mysql_missing',
+        'pgsql' => 'phpthis_transport_pgsql_missing',
+    };
+    $boundProbe = "bound'); DELETE FROM users; --";
     $tableCreated = false;
     $insertSql = <<<SQL
         INSERT INTO {$table} (id, label, enabled, note)
@@ -114,7 +123,7 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
             requireDatabaseCertification(
                 $connection->executeStatement(
                     $insertSql,
-                    ['id' => 1, 'label' => 'committed', 'enabled' => true, 'note' => null],
+                    ['id' => 1, 'label' => $boundProbe, 'enabled' => true, 'note' => null],
                 ) === 1,
                 "{$driver} insert must affect one row.",
             );
@@ -133,7 +142,7 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
         $label = $row['label'] ?? null;
 
         requireDatabaseCertification(
-            ($identifier === 1 || $identifier === '1') && $label === 'committed',
+            ($identifier === 1 || $identifier === '1') && $label === $boundProbe,
             "{$driver} named bindings or associative fetch behavior changed.",
         );
 
@@ -196,7 +205,7 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
         requireDatabaseCertification(
             count($rows) === 2
             && databaseIdentifierMatches($rows[0]['id'] ?? null, 1)
-            && ($rows[0]['label'] ?? null) === 'committed'
+            && ($rows[0]['label'] ?? null) === $boundProbe
             && databaseIdentifierMatches($rows[1]['id'] ?? null, 3)
             && ($rows[1]['label'] ?? null) === 'second-row',
             "{$driver} ordered associative collection fetch changed.",
@@ -269,12 +278,6 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
             }
         }
     }
-}
-
-/** @return non-empty-string */
-function databaseCertificationTableName(): string
-{
-    return 'phpthis_transport_' . bin2hex(random_bytes(8));
 }
 
 /** @return array{dsn: non-empty-string, username: null, password: null, cleanup_file: non-empty-string} */

@@ -123,6 +123,7 @@ try {
     proveDependencyDirectoryIsExcluded($project, $profileCommand, $environment);
     proveMixedCoercionIsRejected($project, $profileCommand, $environment);
     proveDirectPdoConstructionIsRejected($project, $profileCommand, $environment);
+    proveDynamicSqlIsRejected($project, $profileCommand, $environment);
     proveConfigurationCannotReplaceProfile($project, $profileCommand, $environment);
     proveBaselinesAndInlineIgnoresAreRejected($project, $profileCommand, $environment);
     proveComposerGateCannotDrift($project, $profileCommand, $environment);
@@ -807,6 +808,44 @@ PHP;
 
         if (substr_count($result['stdout'] . $result['stderr'], 'phpthis.pht005') !== 3) {
             throw new RuntimeException('Expected literal, aliased, and fully qualified PDO to emit PHT005.');
+        }
+    } finally {
+        unlink($path);
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveDynamicSqlIsRejected(string $project, array $profileCommand, array $environment): void
+{
+    $path = $project . '/src/DynamicSql.php';
+    $source = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use PHPThis\Database\Connection;
+
+final class DynamicSql
+{
+    public function run(Connection $connection, string $sql): void
+    {
+        $connection->selectAllRows($sql);
+    }
+}
+PHP;
+    writeFile($path, $source . "\n");
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'PHT006 dynamic Connection SQL unexpectedly passed.');
+
+        if (substr_count($result['stdout'] . $result['stderr'], 'phpthis.pht006') !== 1) {
+            throw new RuntimeException('Expected dynamic Connection SQL to emit exactly one PHT006 finding.');
         }
     } finally {
         unlink($path);

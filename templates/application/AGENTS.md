@@ -25,11 +25,13 @@ Run the complete application validity gate documented in `.ai/testing.md` from t
 
 ## Authority
 
-- The installed PHPThis consumer contract and Strict Profile are the minimum accepted rules.
+- The installed PHPThis Consumer Contract v2 and Strict Profile v2 are the minimum accepted rules, including PHT006 finite compile-time-constant SQL.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - If a project instruction conflicts with the consumer contract, preserve the contract and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
 - Never add a baseline, broad ignore, hidden fallback, or second framework pattern to make a change pass.
+
+Before database work, `.ai/data.md` must identify the reviewed SQL-structure mappings and bounded-list choices, runtime database authority and prohibited capabilities, isolated migration or administrative authority, and the source and date that those facts were verified. Do not infer them from successful connectivity.
 
 ## Context safety
 

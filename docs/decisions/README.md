@@ -17,3 +17,4 @@ Accepted records:
 - `011-ai-first-authoring.md`
 - `012-pdo-transport-application-owned-dialects.md`
 - `013-optional-crud-reference-profile.md`
+- `014-sql-data-and-finite-structure.md`

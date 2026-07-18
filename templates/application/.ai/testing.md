@@ -26,6 +26,9 @@ Focused commands shorten feedback but never replace the complete validity gate.
 - For each implemented CRUD-shaped operation, tests cover the applicable recorded route, identifier, conflict, pagination, missing-resource, mutation, concurrency, deletion, authorization, and audit policies; operations and concerns that do not exist are recorded as not applicable instead of receiving invented tests.
 - Directory and naming choices in the optional CRUD profile are application context, not runtime or checker assertions.
 - Database behavior runs against every recorded engine and version it relies on, compares small and materially larger fixtures, asserts equal statement counts, inspects distinct bounded traces per connection, and tests query-budget rejection.
+- SQL-safety tests submit quotes, comment markers, operators, encoding edge cases, and other engine-relevant adversarial strings through named bindings and prove they remain data. Tests reject unknown structural selectors and unsupported or oversized list shapes before the query budget or trace changes.
+- A structural choice test names the finite code-owned mapping exercised; successful sanitization or escaping is never accepted as evidence for SQL structure.
+- Database operational evidence records the source and date used to verify the runtime identity's required and prohibited capabilities and its isolation from migration or administrative authority.
 - Transaction tests prove rollback after the last allowed statement fails.
 - External integrations test timeout, malformed response, idempotency, and retry ownership without contacting production systems.
 

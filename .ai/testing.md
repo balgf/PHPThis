@@ -9,7 +9,9 @@ Every behavior test should name one outcome and arrange dependencies directly. F
 - a small fixture and a materially larger fixture;
 - an assertion that both fixture sizes execute the same number of statements;
 - an assertion that query fingerprints do not repeat unexpectedly;
-- the query-budget failure path.
+- the query-budget failure path;
+- adversarial strings passed as bound data and retrieved or matched as data rather than SQL structure;
+- rejection of unknown structural selectors and oversized bounded-list shapes before database work.
 
 `composer test:database-drivers` certifies the narrow PDO transport boundary. It defaults to SQLite; the dedicated CI job sets `PHPTHIS_DATABASE_TEST_DRIVERS=sqlite,mysql,pgsql` and supplies real services. Do not treat an unconfigured driver as a pass or fold driver-specific SQL into a runtime dialect abstraction.
 
@@ -19,10 +21,10 @@ Boundary factories require adversarial tests for missing and unknown fields, nul
 
 `RequestReader` tests must cover method/path normalization, header normalization and collisions, non-string runtime values, query-key and metadata-count bounds, an exact-limit body, an oversized declared body, an oversized actual body, and a mismatched `Content-Length`. Error-boundary tests must prove exact-class mapping, public-message non-disclosure, zero side effects for rejected client input, and unchanged rethrowing of unknown failures.
 
-A Strict Profile rule requires at least one failing fixture, one passing fixture, and assertions for its permanent identifier and source line. Type-aware fixtures run through PHPStan; syntax guard fixtures call the same token-aware implementation used by the repository guardrail.
+A Strict Profile rule requires at least one failing fixture, one passing fixture, and assertions for its permanent identifier and source line. Type-aware fixtures run through PHPStan; syntax guard fixtures call the same token-aware implementation used by the repository guardrail. `PHT006` fixtures must reject arbitrary strings, runtime interpolation or concatenation, sanitizer-shaped returns, argument unpacking, and method-callable indirection while accepting direct constants and finite constant mappings. The installed-consumer proof must independently submit a PHT006 failure through the public checker.
 
 The consumer proof must install a mirrored framework package into a fresh temporary project, run the public checker and application behavior tests, execute the real front controller, and submit adversarial files outside conventional source roots. It must also prove that consumer PHPStan configuration, baselines, and inline ignores cannot weaken the profile. The local package-archive proof must compare the complete Composer and Git export inventory with the explicit release allowlist. Alpha publication separately verifies the actual Packagist-preferred dist because a local archive cannot prove hosting-provider output.
 
 An intentionally invalid performance control uses a `.php.fixture` suffix so it cannot be mistaken for accepted repository PHP. A proof must pass its source to the real Strict Profile checker, assert the stable rejection, execute it only in an isolated subprocess, and compare its output with the accepted implementation. Never exclude an invalid `.php` file from guardrails.
 
-Do not mock fluent APIs or framework internals. Prefer real value objects and an in-memory database when its behavior matches the production database feature under test. Database-specific SQL still requires integration tests against that database.
+Do not mock fluent APIs or framework internals. Prefer real value objects and an in-memory database when its behavior matches the production database feature under test. Database-specific SQL still requires integration tests against that database. Record the source and date of runtime-credential and migration-authority verification; a passing query test does not prove least privilege.

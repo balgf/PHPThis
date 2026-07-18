@@ -13,7 +13,7 @@ if (!is_string($catalogue)) {
     throw new RuntimeException('Unable to read the Strict Profile catalogue.');
 }
 
-foreach (['PHT001', 'PHT002', 'PHT003', 'PHT004', 'PHT005'] as $profileId) {
+foreach (['PHT001', 'PHT002', 'PHT003', 'PHT004', 'PHT005', 'PHT006'] as $profileId) {
     requireProfile(str_contains($catalogue, "`{$profileId}`"), "Strict Profile catalogue omitted {$profileId}.");
 }
 
@@ -95,6 +95,8 @@ $invalidPath = $fixtureDirectory . '/pht001-invalid.php';
 $validPath = $fixtureDirectory . '/pht001-valid.php';
 $invalidPdoPath = $fixtureDirectory . '/pht005-invalid.php';
 $validPdoPath = $fixtureDirectory . '/pht005-valid.php';
+$invalidSqlPath = $fixtureDirectory . '/pht006-invalid.php';
+$validSqlPath = $fixtureDirectory . '/pht006-valid.php';
 $invalidSource = <<<'PHP'
 <?php
 
@@ -230,11 +232,137 @@ final class AcceptedConnectionFactories
 }
 PHP;
 $validPdoSource = str_replace('LocalPdoTarget', 'PDO', $validPdoSource);
+$invalidSqlSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace ProfileSqlInvalid;
+
+use PHPThis\Database\Connection;
+
+final class SimilarApi
+{
+    public function selectAllRows(string $sql): void
+    {
+    }
+
+    public function selectOneRow(string $sql): void
+    {
+    }
+}
+
+final class UnsafeSql
+{
+    public function run(
+        Connection $connection,
+        ?Connection $nullableConnection,
+        string $sql,
+        string $column,
+        string $method,
+        bool $empty,
+    ): void {
+        $connection->selectAllRows($sql);
+        $connection->selectOneRow("SELECT {$column} FROM users");
+        $connection->executeStatement('DELETE FROM users ORDER BY ' . $column);
+        $connection->selectAllRows('   ');
+
+        $maybeEmpty = $empty ? '' : 'SELECT id FROM users';
+        $connection->selectOneRow($maybeEmpty);
+
+        /** @var 'SELECT id FROM users' $claimedSql */
+        $claimedSql = $sql;
+        $connection->selectAllRows($claimedSql);
+        $connection->executeStatement(parameters: [], sql: $sql);
+        $nullableConnection?->selectAllRows($sql);
+
+        /** @var SimilarApi $maskedConnection */
+        $maskedConnection = $connection;
+        $maskedConnection->selectAllRows($sql);
+        $connection->executeStatement($this->sanitize($sql));
+        $connection->SELECTALLROWS($sql);
+
+        $arguments = [$sql];
+        $connection->selectAllRows(...$arguments);
+        $firstClass = $connection->selectOneRow(...);
+        $callableArray = [$connection, 'executeStatement'];
+        $dynamicCallableArray = [$connection, $method];
+        $reversedCallableArray = [1 => 'selectAllRows', 0 => $connection];
+        $numericStringCallableArray = ['0' => $connection, '1' => 'selectOneRow'];
+        $computedKeyCallableArray = [(0 + 0) => $connection, (1 + 0) => 'executeStatement'];
+        $unpackedCallableArray = [...[$connection], ...['selectAllRows']];
+    }
+
+    public function runUnion(Connection|SimilarApi $receiver, string $sql): void
+    {
+        $receiver->selectOneRow($sql);
+    }
+
+    private function sanitize(string $sql): string
+    {
+        return trim($sql);
+    }
+}
+PHP;
+$validSqlSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace ProfileSqlValid;
+
+use PHPThis\Database\Connection;
+
+final class SimilarApi
+{
+    public function selectAllRows(string $sql): void
+    {
+    }
+}
+
+final class SafeSql
+{
+    private const SELECT_BY_ID = 'SELECT id FROM users WHERE id = :id';
+
+    public function run(
+        Connection $connection,
+        ?Connection $nullableConnection,
+        SimilarApi $similar,
+        string $order,
+        string $unrelatedSql,
+    ): void {
+        $connection->selectAllRows('SELECT id FROM users');
+        $nullableConnection?->selectAllRows('SELECT id FROM users');
+        $connection->selectOneRow(self::SELECT_BY_ID, ['id' => 7]);
+
+        $insert = <<<'SQL'
+            INSERT INTO users (id, name) VALUES (:id, :name)
+            SQL;
+        $connection->executeStatement($insert, ['id' => 7, 'name' => 'Ada']);
+
+        $ordered = match ($order) {
+            'oldest' => 'SELECT id FROM users ORDER BY id ASC',
+            'newest' => 'SELECT id FROM users ORDER BY id DESC',
+            default => throw new \InvalidArgumentException('Unknown order.'),
+        };
+        $connection->selectAllRows($ordered);
+        $connection->selectOneRow(parameters: ['id' => 7], sql: 'SELECT id FROM users WHERE id = :id');
+        $similar->selectAllRows($unrelatedSql);
+        $otherConnectionMethod = [$connection, 'beginTransaction'];
+        $reversedOtherConnectionMethod = [1 => 'beginTransaction', 0 => $connection];
+        $definitelyNotCallable = [$connection, 7];
+        $unrelatedCallable = [$similar, 'selectAllRows'];
+        $unpackedOtherConnectionMethod = [...[$connection], ...['beginTransaction']];
+    }
+}
+PHP;
 
 writeFixture($invalidPath, $invalidSource);
 writeFixture($validPath, $validSource);
 writeFixture($invalidPdoPath, $invalidPdoSource);
 writeFixture($validPdoPath, $validPdoSource);
+writeFixture($invalidSqlPath, $invalidSqlSource);
+writeFixture($validSqlPath, $validSqlSource);
 
 $invalidResult = runProfileAnalysis($root, $invalidPath);
 requireProfile($invalidResult['exit_code'] === 1, 'PHT001 invalid fixture unexpectedly passed.');
@@ -268,7 +396,33 @@ requireProfile(
         . $validPdoResult['stdout'],
 );
 
-fwrite(STDOUT, "PASS strict profile: PHT001, PHT002, PHT003, PHT004, and PHT005\n");
+$invalidSqlResult = runProfileAnalysis($root, $invalidSqlPath);
+requireProfile($invalidSqlResult['exit_code'] === 1, 'PHT006 invalid fixture unexpectedly passed.');
+requireProfile(
+    profileDiagnosticLines($invalidSqlResult, $invalidSqlPath, 'phpthis.pht006', 'PHT006')
+        === [30, 31, 32, 33, 36, 40, 41, 42, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 63],
+    'PHT006 did not reject dynamic, blank, annotation-narrowed, unpacked, or indirect Connection SQL.',
+);
+requireProfile(
+    profileDiagnosticLines(
+        $invalidSqlResult,
+        $invalidSqlPath,
+        'varTag.nativeType',
+        'receiver type masking',
+        false,
+    ) === [45],
+    'PHPStan did not reject a PHPDoc annotation that masks a native Connection receiver.',
+);
+
+$validSqlResult = runProfileAnalysis($root, $validSqlPath);
+requireProfile(
+    $validSqlResult['exit_code'] === 0,
+    "PHT006 rejected constant SQL, finite statement selection, or an unrelated API.\n"
+        . $validSqlResult['stderr']
+        . $validSqlResult['stdout'],
+);
+
+fwrite(STDOUT, "PASS strict profile: PHT001 through PHT006\n");
 
 function requireProfile(bool $condition, string $message): void
 {
@@ -288,7 +442,13 @@ function writeFixture(string $path, string $contents): void
  * @param array{exit_code: int, stdout: string, stderr: string} $result
  * @return list<int>
  */
-function profileDiagnosticLines(array $result, string $path, string $identifier, string $profileId): array
+function profileDiagnosticLines(
+    array $result,
+    string $path,
+    string $identifier,
+    string $profileId,
+    bool $mustBeNonIgnorable = true,
+): array
 {
     $jsonOffset = strpos($result['stdout'], '{"totals":');
 
@@ -312,7 +472,9 @@ function profileDiagnosticLines(array $result, string $path, string $identifier,
             continue;
         }
 
-        requireProfile(($message['ignorable'] ?? null) === false, "{$profileId} must not be ignorable.");
+        if ($mustBeNonIgnorable) {
+            requireProfile(($message['ignorable'] ?? null) === false, "{$profileId} must not be ignorable.");
+        }
         $line = $message['line'] ?? null;
 
         if (!is_int($line)) {

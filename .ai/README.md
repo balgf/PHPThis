@@ -16,7 +16,7 @@ Then read only what the task needs:
 | Explain PHPThis behavior or answer a usage question | `VISION.md`, `docs/knowledge-map.md`, relevant contract or decision | current framework source, tests, and application pattern |
 | Add or change a route | `.ai/routing.md` | `example/src/Routes.php`, `src/Routing/` |
 | Add or change a CRUD-shaped resource profile or example | `.ai/crud.md`, `.ai/routing.md`, `.ai/database.md` as applicable | `docs/crud.md`, ADR 013, resource route list, operation directories, and behavior tests |
-| Read or write database data | `.ai/database.md` | `src/Database/`, relevant handler |
+| Read or write database data or map a structural SQL choice | `.ai/database.md`, `.ai/strict-profile.md` | `src/Database/`, relevant handler or query object, application data authority, selector tests |
 | Change PDO transport or database-driver certification | `.ai/database.md`, `.ai/testing.md` | `src/Database/Connection.php`, `tools/test-database-drivers.php`, database CI job |
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php` |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | `src/Http/RequestReader.php`, `src/Http/RequestBoundary.php`, front controller |
@@ -26,6 +26,6 @@ Then read only what the task needs:
 | Map failures | `.ai/errors.md`, `.ai/request-boundary.md` | named failure, registry wiring, front controller |
 | Change types or analysis rules | `.ai/static-analysis.md` | `phpstan.neon`, affected PHP files |
 | Parse database, JSON, or other external values | `.ai/types.md` | boundary factory and adversarial tests |
-| Add or change a strict-profile rule | `.ai/strict-profile.md`, `.ai/static-analysis.md` | rule implementation and positive/negative fixtures |
+| Add or change a strict-profile rule | `.ai/strict-profile.md`, `.ai/static-analysis.md` | rule implementation, positive/negative fixtures, and installed-consumer proof |
 
 Durable framework knowledge and decision rationale live in `docs/`. The `.ai/` files are compact operational routing contracts. Both remain human-auditable, but neither is a traditional tutorial manual.

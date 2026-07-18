@@ -35,13 +35,16 @@ if (!is_string($phpstanConfig)) {
 $requiredRepositoryFiles = [
     '.github/workflows/ci.yml',
     '.ai/crud.md',
+    '.ai/database.md',
     'docs/consumer-contract.md',
     'docs/crud.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
+    'docs/security.md',
     'docs/decisions/011-ai-first-authoring.md',
     'docs/decisions/012-pdo-transport-application-owned-dialects.md',
     'docs/decisions/013-optional-crud-reference-profile.md',
+    'docs/decisions/014-sql-data-and-finite-structure.md',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
@@ -78,6 +81,10 @@ $requiredRepositoryFiles = [
     'bin/phpthis',
     'verification/ApplicationChecker.php',
     'verification/SyntaxProfile.php',
+    'verification/phpstan/ConnectionCallableArrayRule.php',
+    'verification/phpstan/ConnectionMethodCallableRule.php',
+    'verification/phpstan/ConnectionSqlRuleSupport.php',
+    'verification/phpstan/ConstantSqlStringRule.php',
     'verification/phpstan/DirectPdoConstructionRule.php',
     'verification/phpstan/MixedScalarCoercionRule.php',
     'verification/phpstan/extension.php',
@@ -134,8 +141,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 1$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 1.';
+        if (preg_match('/^Contract version: 2$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 2.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -145,6 +152,44 @@ if (is_file($consumerContractPath)) {
         if (!str_contains($consumerContract, 'docs/knowledge-map.md')) {
             $failures[] = 'docs/consumer-contract.md must route framework questions through docs/knowledge-map.md.';
         }
+
+        if (!str_contains($consumerContract, '`PHT006`')) {
+            $failures[] = 'docs/consumer-contract.md must preserve finite SQL enforcement through PHT006.';
+        }
+    }
+}
+
+$securityGuidePath = $root . '/docs/security.md';
+
+if (is_file($securityGuidePath)) {
+    $securityGuide = file_get_contents($securityGuidePath);
+
+    if (!is_string($securityGuide)) {
+        $failures[] = 'Cannot read docs/security.md.';
+    } elseif (
+        !str_contains($securityGuide, 'Separate SQL data from SQL structure.')
+        || !str_contains($securityGuide, '## Database authority')
+        || !str_contains($securityGuide, '## Proof limits')
+    ) {
+        $failures[] = 'docs/security.md must preserve SQL separation, database authority, and proof limits.';
+    }
+}
+
+$applicationDataTemplatePath = $root . '/templates/application/.ai/data.md';
+$applicationTestingTemplatePath = $root . '/templates/application/.ai/testing.md';
+
+if (is_file($applicationDataTemplatePath) && is_file($applicationTestingTemplatePath)) {
+    $applicationDataTemplate = file_get_contents($applicationDataTemplatePath);
+    $applicationTestingTemplate = file_get_contents($applicationTestingTemplatePath);
+
+    if (!is_string($applicationDataTemplate) || !is_string($applicationTestingTemplate)) {
+        $failures[] = 'Cannot read the application SQL-safety context templates.';
+    } elseif (
+        !str_contains($applicationDataTemplate, '## SQL structure and bounded-input policy')
+        || !str_contains($applicationDataTemplate, '## Runtime and migration authority')
+        || !str_contains($applicationTestingTemplate, 'before the query budget or trace changes')
+    ) {
+        $failures[] = 'Application context templates must preserve SQL structure, authority, and adversarial evidence.';
     }
 }
 
@@ -192,8 +237,8 @@ if (is_file($strictProfilePath)) {
 
     if (!is_string($strictProfile)) {
         $failures[] = 'Cannot read docs/strict-profile.md.';
-    } elseif (preg_match('/^Profile version: 1$/m', $strictProfile) !== 1) {
-        $failures[] = 'docs/strict-profile.md must declare profile version 1.';
+    } elseif (preg_match('/^Profile version: 2$/m', $strictProfile) !== 1) {
+        $failures[] = 'docs/strict-profile.md must declare profile version 2.';
     }
 }
 

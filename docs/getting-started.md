@@ -50,7 +50,7 @@ For an existing application adopting only the context template:
 2. Copy the contents of `vendor/phpthis/framework/templates/application/` into the new application root, preserving the hidden `.ai/` directory. When evaluating from a PHPThis source checkout instead, use its `templates/application/` directory.
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
-5. Use the contract-version-1 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, and run `composer check`.
+5. Use the contract-version-2 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, and run `composer check`.
 6. Commit the completed application context before asking the project AI to implement the first feature.
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.
@@ -77,6 +77,8 @@ PHPThis already defines framework mechanics. The application context should add 
 - the actual composition root, route manifest, source boundaries, and dependency direction;
 - whether the application adopts the installed CRUD reference structure or records one canonical alternative, plus its identifier, pagination, mutation-concurrency, missing-record, deletion, authorization, and audit policies;
 - every database connection's engine and version, PDO extension, non-secret configuration source, schema and dialect ownership, large or sensitive tables, result bounds, query budgets, index expectations, integration command, and connection-local transaction constraints;
+- every operation's variable SQL-structure choices or an explicit static-only statement policy, plus the finite reviewed statement mapping and rejection behavior;
+- each runtime connection's required objects and actions, explicitly unavailable schema or administrative authority, privilege-verification source and date, and separation from migration credentials;
 - external services, timeouts, idempotency requirements, retry ownership, and observable side effects;
 - authentication and authorization boundaries;
 - runtime, deployment, worker, logging, and incident-response assumptions;
@@ -103,6 +105,7 @@ After setup, ask the AI to inspect the current application rather than teach fro
 - `Explain the complete request path in this application and name every PHPThis and application file involved.`
 - `Show the canonical pattern in this checkout for adding a route, then implement GET /status with tests.`
 - `Inspect the installed CRUD reference profile and this application's structure policy, then show where a new Create operation belongs.`
+- `Audit this database path for PHT006, unique bound data, finite SQL structure, runtime least privilege, and migration-credential separation; cite the installed contract and application evidence.`
 - `Explain this PHT diagnostic from the installed profile and repair its cause.`
 - `Does this installed PHPThis version provide authentication? If not, identify the decision we need instead of inventing a framework feature.`
 

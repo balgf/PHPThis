@@ -24,13 +24,14 @@
 - Complete: AI-first authoring and human-accountability contract with an installed framework knowledge map instead of a traditional manual.
 - Complete: PDO base-transport contract and certification harness, with local SQLite proof and a dedicated SQLite/MySQL/PostgreSQL CI gate without a dialect abstraction.
 - Complete: optional feature-first CRUD reference profile with a documented application-owned alternative and no runtime or filesystem enforcement.
+- Complete: Consumer Contract and Strict Profile version 2 with PHT006 finite direct SQL, adversarial bound-data evidence, and explicit application-owned database-authority policy.
 - Current: specify typed path parameters before implementing dynamic routes.
 - After typed item routes: prove Get, Update, and Delete only after the example records pagination, concurrency, deletion, authorization, and conflict decisions.
 
 ## Phase 2: type-aware AI guardrails
 
 - Move type-sensitive architecture checks into tested PHPStan extensions.
-- Detect unbounded reads and interpolated SQL with low false-positive rates.
+- Detect unbounded reads with low false-positive rates and measure PHT006 gaps before considering any broader SQL provenance rule.
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.
 - Produce a machine-readable route report from the same explicit route list.
 - Measure how many files and tokens common changes require.

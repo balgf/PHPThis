@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 1
+Contract version: 2
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -42,7 +42,7 @@ A PHPThis application must:
 
 - run on PHP 8.4 and declare strict types in every application-owned PHP file;
 - require `phpstan/phpstan` at `^2.1` and `phpstan/phpstan-strict-rules` at `^2.0` as development dependencies, then run the framework-owned analysis configuration at maximum level;
-- use the installed `phpthis check` binary to enforce Strict Profile version 1;
+- use the installed `phpthis check` binary to enforce Strict Profile version 2;
 - expose one documented project check command that runs static analysis, profile checks, and behavior tests;
 - keep every application-owned named class final and expose an interface when an extension point is required;
 - use ordinary constructors and a visible composition root instead of runtime discovery or service location;
@@ -64,7 +64,7 @@ Composer does not inherit a dependency's root scripts or development dependencie
 
 `phpthis check` discovers every application-owned PHP file, runs structural profile checks, and invokes PHPStan with a temporary framework-owned configuration. The same discovered file manifest drives both stages. It excludes only the resolved Composer dependency directory and version-control metadata; source under `config/`, `bin/`, migrations, hidden directories, or `tmp/` remains application-owned and checked. PHP files use the `.php` extension; extensionless executables beginning with `<?php` or `#!/usr/bin/env php` followed by `<?php` are also checked. A canonical PHP opening prefix under another extension is rejected rather than silently excluded. Symlinked source directories and checked source files are rejected instead of silently skipped.
 
-Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization is deliberately unsupported in contract version 1.
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 2.
 
 ## HTTP and application flow
 
@@ -94,6 +94,10 @@ When an application uses a database:
 
 - require the matching runtime PDO extension in the application Composer package and record the connection's engine, version, configuration source, schema authority, and dialect assumptions in `.ai/data.md`;
 - create the request connection with `PHPThis\Database\Connection::connect` in the composition root and execute visible SQL through that connection with named parameters; `PHT005` rejects application-owned construction of `PDO` or its subclasses, including aliases and anonymous subclasses;
+- call `selectAllRows`, `selectOneRow`, and `executeStatement` directly with SQL that resolves from native PHP code to one or more non-blank compile-time constant strings; `PHT006` rejects arbitrary strings, dynamic interpolation, blank variants, argument unpacking, PHPDoc-only narrowing, and callable indirection;
+- pass every application or external data value through a unique named parameter, even after validation; PDO parameters represent complete data literals and cannot represent identifiers, keywords, operators, directions, or SQL fragments;
+- keep statements static by default; when structure must vary, map a typed operation-specific choice to a finite set of complete, code-owned, reviewed constant statements and reject unknown choices before database work;
+- do not add a generic SQL sanitizer, identifier-quoting helper, query builder, SQL template engine, or dialect layer to turn arbitrary input into statement structure;
 - treat `Connection` as PDO transport, not a portable SQL abstraction; write each query for the selected engine and never infer that SQLite evidence proves MySQL or PostgreSQL behavior;
 - use a distinct portable name for every placeholder occurrence and a unique column name or alias for every selected expression;
 - give every request connection an explicit `QueryBudget` and bounded `QueryTrace`;
@@ -104,9 +108,14 @@ When an application uses a database:
 - keep transactions explicit and preserve the original failure;
 - test materially different fixture sizes and prove that statement count stays constant;
 - run integration tests against every engine and version whose SQL, returned values, errors, isolation, locking, or plans the application relies on;
+- give each runtime connection only the database objects and actions its process needs; do not expose schema-owner, migration, grant-management, or administrative credentials to the web runtime;
+- keep migration and administrative credentials in a separately authorized execution path, and record engine-specific privilege evidence or the equivalent SQLite file/process boundary in `.ai/data.md`;
+- test SQL-looking valid data as unchanged bound values and test every variable structural choice, including rejection before database work;
 - treat query budgets as backstops, not proof of an efficient SQL shape.
 
-Production-specific table sizes, indexes, scalar representations, locking constraints, retention rules, driver/session options, and query limits belong in the application's `.ai/data.md`, not in the framework contract.
+Production-specific table sizes, indexes, scalar representations, locking constraints, retention rules, driver/session options, query limits, SQL structural choices, and database authority belong in the application's `.ai/data.md`, not in the framework contract.
+
+PHT006 proves only the finite native string type passed to the canonical direct calls. It does not parse SQL, prove a statement is safe or authorized, inspect stored procedures or server-side dynamic SQL, validate grants, or cover reflection and non-canonical invocation. Parameterization does not replace authorization, least privilege, engine-specific integration tests, or security review.
 
 ## Project-owned AI context
 
@@ -137,4 +146,6 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 
 Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
 
-Contract version 1 replaces consumer-owned PHPStan configuration with the installed checker and adds the runnable skeleton. Existing contract-version-0 applications must complete the required project-owned context, remove their PHPStan configuration and copied guard runner, add the canonical Composer scripts above, and run `composer check` before adopting version 1.
+Contract version 2 carries contract version 1 forward and adds Strict Profile version 2 with PHT006, explicit SQL data-versus-structure rules, adversarial binding evidence, and application-owned database-authority requirements. Before adopting version 2, audit every canonical `Connection` call, replace arbitrary SQL strings and indirect invocation with finite direct constant-string choices, bind every data value, record runtime and migration credential separation, add the required tests, and run `composer check`.
+
+Contract version 1 replaced consumer-owned PHPStan configuration with the installed checker and added the runnable skeleton. A contract-version-0 application must complete that version-1 migration before applying the version-2 steps above.

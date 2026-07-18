@@ -52,7 +52,7 @@ The letters in CRUD are a classification, not permission to infer behavior. Befo
 | Update | typed item identity, replace-versus-patch semantics, allowed fields, authorization, optimistic or locking policy, not-found and conflict behavior, and transaction boundary |
 | Delete | typed item identity, authorization, hard-versus-soft deletion, retention and dependent-data behavior, concurrency, external side effects, and not-found or repeated-delete behavior |
 
-Every database operation still uses engine-specific visible SQL through `Connection`, distinct portable placeholder names, an explicit `QueryBudget`, a bounded `QueryTrace`, concrete row parsing, and scale-sensitive tests. No structure choice relaxes those requirements.
+Every database operation still uses engine-specific visible SQL through direct `Connection` calls, PHT006-finite statement choices, distinct portable placeholder names for all data, an explicit `QueryBudget`, a bounded `QueryTrace`, concrete row parsing, and scale-sensitive tests. A variable identifier, ordering, operator, or other SQL structure is an operation-specific typed choice mapped to finite reviewed statements, never a generic sanitizer or query builder. Runtime database authority and migration-credential separation remain application-owned obligations. No CRUD structure choice relaxes those requirements.
 
 ## Current partial executable evidence
 

@@ -41,6 +41,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - The request path can be traced in four application hops: route, handler, database, response.
 - Database tests compare small and large fixtures and assert a constant query count.
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
+- Direct database calls resolve to finite reviewed statements, SQL-looking values remain bound data, and unknown structural choices fail before database work.
 - CRUD-shaped work follows the optional feature-first reference profile or one recorded application-owned alternative without runtime discovery or filesystem enforcement.
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
@@ -54,6 +55,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Treating AI output as authority or removing human responsibility for software decisions and outcomes.
 - Recreating a convention-heavy full-stack framework with different names.
 - Hiding SQL behind models or a fluent query language.
+- Treating a generic sanitizer, identifier-quoting helper, or query builder as a substitute for bound data and finite reviewed statement choices.
 - Forcing an application directory layout or turning CRUD into a generic persistence API.
 - Supporting multiple equivalent styles for the same task.
 - Eliminating the need for PHP, database, security, and operational expertise when reviewing or operating a real system.

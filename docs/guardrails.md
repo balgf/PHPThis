@@ -13,6 +13,7 @@
 - the optional CRUD reference profile, its accepted decision, and its AI routing context remain present;
 - the vision, consumer contract, skeleton, and application template preserve the AI authoring and human-accountability route;
 - the canonical check and CI workflow preserve the SQLite, MySQL, and PostgreSQL PDO transport certification path;
+- the SQL data-versus-finite-structure decision, version-2 contracts, application authority template, and PHT006 implementation remain present;
 - Markdown files outnumber PHP files;
 - core source stays within 900 physical lines during Phase 1;
 - PHPStan baseline files are absent;
@@ -22,11 +23,11 @@ Runtime query budgets enforce a separate limit before each statement executes. R
 
 The CRUD profile guard checks only that the installed authority and context route remain available. It deliberately does not inspect consumer directory names: an application may record one canonical alternative structure while remaining subject to the hard consumer contract and Strict Profile.
 
-PHPStan runs separately at maximum level with strict rules. It owns static type correctness; `PHT005` resolves literal, imported, aliased, fully qualified, and typed dynamic PDO construction so the framework connection remains the sole boundary. The repository guardrail retains only lightweight structure checks until equivalent type-aware PHPStan rules exist.
+PHPStan runs separately at maximum level with strict rules. It owns static type correctness; `PHT005` resolves literal, imported, aliased, fully qualified, and typed dynamic PDO construction so the framework connection remains the sole boundary. `PHT006` resolves the native SQL-expression type at direct `Connection` database calls and rejects non-finite, blank, annotation-only, unpacked, or indirectly invoked SQL. The repository guardrail retains only lightweight repository-shape checks rather than attempting SQL parsing or taint analysis.
 
 `php tools/test-strict-profile.php` exercises passing and failing fixtures against the same syntax guard and PHPStan extension used by the canonical check. PHPThis-owned rule IDs are permanent and have no suppression mechanism.
 
-`php tools/test-database-drivers.php` defaults to a temporary SQLite database and fails when any explicitly requested driver or connection configuration is unavailable. The dedicated CI job requests SQLite, MySQL, and PostgreSQL against real services. Its deliberately narrow common SQL proves PDO transport behavior without creating a runtime dialect abstraction; application SQL remains engine-specific.
+`php tools/test-database-drivers.php` defaults to a temporary SQLite database and fails when any explicitly requested driver or connection configuration is unavailable. The dedicated CI job requests SQLite, MySQL, and PostgreSQL against real services. Its deliberately narrow common SQL proves PDO transport behavior without creating a runtime dialect abstraction; application SQL remains engine-specific. Its PHT006-compatible fixed table names are created and dropped, so non-SQLite runs require a disposable or dedicated test database and intentionally DDL-capable fixture credentials.
 
 Consuming applications use `vendor/bin/phpthis check`. It discovers PHP across the application rather than accepting a fixed list of conventional source roots, rejects symlinked checked source, and passes one manifest to both syntax guardrails and a temporary framework-owned PHPStan configuration. Normal runs use a persistent profile-owned cache and parallelize when the host allows PHPStan's loopback coordinator; restricted hosts fall back to serial analysis. `PHT004` rejects consumer PHPStan configuration, baselines, and inline PHPStan ignores before analysis.
 
@@ -36,4 +37,4 @@ That local proof establishes the source-controlled Composer and Git export polic
 
 `php tools/test-query-scaling.php` verifies that the accepted read remains constant at one query and explicitly submits its `.php.fixture` N+1 negative control to `PHT003`. The fixture is not accepted repository PHP; proving its rejection is part of the test.
 
-The loop check is deliberately narrow and syntax-aware. It covers the canonical database methods; review still has to reject aliases, dynamic calls, and inefficient single statements. Guardrails should remain deterministic, fast, and locally runnable.
+The loop check is deliberately narrow and syntax-aware. It covers the canonical database methods; review still has to reject recursive I/O and inefficient single statements. PHT006 narrows direct SQL construction but does not prove authorization, stored-procedure behavior, database grants, migration-credential isolation, or universal injection safety. Guardrails should remain deterministic, fast, and locally runnable.

@@ -7,6 +7,8 @@
 - Construct dependencies manually where the application starts.
 - Keep I/O visible in method names and call sites.
 - Parse external `mixed` values once into concrete final readonly projections or commands.
+- Execute application SQL only through direct `Connection` calls, bind every data value with a distinct named placeholder per occurrence, and keep the final SQL a finite non-blank compile-time constant.
+- Map external SQL-structure selectors to finite reviewed code-owned choices and reject unknown selectors before database work.
 - Pass the complete Strict Profile; PHP execution without `composer check` is not sufficient verification.
 - Add a test for success, expected failure, and resource bounds when relevant.
 - Use one stable term for each concept: route, handler, connection, request, response, query budget, query trace.
@@ -15,7 +17,8 @@
 
 - Runtime discovery, reflection-based wiring, dynamic properties, macros, facades, service location, hidden globals, and magic methods except constructors.
 - Database calls in loops or property access that can perform I/O.
-- Positional SQL parameters, interpolated values, `SELECT *`, and unbounded collection reads.
+- Positional SQL parameters, interpolated data values, runtime-built SQL structure, SQL sanitizers, `SELECT *`, and unbounded collection reads.
+- A runtime database identity with migration, schema-change, user-management, or other authority not required by its application paths.
 - Silent exception conversion, implicit retries, or default success values after failure.
 - Scalar casts or conversion functions used as validation for `mixed` input.
 - Reflection hydration, generic domain collections, and unvalidated arrays crossing a boundary.

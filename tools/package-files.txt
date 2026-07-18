@@ -23,6 +23,7 @@ docs/decisions/010-framework-owned-consumer-check.md
 docs/decisions/011-ai-first-authoring.md
 docs/decisions/012-pdo-transport-application-owned-dialects.md
 docs/decisions/013-optional-crud-reference-profile.md
+docs/decisions/014-sql-data-and-finite-structure.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -68,6 +69,10 @@ templates/application/AGENTS.md
 templates/application/docs/decisions/README.md
 verification/ApplicationChecker.php
 verification/SyntaxProfile.php
+verification/phpstan/ConnectionCallableArrayRule.php
+verification/phpstan/ConnectionMethodCallableRule.php
+verification/phpstan/ConnectionSqlRuleSupport.php
+verification/phpstan/ConstantSqlStringRule.php
 verification/phpstan/DirectPdoConstructionRule.php
 verification/phpstan/MixedScalarCoercionRule.php
 verification/phpstan/extension.php

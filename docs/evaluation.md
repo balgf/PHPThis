@@ -38,6 +38,14 @@ Create and List retain the behavior and scaling evidence above after adopting th
 
 The probe proves native connection, unique named string/integer/boolean/null bindings, associative one-row and collection fetches, one-row insert and delete counts, commit, rollback, visibility from a second connection, independent traces, budget rejection before PDO, and rethrown database failures recorded by the trace. Its SQL deliberately uses only the tiny common subset needed to exercise transport. It is not a dialect translation layer.
 
+The bound-string probe includes quotes, a semicolon, and an SQL comment marker and must round-trip exactly without changing the statement fingerprint or row count. Harness table names are fixed code-owned constants so PHT006 can prove their finite shape. Because the harness creates and drops those tables, MySQL and PostgreSQL runs require a disposable or dedicated test database; their DDL-capable fixture credentials do not model production runtime authority.
+
+## SQL-safety evidence
+
+Strict Profile version 2's PHT006 fixtures prove that the three direct canonical `Connection` calls accept literals, native constants, non-interpolated statement text, named arguments, and finite constant-string choices while rejecting arbitrary or blank strings, dynamic interpolation, argument unpacking, PHPDoc-only narrowing, and callable indirection. Runtime behavior separately proves that SQL-looking bound text remains one unchanged data value and is absent from query traces.
+
+Applications complete that evidence with tests for every real structural choice and safe engine-specific verification of runtime database authority. Unknown structural input must fail before database work. A test account's ability to execute the intended statements and inability to exercise selected prohibited authority is deployment evidence, not a portable framework feature.
+
 ## Future AI comparison
 
 The current proof compares programming patterns; it does not yet prove that one AI model, prompt, or context strategy outperforms another.
@@ -71,6 +79,9 @@ A passing answer must be correct for the installed revision, supported by access
 
 - SQLite proves the execution shape used by the repository tests, not plans or locking behavior on another database.
 - The cross-driver transport probe does not prove application SQL, DDL, generated identifiers, scalar representations, update row counts, error translation, isolation, locking, plans, charset, timezone, TLS, or timeout behavior on any engine.
+- PHT006 proves a finite native string type at direct canonical calls, not that the SQL is correct, nondestructive, authorized, or safe inside stored procedures or server-side dynamic SQL; reflection and other non-canonical execution paths remain review limits.
+- Parameter binding does not prove tenant or record authorization, and static analysis does not verify actual database grants or migration-credential isolation.
+- Adversarial bound-data tests prove only their exercised paths and are not universal SQL-injection certification.
 - Multiple certified connections remain independent; the probe does not provide distributed transactions or cross-database atomicity.
 - Statement budgets do not bound rows scanned or event-history fan-out; this proof detects query-count growth, not total database cost.
 - The aggregate read can observe concurrent changes according to the target database's isolation rules; production evaluation must choose that policy explicitly.

@@ -920,6 +920,43 @@ $tests['connection binds named values and enforces its budget'] = static functio
     }
 };
 
+$tests['connection keeps SQL-looking bound text outside statement structure'] = static function (): void {
+    $budget = new QueryBudget(5);
+    $trace = new QueryTrace(5);
+    $connection = Connection::connect('sqlite::memory:', $budget, $trace);
+    $payload = "Robert'); DELETE FROM users; -- 雪";
+
+    $connection->executeStatement('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)');
+    $connection->executeStatement(
+        'INSERT INTO users (id, name) VALUES (:id, :name)',
+        ['id' => 1, 'name' => 'ordinary'],
+    );
+    $connection->executeStatement(
+        'INSERT INTO users (id, name) VALUES (:id, :name)',
+        ['id' => 2, 'name' => $payload],
+    );
+    $payloadRow = $connection->selectOneRow(
+        'SELECT id, name FROM users WHERE name = :name',
+        ['name' => $payload],
+    );
+    $countRow = $connection->selectOneRow('SELECT COUNT(id) AS row_count FROM users');
+    $summary = $trace->snapshot();
+    $traceJson = json_encode($summary, JSON_THROW_ON_ERROR);
+
+    if (
+        $payloadRow !== ['id' => 2, 'name' => $payload]
+        || ($countRow['row_count'] ?? null) !== 2
+        || $budget->used() !== 5
+        || $summary['statements'] !== 5
+        || $summary['failures'] !== 0
+        || $summary['repeated_fingerprints'] !== 1
+        || $summary['maximum_executions_per_fingerprint'] !== 2
+        || str_contains($traceJson, $payload)
+    ) {
+        throw new RuntimeException('Expected SQL-looking text to remain bound data and stay out of query traces.');
+    }
+};
+
 $tests['connection accepts portable parameter names and rejects invalid or duplicate names before database work'] = static function (): void {
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);

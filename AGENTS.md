@@ -21,8 +21,11 @@ The human supplies intent and remains accountable for the outcome. Surface missi
 - Use ordinary constructor injection wired manually in a composition root.
 - Use `RequestHandler::handle`; do not make handlers invokable.
 - Keep routes in an explicit list. Do not add discovery, attributes, reflection, or string class resolution.
-- Keep SQL in the handler or its narrowly named query object. Use `Connection` with named parameters.
-- Treat `Connection` as native PDO transport, not a dialect abstraction; keep SQL visibly specific to the recorded engine and give every placeholder occurrence a distinct portable name.
+- Keep SQL in the handler or its narrowly named query object and execute it only through direct `Connection` calls.
+- Treat `Connection` as native PDO transport, not a dialect abstraction; keep SQL visibly specific to the recorded engine, bind every data value, and give every placeholder occurrence a distinct portable name.
+- Pass only SQL that PHPStan resolves natively to a finite set of non-blank compile-time constant strings. Map structural choices to finite reviewed code-owned statements or fragments, prefer complete statements, and reject an unknown selector before database work.
+- Do not add an SQL sanitizer or use escaping, filtering, or validation as a substitute for bound values and compile-time-constant SQL structure.
+- Give the runtime database identity only the capabilities the application path needs; keep migration and administrative authority isolated and record how that separation was verified.
 - Give every request an explicit `QueryBudget` and bounded `QueryTrace`; do not write one log line per query.
 - Give separately named connections explicit budgets and distinct traces; never imply cross-connection transaction atomicity.
 - Parse external `mixed` data once through a named factory into a concrete final readonly projection or command.
@@ -48,4 +51,4 @@ composer check
 
 `composer check` runs repository guardrails, maximum-level PHPStan analysis with strict rules, and tests.
 
-For database behavior, also prove that query count stays constant when fixture cardinality increases and inspect the structured query trace for repetition. A small fixture passing under a query budget is not enough evidence.
+For database behavior, also prove that query count stays constant when fixture cardinality increases, inspect the structured query trace for repetition, submit adversarial values through bindings, and reject unsupported structural selectors before database work. A small fixture passing under a query budget is not enough evidence.
