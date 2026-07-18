@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use Example\CreateUserCommand;
-use Example\CreateUserHandler;
-use Example\ListUsersHandler;
 use Example\Routes;
-use Example\UserActivitySummary;
-use Example\UserSummary;
+use Example\Users\CreateUser\CreateUserCommand;
+use Example\Users\CreateUser\CreateUserHandler;
+use Example\Users\ListUsers\ListUsersHandler;
+use Example\Users\ListUsers\UserActivitySummary;
+use Example\Users\ListUsers\UserSummary;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;

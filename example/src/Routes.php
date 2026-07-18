@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Example;
 
+use Example\Users\CreateUser\CreateUserHandler;
+use Example\Users\ListUsers\ListUsersHandler;
+use Example\Users\UserRoutes;
 use PHPThis\Database\Connection;
 use PHPThis\Routing\Route;
 

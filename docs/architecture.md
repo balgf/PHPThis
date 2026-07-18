@@ -28,6 +28,6 @@ The router stores objects, not class names, so dispatch does not need reflection
 - `Routing`: literal method/path matching only.
 - `Http`: bounded runtime ingestion, immutable request/response values, exact error mapping, and final emission.
 - `Database`: explicit PDO execution and query accounting.
-- `example`: proves the complete manual wiring path with a bounded read and transactional write.
+- `example`: proves the complete manual wiring path and the optional feature-first CRUD profile with separate bounded List and transactional Create use cases.
 
 There are no providers, repositories, models, middleware pipelines, or controllers in the core. `RequestBoundary` is one named transport boundary, not a composable middleware chain. Those other labels may be introduced only when they represent a proven responsibility that cannot remain clear in a handler.

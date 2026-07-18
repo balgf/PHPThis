@@ -10,6 +10,7 @@
 - exact route matching and allowed-method lookup do not contain request-time loops;
 - PHP superglobals are read only in `example/public/index.php`;
 - the consumer contract, installed knowledge map, and every required application context template file remain present;
+- the optional CRUD reference profile, its accepted decision, and its AI routing context remain present;
 - the vision, consumer contract, skeleton, and application template preserve the AI authoring and human-accountability route;
 - the canonical check and CI workflow preserve the SQLite, MySQL, and PostgreSQL PDO transport certification path;
 - Markdown files outnumber PHP files;
@@ -18,6 +19,8 @@
 - `phpstan.neon` keeps strict-rules, every strict rule, and the PHPThis extension enabled without `ignoreErrors`.
 
 Runtime query budgets enforce a separate limit before each statement executes. Request-scoped query traces add bounded, redacted evidence about executed statement shapes, repetition, timing, and failures.
+
+The CRUD profile guard checks only that the installed authority and context route remain available. It deliberately does not inspect consumer directory names: an application may record one canonical alternative structure while remaining subject to the hard consumer contract and Strict Profile.
 
 PHPStan runs separately at maximum level with strict rules. It owns static type correctness; `PHT005` resolves literal, imported, aliased, fully qualified, and typed dynamic PDO construction so the framework connection remains the sole boundary. The repository guardrail retains only lightweight structure checks until equivalent type-aware PHPStan rules exist.
 

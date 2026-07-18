@@ -22,7 +22,7 @@ PHPThis reduces that inference surface. It does not attempt to make AI infallibl
 2. **Accountable:** consequential choices remain explicit for human judgment and approval.
 3. **Local:** a change should require a small, named set of files.
 4. **Literal:** executed behavior is represented by ordinary PHP calls and values.
-5. **One-way:** each common task has one canonical implementation pattern.
+5. **One-way:** each framework operation has one canonical execution pattern; optional application structure is selected and documented once.
 6. **Typed:** all files use strict types; inputs and outputs cross explicit boundaries.
 7. **Bounded:** database work, dependency depth, and core size have measurable limits.
 8. **Verified:** important rules are executable checks, not prose alone.
@@ -41,6 +41,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - The request path can be traced in four application hops: route, handler, database, response.
 - Database tests compare small and large fixtures and assert a constant query count.
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
+- CRUD-shaped work follows the optional feature-first reference profile or one recorded application-owned alternative without runtime discovery or filesystem enforcement.
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
@@ -53,6 +54,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Treating AI output as authority or removing human responsibility for software decisions and outcomes.
 - Recreating a convention-heavy full-stack framework with different names.
 - Hiding SQL behind models or a fluent query language.
+- Forcing an application directory layout or turning CRUD into a generic persistence API.
 - Supporting multiple equivalent styles for the same task.
 - Eliminating the need for PHP, database, security, and operational expertise when reviewing or operating a real system.
 - Claiming that raw SQL by itself prevents inefficient access patterns.

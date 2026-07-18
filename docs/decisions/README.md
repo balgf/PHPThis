@@ -16,3 +16,4 @@ Accepted records:
 - `010-framework-owned-consumer-check.md`
 - `011-ai-first-authoring.md`
 - `012-pdo-transport-application-owned-dialects.md`
+- `013-optional-crud-reference-profile.md`

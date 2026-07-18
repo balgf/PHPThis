@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Example;
+namespace Example\Users\ListUsers;
 
 use PHPThis\Database\Connection;
 use PHPThis\Http\Request;

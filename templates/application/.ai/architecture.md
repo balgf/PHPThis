@@ -31,6 +31,18 @@ Dependencies may point only in the direction shown above. Document every deliber
 - Tenant boundary: {{TENANT_BOUNDARY_OR_NOT_APPLICABLE}}
 - Deny-by-default rule: {{DENY_BY_DEFAULT_RULE}}
 
+## Optional CRUD reference profile
+
+- Adoption or coherent alternate organization: {{CRUD_PROFILE_DECISION}}
+- Feature and operation directory rule: `{{CRUD_DIRECTORY_RULE_OR_NOT_APPLICABLE}}`
+- Identifier representation and route binding: {{CRUD_IDENTIFIER_AND_ROUTE_BINDING_POLICY_OR_NOT_APPLICABLE}}
+- Explicit route-shape and HTTP-method policy: {{CRUD_ROUTE_AND_METHOD_POLICY_OR_NOT_APPLICABLE}}
+- Authorization owner and check location by operation: {{CRUD_AUTHORIZATION_POLICY_OR_NOT_APPLICABLE}}
+- Audit-event owner and emission boundary: {{CRUD_AUDIT_POLICY_OR_NOT_APPLICABLE}}
+- Accepted deviation record: `{{CRUD_PROFILE_DECISION_RECORD_OR_NOT_APPLICABLE}}`
+
+The installed `vendor/phpthis/framework/docs/crud.md` profile recommends structure only. An alternate directory and naming policy cannot weaken the installed consumer contract or Strict Profile, and layout never determines identifiers, routes, authorization, or audit behavior.
+
 ## Placement rules
 
 - Routes are grouped by `{{ROUTE_AREA_RULE}}`.

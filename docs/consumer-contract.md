@@ -78,6 +78,16 @@ Applications must not add PHPStan configuration artifacts named `phpstan*.neon`,
 
 Do not add route discovery, automatic input binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
 
+## Optional CRUD reference structure
+
+PHPThis supplies a feature-first CRUD reference profile in `docs/crud.md`. It is optional application structure, not a runtime API or an additional condition of program validity. The PHPThis consumer contract and Strict Profile remain mandatory regardless of source placement.
+
+An application either follows the reference placement or records one coherent alternate placement and naming rule in `.ai/architecture.md`. Project instructions can replace that directory and naming recommendation, but cannot weaken explicit routes and dependencies, concrete boundary types, visible engine-specific SQL, query budgets and traces, bounded reads, scale-sensitive tests, static analysis, or the complete application check.
+
+Do not infer a generic persistence layer from the CRUD label. There is no CRUD base handler, generic repository, automatic resource registration, mass assignment, generated SQL, runtime discovery, or filesystem enforcement. Commands, projections, authorization, transactions, failure behavior, and database work remain specific to each operation.
+
+Current PHPThis executable evidence covers only part of Create and List: structure, boundary parsing, transaction shape, and query cost. It does not establish authorization, Create identity/conflict policy, or List continuation. Get, Update, and Delete wait for typed item routes and application-owned decisions covering pagination, concurrency, deletion, authorization, and conflicts. An application must not present any operation or policy as supplied by PHPThis without concrete source, accepted local decisions, and tests.
+
 ## Database work
 
 When an application uses a database:

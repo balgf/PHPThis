@@ -28,6 +28,10 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 - Identity, authentication, authorization, and tenant boundaries: `NOT_APPLICABLE(public liveness route only)`.
 - Deny-by-default rule: only explicit routes are accepted; other paths return `404`, and unsupported methods on a known path return `405`.
 
+## Optional CRUD reference profile
+
+`NOT_APPLICABLE`: this starter has only a public liveness operation. It has no resource identifier, CRUD routes, create/list/update/delete operations, resource authorization, audit events, or CRUD directory convention. Before adding resource behavior, record adoption of or one coherent alternative to `vendor/phpthis/framework/docs/crud.md`, plus identifier, explicit route, authorization, and audit policy. An alternate layout cannot weaken the installed consumer contract or Strict Profile.
+
 ## Placement rules
 
 - Group routes in narrowly named `src/*Routes.php` route-area classes.

@@ -34,11 +34,14 @@ if (!is_string($phpstanConfig)) {
 
 $requiredRepositoryFiles = [
     '.github/workflows/ci.yml',
+    '.ai/crud.md',
     'docs/consumer-contract.md',
+    'docs/crud.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
     'docs/decisions/011-ai-first-authoring.md',
     'docs/decisions/012-pdo-transport-application-owned-dialects.md',
+    'docs/decisions/013-optional-crud-reference-profile.md',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
@@ -142,6 +145,31 @@ if (is_file($consumerContractPath)) {
         if (!str_contains($consumerContract, 'docs/knowledge-map.md')) {
             $failures[] = 'docs/consumer-contract.md must route framework questions through docs/knowledge-map.md.';
         }
+    }
+}
+
+$crudGuidePath = $root . '/docs/crud.md';
+
+if (is_file($crudGuidePath)) {
+    $crudGuide = file_get_contents($crudGuidePath);
+
+    if (!is_string($crudGuide)) {
+        $failures[] = 'Cannot read docs/crud.md.';
+    } elseif (!str_contains(
+        $crudGuide,
+        'The CRUD reference profile is optional application structure. The PHPThis consumer contract and Strict Profile remain mandatory.',
+    )) {
+        $failures[] = 'docs/crud.md must preserve the optional CRUD-profile and mandatory consumer-contract boundary.';
+    }
+}
+
+foreach (['templates/application/.ai/README.md', 'skeleton/.ai/README.md'] as $applicationContextIndex) {
+    $applicationContextIndexContents = file_get_contents($root . '/' . $applicationContextIndex);
+
+    if (!is_string($applicationContextIndexContents)) {
+        $failures[] = "Cannot read {$applicationContextIndex}.";
+    } elseif (!str_contains($applicationContextIndexContents, 'vendor/phpthis/framework/docs/crud.md')) {
+        $failures[] = "{$applicationContextIndex} must route CRUD work through the installed framework guide.";
     }
 }
 

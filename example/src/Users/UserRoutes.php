@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Example;
+namespace Example\Users;
 
+use Example\Users\CreateUser\CreateUserHandler;
+use Example\Users\ListUsers\ListUsersHandler;
 use PHPThis\Routing\Route;
 
 final class UserRoutes

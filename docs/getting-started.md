@@ -75,6 +75,7 @@ PHPThis already defines framework mechanics. The application context should add 
 
 - the product purpose, users, accountable human decision roles, non-goals, and canonical domain vocabulary;
 - the actual composition root, route manifest, source boundaries, and dependency direction;
+- whether the application adopts the installed CRUD reference structure or records one canonical alternative, plus its identifier, pagination, mutation-concurrency, missing-record, deletion, authorization, and audit policies;
 - every database connection's engine and version, PDO extension, non-secret configuration source, schema and dialect ownership, large or sensitive tables, result bounds, query budgets, index expectations, integration command, and connection-local transaction constraints;
 - external services, timeouts, idempotency requirements, retry ownership, and observable side effects;
 - authentication and authorization boundaries;
@@ -101,6 +102,7 @@ After setup, ask the AI to inspect the current application rather than teach fro
 
 - `Explain the complete request path in this application and name every PHPThis and application file involved.`
 - `Show the canonical pattern in this checkout for adding a route, then implement GET /status with tests.`
+- `Inspect the installed CRUD reference profile and this application's structure policy, then show where a new Create operation belongs.`
 - `Explain this PHT diagnostic from the installed profile and repair its cause.`
 - `Does this installed PHPThis version provide authentication? If not, identify the decision we need instead of inventing a framework feature.`
 

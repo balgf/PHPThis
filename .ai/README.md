@@ -15,11 +15,12 @@ Then read only what the task needs:
 | --- | --- | --- |
 | Explain PHPThis behavior or answer a usage question | `VISION.md`, `docs/knowledge-map.md`, relevant contract or decision | current framework source, tests, and application pattern |
 | Add or change a route | `.ai/routing.md` | `example/src/Routes.php`, `src/Routing/` |
+| Add or change a CRUD-shaped resource profile or example | `.ai/crud.md`, `.ai/routing.md`, `.ai/database.md` as applicable | `docs/crud.md`, ADR 013, resource route list, operation directories, and behavior tests |
 | Read or write database data | `.ai/database.md` | `src/Database/`, relevant handler |
 | Change PDO transport or database-driver certification | `.ai/database.md`, `.ai/testing.md` | `src/Database/Connection.php`, `tools/test-database-drivers.php`, database CI job |
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php` |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | `src/Http/RequestReader.php`, `src/Http/RequestBoundary.php`, front controller |
-| Change the consumer contract, checker, or skeleton | `.ai/application-context.md`, `.ai/static-analysis.md`, `.ai/testing.md` | `docs/consumer-contract.md`, `verification/`, `bin/phpthis`, `skeleton/`, `templates/application/` |
+| Change the consumer contract, checker, skeleton, or application CRUD-profile context | `.ai/application-context.md`, `.ai/crud.md`, `.ai/static-analysis.md`, `.ai/testing.md` | `docs/consumer-contract.md`, `verification/`, `bin/phpthis`, `skeleton/`, `templates/application/` |
 | Add tests | `.ai/testing.md` | `tests/run.php` |
 | Change the development-pattern proof | `.ai/testing.md`, `.ai/database.md` | `tools/test-query-scaling.php`, `tests/fixtures/` |
 | Map failures | `.ai/errors.md`, `.ai/request-boundary.md` | named failure, registry wiring, front controller |

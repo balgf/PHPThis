@@ -21,4 +21,6 @@ Focused commands shorten feedback but never replace the complete gate.
 ## Starter evidence
 
 - Test the exact health response, unknown route, unsupported method, malformed runtime input, oversized declared body, and real front controller.
+- `NOT_APPLICABLE(CRUD_EVIDENCE)`: the starter has no CRUD-shaped operations. For each operation later added, test its applicable route, identifier, conflict, pagination, missing-resource, concurrency, deletion, authorization, and audit policies; keep absent operations and concerns explicitly not applicable.
+- Do not add runtime or checker assertions for optional CRUD directory and naming choices.
 - Use generated or explicitly approved synthetic fixtures. Never copy production payloads, credentials, customer identifiers, tokens, or private keys into tests.

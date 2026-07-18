@@ -33,6 +33,7 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 - An installed knowledge map routes framework questions to the relevant contract, decision, source, and test instead of relying on model memory.
 - Handlers implement one visible `handle` method and receive dependencies through normal constructors.
 - Routes are explicit method, path, and already-constructed handler objects, composed from named route-area lists into one visible manifest.
+- An optional feature-first [CRUD reference profile](docs/crud.md) gives AI-authored Create and List work one compartmentalized default without adding a generic CRUD runtime or enforcing application directories.
 - One request boundary normalizes bounded PHP runtime input and maps only explicitly registered exception classes.
 - Markdown is part of the framework interface. The guardrail command requires more Markdown files than PHP files.
 - The core is intentionally capped at 900 physical lines for Phase 1 under the explicit-request-boundary decision.
@@ -43,7 +44,7 @@ Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis comb
 
 **Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
-This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers, exact error mapping, exact-path routing, explicit handlers, and instrumented PDO access. Its sample application includes a bounded `GET /users` aggregate read and a transactional `POST /users` write.
+This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers, exact error mapping, exact-path routing, explicit handlers, and instrumented PDO access. Its sample application includes a bounded `GET /users` List operation and a transactional `POST /users` Create operation. Get, Update, and Delete are not yet claimed; item operations wait for typed path parameters and application-owned policy decisions.
 
 The executable query-scaling proof holds the accepted read at one statement as its fixture grows from 2 to 50 users. An isolated N+1 negative control produces the same JSON response body while growing from 3 to 51 statements; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
@@ -82,6 +83,7 @@ Ask the project AI to follow the [application bootstrap contract](docs/getting-s
 - [Vision](VISION.md) defines AI-first authoring with human accountability.
 - [Consumer contract](docs/consumer-contract.md) is the portable application validity floor.
 - [Knowledge map](docs/knowledge-map.md) routes an AI to the smallest relevant installed source of authority.
+- [CRUD reference profile](docs/crud.md) defines the optional feature-first application structure and its current evidence boundary.
 - [Architecture decisions](docs/decisions/README.md) preserve accepted rationale and reconsideration triggers.
 - [Evaluation](docs/evaluation.md) defines evidence and future AI-comparison work.
 - [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the pre-alpha project's current boundaries.

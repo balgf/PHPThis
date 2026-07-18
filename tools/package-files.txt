@@ -8,6 +8,7 @@ bin/phpthis
 composer.json
 docs/architecture.md
 docs/consumer-contract.md
+docs/crud.md
 docs/database.md
 docs/decisions/001-manual-composition-root.md
 docs/decisions/002-visible-sql-no-orm.md
@@ -21,6 +22,7 @@ docs/decisions/009-project-owned-ai-context.md
 docs/decisions/010-framework-owned-consumer-check.md
 docs/decisions/011-ai-first-authoring.md
 docs/decisions/012-pdo-transport-application-owned-dialects.md
+docs/decisions/013-optional-crud-reference-profile.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

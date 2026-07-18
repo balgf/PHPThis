@@ -23,7 +23,9 @@
 - Complete: separately packageable runnable skeleton and isolated consumer-install proof.
 - Complete: AI-first authoring and human-accountability contract with an installed framework knowledge map instead of a traditional manual.
 - Complete: PDO base-transport contract and certification harness, with local SQLite proof and a dedicated SQLite/MySQL/PostgreSQL CI gate without a dialect abstraction.
+- Complete: optional feature-first CRUD reference profile with a documented application-owned alternative and no runtime or filesystem enforcement.
 - Current: specify typed path parameters before implementing dynamic routes.
+- After typed item routes: prove Get, Update, and Delete only after the example records pagination, concurrency, deletion, authorization, and conflict decisions.
 
 ## Phase 2: type-aware AI guardrails
 

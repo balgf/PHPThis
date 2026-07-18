@@ -23,6 +23,8 @@ Focused commands shorten feedback but never replace the complete validity gate.
 - Every change covers the expected success and failure behavior.
 - Boundary parsing covers missing, unknown, wrongly typed, coercive, and oversized input as applicable.
 - Authorization-sensitive behavior proves both allowed and denied outcomes.
+- For each implemented CRUD-shaped operation, tests cover the applicable recorded route, identifier, conflict, pagination, missing-resource, mutation, concurrency, deletion, authorization, and audit policies; operations and concerns that do not exist are recorded as not applicable instead of receiving invented tests.
+- Directory and naming choices in the optional CRUD profile are application context, not runtime or checker assertions.
 - Database behavior runs against every recorded engine and version it relies on, compares small and materially larger fixtures, asserts equal statement counts, inspects distinct bounded traces per connection, and tests query-budget rejection.
 - Transaction tests prove rollback after the last allowed statement fails.
 - External integrations test timeout, malformed response, idempotency, and retry ownership without contacting production systems.

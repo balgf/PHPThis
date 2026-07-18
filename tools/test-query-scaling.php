@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Example\ListUsersHandler;
+use Example\Users\ListUsers\ListUsersHandler;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;

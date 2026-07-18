@@ -1,6 +1,6 @@
 # Application data contract
 
-If this application has no database, replace this file with one explicit statement saying that it is not applicable and remove its task-router entries.
+If this application has neither database access nor CRUD-shaped data behavior, replace this file with one explicit statement saying that it is not applicable and remove its task-router entries. If CRUD-shaped behavior uses another persistence mechanism, keep the CRUD semantics section and mark only the database sections not applicable.
 
 ## Systems and schema authority
 
@@ -33,6 +33,22 @@ If this application has no database, replace this file with one explicit stateme
 Database timeout policy: {{DATABASE_TIMEOUT_POLICY}}.
 
 Every database behavior must choose its own budget deliberately. Test small and materially larger fixtures and assert an equal statement count.
+
+## CRUD operation semantics
+
+If there is no CRUD-shaped resource behavior, replace this section with an explicit not-applicable statement. Otherwise record defaults and resource-specific exceptions before implementation, and mark decisions for operations the application does not implement as not applicable.
+
+| Decision | Recorded policy and authority |
+| --- | --- |
+| Resource identifiers and route lookup | {{CRUD_IDENTIFIER_TYPE_GENERATION_PUBLIC_REPRESENTATION_AND_ROUTE_POLICY}} |
+| List pagination | {{CRUD_PAGINATION_MODEL_MAXIMUM_PAGE_SIZE_STABLE_ORDER_AND_CURSOR_OR_OFFSET_POLICY}} |
+| Create identity and conflicts | {{CRUD_CREATE_IDENTITY_GENERATION_DUPLICATE_CONFLICT_AND_IDEMPOTENCY_POLICY}} |
+| Update method and concurrency | {{CRUD_PUT_PATCH_OMITTED_NULL_AND_CONCURRENT_WRITE_POLICY}} |
+| Missing-resource behavior | {{CRUD_MISSING_BEHAVIOR_BY_GET_LIST_UPDATE_AND_DELETE_OPERATION}} |
+| Delete and retention | {{CRUD_HARD_OR_SOFT_DELETE_RETENTION_RESTORE_AND_DEPENDENT_RECORD_POLICY}} |
+| Authorization and audit | {{CRUD_AUTHORIZATION_CHECK_AND_AUDIT_EVENT_POLICY}} |
+
+The optional profile does not choose these semantics. Cite verified product, schema, or accepted-decision authority rather than copying an example.
 
 ## Transaction and operational constraints
 

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Example\UserActivitySummary;
-use Example\UserSummary;
+use Example\Users\ListUsers\UserActivitySummary;
+use Example\Users\ListUsers\UserSummary;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryBudgetExceeded;
