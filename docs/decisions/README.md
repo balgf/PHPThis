@@ -12,3 +12,4 @@ Accepted records:
 - `006-strict-boundary-parsing.md`
 - `007-checked-php-profile.md`
 - `008-explicit-request-boundary.md`
+- `009-project-owned-ai-context.md`

@@ -1,0 +1,28 @@
+# AI coding instructions for {{PROJECT_NAME}}
+
+This file is the universal entrypoint for AI-authored changes in this application. Replace every double-braced template token before feature work begins.
+
+## Read order
+
+1. Read `vendor/phpthis/framework/docs/consumer-contract.md`.
+2. Read `.ai/README.md`.
+3. Read `.ai/rules.md` and `.ai/change-workflow.md`.
+4. Read only the task-specific guide selected by `.ai/README.md`.
+5. Inspect the concrete source and tests on the execution path.
+
+If the installed contract is missing in a fresh checkout, read `.ai/operations.md` only far enough to run its dependency-install command, then restart this read order. If the contract remains unavailable, report the missing dependency instead of inventing or copying framework rules. If Composer uses a non-default vendor directory, update the consumer-contract path above. Do not substitute PHPThis's framework-maintainer `AGENTS.md` or `.ai/` directory for this application context.
+
+## Project gate
+
+Run the complete application validity gate documented in `.ai/testing.md` from the repository root. A task is not complete until that command passes. A focused test may shorten the repair loop but does not replace the complete check.
+
+## Authority
+
+- The installed PHPThis consumer contract and Strict Profile are the minimum accepted rules.
+- This application's `.ai/` guides add project-specific facts and may strengthen those rules.
+- If a project instruction conflicts with the consumer contract, preserve the contract and report the conflict.
+- Never add a baseline, broad ignore, hidden fallback, or second framework pattern to make a change pass.
+
+## Context safety
+
+Do not write credentials, tokens, private keys, customer data, production payloads, or secrets into `AGENTS.md`, `.ai/`, source comments, fixtures, logs, or reports. Use documented secret references and redacted examples.

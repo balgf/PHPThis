@@ -17,6 +17,7 @@ Then read only what the task needs:
 | Read or write database data | `.ai/database.md` | `src/Database/`, relevant handler |
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php` |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | `src/Http/RequestReader.php`, `src/Http/RequestBoundary.php`, front controller |
+| Change the consumer contract or application context template | `.ai/application-context.md` | `docs/consumer-contract.md`, `docs/getting-started.md`, `templates/application/` |
 | Add tests | `.ai/testing.md` | `tests/run.php` |
 | Change the development-pattern proof | `.ai/testing.md`, `.ai/database.md` | `tools/test-query-scaling.php`, `tests/fixtures/` |
 | Map failures | `.ai/errors.md`, `.ai/request-boundary.md` | named failure, registry wiring, front controller |

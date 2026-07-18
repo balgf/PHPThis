@@ -18,6 +18,7 @@
 - Complete: dataset-size query-count tests and an executable N+1 negative control rejected by `PHT003`.
 - Complete: one bounded PHP runtime request reader with immutable normalized headers.
 - Complete: one exact-class error-to-response registry and generic unknown-failure boundary.
+- Complete: consumer contract v0 and a project-owned application AI context template.
 - Current: specify typed path parameters before implementing dynamic routes.
 
 ## Phase 2: type-aware AI guardrails
@@ -27,6 +28,7 @@
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.
 - Produce a machine-readable route report from the same explicit route list.
 - Measure how many files and tokens common changes require.
+- Exercise the application context template in real projects, then ship a separate `phpthis/skeleton` with reusable consumer-project checks.
 
 ## Phase 3: production evaluation
 

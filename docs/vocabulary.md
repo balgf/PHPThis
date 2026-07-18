@@ -14,5 +14,6 @@
 | request boundary | one bounded runtime-reader, handler, and exact error-map sequence | middleware, pipeline |
 | error response registry | exact exception-class to immutable response map | global exception helper |
 | response | immutable HTTP output | result, reply |
+| application AI context | project-owned root `AGENTS.md` and task-routed `.ai/` guides | framework maintainer context, evaluation harness |
 
 Stable vocabulary narrows AI search and reduces duplicate abstractions.

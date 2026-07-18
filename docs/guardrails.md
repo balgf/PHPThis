@@ -10,6 +10,7 @@
 - calls to `selectAllRows`, `selectOneRow`, and `executeStatement` do not occur inside loop headers or bodies (`PHT003`);
 - exact route matching and allowed-method lookup do not contain request-time loops;
 - PHP superglobals are read only in `example/public/index.php`;
+- the consumer contract and every required application context template file remain present;
 - Markdown files outnumber PHP files;
 - core source stays within 900 physical lines during Phase 1;
 - PHPStan baseline files are absent.

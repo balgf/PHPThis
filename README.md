@@ -52,9 +52,19 @@ curl -i -X POST http://127.0.0.1:8080/users \
   --data '{"name":"Katherine Johnson","email":"katherine@example.com"}'
 ```
 
+## Start an application
+
+PHPThis does not yet publish an installable application skeleton. This repository provides a versioned consumer contract and a documentation-only application context template while the application shape is being proven.
+
+Every application should own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
+
+Read [Starting a PHPThis application](docs/getting-started.md) and [the consumer contract](docs/consumer-contract.md) before using the template under `templates/application/`.
+
 ## Read next
 
 - [Vision](VISION.md) explains the hypothesis and success measures.
+- [Starting an application](docs/getting-started.md) explains the project-owned AI context template and its current limitations.
+- [Consumer contract](docs/consumer-contract.md) defines the portable application validity floor.
 - [Architecture](docs/architecture.md) traces the request path.
 - [Request handling](docs/request-handling.md) defines runtime normalization and bounds.
 - [Errors](docs/errors.md) defines exact public failure mapping.
@@ -63,7 +73,7 @@ curl -i -X POST http://127.0.0.1:8080/users \
 - [Evaluation](docs/evaluation.md) describes the executable scaling proof and future AI comparison protocol.
 - [Roadmap](ROADMAP.md) describes the maturity plan.
 - [Contributing](CONTRIBUTING.md) defines the contribution gate.
-- [AI context index](.ai/README.md) routes an AI to task-specific instructions.
+- [Maintainer AI context index](.ai/README.md) routes work on PHPThis itself; applications use their own `.ai/` directory.
 
 ## License
 

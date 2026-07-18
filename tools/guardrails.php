@@ -36,6 +36,55 @@ foreach (['phpstan-baseline.neon', 'phpstan-baseline.php'] as $baselineFile) {
     }
 }
 
+$requiredApplicationContextFiles = [
+    'docs/consumer-contract.md',
+    'docs/getting-started.md',
+    'templates/application/AGENTS.md',
+    'templates/application/.ai/README.md',
+    'templates/application/.ai/architecture.md',
+    'templates/application/.ai/change-workflow.md',
+    'templates/application/.ai/data.md',
+    'templates/application/.ai/integrations.md',
+    'templates/application/.ai/operations.md',
+    'templates/application/.ai/project.md',
+    'templates/application/.ai/rules.md',
+    'templates/application/.ai/testing.md',
+    'templates/application/docs/decisions/README.md',
+];
+
+foreach ($requiredApplicationContextFiles as $requiredApplicationContextFile) {
+    if (!is_file($root . '/' . $requiredApplicationContextFile)) {
+        $failures[] = "Required application context file is missing: {$requiredApplicationContextFile}.";
+    }
+}
+
+$consumerContractPath = $root . '/docs/consumer-contract.md';
+
+if (is_file($consumerContractPath)) {
+    $consumerContract = file_get_contents($consumerContractPath);
+
+    if (!is_string($consumerContract)) {
+        $failures[] = 'Cannot read docs/consumer-contract.md.';
+    } elseif (preg_match('/^Contract version: 0$/m', $consumerContract) !== 1) {
+        $failures[] = 'docs/consumer-contract.md must declare contract version 0.';
+    }
+}
+
+$applicationAgentInstructionsPath = $root . '/templates/application/AGENTS.md';
+
+if (is_file($applicationAgentInstructionsPath)) {
+    $applicationAgentInstructions = file_get_contents($applicationAgentInstructionsPath);
+
+    if (!is_string($applicationAgentInstructions)) {
+        $failures[] = 'Cannot read templates/application/AGENTS.md.';
+    } elseif (!str_contains(
+        $applicationAgentInstructions,
+        'vendor/phpthis/framework/docs/consumer-contract.md',
+    )) {
+        $failures[] = 'Application AGENTS.md must point to the installed PHPThis consumer contract.';
+    }
+}
+
 $iterator = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
 );
