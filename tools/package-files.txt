@@ -38,8 +38,8 @@ docs/guardrails.md
 docs/knowledge-map.md
 docs/logging.md
 docs/performance.md
-docs/request-handling.md
 docs/releases/0.1.0-alpha.1.md
+docs/request-handling.md
 docs/security.md
 docs/sessions.md
 docs/static-analysis.md

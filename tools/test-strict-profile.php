@@ -50,6 +50,7 @@ final class ObscuredMagic
 }
 PHP;
 
+requireParseable($syntaxFixture);
 $syntaxFailures = SyntaxProfile::failures($syntaxFixture, 'fixture.php');
 $expectedSyntaxFailures = [
     'PHT002 fixture.php:3 named class OpenClass must be final.',
@@ -64,6 +65,214 @@ $expectedSyntaxFailures = [
 ];
 
 requireProfile($syntaxFailures === $expectedSyntaxFailures, 'Syntax-profile fixture diagnostics changed.');
+
+$alternativeLoopSyntaxFixture = <<<'PHP'
+<?php
+
+for ($index = 0; $index < 1; $index++):
+    $noop = $index;
+    $database->selectAllRows('SELECT id FROM users');
+endfor;
+
+foreach ($items as $item):
+    $noop = $item;
+    $database->selectOneRow('SELECT id FROM users');
+endforeach;
+
+while ($ready):
+    $ready = false;
+    $database->executeStatement('UPDATE users SET active = 1');
+endwhile;
+
+foreach ($items as $item):
+    $callback = static function () use ($database): void {
+        $database->selectAllRows('SELECT id FROM users');
+    };
+endforeach;
+
+foreach ($groups as $group):
+    for ($index = 0; $index < 1; $index++):
+        $noop = $group;
+        $database->selectOneRow('SELECT id FROM users');
+    endfor;
+    $database->executeStatement('UPDATE users SET active = 1');
+endforeach;
+
+foreach ($groups as $group):
+    foreach ($group as $item):
+        $database->selectAllRows('SELECT id FROM users');
+    endforeach;
+    $database->executeStatement('UPDATE users SET active = 1');
+endforeach;
+
+$database->selectOneRow('SELECT id FROM users');
+PHP;
+
+requireParseable($alternativeLoopSyntaxFixture);
+$alternativeLoopSyntaxFailures = SyntaxProfile::failures($alternativeLoopSyntaxFixture, 'alternative-loop.php');
+$expectedAlternativeLoopSyntaxFailures = [
+    'PHT003 alternative-loop.php:5 calls a database method inside a loop.',
+    'PHT003 alternative-loop.php:10 calls a database method inside a loop.',
+    'PHT003 alternative-loop.php:15 calls a database method inside a loop.',
+    'PHT003 alternative-loop.php:20 calls a database method inside a loop.',
+    'PHT003 alternative-loop.php:27 calls a database method inside a loop.',
+    'PHT003 alternative-loop.php:29 calls a database method inside a loop.',
+    'PHT003 alternative-loop.php:34 calls a database method inside a loop.',
+    'PHT003 alternative-loop.php:36 calls a database method inside a loop.',
+];
+
+requireProfile(
+    $alternativeLoopSyntaxFailures === $expectedAlternativeLoopSyntaxFailures,
+    'PHT003 alternative-loop fixture diagnostics changed.',
+);
+
+$singleStatementLoopSyntaxFixture = <<<'PHP'
+<?php
+
+for ($index = 0; $index < 1; $index++) $database->selectAllRows('SELECT id FROM users');
+foreach ($items as $item) $database->selectOneRow('SELECT id FROM users');
+while ($ready) $database->executeStatement('UPDATE users SET active = 1');
+do $database->selectAllRows('SELECT id FROM users'); while (false);
+
+foreach ($items as $item)
+    $selected = $item ? $item : null;
+
+$database->selectOneRow('SELECT id FROM users');
+PHP;
+
+requireParseable($singleStatementLoopSyntaxFixture);
+$singleStatementLoopSyntaxFailures = SyntaxProfile::failures(
+    $singleStatementLoopSyntaxFixture,
+    'single-statement-loop.php',
+);
+$expectedSingleStatementLoopSyntaxFailures = [
+    'PHT003 single-statement-loop.php:3 calls a database method inside a loop.',
+    'PHT003 single-statement-loop.php:4 calls a database method inside a loop.',
+    'PHT003 single-statement-loop.php:5 calls a database method inside a loop.',
+    'PHT003 single-statement-loop.php:6 calls a database method inside a loop.',
+];
+
+requireProfile(
+    $singleStatementLoopSyntaxFailures === $expectedSingleStatementLoopSyntaxFailures,
+    'PHT003 single-statement-loop fixture diagnostics changed.',
+);
+
+$loopBoundaryFixture = <<<'PHP'
+<?php
+
+for ($index = 0; $database->SELECTONEROW('SELECT id FROM users') !== null; $index++) {
+    $database->selectAllRows('SELECT id FROM users');
+}
+foreach ($database->selectallrows('SELECT id FROM users') as $row)
+    $database->EXECUTESTATEMENT('UPDATE users SET active = 1');
+do
+    $database?-> /* comment */ SelectAllRows('SELECT id FROM users');
+while ($database->selectOneRow('SELECT id FROM users') !== null);
+
+$database->EXECUTESTATEMENT('UPDATE users SET active = 1');
+PHP;
+
+requireParseable($loopBoundaryFixture);
+$loopBoundaryFailures = SyntaxProfile::failures($loopBoundaryFixture, 'loop-boundaries.php');
+$expectedLoopBoundaryFailures = [
+    'PHT003 loop-boundaries.php:3 calls a database method inside a loop.',
+    'PHT003 loop-boundaries.php:4 calls a database method inside a loop.',
+    'PHT003 loop-boundaries.php:6 calls a database method inside a loop.',
+    'PHT003 loop-boundaries.php:7 calls a database method inside a loop.',
+    'PHT003 loop-boundaries.php:9 calls a database method inside a loop.',
+    'PHT003 loop-boundaries.php:10 calls a database method inside a loop.',
+];
+
+requireProfile(
+    $loopBoundaryFailures === $expectedLoopBoundaryFailures,
+    'PHT003 loop-boundary fixture diagnostics changed.',
+);
+
+$compoundLoopBodyFixture = <<<'PHP'
+<?php
+
+foreach ($items as $item)
+    if ($enabled) {
+        $noop = $item;
+    } else {
+        $database->selectOneRow('SELECT id FROM users');
+    }
+
+foreach ($items as $item)
+    try {
+        $noop = $item;
+    } catch (RuntimeException) {
+        $database->executeStatement('UPDATE users SET active = 1');
+    } finally {
+        $database->selectAllRows('SELECT id FROM users');
+    }
+
+foreach ($items as $item)
+    $selected = (static function () use ($item): bool {
+        return $item !== null;
+    })()
+        ? $database->SELECTONEROW('SELECT id FROM users')
+        : null;
+
+foreach ($items as $item)
+    if ($item === null)
+        $noop = null;
+    elseif ($enabled)
+        $database->selectAllRows('SELECT id FROM users');
+    else
+        $database->executeStatement('UPDATE users SET active = 1');
+
+$database->selectOneRow('SELECT id FROM users');
+PHP;
+
+requireParseable($compoundLoopBodyFixture);
+$compoundLoopBodyFailures = SyntaxProfile::failures($compoundLoopBodyFixture, 'compound-loop.php');
+$expectedCompoundLoopBodyFailures = [
+    'PHT003 compound-loop.php:7 calls a database method inside a loop.',
+    'PHT003 compound-loop.php:14 calls a database method inside a loop.',
+    'PHT003 compound-loop.php:16 calls a database method inside a loop.',
+    'PHT003 compound-loop.php:23 calls a database method inside a loop.',
+    'PHT003 compound-loop.php:30 calls a database method inside a loop.',
+    'PHT003 compound-loop.php:32 calls a database method inside a loop.',
+];
+
+requireProfile(
+    $compoundLoopBodyFailures === $expectedCompoundLoopBodyFailures,
+    'PHT003 compound-loop fixture diagnostics changed.',
+);
+
+$loopDelimiterFixture = <<<'PHP'
+<?php
+
+foreach ($items as $item) {
+    $label = "{$item}";
+    $database->selectOneRow('SELECT id FROM users');
+}
+
+foreach ($items as $item)
+    $value = new #[Example] class {};
+
+$database->selectAllRows('SELECT id FROM users');
+
+foreach ($items as $item) checkpoint:
+
+$database->executeStatement('UPDATE users SET active = 1');
+
+$outsideCallback = static function () use ($database): void {
+    $database->selectOneRow('SELECT id FROM users');
+};
+PHP;
+
+requireParseable($loopDelimiterFixture);
+$loopDelimiterFailures = SyntaxProfile::failures($loopDelimiterFixture, 'loop-delimiters.php');
+$expectedLoopDelimiterFailures = [
+    'PHT003 loop-delimiters.php:5 calls a database method inside a loop.',
+];
+
+requireProfile(
+    $loopDelimiterFailures === $expectedLoopDelimiterFailures,
+    'PHT003 loop-delimiter fixture diagnostics changed.',
+);
 
 $validSyntaxFixture = <<<'PHP'
 <?php
@@ -80,6 +289,7 @@ $comment = 'class Fake { $database->selectAllRows(); }';
 // class Commented { $database->selectOneRow(); }
 PHP;
 
+requireParseable($validSyntaxFixture);
 requireProfile(
     SyntaxProfile::failures($validSyntaxFixture, 'valid.php') === [],
     'Shared syntax guard rejected valid syntax or text inside a string.',
@@ -428,6 +638,13 @@ function requireProfile(bool $condition, string $message): void
 {
     if (!$condition) {
         throw new RuntimeException($message);
+    }
+}
+
+function requireParseable(string $contents): void
+{
+    if (token_get_all($contents, TOKEN_PARSE) === []) {
+        throw new RuntimeException('Strict-profile fixture did not contain any PHP tokens.');
     }
 }
 

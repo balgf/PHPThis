@@ -15,13 +15,13 @@ The accountable human approved the following release identity on 2026-07-19 (Asi
 - Skeleton tag: `v0.1.0-alpha.1`
 - Release notes: `docs/releases/0.1.0-alpha.1.md`
 
-This approves the version and tag names only. The release candidate commit and release date remain unset, and this approval does not create or authorize creation of either tag, either package-host entry, either GitHub release, or the announcement. The project remains pre-alpha until the complete gate below passes.
+This approves the version and tag names only. The exact candidate commit, release date, and accountable-human publication authorization belong in the external release evidence attached to the release work item; embedding them in tracked release notes would change the candidate commit. This approval does not create or authorize creation of either tag, either package-host entry, either GitHub release, or the announcement. The project remains pre-alpha until the complete gate below passes.
 
 ## Alpha 1 release gate
 
 ### 1. Freeze the release candidate
 
-- [ ] Record the exact framework prerelease version, tag, candidate commit, release date, and accountable human approval.
+- [ ] Record the exact framework prerelease version, tag, candidate commit, release date, and accountable-human publication authorization.
 - [ ] Confirm maintainer access to the intended GitHub repositories and Packagist package names `phpthis/framework` and `phpthis/skeleton`; do not infer availability from local package metadata.
 - [ ] Confirm GitHub private vulnerability reporting is enabled for the public framework repository.
 - [ ] Confirm the candidate scope matches ADR 018 and release notes do not imply production readiness, backward compatibility, complete CRUD, authentication, authorization, tenancy, or SQL dialect portability.
@@ -111,7 +111,7 @@ Public-proof date and environment:
 Inventory result:
 Generated application check result:
 Loopback health result:
-Accountable human approval:
+Accountable-human publication authorization:
 Known limitations:
 ```
 

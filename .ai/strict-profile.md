@@ -6,7 +6,7 @@ Rules carried forward from profile v0:
 
 - `PHT001`: do not cast or call scalar conversion functions while the input type is still `mixed`. Validate and narrow first.
 - `PHT002`: every named repository class is `final`. Use an interface for an extension point; anonymous classes remain available for local tests.
-- `PHT003`: do not call `selectAllRows`, `selectOneRow`, or `executeStatement` inside any loop.
+- `PHT003`: do not call `selectAllRows`, `selectOneRow`, or `executeStatement` inside any loop header or body, including compound unbraced statements, PHP alternative syntax, and closures declared inside the loop.
 
 Profile v1 carries `PHT001` through `PHT003` forward and adds:
 

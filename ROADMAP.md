@@ -34,7 +34,7 @@
 
 ## Phase 2: publish Alpha 1 and extend type-aware AI guardrails
 
-- Current: execute `RELEASING.md` without expanding the runtime surface: approve the exact prerelease version, publish the framework package, export and publish the skeleton package, verify the actual Packagist-preferred artifacts, and prove the public `composer create-project --stability=alpha` path before announcement.
+- Current: execute `RELEASING.md` without expanding the runtime surface: prove a candidate for the approved prerelease identity, publish the framework package, export and publish the skeleton package, verify the actual Packagist-preferred artifacts, and prove the public `composer create-project --stability=alpha` path before announcement.
 - Export `skeleton/` as its own package root, remove the pre-alpha VCS repository override, replace `dev-main` with the Packagist alpha constraint, commit its lockfile, and publish both prerelease packages.
 - Install the actual Packagist-preferred framework dist, compare it with `tools/package-files.txt`, and prove the documented `composer create-project --stability=alpha` path before announcing alpha.
 - Move type-sensitive architecture checks into tested PHPStan extensions.
