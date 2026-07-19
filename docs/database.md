@@ -48,7 +48,7 @@ A transaction belongs to one PDO connection. Work across two connections or engi
 
 The sample `POST /users` path performs two writes: one user row and one `user.created` event selected through the unique email. Both affected-row counts must be one. The handler prepares its success response before beginning, commits only after both writes, and rolls back when a failure or query-budget rejection leaves the transaction active.
 
-The sample `GET /users` path selects at most 50 users with event counts in one aggregate statement. The derived user selection applies the bound before joining events, and `user_events.user_id` is indexed in the sample schema. Equivalent small and large fixtures must both use exactly one statement.
+The sample `GET /users` path binds the validated last-emitted user ID, or the code-owned first-page sentinel `0`, and selects up to 51 ascending users with event counts in one aggregate statement. The handler emits at most 50 rows and uses the extra row only to prove that a continuation exists. The derived user selection applies the keyset predicate and bound before joining events, and `user_events.user_id` is indexed in the sample schema. Every accepted page receives its own one-statement budget and trace; 125-row traversal evidence proves 50/50/25 output with no gaps or duplicates in a static fixture.
 
 ## Query trace policy
 

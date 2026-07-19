@@ -80,5 +80,5 @@ The installed `vendor/phpthis/framework/docs/crud.md` profile recommends structu
 
 - Routes are grouped by `{{ROUTE_AREA_RULE}}`.
 - Handlers are placed at `{{HANDLER_PATH_RULE}}`.
-- Commands and projections are placed at `{{BOUNDARY_VALUE_PATH_RULE}}`.
+- Operation requests, commands, and projections are placed at `{{BOUNDARY_VALUE_PATH_RULE}}`.
 - Cross-cutting application behavior requires an accepted decision record; do not invent providers, middleware, discovery, helper layers, a generic session repository, or a generic cache service.

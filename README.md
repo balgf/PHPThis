@@ -49,9 +49,9 @@ Finite SQL and parameter binding do not prove authorization or least privilege. 
 
 **Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
-This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, directly indexed literal routes, one indexed trailing positive-integer route shape, explicit handlers, and instrumented PDO access. It does not include a cache client, cache interface, cache helper, or general automatic HTTP cache policy. Framework-generated 404, 405, and 500 responses and the current skeleton/example response paths explicitly use `Cache-Control: no-store`; arbitrary application handler responses remain application-owned. The sample application includes a bounded `GET /users` List operation, a transactional `POST /users` Create operation, and the first bounded `GET /users/{user_id}` item proof. That Get slice proves typed routing, concrete identifier conversion, and bounded query cost, not complete authorization or tenant policy. Update and Delete are not yet claimed. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
+This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, directly indexed literal routes, one indexed trailing positive-integer route shape, explicit handlers, and instrumented PDO access. It does not include a cache client, cache interface, cache helper, or general automatic HTTP cache policy. Framework-generated 404, 405, and 500 responses and the current skeleton/example response paths explicitly use `Cache-Control: no-store`; arbitrary application handler responses remain application-owned. The sample application includes a bounded `GET /users` List operation with one explicit application-owned keyset continuation, a transactional `POST /users` Create operation, and the first bounded `GET /users/{user_id}` item proof. That Get slice proves typed routing, concrete identifier conversion, and bounded query cost, not complete authorization or tenant policy. Update and Delete are not yet claimed. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
 
-The executable query-scaling proof holds the accepted read at one statement as its fixture grows from 2 to 50 users. An isolated N+1 negative control produces the same JSON response body while growing from 3 to 51 statements; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
+The executable query-scaling proof holds every accepted page at one statement while traversing 125 users as 50, 50, and 25 rows without gaps or duplicates. Its isolated N+1 negative control grows from 3 statements for 2 users to 51 for 50 users; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
 ```text
 PHP runtime -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> Handler -> Response
@@ -70,6 +70,7 @@ composer example:setup
 php -S 127.0.0.1:8080 -t example/public
 curl -i http://127.0.0.1:8080/health
 curl -i http://127.0.0.1:8080/users
+curl -i 'http://127.0.0.1:8080/users?after_user_id=1'
 curl -i http://127.0.0.1:8080/users/1
 curl -i -X POST http://127.0.0.1:8080/users \
   -H 'Content-Type: application/json' \

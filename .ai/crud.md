@@ -27,6 +27,7 @@ src/
       UserId.php
     ListUsers/
       ListUsersHandler.php
+      ListUsersPageRequest.php
       UserActivitySummary.php
     UpdateUser/
       UpdateUserCommand.php
@@ -56,4 +57,4 @@ Do not infer these facts from the directory name or from another application's e
 
 Test every adopted behavior rather than the spelling of directories. Cover route and method matching, boundary rejection, success and missing-resource behavior, authorization denial, create conflicts, bounded and stable pagination, concurrent updates, deletion and retention policy, and required audit effects. Database-backed behavior also needs engine-specific integration evidence, explicit query budgets, bounded traces, and constant statement counts across materially different fixture sizes.
 
-The current executable reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List; it does not prove their authorization, identity/conflict, or continuation policies. Its first Get slice proves the typed trailing route, immediate `UserId` conversion, explicit missing response, concrete projection, and one bounded query, but not authorization or tenant scope. Update and Delete remain absent.
+The current executable reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List. List additionally proves one application-owned keyset contract: optional canonical `after_user_id`, ascending identifiers, a fixed 50-row page, one up-to-51-row lookahead statement, and a canonical string continuation or `null`. It does not provide a generic pagination policy, and List authorization remains unresolved. Create still lacks authorization and identity/conflict policy. The first Get slice proves the typed trailing route, immediate `UserId` conversion, explicit missing response, concrete projection, and one bounded query, but not authorization or tenant scope. Update and Delete remain absent.

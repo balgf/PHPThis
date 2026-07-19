@@ -6,7 +6,7 @@
 - Prefer public data in immutable request/response values and explicit methods for behavior.
 - Construct dependencies manually where the application starts.
 - Keep I/O visible in method names and call sites.
-- Parse external `mixed` values once into concrete final readonly projections or commands.
+- Parse external `mixed` values once into concrete final readonly boundary values: operation-specific requests or commands for inbound data, and projections for returned data.
 - Execute application SQL only through direct `Connection` calls, bind every data value with a distinct named placeholder per occurrence, and keep the final SQL a finite non-blank compile-time constant.
 - Map external SQL-structure selectors to finite reviewed code-owned choices and reject unknown selectors before database work.
 - Keep every adopted cache read, write, and invalidation visible behind a narrowly named typed application service and an explicitly wired backend; parse cache hits as untrusted external values before use.

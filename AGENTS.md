@@ -34,7 +34,7 @@ The human supplies intent and remains accountable for the outcome. Surface missi
 - Give every request an explicit `QueryBudget` and bounded `QueryTrace`; do not write one log line per query.
 - Give separately named connections explicit budgets and distinct traces; never imply cross-connection transaction atomicity.
 - Treat HTTP response caching and server-side data caching as separate application policies before mechanisms. Do not add a generic cache API, remember-style callback, automatic query caching, or framework-owned backend abstraction; a future server-side adoption must use a narrowly named typed application service with explicit key, value, lifetime, invalidation, stale-refill, failure, topology, observability, and test policy.
-- Parse external `mixed` data once through a named factory into a concrete final readonly projection or command.
+- Parse external `mixed` data once through a named factory into a concrete final readonly boundary value: an operation-specific request or command for inbound data, or a projection for returned data.
 - Reject missing and unknown fields and validate before conversion; never use a scalar cast as validation.
 - Treat `composer check` as the PHPThis validity gate and repair diagnostics by their stable profile rule or PHPStan identifier.
 - Do not suppress a profile rule with a baseline, inline ignore, wildcard exclusion, or comment exemption.

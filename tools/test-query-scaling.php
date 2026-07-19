@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Example\Users\ListUsers\ListUsersHandler;
+use Example\Users\ListUsers\UserActivitySummary;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;
@@ -39,6 +40,23 @@ $largeAccepted = runAcceptedRead($largeDatabase);
 $smallRejected = runRejectedRead($root, $fixturePath, $smallDatabase, 10);
 $largeRejected = runRejectedRead($root, $fixturePath, $largeDatabase, 60);
 $limitedRejected = runRejectedRead($root, $fixturePath, $largeDatabase, 3);
+$continuationDatabase = createScalingDatabase($root, 'continuation', 125);
+$firstPage = runAcceptedRead($continuationDatabase);
+$secondPage = runAcceptedRead($continuationDatabase, '50');
+$thirdPage = runAcceptedRead($continuationDatabase, '100');
+$firstPageData = acceptedPageData($firstPage['body']);
+$secondPageData = acceptedPageData($secondPage['body']);
+$thirdPageData = acceptedPageData($thirdPage['body']);
+$continuedIds = [
+    ...$firstPageData['ids'],
+    ...$secondPageData['ids'],
+    ...$thirdPageData['ids'],
+];
+$continuedEventCounts = [
+    ...$firstPageData['event_counts'],
+    ...$secondPageData['event_counts'],
+    ...$thirdPageData['event_counts'],
+];
 
 requireScalingProof($smallAccepted['body'] === $smallRejected['body'], 'Small accepted and N+1 outputs differ.');
 requireScalingProof($largeAccepted['body'] === $largeRejected['body'], 'Large accepted and N+1 outputs differ.');
@@ -57,20 +75,36 @@ requireScalingProof(!$largeRejected['budget_exceeded'], 'Large N+1 control unexp
 requireScalingProof($limitedRejected['budget_exceeded'], 'The bounded N+1 control did not exceed its budget.');
 requireScalingProof($limitedRejected['statements'] === 3, 'Budget rejection must not enter the query trace.');
 requireScalingProof($limitedRejected['maximum_executions'] === 2, 'Limited N+1 trace shape changed.');
+requireScalingProof($firstPageData['ids'] === range(1, 50), 'First continuation page changed.');
+requireScalingProof($secondPageData['ids'] === range(51, 100), 'Second continuation page changed.');
+requireScalingProof($thirdPageData['ids'] === range(101, 125), 'Final continuation page changed.');
+requireScalingProof($firstPageData['next_after_user_id'] === '50', 'First continuation cursor changed.');
+requireScalingProof($secondPageData['next_after_user_id'] === '100', 'Second continuation cursor changed.');
+requireScalingProof($thirdPageData['next_after_user_id'] === null, 'Final continuation cursor must be null.');
+requireScalingProof($continuedIds === range(1, 125), 'Continuation introduced a gap or ordering error.');
+requireScalingProof(count(array_unique($continuedIds)) === 125, 'Continuation returned a duplicate user.');
+requireScalingProof(array_unique($continuedEventCounts) === [2], 'Continuation aggregate output changed.');
+
+foreach ([$firstPage, $secondPage, $thirdPage] as $page) {
+    requireScalingProof($page['statements'] === 1, 'Each accepted page must execute one statement.');
+    requireScalingProof($page['maximum_executions'] === 1, 'An accepted page repeated a statement.');
+    requireScalingProof(!$page['truncated'], 'An accepted page trace was truncated.');
+}
 
 fwrite(
     STDOUT,
-    "PASS query scaling: accepted 1 -> 1; rejected N+1 3 -> 51; budget stopped statement 4\n",
+    "PASS query scaling: accepted pages 1 each across 125 users; rejected N+1 3 -> 51; budget stopped statement 4\n",
 );
 
 /** @return array{body: string, statements: int, maximum_executions: int, truncated: bool} */
-function runAcceptedRead(string $databasePath): array
+function runAcceptedRead(string $databasePath, ?string $afterUserId = null): array
 {
     $trace = new QueryTrace(1);
     $handler = new ListUsersHandler(
         Connection::connect('sqlite:' . $databasePath, new QueryBudget(1), $trace),
     );
-    $response = $handler->handle(new Request('GET', '/users'));
+    $query = $afterUserId === null ? [] : ['after_user_id' => $afterUserId];
+    $response = $handler->handle(new Request('GET', '/users', $query));
     $summary = $trace->snapshot();
 
     return [
@@ -78,6 +112,61 @@ function runAcceptedRead(string $databasePath): array
         'statements' => $summary['statements'],
         'maximum_executions' => $summary['maximum_executions_per_fingerprint'],
         'truncated' => $summary['truncated'],
+    ];
+}
+
+/** @return array{ids: list<int>, event_counts: list<int>, next_after_user_id: string|null} */
+function acceptedPageData(string $body): array
+{
+    $decoded = json_decode($body, true, 64, JSON_THROW_ON_ERROR);
+
+    if (
+        !is_array($decoded)
+        || count($decoded) !== 2
+        || !array_key_exists('users', $decoded)
+        || !array_key_exists('next_after_user_id', $decoded)
+    ) {
+        throw new RuntimeException('Accepted page returned an invalid response shape.');
+    }
+
+    $userValues = $decoded['users'];
+    $nextAfterUserId = $decoded['next_after_user_id'];
+
+    if (!is_array($userValues) || !array_is_list($userValues)) {
+        throw new RuntimeException('Accepted page returned an invalid users collection.');
+    }
+
+    if ($nextAfterUserId !== null && !is_string($nextAfterUserId)) {
+        throw new RuntimeException('Accepted page returned an invalid continuation value.');
+    }
+
+    $ids = [];
+    $eventCounts = [];
+
+    foreach ($userValues as $userValue) {
+        if (!is_array($userValue)) {
+            throw new RuntimeException('Accepted page returned a non-object user value.');
+        }
+
+        $row = [];
+
+        foreach ($userValue as $name => $value) {
+            if (!is_string($name)) {
+                throw new RuntimeException('Accepted page returned a non-string user field name.');
+            }
+
+            $row[$name] = $value;
+        }
+
+        $user = UserActivitySummary::fromDatabaseRow($row);
+        $ids[] = $user->id;
+        $eventCounts[] = $user->eventCount;
+    }
+
+    return [
+        'ids' => $ids,
+        'event_counts' => $eventCounts,
+        'next_after_user_id' => $nextAfterUserId,
     ];
 }
 
@@ -149,8 +238,8 @@ function runRejectedRead(
 
 function createScalingDatabase(string $root, string $name, int $userCount): string
 {
-    if ($userCount < 1 || $userCount > 50) {
-        throw new InvalidArgumentException('Scaling fixture count must be between 1 and 50.');
+    if ($userCount < 1 || $userCount > 125) {
+        throw new InvalidArgumentException('Scaling fixture count must be between 1 and 125.');
     }
 
     $directory = $root . '/tmp/query-scaling';

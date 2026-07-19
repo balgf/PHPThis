@@ -9,6 +9,7 @@ use Example\Users\GetUser\GetUserHandler;
 use Example\Users\GetUser\UserDetails;
 use Example\Users\GetUser\UserId;
 use Example\Users\ListUsers\ListUsersHandler;
+use Example\Users\ListUsers\ListUsersPageRequest;
 use Example\Users\ListUsers\UserActivitySummary;
 use Example\Users\ListUsers\UserSummary;
 use PHPThis\Application;
@@ -960,6 +961,143 @@ $tests['user activity projection rejects malformed aggregate rows'] = static fun
     }
 };
 
+$tests['list users page request parses only one canonical continuation'] = static function (): void {
+    $firstPage = ListUsersPageRequest::fromQuery([]);
+    $continuedPage = ListUsersPageRequest::fromQuery(['after_user_id' => '1']);
+    $maximumPage = ListUsersPageRequest::fromQuery([
+        'after_user_id' => (string) PHP_INT_MAX,
+    ]);
+
+    if (
+        $firstPage->afterUserId !== null
+        || $continuedPage->afterUserId !== 1
+        || $maximumPage->afterUserId !== PHP_INT_MAX
+    ) {
+        throw new RuntimeException('Expected canonical list continuation input to become typed page requests.');
+    }
+
+    $invalidQueries = [
+        ['after_user_id' => ''],
+        ['after_user_id' => '0'],
+        ['after_user_id' => '01'],
+        ['after_user_id' => '+1'],
+        ['after_user_id' => '-1'],
+        ['after_user_id' => '1.0'],
+        ['after_user_id' => '1e0'],
+        ['after_user_id' => ' 1'],
+        ['after_user_id' => '１'],
+        ['after_user_id' => (string) PHP_INT_MAX . '0'],
+        ['after_user_id' => 1],
+        ['after_user_id' => 1.0],
+        ['after_user_id' => true],
+        ['after_user_id' => null],
+        ['after_user_id' => []],
+        ['after_user_id' => new stdClass()],
+        ['cursor' => '1'],
+        ['after_user_id' => '1', 'limit' => '50'],
+    ];
+
+    foreach ($invalidQueries as $query) {
+        try {
+            ListUsersPageRequest::fromQuery($query);
+        } catch (InvalidRequest) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected malformed or unknown list continuation input to be rejected.');
+    }
+};
+
+$tests['list users rejects invalid continuation before database work'] = static function (): void {
+    $databasePath = createUserDatabaseFixture('list-invalid-continuation', 2, true);
+    $budget = new QueryBudget(1);
+    $trace = new QueryTrace(1);
+    $application = new Application(new Router([
+        new Route(
+            'GET',
+            '/users',
+            new ListUsersHandler(
+                Connection::connect('sqlite:' . $databasePath, $budget, $trace),
+            ),
+        ),
+    ]));
+    $boundary = new RequestBoundary(
+        requestReaderForBody('', 8_192),
+        $application,
+        exampleErrorResponseRegistry(),
+    );
+    $invalidQueries = [
+        ['after_user_id' => '01'],
+        ['after_user_id' => (string) PHP_INT_MAX . '0'],
+        ['after_user_id' => ['1']],
+        ['unknown' => '1'],
+        ['after_user_id' => '1', 'limit' => '50'],
+    ];
+
+    foreach ($invalidQueries as $query) {
+        $response = $boundary->handle(
+            ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/users?after_user_id=invalid'],
+            $query,
+        );
+
+        if (
+            $response->status !== 400
+            || $response->headers !== [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'Cache-Control' => 'no-store',
+            ]
+            || $response->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
+        ) {
+            throw new RuntimeException('Expected invalid list continuation to map to the public 400 response.');
+        }
+    }
+
+    $summary = $trace->snapshot();
+
+    if (
+        $budget->used() !== 0
+        || $summary['statements'] !== 0
+        || $summary['failures'] !== 0
+        || $summary['tracked_fingerprints'] !== 0
+        || $summary['queries'] !== []
+    ) {
+        throw new RuntimeException('Expected invalid list continuation to perform zero database work.');
+    }
+};
+
+$tests['list users accepts one canonical runtime continuation'] = static function (): void {
+    $databasePath = createUserDatabaseFixture('list-valid-continuation', 2, true);
+    $budget = new QueryBudget(1);
+    $trace = new QueryTrace(1);
+    $application = new Application(new Router([
+        new Route(
+            'GET',
+            '/users',
+            new ListUsersHandler(
+                Connection::connect('sqlite:' . $databasePath, $budget, $trace),
+            ),
+        ),
+    ]));
+    $boundary = new RequestBoundary(
+        requestReaderForBody('', 8_192),
+        $application,
+        exampleErrorResponseRegistry(),
+    );
+    $continued = $boundary->handle(
+        ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/users?after_user_id=1'],
+        ['after_user_id' => '1'],
+    );
+
+    if (
+        $continued->status !== 200
+        || $continued->body !== "{\"users\":[{\"id\":2,\"name\":\"User 2\",\"event_count\":2}],\"next_after_user_id\":null}\n"
+        || $budget->used() !== 1
+        || $trace->snapshot()['statements'] !== 1
+    ) {
+        throw new RuntimeException('Expected one valid runtime continuation to reach the bounded list query.');
+    }
+};
+
 $tests['HTTP command parses one exact JSON object'] = static function (): void {
     $command = CreateUserCommand::fromJson(
         '{"email":"ada@example.com","name":"Ada Lovelace"}',
@@ -1151,7 +1289,7 @@ $tests['user routes execute bounded reads and one transactional write end to end
         || $got->body !== "{\"user\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n"
         || $listed->status !== 200
         || $listed->headers !== $created->headers
-        || $listed->body !== "{\"users\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}]}\n"
+        || $listed->body !== "{\"users\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"next_after_user_id\":null}\n"
         || $writeBudget->used() !== 2
         || $readBudget->used() !== 1
         || $getBudget->used() !== 1
@@ -1163,40 +1301,103 @@ $tests['user routes execute bounded reads and one transactional write end to end
     }
 };
 
-$tests['user read endpoint keeps one query across dataset sizes'] = static function (): void {
+$tests['user list page keeps one query across dataset sizes'] = static function (): void {
     $smallPath = createUserDatabaseFixture('read-small', 2, true);
     $largePath = createUserDatabaseFixture('read-large', 500, true);
-    $smallBudget = new QueryBudget(1);
-    $smallTrace = new QueryTrace(1);
-    $largeBudget = new QueryBudget(1);
-    $largeTrace = new QueryTrace(1);
-    $smallHandler = new ListUsersHandler(
-        Connection::connect('sqlite:' . $smallPath, $smallBudget, $smallTrace),
-    );
-    $largeHandler = new ListUsersHandler(
-        Connection::connect('sqlite:' . $largePath, $largeBudget, $largeTrace),
-    );
-
-    $smallResponse = $smallHandler->handle(new Request('GET', '/users'));
-    $largeResponse = $largeHandler->handle(new Request('GET', '/users'));
-    $smallSummary = $smallTrace->snapshot();
-    $largeSummary = $largeTrace->snapshot();
+    $small = runListUsersPageScenario($smallPath, null);
+    $large = runListUsersPageScenario($largePath, null);
 
     if (
-        $smallResponse->body !== "{\"users\":[{\"id\":1,\"name\":\"User 1\",\"event_count\":2},{\"id\":2,\"name\":\"User 2\",\"event_count\":2}]}\n"
-        || substr_count($largeResponse->body, '"event_count":2') !== 50
-        || $smallBudget->used() !== 1
-        || $largeBudget->used() !== 1
-        || $smallSummary['statements'] !== 1
-        || $largeSummary['statements'] !== 1
-        || $smallSummary['repeated_fingerprints'] !== 0
-        || $largeSummary['repeated_fingerprints'] !== 0
-        || $smallSummary['maximum_executions_per_fingerprint'] !== 1
-        || $largeSummary['maximum_executions_per_fingerprint'] !== 1
-        || $smallSummary['truncated']
-        || $largeSummary['truncated']
+        $small['ids'] !== [1, 2]
+        || $small['event_counts'] !== [2, 2]
+        || $small['next_after_user_id'] !== null
+        || $large['ids'] !== range(1, 50)
+        || $large['next_after_user_id'] !== '50'
+        || $small['used'] !== 1
+        || $large['used'] !== 1
+        || $small['statements'] !== 1
+        || $large['statements'] !== 1
+        || $small['repeated_fingerprints'] !== 0
+        || $large['repeated_fingerprints'] !== 0
+        || $small['maximum_executions'] !== 1
+        || $large['maximum_executions'] !== 1
+        || $small['truncated']
+        || $large['truncated']
     ) {
-        throw new RuntimeException('Expected the bounded aggregate read to remain one query at scale.');
+        throw new RuntimeException('Expected each bounded list page to remain one query at scale.');
+    }
+};
+
+$tests['user list continuation handles exact and lookahead page boundaries'] = static function (): void {
+    $fullPath = createUserDatabaseFixture('list-exact-page', 50, true);
+    $lookaheadPath = createUserDatabaseFixture('list-lookahead-page', 51, false);
+    $full = runListUsersPageScenario($fullPath, null);
+    $lookahead = runListUsersPageScenario($lookaheadPath, null);
+    $deletedRows = Connection::connect(
+        'sqlite:' . $lookaheadPath,
+        new QueryBudget(1),
+        new QueryTrace(1),
+    )->executeStatement(
+        'DELETE FROM users WHERE users.id = :user_id',
+        ['user_id' => 50],
+    );
+    $continued = runListUsersPageScenario($lookaheadPath, '50');
+
+    if (
+        $full['ids'] !== range(1, 50)
+        || $full['next_after_user_id'] !== null
+        || $lookahead['ids'] !== range(1, 50)
+        || $lookahead['next_after_user_id'] !== '50'
+        || $deletedRows !== 1
+        || $continued['ids'] !== [51]
+        || $continued['next_after_user_id'] !== null
+    ) {
+        throw new RuntimeException('Expected lookahead continuation to survive deletion without skipping row 51.');
+    }
+};
+
+$tests['user list continuation traverses large data without gaps or duplicates'] = static function (): void {
+    $databasePath = createUserDatabaseFixture('list-continuation', 125, true);
+    $first = runListUsersPageScenario($databasePath, null);
+    $second = runListUsersPageScenario($databasePath, '50');
+    $third = runListUsersPageScenario($databasePath, '100');
+    $beyond = runListUsersPageScenario($databasePath, '125');
+    $ids = [...$first['ids'], ...$second['ids'], ...$third['ids']];
+    $eventCounts = [
+        ...$first['event_counts'],
+        ...$second['event_counts'],
+        ...$third['event_counts'],
+    ];
+
+    foreach ([$first, $second, $third, $beyond] as $page) {
+        if (
+            $page['used'] !== 1
+            || $page['statements'] !== 1
+            || $page['failures'] !== 0
+            || $page['tracked_fingerprints'] !== 1
+            || $page['repeated_fingerprints'] !== 0
+            || $page['maximum_executions'] !== 1
+            || $page['truncated']
+            || $page['untracked_statements'] !== 0
+        ) {
+            throw new RuntimeException('Expected every continuation request to execute one bounded statement.');
+        }
+    }
+
+    if (
+        count($first['ids']) !== 50
+        || count($second['ids']) !== 50
+        || count($third['ids']) !== 25
+        || $first['next_after_user_id'] !== '50'
+        || $second['next_after_user_id'] !== '100'
+        || $third['next_after_user_id'] !== null
+        || $ids !== range(1, 125)
+        || count(array_unique($ids)) !== 125
+        || array_unique($eventCounts) !== [2]
+        || $beyond['ids'] !== []
+        || $beyond['next_after_user_id'] !== null
+    ) {
+        throw new RuntimeException('Expected stable keyset continuation with no gaps or duplicates.');
     }
 };
 
@@ -1726,6 +1927,103 @@ function exampleErrorResponseRegistry(): ErrorResponseRegistry
             "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n",
         ),
     ]);
+}
+
+/**
+ * @return array{
+ *     ids: list<int>,
+ *     event_counts: list<int>,
+ *     next_after_user_id: string|null,
+ *     used: int,
+ *     statements: int,
+ *     failures: int,
+ *     tracked_fingerprints: int,
+ *     repeated_fingerprints: int,
+ *     maximum_executions: int,
+ *     truncated: bool,
+ *     untracked_statements: int
+ * }
+ */
+function runListUsersPageScenario(string $databasePath, ?string $afterUserId): array
+{
+    $budget = new QueryBudget(1);
+    $trace = new QueryTrace(1);
+    $handler = new ListUsersHandler(
+        Connection::connect('sqlite:' . $databasePath, $budget, $trace),
+    );
+    $query = $afterUserId === null ? [] : ['after_user_id' => $afterUserId];
+    $response = $handler->handle(new Request('GET', '/users', $query));
+    $decoded = json_decode($response->body, true, 64, JSON_THROW_ON_ERROR);
+
+    if (
+        $response->status !== 200
+        || $response->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
+        || !is_array($decoded)
+        || count($decoded) !== 2
+        || !array_key_exists('users', $decoded)
+        || !array_key_exists('next_after_user_id', $decoded)
+    ) {
+        throw new RuntimeException('List users returned an invalid page response.');
+    }
+
+    $userValues = $decoded['users'];
+    $nextAfterUserId = $decoded['next_after_user_id'];
+
+    if (!is_array($userValues) || !array_is_list($userValues)) {
+        throw new RuntimeException('List users returned an invalid users collection.');
+    }
+
+    if (
+        $nextAfterUserId !== null
+        && (
+            !is_string($nextAfterUserId)
+            || preg_match('/^[1-9][0-9]*$/D', $nextAfterUserId) !== 1
+        )
+    ) {
+        throw new RuntimeException('List users returned an invalid continuation representation.');
+    }
+
+    $ids = [];
+    $eventCounts = [];
+
+    foreach ($userValues as $userValue) {
+        if (!is_array($userValue)) {
+            throw new RuntimeException('List users returned a non-object user representation.');
+        }
+
+        $row = [];
+
+        foreach ($userValue as $name => $value) {
+            if (!is_string($name)) {
+                throw new RuntimeException('List users returned a non-string user field name.');
+            }
+
+            $row[$name] = $value;
+        }
+
+        $user = UserActivitySummary::fromDatabaseRow($row);
+        $ids[] = $user->id;
+        $eventCounts[] = $user->eventCount;
+    }
+
+    $summary = $trace->snapshot();
+
+    return [
+        'ids' => $ids,
+        'event_counts' => $eventCounts,
+        'next_after_user_id' => $nextAfterUserId,
+        'used' => $budget->used(),
+        'statements' => $summary['statements'],
+        'failures' => $summary['failures'],
+        'tracked_fingerprints' => $summary['tracked_fingerprints'],
+        'repeated_fingerprints' => $summary['repeated_fingerprints'],
+        'maximum_executions' => $summary['maximum_executions_per_fingerprint'],
+        'truncated' => $summary['truncated'],
+        'untracked_statements' => $summary['untracked_statements'],
+    ];
 }
 
 /**

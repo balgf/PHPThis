@@ -18,6 +18,12 @@ It rejects missing or wrongly typed method and URI values, relative or fragmente
 
 Header names in `Request` are lowercase HTTP tokens. Handlers use explicit array access such as `$request->headers['content-type'] ?? null`; PHPThis intentionally provides no generic input or header helper.
 
+## Query parameters
+
+The top-level query-parameter count is bounded and names must be strings, but values remain external `mixed` data. An operation that accepts query parameters parses the complete array once through its own concrete boundary before I/O. The example `ListUsersPageRequest::fromQuery` accepts either no parameters or exactly one canonical positive-integer string named `after_user_id`; unknown, nested, coercive, padded, signed, and overflowing values fail before database work.
+
+PHP has already normalized the raw query string into `$_GET` before this boundary receives it. PHPThis therefore does not claim to detect repeated raw query keys whose spellings collapse to one PHP array entry. Supporting that distinction requires a separate raw-query ingestion decision.
+
 ## Routing metadata
 
 `Router` first attempts direct literal lookup. It then considers only the accepted trailing `{name:positive-int}` shape through its method and literal-prefix index. A matching segment must be canonical ASCII decimal in the range 1 through `PHP_INT_MAX`; the reader's no-decoding rule means `%31` does not become `1` and an encoded separator does not create another segment.

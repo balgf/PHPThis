@@ -8,7 +8,9 @@ PHP has no native generic collections, and strict types do not validate values r
 
 ## Decision
 
-External `mixed` data is parsed exactly once by a named factory into a concrete final readonly projection or command. Factories reject missing and unknown fields, validate before conversion, accept only documented canonical representations, and have private constructors. PHPStan generics remain static supplements.
+External `mixed` data is parsed exactly once by a named factory into a concrete final readonly boundary value: an operation-specific request or command for inbound data, or a projection for returned data. Factories reject missing required fields and unknown fields, validate before conversion, accept only documented canonical representations, and have private constructors. PHPStan generics remain static supplements.
+
+Naming an operation-specific request boundary does not add a generic request bag, change Consumer Contract version 3, or change Strict Profile version 2.
 
 The first examples are `UserSummary::fromDatabaseRow` and `CreateUserCommand::fromJson`. PHPThis does not add reflection hydration, a generic collection, or a generic result wrapper for this capability.
 

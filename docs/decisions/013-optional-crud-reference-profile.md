@@ -6,7 +6,7 @@ Status: accepted
 
 Create, read, update, and delete work is a recurring shape in database-backed PHP applications. Giving that work a predictable source layout reduces the number of plausible placements an AI must infer, but treating CRUD as one generic operation erases important differences between its use cases. Create, list, item read, update, and delete can have different input types, authorization rules, query shapes, transaction boundaries, concurrency behavior, conflicts, and response semantics.
 
-PHPThis has executable evidence for two collection operations: a transactional Create handler and a bounded List handler whose query count is tested at materially different fixture sizes. ADR 017 now adds the single bounded trailing positive-integer route shape and a first item Get proof with immediate concrete-identifier conversion, explicit missing behavior, and one query. The framework still cannot choose an application's pagination contract, tenant scope, update concurrency policy, deletion semantics, authorization rules, or conflict behavior.
+PHPThis has executable evidence for two collection operations: a transactional Create handler and a bounded List handler whose query count is tested at materially different fixture sizes. The example List now records and proves its own keyset contract: optional canonical `after_user_id`, ascending identifiers, fixed 50-row pages, one-row lookahead, a canonical string continuation or `null`, and one statement per accepted page. ADR 017 adds the single bounded trailing positive-integer route shape and a first item Get proof with immediate concrete-identifier conversion, explicit missing behavior, and one query. These examples do not choose another application's pagination contract, tenant scope, update concurrency policy, deletion semantics, authorization rules, or conflict behavior.
 
 Consumers need a clear PHPThis-shaped default without making their directories part of framework runtime behavior or preventing a project from selecting a better structure for its domain.
 
@@ -29,16 +29,17 @@ src/
       UserId.php
     ListUsers/
       ListUsersHandler.php
+      ListUsersPageRequest.php
       UserActivitySummary.php
 ```
 
-Feature and operation names use the application's domain vocabulary. Route lists remain explicit. A handler keeps the complete request path visible and may move SQL only into a narrowly named query object when that responsibility no longer remains clear in the handler. Commands and projections stay specific to one boundary instead of becoming generic records, models, or collections.
+Feature and operation names use the application's domain vocabulary. Route lists remain explicit. A handler keeps the complete request path visible and may move SQL only into a narrowly named query object when that responsibility no longer remains clear in the handler. Operation requests, commands, and projections stay specific to one boundary instead of becoming generic records, models, or collections.
 
 An application may use this reference placement or record one coherent alternate placement and naming rule in its `.ai/architecture.md`. That selection guides authoring within the application; it does not add a second framework runtime API. An alternate structure may strengthen the installed consumer contract but cannot weaken its typing, explicit routing, visible SQL, bounded database work, analysis, or verification requirements.
 
 PHPThis does not add a CRUD base handler, generic repository, resource registration API, automatic routes, mass assignment, SQL generation, runtime discovery, filesystem enforcement, or code-generation requirement. The framework dispatches the explicitly constructed objects supplied by the application regardless of their directories.
 
-Create and List have partial executable evidence for structure, boundary parsing, transaction shape, and query cost; they do not yet have complete authorization, identity/conflict, or continuation policy. The first Get slice proves only the bounded typed route, immediate `UserId` conversion, explicit missing response, concrete projection, and one-query cost; authorization and tenant policy remain application-owned and unresolved. Update and Delete have no executable reference and do not become supported merely because their names appear in the CRUD vocabulary. They require accountable application decisions and executable evidence for concurrency, deletion, authorization, conflicts, and related behavior.
+Create and List have partial executable evidence for structure, boundary parsing, transaction shape, and query cost. List additionally has bounded executable evidence for the narrow example-owned continuation contract above, but not authorization or snapshot consistency during concurrent writes. Create still lacks complete authorization and identity/conflict policy. The first Get slice proves only the bounded typed route, immediate `UserId` conversion, explicit missing response, concrete projection, and one-query cost; authorization and tenant policy remain application-owned and unresolved. Update and Delete have no executable reference and do not become supported merely because their names appear in the CRUD vocabulary. They require accountable application decisions and executable evidence for concurrency, deletion, authorization, conflicts, and related behavior.
 
 ## Consequences
 

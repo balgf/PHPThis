@@ -16,7 +16,7 @@ The focused scaling harness is also available as `composer test:query-scaling`; 
 
 The harness creates fresh SQLite databases with the same `users` and indexed `user_events` schema used by the example application. Each user has two events.
 
-The accepted `GET /users` handler uses one bounded aggregate statement. It returns equivalent data for a 2-user fixture and a 50-user fixture while executing exactly one statement in both cases. Its query trace contains one fingerprint executed once and is not truncated.
+The accepted `GET /users` handler uses one bounded aggregate statement per accepted page. It returns equivalent data for a 2-user fixture and a 50-user fixture while executing exactly one statement in both cases. Its query trace contains one fingerprint executed once and is not truncated. Separate evidence traverses 125 static users as 50, 50, and 25 rows using canonical `after_user_id` values, with one fresh request budget and trace per page and no gaps or duplicates.
 
 The negative control returns the same data by selecting users once and then counting events once per user. It executes 3 statements for 2 users and 51 statements for 50 users. The child-query fingerprint reaches 50 executions. The harness also proves that:
 
@@ -32,7 +32,7 @@ The first `GET /users/{user_id}` item proof accepts only the bounded typed route
 
 The optional CRUD reference profile is an authoring and placement convention, not a runtime CRUD abstraction. The example proves its current executable scope with separate `Users/CreateUser`, `Users/ListUsers`, and `Users/GetUser` use-case directories, one explicit route-area manifest, direct constructor wiring, visible SQL, strict command, identifier, and projection boundaries, and operation-specific query budgets and traces.
 
-Create and List retain the behavior and scaling evidence above after adopting that structure. Get adds only the narrow typed-route, concrete-identifier, explicit-missing, projection, and one-query proof; its authorization and tenant policy remain unresolved. The framework does not inspect application directories, and this repository does not claim complete item CRUD: Update and Delete still require application-owned decisions and executable evidence for authorization, concurrency, conflicts, deletion, and retention semantics.
+Create and List retain the behavior and scaling evidence above after adopting that structure. List also adds a concrete page-request boundary that rejects malformed or unknown continuation input before database work; this remains one example-owned policy rather than a generic paginator. Get adds only the narrow typed-route, concrete-identifier, explicit-missing, projection, and one-query proof; its authorization and tenant policy remain unresolved. The framework does not inspect application directories, and this repository does not claim complete item CRUD: Update and Delete still require application-owned decisions and executable evidence for authorization, concurrency, conflicts, deletion, and retention semantics.
 
 ## Database transport certification
 
@@ -86,8 +86,8 @@ A passing answer must be correct for the installed revision, supported by access
 - Adversarial bound-data tests prove only their exercised paths and are not universal SQL-injection certification.
 - Multiple certified connections remain independent; the probe does not provide distributed transactions or cross-database atomicity.
 - Statement budgets do not bound rows scanned or event-history fan-out; this proof detects query-count growth, not total database cost.
-- The aggregate read can observe concurrent changes according to the target database's isolation rules; production evaluation must choose that policy explicitly.
-- The read returns only the first 50 users; pagination and continuation are not implemented yet.
+- The keyset traversal is not a snapshot. It can observe higher identifiers inserted between requests and other concurrent changes according to the target database's isolation rules; production evaluation must choose that policy explicitly.
+- The `after_user_id` contract is one application-owned ascending-identifier policy. It does not supply filters, ordering choices, opaque cursors, total counts, or a generic framework paginator.
 - Item Get is limited to the one trailing positive-integer shape and lacks authorization and tenant policy; Update and Delete routes are not implemented, and the router does not accept general resource-identifier patterns.
 - The sample enforces JSON `Content-Type` and maps malformed input, unsupported media, and oversized bodies; database conflicts remain generic 500 failures until a reliable named translation is designed.
 - The unknown-failure log is deliberately minimal and has no request ID or query-trace summary yet.

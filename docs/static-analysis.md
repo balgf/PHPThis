@@ -8,7 +8,7 @@ PHPThis additionally defines a versioned Strict Profile. Repository-owned diagno
 
 Precise static feedback narrows the repair loop for an AI agent. It catches missing and implicit types, unsafe nullable access, invalid calls, incomplete iterable types, and contradictions between PHPDoc and native declarations before execution.
 
-PHPStan generics and array shapes are compile-time contracts only. Runtime data still passes through explicit projection and command factories before entering typed application code.
+PHPStan generics and array shapes are compile-time contracts only. Runtime data still passes through explicit operation-request, command, or projection factories before entering typed application code.
 
 ## No baseline policy
 

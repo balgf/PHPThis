@@ -30,7 +30,7 @@ Reported `execute_duration_us` values cover prepare, parameter binding, and exec
 
 ## Query-scaling proof
 
-`composer test:query-scaling` compares the accepted bounded aggregate read with an intentionally invalid N+1 negative control. Both return identical JSON for 2-user and 50-user fixtures. The accepted implementation stays at one statement; the negative control grows from 3 to 51, repeats its child-query fingerprint 50 times, is rejected by `PHT003`, and is stopped before statement 4 when given a budget of 3.
+`composer test:query-scaling` compares the accepted bounded aggregate read with an intentionally invalid N+1 negative control. Both return identical JSON for 2-user and 50-user fixtures. The accepted implementation stays at one statement; the negative control grows from 3 to 51, repeats its child-query fingerprint 50 times, is rejected by `PHT003`, and is stopped before statement 4 when given a budget of 3. A separate 125-user fixture traverses the accepted keyset as 50, 50, and 25 users, with one fresh budget and trace per request, one statement per accepted page, and no missing or repeated identifiers.
 
 The negative source uses a `.php.fixture` suffix and is never accepted application code. The proof explicitly submits it to the same Strict Profile checker used by the repository validity gate before executing it in an isolated subprocess.
 

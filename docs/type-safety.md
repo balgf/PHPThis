@@ -20,9 +20,13 @@ A JSON body is decoded with `JSON_THROW_ON_ERROR` and an explicit depth limit, r
 
 Native `json_decode` keeps the final value when a JSON object repeats a key. This first slice documents that limitation rather than claiming duplicate keys are rejected. A duplicate-key-aware parser requires a separate decision if interoperability proves the need.
 
+## Query parameters
+
+When constructed through `RequestReader`, `Request::$query` receives at most 64 string-named top-level entries with `mixed` values. Each accepting operation parses the complete array through a concrete factory before I/O, rejects unknown keys and non-canonical representations, and exposes only native typed state afterward. The example `ListUsersPageRequest::fromQuery` turns its optional canonical decimal `after_user_id` string into `?int`; it does not create a generic query bag or coercive input helper.
+
 ## Static generics
 
-PHPStan types such as `list<UserSummary>`, array shapes, `class-string<T>`, and `@template T` provide compile-time relationships but have no runtime effect. PHPThis reserves templates for genuinely generic infrastructure. Domain data uses concrete projections and commands; a generic collection is not the default.
+PHPStan types such as `list<UserSummary>`, array shapes, `class-string<T>`, and `@template T` provide compile-time relationships but have no runtime effect. PHPThis reserves templates for genuinely generic infrastructure. Domain data uses concrete operation requests, commands, and projections; a generic collection is not the default.
 
 ## Enforcement
 

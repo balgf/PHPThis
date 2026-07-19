@@ -29,7 +29,8 @@
 - Complete: accepted cache policy that separates explicit application-owned HTTP response caching from server-side derived-data caching while adding no pre-Alpha generic cache mechanism or Consumer Contract version.
 - Complete: one bounded trailing `{name:positive-int}` route grammar, immutable `RouteMatch` and `PathParameters` delivery without changing the handler interface, literal precedence, ambiguity rejection, and indexed request-time lookup.
 - Complete: first bounded `GET /users/{user_id}` proof with immediate concrete-identifier conversion; this does not claim complete authorization or tenant policy.
-- Current: finish the remaining Create identity/conflict, List continuation, and Get authorization/tenant decisions and evidence.
+- Complete: application-owned `GET /users` keyset continuation with strict `after_user_id` parsing, fixed 50-row pages, one-statement lookahead, and no-gap/no-duplicate scaling evidence.
+- Current: finish the remaining Create identity/conflict plus Create/List/Get authorization and tenant decisions and evidence.
 - After those decisions: prove Update and Delete only after the example also records mutation concurrency, deletion, authorization, and conflict behavior.
 
 ## Phase 2: type-aware AI guardrails

@@ -6,10 +6,11 @@ Canonical factories:
 
 - `Projection::fromDatabaseRow(array<string, mixed>)` for a selected database row.
 - `Command::fromJson(string)` for a JSON request body.
+- `PageRequest::fromQuery(array<string, mixed>)` for operation-specific query parameters.
 
 Every factory must:
 
-1. Reject missing and unknown fields.
+1. Reject missing required fields and unknown fields.
 2. Check the runtime type before conversion.
 3. Accept only documented canonical representations and ranges.
 4. Throw without including the rejected value.

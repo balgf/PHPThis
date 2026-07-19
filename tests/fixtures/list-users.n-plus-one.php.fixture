@@ -70,7 +70,10 @@ try {
     $budgetExceeded = true;
 }
 
-$body = json_encode(['users' => $users], JSON_THROW_ON_ERROR) . "\n";
+$body = json_encode(
+    ['users' => $users, 'next_after_user_id' => null],
+    JSON_THROW_ON_ERROR,
+) . "\n";
 
 fwrite(STDOUT, json_encode([
     'body' => $body,

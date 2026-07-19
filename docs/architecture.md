@@ -35,7 +35,7 @@ The router stores objects, not class names, so dispatch does not need reflection
 - `Http`: bounded runtime ingestion, immutable request/response values, exact error mapping, and final emission.
 - `Session`: bounded immutable snapshots and one lazy native-file session lifecycle; authentication, authorization, expiry, and CSRF remain application policy.
 - `Database`: explicit PDO execution and query accounting.
-- `example`: proves the complete manual wiring path and the optional feature-first CRUD profile with bounded List, transactional Create, and a first bounded typed-item Get use case.
+- `example`: proves the complete manual wiring path and the optional feature-first CRUD profile with a one-statement application-owned List continuation, transactional Create, and a first bounded typed-item Get use case.
 
 There is no cache namespace or cache mechanism in the core. HTTP response policy remains an explicit property of the response-producing path. Framework-owned 404, 405, and unknown-failure 500 responses explicitly prohibit storage; the skeleton and example do the same for their current handlers. PHPThis does not rewrite arbitrary handler responses, so every additional application path still owns and tests its policy. If an application later adopts server-side caching, it manually wires a narrowly named typed application service at the handler boundary; that service owns one cache-aside execution path and its backend-specific policy. It is not a generic key-value facility, middleware, or replacement for the authoritative data path.
 

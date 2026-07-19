@@ -31,6 +31,7 @@ src/
       UserId.php
     ListUsers/
       ListUsersHandler.php
+      ListUsersPageRequest.php
       UserActivitySummary.php
 ```
 
@@ -39,7 +40,8 @@ The feature route list explicitly constructs literal or bounded typed routes for
 - a Create command parses and validates external input before database work;
 - a Create handler owns the visible transaction, write SQL, expected failure behavior, and response;
 - a Get handler immediately wraps its validated positive-integer path parameter in `UserId`, owns one bounded item query and explicit missing behavior, and parses a concrete `UserDetails` projection;
-- a List handler owns a bounded, deterministically ordered read and its response;
+- a List page request parses its exact query-parameter contract before database work;
+- a List handler owns a bounded, deterministically ordered read, continuation behavior, and response;
 - a List projection parses each selected row into a concrete final readonly value;
 - a narrowly named query object is introduced only when visible SQL no longer remains clear in its handler.
 
@@ -64,10 +66,10 @@ Every database operation still uses engine-specific visible SQL through direct `
 The framework repository's runnable example currently proves these structural and query-cost properties:
 
 - `POST /users`: a concrete command, explicit transactional Create handler, named SQL parameters, and a statement count that remains constant as pre-existing data grows;
-- `GET /users`: a bounded List handler with concrete projections and aggregate SQL whose statement count remains constant as the fixture grows;
+- `GET /users`: a bounded List handler with a concrete page request and projections. Its example-owned contract accepts only optional canonical `after_user_id`, orders by ascending user ID, returns at most 50 users, probes one extra row, emits the last returned ID as the next canonical string or `null`, and keeps every page to one aggregate statement;
 - `GET /users/{user_id}`: the declared trailing positive-integer route, immediate `UserId` conversion, a concrete `UserDetails` projection, explicit missing response, and one bounded database statement.
 
-This is not complete Create, List, or Get policy evidence. The example has no authorization behavior, Create still lacks a named identity/conflict contract, List returns one fixed first page without continuation, and Get does not establish authorization or tenant scope. Update and Delete have no executable reference. Every operation still requires the relevant application-owned decisions for pagination, concurrency, deletion, authorization, tenant scope, and conflict behavior; PHPThis does not invent those policies.
+This is not complete Create, List, or Get policy evidence. The example has no authorization behavior, Create still lacks a named identity/conflict contract, and Get does not establish authorization or tenant scope. List proves only the specific continuation contract above; it does not make that policy a framework default or provide snapshot consistency during concurrent writes. Update and Delete have no executable reference. Every operation still requires the relevant application-owned decisions for pagination, concurrency, deletion, authorization, tenant scope, and conflict behavior; PHPThis does not invent those policies.
 
 ## Selecting an alternate structure
 
@@ -76,7 +78,7 @@ An application that does not adopt the reference placement records its one canon
 - feature or area grouping rule;
 - route-list placement;
 - handler placement and naming;
-- command and projection placement;
+- operation-request, command, and projection placement;
 - dependency direction; and
 - the source and test paths an AI must inspect for each operation.
 
