@@ -8,9 +8,9 @@ A useful first request is:
 
 > Read `AGENTS.md`, inspect the installed PHPThis version, explain the current request path with file references, and identify the project facts I must decide before we add the first feature.
 
-PHPThis is still pre-alpha. Until tagged packages are published, this skeleton installs `phpthis/framework` from its public source repository at `dev-main`.
+Package availability is an external fact: verify tagged repositories and Packagist rather than inferring publication from this tracked README. If this checkout's `composer.json` contains a VCS repository override and requires `phpthis/framework: dev-main`, it is the source-evaluation variant.
 
-The `repositories` entry is only a pre-alpha bootstrap. The separately published skeleton must remove it, require the alpha package constraint from Packagist, and commit the resulting `composer.lock` before release.
+The separately published skeleton must remove that override, require the approved Alpha constraint from Packagist, and commit the resulting `composer.lock` before its tag. A published artifact must be proved through `RELEASING.md`.
 
 ## Install and check
 

@@ -32,11 +32,11 @@
 - Complete: application-owned `GET /users` keyset continuation with strict `after_user_id` parsing, fixed 50-row pages, one-statement lookahead, and no-gap/no-duplicate scaling evidence.
 - Complete: accepted bounded Alpha 1 release scope; complete CRUD, authentication, authorization, and tenancy are explicitly not publication prerequisites.
 
-## Phase 2: publish Alpha 1 and extend type-aware AI guardrails
+## Phase 2: Alpha 1 publication and type-aware AI guardrails
 
-- Current: execute `RELEASING.md` without expanding the runtime surface: prove a candidate for the approved prerelease identity, publish the framework package, export and publish the skeleton package, verify the actual Packagist-preferred artifacts, and prove the public `composer create-project --stability=alpha` path before announcement.
-- Export `skeleton/` as its own package root, remove the pre-alpha VCS repository override, replace `dev-main` with the Packagist alpha constraint, commit its lockfile, and publish both prerelease packages.
-- Install the actual Packagist-preferred framework dist, compare it with `tools/package-files.txt`, and prove the documented `composer create-project --stability=alpha` path before announcing alpha.
+- Alpha 1 publication state is external; `RELEASING.md` defines the proof without embedding mutable tag, package-host, or announcement state in the tagged artifact.
+- Alpha 1 requires the contents of `skeleton/` to be exported as their own package root, the source-evaluation VCS override to be removed, `dev-main` to be replaced with the approved Packagist alpha constraint, and the resulting lockfile to be committed.
+- Alpha 1 public proof installs the actual Packagist-preferred framework dist, compares it with `tools/package-files.txt`, and proves the documented `composer create-project --stability=alpha` path before announcement.
 - Move type-sensitive architecture checks into tested PHPStan extensions.
 - Detect unbounded reads with low false-positive rates and measure PHT006 gaps before considering any broader SQL provenance rule.
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.

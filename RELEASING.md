@@ -1,6 +1,6 @@
 # PHPThis release process
 
-Current release state: pre-alpha. Alpha 1 scope is accepted in `docs/decisions/018-bounded-alpha-1-release-scope.md`; publication is not complete.
+Alpha 1 scope is accepted in `docs/decisions/018-bounded-alpha-1-release-scope.md`. Publication state is external: this reusable checklist intentionally does not claim whether Alpha 1 has been published.
 
 This is the maintainer release gate, not an application programming manual. Copy the checklist into the release work item and attach evidence there. Keep this canonical checklist unchecked and reusable.
 
@@ -15,7 +15,7 @@ The accountable human approved the following release identity on 2026-07-19 (Asi
 - Skeleton tag: `v0.1.0-alpha.1`
 - Release notes: `docs/releases/0.1.0-alpha.1.md`
 
-This approves the version and tag names only. The exact candidate commit, release date, and accountable-human publication authorization belong in the external release evidence attached to the release work item; embedding them in tracked release notes would change the candidate commit. This approval does not create or authorize creation of either tag, either package-host entry, either GitHub release, or the announcement. The project remains pre-alpha until the complete gate below passes.
+This approves the version and tag names only. The exact candidate commit, release date, and accountable-human publication authorization belong in the external release evidence attached to the release work item; embedding them in tracked release notes would change the candidate commit. This approval does not create or authorize creation of either tag, either package-host entry, either GitHub release, or the announcement. Alpha 1 must not be announced until the complete gate below passes, and its publication state must be verified from external evidence.
 
 ## Alpha 1 release gate
 
@@ -51,7 +51,7 @@ composer check
 - [ ] Submit or refresh `phpthis/framework` on Packagist and wait until the exact prerelease is indexed with a preferred distribution artifact.
 - [ ] Record the framework tag, commit, Packagist version, and distribution reference in the release evidence.
 
-Do not announce Alpha 1 yet. The public artifact and skeleton path are still unproved.
+At the end of this step, treat the public artifact and skeleton path as unproved until Steps 4 and 5 pass. Do not announce Alpha 1 yet.
 
 ### 4. Publish the skeleton prerelease
 
@@ -86,7 +86,7 @@ composer check
 
 ### 6. Announce or stop
 
-- [ ] Update pre-alpha wording only after both packages and the clean public path are proven.
+- [ ] Update mutable repository landing-page or announcement wording only after both packages and the clean public path are proven; keep tagged package authority independent of mutable publication state.
 - [ ] Publish the approved GitHub prereleases for both proven tags without moving either tag.
 - [ ] Publish the approved Alpha 1 announcement with direct links to both tagged packages, release notes, ADR 018, the security policy, and the installation command.
 - [ ] Preserve the release evidence with the release work item.

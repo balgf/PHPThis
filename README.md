@@ -47,9 +47,9 @@ Finite SQL and parameter binding do not prove authorization or least privilege. 
 
 ## Current state
 
-**Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
+**Status: experimental prerelease evaluation software.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
-The bounded [Alpha 1 release scope](docs/decisions/018-bounded-alpha-1-release-scope.md) is accepted, but no alpha has been published. Alpha 1 freezes the current checked installation and authoring surface; it will not claim production readiness, backward compatibility, complete CRUD, authentication, authorization, or tenancy. The project remains pre-alpha until the complete [release gate](RELEASING.md) proves both Packagist packages and the clean public installation path.
+The bounded [Alpha 1 release scope](docs/decisions/018-bounded-alpha-1-release-scope.md) is accepted. Package availability and current release state are external facts: verify the approved tags and Packagist packages rather than inferring publication from this immutable source file. Alpha 1 freezes the checked installation and authoring surface; it does not claim production readiness, backward compatibility, complete CRUD, authentication, authorization, or tenancy. The [release gate](RELEASING.md) must prove both packages and the clean public installation path before Alpha 1 is announced.
 
 This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, directly indexed literal routes, one indexed trailing positive-integer route shape, explicit handlers, and instrumented PDO access. It does not include a cache client, cache interface, cache helper, or general automatic HTTP cache policy. Framework-generated 404, 405, and 500 responses and the current skeleton/example response paths explicitly use `Cache-Control: no-store`; arbitrary application handler responses remain application-owned. The sample application includes a bounded `GET /users` List operation with one explicit application-owned keyset continuation, a transactional `POST /users` Create operation, and the first bounded `GET /users/{user_id}` item proof. That Get slice proves typed routing, concrete identifier conversion, and bounded query cost, not complete authorization or tenant policy. Update and Delete are not yet claimed. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
 
@@ -81,7 +81,7 @@ curl -i -X POST http://127.0.0.1:8080/users \
 
 ## Start an application
 
-The independently checked `phpthis/skeleton` package source now lives under `skeleton/`. It contains a runnable health application, project-owned AI context, the installed profile gate, behavior tests, and CI. The separate Composer package will be published with the first alpha; until then, [the getting-started guide](docs/getting-started.md) describes source evaluation without pretending `composer create-project` is already available.
+The independently checked `phpthis/skeleton` package source lives under `skeleton/`. It contains a runnable health application, project-owned AI context, the installed profile gate, behavior tests, and CI. The [getting-started guide](docs/getting-started.md) defines both the Packagist installation path and source-checkout evaluation while requiring current package availability to be verified externally.
 
 Every application must own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
 
@@ -99,9 +99,9 @@ Ask the project AI to follow the [application bootstrap contract](docs/getting-s
 - [Architecture decisions](docs/decisions/README.md) preserve accepted rationale and reconsideration triggers.
 - [Alpha 1 scope](docs/decisions/018-bounded-alpha-1-release-scope.md) defines the bounded first-prerelease claim, and the [release process](RELEASING.md) defines the public-artifact gate.
 - [Evaluation](docs/evaluation.md) defines evidence and future AI-comparison work.
-- [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the pre-alpha project's current boundaries.
+- [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the experimental project's current boundaries.
 
-The maintainer [AI context index](.ai/README.md) routes changes to PHPThis itself. It is not copied into applications.
+The source repository contains a maintainer-only `.ai/README.md` that routes changes to PHPThis itself. It is intentionally excluded from the Composer package; installed consumers use the [knowledge map](docs/knowledge-map.md).
 
 ## License
 

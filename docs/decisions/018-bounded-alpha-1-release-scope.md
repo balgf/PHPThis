@@ -4,7 +4,7 @@ Status: accepted
 
 ## Context
 
-PHPThis now has an independently installable framework archive, a framework-owned consumer checker, a runnable skeleton, application-owned automated behavior evidence, database query-scaling controls, and a public repository. It remains pre-alpha because neither `phpthis/framework` nor `phpthis/skeleton` has been published as a tagged Packagist prerelease and the actual public distribution path has not been exercised.
+When this decision was accepted, PHPThis had an independently installable framework archive, a framework-owned consumer checker, a runnable skeleton, application-owned automated behavior evidence, database query-scaling controls, and a public repository. It remained pre-alpha at that point because neither `phpthis/framework` nor `phpthis/skeleton` had been published as a tagged Packagist prerelease and the actual public distribution path had not been exercised.
 
 The reference application intentionally proves only bounded parts of Create, List, and Get. Create identity and conflict behavior, authorization, tenancy, Update, and Delete remain application decisions or future evidence. Treating all conventional framework capabilities as Alpha prerequisites would turn the first release into an unbounded full-stack project and weaken the evidence-first development model.
 
@@ -33,7 +33,7 @@ Alpha 1 may be announced only after every mandatory step in `RELEASING.md` passe
 
 The exact prerelease version, tag names, skeleton repository URL, package publication, and release announcement remain separately authorized release operations. Accepting this scope does not perform or pre-authorize those external writes.
 
-Until every mandatory release gate passes, the public project status remains pre-alpha.
+Alpha 1 must not be announced unless every mandatory release gate passes. This decision does not record mutable publication state; verify current state from tagged releases, Packagist, and the external release evidence.
 
 This decision changes no runtime API, Consumer Contract version, or Strict Profile version.
 

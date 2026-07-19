@@ -436,9 +436,9 @@ $alphaReleaseContractMarkers = [
     '.ai/README.md' => 'Prepare, assess, or publish a release',
     '.ai/application-context.md' => 'Keep Alpha scope approval separate from authorization to create tags',
     '.ai/testing.md' => 'The Git export comparison requires a clean worktree',
-    'README.md' => 'The project remains pre-alpha until the complete [release gate](RELEASING.md)',
+    'README.md' => 'Package availability and current release state are external facts',
     'RELEASING.md' => '## Alpha 1 release gate',
-    'ROADMAP.md' => 'Current: execute `RELEASING.md` without expanding the runtime surface: prove a candidate for the approved prerelease identity',
+    'ROADMAP.md' => 'Alpha 1 publication state is external',
     'SECURITY.md' => 'Private vulnerability reports are still assessed on a best-effort basis.',
     'docs/getting-started.md' => 'Acceptance of the scope is not publication.',
     'docs/knowledge-map.md' => 'Assess or prepare a PHPThis release',
@@ -465,17 +465,25 @@ $alphaReleaseIdentityArtifactMarkers = [
         'Skeleton tag: `v0.1.0-alpha.1`',
         'The exact candidate commit, release date, and accountable-human publication authorization belong in the external release evidence',
         'This approval does not create or authorize creation of either tag, either package-host entry, either GitHub release, or the announcement.',
-        'The project remains pre-alpha until the complete gate below passes.',
+        'Alpha 1 must not be announced until the complete gate below passes',
     ],
     'docs/knowledge-map.md' => [
         '`docs/releases/0.1.0-alpha.1.md`',
     ],
     'docs/releases/0.1.0-alpha.1.md' => [
-        'Status: unpublished; project state remains pre-alpha; version identity approved.',
+        'Release identity: `0.1.0-alpha.1`. Publication state is external',
         'external release evidence recorded with the release work item using the checklist in `RELEASING.md`',
         'They are intentionally not embedded in these tracked notes because changing them would produce a different candidate commit.',
-        'The public `composer create-project --stability=alpha phpthis/skeleton` path is intentionally unavailable',
+        'The public `composer create-project --stability=alpha phpthis/skeleton` path is supported only when both packages are indexed',
         'It is not production-ready and makes no backward-compatibility promise across prereleases.',
+    ],
+    'docs/decisions/018-bounded-alpha-1-release-scope.md' => [
+        'When this decision was accepted',
+        'This decision does not record mutable publication state',
+    ],
+    'skeleton/README.md' => [
+        'Package availability is an external fact',
+        'A published artifact must be proved through `RELEASING.md`.',
     ],
     'tools/package-files.txt' => [
         'docs/releases/0.1.0-alpha.1.md',
@@ -493,6 +501,43 @@ foreach ($alphaReleaseIdentityArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "The approved Alpha 1 identity marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$mutableReleaseStateForbiddenMarkers = [
+    'Status: unpublished; project state remains pre-alpha',
+    'PHPThis is still pre-alpha.',
+    'Until tagged packages are published',
+    'It remains pre-alpha because neither',
+    'Until every mandatory release gate passes, the public project status remains pre-alpha.',
+    'The public artifact and skeleton path are still unproved.',
+    'no alpha has been published',
+    'path is intentionally unavailable until',
+];
+
+$mutableReleaseStateAuthorityFiles = [
+    'README.md',
+    'RELEASING.md',
+    'ROADMAP.md',
+    'SECURITY.md',
+    'docs/getting-started.md',
+    'docs/releases/0.1.0-alpha.1.md',
+    'docs/decisions/018-bounded-alpha-1-release-scope.md',
+    'skeleton/README.md',
+];
+
+foreach ($mutableReleaseStateAuthorityFiles as $relativePath) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read release-state authority {$relativePath}.";
+        continue;
+    }
+
+    foreach ($mutableReleaseStateForbiddenMarkers as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "Mutable release-state claim remains in {$relativePath}: {$marker}";
         }
     }
 }

@@ -1,6 +1,6 @@
 # PHPThis application bootstrap contract
 
-PHPThis is experimental pre-alpha software. The repository contains the independently checked `phpthis/skeleton` package source under `skeleton/`; publication as a separate Composer package follows the first alpha tag.
+PHPThis is experimental prerelease software. The repository contains the independently checked `phpthis/skeleton` package source under `skeleton/`; its separate Composer package is governed by the Alpha release gate.
 
 This file defines reproducible setup and application-context requirements. It is not a framework programming manual. After bootstrap, the normal learning and authoring interface is the AI working in the application, grounded by `AGENTS.md`, `.ai/`, the installed PHPThis contract and knowledge map, source, and tests.
 
@@ -12,7 +12,7 @@ The intended first request is:
 
 ## Start from the checked skeleton
 
-After `phpthis/skeleton` is published, the canonical installation path will be:
+When Packagist lists the approved `phpthis/skeleton` Alpha, the canonical installation path is:
 
 ```bash
 composer create-project --stability=alpha phpthis/skeleton my-app
@@ -20,7 +20,7 @@ cd my-app
 composer check
 ```
 
-During pre-alpha source evaluation, use the public repository's `skeleton/` directory:
+For source-checkout evaluation, including when the package is not available, use the public repository's `skeleton/` directory:
 
 ```bash
 git clone https://github.com/balgf/PHPThis.git phpthis-source
@@ -122,8 +122,8 @@ After setup, ask the AI to inspect the current application rather than teach fro
 
 The AI should cite concrete paths, distinguish existing behavior from proposals, run `composer check` after changes, and surface consequential choices for human judgment. The accountable human approves accepted application decisions and owns the resulting system.
 
-## Pre-alpha publication boundary
+## Alpha publication boundary
 
-The bounded Alpha 1 claim is accepted in `docs/decisions/018-bounded-alpha-1-release-scope.md`, but neither `phpthis/framework` nor `phpthis/skeleton` has an alpha Composer tag. Acceptance of the scope is not publication. The VCS constraint and `repositories` override remain a pre-alpha bootstrap, so source evaluation is intentionally moving: record the evaluated Git commit and commit the generated application lockfile.
+The bounded Alpha 1 claim is accepted in `docs/decisions/018-bounded-alpha-1-release-scope.md`. Acceptance of the scope is not publication. Package availability is an external fact: verify the approved repository tags and Packagist versions. The source repository's `skeleton/` directory retains a VCS constraint and `repositories` override only as a source-evaluation bootstrap, so record the evaluated Git commit and commit the generated application lockfile.
 
-Alpha publication follows the complete maintainer gate in `RELEASING.md`. Export `skeleton/` as the root of its separate package repository, remove the VCS override, replace `dev-main` with the approved alpha constraint resolved from Packagist, and commit the skeleton lockfile. After both prerelease packages are indexed, install the actual Packagist-preferred dist, compare its framework inventory with `tools/package-files.txt`, and prove the exact `composer create-project --stability=alpha` command in a clean project before announcing the release. Do not represent that future public command as available before these gates pass. The shorter command without `--stability=alpha` belongs to a future stable release.
+Alpha publication follows the complete maintainer gate in `RELEASING.md`. Export `skeleton/` as the root of its separate package repository, remove the VCS override, replace `dev-main` with the approved alpha constraint resolved from Packagist, and commit the skeleton lockfile. Both prerelease packages must be indexed before the actual Packagist-preferred dist is installed, its framework inventory is compared with `tools/package-files.txt`, and the exact `composer create-project --stability=alpha` command is proved in a clean project. This tracked guide does not itself establish that the public command is currently available. The shorter command without `--stability=alpha` belongs to a future stable release.
