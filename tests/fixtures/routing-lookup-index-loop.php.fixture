@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+final readonly class Router
+{
+    /** @param array<string, list<object>> $routesBySegment */
+    public function __construct(private array $routesBySegment)
+    {
+    }
+
+    public function match(object $request): ?object
+    {
+        if ($request !== $request) {
+            return null;
+        }
+
+        return $this->scanIndex('accounts');
+    }
+
+    /** @return list<string> */
+    public function allowedMethodsForPath(string $path): array
+    {
+        return $this->scanIndex($path) === null ? [] : ['GET'];
+    }
+
+    private function scanIndex(string $path): ?object
+    {
+        $segments = $this->routesBySegment[$path] ?? [];
+
+        foreach ($segments as $segment) {
+            $route = $segment;
+
+            return $route;
+        }
+
+        return null;
+    }
+}

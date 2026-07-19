@@ -2,9 +2,9 @@
 
 | Term | Meaning | Do not alias as |
 | --- | --- | --- |
-| route | HTTP method, explicit literal or bounded trailing positive-integer path declaration, and handler | discovered endpoint, action map, regular-expression rule |
+| route | HTTP method, explicit literal or at-most-two-full-segment typed path declaration, and handler | discovered endpoint, action map, regular-expression rule |
 | route match | immutable selected route plus immutable path parameters | controller arguments, binding result |
-| path parameters | empty routing metadata or one validated trailing positive integer carried by the matched request copy | request bag, domain context, automatic model binding |
+| path parameters | empty routing metadata or at most two validated `positive-int` or bounded `token` values carried by the matched request copy and read through type-specific access | request bag, domain context, automatic model binding |
 | handler | object with `handle(Request): Response` | controller, action, responder |
 | connection | instrumented PDO boundary | DB facade, query builder |
 | PDO transport | native-driver connection, binding, fetch, transaction, budget, and trace behavior certified without SQL translation | database abstraction, portable dialect |

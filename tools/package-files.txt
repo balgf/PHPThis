@@ -30,6 +30,7 @@ docs/decisions/015-explicit-native-session-lifecycle.md
 docs/decisions/016-cache-policy-before-cache-mechanism.md
 docs/decisions/017-bounded-trailing-positive-integer-routes.md
 docs/decisions/018-bounded-alpha-1-release-scope.md
+docs/decisions/019-bounded-multiple-typed-routes.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -67,6 +68,8 @@ src/Http/UnsupportedMediaType.php
 src/Routing/PathParameters.php
 src/Routing/Route.php
 src/Routing/RouteMatch.php
+src/Routing/RouteParameterType.php
+src/Routing/RouteSegment.php
 src/Routing/Router.php
 src/Session/SessionConfiguration.php
 src/Session/SessionLifecycle.php

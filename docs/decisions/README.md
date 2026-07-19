@@ -22,3 +22,4 @@ Accepted records:
 - `016-cache-policy-before-cache-mechanism.md`
 - `017-bounded-trailing-positive-integer-routes.md`
 - `018-bounded-alpha-1-release-scope.md`
+- `019-bounded-multiple-typed-routes.md`

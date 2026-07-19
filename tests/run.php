@@ -31,6 +31,7 @@ use PHPThis\Http\UnsupportedMediaType;
 use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\PathParameters;
 use PHPThis\Routing\Route;
+use PHPThis\Routing\RouteParameterType;
 use PHPThis\Routing\Router;
 
 require dirname(__DIR__) . '/autoload.php';
@@ -54,6 +55,29 @@ $tests['example composes explicit route modules'] = static function (): void {
         || $response->body !== "{\"status\":\"ok\"}\n"
     ) {
         throw new RuntimeException('Expected the composed example health route.');
+    }
+};
+
+$tests['example converts both nested route values into concrete identifiers'] = static function (): void {
+    $application = new Application(new Router(Routes::create(
+        Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
+        Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
+        Connection::connect('sqlite::memory:', new QueryBudget(2), new QueryTrace(2)),
+    )));
+    $response = $application->handle(
+        new Request('GET', '/accounts/42/documents/Doc_9-z'),
+    );
+
+    if (
+        $response->status !== 200
+        || $response->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
+        || $response->body
+            !== "{\"document\":{\"account_id\":42,\"key\":\"Doc_9-z\"}}\n"
+    ) {
+        throw new RuntimeException('Expected concrete identifiers from both typed route values.');
     }
 };
 
@@ -469,27 +493,49 @@ $tests['router rejects duplicate method and path pairs'] = static function (): v
     throw new RuntimeException('Expected duplicate routes to fail at startup.');
 };
 
-$tests['route accepts only one trailing positive integer parameter declaration'] = static function (): void {
+$tests['route accepts at most two full-segment typed parameter declarations'] = static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
             return new Response(204, [], '');
         }
     };
-    $route = new Route('GET', '/users/{user_id:positive-int}', $handler);
+    $itemRoute = new Route('GET', '/users/{user_id:positive-int}', $handler);
+    $nestedRoute = new Route(
+        'GET',
+        '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+        $handler,
+    );
+    $retainedRoute = new Route('GET', '/users//{user_id:positive-int}', $handler);
+    $retainedMatch = (new Router([$retainedRoute]))->match(new Request('GET', '/users//7'));
+    $segments = $nestedRoute->segments();
 
-    if ($route->literalPrefix() !== '/users/' || $route->parameterName() !== 'user_id') {
-        throw new RuntimeException('Expected explicit positive-integer route metadata.');
+    if (
+        $itemRoute->path !== '/users/{user_id:positive-int}'
+        || $nestedRoute->path
+            !== '/accounts/{account_id:positive-int}/documents/{document_key:token}'
+        || count($segments) !== 5
+        || $segments[1]->literal !== 'accounts'
+        || $segments[2]->parameterName !== 'account_id'
+        || $segments[2]->parameterType !== RouteParameterType::PositiveInteger
+        || $segments[3]->literal !== 'documents'
+        || $segments[4]->parameterName !== 'document_key'
+        || $segments[4]->parameterType !== RouteParameterType::Token
+        || $retainedMatch?->route !== $retainedRoute
+        || $retainedMatch->pathParameters->positiveInteger('user_id') !== 7
+    ) {
+        throw new RuntimeException('Expected explicit typed route declarations to remain inspectable.');
     }
 
     $invalidPaths = [
         '/users/{id}',
         '/users/{Id:positive-int}',
+        '/accounts/{accountId:positive-int}',
         '/users/{1id:positive-int}',
         '/users/{id:integer}',
-        '/users/{id:positive-int}/details',
-        '/users/{id:positive-int}/{other:positive-int}',
         '/users/{id:positive-int}suffix',
+        '/users/prefix{id:positive-int}',
+        '/{first:positive-int}/{second:token}/{third:token}',
     ];
 
     foreach ($invalidPaths as $path) {
@@ -499,7 +545,7 @@ $tests['route accepts only one trailing positive integer parameter declaration']
             continue;
         }
 
-        throw new RuntimeException("Expected invalid parameterized route to fail: {$path}");
+        throw new RuntimeException("Expected invalid typed route declaration to fail: {$path}");
     }
 };
 
@@ -554,7 +600,63 @@ $tests['router matches bounded canonical positive integer path parameters'] = st
     }
 };
 
-$tests['path parameters reject invalid construction and unknown names'] = static function (): void {
+$tests['router matches two ordered parameters and bounded opaque tokens'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $route = new Route(
+        'GET',
+        '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+        $handler,
+    );
+    $router = new Router([$route]);
+    $validValues = [
+        'A',
+        'AbC_9-z',
+        '001',
+        'A' . str_repeat('_', 63),
+    ];
+
+    foreach ($validValues as $value) {
+        $match = $router->match(new Request('GET', '/accounts/42/documents/' . $value));
+
+        if (
+            $match === null
+            || $match->route !== $route
+            || $match->pathParameters->positiveInteger('account_id') !== 42
+            || $match->pathParameters->token('document_key') !== $value
+        ) {
+            throw new RuntimeException("Expected exact bounded token matching: {$value}");
+        }
+    }
+
+    $invalidValues = [
+        '',
+        '_leading_underscore',
+        '-leading-hyphen',
+        'A' . str_repeat('_', 64),
+        'contains.dot',
+        'contains~tilde',
+        'contains:colon',
+        'contains space',
+        "contains\tcontrol",
+        'unicode-é',
+        '%41',
+        'abc%2Fdef',
+        'abc/def',
+    ];
+
+    foreach ($invalidValues as $value) {
+        if ($router->match(new Request('GET', '/accounts/42/documents/' . $value)) !== null) {
+            throw new RuntimeException("Expected opaque token to be rejected: {$value}");
+        }
+    }
+};
+
+$tests['path parameters reject invalid construction unknown names and wrong types'] = static function (): void {
     foreach ([['Invalid', 1], ['user_id', 0]] as [$name, $value]) {
         try {
             PathParameters::onePositiveInteger($name, $value);
@@ -565,34 +667,110 @@ $tests['path parameters reject invalid construction and unknown names'] = static
         throw new RuntimeException('Expected invalid path parameter construction to fail.');
     }
 
-    $parameters = PathParameters::onePositiveInteger('user_id', 7);
+    $invalidCollections = [
+        static fn(): PathParameters => PathParameters::fromValues(
+            ['first_id' => 1, 'second_id' => 2],
+            ['third_key' => 'Third'],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            ['identifier' => 1],
+            ['identifier' => 'Identifier'],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            [],
+            ['document_key' => '_invalid'],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            ['user_id' => '1'],
+            [],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            ['user_id' => true],
+            [],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            ['user_id' => 1.0],
+            [],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            [1 => 1],
+            [],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            [],
+            ['document_key' => 1],
+        ),
+    ];
 
-    try {
-        $parameters->positiveInteger('other_id');
-    } catch (OutOfBoundsException) {
-        return;
+    foreach ($invalidCollections as $invalidCollection) {
+        try {
+            $invalidCollection();
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected an invalid path parameter collection to fail.');
     }
 
-    throw new RuntimeException('Expected an unknown typed path parameter name to fail.');
-};
-
-$tests['literal route wins over matching parameterized route'] = static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
             return new Response(204, [], '');
         }
     };
-    $dynamic = new Route('GET', '/users/{user_id:positive-int}', $handler);
-    $literal = new Route('GET', '/users/7', $handler);
-    $match = (new Router([$dynamic, $literal]))->match(new Request('GET', '/users/7'));
+    $match = (new Router([
+        new Route(
+            'GET',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
+    ]))->match(new Request('GET', '/accounts/7/documents/Doc_9'));
+
+    if ($match === null) {
+        throw new RuntimeException('Expected typed path parameters for accessor failure tests.');
+    }
+
+    $invalidAccessors = [
+        static fn(): int => $match->pathParameters->positiveInteger('other_id'),
+        static fn(): int => $match->pathParameters->positiveInteger('document_key'),
+        static fn(): string => $match->pathParameters->token('other_key'),
+        static fn(): string => $match->pathParameters->token('account_id'),
+    ];
+
+    foreach ($invalidAccessors as $invalidAccessor) {
+        try {
+            $invalidAccessor();
+        } catch (OutOfBoundsException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected an unknown or wrongly typed path parameter access to fail.');
+    }
+};
+
+$tests['literal route wins over a matching mixed typed route'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $dynamic = new Route(
+        'GET',
+        '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+        $handler,
+    );
+    $literal = new Route('GET', '/accounts/7/documents/latest', $handler);
+    $match = (new Router([$dynamic, $literal]))->match(
+        new Request('GET', '/accounts/7/documents/latest'),
+    );
 
     if ($match === null || $match->route !== $literal) {
         throw new RuntimeException('Expected the exact literal route to win.');
     }
 
     try {
-        $match->pathParameters->positiveInteger('user_id');
+        $match->pathParameters->positiveInteger('account_id');
     } catch (OutOfBoundsException) {
         return;
     }
@@ -600,7 +778,30 @@ $tests['literal route wins over matching parameterized route'] = static function
     throw new RuntimeException('Expected a literal route match to carry no path parameters.');
 };
 
-$tests['router rejects ambiguous parameter shapes and inconsistent names'] = static function (): void {
+$tests['route rejects repeated typed parameter names'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+
+    foreach (['positive-int', 'token'] as $secondType) {
+        try {
+            new Route(
+                'GET',
+                '/accounts/{identifier:positive-int}/documents/{identifier:' . $secondType . '}',
+                $handler,
+            );
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected repeated typed parameter names to fail at startup.');
+    }
+};
+
+$tests['router rejects overlapping typed declarations and inconsistent metadata'] = static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -610,11 +811,39 @@ $tests['router rejects ambiguous parameter shapes and inconsistent names'] = sta
     $invalidRouteLists = [
         [
             new Route('GET', '/users/{user_id:positive-int}', $handler),
+            new Route('GET', '/users/{user_id:positive-int}', $handler),
+        ],
+        [
+            new Route('GET', '/users/{user_id:positive-int}', $handler),
             new Route('GET', '/users/{id:positive-int}', $handler),
         ],
         [
             new Route('GET', '/users/{user_id:positive-int}', $handler),
             new Route('POST', '/users/{id:positive-int}', $handler),
+        ],
+        [
+            new Route('GET', '/items/{item_id:positive-int}', $handler),
+            new Route('GET', '/items/{item_key:token}', $handler),
+        ],
+        [
+            new Route('GET', '/items/{item_id:positive-int}', $handler),
+            new Route('POST', '/items/{item_id:token}', $handler),
+        ],
+        [
+            new Route('GET', '/accounts/{account_key:token}/documents/latest', $handler),
+            new Route('GET', '/accounts/current/documents/{document_key:token}', $handler),
+        ],
+        [
+            new Route(
+                'GET',
+                '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+                $handler,
+            ),
+            new Route(
+                'GET',
+                '/accounts/{id:positive-int}/documents/{key:token}',
+                $handler,
+            ),
         ],
     ];
 
@@ -625,17 +854,30 @@ $tests['router rejects ambiguous parameter shapes and inconsistent names'] = sta
             continue;
         }
 
-        throw new RuntimeException('Expected ambiguous parameterized routes to fail at startup.');
+        throw new RuntimeException('Expected overlapping typed routes to fail at startup.');
     }
+
+    new Router([
+        new Route(
+            'GET',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
+        new Route(
+            'POST',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
+    ]);
 };
 
-$tests['application passes immutable typed path parameters to the handler'] = static function (): void {
+$tests['application passes immutable mixed path parameters to the handler'] = static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
             if (
                 $request->method !== 'GET'
-                || $request->path !== '/users/41'
+                || $request->path !== '/accounts/41/documents/Doc_9-z'
                 || $request->query !== ['view' => 'summary']
                 || $request->headers !== ['accept' => 'application/json']
             ) {
@@ -645,58 +887,104 @@ $tests['application passes immutable typed path parameters to the handler'] = st
             return new Response(
                 200,
                 ['Content-Type' => 'text/plain'],
-                (string) $request->pathParameters->positiveInteger('user_id'),
+                $request->pathParameters->positiveInteger('account_id')
+                    . ':'
+                    . $request->pathParameters->token('document_key'),
             );
         }
     };
     $application = new Application(new Router([
-        new Route('GET', '/users/{user_id:positive-int}', $handler),
+        new Route(
+            'GET',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
     ]));
     $request = new Request(
         'GET',
-        '/users/41',
+        '/accounts/41/documents/Doc_9-z',
         ['view' => 'summary'],
         '',
         ['accept' => 'application/json'],
     );
     $response = $application->handle($request);
 
-    if ($response->body !== '41') {
-        throw new RuntimeException('Expected the handler to receive the typed path parameter.');
+    if ($response->body !== '41:Doc_9-z') {
+        throw new RuntimeException('Expected the handler to receive both typed path parameters.');
     }
 
     try {
-        $request->pathParameters->positiveInteger('user_id');
+        $request->pathParameters->positiveInteger('account_id');
     } catch (OutOfBoundsException) {
-        return;
+        try {
+            $request->pathParameters->token('document_key');
+        } catch (OutOfBoundsException) {
+            return;
+        }
     }
 
     throw new RuntimeException('Expected Application to preserve the original immutable request.');
 };
 
-$tests['application preserves dynamic 405 order and rejects malformed item paths'] = static function (): void {
+$tests['application preserves mixed route 405 order and rejects invalid values before handling'] = static function (): void {
     $handler = new class implements RequestHandler {
+        public int $calls = 0;
+
         public function handle(Request $request): Response
         {
+            $this->calls++;
+
             return new Response(204, [], '');
         }
     };
     $application = new Application(new Router([
-        new Route('POST', '/items/{item_id:positive-int}', $handler),
-        new Route('GET', '/items/{item_id:positive-int}', $handler),
-        new Route('DELETE', '/items/{item_id:positive-int}', $handler),
+        new Route(
+            'POST',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
+        new Route(
+            'GET',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
+        new Route(
+            'DELETE',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
     ]));
-    $notAllowed = $application->handle(new Request('PATCH', '/items/9'));
-    $notFound = $application->handle(new Request('PATCH', '/items/09'));
+    $notAllowed = $application->handle(
+        new Request('PATCH', '/accounts/9/documents/Doc_9'),
+    );
+    $invalidInteger = $application->handle(
+        new Request('PATCH', '/accounts/09/documents/Doc_9'),
+    );
+    $overflowingInteger = $application->handle(
+        new Request('PATCH', '/accounts/' . PHP_INT_MAX . '0/documents/Doc_9'),
+    );
+    $encodedToken = $application->handle(
+        new Request('PATCH', '/accounts/9/documents/%41'),
+    );
+    $oversizedToken = $application->handle(
+        new Request('PATCH', '/accounts/9/documents/A' . str_repeat('_', 64)),
+    );
 
     if (
         $notAllowed->status !== 405
         || $notAllowed->headers['Allow'] !== 'POST, GET, DELETE'
         || $notAllowed->headers['Cache-Control'] !== 'no-store'
-        || $notFound->status !== 404
-        || $notFound->headers['Cache-Control'] !== 'no-store'
+        || $invalidInteger->status !== 404
+        || $invalidInteger->headers['Cache-Control'] !== 'no-store'
+        || $overflowingInteger->status !== 404
+        || $overflowingInteger->headers['Cache-Control'] !== 'no-store'
+        || $encodedToken->status !== 404
+        || $encodedToken->headers['Cache-Control'] !== 'no-store'
+        || $oversizedToken->status !== 404
+        || $oversizedToken->headers['Cache-Control'] !== 'no-store'
+        || $handler->calls !== 0
     ) {
-        throw new RuntimeException('Expected indexed dynamic method discovery and malformed-path rejection.');
+        throw new RuntimeException('Expected indexed method discovery and pre-handler typed rejection.');
     }
 };
 
@@ -708,13 +996,24 @@ $tests['allowed methods merge literal and parameterized registrations in order']
         }
     };
     $router = new Router([
-        new Route('POST', '/items/{item_id:positive-int}', $handler),
-        new Route('GET', '/items/7', $handler),
-        new Route('DELETE', '/items/{item_id:positive-int}', $handler),
-        new Route('POST', '/items/7', $handler),
+        new Route(
+            'POST',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
+        new Route('GET', '/accounts/7/documents/latest', $handler),
+        new Route(
+            'DELETE',
+            '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+            $handler,
+        ),
+        new Route('POST', '/accounts/7/documents/latest', $handler),
     ]);
 
-    if ($router->allowedMethodsForPath('/items/7') !== ['POST', 'GET', 'DELETE']) {
+    if (
+        $router->allowedMethodsForPath('/accounts/7/documents/latest')
+            !== ['POST', 'GET', 'DELETE']
+    ) {
         throw new RuntimeException('Expected ordered unique methods from literal and parameter routes.');
     }
 };
@@ -750,7 +1049,7 @@ $tests['router dispatches from a large explicit route table'] = static function 
     }
 };
 
-$tests['router indexes one parameter candidate in a large explicit route table'] = static function (): void {
+$tests['router indexes mixed paths in a large branching route table'] = static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -758,25 +1057,57 @@ $tests['router indexes one parameter candidate in a large explicit route table']
         }
     };
     $routes = [];
+    $targetRoutes = [];
 
     for ($index = 0; $index < 10_000; $index++) {
         $routes[] = new Route(
             'GET',
-            '/route-groups/' . $index . '/{item_id:positive-int}',
+            '/accounts/account-'
+                . $index
+                . '/documents/{document_key:token}',
             $handler,
         );
+        $targetRoute = new Route(
+            'GET',
+            '/accounts/{account_id:positive-int}/document-groups/'
+                . $index
+                . '/documents/{document_key:token}',
+            $handler,
+        );
+        $routes[] = $targetRoute;
+        $targetRoutes[] = $targetRoute;
     }
 
     $router = new Router($routes);
-    $match = $router->match(new Request('GET', '/route-groups/9999/73'));
+    $first = $router->match(
+        new Request('GET', '/accounts/1/document-groups/0/documents/Doc_0'),
+    );
+    $middle = $router->match(
+        new Request('GET', '/accounts/5001/document-groups/5000/documents/Doc_5000'),
+    );
+    $last = $router->match(
+        new Request('GET', '/accounts/10000/document-groups/9999/documents/Doc_9999'),
+    );
+    $missing = $router->match(
+        new Request('GET', '/accounts/1/document-groups/missing/documents/Doc_0'),
+    );
 
     if (
-        $match === null
-        || $match->route !== $routes[9_999]
-        || $match->pathParameters->positiveInteger('item_id') !== 73
-        || $router->allowedMethodsForPath('/route-groups/9999/73') !== ['GET']
+        $first?->route !== $targetRoutes[0]
+        || $first->pathParameters->positiveInteger('account_id') !== 1
+        || $first->pathParameters->token('document_key') !== 'Doc_0'
+        || $middle?->route !== $targetRoutes[5_000]
+        || $middle->pathParameters->positiveInteger('account_id') !== 5_001
+        || $middle->pathParameters->token('document_key') !== 'Doc_5000'
+        || $last?->route !== $targetRoutes[9_999]
+        || $last->pathParameters->positiveInteger('account_id') !== 10_000
+        || $last->pathParameters->token('document_key') !== 'Doc_9999'
+        || $missing !== null
+        || $router->allowedMethodsForPath(
+            '/accounts/10000/document-groups/9999/documents/Doc_9999',
+        ) !== ['GET']
     ) {
-        throw new RuntimeException('Expected one indexed parameter candidate across 10,000 routes.');
+        throw new RuntimeException('Expected indexed mixed matching across 20,000 routes.');
     }
 };
 

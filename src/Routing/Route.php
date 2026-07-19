@@ -9,9 +9,10 @@ use PHPThis\Http\RequestHandler;
 
 final readonly class Route
 {
-    private ?string $literalPrefix;
+    /** @var list<RouteSegment> */
+    private array $segments;
 
-    private ?string $parameterName;
+    private int $parameterCount;
 
     public function __construct(
         public string $method,
@@ -31,45 +32,59 @@ final readonly class Route
             throw new InvalidArgumentException('Route path must be an absolute path without query or fragment.');
         }
 
-        $literalPrefix = null;
-        $parameterName = null;
+        $segments = [];
+        $parameterNames = [];
+        $parameterCount = 0;
 
-        if (str_contains($path, '{') || str_contains($path, '}')) {
-            $lastSlash = strrpos($path, '/');
-
-            if ($lastSlash === false) {
-                throw new InvalidArgumentException('Parameterized route must use one trailing full path segment.');
+        foreach (explode('/', $path) as $segment) {
+            if (!str_contains($segment, '{') && !str_contains($segment, '}')) {
+                $segments[] = RouteSegment::literal($segment);
+                continue;
             }
 
-            $prefix = substr($path, 0, $lastSlash + 1);
-            $segment = substr($path, $lastSlash + 1);
             $matches = [];
 
             if (
-                str_contains($prefix, '{')
-                || str_contains($prefix, '}')
-                || preg_match('/^\{([a-z][a-z0-9_]*):positive-int\}$/D', $segment, $matches) !== 1
+                preg_match(
+                    '/^\{([a-z][a-z0-9_]*):(positive-int|token)\}$/D',
+                    $segment,
+                    $matches,
+                ) !== 1
             ) {
                 throw new InvalidArgumentException(
-                    'Route supports only one trailing {name:positive-int} parameter.',
+                    'Route parameters must occupy a full segment and use positive-int or token.',
                 );
             }
 
-            $literalPrefix = $prefix;
-            $parameterName = $matches[1];
+            if (isset($parameterNames[$matches[1]])) {
+                throw new InvalidArgumentException(
+                    "Route path parameter {$matches[1]} must be unique.",
+                );
+            }
+
+            $parameterCount++;
+
+            if ($parameterCount > 2) {
+                throw new InvalidArgumentException('Route supports at most two path parameters.');
+            }
+
+            $type = RouteParameterType::from($matches[2]);
+            $segments[] = RouteSegment::parameter($matches[1], $type);
+            $parameterNames[$matches[1]] = true;
         }
 
-        $this->literalPrefix = $literalPrefix;
-        $this->parameterName = $parameterName;
+        $this->segments = $segments;
+        $this->parameterCount = $parameterCount;
     }
 
-    public function literalPrefix(): ?string
+    /** @return list<RouteSegment> */
+    public function segments(): array
     {
-        return $this->literalPrefix;
+        return $this->segments;
     }
 
-    public function parameterName(): ?string
+    public function parameterCount(): int
     {
-        return $this->parameterName;
+        return $this->parameterCount;
     }
 }

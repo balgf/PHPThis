@@ -34,13 +34,14 @@
 
 ## Phase 2: Alpha 1 publication and type-aware AI guardrails
 
+- Complete: Consumer Contract version 4 and ADR 019 with at most two full-segment `positive-int` or bounded `token` parameters, deterministic indexed matching, exact-literal precedence, overlap rejection, and immutable type-specific delivery.
+- Complete: inspectable immutable `Route::segments()` metadata derived from the same explicit route declaration; no generated route source, persisted route cache, or second routing API.
 - Alpha 1 publication state is external; `RELEASING.md` defines the proof without embedding mutable tag, package-host, or announcement state in the tagged artifact.
 - Alpha 1 requires the contents of `skeleton/` to be exported as their own package root, the source-evaluation VCS override to be removed, `dev-main` to be replaced with the approved Packagist alpha constraint, and the resulting lockfile to be committed.
 - Alpha 1 public proof installs the actual Packagist-preferred framework dist, compares it with `tools/package-files.txt`, and proves the documented `composer create-project --stability=alpha` path before announcement.
 - Move type-sensitive architecture checks into tested PHPStan extensions.
 - Detect unbounded reads with low false-positive rates and measure PHT006 gaps before considering any broader SQL provenance rule.
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.
-- Produce a machine-readable route report from the same explicit route list.
 - Measure how many files and tokens common changes require.
 - Build grounded-answer evaluations across installed revisions and measure unsupported claims, citation accuracy, uncertainty, and correct escalation of human decisions.
 - After Alpha 1: finish the example's Create identity/conflict plus Create/List/Get authorization and tenant decisions and evidence without presenting them as framework policy.

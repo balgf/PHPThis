@@ -29,7 +29,7 @@ The framework repository retains its reviewed `phpstan.neon` because it verifies
 - `PHT005` owns non-ignorable, type- and name-aware detection of application PDO or PDO-subclass construction.
 - `PHT006` owns non-ignorable detection of non-finite, blank, annotation-only, unpacked, or indirectly invoked SQL at the three canonical `Connection` database methods.
 - `tools/guardrails.php` owns small repository invariants that are not yet PHPStan extensions.
-- The application checker's structural stage owns Contract version 3's rejection of `$_SESSION`, direct/imported native session calls, and literal indirect references in consumer code; dynamically obscured calls remain a contract violation. This carries Strict Profile version 2 forward without adding a `PHT` rule.
+- The application checker's structural stage owns the native-session restrictions introduced by Contract version 3 and carried by version 4: rejection of `$_SESSION`, direct/imported native session calls, and literal indirect references in consumer code; dynamically obscured calls remain a contract violation. This carries Strict Profile version 2 forward without adding a `PHT` rule.
 - `QueryBudget` owns actual runtime statement limits.
 - `QueryTrace` owns bounded runtime query fingerprints, execution timing, and failure counts without logging I/O.
 - Integration tests own database-specific behavior and query-count invariance.

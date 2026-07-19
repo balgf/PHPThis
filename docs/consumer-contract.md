@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 3
+Contract version: 4
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -76,25 +76,27 @@ The installed checker can verify the canonical gate wiring, but it cannot determ
 
 `phpthis check` discovers every application-owned PHP file, runs structural profile checks, and invokes PHPStan with a temporary framework-owned configuration. The same discovered file manifest drives both stages. It excludes only the resolved Composer dependency directory and version-control metadata; source under `config/`, `bin/`, migrations, hidden directories, or `tmp/` remains application-owned and checked. PHP files use the `.php` extension; extensionless executables beginning with `<?php` or `#!/usr/bin/env php` followed by `<?php` are also checked. A canonical PHP opening prefix under another extension is rejected rather than silently excluded. Symlinked source directories and checked source files are rejected instead of silently skipped.
 
-Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 3.
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 4.
 
 ## HTTP and application flow
 
 - `public/index.php` is the one front controller permitted to read PHP runtime globals and pass them to one bounded request boundary.
 - Requests and responses are immutable values.
-- Routes are explicit method, path declaration, and already-constructed handler objects. A path is literal or uses the single accepted trailing full-segment `{name:positive-int}` form; the name begins with a lowercase ASCII letter and continues only with lowercase letters, digits, or underscores.
+- Routes are explicit method, path declaration, and already-constructed handler objects. A path is literal or contains at most two named typed placeholders. Each placeholder occupies one complete segment, uses only `positive-int` or `token`, and has a name beginning with a lowercase ASCII letter followed only by lowercase letters, digits, or underscores; names are unique within one route.
 - A root route manifest combines named route-area lists; request-time route lookup remains indexed.
-- Literal lookup has precedence. Typed route segments accept only canonical ASCII integers from 1 through `PHP_INT_MAX`; URL-encoded, zero, signed, padded, non-ASCII, non-integral, and overflowing spellings do not match.
-- Typed declarations sharing a literal prefix across methods use the same parameter name; ambiguous same-method shapes and inconsistent cross-method names fail during router construction.
+- `positive-int` accepts only canonical ASCII integers from 1 through `PHP_INT_MAX`. `token` accepts only case-sensitive 1-to-64-byte ASCII values matching `[A-Za-z0-9][A-Za-z0-9_-]{0,63}` and returns the bytes unchanged. URL-encoded, whitespace, Unicode, empty, oversized, or otherwise non-canonical spellings do not match.
+- Exact literal lookup has precedence. Parameterized declarations whose paths overlap for one method and duplicate parameter names fail during router construction. To preserve one deterministic state, sibling parameter types and a typed transition beside any parameterized literal transition it accepts are rejected even when later segments differ. Every declaration sharing a typed transition uses the same name and type regardless of method or later branch. Registration order and parameter-type preference do not resolve those conflicts.
+- Parameterized matching and allowed-method lookup traverse the bounded request path through a deterministic state index; neither scans the declared route list or an index collection during a request.
+- `Route::segments()` exposes immutable compiled segment metadata from the same explicit declaration. PHPThis does not generate route source, persist a route cache, or add a second report or registration API.
 - A successful lookup yields immutable routing metadata. `Application` creates an immutable `Request` copy carrying immutable `PathParameters`; static routes carry empty parameters, and handlers keep `RequestHandler::handle(Request): Response`.
-- Route-specific code immediately converts the validated integer into a concrete identifier. Path parameters are not a mixed domain bag and do not supply authorization, tenant scope, or record existence.
+- `PathParameters` exposes only `positiveInteger(name): int` and `token(name): string`. Route-specific code immediately converts each validated value into a concrete identifier. Path parameters are not a mixed domain bag and do not supply authorization, tenant scope, or record existence.
 - Handlers receive dependencies through constructors.
 - External `mixed` input is parsed once into a concrete final readonly boundary value before it enters typed application behavior: an operation-specific request or command for inbound data, or a projection for returned data.
 - Known public failures use named exception classes and exact-class response registration. Unknown failures remain generic externally and are logged once by exception class without the exception message or sensitive request or database data.
 - Response cookies use validated `ResponseCookie` values and remain separate from the ordinary single-value header map; application code does not manually encode `Set-Cookie`.
 - Framework-generated 404, 405, and unknown-failure 500 responses explicitly use `Cache-Control: no-store`. PHPThis does not rewrite arbitrary handler responses; each application response path owns its exact cache policy.
 
-Do not add other dynamic route shapes, regular-expression or callback routes, arbitrary string parameters, route-table scanning, route discovery, automatic input or domain binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
+Do not add a third path parameter, another parameter type, partial-segment placeholders, regular-expression or callback routes, arbitrary strings, route or index scanning, route discovery, automatic input or domain binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
 
 ## Optional session state
 
@@ -184,9 +186,9 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 
 ## Contract evolution
 
-Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. The automated-behavior-evidence language clarifies the existing behavior-test stage while leaving its library, runner, and file placement application-owned; it adds no new checker rejection, so Contract version 3 remains unchanged. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. The automated-behavior-evidence language clarifies the existing behavior-test stage while leaving its library, runner, and file placement application-owned. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
 
-ADR 017's bounded trailing positive-integer route is a framework API capability within the existing explicit-route obligation. It does not change the PHP program subset accepted by the installed checker, so Consumer Contract version 3 and Strict Profile version 2 remain unchanged.
+Contract version 4 carries contract version 3 and Strict Profile version 2 forward. It replaces ADR 017's one-trailing-positive-integer grammar with ADR 019's at-most-two full-segment grammar, adds the bounded `token` type and type-specific token access, and replaces the one-prefix metadata and index with immutable `Route::segments()` metadata and a deterministic state index. Existing literal and one-trailing-positive-integer declarations remain valid. Before adopting version 4, migrate any direct calls to `Route::literalPrefix()` or `Route::parameterName()` to `Route::segments()`, reject any newly exposed route overlap at construction, add malformed, oversized, encoded, 404, 405, and scale evidence, and run the complete application gate.
 
 Contract version 3 carries contract version 2 and Strict Profile version 2 forward unchanged. It adds explicit response cookies and the optional native-file session lifecycle. Before adopting version 3, ensure unconditional `ext-session` availability and replace manually encoded response cookies. When adopting session state, also verify the fixed PHP 8.4 settings and an application-isolated save path, record applicable policy or explicit non-applicability, place state behind narrowly named typed services over the single lifecycle, and add the required transport and application-policy tests. Then run the complete application gate.
 

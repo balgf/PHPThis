@@ -24,6 +24,6 @@ Then read only what the task needs:
 | Change runtime, logging, workers, or deployment behavior | `.ai/operations.md` | composition root, deployment configuration, operational tests |
 | Add or change tests | `.ai/testing.md` | nearest behavior tests and complete project check |
 
-The CRUD reference profile is optional application structure. Record its adoption or one coherent alternate placement and naming rule; neither may weaken Consumer Contract v3 or Strict Profile v2.
+The CRUD reference profile is optional application structure. Record its adoption or one coherent alternate placement and naming rule; neither may weaken Consumer Contract v4 or Strict Profile v2.
 
 Accepted architectural decisions and durable rationale live in `docs/decisions/`. AI may draft and update a decision record, but acceptance requires explicit approval from an accountable human. Add a narrowly named area guide when a recurring task needs context that does not fit this map; do not turn this index into a complete project description.

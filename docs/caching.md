@@ -83,7 +83,7 @@ Before adopting a server-side cache, the accountable human records in applicatio
 - bounded hit, miss, write, failure, latency, and eviction observability;
 - tests and production measurements supporting the decision.
 
-An application with no server-side data cache records `NOT_APPLICABLE(CACHE)` in the relevant application context. That marker does not waive explicit HTTP response policy. This policy record does not change Consumer Contract version 3 and is not currently checked by the framework-owned consumer checker.
+An application with no server-side data cache records `NOT_APPLICABLE(CACHE)` in the relevant application context. That marker does not waive explicit HTTP response policy. This policy record added no consumer-checker rule when accepted under Consumer Contract version 3; version 4 carries that unchanged cache-policy boundary forward.
 
 Evidence includes:
 

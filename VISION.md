@@ -47,7 +47,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
 - Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,050-line Phase 1 limit enforced by repository guardrails after review of the cookie/session and bounded typed-routing slices. The reviewed implementation occupies 2,010 lines; its 40-line maintenance margin pre-authorizes no adjacent mechanism.
+- Core source remains at or below the 2,300-line Alpha 2 limit enforced by repository guardrails after review of the cookie/session, initial typed-routing, and bounded multiple-typed-routing slices. The reviewed implementation occupies 2,246 lines; its 54-line maintenance margin pre-authorizes no adjacent mechanism.
 
 ## Non-goals
 

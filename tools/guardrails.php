@@ -90,7 +90,13 @@ function routingLookupFailures(string $contents, string $relativePath): array
             continue;
         }
 
-        if (in_array($tokenId, [T_FOR, T_FOREACH, T_WHILE, T_DO], true)) {
+        if (
+            in_array($tokenId, [T_FOR, T_FOREACH, T_WHILE, T_DO], true)
+            && !(
+                $tokenId === T_FOREACH
+                && routingIsBoundedPathSegmentForeach($tokens, $index)
+            )
+        ) {
             $failuresByMethod[$currentMethod][] = sprintf(
                 '%s:%d uses a loop in lookup-reachable Router method %s; route lookup must remain indexed.',
                 $relativePath,
@@ -191,6 +197,123 @@ function routingLookupFailures(string $contents, string $relativePath): array
     }
 
     return $failures;
+}
+
+/**
+ * @param list<array{0: int, 1: string, 2: int}|string> $tokens
+ */
+function routingIsBoundedPathSegmentForeach(array $tokens, int $foreachIndex): bool
+{
+    $openIndex = routingNextSignificantTokenIndex($tokens, $foreachIndex + 1);
+    $segmentsIndex = $openIndex === null
+        ? null
+        : routingNextSignificantTokenIndex($tokens, $openIndex + 1);
+    $asIndex = $segmentsIndex === null
+        ? null
+        : routingNextSignificantTokenIndex($tokens, $segmentsIndex + 1);
+    $segmentIndex = $asIndex === null
+        ? null
+        : routingNextSignificantTokenIndex($tokens, $asIndex + 1);
+    $closeIndex = $segmentIndex === null
+        ? null
+        : routingNextSignificantTokenIndex($tokens, $segmentIndex + 1);
+
+    if (
+        $openIndex === null
+        || routingTokenText($tokens[$openIndex]) !== '('
+        || $segmentsIndex === null
+        || $asIndex === null
+        || $segmentIndex === null
+        || $closeIndex === null
+    ) {
+        return false;
+    }
+
+    $segmentsToken = $tokens[$segmentsIndex];
+    $asToken = $tokens[$asIndex];
+    $segmentToken = $tokens[$segmentIndex];
+
+    return is_array($segmentsToken)
+        && $segmentsToken[0] === T_VARIABLE
+        && $segmentsToken[1] === '$segments'
+        && is_array($asToken)
+        && $asToken[0] === T_AS
+        && is_array($segmentToken)
+        && $segmentToken[0] === T_VARIABLE
+        && $segmentToken[1] === '$segment'
+        && routingTokenText($tokens[$closeIndex]) === ')'
+        && routingHasLocalPathSegmentsAssignment($tokens, $foreachIndex);
+}
+
+/**
+ * @param list<array{0: int, 1: string, 2: int}|string> $tokens
+ */
+function routingHasLocalPathSegmentsAssignment(array $tokens, int $foreachIndex): bool
+{
+    for ($index = $foreachIndex - 1; $index >= 0; $index--) {
+        $token = $tokens[$index];
+
+        if (is_array($token) && $token[0] === T_FUNCTION) {
+            return false;
+        }
+
+        if (!is_array($token) || $token[0] !== T_VARIABLE || $token[1] !== '$segments') {
+            continue;
+        }
+
+        $equalsIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+
+        if ($equalsIndex === null || routingTokenText($tokens[$equalsIndex]) !== '=') {
+            return false;
+        }
+
+        $explodeIndex = routingNextSignificantTokenIndex($tokens, $equalsIndex + 1);
+        $openIndex = $explodeIndex === null
+            ? null
+            : routingNextSignificantTokenIndex($tokens, $explodeIndex + 1);
+        $delimiterIndex = $openIndex === null
+            ? null
+            : routingNextSignificantTokenIndex($tokens, $openIndex + 1);
+        $commaIndex = $delimiterIndex === null
+            ? null
+            : routingNextSignificantTokenIndex($tokens, $delimiterIndex + 1);
+        $pathIndex = $commaIndex === null
+            ? null
+            : routingNextSignificantTokenIndex($tokens, $commaIndex + 1);
+        $closeIndex = $pathIndex === null
+            ? null
+            : routingNextSignificantTokenIndex($tokens, $pathIndex + 1);
+
+        if (
+            $explodeIndex === null
+            || $openIndex === null
+            || $delimiterIndex === null
+            || $commaIndex === null
+            || $pathIndex === null
+            || $closeIndex === null
+        ) {
+            return false;
+        }
+
+        $explodeToken = $tokens[$explodeIndex];
+        $delimiterToken = $tokens[$delimiterIndex];
+        $pathToken = $tokens[$pathIndex];
+
+        return is_array($explodeToken)
+            && $explodeToken[0] === T_STRING
+            && strtolower($explodeToken[1]) === 'explode'
+            && routingTokenText($tokens[$openIndex]) === '('
+            && is_array($delimiterToken)
+            && $delimiterToken[0] === T_CONSTANT_ENCAPSED_STRING
+            && in_array($delimiterToken[1], ["'/'", '"/"'], true)
+            && routingTokenText($tokens[$commaIndex]) === ','
+            && is_array($pathToken)
+            && $pathToken[0] === T_VARIABLE
+            && $pathToken[1] === '$path'
+            && routingTokenText($tokens[$closeIndex]) === ')';
+    }
+
+    return false;
 }
 
 /**
@@ -311,6 +434,11 @@ $requiredRepositoryFiles = [
     'docs/decisions/016-cache-policy-before-cache-mechanism.md',
     'docs/decisions/017-bounded-trailing-positive-integer-routes.md',
     'docs/decisions/018-bounded-alpha-1-release-scope.md',
+    'docs/decisions/019-bounded-multiple-typed-routes.md',
+    'example/src/Documents/DocumentRoutes.php',
+    'example/src/Documents/GetDocument/AccountId.php',
+    'example/src/Documents/GetDocument/DocumentKey.php',
+    'example/src/Documents/GetDocument/GetDocumentHandler.php',
     'example/src/Users/GetUser/GetUserHandler.php',
     'example/src/Users/GetUser/UserDetails.php',
     'example/src/Users/GetUser/UserId.php',
@@ -361,13 +489,19 @@ $requiredRepositoryFiles = [
     'src/Http/CookieSameSite.php',
     'src/Http/ResponseCookie.php',
     'src/Routing/PathParameters.php',
+    'src/Routing/Route.php',
     'src/Routing/RouteMatch.php',
+    'src/Routing/RouteParameterType.php',
+    'src/Routing/RouteSegment.php',
+    'src/Routing/Router.php',
     'src/Session/SessionConfiguration.php',
     'src/Session/SessionLifecycle.php',
     'src/Session/SessionSnapshot.php',
     'src/Session/SessionUnavailable.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
+    'tests/fixtures/routing-lookup-index-loop.php.fixture',
     'tests/fixtures/routing-lookup-helper-loop.php.fixture',
+    'tests/fixtures/routing-path-segment-traversal.php.fixture',
     'tests/fixtures/routing-lookup-traversal.php.fixture',
     'tools/package-files.txt',
     'tools/test-database-drivers.php',
@@ -381,6 +515,10 @@ foreach ($requiredRepositoryFiles as $requiredRepositoryFile) {
 
 $routingGuardFixtures = [
     'tests/fixtures/routing-construction-traversal.php.fixture' => [],
+    'tests/fixtures/routing-path-segment-traversal.php.fixture' => [],
+    'tests/fixtures/routing-lookup-index-loop.php.fixture' => [
+        'tests/fixtures/routing-lookup-index-loop.php.fixture:31 uses a loop in lookup-reachable Router method scanIndex; route lookup must remain indexed.',
+    ],
     'tests/fixtures/routing-lookup-helper-loop.php.fixture' => [
         'tests/fixtures/routing-lookup-helper-loop.php.fixture:29 uses a loop in lookup-reachable Router method scanRoutes; route lookup must remain indexed.',
     ],
@@ -646,9 +784,12 @@ foreach ($cachePolicyArtifactMarkers as $relativePath => $markers) {
 $routingArtifactMarkers = [
     '.ai/routing.md' => [
         '{name:positive-int}',
+        '{name:token}',
+        'at most two',
         'RouteMatch',
         'PathParameters',
-        'must not scan the route list during a request',
+        'Route::segments()',
+        'must not scan the route list or an index collection',
     ],
     'docs/decisions/017-bounded-trailing-positive-integer-routes.md' => [
         'Status: accepted',
@@ -656,6 +797,24 @@ $routingArtifactMarkers = [
         'PHP_INT_MAX',
         'one parameter name',
         'does not claim Update or Delete support',
+    ],
+    'docs/decisions/019-bounded-multiple-typed-routes.md' => [
+        'Status: accepted',
+        '[A-Za-z0-9][A-Za-z0-9_-]{0,63}',
+        'at most two',
+        'Contract version 4',
+        '2,300',
+        'supersedes ADR 017 only',
+    ],
+    'example/src/Documents/DocumentRoutes.php' => [
+        '/accounts/{account_id:positive-int}/documents/{document_key:token}',
+    ],
+    'example/src/Documents/GetDocument/GetDocumentHandler.php' => [
+        "positiveInteger('account_id')",
+        "token('document_key')",
+        'AccountId::fromPositiveInteger',
+        'DocumentKey::fromToken',
+        "'Cache-Control' => 'no-store'",
     ],
     'example/src/Users/UserRoutes.php' => [
         '/users/{user_id:positive-int}',
@@ -668,8 +827,11 @@ $routingArtifactMarkers = [
     ],
     'tools/package-files.txt' => [
         'docs/decisions/017-bounded-trailing-positive-integer-routes.md',
+        'docs/decisions/019-bounded-multiple-typed-routes.md',
         'src/Routing/PathParameters.php',
         'src/Routing/RouteMatch.php',
+        'src/Routing/RouteParameterType.php',
+        'src/Routing/RouteSegment.php',
     ],
 ];
 
@@ -731,8 +893,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 3$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 3.';
+        if (preg_match('/^Contract version: 4$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 4.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -1105,8 +1267,8 @@ foreach ($phpFiles as $relativePath => $path) {
     $coreLines += is_array($lines) ? count($lines) : 0;
 }
 
-if ($coreLines > 2_050) {
-    $failures[] = "Core source has {$coreLines} physical lines; the Phase 1 limit is 2050.";
+if ($coreLines > 2_300) {
+    $failures[] = "Core source has {$coreLines} physical lines; the Alpha 2 limit is 2300.";
 }
 
 if ($failures !== []) {

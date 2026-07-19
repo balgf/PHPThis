@@ -16,11 +16,19 @@ final readonly class Router
     /** @var array<string, list<string>> */
     private array $literalMethodsByPath;
 
-    /** @var array<string, array<string, Route>> */
-    private array $parameterizedRoutesByMethodAndPrefix;
+    /** @var array<int, array<string, int>> */
+    private array $literalTransitionsByState;
 
-    /** @var array<string, list<string>> */
-    private array $parameterizedMethodsByPrefix;
+    /**
+     * @var array<int, array{type: RouteParameterType, name: string, next: int}>
+     */
+    private array $typedTransitionsByState;
+
+    /** @var array<int, array<string, Route>> */
+    private array $terminalRoutesByStateAndMethod;
+
+    /** @var array<int, list<string>> */
+    private array $terminalMethodsByState;
 
     /**
      * @param list<Route> $routes
@@ -29,16 +37,16 @@ final readonly class Router
     {
         $literalRoutes = [];
         $literalMethodEntries = [];
-        $parameterizedRoutes = [];
-        $parameterizedMethodEntries = [];
-        $parameterNamesByPrefix = [];
+        $literalTransitions = [];
+        $typedTransitions = [];
+        $terminalRoutes = [];
+        $terminalMethodEntries = [];
+        $nextState = 1;
 
         foreach ($routes as $order => $route) {
             $route = $this->routeFromValue($route);
-            $prefix = $route->literalPrefix();
-            $parameterName = $route->parameterName();
 
-            if ($prefix === null && $parameterName === null) {
+            if ($route->parameterCount() === 0) {
                 if (isset($literalRoutes[$route->method][$route->path])) {
                     throw new InvalidArgumentException(
                         "Duplicate route: {$route->method} {$route->path}.",
@@ -53,39 +61,89 @@ final readonly class Router
                 continue;
             }
 
-            if ($prefix === null || $parameterName === null) {
-                throw new LogicException('Route parameter metadata is incomplete.');
+            $state = 0;
+
+            foreach ($route->segments() as $segment) {
+                if ($segment->literal !== null) {
+                    $typedTransition = $typedTransitions[$state] ?? null;
+
+                    if (
+                        $typedTransition !== null
+                        && $typedTransition['type']->accepts($segment->literal)
+                    ) {
+                        throw new InvalidArgumentException(
+                            "Ambiguous parameterized route transition: {$route->path}.",
+                        );
+                    }
+
+                    $followingState = $literalTransitions[$state][$segment->literal] ?? null;
+
+                    if ($followingState === null) {
+                        $followingState = $nextState++;
+                        $literalTransitions[$state][$segment->literal] = $followingState;
+                    }
+
+                    $state = $followingState;
+                    continue;
+                }
+
+                $name = $segment->parameterName;
+                $type = $segment->parameterType;
+
+                if ($name === null || $type === null) {
+                    throw new LogicException('Route parameter metadata is incomplete.');
+                }
+
+                $typedTransition = $typedTransitions[$state] ?? null;
+
+                if ($typedTransition === null) {
+                    foreach ($literalTransitions[$state] ?? [] as $literal => $_followingState) {
+                        if ($type->accepts($literal)) {
+                            throw new InvalidArgumentException(
+                                "Ambiguous parameterized route transition: {$route->path}.",
+                            );
+                        }
+                    }
+
+                    $typedTransition = [
+                        'type' => $type,
+                        'name' => $name,
+                        'next' => $nextState++,
+                    ];
+                    $typedTransitions[$state] = $typedTransition;
+                } elseif (
+                    $typedTransition['type'] !== $type
+                    || $typedTransition['name'] !== $name
+                ) {
+                    throw new InvalidArgumentException(
+                        "Conflicting parameterized route metadata: {$route->path}.",
+                    );
+                }
+
+                $state = $typedTransition['next'];
             }
 
-            if (
-                isset($parameterNamesByPrefix[$prefix])
-                && $parameterNamesByPrefix[$prefix] !== $parameterName
-            ) {
-                throw new InvalidArgumentException(
-                    "Parameterized routes with prefix {$prefix} must use one parameter name.",
-                );
-            }
-
-            if (isset($parameterizedRoutes[$route->method][$prefix])) {
+            if (isset($terminalRoutes[$state][$route->method])) {
                 throw new InvalidArgumentException(
                     "Ambiguous parameterized route: {$route->method} {$route->path}.",
                 );
             }
 
-            $parameterNamesByPrefix[$prefix] = $parameterName;
-            $parameterizedRoutes[$route->method][$prefix] = $route;
-            $parameterizedMethodEntries[$prefix][] = [
+            $terminalRoutes[$state][$route->method] = $route;
+            $terminalMethodEntries[$state][] = [
                 'method' => $route->method,
                 'order' => $order,
             ];
         }
 
         $this->literalRoutesByMethodAndPath = $literalRoutes;
-        $this->parameterizedRoutesByMethodAndPrefix = $parameterizedRoutes;
-        $this->parameterizedMethodsByPrefix = $this->methodLists($parameterizedMethodEntries);
+        $this->literalTransitionsByState = $literalTransitions;
+        $this->typedTransitionsByState = $typedTransitions;
+        $this->terminalRoutesByStateAndMethod = $terminalRoutes;
+        $this->terminalMethodsByState = $this->methodLists($terminalMethodEntries);
         $this->literalMethodsByPath = $this->literalMethodLists(
             $literalMethodEntries,
-            $parameterizedMethodEntries,
+            $terminalMethodEntries,
         );
     }
 
@@ -106,28 +164,25 @@ final readonly class Router
             return new RouteMatch($literalRoute, PathParameters::none());
         }
 
-        $value = $this->trailingPositiveInteger($request->path);
+        $pathMatch = $this->typedPathMatch($request->path);
 
-        if ($value === null) {
+        if ($pathMatch === null) {
             return null;
         }
 
-        $prefix = $this->trailingSegmentPrefix($request->path);
-        $route = $this->parameterizedRoutesByMethodAndPrefix[$request->method][$prefix] ?? null;
+        $route = $this->terminalRoutesByStateAndMethod[$pathMatch['state']][$request->method]
+            ?? null;
 
         if ($route === null) {
             return null;
         }
 
-        $parameterName = $route->parameterName();
-
-        if ($parameterName === null) {
-            throw new LogicException('Parameterized route has no parameter name.');
-        }
-
         return new RouteMatch(
             $route,
-            PathParameters::onePositiveInteger($parameterName, $value),
+            PathParameters::fromValues(
+                $pathMatch['positiveIntegers'],
+                $pathMatch['tokens'],
+            ),
         );
     }
 
@@ -140,41 +195,101 @@ final readonly class Router
             return $literalMethods;
         }
 
-        if ($this->trailingPositiveInteger($path) === null) {
+        $pathMatch = $this->typedPathMatch($path);
+
+        if ($pathMatch === null) {
             return [];
         }
 
-        return $this->parameterizedMethodsByPrefix[$this->trailingSegmentPrefix($path)] ?? [];
+        return $this->terminalMethodsByState[$pathMatch['state']] ?? [];
     }
 
     /**
-     * @param array<string, list<array{method: string, order: int}>> $entriesByKey
-     * @return array<string, list<string>>
+     * @return array{
+     *     state: int,
+     *     positiveIntegers: array<string, int>,
+     *     tokens: array<string, string>
+     * }|null
      */
-    private function methodLists(array $entriesByKey): array
+    private function typedPathMatch(string $path): ?array
     {
-        $methodsByKey = [];
+        $state = 0;
+        $positiveIntegers = [];
+        $tokens = [];
+        $segments = explode('/', $path);
 
-        foreach ($entriesByKey as $key => $entries) {
-            $methodsByKey[$key] = $this->orderedUniqueMethods($entries);
+        foreach ($segments as $segment) {
+            $literalState = $this->literalTransitionsByState[$state][$segment] ?? null;
+
+            if ($literalState !== null) {
+                $state = $literalState;
+                continue;
+            }
+
+            $typedTransition = $this->typedTransitionsByState[$state] ?? null;
+
+            if ($typedTransition === null) {
+                return null;
+            }
+
+            if ($typedTransition['type'] === RouteParameterType::PositiveInteger) {
+                $value = RouteParameterType::positiveInteger($segment);
+
+                if ($value === null) {
+                    return null;
+                }
+
+                $positiveIntegers[$typedTransition['name']] = $value;
+            } else {
+                if (!RouteParameterType::isToken($segment)) {
+                    return null;
+                }
+
+                $tokens[$typedTransition['name']] = $segment;
+            }
+
+            $state = $typedTransition['next'];
         }
 
-        return $methodsByKey;
+        return [
+            'state' => $state,
+            'positiveIntegers' => $positiveIntegers,
+            'tokens' => $tokens,
+        ];
+    }
+
+    /**
+     * @param array<int, list<array{method: string, order: int}>> $entriesByState
+     * @return array<int, list<string>>
+     */
+    private function methodLists(array $entriesByState): array
+    {
+        $methodsByState = [];
+
+        foreach ($entriesByState as $state => $entries) {
+            $methodsByState[$state] = $this->orderedUniqueMethods($entries);
+        }
+
+        return $methodsByState;
     }
 
     /**
      * @param array<string, list<array{method: string, order: int}>> $literalEntries
-     * @param array<string, list<array{method: string, order: int}>> $parameterizedEntries
+     * @param array<int, list<array{method: string, order: int}>> $terminalEntries
      * @return array<string, list<string>>
      */
-    private function literalMethodLists(array $literalEntries, array $parameterizedEntries): array
+    private function literalMethodLists(array $literalEntries, array $terminalEntries): array
     {
         $methodsByPath = [];
 
         foreach ($literalEntries as $path => $entries) {
-            if ($this->trailingPositiveInteger($path) !== null) {
-                $prefix = $this->trailingSegmentPrefix($path);
-                $entries = array_merge($entries, $parameterizedEntries[$prefix] ?? []);
+            $pathMatch = $this->typedPathMatch($path);
+
+            if ($pathMatch !== null) {
+                $entries = array_merge(
+                    $entries,
+                    $terminalEntries[$pathMatch['state']] ?? [],
+                );
             }
 
             $methodsByPath[$path] = $this->orderedUniqueMethods($entries);
@@ -203,44 +318,5 @@ final readonly class Router
         }
 
         return $methods;
-    }
-
-    private function trailingSegmentPrefix(string $path): string
-    {
-        $lastSlash = strrpos($path, '/');
-
-        if ($lastSlash === false) {
-            throw new LogicException('Request path has no slash.');
-        }
-
-        return substr($path, 0, $lastSlash + 1);
-    }
-
-    private function trailingPositiveInteger(string $path): ?int
-    {
-        $lastSlash = strrpos($path, '/');
-
-        if ($lastSlash === false) {
-            return null;
-        }
-
-        $segment = substr($path, $lastSlash + 1);
-
-        if (preg_match('/^[1-9][0-9]*$/D', $segment) !== 1) {
-            return null;
-        }
-
-        $maximum = (string) PHP_INT_MAX;
-        $length = strlen($segment);
-        $maximumLength = strlen($maximum);
-
-        if (
-            $length > $maximumLength
-            || ($length === $maximumLength && strcmp($segment, $maximum) > 0)
-        ) {
-            return null;
-        }
-
-        return (int) $segment;
     }
 }

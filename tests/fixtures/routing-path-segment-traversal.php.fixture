@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+final readonly class Router
+{
+    /** @param array<string, object> $routesBySegment */
+    public function __construct(private array $routesBySegment)
+    {
+    }
+
+    public function match(object $request): ?object
+    {
+        if ($request !== $request) {
+            return null;
+        }
+
+        return $this->matchPathSegments('/accounts/1/documents/key');
+    }
+
+    /** @return list<string> */
+    public function allowedMethodsForPath(string $path): array
+    {
+        return $this->matchPathSegments($path) === null ? [] : ['GET'];
+    }
+
+    private function matchPathSegments(string $path): ?object
+    {
+        $segments = explode('/', $path);
+
+        foreach ($segments as $segment) {
+            $route = $this->routesBySegment[$segment] ?? null;
+
+            if ($route !== null) {
+                return $route;
+            }
+        }
+
+        return null;
+    }
+}

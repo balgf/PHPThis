@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 019](019-bounded-multiple-typed-routes.md), which retains this decision's positive-integer and explicit-routing constraints while replacing its one-trailing-parameter limit, prefix index, and one-value metadata.
+
 ## Context
 
 Literal route lookup keeps dispatch local, deterministic, and independent of route-table size, but a database-backed item operation needs one value from the request path. Leaving every item URL as a manually enumerated literal is not viable. Adopting a general pattern router would introduce a much larger inference surface: arbitrary regular expressions, user callbacks, decoded-path ambiguity, multiple parameter shapes, automatic domain binding, and potentially a request-time scan of the route table.
