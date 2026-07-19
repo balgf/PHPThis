@@ -1,6 +1,7 @@
 CONTRIBUTING.md
 LICENSE
 README.md
+RELEASING.md
 ROADMAP.md
 SECURITY.md
 VISION.md
@@ -28,6 +29,7 @@ docs/decisions/014-sql-data-and-finite-structure.md
 docs/decisions/015-explicit-native-session-lifecycle.md
 docs/decisions/016-cache-policy-before-cache-mechanism.md
 docs/decisions/017-bounded-trailing-positive-integer-routes.md
+docs/decisions/018-bounded-alpha-1-release-scope.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

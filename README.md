@@ -49,6 +49,8 @@ Finite SQL and parameter binding do not prove authorization or least privilege. 
 
 **Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
+The bounded [Alpha 1 release scope](docs/decisions/018-bounded-alpha-1-release-scope.md) is accepted, but no alpha has been published. Alpha 1 freezes the current checked installation and authoring surface; it will not claim production readiness, backward compatibility, complete CRUD, authentication, authorization, or tenancy. The project remains pre-alpha until the complete [release gate](RELEASING.md) proves both Packagist packages and the clean public installation path.
+
 This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, directly indexed literal routes, one indexed trailing positive-integer route shape, explicit handlers, and instrumented PDO access. It does not include a cache client, cache interface, cache helper, or general automatic HTTP cache policy. Framework-generated 404, 405, and 500 responses and the current skeleton/example response paths explicitly use `Cache-Control: no-store`; arbitrary application handler responses remain application-owned. The sample application includes a bounded `GET /users` List operation with one explicit application-owned keyset continuation, a transactional `POST /users` Create operation, and the first bounded `GET /users/{user_id}` item proof. That Get slice proves typed routing, concrete identifier conversion, and bounded query cost, not complete authorization or tenant policy. Update and Delete are not yet claimed. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
 
 The executable query-scaling proof holds every accepted page at one statement while traversing 125 users as 50, 50, and 25 rows without gaps or duplicates. Its isolated N+1 negative control grows from 3 statements for 2 users to 51 for 50 users; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
@@ -95,6 +97,7 @@ Ask the project AI to follow the [application bootstrap contract](docs/getting-s
 - [Session state](docs/sessions.md) defines the optional native lifecycle, explicit cookie contract, deployment requirements, and application-policy boundary.
 - [Caching policy](docs/caching.md) separates HTTP response caching from application data caching and defines the evidence required before either is adopted.
 - [Architecture decisions](docs/decisions/README.md) preserve accepted rationale and reconsideration triggers.
+- [Alpha 1 scope](docs/decisions/018-bounded-alpha-1-release-scope.md) defines the bounded first-prerelease claim, and the [release process](RELEASING.md) defines the public-artifact gate.
 - [Evaluation](docs/evaluation.md) defines evidence and future AI-comparison work.
 - [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the pre-alpha project's current boundaries.
 

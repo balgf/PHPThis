@@ -30,19 +30,21 @@
 - Complete: one bounded trailing `{name:positive-int}` route grammar, immutable `RouteMatch` and `PathParameters` delivery without changing the handler interface, literal precedence, ambiguity rejection, and indexed request-time lookup.
 - Complete: first bounded `GET /users/{user_id}` proof with immediate concrete-identifier conversion; this does not claim complete authorization or tenant policy.
 - Complete: application-owned `GET /users` keyset continuation with strict `after_user_id` parsing, fixed 50-row pages, one-statement lookahead, and no-gap/no-duplicate scaling evidence.
-- Current: finish the remaining Create identity/conflict plus Create/List/Get authorization and tenant decisions and evidence.
-- After those decisions: prove Update and Delete only after the example also records mutation concurrency, deletion, authorization, and conflict behavior.
+- Complete: accepted bounded Alpha 1 release scope; complete CRUD, authentication, authorization, and tenancy are explicitly not publication prerequisites.
 
-## Phase 2: type-aware AI guardrails
+## Phase 2: publish Alpha 1 and extend type-aware AI guardrails
 
+- Current: execute `RELEASING.md` without expanding the runtime surface: approve the exact prerelease version, publish the framework package, export and publish the skeleton package, verify the actual Packagist-preferred artifacts, and prove the public `composer create-project --stability=alpha` path before announcement.
+- Export `skeleton/` as its own package root, remove the pre-alpha VCS repository override, replace `dev-main` with the Packagist alpha constraint, commit its lockfile, and publish both prerelease packages.
+- Install the actual Packagist-preferred framework dist, compare it with `tools/package-files.txt`, and prove the documented `composer create-project --stability=alpha` path before announcing alpha.
 - Move type-sensitive architecture checks into tested PHPStan extensions.
 - Detect unbounded reads with low false-positive rates and measure PHT006 gaps before considering any broader SQL provenance rule.
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.
 - Produce a machine-readable route report from the same explicit route list.
 - Measure how many files and tokens common changes require.
 - Build grounded-answer evaluations across installed revisions and measure unsupported claims, citation accuracy, uncertainty, and correct escalation of human decisions.
-- Export `skeleton/` as its own package root, remove the pre-alpha VCS repository override, replace `dev-main` with the Packagist alpha constraint, commit its lockfile, and publish both prerelease packages.
-- Install the actual Packagist-preferred framework dist, compare it with `tools/package-files.txt`, and prove the documented `composer create-project --stability=alpha` path before announcing alpha.
+- After Alpha 1: finish the example's Create identity/conflict plus Create/List/Get authorization and tenant decisions and evidence without presenting them as framework policy.
+- After those decisions: prove Update and Delete only after the example also records mutation concurrency, deletion, authorization, and conflict behavior.
 
 ## Phase 3: production evaluation
 

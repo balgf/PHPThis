@@ -22,7 +22,7 @@ No generic checker can determine whether an arbitrary application-owned suite ad
 
 No checker can protect a repository that removes the checker from CI and refuses to run it. The skeleton CI therefore invokes the installed binary directly as well as owning the application behavior-test stage.
 
-The local archive proof cannot establish the bytes later served by a hosting provider. The alpha publication process therefore remains incomplete until the actual Packagist-preferred dist is installed, compared with the same inventory manifest, and exercised through the public skeleton command.
+The local archive proof cannot establish the bytes later served by a hosting provider. The alpha publication process in `RELEASING.md` therefore remains incomplete until the actual Packagist-preferred dist is installed, compared with the same inventory manifest, and exercised through the public skeleton command.
 
 ## Reconsider when
 

@@ -288,6 +288,7 @@ if (!is_string($phpstanConfig)) {
 
 $requiredRepositoryFiles = [
     '.github/workflows/ci.yml',
+    'RELEASING.md',
     '.ai/cache.md',
     '.ai/crud.md',
     '.ai/database.md',
@@ -308,6 +309,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/015-explicit-native-session-lifecycle.md',
     'docs/decisions/016-cache-policy-before-cache-mechanism.md',
     'docs/decisions/017-bounded-trailing-positive-integer-routes.md',
+    'docs/decisions/018-bounded-alpha-1-release-scope.md',
     'example/src/Users/GetUser/GetUserHandler.php',
     'example/src/Users/GetUser/UserDetails.php',
     'example/src/Users/GetUser/UserId.php',
@@ -426,6 +428,28 @@ foreach ($automatedBehaviorEvidenceMarkers as $relativePath => $marker) {
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
         $failures[] = "The mandatory automated-behavior-evidence contract is missing from {$relativePath}.";
+    }
+}
+
+$alphaReleaseContractMarkers = [
+    '.ai/README.md' => 'Prepare, assess, or publish a release',
+    '.ai/application-context.md' => 'Keep Alpha scope approval separate from authorization to create tags',
+    '.ai/testing.md' => 'The Git export comparison requires a clean worktree',
+    'README.md' => 'The project remains pre-alpha until the complete [release gate](RELEASING.md)',
+    'RELEASING.md' => '## Alpha 1 release gate',
+    'ROADMAP.md' => 'Current: execute `RELEASING.md` without expanding the runtime surface',
+    'SECURITY.md' => 'Private vulnerability reports are still assessed on a best-effort basis.',
+    'docs/getting-started.md' => 'Acceptance of the scope is not publication.',
+    'docs/knowledge-map.md' => 'Assess or prepare a PHPThis release',
+    'docs/decisions/018-bounded-alpha-1-release-scope.md' => 'Complete CRUD is not an Alpha 1 release prerequisite.',
+    'tools/package-files.txt' => 'docs/decisions/018-bounded-alpha-1-release-scope.md',
+];
+
+foreach ($alphaReleaseContractMarkers as $relativePath => $marker) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents) || !str_contains($contents, $marker)) {
+        $failures[] = "The accepted bounded Alpha 1 release contract is missing from {$relativePath}.";
     }
 }
 

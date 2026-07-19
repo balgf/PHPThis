@@ -15,4 +15,6 @@ AI may draft and update a proposed decision record and analyze tradeoffs. A cons
 
 `composer check` is the PHPThis validity gate, not an optional quality report. Fix Strict Profile diagnostics at their cause; do not add a baseline, inline ignore, wildcard exclusion, or comment exemption.
 
+Release candidates additionally follow `RELEASING.md` and the accepted bounded scope in `docs/decisions/018-bounded-alpha-1-release-scope.md`. A green local checkout does not authorize a tag, package publication, or announcement, and local archive proof does not replace verification of the actual public distribution artifact.
+
 A shorter call site is not sufficient justification. New framework code must reduce ambiguity, enforce a rule, or remove repeated application code without hiding I/O or control flow.

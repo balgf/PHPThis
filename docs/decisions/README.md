@@ -21,3 +21,4 @@ Accepted records:
 - `015-explicit-native-session-lifecycle.md`
 - `016-cache-policy-before-cache-mechanism.md`
 - `017-bounded-trailing-positive-integer-routes.md`
+- `018-bounded-alpha-1-release-scope.md`

@@ -1,6 +1,6 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, ADR 016, or ADR 017.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, ADR 016, ADR 017, or ADR 018.
 
 Rules:
 
@@ -28,5 +28,6 @@ Rules:
 - Keep template links valid after the files are copied to an application root; do not link back with repository-relative `../../` paths. Treat every hardcoded `vendor/phpthis/framework/` path in copied `AGENTS.md` and `.ai/` files as one installation assumption that must be updated together when Composer uses a non-default vendor directory.
 - Keep the role, authority, and human-decision language aligned across the consumer contract, skeleton, and application template.
 - Require every observable behavior change to add or update application-owned automated tests while leaving the test library, runner, file placement, and organization application-owned. Static analysis, documentation, manual verification, and no-op commands are not behavior evidence.
+- Keep Alpha scope approval separate from authorization to create tags, repositories, package-host entries, releases, or announcements. The project remains pre-alpha until the actual Packagist-preferred artifacts and unchanged public create-project path pass `RELEASING.md`.
 
 Run `composer check`, inspect unresolved placeholders in the documentation-only template, execute the isolated skeleton-consumer proof, and verify the exact framework archive inventory before a release.
