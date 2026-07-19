@@ -27,5 +27,6 @@ Rules:
 - Do not claim that Composer dependency installation inherits root scripts or development dependencies; the skeleton must declare both explicitly.
 - Keep template links valid after the files are copied to an application root; do not link back with repository-relative `../../` paths. Treat every hardcoded `vendor/phpthis/framework/` path in copied `AGENTS.md` and `.ai/` files as one installation assumption that must be updated together when Composer uses a non-default vendor directory.
 - Keep the role, authority, and human-decision language aligned across the consumer contract, skeleton, and application template.
+- Require every observable behavior change to add or update application-owned automated tests while leaving the test library, runner, file placement, and organization application-owned. Static analysis, documentation, manual verification, and no-op commands are not behavior evidence.
 
 Run `composer check`, inspect unresolved placeholders in the documentation-only template, execute the isolated skeleton-consumer proof, and verify the exact framework archive inventory before a release.

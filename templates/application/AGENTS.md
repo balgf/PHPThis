@@ -23,6 +23,8 @@ If the installed contract or knowledge map is missing in a fresh checkout, read 
 
 Run the complete application validity gate documented in `.ai/testing.md` from the repository root. A task is not complete until that command passes. A focused test may shorten the repair loop but does not replace the complete check.
 
+Every observable behavior change must add or update application-owned automated tests. The application owns the test library, runner, file placement, and organization. Static analysis, documentation, manual verification, and a no-op test command do not satisfy this requirement.
+
 ## Authority
 
 - The installed PHPThis Consumer Contract v3 and Strict Profile v2 are the minimum accepted rules, including explicit cookie/session boundaries and PHT006 finite compile-time-constant SQL.

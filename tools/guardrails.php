@@ -407,6 +407,28 @@ foreach ($routingGuardFixtures as $relativePath => $expectedFailures) {
     }
 }
 
+$automatedBehaviorEvidenceMarkers = [
+    '.ai/application-context.md' => 'no-op commands are not behavior evidence',
+    'docs/consumer-contract.md' => '## Automated behavior evidence',
+    'docs/decisions/010-framework-owned-consumer-check.md' => 'No generic checker can determine whether an arbitrary application-owned suite adequately proves the requested behavior.',
+    'docs/getting-started.md' => 'Every observable behavior change must add or update automated tests.',
+    'templates/application/AGENTS.md' => 'Every observable behavior change must add or update application-owned automated tests.',
+    'templates/application/.ai/testing.md' => '## Automated behavior evidence',
+    'templates/application/.ai/change-workflow.md' => 'automated behavior evidence must remain apparent to the next agent',
+    'skeleton/AGENTS.md' => 'Every observable behavior change must add or update application-owned automated tests.',
+    'skeleton/.ai/testing.md' => '## Automated behavior evidence',
+    'skeleton/.ai/change-workflow.md' => 'automated behavior evidence must remain apparent to the next agent',
+    'skeleton/README.md' => 'the application remains free to choose its test library, runner, and file placement',
+];
+
+foreach ($automatedBehaviorEvidenceMarkers as $relativePath => $marker) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents) || !str_contains($contents, $marker)) {
+        $failures[] = "The mandatory automated-behavior-evidence contract is missing from {$relativePath}.";
+    }
+}
+
 $sessionContractMarkers = [
     '.ai/README.md' => '`.ai/session.md`',
     'docs/knowledge-map.md' => '`docs/sessions.md`',

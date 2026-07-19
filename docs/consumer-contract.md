@@ -64,6 +64,16 @@ Composer does not inherit a dependency's root scripts or development dependencie
 }
 ```
 
+The `php tests/run.php` value is the skeleton's concrete example, not a required command or path. The contractual structure is the exact `profile` and `check` values plus a non-empty application-owned `test` script.
+
+## Automated behavior evidence
+
+Every observable behavior change must add or update application-owned automated tests. The evidence covers expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits. Static analysis, documentation, manual verification, and a test command that merely exits successfully do not satisfy this obligation.
+
+The application owns its test library, runner, file placement, and organization. PHPThis does not require PHPUnit, Pest, a `tests/` directory, or a particular distinction between unit, integration, and end-to-end tests. Composer `scripts.test` must execute the application's automated behavior evidence and return a non-zero status when that evidence fails. The complete project check must run it after `phpthis check`; an implementation task is incomplete until both stages pass.
+
+The installed checker can verify the canonical gate wiring, but it cannot determine the semantic adequacy of an arbitrary test suite. The AI implementing a change must name the automated tests added or updated and the behavior they prove. The accountable human decides whether that evidence is sufficient for the requested outcome and risk.
+
 `phpthis check` discovers every application-owned PHP file, runs structural profile checks, and invokes PHPStan with a temporary framework-owned configuration. The same discovered file manifest drives both stages. It excludes only the resolved Composer dependency directory and version-control metadata; source under `config/`, `bin/`, migrations, hidden directories, or `tmp/` remains application-owned and checked. PHP files use the `.php` extension; extensionless executables beginning with `<?php` or `#!/usr/bin/env php` followed by `<?php` are also checked. A canonical PHP opening prefix under another extension is rejected rather than silently excluded. Symlinked source directories and checked source files are rejected instead of silently skipped.
 
 Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 3.
@@ -174,7 +184,7 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 
 ## Contract evolution
 
-Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. The automated-behavior-evidence language clarifies the existing behavior-test stage while leaving its library, runner, and file placement application-owned; it adds no new checker rejection, so Contract version 3 remains unchanged. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
 
 ADR 017's bounded trailing positive-integer route is a framework API capability within the existing explicit-route obligation. It does not change the PHP program subset accepted by the installed checker, so Consumer Contract version 3 and Strict Profile version 2 remain unchanged.
 

@@ -223,7 +223,7 @@ final class ApplicationChecker
         }
 
         if (!$this->isNonEmptyComposerScript($scripts['test'] ?? null)) {
-            $failures[] = 'composer.json scripts.test must define the application behavior tests.';
+            $failures[] = "composer.json scripts.test must execute the application's automated behavior tests.";
         }
 
         if (($scripts['check'] ?? null) !== ['@profile', '@test']) {

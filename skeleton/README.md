@@ -19,7 +19,7 @@ composer install
 composer check
 ```
 
-`composer check` first runs the framework-owned Strict Profile and maximum-level PHPStan configuration, then runs the application's behavior tests.
+`composer check` first runs the framework-owned Strict Profile and maximum-level PHPStan configuration, then runs the application's automated behavior tests. This starter's zero-dependency `tests/run.php` is one concrete implementation, not a required framework, filename, or directory. Every observable behavior change must add or update automated tests; the application remains free to choose its test library, runner, and file placement.
 Commit the generated `composer.lock` with the application so dependency versions remain reproducible.
 
 ## Run locally

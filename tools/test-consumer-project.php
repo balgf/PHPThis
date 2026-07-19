@@ -127,7 +127,7 @@ try {
     proveDynamicSqlIsRejected($project, $profileCommand, $environment);
     proveConfigurationCannotReplaceProfile($project, $profileCommand, $environment);
     proveBaselinesAndInlineIgnoresAreRejected($project, $profileCommand, $environment);
-    proveComposerGateCannotDrift($project, $profileCommand, $environment);
+    proveComposerGateCannotDrift($project, $composerBinary, $profileCommand, $environment);
     proveSymlinkedSourceIsRejected($workspace, $project, $profileCommand, $environment);
 
     $restoredResult = runProcess($profileCommand, $project, $environment);
@@ -1028,7 +1028,12 @@ PHP;
  * @param list<string> $profileCommand
  * @param array<string, string> $environment
  */
-function proveComposerGateCannotDrift(string $project, array $profileCommand, array $environment): void
+function proveComposerGateCannotDrift(
+    string $project,
+    string $composerBinary,
+    array $profileCommand,
+    array $environment,
+): void
 {
     $composerPath = $project . '/composer.json';
     $original = file_get_contents($composerPath);
@@ -1055,6 +1060,119 @@ function proveComposerGateCannotDrift(string $project, array $profileCommand, ar
     } finally {
         if (file_put_contents($composerPath, $original, LOCK_EX) !== strlen($original)) {
             throw new RuntimeException('Unable to restore the consumer Composer gate.');
+        }
+    }
+
+    $composer = jsonFile($composerPath);
+    $scripts = $composer['scripts'] ?? null;
+
+    if (!is_array($scripts)) {
+        throw new RuntimeException('The restored consumer Composer scripts are missing.');
+    }
+
+    $scripts['test'] = '';
+    $composer['scripts'] = $scripts;
+    writeJson($composerPath, $composer);
+
+    try {
+        $testResult = runProcess($profileCommand, $project, $environment);
+        requireFailure($testResult, 'A missing application behavior-test command unexpectedly passed.');
+        requireOutputContains($testResult, "scripts.test must execute the application's automated behavior tests");
+    } finally {
+        if (file_put_contents($composerPath, $original, LOCK_EX) !== strlen($original)) {
+            throw new RuntimeException('Unable to restore the consumer behavior-test command.');
+        }
+    }
+
+    $composer = jsonFile($composerPath);
+    $scripts = $composer['scripts'] ?? null;
+
+    if (!is_array($scripts)) {
+        throw new RuntimeException('The restored consumer Composer scripts are missing.');
+    }
+
+    $scripts['check'] = ['@profile'];
+    $composer['scripts'] = $scripts;
+    writeJson($composerPath, $composer);
+
+    try {
+        $checkResult = runProcess($profileCommand, $project, $environment);
+        requireFailure($checkResult, 'A complete gate without the application behavior-test stage unexpectedly passed.');
+        requireOutputContains($checkResult, 'scripts.check must be exactly [`@profile`, `@test`]');
+    } finally {
+        if (file_put_contents($composerPath, $original, LOCK_EX) !== strlen($original)) {
+            throw new RuntimeException('Unable to restore the complete consumer gate.');
+        }
+    }
+
+    $composer = jsonFile($composerPath);
+    $scripts = $composer['scripts'] ?? null;
+
+    if (!is_array($scripts)) {
+        throw new RuntimeException('The restored consumer Composer scripts are missing.');
+    }
+
+    $scripts['test'] = 'php -r "fwrite(STDERR, \'PHPTHIS_BEHAVIOR_STAGE_FAILED\'); exit(23);"';
+    $composer['scripts'] = $scripts;
+    writeJson($composerPath, $composer);
+
+    try {
+        $behaviorFailureResult = runProcess(
+            composerCommand($composerBinary, ['check']),
+            $project,
+            $environment,
+        );
+        requireFailure($behaviorFailureResult, 'A failing application behavior-test stage did not fail the complete gate.');
+        requireOutputContains($behaviorFailureResult, 'PASS PHPThis application check');
+        requireOutputContains($behaviorFailureResult, 'PHPTHIS_BEHAVIOR_STAGE_FAILED');
+    } finally {
+        if (file_put_contents($composerPath, $original, LOCK_EX) !== strlen($original)) {
+            throw new RuntimeException('Unable to restore the consumer behavior-test stage.');
+        }
+    }
+
+    $checksDirectory = $project . '/checks';
+    $originalRunner = $project . '/tests/run.php';
+    $movedRunner = $checksDirectory . '/behavior.php';
+
+    if (!mkdir($checksDirectory, 0700)) {
+        throw new RuntimeException('Unable to create the alternate behavior-test directory.');
+    }
+
+    if (!rename($originalRunner, $movedRunner)) {
+        throw new RuntimeException('Unable to move the behavior-test runner for the path-neutrality control.');
+    }
+
+    $composer = jsonFile($composerPath);
+    $scripts = $composer['scripts'] ?? null;
+
+    if (!is_array($scripts)) {
+        throw new RuntimeException('The restored consumer Composer scripts are missing.');
+    }
+
+    $scripts['test'] = 'php checks/behavior.php';
+    $composer['scripts'] = $scripts;
+    writeJson($composerPath, $composer);
+
+    try {
+        $alternatePathResult = runProcess(
+            composerCommand($composerBinary, ['check']),
+            $project,
+            $environment,
+        );
+        requireSuccess($alternatePathResult, 'An application-owned behavior-test path unexpectedly failed.');
+        requireOutputContains($alternatePathResult, 'PASS application behavior and front controller');
+    } finally {
+        if (file_put_contents($composerPath, $original, LOCK_EX) !== strlen($original)) {
+            throw new RuntimeException('Unable to restore the consumer test path.');
+        }
+
+        if (!rename($movedRunner, $originalRunner)) {
+            throw new RuntimeException('Unable to restore the original behavior-test runner.');
+        }
+
+        if (!rmdir($checksDirectory)) {
+            throw new RuntimeException('Unable to remove the alternate behavior-test directory.');
         }
     }
 

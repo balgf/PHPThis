@@ -10,6 +10,10 @@ Run from the application root:
 
 This command must call the installed `phpthis check` profile stage and then run application behavior tests. Record its exact definition at `{{PROJECT_CHECK_DEFINITION_PATH}}`. Do not add an application-owned PHPStan configuration, baseline, or inline suppression path.
 
+## Automated behavior evidence
+
+Every observable behavior change must add or update application-owned automated tests. The application owns the test library, runner, file placement, and organization; PHPThis does not require PHPUnit, Pest, a `tests/` directory, or a particular test category. Composer `scripts.test` must execute this evidence and return a non-zero status when it fails. Static analysis, documentation, manual verification, and a no-op test command are not behavior evidence.
+
 ## Focused commands
 
 - Unit or behavior tests: `{{FOCUSED_TEST_COMMAND}}`
@@ -22,7 +26,7 @@ Focused commands shorten feedback but never replace the complete validity gate.
 
 ## Required evidence
 
-- Every change covers the expected success and failure behavior.
+- Automated tests for every observable behavior change cover expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits.
 - Boundary parsing covers missing, unknown, wrongly typed, coercive, and oversized input as applicable.
 - Authorization-sensitive behavior proves both allowed and denied outcomes.
 - Adopted session transport proves anonymous access without storage, invalid, duplicated, attacker-selected, stale, and obsolete identifier rejection, exact state bounds, callback rollback, lock release, unissued-ID cleanup, delayed-response cookie safety, explicit invalidation, secure cookie attributes, isolated save-path enforcement, and concurrent requests under the recorded native file-storage topology. Authentication-time regeneration, idle and absolute expiry, CSRF, authorization, and revocation tests are required when those policies apply; each absent concern is explicitly not applicable. Session-free applications record only session transport and session-backed concerns as not applicable.

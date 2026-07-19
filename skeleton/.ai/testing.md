@@ -10,6 +10,10 @@ composer check
 
 Its exact definition is in `composer.json`: `phpthis check` owns application-wide guardrails, the PHPThis Strict Profile, and maximum-level PHPStan; `composer test` owns behavior evidence.
 
+## Automated behavior evidence
+
+Every observable behavior change must add or update application-owned automated tests. The application owns the test library, runner, file placement, and organization; PHPThis does not require PHPUnit, Pest, a `tests/` directory, or a particular test category. Composer `scripts.test` must execute this evidence and return a non-zero status when it fails. Static analysis, documentation, manual verification, and a no-op test command are not behavior evidence.
+
 ## Focused commands
 
 - Framework-owned profile and static analysis: `vendor/bin/phpthis check`
@@ -22,6 +26,7 @@ Focused commands shorten feedback but never replace the complete gate.
 
 ## Starter evidence
 
+- Automated tests for every observable behavior change cover expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits.
 - Test the exact health response, unknown route, unsupported method, malformed runtime input, oversized declared body, and real front controller.
 - `NOT_APPLICABLE(CRUD_EVIDENCE)`: the starter has no CRUD-shaped operations. For each operation later added, test its applicable route, identifier, conflict, pagination, missing-resource, concurrency, deletion, authorization, and audit policies; keep absent operations and concerns explicitly not applicable.
 - `NOT_APPLICABLE(DATABASE_EVIDENCE)`: before database adoption, add engine integration and scale tests, adversarial bound-data tests, unknown-selector and oversized-list rejection before database work, query-budget and trace assertions, and dated evidence that runtime authority excludes migration and administrative capabilities.

@@ -40,6 +40,8 @@ The skeleton supplies:
 - the framework-owned `phpthis check` profile stage and application-owned behavior tests;
 - a CI workflow that calls the installed checker directly and runs behavior tests.
 
+Every observable behavior change must add or update automated tests. The consumer chooses the test library, runner, and file placement, but Composer `scripts.test` must execute that evidence and fail when a test fails. Static analysis, documentation, manual verification, and a no-op test command do not replace behavior tests.
+
 Replace the skeleton's generic project facts with verified product, architecture, data, integration, authorization, and operational facts before feature work.
 
 ## Add context to an existing application
