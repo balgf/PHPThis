@@ -9,9 +9,10 @@
 - Parse external `mixed` values once into concrete final readonly projections or commands.
 - Execute application SQL only through direct `Connection` calls, bind every data value with a distinct named placeholder per occurrence, and keep the final SQL a finite non-blank compile-time constant.
 - Map external SQL-structure selectors to finite reviewed code-owned choices and reject unknown selectors before database work.
+- Keep every adopted cache read, write, and invalidation visible behind a narrowly named typed application service and an explicitly wired backend; parse cache hits as untrusted external values before use.
 - Pass the complete Strict Profile; PHP execution without `composer check` is not sufficient verification.
 - Add a test for success, expected failure, and resource bounds when relevant.
-- Use one stable term for each concept: route, handler, connection, request, response, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace.
+- Use one stable term for each concept: route, handler, connection, request, response, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, HTTP cache policy, application cache service, stale-refill race.
 
 ## Forbidden
 
@@ -24,6 +25,7 @@
 - Reflection hydration, generic domain collections, and unvalidated arrays crossing a boundary.
 - Aliases or shortcuts that provide a second spelling for existing behavior.
 - Direct application access to `$_SESSION`, native `session_*` calls, generic session helpers, or authentication state stored without a typed application boundary.
+- Generic cache facades or bags, remember-style callbacks, implicit cache fallback or retries, automatic query caching, hidden cache middleware, unbounded keys or values, implicit forever lifetimes, and claims that distinct backends are behaviorally interchangeable.
 - Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
 - Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.
 

@@ -19,6 +19,14 @@
 
 `NOT_APPLICABLE`: the starter does not construct `SessionLifecycle` or create session storage. PHP 8.4 `ext-session` remains an installed framework platform requirement. Before adoption, record the native file handler and save-path ownership, exact PHP settings and dated source, cookie policy, deployment topology and concurrency evidence, and garbage collection in this section.
 
+## HTTP cache runtime
+
+`UNRESOLVED(HTTP_CACHE_POLICY)`: the starter records no browser, reverse-proxy, gateway, or CDN topology, cache-header transformation, purge behavior, or HTTP cache observability. Local execution is not evidence of production intermediary behavior, and missing cache headers do not disable HTTP caching.
+
+## Server-side cache runtime
+
+`NOT_APPLICABLE(CACHE)`: the starter configures no cache backend, client, extension, package, storage, or server-side caching. Before adoption, record the backend product and supported version, deployment topology and environment isolation, non-secret configuration source, capacity and eviction behavior, finite TTL policy, invalidation and stale-refill behavior, failure and recovery behavior, stampede owner and bounded lock or lease behavior, and dated operational source. Cache availability must not establish application correctness.
+
 ## Deployment
 
 `NOT_APPLICABLE`: the skeleton defines no environment, release, rollback, or production runtime policy. Add verified operational sources before deployment work.
@@ -28,8 +36,10 @@
 - Unknown failures use `PHPThis\Http\UnknownFailureBoundary` and remain generic to clients.
 - `GET /health` is the starter liveness path; no readiness path exists.
 - Query summaries are `NOT_APPLICABLE(no database)`.
+- HTTP cache status, revalidation, and intermediary metrics are `UNRESOLVED(HTTP_CACHE_POLICY)`.
+- Cache-operation summaries and hit, miss, failure, invalidation, and stampede metrics are `NOT_APPLICABLE(CACHE)`.
 
-Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, request bodies, SQL parameters, customer data, or unknown exception messages.
+Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, cache keys or payloads, request bodies, SQL parameters, customer data, or unknown exception messages.
 
 ## Prohibited operational actions
 

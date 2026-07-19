@@ -59,10 +59,13 @@ if (!is_string($phpstanConfig)) {
 
 $requiredRepositoryFiles = [
     '.github/workflows/ci.yml',
+    '.ai/cache.md',
     '.ai/crud.md',
     '.ai/database.md',
+    '.ai/http.md',
     '.ai/session.md',
     'docs/consumer-contract.md',
+    'docs/caching.md',
     'docs/crud.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
@@ -73,6 +76,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/013-optional-crud-reference-profile.md',
     'docs/decisions/014-sql-data-and-finite-structure.md',
     'docs/decisions/015-explicit-native-session-lifecycle.md',
+    'docs/decisions/016-cache-policy-before-cache-mechanism.md',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
@@ -148,6 +152,86 @@ foreach ($sessionContractMarkers as $relativePath => $marker) {
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
         $failures[] = "Session contract route or application-context field is missing from {$relativePath}.";
+    }
+}
+
+$cacheContractMarkers = [
+    '.ai/README.md' => '`.ai/cache.md`',
+    '.ai/http.md' => '`.ai/cache.md`',
+    'docs/knowledge-map.md' => '`docs/caching.md`',
+    'templates/application/.ai/architecture.md' => '{{CACHE_ADOPTION_OR_NOT_APPLICABLE}}',
+    'templates/application/.ai/operations.md' => '{{CACHE_RUNTIME_ADOPTION_OR_NOT_APPLICABLE}}',
+    'templates/application/.ai/testing.md' => 'Adopted cache behavior',
+    'skeleton/.ai/README.md' => 'vendor/phpthis/framework/docs/caching.md',
+    'skeleton/.ai/architecture.md' => 'NOT_APPLICABLE(CACHE)',
+    'skeleton/.ai/testing.md' => 'NOT_APPLICABLE(CACHE_EVIDENCE)',
+];
+
+foreach ($cacheContractMarkers as $relativePath => $marker) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents) || !str_contains($contents, $marker)) {
+        $failures[] = "Cache contract route or application-context field is missing from {$relativePath}.";
+    }
+}
+
+$cachePolicyArtifactMarkers = [
+    '.ai/cache.md' => [
+        'The framework currently provides no generic cache API',
+        '## HTTP response caching',
+        '## Server-side data caching',
+    ],
+    'docs/caching.md' => [
+        'PHPThis has an accepted cache policy but no framework cache mechanism.',
+        '`NOT_APPLICABLE(CACHE)`',
+        'A warm cache is not evidence that a database path avoids N+1 queries.',
+        'stale-refill race',
+    ],
+    'docs/decisions/016-cache-policy-before-cache-mechanism.md' => [
+        'Status: accepted',
+        'It adds no runtime source, dependency, automatic response header, generic cache API',
+        'an explicit stale-refill policy',
+    ],
+    'templates/application/.ai/architecture.md' => [
+        '{{HTTP_CACHE_POLICY_DECISION}}',
+        '{{HTTP_CACHE_RESPONSE_POLICY}}',
+        '{{CACHEABLE_RESPONSE_FRESHNESS_AND_REVALIDATION_POLICY}}',
+    ],
+    'templates/application/.ai/operations.md' => [
+        '{{HTTP_CACHE_RUNTIME_POLICY}}',
+    ],
+    'templates/application/.ai/data.md' => [
+        '{{CACHE_INVALIDATION_AND_STALE_REFILL_POLICY_OR_NOT_APPLICABLE}}',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'HTTP cache policy evidence',
+        'a concurrent miss racing an authoritative write',
+    ],
+    'skeleton/.ai/README.md' => [
+        'UNRESOLVED(HTTP_CACHE_POLICY)',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'UNRESOLVED(HTTP_CACHE_EVIDENCE)',
+        'a concurrent miss racing an authoritative write',
+    ],
+    'tools/package-files.txt' => [
+        'docs/caching.md',
+        'docs/decisions/016-cache-policy-before-cache-mechanism.md',
+    ],
+];
+
+foreach ($cachePolicyArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read cache policy artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Cache policy artifact marker is missing from {$relativePath}.";
+        }
     }
 }
 

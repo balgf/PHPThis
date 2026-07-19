@@ -15,6 +15,8 @@ This command must call the installed `phpthis check` profile stage and then run 
 - Unit or behavior tests: `{{FOCUSED_TEST_COMMAND}}`
 - Framework-owned profile and static analysis: `vendor/bin/phpthis check`
 - Database integration tests: `{{DATABASE_TEST_COMMAND_OR_NOT_APPLICABLE}}`
+- HTTP cache policy tests: `{{HTTP_CACHE_TEST_COMMAND}}`
+- Cache integration tests: `{{CACHE_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 
 Focused commands shorten feedback but never replace the complete validity gate.
 
@@ -31,6 +33,9 @@ Focused commands shorten feedback but never replace the complete validity gate.
 - A structural choice test names the finite code-owned mapping exercised; successful sanitization or escaping is never accepted as evidence for SQL structure.
 - Database operational evidence records the source and date used to verify the runtime identity's required and prohibited capabilities and its isolation from migration or administrative authority.
 - Transaction tests prove rollback after the last allowed statement fails.
+- HTTP cache policy evidence proves exact `Cache-Control` behavior for every response class, finite freshness or revalidation for every storable response, validators and `304` behavior where applicable, every `Vary` dimension, authenticated and cookie-bearing response isolation, and the recorded browser or intermediary behavior. Public-cache tests prove that one identity, tenant, encoding, or representation cannot receive another's response.
+- Adopted cache behavior proves cold miss and authoritative rebuild, warm hit without hidden database work, finite expiry, bounded payload parsing, corruption handling, backend failure and recovery, environment and tenant isolation, versioned-key rollover, post-commit invalidation and invalidation failure, a concurrent miss racing an authoritative write, and the recorded stampede behavior under concurrent requests. Cold-cache database tests still prove constant query scaling; a warm cache cannot conceal N+1 access.
+- Cache evidence inspects bounded operation summaries for hits, misses, writes, invalidations, failures, and stampede outcomes without logging keys or payloads.
 - External integrations test timeout, malformed response, idempotency, and retry ownership without contacting production systems.
 
 ## Test data safety

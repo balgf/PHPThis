@@ -7,6 +7,7 @@ VISION.md
 bin/phpthis
 composer.json
 docs/architecture.md
+docs/caching.md
 docs/consumer-contract.md
 docs/crud.md
 docs/database.md
@@ -25,6 +26,7 @@ docs/decisions/012-pdo-transport-application-owned-dialects.md
 docs/decisions/013-optional-crud-reference-profile.md
 docs/decisions/014-sql-data-and-finite-structure.md
 docs/decisions/015-explicit-native-session-lifecycle.md
+docs/decisions/016-cache-policy-before-cache-mechanism.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

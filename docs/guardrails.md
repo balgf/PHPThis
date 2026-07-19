@@ -12,6 +12,7 @@
 - native `session_*` calls occur only in `SessionLifecycle`, with the same restriction enforced in consuming applications;
 - the consumer contract, installed knowledge map, and every required application context template file remain present;
 - the optional CRUD reference profile, its accepted decision, and its AI routing context remain present;
+- the cache policy guide, policy-before-mechanism decision, AI route, required HTTP policy fields, and explicit server-side adoption or not-applicable fields remain present;
 - the vision, consumer contract, skeleton, and application template preserve the AI authoring and human-accountability route;
 - the canonical check and CI workflow preserve the SQLite, MySQL, and PostgreSQL PDO transport certification path;
 - the SQL data-versus-finite-structure decision, Contract version 3, Strict Profile version 2, application authority template, and PHT006 implementation remain present;
@@ -23,6 +24,8 @@
 Runtime query budgets enforce a separate limit before each statement executes. Request-scoped query traces add bounded, redacted evidence about executed statement shapes, repetition, timing, and failures.
 
 The Phase 1 cap increase is scoped to ADR 015's explicit cookie and native-session slice. It does not authorize another mechanism. Repository checks also retain the accepted session decision, session knowledge route, Consumer Contract version 3, and the application context fields that force session transport and each applicable policy to be verified or explicitly not applicable.
+
+The cache guard retains documentation and application-context policy, not a cache implementation. It keeps the current absence of a generic framework cache explicit, preserves separate HTTP and application data-cache decisions, requires the health-only skeleton to mark its headerless HTTP cache policy unresolved, and resolves only server-side caching as not applicable. It does not claim that an application has adopted a backend or that PHPThis certifies one.
 
 The CRUD profile guard checks only that the installed authority and context route remain available. It deliberately does not inspect consumer directory names: an application may record one canonical alternative structure while remaining subject to the hard consumer contract and Strict Profile.
 

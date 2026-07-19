@@ -12,6 +12,7 @@ public/index.php
       -> Router
         -> RequestHandler
           -> typed application session service (when needed)
+          -> typed application cache service (when deliberately adopted)
           -> Connection (when needed)
         <- Response
     -> ErrorResponseRegistry (only after a named failure)
@@ -33,5 +34,7 @@ The router stores objects, not class names, so dispatch does not need reflection
 - `Session`: bounded immutable snapshots and one lazy native-file session lifecycle; authentication, authorization, expiry, and CSRF remain application policy.
 - `Database`: explicit PDO execution and query accounting.
 - `example`: proves the complete manual wiring path and the optional feature-first CRUD profile with separate bounded List and transactional Create use cases.
+
+There is no cache namespace or cache mechanism in the core. HTTP response policy remains an explicit property of the response-producing path. If an application later adopts server-side caching, it manually wires a narrowly named typed application service at the handler boundary; that service owns one cache-aside execution path and its backend-specific policy. It is not a generic key-value facility, middleware, or replacement for the authoritative data path.
 
 There are no providers, repositories, models, middleware pipelines, or controllers in the core. `RequestBoundary` is one named transport boundary, not a composable middleware chain. Session state does not enter `Request`; an application places narrowly named typed services with explicit non-overlapping key ownership in front of one `SessionLifecycle` instead of adding helpers or a generic key-value repository. Other labels may be introduced only when they represent a proven responsibility that cannot remain clear in a handler.

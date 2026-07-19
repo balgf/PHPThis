@@ -31,6 +31,7 @@ The human supplies intent and remains accountable for the outcome. Surface missi
 - Give the runtime database identity only the capabilities the application path needs; keep migration and administrative authority isolated and record how that separation was verified.
 - Give every request an explicit `QueryBudget` and bounded `QueryTrace`; do not write one log line per query.
 - Give separately named connections explicit budgets and distinct traces; never imply cross-connection transaction atomicity.
+- Treat HTTP response caching and server-side data caching as separate application policies before mechanisms. Do not add a generic cache API, remember-style callback, automatic query caching, or framework-owned backend abstraction; a future server-side adoption must use a narrowly named typed application service with explicit key, value, lifetime, invalidation, stale-refill, failure, topology, observability, and test policy.
 - Parse external `mixed` data once through a named factory into a concrete final readonly projection or command.
 - Reject missing and unknown fields and validate before conversion; never use a scalar cast as validation.
 - Treat `composer check` as the PHPThis validity gate and repair diagnostics by their stable profile rule or PHPStan identifier.
@@ -55,3 +56,5 @@ composer check
 `composer check` runs repository guardrails, maximum-level PHPStan analysis with strict rules, and tests.
 
 For database behavior, also prove that query count stays constant when fixture cardinality increases, inspect the structured query trace for repetition, submit adversarial values through bindings, and reject unsupported structural selectors before database work. A small fixture passing under a query budget is not enough evidence.
+
+For an application that adopts caching, preserve the same database proof with a cold cache. A warm-cache result does not prove bounded SQL behavior.

@@ -14,6 +14,12 @@ A convenience API is rejected when it can hide:
 
 Optimize after measurement, but install cheap limits early. Query budgets and explicit collection bounds are correctness constraints, not micro-optimizations.
 
+## Cache evidence
+
+A cache changes where work occurs; it does not remove the need to bound that work. Performance reports for an adopted cache name the backend and topology and report cold and warm scenarios separately. They include cache-operation count, payload size, hit/miss outcome, database statement count, request latency, and the tested fixture cardinality. A warm-cache latency result is not evidence that the cold path avoids N+1 queries.
+
+Cache observability is a separate bounded aggregate from `QueryBudget` and `QueryTrace`. Do not emit one log event per cache operation or retain keys and values. Expiration, eviction, backend failure, invalidation, stale refill during a concurrent authoritative write, serialization, and concurrent misses are measured behavior rather than assumed backend portability.
+
 `RequestReader` bounds body materialization at the configured maximum plus one detection byte. It also bounds request-target bytes, top-level query count, header count, and each header value. These are allocation guards, not complete request-latency or denial-of-service protection; the web server must enforce compatible transport limits before PHP.
 
 ## Database observability

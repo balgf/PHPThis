@@ -17,6 +17,10 @@ Every behavior test should name one outcome and arrange dependencies directly. F
 
 Inspect the in-memory query trace directly and print its redacted JSON snapshot only when useful for a focused failure. Do not write every query during the full test suite.
 
+An application that adopts server-side data caching must test miss and hit paths, finite expiry, malformed or version-incompatible values, backend failure, tenant separation, invalidation after committed writes, a miss racing a committed write, and its recorded stampede/concurrency policy. Compare small and large fixtures with an empty cache so a warm result cannot hide N+1 behavior. Cache-operation counts and bounded redacted cache evidence remain separate from `QueryBudget` and `QueryTrace`. Assert exact key grammar with synthetic non-sensitive values; never copy production or sensitive key material into tests, and never log complete keys or values.
+
+An application that defines HTTP caching must test the exact `Cache-Control` policy and every applicable validator and `Vary` dimension, including cookie-emitting responses as a separate case. Personalized, session-affecting, authenticated, and sensitive responses begin as `private, no-store` unless an accepted application decision and tests prove a different safe policy.
+
 Boundary factories require adversarial tests for missing and unknown fields, null, arrays, objects, coercive strings, numeric overflow, malformed JSON, invalid UTF-8, and excessive nesting as applicable.
 
 `RequestReader` tests must cover method/path normalization, header normalization and collisions, non-string runtime values, query-key and metadata-count bounds, an exact-limit body, an oversized declared body, an oversized actual body, and a mismatched `Content-Length`. Error-boundary tests must prove exact-class mapping, public-message non-disclosure, zero side effects for rejected client input, and unchanged rethrowing of unknown failures.

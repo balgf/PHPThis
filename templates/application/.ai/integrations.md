@@ -7,6 +7,16 @@ If this application has no external integrations, state that explicitly and remo
 | `{{INTEGRATION_1}}` | `{{INTEGRATION_1_PATH}}` | `{{INTEGRATION_1_CONTRACT}}` | {{INTEGRATION_1_TIMEOUT}} | {{INTEGRATION_1_RETRY_OWNER}} | {{INTEGRATION_1_IDEMPOTENCY}} |
 | `{{INTEGRATION_2}}` | `{{INTEGRATION_2_PATH}}` | `{{INTEGRATION_2_CONTRACT}}` | {{INTEGRATION_2_TIMEOUT}} | {{INTEGRATION_2_RETRY_OWNER}} | {{INTEGRATION_2_IDEMPOTENCY}} |
 
+## Cache backend boundary
+
+- Adoption or `NOT_APPLICABLE(CACHE)`: {{CACHE_BACKEND_INTEGRATION_OR_NOT_APPLICABLE}}
+- Named client boundary and contract/version source: {{CACHE_BACKEND_CLIENT_AND_CONTRACT_OR_NOT_APPLICABLE}}
+- Connect, operation, and total timeout policy: {{CACHE_BACKEND_TIMEOUT_POLICY_OR_NOT_APPLICABLE}}
+- Retry owner and maximum attempts: {{CACHE_BACKEND_RETRY_POLICY_OR_NOT_APPLICABLE}}
+- Backend failure and authoritative-data fallback behavior: {{CACHE_BACKEND_FAILURE_POLICY_OR_NOT_APPLICABLE}}
+
+A remote cache backend is an external integration even though cached data is disposable. Its failure path remains visible and bounded; do not silently retry, silently serve stale data, or report a cache failure as an authoritative-data miss unless the recorded application policy explicitly permits that outcome.
+
 ## Side-effect rules
 
 - {{SIDE_EFFECT_RULE_1}}

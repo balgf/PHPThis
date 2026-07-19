@@ -37,6 +37,10 @@ Run `composer check` from the application root. A task is not complete until it 
 
 `NOT_APPLICABLE(SESSION)`: before introducing session-backed behavior, replace the session sections in `.ai/architecture.md`, `.ai/operations.md`, and `.ai/testing.md` with verified typed key ownership, cookie and isolated native-file storage, concurrency and transport evidence, plus each applicable identity, expiry, revocation, and CSRF policy or explicit non-applicability.
 
+`UNRESOLVED(HTTP_CACHE_POLICY)`: the starter emits a headerless health response, so it cannot claim that HTTP caching is not applicable or safely disabled. Before deployment, resolve response-specific `no-store`, `private`, or `public` behavior, freshness or revalidation, validators and `Vary` dimensions where applicable, intermediary topology, observability, and tests. Keep this decision separate from server-side data caching.
+
+`NOT_APPLICABLE(CACHE)`: before introducing server-side caching, replace the cache sections in `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, and `.ai/testing.md` with verified narrowly named typed service ownership, backend and topology, versioned environment- and tenant-scoped keys, bounded payloads and finite TTLs, invalidation, stale-refill and failure behavior, stampede ownership, observability, and cold, warm, failure, isolation, stale-refill race, and concurrency evidence. Do not add a generic cache helper or treat cached data as authoritative.
+
 ## Context safety
 
 Do not write credentials, tokens, private keys, customer data, production payloads, or secrets into AI context, source comments, fixtures, logs, or reports. Use documented secret references and redacted examples.

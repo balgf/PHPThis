@@ -15,6 +15,8 @@ Its exact definition is in `composer.json`: `phpthis check` owns application-wid
 - Framework-owned profile and static analysis: `vendor/bin/phpthis check`
 - Application behavior tests: `composer test`
 - Database integration tests: `NOT_APPLICABLE(no database)`
+- HTTP cache policy tests: `UNRESOLVED(HTTP_CACHE_POLICY)`
+- Cache integration tests: `NOT_APPLICABLE(CACHE)`
 
 Focused commands shorten feedback but never replace the complete gate.
 
@@ -24,5 +26,7 @@ Focused commands shorten feedback but never replace the complete gate.
 - `NOT_APPLICABLE(CRUD_EVIDENCE)`: the starter has no CRUD-shaped operations. For each operation later added, test its applicable route, identifier, conflict, pagination, missing-resource, concurrency, deletion, authorization, and audit policies; keep absent operations and concerns explicitly not applicable.
 - `NOT_APPLICABLE(DATABASE_EVIDENCE)`: before database adoption, add engine integration and scale tests, adversarial bound-data tests, unknown-selector and oversized-list rejection before database work, query-budget and trace assertions, and dated evidence that runtime authority excludes migration and administrative capabilities.
 - `NOT_APPLICABLE(SESSION_EVIDENCE)`: before session adoption, prove anonymous access without storage, invalid, duplicated, attacker-selected, stale, and obsolete identifier rejection, exact state bounds, callback rollback, lock release, unissued-ID cleanup, delayed-response cookie safety, explicit invalidation, cookie attributes, isolated save-path enforcement, and concurrent requests. Add authentication-time regeneration, expiry, CSRF, authorization, and revocation tests only when those recorded policies apply; mark each absent concern explicitly not applicable.
+- `UNRESOLVED(HTTP_CACHE_EVIDENCE)`: before deployment, prove exact `Cache-Control` behavior for every response class, finite freshness or revalidation for every storable response, validators and `304` behavior where applicable, every `Vary` dimension, authenticated and cookie-bearing response isolation, and the recorded browser or intermediary behavior. Public-cache tests must prove identity, tenant, encoding, and representation isolation as applicable.
+- `NOT_APPLICABLE(CACHE_EVIDENCE)`: before cache adoption, prove cold miss and authoritative rebuild, warm hit without hidden database work, finite expiry, bounded payload parsing, corruption handling, backend failure and recovery, environment and tenant isolation, versioned-key rollover, post-commit invalidation and invalidation failure, a concurrent miss racing an authoritative write, and the recorded stampede behavior under concurrent requests. Inspect bounded hit, miss, write, invalidation, failure, and stampede summaries without logging keys or payloads; cold-cache database tests must still prove constant query scaling.
 - Do not add runtime or checker assertions for optional CRUD directory and naming choices.
 - Use generated or explicitly approved synthetic fixtures. Never copy production payloads, credentials, customer identifiers, tokens, or private keys into tests.

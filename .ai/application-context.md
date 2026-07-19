@@ -1,6 +1,6 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, or ADR 013.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 016.
 
 Rules:
 
@@ -19,6 +19,8 @@ Rules:
 - Route consumer CRUD work through installed `vendor/phpthis/framework/docs/crud.md`, never the maintainer-only `.ai/crud.md`.
 - Require application context to record identifier and route policy, pagination, create identity and conflicts, `PUT`/`PATCH` and concurrency, missing behavior, delete and retention, authorization, and audit ownership.
 - When sessions are adopted, require application context to record typed service boundaries and key ownership, cookie policy, native file-storage topology, cleanup, verified PHP settings, and each applicable authentication, regeneration, expiry, logout, revocation, and CSRF policy; mark absent concerns explicitly not applicable.
+- Require application context to record an explicit HTTP response policy and separately adopt or reject server-side data caching. An adopted data cache records its narrowly named typed services, backend and topology, bounded versioned tenant-aware keys and payloads, finite lifetimes, invalidation and stale-refill behavior, failure and stampede behavior, redacted aggregate observability, and cold-cache plus cache-specific concurrency evidence.
+- Keep authentication, authorization, session state, permissions, secrets, and other security decisions outside an initial application data-cache slice unless a later accepted decision defines stronger invariants and evidence.
 - Do not add a generic CRUD runtime, discovery mechanism, filesystem enforcement, or checker rule for directories and names.
 - Require `.ai/data.md` to name every connection's engine/version, PDO extension, non-secret configuration source, schema/dialect authority, integration command, and lack of cross-connection atomicity.
 - Never place credentials, tokens, private keys, customer data, production payloads, runtime dumps, or chat transcripts in the template.

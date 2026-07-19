@@ -27,6 +27,29 @@
 
 `ext-session` is an installed-framework requirement even when session state is not adopted. Adoption additionally requires the native `files` handler, an exact save path proven isolated to this application identity, the fixed runtime settings, and cleanup retention beyond the absolute session lifetime described in installed `vendor/phpthis/framework/docs/sessions.md`. Do not copy session IDs, cookie values, CSRF tokens, or snapshots into this file.
 
+## HTTP cache runtime
+
+- Required runtime policy: {{HTTP_CACHE_RUNTIME_POLICY}}
+- Browser, reverse-proxy, CDN, and gateway topology: {{HTTP_CACHE_INTERMEDIARY_TOPOLOGY_OR_NOT_APPLICABLE}}
+- Header transformation, purge, and deployment behavior: {{HTTP_CACHE_DEPLOYMENT_POLICY_OR_NOT_APPLICABLE}}
+- Operational source and dated verification: {{HTTP_CACHE_OPERATIONS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
+
+Do not infer intermediary behavior from local responses. Verify every production cache layer and record whether it honors `Cache-Control`, validators, conditional requests, and every declared `Vary` dimension.
+
+## Server-side cache runtime
+
+- Adoption or `NOT_APPLICABLE(CACHE)`: {{CACHE_RUNTIME_ADOPTION_OR_NOT_APPLICABLE}}
+- Backend product, supported version, and client boundary: {{CACHE_BACKEND_AND_VERSION_OR_NOT_APPLICABLE}}
+- Deployment topology and application/environment isolation: {{CACHE_TOPOLOGY_AND_ISOLATION_OR_NOT_APPLICABLE}}
+- Non-secret configuration source and required extension or package: {{CACHE_CONFIGURATION_AND_DEPENDENCY_OR_NOT_APPLICABLE}}
+- Capacity, eviction, and finite TTL policy: {{CACHE_CAPACITY_EVICTION_AND_TTL_POLICY_OR_NOT_APPLICABLE}}
+- Backend failure, degradation, and recovery behavior: {{CACHE_FAILURE_AND_RECOVERY_POLICY_OR_NOT_APPLICABLE}}
+- Stampede owner, lock or lease bound, and loser behavior: {{CACHE_STAMPEDE_POLICY_OR_NOT_APPLICABLE}}
+- Concurrent miss versus authoritative-write stale-refill policy: {{CACHE_STALE_REFILL_RUNTIME_POLICY_OR_NOT_APPLICABLE}}
+- Operational source and dated verification: {{CACHE_OPERATIONS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
+
+Cache availability never establishes application correctness. Record whether each operation bypasses the cache, fails closed, or returns an explicitly stale bounded result when the backend is unavailable; do not add an implicit fallback or unbounded retry.
+
 ## Environments and deployment
 
 - Environment names and purpose: {{ENVIRONMENT_MODEL}}
@@ -40,10 +63,12 @@
 - Request identifier policy: {{REQUEST_IDENTIFIER_POLICY}}
 - Structured log destination: {{LOG_DESTINATION}}
 - Query-summary policy: {{QUERY_SUMMARY_POLICY}}
+- HTTP cache status, revalidation, and intermediary observability: {{HTTP_CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
+- Cache-operation summary and hit, miss, failure, invalidation, and stampede metrics: {{CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
 - Health and readiness paths: {{HEALTH_AND_READINESS_PATHS}}
 - Alert or incident reference: `{{INCIDENT_REFERENCE}}`
 
-Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, request bodies, SQL parameters, customer data, or unknown exception messages. A separately reviewed logging contract may permit only explicitly safe structured fields that do not copy an unknown exception message.
+Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, cache keys or payloads, request bodies, SQL parameters, customer data, or unknown exception messages. A separately reviewed logging contract may permit only explicitly safe structured fields that do not copy an unknown exception message.
 
 ## Prohibited operational actions
 

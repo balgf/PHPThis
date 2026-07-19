@@ -1,6 +1,6 @@
 # Application data contract
 
-If this application has neither database access nor CRUD-shaped data behavior, replace this file with one explicit statement saying that it is not applicable and remove its task-router entries. If CRUD-shaped behavior uses another persistence mechanism, keep the CRUD semantics section and mark only the database sections not applicable.
+If this application has no database access, CRUD-shaped data behavior, or server-side cache, replace this file with one explicit statement saying that it is not applicable and remove its task-router entries. If only some concerns apply, retain their sections and mark the others explicitly not applicable.
 
 ## Systems and schema authority
 
@@ -53,6 +53,21 @@ Runtime identities receive only the operations required by named application pat
 Database timeout policy: {{DATABASE_TIMEOUT_POLICY}}.
 
 Every database behavior must choose its own budget deliberately. Test small and materially larger fixtures and assert an equal statement count. Submit adversarial strings as bound data, and test unknown selectors and unsupported list shapes as pre-database failures.
+
+## Optional server-side cache data
+
+If the application has no server-side cache, record `NOT_APPLICABLE(CACHE)` for this section. Otherwise complete every field before implementation.
+
+| Typed cache service and owned projection | Authoritative rebuild source | Versioned key schema | Environment and tenant isolation | Parsed payload schema and bounds | TTL and staleness bound |
+| --- | --- | --- | --- | --- | --- |
+| `{{CACHE_SERVICE_1_AND_PROJECTION}}` | {{CACHE_SERVICE_1_AUTHORITATIVE_SOURCE}} | `{{CACHE_SERVICE_1_KEY_SCHEMA_AND_VERSION}}` | {{CACHE_SERVICE_1_ENVIRONMENT_AND_TENANT_ISOLATION}} | {{CACHE_SERVICE_1_PAYLOAD_SCHEMA_AND_BOUNDS}} | {{CACHE_SERVICE_1_TTL_AND_STALENESS_BOUND}} |
+| `{{CACHE_SERVICE_2_AND_PROJECTION_OR_NOT_APPLICABLE}}` | {{CACHE_SERVICE_2_AUTHORITATIVE_SOURCE_OR_NOT_APPLICABLE}} | `{{CACHE_SERVICE_2_KEY_SCHEMA_AND_VERSION_OR_NOT_APPLICABLE}}` | {{CACHE_SERVICE_2_ENVIRONMENT_AND_TENANT_ISOLATION_OR_NOT_APPLICABLE}} | {{CACHE_SERVICE_2_PAYLOAD_SCHEMA_AND_BOUNDS_OR_NOT_APPLICABLE}} | {{CACHE_SERVICE_2_TTL_AND_STALENESS_BOUND_OR_NOT_APPLICABLE}} |
+
+- Invalidation trigger, ordering after authoritative commit, failure policy, and stale-refill race mitigation or accepted bound: {{CACHE_INVALIDATION_AND_STALE_REFILL_POLICY_OR_NOT_APPLICABLE}}
+- Eviction, corruption, and missing-value behavior: {{CACHE_EVICTION_CORRUPTION_AND_MISS_POLICY_OR_NOT_APPLICABLE}}
+- Serialization and parser boundary: {{CACHE_SERIALIZATION_AND_PARSER_POLICY_OR_NOT_APPLICABLE}}
+
+Every key includes a reviewed schema version and the applicable environment and tenant ownership. Every payload is parsed as untrusted external input into a bounded typed projection. A cache entry is never authoritative, and a TTL is a maximum staleness policy rather than a promise that an entry remains available.
 
 ## CRUD operation semantics
 

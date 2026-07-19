@@ -31,7 +31,7 @@ PHPThis reduces that inference surface. It does not attempt to make AI infallibl
 
 ## Performance-obscuring shorthand
 
-PHPThis does not reject every convenience method. It rejects shorthand when its cost depends on hidden I/O, hidden iteration, runtime discovery, or mutable global state. A small response constructor is acceptable; a property access that may execute SQL is not.
+PHPThis does not reject every convenience method. It rejects shorthand when its cost depends on hidden I/O, hidden iteration, runtime discovery, mutable global state, or an implicit stale-data decision. A small response constructor is acceptable; a property access that may execute SQL or a remember-style callback that may perform network and database work is not.
 
 ## Success measures
 
@@ -57,6 +57,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Hiding SQL behind models or a fluent query language.
 - Treating a generic sanitizer, identifier-quoting helper, or query builder as a substitute for bound data and finite reviewed statement choices.
 - Forcing an application directory layout or turning CRUD into a generic persistence API.
+- Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
 - Supporting multiple equivalent styles for the same task.
 - Eliminating the need for PHP, database, security, and operational expertise when reviewing or operating a real system.
 - Claiming that raw SQL by itself prevents inefficient access patterns.

@@ -19,6 +19,10 @@ AI-oriented explicitness does not replace security review.
 - Regenerate the session identifier before committing authenticated identity or another privilege elevation, invalidate it at logout, and reject malformed, attacker-selected, and obsolete identifiers.
 - Keep session cookies `HttpOnly`, use the environment's explicit `Secure` and SameSite policy, omit Domain, and emit them only as validated `ResponseCookie` values.
 - Add CSRF, authentication, authorization, idle and absolute session expiry, rate limiting, and security headers as explicit application policies when required. `SameSite` is not a replacement for CSRF validation.
+- Treat cache keys and values as sensitive external storage: bound their sizes, separate application, environment, version, and tenant ownership, and never log complete keys or values.
+- Parse every cache hit into its expected typed projection and treat malformed, stale-schema, cross-tenant, or otherwise invalid values as a recorded miss or failure; never deserialize PHP objects from a cache.
+- Keep authentication, authorization, permissions, sessions, CSRF material, secrets, and other security decisions out of the initial application data-cache slice.
+- Give personalized, session-affecting, authenticated, and sensitive HTTP responses an explicit `private, no-store` policy until the application records and tests a different safe policy; test cookie-emitting responses separately because `Set-Cookie` is not a cache prohibition.
 - Do not deserialize untrusted PHP values or execute generated PHP.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
@@ -28,6 +32,12 @@ Security mechanisms must remain visible in the route-to-handler path or in the o
 The optional session boundary certifies only PHP 8.4's native file handler with fixed identifier settings and an exact application-isolated save path. It bounds stored values and shortens native lock duration, but it does not authenticate a principal, authorize an operation, select expiry windows, revoke every session for an account, or prove a multi-node storage topology. Applications record and test applicable choices and must not treat possession of stored identity as current authorization.
 
 Session identifiers, cookie fields, CSRF tokens, and complete snapshots are sensitive and do not enter logs, query traces, exception messages, or public errors. See [Session state](sessions.md) and [ADR 015](decisions/015-explicit-native-session-lifecycle.md).
+
+## Cache limits
+
+A cache is not an authorization boundary or source of truth. Tenant-aware key construction reduces collision risk but does not replace authorization before a response is returned. Expiration does not prove immediate invalidation, eviction can remove an unexpired value, and a database commit plus cache invalidation is not one atomic operation. An in-flight miss can also repopulate stale data after a concurrent writer commits and invalidates. Applications record whether invalidation failure or stale refill causes a request failure, bounded staleness, a version fence, or another explicit outcome and test that choice.
+
+Cache backends receive the least network and command authority the application path needs. Network exposure, transport protection, authentication, memory policy, persistence, replication, and administrative access remain backend-specific deployment responsibilities. See [Caching policy](caching.md) and [ADR 016](decisions/016-cache-policy-before-cache-mechanism.md).
 
 ## SQL data and structure
 

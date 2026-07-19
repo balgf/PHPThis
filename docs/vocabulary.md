@@ -25,6 +25,10 @@
 | session snapshot | bounded immutable scalar or `null` state returned by the lifecycle | session bag, domain object store |
 | session unavailable | explicit stale-mutation failure that emits no competing cookie | automatic anonymous replacement, silent retry |
 | typed application session service | one narrowly named application-owned meaning and non-overlapping key set placed in front of the single `SessionLifecycle` | generic key-value helper, authentication framework |
+| HTTP cache policy | explicit response-specific `Cache-Control`, validator, and `Vary` behavior | server-side data cache, automatic middleware default |
+| application cache service | narrowly named typed application-owned cache-aside boundary with one recorded backend and policy | cache facade, generic cache bag, transparent query cache |
+| authoritative data path | source-of-truth read or committed write path that remains correct without a cache | warm-cache shortcut, cached truth |
+| stale-refill race | cache-aside ordering where an in-flight miss reads old authoritative data and repopulates it after a concurrent writer commits and invalidates | invalidation failure, ordinary cache miss |
 | application AI context | project-owned root `AGENTS.md` and task-routed `.ai/` guides | framework maintainer context, evaluation harness |
 | AI-first authoring | workflow in which AI is the expected primary code author under human direction | autonomous approval, AI-only development |
 | AI knowledge interface | AI grounded in the installed contract, knowledge map, application context, source, and tests | model memory, framework manual replacement without evidence |
