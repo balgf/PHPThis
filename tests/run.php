@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Example\Documents\GetDocument\DenyAllGetDocumentAuthentication;
+use Example\Documents\GetDocument\DenyAllGetDocumentAuthorization;
+use Example\Documents\GetDocument\DenyAllGetDocumentTenantResolution;
 use Example\Routes;
 use Example\Users\CreateUser\CreateUserCommand;
 use Example\Users\CreateUser\CreateUserHandler;
@@ -36,13 +39,19 @@ use PHPThis\Routing\Router;
 
 require dirname(__DIR__) . '/autoload.php';
 
-$tests = [];
+require __DIR__ . '/request-policy.php';
+
+$tests = requestPolicyTests();
 
 $tests['example composes explicit route modules'] = static function (): void {
     $application = new Application(new Router(Routes::create(
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(2), new QueryTrace(2)),
+        Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
+        new DenyAllGetDocumentAuthentication(),
+        new DenyAllGetDocumentTenantResolution(),
+        new DenyAllGetDocumentAuthorization(),
     )));
     $response = $application->handle(new Request('GET', '/health'));
 
@@ -55,29 +64,6 @@ $tests['example composes explicit route modules'] = static function (): void {
         || $response->body !== "{\"status\":\"ok\"}\n"
     ) {
         throw new RuntimeException('Expected the composed example health route.');
-    }
-};
-
-$tests['example converts both nested route values into concrete identifiers'] = static function (): void {
-    $application = new Application(new Router(Routes::create(
-        Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
-        Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
-        Connection::connect('sqlite::memory:', new QueryBudget(2), new QueryTrace(2)),
-    )));
-    $response = $application->handle(
-        new Request('GET', '/accounts/42/documents/Doc_9-z'),
-    );
-
-    if (
-        $response->status !== 200
-        || $response->headers !== [
-            'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'no-store',
-        ]
-        || $response->body
-            !== "{\"document\":{\"account_id\":42,\"key\":\"Doc_9-z\"}}\n"
-    ) {
-        throw new RuntimeException('Expected concrete identifiers from both typed route values.');
     }
 };
 
@@ -1501,6 +1487,10 @@ $tests['example request boundary maps client failures before database work'] = s
         Connection::connect($dsn, $readBudget, new QueryTrace(1)),
         Connection::connect($dsn, $getBudget, new QueryTrace(1)),
         Connection::connect($dsn, $writeBudget, $writeTrace),
+        Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
+        new DenyAllGetDocumentAuthentication(),
+        new DenyAllGetDocumentTenantResolution(),
+        new DenyAllGetDocumentAuthorization(),
     )));
     $registry = exampleErrorResponseRegistry();
     $invalidBody = '{"name":"Ada"}';
@@ -1597,6 +1587,10 @@ $tests['user routes execute bounded reads and one transactional write end to end
         Connection::connect($dsn, $readBudget, $readTrace),
         Connection::connect($dsn, $getBudget, $getTrace),
         Connection::connect($dsn, $writeBudget, $writeTrace),
+        Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
+        new DenyAllGetDocumentAuthentication(),
+        new DenyAllGetDocumentTenantResolution(),
+        new DenyAllGetDocumentAuthorization(),
     )));
 
     $created = $application->handle(new Request(

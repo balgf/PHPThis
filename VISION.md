@@ -39,6 +39,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - After the universal contract, knowledge map, and application entrypoints are loaded, an AI can add a simple endpoint after reading at most four task-specific guide or code files.
 - A completed change reports its behavior, evidence, resource cost, and any consequential decision that still belongs to a human.
 - The request path can be traced in four application hops: route, handler, database, response.
+- A protected request exposes its fixed authentication, tenant-resolution, authorization, and handler order with independently replaceable application policies and separately bounded policy and protected data work.
 - Database tests compare small and large fixtures and assert a constant query count.
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
 - Direct database calls resolve to finite reviewed statements, SQL-looking values remain bound data, and unknown structural choices fail before database work.
@@ -58,6 +59,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Treating a generic sanitizer, identifier-quoting helper, or query builder as a substitute for bound data and finite reviewed statement choices.
 - Forcing an application directory layout or turning CRUD into a generic persistence API.
 - Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
+- Providing a generic middleware, request-context, identity, tenant, or authorization engine that hides application policy or its I/O.
 - Supporting multiple equivalent styles for the same task.
 - Eliminating the need for PHP, database, security, and operational expertise when reviewing or operating a real system.
 - Claiming that raw SQL by itself prevents inefficient access patterns.

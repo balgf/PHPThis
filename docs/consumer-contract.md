@@ -98,6 +98,22 @@ Applications must not add PHPStan configuration artifacts named `phpstan*.neon`,
 
 Do not add a third path parameter, another parameter type, partial-segment placeholders, regular-expression or callback routes, arbitrary strings, route or index scanning, route discovery, automatic input or domain binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
 
+## Application-owned request policy
+
+ADR 020 records the canonical application composition for a protected route without adding a framework runtime API. One action-specific adapter implements `RequestHandler`, receives narrowly named application policy interfaces through its constructor, and executes visible straight-line `authenticate -> resolve tenant -> authorize -> protected handler` order. It passes concrete immutable principal, tenant, and route-specific values explicitly to the protected operation.
+
+An application adopting this pattern must:
+
+- choose and record its credential source, concrete principal and tenant representations, action vocabulary, tenant source, current per-request authorization rule, credential lifecycle, and concurrency policy;
+- wire every authenticator, tenant resolver, and authorizer explicitly and make each implementation independently replaceable without framework edits or discovery metadata;
+- keep principal, tenant, and authorization state out of `Request`, `PathParameters`, globals, generic context bags, session snapshots, and application data caches;
+- give any policy reads separately named connections, budgets, and traces from protected handler work and prove that every denial stops before protected queries, writes, session mutation, cache mutation, or external business side effects;
+- keep protected SQL explicitly tenant- and resource-scoped after authorization rather than relying on an implicit or global scope;
+- use named exact-class denial failures, generic disclosure-safe responses, no denial logging, class-only unknown-failure logging, and an explicit authenticated-response cache policy;
+- test missing or rejected credentials, ordinary forbidden access, cross-tenant access, permitted access, every failing stage, exact call order, zero protected denial work, redaction, and policy replacement.
+
+The accepted reference proof is stateless, exposes the bounded authorization header to a replaceable authenticator, wires deny-all in its checked-in composition, uses I/O-free synthetic consumer policies, maps unauthenticated requests to one generic `401` with `WWW-Authenticate: Bearer`, maps ordinary forbidden and cross-tenant access to the same generic `403`, re-evaluates authorization on every protected request, and starts authenticated and denied responses with `private, no-store`. PHPThis supplies no credential parser or verifier. These are the proof's application decisions, not a framework identity provider, token format, permission store, tenant model, audit contract, or middleware facility. A public route may record request policy as not applicable.
+
 ## Optional session state
 
 PHPThis provides one optional lazy `SessionLifecycle` over PHP 8.4's native file session handler. It is session transport, not authentication, authorization, expiry, or CSRF policy.
@@ -186,7 +202,7 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 
 ## Contract evolution
 
-Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. The automated-behavior-evidence language clarifies the existing behavior-test stage while leaving its library, runner, and file placement application-owned. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. The automated-behavior-evidence language clarifies the existing behavior-test stage while leaving its library, runner, file placement, and organization application-owned. ADR 020 likewise records an application-owned protected-request composition using existing `RequestHandler`, request, error, and database contracts; it adds no core API, required authentication mechanism, accepted PHP syntax, or diagnostic, so Consumer Contract version 4 and Strict Profile version 2 remain unchanged. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
 
 Contract version 4 carries contract version 3 and Strict Profile version 2 forward. It replaces ADR 017's one-trailing-positive-integer grammar with ADR 019's at-most-two full-segment grammar, adds the bounded `token` type and type-specific token access, and replaces the one-prefix metadata and index with immutable `Route::segments()` metadata and a deterministic state index. Existing literal and one-trailing-positive-integer declarations remain valid. Before adopting version 4, migrate any direct calls to `Route::literalPrefix()` or `Route::parameterName()` to `Route::segments()`, reject any newly exposed route overlap at construction, add malformed, oversized, encoded, 404, 405, and scale evidence, and run the complete application gate.
 

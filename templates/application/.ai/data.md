@@ -54,6 +54,16 @@ Database timeout policy: {{DATABASE_TIMEOUT_POLICY}}.
 
 Every database behavior must choose its own budget deliberately. Test small and materially larger fixtures and assert an equal statement count. Submit adversarial strings as bound data, and test unknown selectors and unsupported list shapes as pre-database failures.
 
+## Request-policy data work
+
+If no route is protected, record `NOT_APPLICABLE(REQUEST_POLICY)` for this section. Otherwise list policy reads separately from protected handler work.
+
+| Protected route and action | Authentication connection and budget | Tenant-resolution connection and budget | Authorization connection and budget | Protected connection and budget | Tenant/resource SQL scope and authorization-to-write race policy |
+| --- | --- | --- | --- | --- | --- |
+| `{{PROTECTED_OPERATION_1}}` | {{PROTECTED_OPERATION_1_AUTHENTICATION_QUERY_POLICY}} | {{PROTECTED_OPERATION_1_TENANT_QUERY_POLICY}} | {{PROTECTED_OPERATION_1_AUTHORIZATION_QUERY_POLICY}} | {{PROTECTED_OPERATION_1_DATA_QUERY_POLICY}} | {{PROTECTED_OPERATION_1_TENANT_SCOPE_AND_RACE_POLICY}} |
+
+Every connection has a distinct trace. A denial may consume only its recorded policy-read budget and must leave the protected budget and database state unchanged. Successful authorization does not replace the tenant and resource predicates in protected SQL.
+
 ## Optional server-side cache data
 
 If the application has no server-side cache, record `NOT_APPLICABLE(CACHE)` for this section. Otherwise complete every field before implementation.

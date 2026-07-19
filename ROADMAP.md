@@ -36,6 +36,7 @@
 
 - Complete: Consumer Contract version 4 and ADR 019 with at most two full-segment `positive-int` or bounded `token` parameters, deterministic indexed matching, exact-literal precedence, overlap rejection, and immutable type-specific delivery.
 - Complete: inspectable immutable `Route::segments()` metadata derived from the same explicit route declaration; no generated route source, persisted route cache, or second routing API.
+- Complete: ADR 020 application-owned protected-request composition with visible stateless authentication, tenant resolution, current per-request authorization, replaceable policies, denial bounds, and no new core runtime contract.
 - Alpha 1 publication state is external; `RELEASING.md` defines the proof without embedding mutable tag, package-host, or announcement state in the tagged artifact.
 - Alpha 1 requires the contents of `skeleton/` to be exported as their own package root, the source-evaluation VCS override to be removed, `dev-main` to be replaced with the approved Packagist alpha constraint, and the resulting lockfile to be committed.
 - Alpha 1 public proof installs the actual Packagist-preferred framework dist, compares it with `tools/package-files.txt`, and proves the documented `composer create-project --stability=alpha` path before announcement.
@@ -44,7 +45,7 @@
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.
 - Measure how many files and tokens common changes require.
 - Build grounded-answer evaluations across installed revisions and measure unsupported claims, citation accuracy, uncertainty, and correct escalation of human decisions.
-- After Alpha 1: finish the example's Create identity/conflict plus Create/List/Get authorization and tenant decisions and evidence without presenting them as framework policy.
+- After Alpha 1: finish the example's Create identity/conflict and extend the accepted application-owned request-policy evidence to additional applicable Create/List/Get operations without presenting domain policy as framework behavior.
 - After those decisions: prove Update and Delete only after the example also records mutation concurrency, deletion, authorization, and conflict behavior.
 
 ## Phase 3: production evaluation
@@ -57,4 +58,4 @@
 
 ## Deferred by design
 
-Authentication, authorization, CSRF policy, custom or shared session storage, middleware, a generic cache runtime, queues, templating, validation, migrations, and dependency packages are not accepted merely because conventional frameworks include them. Each needs a problem statement, an explicit execution path, a cost model, and a decision record. The accepted native session transport does not imply those adjacent capabilities. ADR 016 accepts cache policy, not a cache transport or universal API; the first backend-specific typed cache-aside proof remains application-owned and post-Alpha.
+Framework-owned authentication or authorization engines, credential issuance and lifecycle, CSRF policy, custom or shared session storage, middleware, a generic cache runtime, queues, templating, validation, migrations, and dependency packages are not accepted by implication. Each needs a problem statement, an explicit execution path, a cost model, and a decision record. ADR 020 accepts an application-owned request-policy composition, not universal identity, tenant, permission, middleware, or request-context contracts. The accepted native session transport does not imply those adjacent capabilities. ADR 016 accepts cache policy, not a cache transport or universal API; the first backend-specific typed cache-aside proof remains application-owned and post-Alpha.

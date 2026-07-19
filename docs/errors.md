@@ -16,4 +16,6 @@ Broad runtime types are never registered. A database projection `UnexpectedValue
 
 Database conflicts do not become 409 merely because a driver threw `PDOException`; that would misclassify unrelated constraint, connection, and statement failures. A future conflict mapping needs a named application failure translated at a boundary that can prove the specific condition.
 
+An application adopting ADR 020 defines narrowly named request-policy failures and maps their exact classes. Missing, malformed, and rejected Bearer credentials share one generic `401` response with `WWW-Authenticate: Bearer`. Ordinary forbidden and cross-tenant decisions share one generic `403`. These responses use `Cache-Control: private, no-store` and expose no credential, principal, tenant, resource identifier, or internal policy message. Known denials are deliberately not logged; unexpected policy failures remain unknown failures and retain the class-only `500` path.
+
 Request IDs, structured log sinks, and one request-level query-trace summary remain production-evaluation work. They must be added as explicit dependencies rather than hidden global logging.

@@ -19,6 +19,7 @@ Every observable behavior change must add or update application-owned automated 
 - Unit or behavior tests: `{{FOCUSED_TEST_COMMAND}}`
 - Framework-owned profile and static analysis: `vendor/bin/phpthis check`
 - Database integration tests: `{{DATABASE_TEST_COMMAND_OR_NOT_APPLICABLE}}`
+- Request-policy tests: `{{REQUEST_POLICY_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 - HTTP cache policy tests: `{{HTTP_CACHE_TEST_COMMAND}}`
 - Cache integration tests: `{{CACHE_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 
@@ -29,6 +30,7 @@ Focused commands shorten feedback but never replace the complete validity gate.
 - Automated tests for every observable behavior change cover expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits.
 - Boundary parsing covers missing, unknown, wrongly typed, coercive, and oversized input as applicable.
 - Authorization-sensitive behavior proves both allowed and denied outcomes.
+- Every protected route distinguishes unauthenticated, ordinary forbidden, cross-tenant, permitted, and unexpected policy-failure paths. Tests assert exact `authenticate -> resolve tenant -> authorize -> handler` order, zero later calls after failure, zero protected queries and writes on denial, explicit principal and tenant delivery to the protected operation, generic response and challenge policy, `private, no-store`, redaction from responses, logs, and traces, and independent replacement of every policy implementation. A concrete credential parser additionally tests absent, malformed, wrong-scheme, oversized, expired, revoked, and rejected credentials. Any policy I/O has a named budget and trace distinct from protected handler work; I/O-free policies record and prove that limit explicitly.
 - Adopted session transport proves anonymous access without storage, invalid, duplicated, attacker-selected, stale, and obsolete identifier rejection, exact state bounds, callback rollback, lock release, unissued-ID cleanup, delayed-response cookie safety, explicit invalidation, secure cookie attributes, isolated save-path enforcement, and concurrent requests under the recorded native file-storage topology. Authentication-time regeneration, idle and absolute expiry, CSRF, authorization, and revocation tests are required when those policies apply; each absent concern is explicitly not applicable. Session-free applications record only session transport and session-backed concerns as not applicable.
 - For each implemented CRUD-shaped operation, tests cover the applicable recorded route, identifier, conflict, pagination, missing-resource, mutation, concurrency, deletion, authorization, and audit policies; operations and concerns that do not exist are recorded as not applicable instead of receiving invented tests.
 - Directory and naming choices in the optional CRUD profile are application context, not runtime or checker assertions.

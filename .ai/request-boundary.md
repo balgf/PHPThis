@@ -14,5 +14,6 @@ Rules:
 - Pass an unknown failure to `UnknownFailureBoundary`; it logs once without the message, SQL, parameters, or trace, then returns the generic 500 response.
 - When sessions are configured, call `SessionLifecycle::begin` only after successful request parsing, finish normal and registered-error responses, and abort before rethrowing an unknown failure.
 - Beginning a lifecycle records the cookie header only. Do not start native storage or emit a cookie unless application code explicitly reads or mutates session state.
+- A protected matched route may delegate to one application-owned action-specific request-policy adapter. That adapter executes authentication, tenant resolution, and authorization inside the explicit handler path; it does not change `RequestBoundary`, `Application`, `Request`, or the routing contract.
 
-Do not put session state on `Request` or turn this boundary into middleware, an event pipeline, a request helper bag, automatic input binding, or a service locator.
+Do not put session, principal, tenant, or authorization state on `Request` or turn this boundary into middleware, an event pipeline, a request helper bag, automatic input binding, a policy registry, or a service locator.

@@ -27,6 +27,17 @@
 
 `ext-session` is an installed-framework requirement even when session state is not adopted. Adoption additionally requires the native `files` handler, an exact save path proven isolated to this application identity, the fixed runtime settings, and cleanup retention beyond the absolute session lifetime described in installed `vendor/phpthis/framework/docs/sessions.md`. Do not copy session IDs, cookie values, CSRF tokens, or snapshots into this file.
 
+## Request-policy runtime
+
+- Adoption or `NOT_APPLICABLE(REQUEST_POLICY)`: {{REQUEST_POLICY_RUNTIME_ADOPTION_OR_NOT_APPLICABLE}}
+- Credential verifier, supported scheme, and non-secret configuration source: {{CREDENTIAL_VERIFIER_AND_CONFIGURATION_OR_NOT_APPLICABLE}}
+- Authorization-header forwarding and trusted-proxy policy: {{AUTHORIZATION_HEADER_FORWARDING_POLICY_OR_NOT_APPLICABLE}}
+- Credential expiry, rotation, revocation, and verifier-failure behavior: {{CREDENTIAL_LIFECYCLE_AND_FAILURE_POLICY_OR_NOT_APPLICABLE}}
+- Tenant and permission source availability and failure behavior: {{TENANT_AND_AUTHORIZATION_SOURCE_FAILURE_POLICY_OR_NOT_APPLICABLE}}
+- Known-denial logging and unexpected-failure redaction: {{REQUEST_POLICY_LOGGING_POLICY_OR_NOT_APPLICABLE}}
+
+Known denials are not logged under the ADR 020 reference policy. Never record credentials, complete sensitive identifiers, or internal policy messages. A separately accepted observability decision is required before adding bounded request-policy events.
+
 ## HTTP cache runtime
 
 - Required runtime policy: {{HTTP_CACHE_RUNTIME_POLICY}}

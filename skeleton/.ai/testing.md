@@ -19,6 +19,7 @@ Every observable behavior change must add or update application-owned automated 
 - Framework-owned profile and static analysis: `vendor/bin/phpthis check`
 - Application behavior tests: `composer test`
 - Database integration tests: `NOT_APPLICABLE(no database)`
+- Request-policy tests: `NOT_APPLICABLE(public liveness route only)`
 - HTTP cache policy tests: `composer test`
 - Cache integration tests: `NOT_APPLICABLE(CACHE)`
 
@@ -28,6 +29,7 @@ Focused commands shorten feedback but never replace the complete gate.
 
 - Automated tests for every observable behavior change cover expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits.
 - Test the exact health response, unknown route, unsupported method, malformed runtime input, oversized declared body, and real front controller.
+- `NOT_APPLICABLE(REQUEST_POLICY_EVIDENCE)`: before protecting a route, test unauthenticated, ordinary forbidden, cross-tenant, permitted, and unexpected policy-failure paths, exact policy order, every failing stage, zero protected queries and writes on denial, explicit principal and tenant delivery, generic disclosure and cache policy, redaction from responses, logs, and traces, and independent replacement of every policy implementation. A concrete credential parser also tests malformed and rejected input, and any policy I/O has a budget and trace distinct from protected work.
 - `NOT_APPLICABLE(CRUD_EVIDENCE)`: the starter has no CRUD-shaped operations. For each operation later added, test its applicable route, identifier, conflict, pagination, missing-resource, concurrency, deletion, authorization, and audit policies; keep absent operations and concerns explicitly not applicable.
 - `NOT_APPLICABLE(DATABASE_EVIDENCE)`: before database adoption, add engine integration and scale tests, adversarial bound-data tests, unknown-selector and oversized-list rejection before database work, query-budget and trace assertions, and dated evidence that runtime authority excludes migration and administrative capabilities.
 - `NOT_APPLICABLE(SESSION_EVIDENCE)`: before session adoption, prove anonymous access without storage, invalid, duplicated, attacker-selected, stale, and obsolete identifier rejection, exact state bounds, callback rollback, lock release, unissued-ID cleanup, delayed-response cookie safety, explicit invalidation, cookie attributes, isolated save-path enforcement, and concurrent requests. Add authentication-time regeneration, expiry, CSRF, authorization, and revocation tests only when those recorded policies apply; mark each absent concern explicitly not applicable.

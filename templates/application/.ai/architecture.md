@@ -37,6 +37,17 @@ Dependencies may point only in the direction shown above. Document every deliber
 - Authorization owner and check location: `{{AUTHORIZATION_OWNER_AND_PATH}}`
 - Tenant boundary: {{TENANT_BOUNDARY_OR_NOT_APPLICABLE}}
 - Deny-by-default rule: {{DENY_BY_DEFAULT_RULE}}
+- Protected routes, named actions, and action-specific adapter paths: {{PROTECTED_ROUTE_POLICY_ADAPTERS_OR_NOT_APPLICABLE}}
+- Authenticator, tenant-resolver, and authorizer interfaces and implementations: {{REQUEST_POLICY_IMPLEMENTATIONS_OR_NOT_APPLICABLE}}
+- Fixed policy order and explicit principal/tenant delivery: {{REQUEST_POLICY_ORDER_AND_DELIVERY_OR_NOT_APPLICABLE}}
+- Missing or rejected credential response and challenge: {{UNAUTHENTICATED_RESPONSE_POLICY_OR_NOT_APPLICABLE}}
+- Ordinary forbidden and cross-tenant disclosure policy: {{FORBIDDEN_AND_CROSS_TENANT_RESPONSE_POLICY_OR_NOT_APPLICABLE}}
+- Current per-request authorization, expiry, and revocation source: {{CURRENT_AUTHORIZATION_SOURCE_OR_NOT_APPLICABLE}}
+- Separately named policy and protected query connections, budgets, and traces: {{REQUEST_POLICY_QUERY_BOUNDS_OR_NOT_APPLICABLE}}
+- Tenant- and resource-scoped protected SQL and authorization-to-write race policy: {{TENANT_SQL_AND_AUTHORIZATION_RACE_POLICY_OR_NOT_APPLICABLE}}
+- Known-denial and unexpected-failure logging policy: {{REQUEST_POLICY_LOGGING_OR_NOT_APPLICABLE}}
+
+For each protected route, use one action-specific adapter with visible `authenticate -> resolve tenant -> authorize -> protected handler` order. Pass concrete immutable principal and tenant values explicitly; do not add them to `Request`, session state, a generic context bag, or a global. Every denial stops before protected queries, writes, session mutation, cache mutation, and external business side effects.
 
 ## Cache policies
 
@@ -81,4 +92,4 @@ The installed `vendor/phpthis/framework/docs/crud.md` profile recommends structu
 - Routes are grouped by `{{ROUTE_AREA_RULE}}`.
 - Handlers are placed at `{{HANDLER_PATH_RULE}}`.
 - Operation requests, commands, and projections are placed at `{{BOUNDARY_VALUE_PATH_RULE}}`.
-- Cross-cutting application behavior requires an accepted decision record; do not invent providers, middleware, discovery, helper layers, a generic session repository, or a generic cache service.
+- Cross-cutting application behavior requires an accepted decision record; do not invent providers, middleware, policy registries, request-context bags, discovery, helper layers, a generic session repository, or a generic cache service.

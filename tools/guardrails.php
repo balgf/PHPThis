@@ -416,6 +416,7 @@ $requiredRepositoryFiles = [
     '.ai/crud.md',
     '.ai/database.md',
     '.ai/http.md',
+    '.ai/request-policy.md',
     '.ai/routing.md',
     '.ai/session.md',
     'docs/consumer-contract.md',
@@ -423,6 +424,7 @@ $requiredRepositoryFiles = [
     'docs/crud.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
+    'docs/request-policy.md',
     'docs/releases/0.1.0-alpha.1.md',
     'docs/security.md',
     'docs/sessions.md',
@@ -435,10 +437,18 @@ $requiredRepositoryFiles = [
     'docs/decisions/017-bounded-trailing-positive-integer-routes.md',
     'docs/decisions/018-bounded-alpha-1-release-scope.md',
     'docs/decisions/019-bounded-multiple-typed-routes.md',
+    'docs/decisions/020-application-owned-request-policy.md',
     'example/src/Documents/DocumentRoutes.php',
     'example/src/Documents/GetDocument/AccountId.php',
+    'example/src/Documents/GetDocument/AuthenticateGetDocumentRequest.php',
+    'example/src/Documents/GetDocument/AuthenticatedPrincipal.php',
+    'example/src/Documents/GetDocument/AuthorizeGetDocument.php',
     'example/src/Documents/GetDocument/DocumentKey.php',
     'example/src/Documents/GetDocument/GetDocumentHandler.php',
+    'example/src/Documents/GetDocument/ResolveGetDocumentTenant.php',
+    'example/src/Documents/GetDocument/ResolvedTenant.php',
+    'example/src/Documents/GetDocument/RetrieveAuthorizedDocument.php',
+    'example/src/Documents/GetDocument/SelectAuthorizedDocument.php',
     'example/src/Users/GetUser/GetUserHandler.php',
     'example/src/Users/GetUser/UserDetails.php',
     'example/src/Users/GetUser/UserId.php',
@@ -451,6 +461,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/integrations.md',
     'templates/application/.ai/operations.md',
     'templates/application/.ai/project.md',
+    'templates/application/.ai/request-policy.md',
     'templates/application/.ai/rules.md',
     'templates/application/.ai/testing.md',
     'templates/application/docs/decisions/README.md',
@@ -466,6 +477,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/integrations.md',
     'skeleton/.ai/operations.md',
     'skeleton/.ai/project.md',
+    'skeleton/.ai/request-policy.md',
     'skeleton/.ai/rules.md',
     'skeleton/.ai/testing.md',
     'skeleton/bootstrap.php',
@@ -498,6 +510,7 @@ $requiredRepositoryFiles = [
     'src/Session/SessionLifecycle.php',
     'src/Session/SessionSnapshot.php',
     'src/Session/SessionUnavailable.php',
+    'tests/request-policy.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
     'tests/fixtures/routing-lookup-index-loop.php.fixture',
     'tests/fixtures/routing-lookup-helper-loop.php.fixture',
@@ -814,7 +827,7 @@ $routingArtifactMarkers = [
         "token('document_key')",
         'AccountId::fromPositiveInteger',
         'DocumentKey::fromToken',
-        "'Cache-Control' => 'no-store'",
+        "'Cache-Control' => 'private, no-store'",
     ],
     'example/src/Users/UserRoutes.php' => [
         '/users/{user_id:positive-int}',
@@ -846,6 +859,85 @@ foreach ($routingArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "Typed routing artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$requestPolicyArtifactMarkers = [
+    '.ai/README.md' => [
+        '`.ai/request-policy.md`',
+    ],
+    '.ai/request-policy.md' => [
+        'authenticate -> resolve tenant -> authorize -> protected handler',
+        'PHPThis provides no credential parser or verifier.',
+        'Cache-Control: private, no-store',
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/request-policy.md`',
+    ],
+    'docs/request-policy.md' => [
+        'PHPThis keeps authentication, tenant resolution, and authorization application-owned.',
+        'Missing, malformed, and rejected credentials map to one generic `401`',
+        'Ordinary forbidden and cross-tenant decisions map to the same generic `403`.',
+        'When a policy reads storage, give it a separately named connection, budget, and trace from protected handler work.',
+    ],
+    'docs/decisions/020-application-owned-request-policy.md' => [
+        'Status: accepted',
+        'adds no core runtime contract',
+        'Consumer Contract version 4 and Strict Profile version 2 remain unchanged.',
+        'No core PHP file, runtime dependency, Consumer Contract version, Strict Profile version, or PHPThis diagnostic changes.',
+    ],
+    'example/src/Documents/GetDocument/GetDocumentHandler.php' => [
+        '$this->authenticate->authenticate($request)',
+        '$this->resolveTenant->resolve($principal, $accountId)',
+        '$this->authorize->authorize($principal, $tenant, $documentKey)',
+        '$this->retrieve->retrieve(',
+    ],
+    'example/src/Documents/GetDocument/SelectAuthorizedDocument.php' => [
+        'documents.account_id = :account_id',
+        'documents.account_id = :resolved_tenant_account_id',
+        'account_memberships.principal_id = :principal_id',
+        'account_memberships.account_id = :membership_tenant_account_id',
+    ],
+    'example/bootstrap.php' => [
+        'new DenyAllGetDocumentAuthentication()',
+        'Unauthenticated::class => new Response(',
+        'Forbidden::class => $forbiddenResponse',
+        'CrossTenant::class => $forbiddenResponse',
+    ],
+    'tests/request-policy.php' => [
+        'consumer replaces every document policy and passes explicit authority values',
+        'permitted document policy keeps protected missing responses private and generic',
+        'protected document query fails closed when requested and resolved tenants differ',
+        'mapped document denials emit no sensitive log data',
+        'unexpected document policy failures use the generic redacted boundary',
+    ],
+    'templates/application/.ai/request-policy.md' => [
+        '{{REQUEST_POLICY_ADAPTER_PATH}}',
+        '{{CREDENTIAL_PARSER_EVIDENCE_OR_LIMIT}}',
+    ],
+    'skeleton/.ai/request-policy.md' => [
+        'NOT_APPLICABLE(REQUEST_POLICY)',
+        'vendor/phpthis/framework/docs/request-policy.md',
+    ],
+    'tools/package-files.txt' => [
+        'docs/request-policy.md',
+        'docs/decisions/020-application-owned-request-policy.md',
+        'templates/application/.ai/request-policy.md',
+    ],
+];
+
+foreach ($requestPolicyArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read request-policy artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Request-policy artifact marker is missing from {$relativePath}.";
         }
     }
 }

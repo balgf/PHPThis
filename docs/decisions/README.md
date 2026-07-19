@@ -23,3 +23,4 @@ Accepted records:
 - `017-bounded-trailing-positive-integer-routes.md`
 - `018-bounded-alpha-1-release-scope.md`
 - `019-bounded-multiple-typed-routes.md`
+- `020-application-owned-request-policy.md`

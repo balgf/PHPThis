@@ -19,6 +19,10 @@
 
 `NOT_APPLICABLE`: the starter does not construct `SessionLifecycle` or create session storage. PHP 8.4 `ext-session` remains an installed framework platform requirement. Before adoption, record the native file handler and save-path ownership, exact PHP settings and dated source, cookie policy, deployment topology and concurrency evidence, and garbage collection in this section.
 
+## Request-policy runtime
+
+`NOT_APPLICABLE(REQUEST_POLICY)`: the public health-only starter accepts no credential and has no identity, tenant, authorization, credential verifier, expiry, rotation, revocation, or policy-source dependency. Before protecting a route, record those runtime facts, authorization-header forwarding, fail-closed dependency behavior, and the no-denial-log plus unexpected-failure-redaction policy without copying secrets or sensitive identifiers.
+
 ## HTTP cache runtime
 
 `HTTP_CACHE_POLICY(NO_STORE)`: every currently shipped response emits `Cache-Control: no-store`, and application behavior tests assert that exact field for health, route miss, method rejection, mapped client failure, and unknown failure. The starter records no production reverse-proxy, gateway, or CDN topology; before deployment, verify that every intermediary preserves the field. New response paths require an explicit application-owned policy and test.

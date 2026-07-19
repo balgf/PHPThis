@@ -27,9 +27,12 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 
 ## Identity and authorization
 
+- Request-policy composition: `NOT_APPLICABLE(REQUEST_POLICY)` because the starter has only one public liveness route.
 - Identity, authentication, authorization, and tenant boundaries: `NOT_APPLICABLE(public liveness route only)`.
 - Session state, authentication regeneration, idle or absolute expiry, logout, revocation, and CSRF: `NOT_APPLICABLE(public liveness route only)`.
 - Deny-by-default rule: only explicit routes are accepted; other paths return `404`, and unsupported methods on a known path return `405`.
+
+Before protecting a route, record its named action, concrete principal and tenant types, credential source and lifecycle, action-specific adapter, replaceable policies, fixed `authenticate -> resolve tenant -> authorize -> handler` order, generic denial responses, current authorization source, separate policy and protected query budgets and traces, explicitly tenant-scoped protected SQL, authorization-to-write race policy, redaction, and tests. Do not add middleware, a request-context bag, hidden tenant resolution, or an implicit scope.
 
 ## Cache policies
 
@@ -50,4 +53,4 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 - Group routes in narrowly named `src/*Routes.php` route-area classes.
 - Place handlers at `src/*Handler.php`.
 - Add commands and projections only at explicit external-data boundaries.
-- Do not invent providers, middleware, discovery, helper layers, or a generic cache service.
+- Do not invent providers, middleware, policy registries, request-context bags, discovery, helper layers, or a generic cache service.

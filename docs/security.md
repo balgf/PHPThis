@@ -27,6 +27,16 @@ AI-oriented explicitness does not replace security review.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
 
+## Request policy
+
+ADR 020 keeps protected-request policy in one application-owned action-specific adapter. The visible order is authenticate, resolve tenant, authorize the current named action, then invoke the protected handler with concrete immutable principal and tenant values. Applications manually wire independently replaceable policies; PHPThis adds no middleware, request context, identity provider, tenant model, permission engine, discovery, or service location.
+
+The reference proof is stateless. Its checked-in authenticator is deny-all and its consumer replacement is synthetic and I/O-free; PHPThis supplies no credential parser or verifier. A concrete Bearer implementation maps missing, malformed, and rejected credentials to one generic `401` response with `WWW-Authenticate: Bearer`. Ordinary forbidden and cross-tenant attempts share one generic `403`, so the response does not reveal whether a different tenant relationship exists. Known denials are not logged. Unexpected failures retain class-only logging, and authenticated plus denied responses start as `private, no-store`.
+
+Authorization is current per request. Session or cache state may supply strictly parsed identity input but never a current authorization decision. Any policy reads use named connections, budgets, and traces distinct from protected handler work. Every denial stops before protected queries, writes, session mutation, cache mutation, and external business side effects. A successful decision does not install an implicit database scope: every protected statement still binds the applicable tenant and resource identifiers, and the application records any authorization-to-write race policy.
+
+Credential issuance, verification algorithm, expiry, rotation, revocation, CSRF, rate limiting, audit events, identity-provider availability, and tenant-discovery semantics remain application and deployment decisions. See [Request policy](request-policy.md) and [ADR 020](decisions/020-application-owned-request-policy.md).
+
 ## Session limits
 
 The optional session boundary certifies only PHP 8.4's native file handler with fixed identifier settings and an exact application-isolated save path. It bounds stored values and shortens native lock duration, but it does not authenticate a principal, authorize an operation, select expiry windows, revoke every session for an account, or prove a multi-node storage topology. Applications record and test applicable choices and must not treat possession of stored identity as current authorization.

@@ -8,8 +8,16 @@ use PHPThis\Http\Request;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
 
-final class GetDocumentHandler implements RequestHandler
+final readonly class GetDocumentHandler implements RequestHandler
 {
+    public function __construct(
+        private AuthenticateGetDocumentRequest $authenticate,
+        private ResolveGetDocumentTenant $resolveTenant,
+        private AuthorizeGetDocument $authorize,
+        private RetrieveAuthorizedDocument $retrieve,
+    ) {
+    }
+
     public function handle(Request $request): Response
     {
         $accountId = AccountId::fromPositiveInteger(
@@ -18,11 +26,33 @@ final class GetDocumentHandler implements RequestHandler
         $documentKey = DocumentKey::fromToken(
             $request->pathParameters->token('document_key'),
         );
+        $principal = $this->authenticate->authenticate($request);
+        $tenant = $this->resolveTenant->resolve($principal, $accountId);
+        $this->authorize->authorize($principal, $tenant, $documentKey);
+        $document = $this->retrieve->retrieve(
+            $principal,
+            $tenant,
+            $accountId,
+            $documentKey,
+        );
+
+        if ($document === null) {
+            return new Response(
+                status: 404,
+                headers: [
+                    'Content-Type' => 'application/json; charset=utf-8',
+                    'Cache-Control' => 'private, no-store',
+                ],
+                body: "{\"error\":{\"code\":\"document_not_found\",\"message\":\"Document was not found.\"}}\n",
+            );
+        }
+
         $body = json_encode(
             [
                 'document' => [
                     'account_id' => $accountId->value,
                     'key' => $documentKey->value,
+                    'title' => $document->title,
                 ],
             ],
             JSON_THROW_ON_ERROR,
@@ -32,7 +62,7 @@ final class GetDocumentHandler implements RequestHandler
             status: 200,
             headers: [
                 'Content-Type' => 'application/json; charset=utf-8',
-                'Cache-Control' => 'no-store',
+                'Cache-Control' => 'private, no-store',
             ],
             body: $body . "\n",
         );

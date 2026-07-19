@@ -3,6 +3,12 @@
 declare(strict_types=1);
 
 use Example\Routes;
+use Example\Documents\GetDocument\CrossTenant;
+use Example\Documents\GetDocument\DenyAllGetDocumentAuthentication;
+use Example\Documents\GetDocument\DenyAllGetDocumentAuthorization;
+use Example\Documents\GetDocument\DenyAllGetDocumentTenantResolution;
+use Example\Documents\GetDocument\Forbidden;
+use Example\Documents\GetDocument\Unauthenticated;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -28,16 +34,41 @@ $dsn = 'sqlite:' . $databasePath;
 $listUsersConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
 $getUserConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
 $createUserConnection = Connection::connect($dsn, new QueryBudget(2), new QueryTrace(2));
+$getDocumentConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
 $application = new Application(new Router(Routes::create(
     $listUsersConnection,
     $getUserConnection,
     $createUserConnection,
+    $getDocumentConnection,
+    new DenyAllGetDocumentAuthentication(),
+    new DenyAllGetDocumentTenantResolution(),
+    new DenyAllGetDocumentAuthorization(),
 )));
 $jsonHeaders = [
     'Content-Type' => 'application/json; charset=utf-8',
     'Cache-Control' => 'no-store',
 ];
+$privateJsonHeaders = [
+    'Content-Type' => 'application/json; charset=utf-8',
+    'Cache-Control' => 'private, no-store',
+];
+$forbiddenResponse = new Response(
+    403,
+    $privateJsonHeaders,
+    "{\"error\":{\"code\":\"forbidden\",\"message\":\"Request is forbidden.\"}}\n",
+);
 $errorResponses = new ErrorResponseRegistry([
+    Unauthenticated::class => new Response(
+        401,
+        [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'private, no-store',
+            'WWW-Authenticate' => 'Bearer',
+        ],
+        "{\"error\":{\"code\":\"unauthenticated\",\"message\":\"Authentication is required.\"}}\n",
+    ),
+    Forbidden::class => $forbiddenResponse,
+    CrossTenant::class => $forbiddenResponse,
     InvalidRequest::class => new Response(
         400,
         $jsonHeaders,

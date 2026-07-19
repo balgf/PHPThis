@@ -6,6 +6,7 @@ These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile
 
 - Preserve the dependency direction and boundaries in `.ai/architecture.md`.
 - Resolve missing product, scale, authorization, and external-contract facts before implementation.
+- Keep `NOT_APPLICABLE(REQUEST_POLICY)` while every route is public. Before protecting a route, use the installed action-specific request-policy composition with explicit order, concrete principal and tenant values, replaceable policies, isolated policy and protected budgets, and denial tests.
 - Keep every external side effect and failure path visible at a named boundary.
 - Before database adoption, verify and record finite SQL-structure choices, bounded-list shapes, and isolated least-privileged runtime authority in `.ai/data.md`.
 - Preserve the current explicit `Cache-Control: no-store` policy for health success, route miss, method rejection, mapped client failure, and unknown failure. Start every response path added later with explicit `no-store`, then adopt `private` or `public` only after recording finite freshness or revalidation, validators, `Vary`, intermediary topology, observability, and tests where applicable.
@@ -21,6 +22,7 @@ These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile
 - Do not infer that `Set-Cookie`, a server-side cache miss, or a server-side cache hit makes an HTTP response safely private, uncacheable, or public.
 - Do not add a cache helper, middleware default, or response post-processor to hide which response-producing path owns its HTTP cache policy.
 - Do not invent human approval or claim unsupported framework or application behavior.
+- Do not add middleware or policy registries, a request-context or attribute bag, hidden tenant resolution, an implicit or global authorization scope, or stored or cached authorization decisions.
 - Do not copy secrets or real customer data into code, context, fixtures, logs, or reports.
 - Do not add runtime-built SQL, an SQL sanitizer, or a runtime database identity with migration or administrative authority.
 - Do not read `$_SESSION`, call native `session_*` functions, manually emit a framework session cookie, or add a generic session helper.
