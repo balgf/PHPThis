@@ -23,7 +23,7 @@ Then read only what the task needs:
 | Add, use, or change cookie-backed session state | `.ai/session.md`, `.ai/http.md`, `.ai/request-boundary.md` | `src/Session/`, `src/Http/ResponseCookie.php`, typed service key ownership, composition root, isolated save path, and transport plus applicable policy tests |
 | Propose or adopt HTTP or application data caching | `.ai/cache.md`, `.ai/http.md`, `.ai/testing.md` | `docs/caching.md`, ADR 016, application cache policy, explicit call sites, cold-cache database proof, and applicable cache tests |
 | Change the consumer contract, checker, skeleton, or application CRUD-profile context | `.ai/application-context.md`, `.ai/crud.md`, `.ai/static-analysis.md`, `.ai/testing.md` | `docs/consumer-contract.md`, `verification/`, `bin/phpthis`, `skeleton/`, `templates/application/` |
-| Prepare, assess, or publish a release | `RELEASING.md`, ADR 018, `.ai/application-context.md`, `.ai/testing.md` | candidate metadata, clean-tree complete gate, exact CI run, package inventory, skeleton repository and lockfile, Packagist-preferred artifacts, and public installation proof |
+| Prepare, assess, or publish a release | `RELEASING.md`, `docs/releases/0.1.0-alpha.1.md`, ADR 018, `.ai/application-context.md`, `.ai/testing.md` | candidate metadata, clean-tree complete gate, exact CI run, package inventory, skeleton repository and lockfile, Packagist-preferred artifacts, and public installation proof |
 | Add tests | `.ai/testing.md` | `tests/run.php` |
 | Change the development-pattern proof | `.ai/testing.md`, `.ai/database.md` | `tools/test-query-scaling.php`, `tests/fixtures/` |
 | Map failures | `.ai/errors.md`, `.ai/request-boundary.md` | named failure, registry wiring, front controller |

@@ -6,6 +6,17 @@ This is the maintainer release gate, not an application programming manual. Copy
 
 Tags, GitHub releases, repository creation, and Packagist publication are consequential external writes. Perform each only after explicit accountable-human authorization for that release. Do not announce a release until the post-publication proof passes.
 
+## Approved Alpha 1 identity
+
+The accountable human approved the following release identity on 2026-07-19 (Asia/Manila):
+
+- Composer version: `0.1.0-alpha.1`
+- Framework tag: `v0.1.0-alpha.1`
+- Skeleton tag: `v0.1.0-alpha.1`
+- Release notes: `docs/releases/0.1.0-alpha.1.md`
+
+This approves the version and tag names only. The release candidate commit and release date remain unset, and this approval does not create or authorize creation of either tag, either package-host entry, either GitHub release, or the announcement. The project remains pre-alpha until the complete gate below passes.
+
 ## Alpha 1 release gate
 
 ### 1. Freeze the release candidate

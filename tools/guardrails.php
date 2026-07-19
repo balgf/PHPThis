@@ -300,6 +300,7 @@ $requiredRepositoryFiles = [
     'docs/crud.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
+    'docs/releases/0.1.0-alpha.1.md',
     'docs/security.md',
     'docs/sessions.md',
     'docs/decisions/011-ai-first-authoring.md',
@@ -450,6 +451,44 @@ foreach ($alphaReleaseContractMarkers as $relativePath => $marker) {
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
         $failures[] = "The accepted bounded Alpha 1 release contract is missing from {$relativePath}.";
+    }
+}
+
+$alphaReleaseIdentityArtifactMarkers = [
+    '.ai/README.md' => [
+        '`docs/releases/0.1.0-alpha.1.md`',
+    ],
+    'RELEASING.md' => [
+        '## Approved Alpha 1 identity',
+        'Composer version: `0.1.0-alpha.1`',
+        'Framework tag: `v0.1.0-alpha.1`',
+        'Skeleton tag: `v0.1.0-alpha.1`',
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/releases/0.1.0-alpha.1.md`',
+    ],
+    'docs/releases/0.1.0-alpha.1.md' => [
+        'Status: unpublished draft; version identity approved; release candidate not yet frozen.',
+        'The public `composer create-project --stability=alpha phpthis/skeleton` path is intentionally unavailable',
+        'It is not production-ready and makes no backward-compatibility promise across prereleases.',
+    ],
+    'tools/package-files.txt' => [
+        'docs/releases/0.1.0-alpha.1.md',
+    ],
+];
+
+foreach ($alphaReleaseIdentityArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read Alpha 1 identity artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "The approved Alpha 1 identity marker is missing from {$relativePath}.";
+        }
     }
 }
 
