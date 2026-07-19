@@ -14,7 +14,10 @@ final class HealthHandler implements RequestHandler
     {
         return new Response(
             status: 200,
-            headers: ['Content-Type' => 'application/json; charset=utf-8'],
+            headers: [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'Cache-Control' => 'no-store',
+            ],
             body: json_encode(['status' => 'ok'], JSON_THROW_ON_ERROR) . "\n",
         );
     }

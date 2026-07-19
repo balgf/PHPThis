@@ -6,6 +6,235 @@ require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
 
 use PHPThis\Verification\SyntaxProfile;
 
+/**
+ * @return list<string>
+ */
+function routingLookupFailures(string $contents, string $relativePath): array
+{
+    $tokens = token_get_all($contents);
+    $traversalFunctions = [
+        'array_all',
+        'array_any',
+        'array_filter',
+        'array_find',
+        'array_find_key',
+        'array_map',
+        'array_reduce',
+        'array_search',
+        'array_walk',
+        'array_walk_recursive',
+        'in_array',
+        'uasort',
+        'uksort',
+        'usort',
+    ];
+    /** @var array<string, list<string>> $callsByMethod */
+    $callsByMethod = [];
+    /** @var array<string, list<string>> $failuresByMethod */
+    $failuresByMethod = [];
+    /** @var list<string> $methodOrder */
+    $methodOrder = [];
+    $pendingMethod = null;
+    $currentMethod = null;
+    $currentMethodBraceDepth = null;
+    $braceDepth = 0;
+
+    foreach ($tokens as $index => $token) {
+        $tokenId = is_array($token) ? $token[0] : null;
+        $tokenText = is_array($token) ? $token[1] : $token;
+
+        if ($currentMethod === null && $tokenId === T_FUNCTION) {
+            $nameIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+
+            if ($nameIndex !== null && routingTokenText($tokens[$nameIndex]) === '&') {
+                $nameIndex = routingNextSignificantTokenIndex($tokens, $nameIndex + 1);
+            }
+
+            $nameToken = $nameIndex === null ? null : $tokens[$nameIndex];
+            $pendingMethod = is_array($nameToken) && in_array($nameToken[0], [T_STRING, T_MATCH], true)
+                ? $nameToken[1]
+                : null;
+            continue;
+        }
+
+        if ($tokenText === '{') {
+            $braceDepth++;
+
+            if ($pendingMethod !== null) {
+                $currentMethod = $pendingMethod;
+                $currentMethodBraceDepth = $braceDepth;
+                $callsByMethod[$currentMethod] = [];
+                $failuresByMethod[$currentMethod] = [];
+                $methodOrder[] = $currentMethod;
+                $pendingMethod = null;
+            }
+
+            continue;
+        }
+
+        if ($tokenText === '}') {
+            if ($currentMethodBraceDepth === $braceDepth) {
+                $currentMethod = null;
+                $currentMethodBraceDepth = null;
+            }
+
+            $braceDepth--;
+            continue;
+        }
+
+        if ($currentMethod === null) {
+            if ($pendingMethod !== null && $tokenText === ';') {
+                $pendingMethod = null;
+            }
+
+            continue;
+        }
+
+        if (in_array($tokenId, [T_FOR, T_FOREACH, T_WHILE, T_DO], true)) {
+            $failuresByMethod[$currentMethod][] = sprintf(
+                '%s:%d uses a loop in lookup-reachable Router method %s; route lookup must remain indexed.',
+                $relativePath,
+                $token[2],
+                $currentMethod,
+            );
+        }
+
+        if ($tokenId === T_VARIABLE && $tokenText === '$this') {
+            $operatorIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+            $operatorToken = $operatorIndex === null ? null : $tokens[$operatorIndex];
+            $operatorId = is_array($operatorToken) ? $operatorToken[0] : null;
+
+            if (in_array($operatorId, [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR], true)) {
+                $methodIndex = routingNextSignificantTokenIndex($tokens, $operatorIndex + 1);
+                $methodToken = $methodIndex === null ? null : $tokens[$methodIndex];
+                $openIndex = $methodIndex === null
+                    ? null
+                    : routingNextSignificantTokenIndex($tokens, $methodIndex + 1);
+
+                if (
+                    is_array($methodToken)
+                    && $methodToken[0] === T_STRING
+                    && $openIndex !== null
+                    && routingTokenText($tokens[$openIndex]) === '('
+                ) {
+                    $callsByMethod[$currentMethod][] = $methodToken[1];
+                }
+            }
+        }
+
+        if (!in_array($tokenId, [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED], true)) {
+            continue;
+        }
+
+        $functionName = strtolower(ltrim($tokenText, '\\'));
+        $separator = strrpos($functionName, '\\');
+
+        if ($separator !== false) {
+            $functionName = substr($functionName, $separator + 1);
+        }
+
+        if (!in_array($functionName, $traversalFunctions, true)) {
+            continue;
+        }
+
+        $previousIndex = routingPreviousSignificantTokenIndex($tokens, $index - 1);
+        $previousToken = $previousIndex === null ? null : $tokens[$previousIndex];
+        $previousId = is_array($previousToken) ? $previousToken[0] : null;
+        $openIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+
+        if (
+            $openIndex !== null
+            && routingTokenText($tokens[$openIndex]) === '('
+            && !in_array(
+                $previousId,
+                [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON],
+                true,
+            )
+        ) {
+            $failuresByMethod[$currentMethod][] = sprintf(
+                '%s:%d calls traversal function %s in lookup-reachable Router method %s; route lookup must remain indexed.',
+                $relativePath,
+                $token[2],
+                $functionName,
+                $currentMethod,
+            );
+        }
+    }
+
+    $reachableMethods = [];
+    $pendingMethods = ['match', 'allowedMethodsForPath'];
+
+    while ($pendingMethods !== []) {
+        $method = array_pop($pendingMethods);
+
+        if (isset($reachableMethods[$method])) {
+            continue;
+        }
+
+        $reachableMethods[$method] = true;
+
+        foreach ($callsByMethod[$method] ?? [] as $calledMethod) {
+            $pendingMethods[] = $calledMethod;
+        }
+    }
+
+    $failures = [];
+
+    foreach ($methodOrder as $orderedMethod) {
+        if (!isset($reachableMethods[$orderedMethod])) {
+            continue;
+        }
+
+        foreach ($failuresByMethod[$orderedMethod] as $failure) {
+            $failures[] = $failure;
+        }
+    }
+
+    return $failures;
+}
+
+/**
+ * @param list<array{0: int, 1: string, 2: int}|string> $tokens
+ */
+function routingNextSignificantTokenIndex(array $tokens, int $start): ?int
+{
+    for ($index = $start, $count = count($tokens); $index < $count; $index++) {
+        $token = $tokens[$index];
+
+        if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+
+        return $index;
+    }
+
+    return null;
+}
+
+/**
+ * @param list<array{0: int, 1: string, 2: int}|string> $tokens
+ */
+function routingPreviousSignificantTokenIndex(array $tokens, int $start): ?int
+{
+    for ($index = $start; $index >= 0; $index--) {
+        $token = $tokens[$index];
+
+        if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+
+        return $index;
+    }
+
+    return null;
+}
+
+/** @param array{0: int, 1: string, 2: int}|string $token */
+function routingTokenText(array|string $token): string
+{
+    return is_array($token) ? $token[1] : $token;
+}
+
 $root = dirname(__DIR__);
 $phpFiles = [];
 $markdownFiles = [];
@@ -63,6 +292,7 @@ $requiredRepositoryFiles = [
     '.ai/crud.md',
     '.ai/database.md',
     '.ai/http.md',
+    '.ai/routing.md',
     '.ai/session.md',
     'docs/consumer-contract.md',
     'docs/caching.md',
@@ -77,6 +307,11 @@ $requiredRepositoryFiles = [
     'docs/decisions/014-sql-data-and-finite-structure.md',
     'docs/decisions/015-explicit-native-session-lifecycle.md',
     'docs/decisions/016-cache-policy-before-cache-mechanism.md',
+    'docs/decisions/017-bounded-trailing-positive-integer-routes.md',
+    'example/src/Users/GetUser/GetUserHandler.php',
+    'example/src/Users/GetUser/UserDetails.php',
+    'example/src/Users/GetUser/UserId.php',
+    'example/src/Users/UserRoutes.php',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
@@ -122,10 +357,15 @@ $requiredRepositoryFiles = [
     'verification/phpstan/extension.php',
     'src/Http/CookieSameSite.php',
     'src/Http/ResponseCookie.php',
+    'src/Routing/PathParameters.php',
+    'src/Routing/RouteMatch.php',
     'src/Session/SessionConfiguration.php',
     'src/Session/SessionLifecycle.php',
     'src/Session/SessionSnapshot.php',
     'src/Session/SessionUnavailable.php',
+    'tests/fixtures/routing-construction-traversal.php.fixture',
+    'tests/fixtures/routing-lookup-helper-loop.php.fixture',
+    'tests/fixtures/routing-lookup-traversal.php.fixture',
     'tools/package-files.txt',
     'tools/test-database-drivers.php',
 ];
@@ -133,6 +373,37 @@ $requiredRepositoryFiles = [
 foreach ($requiredRepositoryFiles as $requiredRepositoryFile) {
     if (!is_file($root . '/' . $requiredRepositoryFile)) {
         $failures[] = "Required repository file is missing: {$requiredRepositoryFile}.";
+    }
+}
+
+$routingGuardFixtures = [
+    'tests/fixtures/routing-construction-traversal.php.fixture' => [],
+    'tests/fixtures/routing-lookup-helper-loop.php.fixture' => [
+        'tests/fixtures/routing-lookup-helper-loop.php.fixture:29 uses a loop in lookup-reachable Router method scanRoutes; route lookup must remain indexed.',
+    ],
+    'tests/fixtures/routing-lookup-traversal.php.fixture' => [
+        'tests/fixtures/routing-lookup-traversal.php.fixture:25 calls traversal function array_find in lookup-reachable Router method findRoute; route lookup must remain indexed.',
+        'tests/fixtures/routing-lookup-traversal.php.fixture:36 calls traversal function array_filter in lookup-reachable Router method filterMethods; route lookup must remain indexed.',
+    ],
+];
+
+foreach ($routingGuardFixtures as $relativePath => $expectedFailures) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read routing guard fixture {$relativePath}.";
+        continue;
+    }
+
+    $actualFailures = routingLookupFailures($contents, $relativePath);
+
+    if ($actualFailures !== $expectedFailures) {
+        $failures[] = sprintf(
+            'Routing guard fixture diagnostics changed: %s. Expected %s; got %s.',
+            $relativePath,
+            json_encode($expectedFailures, JSON_THROW_ON_ERROR),
+            json_encode($actualFailures, JSON_THROW_ON_ERROR),
+        );
     }
 }
 
@@ -189,7 +460,8 @@ $cachePolicyArtifactMarkers = [
     ],
     'docs/decisions/016-cache-policy-before-cache-mechanism.md' => [
         'Status: accepted',
-        'It adds no runtime source, dependency, automatic response header, generic cache API',
+        'Framework-owned 404, 405, and unknown-failure 500 responses',
+        'no cache client or backend dependency, generic cache API',
         'an explicit stale-refill policy',
     ],
     'templates/application/.ai/architecture.md' => [
@@ -208,10 +480,11 @@ $cachePolicyArtifactMarkers = [
         'a concurrent miss racing an authoritative write',
     ],
     'skeleton/.ai/README.md' => [
-        'UNRESOLVED(HTTP_CACHE_POLICY)',
+        'HTTP_CACHE_POLICY(NO_STORE)',
+        'Cache-Control: no-store',
     ],
     'skeleton/.ai/testing.md' => [
-        'UNRESOLVED(HTTP_CACHE_EVIDENCE)',
+        'HTTP_CACHE_EVIDENCE(NO_STORE)',
         'a concurrent miss racing an authoritative write',
     ],
     'tools/package-files.txt' => [
@@ -231,6 +504,51 @@ foreach ($cachePolicyArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "Cache policy artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$routingArtifactMarkers = [
+    '.ai/routing.md' => [
+        '{name:positive-int}',
+        'RouteMatch',
+        'PathParameters',
+        'must not scan the route list during a request',
+    ],
+    'docs/decisions/017-bounded-trailing-positive-integer-routes.md' => [
+        'Status: accepted',
+        '[1-9][0-9]*',
+        'PHP_INT_MAX',
+        'one parameter name',
+        'does not claim Update or Delete support',
+    ],
+    'example/src/Users/UserRoutes.php' => [
+        '/users/{user_id:positive-int}',
+    ],
+    'example/src/Users/GetUser/GetUserHandler.php' => [
+        "positiveInteger('user_id')",
+        'UserId::fromPositiveInteger',
+        'WHERE users.id = :user_id',
+        "'Cache-Control' => 'no-store'",
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/017-bounded-trailing-positive-integer-routes.md',
+        'src/Routing/PathParameters.php',
+        'src/Routing/RouteMatch.php',
+    ],
+];
+
+foreach ($routingArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read typed routing artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Typed routing artifact marker is missing from {$relativePath}.";
         }
     }
 }
@@ -492,15 +810,13 @@ foreach ($phpFiles as $relativePath => $path) {
         $failures[] = $profileFailure;
     }
 
+    if ($relativePath === 'src/Routing/Router.php') {
+        foreach (routingLookupFailures($contents, $relativePath) as $routingFailure) {
+            $failures[] = $routingFailure;
+        }
+    }
+
     $tokens = token_get_all($contents);
-    $loopBodyPending = false;
-    $loopHeaderDepth = null;
-    $loopHeaderComplete = false;
-    $braceDepth = 0;
-    $loopBraceDepths = [];
-    $routeLookupMethodPending = null;
-    $routeLookupMethod = null;
-    $routeLookupMethodBraceDepth = null;
     $functionImportPending = false;
     $insideFunctionImport = false;
 
@@ -632,92 +948,6 @@ foreach ($phpFiles as $relativePath => $path) {
             );
         }
 
-        if ($relativePath === 'src/Routing/Router.php' && $tokenId === T_FUNCTION) {
-            for ($next = $index + 1, $count = count($tokens); $next < $count; $next++) {
-                $nextToken = $tokens[$next];
-
-                if (is_array($nextToken) && $nextToken[0] === T_WHITESPACE) {
-                    continue;
-                }
-
-                if (
-                    is_array($nextToken)
-                    && $nextToken[0] === T_STRING
-                    && in_array($nextToken[1], ['match', 'allowedMethodsForPath'], true)
-                ) {
-                    $routeLookupMethodPending = $nextToken[1];
-                }
-
-                break;
-            }
-        }
-
-        if (in_array($tokenId, [T_FOR, T_FOREACH, T_WHILE, T_DO], true)) {
-            if ($routeLookupMethod !== null) {
-                $failures[] = sprintf(
-                    'src/Routing/Router.php:%d uses a loop in %s; route lookup must remain indexed.',
-                    $token[2],
-                    $routeLookupMethod,
-                );
-            }
-
-            $loopBodyPending = true;
-            $loopHeaderDepth = $tokenId === T_DO ? 0 : null;
-            $loopHeaderComplete = $tokenId === T_DO;
-            continue;
-        }
-
-        if ($loopBodyPending && $tokenText === '(') {
-            $loopHeaderDepth = ($loopHeaderDepth ?? 0) + 1;
-            continue;
-        }
-
-        if ($loopBodyPending && $tokenText === ')' && is_int($loopHeaderDepth)) {
-            $loopHeaderDepth--;
-
-            if ($loopHeaderDepth === 0) {
-                $loopHeaderComplete = true;
-            }
-
-            continue;
-        }
-
-        if ($tokenText === '{') {
-            $braceDepth++;
-
-            if ($routeLookupMethodPending !== null) {
-                $routeLookupMethod = $routeLookupMethodPending;
-                $routeLookupMethodBraceDepth = $braceDepth;
-                $routeLookupMethodPending = null;
-            }
-
-            if ($loopBodyPending && $loopHeaderComplete) {
-                $loopBraceDepths[] = $braceDepth;
-                $loopBodyPending = false;
-            }
-
-            continue;
-        }
-
-        if ($tokenText === '}') {
-            if ($loopBraceDepths !== [] && end($loopBraceDepths) === $braceDepth) {
-                array_pop($loopBraceDepths);
-            }
-
-            if ($routeLookupMethodBraceDepth === $braceDepth) {
-                $routeLookupMethod = null;
-                $routeLookupMethodBraceDepth = null;
-            }
-
-            $braceDepth--;
-            continue;
-        }
-
-        if ($loopBodyPending && $loopHeaderComplete && $tokenText === ';') {
-            $loopBodyPending = false;
-            continue;
-        }
-
     }
 }
 
@@ -740,8 +970,8 @@ foreach ($phpFiles as $relativePath => $path) {
     $coreLines += is_array($lines) ? count($lines) : 0;
 }
 
-if ($coreLines > 1_700) {
-    $failures[] = "Core source has {$coreLines} physical lines; the Phase 1 limit is 1700.";
+if ($coreLines > 2_050) {
+    $failures[] = "Core source has {$coreLines} physical lines; the Phase 1 limit is 2050.";
 }
 
 if ($failures !== []) {

@@ -52,7 +52,10 @@ final class ListUsersHandler implements RequestHandler
 
         return new Response(
             status: 200,
-            headers: ['Content-Type' => 'application/json; charset=utf-8'],
+            headers: [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'Cache-Control' => 'no-store',
+            ],
             body: $body . "\n",
         );
     }

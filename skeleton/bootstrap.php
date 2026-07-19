@@ -14,7 +14,10 @@ use PHPThis\Routing\Router;
 
 require __DIR__ . '/vendor/autoload.php';
 
-$jsonHeaders = ['Content-Type' => 'application/json; charset=utf-8'];
+$jsonHeaders = [
+    'Content-Type' => 'application/json; charset=utf-8',
+    'Cache-Control' => 'no-store',
+];
 
 return new RequestBoundary(
     new RequestReader(1_024, 'php://input'),

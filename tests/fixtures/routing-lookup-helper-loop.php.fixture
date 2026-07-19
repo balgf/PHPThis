@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+final readonly class Router
+{
+    /** @param list<object> $routes */
+    public function __construct(private array $routes)
+    {
+    }
+
+    public function match(object $request): ?object
+    {
+        return $this->scanRoutes($request);
+    }
+
+    /** @return list<string> */
+    public function allowedMethodsForPath(string $path): array
+    {
+        return [];
+    }
+
+    private function scanRoutes(object $request): ?object
+    {
+        if ($request === $request) {
+            // Keep the fixture focused on helper reachability.
+        }
+
+        foreach ($this->routes as $route) {
+            return $route;
+        }
+
+        return null;
+    }
+}

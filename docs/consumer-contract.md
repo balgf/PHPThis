@@ -41,6 +41,7 @@ PHPThis therefore has no traditional framework manual as its canonical knowledge
 A PHPThis application must:
 
 - run on PHP 8.4 and declare strict types in every application-owned PHP file;
+- declare `phpthis/framework` as a runtime Composer dependency under `require` when application code executes framework classes;
 - provide `ext-session` required by the installed framework, even when the application does not configure session state;
 - require `phpstan/phpstan` at `^2.1` and `phpstan/phpstan-strict-rules` at `^2.0` as development dependencies, then run the framework-owned analysis configuration at maximum level;
 - use the installed `phpthis check` binary to enforce Strict Profile version 2;
@@ -71,14 +72,19 @@ Applications must not add PHPStan configuration artifacts named `phpstan*.neon`,
 
 - `public/index.php` is the one front controller permitted to read PHP runtime globals and pass them to one bounded request boundary.
 - Requests and responses are immutable values.
-- Routes are explicit method, literal path, and already-constructed handler objects.
+- Routes are explicit method, path declaration, and already-constructed handler objects. A path is literal or uses the single accepted trailing full-segment `{name:positive-int}` form; the name begins with a lowercase ASCII letter and continues only with lowercase letters, digits, or underscores.
 - A root route manifest combines named route-area lists; request-time route lookup remains indexed.
-- Handlers implement `RequestHandler::handle` and receive dependencies through constructors.
+- Literal lookup has precedence. Typed route segments accept only canonical ASCII integers from 1 through `PHP_INT_MAX`; URL-encoded, zero, signed, padded, non-ASCII, non-integral, and overflowing spellings do not match.
+- Typed declarations sharing a literal prefix across methods use the same parameter name; ambiguous same-method shapes and inconsistent cross-method names fail during router construction.
+- A successful lookup yields immutable routing metadata. `Application` creates an immutable `Request` copy carrying immutable `PathParameters`; static routes carry empty parameters, and handlers keep `RequestHandler::handle(Request): Response`.
+- Route-specific code immediately converts the validated integer into a concrete identifier. Path parameters are not a mixed domain bag and do not supply authorization, tenant scope, or record existence.
+- Handlers receive dependencies through constructors.
 - External `mixed` input is parsed once into a concrete final readonly command or projection before it enters typed application behavior.
 - Known public failures use named exception classes and exact-class response registration. Unknown failures remain generic externally and are logged once by exception class without the exception message or sensitive request or database data.
 - Response cookies use validated `ResponseCookie` values and remain separate from the ordinary single-value header map; application code does not manually encode `Set-Cookie`.
+- Framework-generated 404, 405, and unknown-failure 500 responses explicitly use `Cache-Control: no-store`. PHPThis does not rewrite arbitrary handler responses; each application response path owns its exact cache policy.
 
-Do not add route discovery, automatic input binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
+Do not add other dynamic route shapes, regular-expression or callback routes, arbitrary string parameters, route-table scanning, route discovery, automatic input or domain binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
 
 ## Optional session state
 
@@ -110,7 +116,7 @@ An application either follows the reference placement or records one coherent al
 
 Do not infer a generic persistence layer from the CRUD label. There is no CRUD base handler, generic repository, automatic resource registration, mass assignment, generated SQL, runtime discovery, or filesystem enforcement. Commands, projections, authorization, transactions, failure behavior, and database work remain specific to each operation.
 
-Current PHPThis executable evidence covers only part of Create and List: structure, boundary parsing, transaction shape, and query cost. It does not establish authorization, Create identity/conflict policy, or List continuation. Get, Update, and Delete wait for typed item routes and application-owned decisions covering pagination, concurrency, deletion, authorization, and conflicts. An application must not present any operation or policy as supplied by PHPThis without concrete source, accepted local decisions, and tests.
+Current PHPThis executable evidence covers only part of Create and List: structure, boundary parsing, transaction shape, and query cost. It does not establish authorization, Create identity/conflict policy, or List continuation. The first Get slice proves the trailing positive-integer route, immediate concrete-identifier conversion, not-found shape, concrete projection, and bounded query count; it does not establish authorization or tenant policy. Update and Delete have no executable reference and still require application-owned concurrency, deletion, authorization, and conflict decisions. An application must not present any operation or policy as supplied by PHPThis without concrete source, accepted local decisions, and tests.
 
 ## Database work
 
@@ -169,6 +175,8 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 ## Contract evolution
 
 Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+
+ADR 017's bounded trailing positive-integer route is a framework API capability within the existing explicit-route obligation. It does not change the PHP program subset accepted by the installed checker, so Consumer Contract version 3 and Strict Profile version 2 remain unchanged.
 
 Contract version 3 carries contract version 2 and Strict Profile version 2 forward unchanged. It adds explicit response cookies and the optional native-file session lifecycle. Before adopting version 3, ensure unconditional `ext-session` availability and replace manually encoded response cookies. When adopting session state, also verify the fixed PHP 8.4 settings and an application-isolated save path, record applicable policy or explicit non-applicability, place state behind narrowly named typed services over the single lifecycle, and add the required transport and application-policy tests. Then run the complete application gate.
 

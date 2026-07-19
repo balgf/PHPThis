@@ -51,6 +51,8 @@ Dependencies may point only in the direction shown above. Document every deliber
 
 HTTP response caching is separate from server-side data caching. Each response-producing path owns an explicit policy; a server-side cache hit does not make an HTTP response public, and `Set-Cookie` alone is not a cache prohibition.
 
+Use an explicit `Cache-Control: no-store` policy as the safe starting point for every new or not-yet-reviewed success, redirect, client-error, server-error, and cookie-emitting response. Replace it with `private` or `public` behavior only after the application records and tests the complete policy above. This is an application decision at each response-producing path, not a framework default or middleware behavior.
+
 ### Optional server-side data cache
 
 - Adoption or `NOT_APPLICABLE(CACHE)`: {{CACHE_ADOPTION_OR_NOT_APPLICABLE}}

@@ -15,6 +15,7 @@ These rules supplement installed PHPThis Consumer Contract v3 and Strict Profile
 - Keep adopted server-side caching behind narrowly named typed services with explicit hit, miss, authoritative-read, write, and invalidation paths; apply the key, payload, TTL, tenant, invalidation, stale-refill, failure, stampede, and observability policies recorded in `.ai/data.md` and `.ai/operations.md`.
 - Treat cached payloads as untrusted derived data, parse them into bounded typed projections, and preserve correctness when an entry is absent or evicted.
 - Keep HTTP response caching separate from server-side data caching and give each response-producing path an explicit `no-store`, `private`, or `public` policy with finite freshness or revalidation, validators, and complete `Vary` behavior where applicable.
+- Start every new or unreviewed response path with an explicit `Cache-Control: no-store` header, including success, redirect, mapped client-error, unknown server-error, and cookie-emitting responses; change that path only after its recorded policy and tests support reuse.
 - Run the complete application validity gate defined in `.ai/testing.md` before reporting completion.
 
 ## Forbidden
@@ -24,6 +25,7 @@ These rules supplement installed PHPThis Consumer Contract v3 and Strict Profile
 - Do not add a generic cache service, global cache helper, hidden cache-aside behavior, automatic query caching, implicit forever TTL, or arbitrary PHP object deserialization.
 - Do not use cached data as a source of truth or cache sessions, authentication state, authorization decisions, permissions, credentials, secrets, or another class prohibited by `.ai/architecture.md`.
 - Do not infer that `Set-Cookie`, a server-side cache miss, or a server-side cache hit makes an HTTP response safely private, uncacheable, or public.
+- Do not add a cache helper, middleware default, or response post-processor to hide which response-producing path owns its HTTP cache policy.
 - Do not invent human approval or claim unsupported framework or application behavior.
 - Do not bypass authentication, authorization, validation, audit, or data-retention requirements to simplify a change.
 - Do not read `$_SESSION`, call native `session_*` functions, manually emit the framework session cookie, add a generic session helper, or treat stored identity as authorization.

@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+final readonly class Router
+{
+    /** @param list<object> $routes */
+    public function __construct(private array $routes)
+    {
+    }
+
+    public function match(object $request): ?object
+    {
+        return $this->findRoute($request);
+    }
+
+    /** @return list<string> */
+    public function allowedMethodsForPath(string $path): array
+    {
+        return $this->filterMethods($path);
+    }
+
+    private function findRoute(object $request): ?object
+    {
+        return array_find(
+            $this->routes,
+            static fn(object $route): bool => $route === $request,
+        );
+    }
+
+    /** @return list<string> */
+    private function filterMethods(string $path): array
+    {
+        $methods = $path === '' ? [] : ['GET', 'POST'];
+
+        return array_values(array_filter(
+            $methods,
+            static fn(string $method): bool => $method === 'GET',
+        ));
+    }
+}

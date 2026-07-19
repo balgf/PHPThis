@@ -26,11 +26,13 @@ The negative control returns the same data by selecting users once and then coun
 
 The `POST /users` tests provide the transaction evidence. Empty and 500-user fixtures both require two writes. With a budget of 1, the event write is rejected and the preceding user insert is rolled back.
 
+The first `GET /users/{user_id}` item proof accepts only the bounded typed route, immediately converts the route integer into `UserId`, parses a concrete `UserDetails` projection, returns an explicit missing response, and executes one database statement. It does not prove authorization or tenant scope.
+
 ## CRUD reference-profile evidence
 
-The optional CRUD reference profile is an authoring and placement convention, not a runtime CRUD abstraction. The example proves its current executable scope with separate `Users/CreateUser` and `Users/ListUsers` use-case directories, one explicit route-area manifest, direct constructor wiring, visible SQL, strict command and projection boundaries, and operation-specific query budgets and traces.
+The optional CRUD reference profile is an authoring and placement convention, not a runtime CRUD abstraction. The example proves its current executable scope with separate `Users/CreateUser`, `Users/ListUsers`, and `Users/GetUser` use-case directories, one explicit route-area manifest, direct constructor wiring, visible SQL, strict command, identifier, and projection boundaries, and operation-specific query budgets and traces.
 
-Create and List retain the behavior and scaling evidence above after adopting that structure. The framework does not inspect application directories, and this repository does not claim complete item CRUD: Get, Update, and Delete wait for a reviewed typed item-route contract plus application-owned decisions for authorization, missing records, concurrency, conflicts, and deletion or retention semantics.
+Create and List retain the behavior and scaling evidence above after adopting that structure. Get adds only the narrow typed-route, concrete-identifier, explicit-missing, projection, and one-query proof; its authorization and tenant policy remain unresolved. The framework does not inspect application directories, and this repository does not claim complete item CRUD: Update and Delete still require application-owned decisions and executable evidence for authorization, concurrency, conflicts, deletion, and retention semantics.
 
 ## Database transport certification
 
@@ -86,7 +88,7 @@ A passing answer must be correct for the installed revision, supported by access
 - Statement budgets do not bound rows scanned or event-history fan-out; this proof detects query-count growth, not total database cost.
 - The aggregate read can observe concurrent changes according to the target database's isolation rules; production evaluation must choose that policy explicitly.
 - The read returns only the first 50 users; pagination and continuation are not implemented yet.
-- Item Get, Update, and Delete routes are not implemented; the current exact-path router cannot express a general resource identifier.
+- Item Get is limited to the one trailing positive-integer shape and lacks authorization and tenant policy; Update and Delete routes are not implemented, and the router does not accept general resource-identifier patterns.
 - The sample enforces JSON `Content-Type` and maps malformed input, unsupported media, and oversized bodies; database conflicts remain generic 500 failures until a reliable named translation is designed.
 - The unknown-failure log is deliberately minimal and has no request ID or query-trace summary yet.
 - The project-owned AI context and installed knowledge map define a grounding strategy, not proof that every model will follow it; grounded-answer trials remain future work.

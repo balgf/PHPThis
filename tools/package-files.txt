@@ -27,6 +27,7 @@ docs/decisions/013-optional-crud-reference-profile.md
 docs/decisions/014-sql-data-and-finite-structure.md
 docs/decisions/015-explicit-native-session-lifecycle.md
 docs/decisions/016-cache-policy-before-cache-mechanism.md
+docs/decisions/017-bounded-trailing-positive-integer-routes.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -60,7 +61,9 @@ src/Http/ResponseCookie.php
 src/Http/ResponseEmitter.php
 src/Http/UnknownFailureBoundary.php
 src/Http/UnsupportedMediaType.php
+src/Routing/PathParameters.php
 src/Routing/Route.php
+src/Routing/RouteMatch.php
 src/Routing/Router.php
 src/Session/SessionConfiguration.php
 src/Session/SessionLifecycle.php

@@ -11,7 +11,7 @@ Rules:
 - Set the outer body limit in the composition root, enforce endpoint-specific limits before decoding, and use `JSON_THROW_ON_ERROR` with an explicit depth.
 - Enforce route-specific media types in the handler before parsing or database work.
 - Set status, body, and headers explicitly.
-- For `Cache-Control`, validators, or `Vary`, also follow `.ai/cache.md`; PHPThis currently adds no automatic HTTP cache policy.
+- For `Cache-Control`, validators, or `Vary`, also follow `.ai/cache.md`. PHPThis explicitly emits `no-store` for framework-owned 404, 405, and unknown-failure 500 responses, and current skeleton/example handlers do the same; it does not automatically inject or replace policy on arbitrary handler responses.
 - Represent response cookies only as validated `ResponseCookie` values in `Response::$cookies`; never encode `Set-Cookie` in the ordinary header map.
 - Keep cookie names, values, paths, expiration, and security attributes explicit. `SameSite=None` and the `__Secure-` or `__Host-` prefixes require `Secure`; `__Host-` also requires `Path=/`.
 - Encode JSON with `JSON_THROW_ON_ERROR` and set its content type.

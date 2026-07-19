@@ -5,6 +5,9 @@ declare(strict_types=1);
 use Example\Routes;
 use Example\Users\CreateUser\CreateUserCommand;
 use Example\Users\CreateUser\CreateUserHandler;
+use Example\Users\GetUser\GetUserHandler;
+use Example\Users\GetUser\UserDetails;
+use Example\Users\GetUser\UserId;
 use Example\Users\ListUsers\ListUsersHandler;
 use Example\Users\ListUsers\UserActivitySummary;
 use Example\Users\ListUsers\UserSummary;
@@ -25,6 +28,7 @@ use PHPThis\Http\Response;
 use PHPThis\Http\ResponseCookie;
 use PHPThis\Http\UnsupportedMediaType;
 use PHPThis\Http\UnknownFailureBoundary;
+use PHPThis\Routing\PathParameters;
 use PHPThis\Routing\Route;
 use PHPThis\Routing\Router;
 
@@ -35,11 +39,19 @@ $tests = [];
 $tests['example composes explicit route modules'] = static function (): void {
     $application = new Application(new Router(Routes::create(
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
+        Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(2), new QueryTrace(2)),
     )));
     $response = $application->handle(new Request('GET', '/health'));
 
-    if ($response->status !== 200 || $response->body !== "{\"status\":\"ok\"}\n") {
+    if (
+        $response->status !== 200
+        || $response->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
+        || $response->body !== "{\"status\":\"ok\"}\n"
+    ) {
         throw new RuntimeException('Expected the composed example health route.');
     }
 };
@@ -72,11 +84,15 @@ $tests['application distinguishes 404 and 405'] = static function (): void {
     $notAllowed = $application->handle(new Request('POST', '/health'));
     $notFound = $application->handle(new Request('GET', '/missing'));
 
-    if ($notAllowed->status !== 405 || $notAllowed->headers['Allow'] !== 'GET') {
+    if (
+        $notAllowed->status !== 405
+        || $notAllowed->headers['Allow'] !== 'GET'
+        || $notAllowed->headers['Cache-Control'] !== 'no-store'
+    ) {
         throw new RuntimeException('Expected 405 with an Allow header.');
     }
 
-    if ($notFound->status !== 404) {
+    if ($notFound->status !== 404 || $notFound->headers['Cache-Control'] !== 'no-store') {
         throw new RuntimeException('Expected 404 for an unknown path.');
     }
 };
@@ -422,7 +438,10 @@ $tests['unknown failure boundary logs once and returns one generic response'] = 
         || substr_count($log, 'phpthis.request.unhandled exception=RuntimeException') !== 1
         || str_contains($log, 'private failure message')
         || $response->status !== 500
-        || $response->headers !== ['Content-Type' => 'application/json; charset=utf-8']
+        || $response->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
         || $response->body !== "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n"
     ) {
         throw new RuntimeException('Expected one redacted unknown-failure log and generic 500 response.');
@@ -449,6 +468,256 @@ $tests['router rejects duplicate method and path pairs'] = static function (): v
     throw new RuntimeException('Expected duplicate routes to fail at startup.');
 };
 
+$tests['route accepts only one trailing positive integer parameter declaration'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $route = new Route('GET', '/users/{user_id:positive-int}', $handler);
+
+    if ($route->literalPrefix() !== '/users/' || $route->parameterName() !== 'user_id') {
+        throw new RuntimeException('Expected explicit positive-integer route metadata.');
+    }
+
+    $invalidPaths = [
+        '/users/{id}',
+        '/users/{Id:positive-int}',
+        '/users/{1id:positive-int}',
+        '/users/{id:integer}',
+        '/users/{id:positive-int}/details',
+        '/users/{id:positive-int}/{other:positive-int}',
+        '/users/{id:positive-int}suffix',
+    ];
+
+    foreach ($invalidPaths as $path) {
+        try {
+            new Route('GET', $path, $handler);
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException("Expected invalid parameterized route to fail: {$path}");
+    }
+};
+
+$tests['router matches bounded canonical positive integer path parameters'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $route = new Route('GET', '/users/{user_id:positive-int}', $handler);
+    $router = new Router([$route]);
+    $one = $router->match(new Request('GET', '/users/1'));
+    $maximum = $router->match(new Request('GET', '/users/' . PHP_INT_MAX));
+
+    if (
+        $one === null
+        || $one->route !== $route
+        || $one->pathParameters->positiveInteger('user_id') !== 1
+        || $maximum === null
+        || $maximum->pathParameters->positiveInteger('user_id') !== PHP_INT_MAX
+    ) {
+        throw new RuntimeException('Expected canonical bounded positive-integer matching.');
+    }
+
+    $invalidSegments = [
+        '',
+        '0',
+        '-1',
+        '+1',
+        '01',
+        ' 1',
+        '1 ',
+        '1e2',
+        (string) PHP_INT_MAX . '0',
+        str_repeat('9', strlen((string) PHP_INT_MAX)),
+        '%31',
+        '1%32',
+        '1%2Fdetails',
+        '1.0',
+        '１２',
+    ];
+
+    foreach ($invalidSegments as $segment) {
+        if ($router->match(new Request('GET', '/users/' . $segment)) !== null) {
+            throw new RuntimeException("Expected route parameter to be rejected: {$segment}");
+        }
+    }
+
+    if ($router->match(new Request('GET', '/users/1/details')) !== null) {
+        throw new RuntimeException('Expected an extra path segment to miss the item route.');
+    }
+};
+
+$tests['path parameters reject invalid construction and unknown names'] = static function (): void {
+    foreach ([['Invalid', 1], ['user_id', 0]] as [$name, $value]) {
+        try {
+            PathParameters::onePositiveInteger($name, $value);
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected invalid path parameter construction to fail.');
+    }
+
+    $parameters = PathParameters::onePositiveInteger('user_id', 7);
+
+    try {
+        $parameters->positiveInteger('other_id');
+    } catch (OutOfBoundsException) {
+        return;
+    }
+
+    throw new RuntimeException('Expected an unknown typed path parameter name to fail.');
+};
+
+$tests['literal route wins over matching parameterized route'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $dynamic = new Route('GET', '/users/{user_id:positive-int}', $handler);
+    $literal = new Route('GET', '/users/7', $handler);
+    $match = (new Router([$dynamic, $literal]))->match(new Request('GET', '/users/7'));
+
+    if ($match === null || $match->route !== $literal) {
+        throw new RuntimeException('Expected the exact literal route to win.');
+    }
+
+    try {
+        $match->pathParameters->positiveInteger('user_id');
+    } catch (OutOfBoundsException) {
+        return;
+    }
+
+    throw new RuntimeException('Expected a literal route match to carry no path parameters.');
+};
+
+$tests['router rejects ambiguous parameter shapes and inconsistent names'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $invalidRouteLists = [
+        [
+            new Route('GET', '/users/{user_id:positive-int}', $handler),
+            new Route('GET', '/users/{id:positive-int}', $handler),
+        ],
+        [
+            new Route('GET', '/users/{user_id:positive-int}', $handler),
+            new Route('POST', '/users/{id:positive-int}', $handler),
+        ],
+    ];
+
+    foreach ($invalidRouteLists as $routes) {
+        try {
+            new Router($routes);
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected ambiguous parameterized routes to fail at startup.');
+    }
+};
+
+$tests['application passes immutable typed path parameters to the handler'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            if (
+                $request->method !== 'GET'
+                || $request->path !== '/users/41'
+                || $request->query !== ['view' => 'summary']
+                || $request->headers !== ['accept' => 'application/json']
+            ) {
+                throw new RuntimeException('Expected the routed request copy to preserve request input.');
+            }
+
+            return new Response(
+                200,
+                ['Content-Type' => 'text/plain'],
+                (string) $request->pathParameters->positiveInteger('user_id'),
+            );
+        }
+    };
+    $application = new Application(new Router([
+        new Route('GET', '/users/{user_id:positive-int}', $handler),
+    ]));
+    $request = new Request(
+        'GET',
+        '/users/41',
+        ['view' => 'summary'],
+        '',
+        ['accept' => 'application/json'],
+    );
+    $response = $application->handle($request);
+
+    if ($response->body !== '41') {
+        throw new RuntimeException('Expected the handler to receive the typed path parameter.');
+    }
+
+    try {
+        $request->pathParameters->positiveInteger('user_id');
+    } catch (OutOfBoundsException) {
+        return;
+    }
+
+    throw new RuntimeException('Expected Application to preserve the original immutable request.');
+};
+
+$tests['application preserves dynamic 405 order and rejects malformed item paths'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $application = new Application(new Router([
+        new Route('POST', '/items/{item_id:positive-int}', $handler),
+        new Route('GET', '/items/{item_id:positive-int}', $handler),
+        new Route('DELETE', '/items/{item_id:positive-int}', $handler),
+    ]));
+    $notAllowed = $application->handle(new Request('PATCH', '/items/9'));
+    $notFound = $application->handle(new Request('PATCH', '/items/09'));
+
+    if (
+        $notAllowed->status !== 405
+        || $notAllowed->headers['Allow'] !== 'POST, GET, DELETE'
+        || $notAllowed->headers['Cache-Control'] !== 'no-store'
+        || $notFound->status !== 404
+        || $notFound->headers['Cache-Control'] !== 'no-store'
+    ) {
+        throw new RuntimeException('Expected indexed dynamic method discovery and malformed-path rejection.');
+    }
+};
+
+$tests['allowed methods merge literal and parameterized registrations in order'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $router = new Router([
+        new Route('POST', '/items/{item_id:positive-int}', $handler),
+        new Route('GET', '/items/7', $handler),
+        new Route('DELETE', '/items/{item_id:positive-int}', $handler),
+        new Route('POST', '/items/7', $handler),
+    ]);
+
+    if ($router->allowedMethodsForPath('/items/7') !== ['POST', 'GET', 'DELETE']) {
+        throw new RuntimeException('Expected ordered unique methods from literal and parameter routes.');
+    }
+};
+
 $tests['router dispatches from a large explicit route table'] = static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
@@ -470,13 +739,43 @@ $tests['router dispatches from a large explicit route table'] = static function 
     $allowedMethods = $router->allowedMethodsForPath('/routes/9999');
 
     if (
-        $firstRoute !== $routes[0]
-        || $middleRoute !== $routes[5_000]
-        || $lastRoute !== $routes[9_999]
+        $firstRoute?->route !== $routes[0]
+        || $middleRoute?->route !== $routes[5_000]
+        || $lastRoute?->route !== $routes[9_999]
         || $missingRoute !== null
         || $allowedMethods !== ['GET']
     ) {
         throw new RuntimeException('Expected exact lookup across 10,000 routes.');
+    }
+};
+
+$tests['router indexes one parameter candidate in a large explicit route table'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $routes = [];
+
+    for ($index = 0; $index < 10_000; $index++) {
+        $routes[] = new Route(
+            'GET',
+            '/route-groups/' . $index . '/{item_id:positive-int}',
+            $handler,
+        );
+    }
+
+    $router = new Router($routes);
+    $match = $router->match(new Request('GET', '/route-groups/9999/73'));
+
+    if (
+        $match === null
+        || $match->route !== $routes[9_999]
+        || $match->pathParameters->positiveInteger('item_id') !== 73
+        || $router->allowedMethodsForPath('/route-groups/9999/73') !== ['GET']
+    ) {
+        throw new RuntimeException('Expected one indexed parameter candidate across 10,000 routes.');
     }
 };
 
@@ -495,6 +794,49 @@ $tests['router preserves allowed method registration order'] = static function (
 
     if ($router->allowedMethodsForPath('/items') !== ['POST', 'GET', 'DELETE']) {
         throw new RuntimeException('Expected allowed methods in explicit registration order.');
+    }
+};
+
+$tests['item projection converts exact database rows into concrete identifiers'] = static function (): void {
+    $nativeInteger = UserDetails::fromDatabaseRow(['name' => 'Ada', 'id' => 7]);
+    $canonicalString = UserDetails::fromDatabaseRow(['id' => '8', 'name' => 'Grace']);
+
+    if (
+        $nativeInteger->id->value !== 7
+        || $nativeInteger->name !== 'Ada'
+        || $canonicalString->id->value !== 8
+        || $canonicalString->name !== 'Grace'
+    ) {
+        throw new RuntimeException('Expected strict item rows to use concrete user identifiers.');
+    }
+
+    try {
+        UserId::fromPositiveInteger(0);
+    } catch (InvalidArgumentException) {
+        return;
+    }
+
+    throw new RuntimeException('Expected the concrete user identifier to reject zero.');
+};
+
+$tests['item projection rejects coercive and structurally invalid rows'] = static function (): void {
+    $invalidRows = [
+        ['id' => 0, 'name' => 'Ada'],
+        ['id' => '01', 'name' => 'Ada'],
+        ['id' => (string) PHP_INT_MAX . '0', 'name' => 'Ada'],
+        ['id' => 7, 'name' => ''],
+        ['id' => 7, 'name' => 'Ada', 'email' => 'ada@example.com'],
+        ['id' => 7],
+    ];
+
+    foreach ($invalidRows as $row) {
+        try {
+            UserDetails::fromDatabaseRow($row);
+        } catch (UnexpectedValueException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected an invalid item projection row to be rejected.');
     }
 };
 
@@ -682,11 +1024,13 @@ $tests['HTTP command rejects malformed coercive and unknown input'] = static fun
 $tests['example request boundary maps client failures before database work'] = static function (): void {
     $databasePath = createUserDatabaseFixture('request-client-failures', 0, false);
     $readBudget = new QueryBudget(1);
+    $getBudget = new QueryBudget(1);
     $writeBudget = new QueryBudget(2);
     $writeTrace = new QueryTrace(2);
     $dsn = 'sqlite:' . $databasePath;
     $application = new Application(new Router(Routes::create(
         Connection::connect($dsn, $readBudget, new QueryTrace(1)),
+        Connection::connect($dsn, $getBudget, new QueryTrace(1)),
         Connection::connect($dsn, $writeBudget, $writeTrace),
     )));
     $registry = exampleErrorResponseRegistry();
@@ -747,15 +1091,23 @@ $tests['example request boundary maps client failures before database work'] = s
 
     if (
         $invalidResponse->status !== 400
+        || $invalidResponse->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
         || $invalidResponse->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
         || str_contains($invalidResponse->body, 'exactly name and email')
         || $unsupportedResponse->status !== 415
+        || $unsupportedResponse->headers !== $invalidResponse->headers
         || $unsupportedResponse->body !== "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n"
         || $tooLargeResponse->status !== 413
+        || $tooLargeResponse->headers !== $invalidResponse->headers
         || $tooLargeResponse->body !== "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n"
         || $outerTooLargeResponse->status !== 413
+        || $outerTooLargeResponse->headers !== $invalidResponse->headers
         || $outerTooLargeResponse->body !== $tooLargeResponse->body
         || $readBudget->used() !== 0
+        || $getBudget->used() !== 0
         || $writeBudget->used() !== 0
         || $writeTrace->snapshot()['statements'] !== 0
     ) {
@@ -763,15 +1115,18 @@ $tests['example request boundary maps client failures before database work'] = s
     }
 };
 
-$tests['user routes execute one read and one transactional write end to end'] = static function (): void {
+$tests['user routes execute bounded reads and one transactional write end to end'] = static function (): void {
     $databasePath = createUserDatabaseFixture('user-routes', 0, false);
     $readBudget = new QueryBudget(1);
     $readTrace = new QueryTrace(1);
+    $getBudget = new QueryBudget(1);
+    $getTrace = new QueryTrace(1);
     $writeBudget = new QueryBudget(2);
     $writeTrace = new QueryTrace(2);
     $dsn = 'sqlite:' . $databasePath;
     $application = new Application(new Router(Routes::create(
         Connection::connect($dsn, $readBudget, $readTrace),
+        Connection::connect($dsn, $getBudget, $getTrace),
         Connection::connect($dsn, $writeBudget, $writeTrace),
     )));
 
@@ -781,19 +1136,30 @@ $tests['user routes execute one read and one transactional write end to end'] = 
         body: '{"name":"Ada Lovelace","email":"ada@example.com"}',
         headers: ['content-type' => 'application/json'],
     ));
+    $got = $application->handle(new Request('GET', '/users/1'));
     $listed = $application->handle(new Request('GET', '/users'));
 
     if (
         $created->status !== 201
+        || $created->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
         || $created->body !== "{\"user\":{\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
+        || $got->status !== 200
+        || $got->headers !== $created->headers
+        || $got->body !== "{\"user\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n"
         || $listed->status !== 200
+        || $listed->headers !== $created->headers
         || $listed->body !== "{\"users\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}]}\n"
         || $writeBudget->used() !== 2
         || $readBudget->used() !== 1
+        || $getBudget->used() !== 1
         || $writeTrace->snapshot()['statements'] !== 2
         || $readTrace->snapshot()['statements'] !== 1
+        || $getTrace->snapshot()['statements'] !== 1
     ) {
-        throw new RuntimeException('Expected the explicit user routes to read and write the sample schema.');
+        throw new RuntimeException('Expected explicit user routes with bounded reads and writes.');
     }
 };
 
@@ -831,6 +1197,137 @@ $tests['user read endpoint keeps one query across dataset sizes'] = static funct
         || $largeSummary['truncated']
     ) {
         throw new RuntimeException('Expected the bounded aggregate read to remain one query at scale.');
+    }
+};
+
+$tests['user item endpoint keeps one query across dataset sizes'] = static function (): void {
+    $smallPath = createUserDatabaseFixture('item-read-small', 2, false);
+    $largePath = createUserDatabaseFixture('item-read-large', 500, false);
+    $smallBudget = new QueryBudget(1);
+    $smallTrace = new QueryTrace(1);
+    $largeBudget = new QueryBudget(1);
+    $largeTrace = new QueryTrace(1);
+    $smallApplication = new Application(new Router([
+        new Route(
+            'GET',
+            '/users/{user_id:positive-int}',
+            new GetUserHandler(
+                Connection::connect('sqlite:' . $smallPath, $smallBudget, $smallTrace),
+            ),
+        ),
+    ]));
+    $largeApplication = new Application(new Router([
+        new Route(
+            'GET',
+            '/users/{user_id:positive-int}',
+            new GetUserHandler(
+                Connection::connect('sqlite:' . $largePath, $largeBudget, $largeTrace),
+            ),
+        ),
+    ]));
+
+    $smallResponse = $smallApplication->handle(new Request('GET', '/users/2'));
+    $largeResponse = $largeApplication->handle(new Request('GET', '/users/500'));
+    $smallSummary = $smallTrace->snapshot();
+    $largeSummary = $largeTrace->snapshot();
+
+    if (
+        $smallResponse->status !== 200
+        || $smallResponse->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
+        || $smallResponse->body !== "{\"user\":{\"id\":2,\"name\":\"User 2\"}}\n"
+        || $largeResponse->status !== 200
+        || $largeResponse->headers !== $smallResponse->headers
+        || $largeResponse->body !== "{\"user\":{\"id\":500,\"name\":\"User 500\"}}\n"
+        || $smallBudget->used() !== 1
+        || $largeBudget->used() !== 1
+        || $smallSummary['statements'] !== 1
+        || $largeSummary['statements'] !== 1
+        || $smallSummary['repeated_fingerprints'] !== 0
+        || $largeSummary['repeated_fingerprints'] !== 0
+        || $smallSummary['maximum_executions_per_fingerprint'] !== 1
+        || $largeSummary['maximum_executions_per_fingerprint'] !== 1
+        || $smallSummary['truncated']
+        || $largeSummary['truncated']
+    ) {
+        throw new RuntimeException('Expected the typed item read to remain one query at scale.');
+    }
+};
+
+$tests['user item route separates missing records from malformed identifiers'] = static function (): void {
+    $databasePath = createUserDatabaseFixture('item-read-failures', 2, false);
+    $missingBudget = new QueryBudget(1);
+    $missingTrace = new QueryTrace(1);
+    $missingApplication = new Application(new Router([
+        new Route(
+            'GET',
+            '/users/{user_id:positive-int}',
+            new GetUserHandler(
+                Connection::connect(
+                    'sqlite:' . $databasePath,
+                    $missingBudget,
+                    $missingTrace,
+                ),
+            ),
+        ),
+    ]));
+    $missing = $missingApplication->handle(new Request('GET', '/users/99'));
+
+    if (
+        $missing->status !== 404
+        || $missing->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
+        || $missing->body !== "{\"error\":{\"code\":\"user_not_found\",\"message\":\"User was not found.\"}}\n"
+        || $missingBudget->used() !== 1
+        || $missingTrace->snapshot()['statements'] !== 1
+    ) {
+        throw new RuntimeException('Expected a valid absent identifier to perform one bounded item query.');
+    }
+
+    $malformedBudget = new QueryBudget(1);
+    $malformedTrace = new QueryTrace(1);
+    $malformedApplication = new Application(new Router([
+        new Route(
+            'GET',
+            '/users/{user_id:positive-int}',
+            new GetUserHandler(
+                Connection::connect(
+                    'sqlite:' . $databasePath,
+                    $malformedBudget,
+                    $malformedTrace,
+                ),
+            ),
+        ),
+    ]));
+    $malformedPaths = [
+        '/users/0',
+        '/users/01',
+        '/users/-1',
+        '/users/%31',
+        '/users/1%2Fdetails',
+        '/users/' . PHP_INT_MAX . '0',
+        '/users/' . str_repeat('9', strlen((string) PHP_INT_MAX)),
+        '/users/1/details',
+    ];
+
+    foreach ($malformedPaths as $path) {
+        $response = $malformedApplication->handle(new Request('GET', $path));
+
+        if (
+            $response->status !== 404
+            || $response->headers['Cache-Control'] !== 'no-store'
+            || $response->body !== "Not Found\n"
+        ) {
+            throw new RuntimeException("Expected malformed item identifier to miss routing: {$path}");
+        }
+    }
+
+    if ($malformedBudget->used() !== 0 || $malformedTrace->snapshot()['statements'] !== 0) {
+        throw new RuntimeException('Expected malformed item identifiers to perform no database work.');
     }
 };
 
@@ -1207,7 +1704,10 @@ function requestReaderForBody(string $body, int $maximumBodyBytes): RequestReade
 
 function exampleErrorResponseRegistry(): ErrorResponseRegistry
 {
-    $headers = ['Content-Type' => 'application/json; charset=utf-8'];
+    $headers = [
+        'Content-Type' => 'application/json; charset=utf-8',
+        'Cache-Control' => 'no-store',
+    ];
 
     return new ErrorResponseRegistry([
         InvalidRequest::class => new Response(
@@ -1272,7 +1772,6 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
     }
 
     $summary = $trace->snapshot();
-
     return [
         'status' => $response->status,
         'body' => $response->body,

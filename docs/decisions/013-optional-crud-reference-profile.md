@@ -6,7 +6,7 @@ Status: accepted
 
 Create, read, update, and delete work is a recurring shape in database-backed PHP applications. Giving that work a predictable source layout reduces the number of plausible placements an AI must infer, but treating CRUD as one generic operation erases important differences between its use cases. Create, list, item read, update, and delete can have different input types, authorization rules, query shapes, transaction boundaries, concurrency behavior, conflicts, and response semantics.
 
-PHPThis currently has executable evidence for two collection operations: a transactional Create handler and a bounded List handler whose query count is tested at materially different fixture sizes. The literal-path router does not yet provide typed item routes. The framework also cannot choose an application's pagination contract, update concurrency policy, deletion semantics, authorization rules, or conflict behavior.
+PHPThis has executable evidence for two collection operations: a transactional Create handler and a bounded List handler whose query count is tested at materially different fixture sizes. ADR 017 now adds the single bounded trailing positive-integer route shape and a first item Get proof with immediate concrete-identifier conversion, explicit missing behavior, and one query. The framework still cannot choose an application's pagination contract, tenant scope, update concurrency policy, deletion semantics, authorization rules, or conflict behavior.
 
 Consumers need a clear PHPThis-shaped default without making their directories part of framework runtime behavior or preventing a project from selecting a better structure for its domain.
 
@@ -23,6 +23,10 @@ src/
     CreateUser/
       CreateUserCommand.php
       CreateUserHandler.php
+    GetUser/
+      GetUserHandler.php
+      UserDetails.php
+      UserId.php
     ListUsers/
       ListUsersHandler.php
       UserActivitySummary.php
@@ -34,7 +38,7 @@ An application may use this reference placement or record one coherent alternate
 
 PHPThis does not add a CRUD base handler, generic repository, resource registration API, automatic routes, mass assignment, SQL generation, runtime discovery, filesystem enforcement, or code-generation requirement. The framework dispatches the explicitly constructed objects supplied by the application regardless of their directories.
 
-Create and List have partial executable evidence for structure, boundary parsing, transaction shape, and query cost; they do not yet have complete authorization, identity/conflict, or continuation policy. Get, Update, and Delete have no executable reference and do not become supported merely because their names appear in the CRUD vocabulary. The reference profile will add item-operation examples only after typed item routes exist and the example application records accountable decisions for pagination, concurrency, deletion, authorization, and conflict behavior.
+Create and List have partial executable evidence for structure, boundary parsing, transaction shape, and query cost; they do not yet have complete authorization, identity/conflict, or continuation policy. The first Get slice proves only the bounded typed route, immediate `UserId` conversion, explicit missing response, concrete projection, and one-query cost; authorization and tenant policy remain application-owned and unresolved. Update and Delete have no executable reference and do not become supported merely because their names appear in the CRUD vocabulary. They require accountable application decisions and executable evidence for concurrency, deletion, authorization, conflicts, and related behavior.
 
 ## Consequences
 

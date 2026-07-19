@@ -6,6 +6,7 @@ use App\Routes;
 use PHPThis\Application;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestBoundary;
+use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Router;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -21,26 +22,49 @@ $health = $application->handle(new Request('GET', '/health'));
 
 $expectSame(200, $health->status, 'GET /health must return 200.');
 $expectSame(
-    ['Content-Type' => 'application/json; charset=utf-8'],
+    [
+        'Content-Type' => 'application/json; charset=utf-8',
+        'Cache-Control' => 'no-store',
+    ],
     $health->headers,
-    'GET /health must return the JSON content type.',
+    'GET /health must return JSON with the explicit no-store policy.',
 );
 $expectSame("{\"status\":\"ok\"}\n", $health->body, 'GET /health must return the exact health body.');
 
 $notAllowed = $application->handle(new Request('POST', '/health'));
 $expectSame(405, $notAllowed->status, 'POST /health must return 405.');
 $expectSame('GET', $notAllowed->headers['Allow'] ?? null, 'POST /health must advertise GET.');
+$expectSame(
+    'no-store',
+    $notAllowed->headers['Cache-Control'] ?? null,
+    'POST /health must return the explicit no-store policy.',
+);
 
 $missing = $application->handle(new Request('GET', '/missing'));
 $expectSame(404, $missing->status, 'An unknown route must return 404.');
+$expectSame(
+    'no-store',
+    $missing->headers['Cache-Control'] ?? null,
+    'An unknown route must return the explicit no-store policy.',
+);
 
 /** @var RequestBoundary $boundary */
 $boundary = require dirname(__DIR__) . '/bootstrap.php';
 $runtimeHealth = $boundary->handle(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/health'], []);
 $expectSame(200, $runtimeHealth->status, 'Valid PHP runtime input must reach GET /health.');
+$expectSame(
+    'no-store',
+    $runtimeHealth->headers['Cache-Control'] ?? null,
+    'Runtime GET /health must preserve the explicit no-store policy.',
+);
 
 $invalid = $boundary->handle([], []);
 $expectSame(400, $invalid->status, 'Invalid PHP runtime input must map to 400.');
+$expectSame(
+    'no-store',
+    $invalid->headers['Cache-Control'] ?? null,
+    'Mapped invalid input must return the explicit no-store policy.',
+);
 
 $oversized = $boundary->handle([
     'REQUEST_METHOD' => 'POST',
@@ -48,6 +72,35 @@ $oversized = $boundary->handle([
     'CONTENT_LENGTH' => '1025',
 ], []);
 $expectSame(413, $oversized->status, 'An oversized declared body must map to 413.');
+$expectSame(
+    'no-store',
+    $oversized->headers['Cache-Control'] ?? null,
+    'Mapped oversized input must return the explicit no-store policy.',
+);
+
+$unknownLog = tempnam(sys_get_temp_dir(), 'phpthis-unknown-');
+$previousErrorLog = ini_get('error_log');
+
+if (!is_string($unknownLog) || !is_string($previousErrorLog) || ini_set('error_log', $unknownLog) === false) {
+    throw new RuntimeException('Unable to isolate the expected unknown-failure log.');
+}
+
+try {
+    $unknown = (new UnknownFailureBoundary())->logAndRespond(new RuntimeException('private test failure'));
+} finally {
+    ini_set('error_log', $previousErrorLog);
+
+    if (is_file($unknownLog) && !unlink($unknownLog)) {
+        throw new RuntimeException('Unable to remove the expected unknown-failure log.');
+    }
+}
+
+$expectSame(500, $unknown->status, 'An unknown failure must return 500.');
+$expectSame(
+    'no-store',
+    $unknown->headers['Cache-Control'] ?? null,
+    'An unknown failure must return the explicit no-store policy.',
+);
 
 $frontControllerProgram = <<<'PHP'
 $_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/health'];

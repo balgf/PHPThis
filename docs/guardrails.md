@@ -7,7 +7,8 @@
 - magic methods other than constructors are absent;
 - dangerous dynamic mechanisms such as `eval` and variable variables are absent;
 - calls to `selectAllRows`, `selectOneRow`, and `executeStatement` do not occur inside loop headers or bodies (`PHT003`);
-- exact route matching and allowed-method lookup do not contain request-time loops;
+- literal and bounded typed route lookup do not scan the route table at request time;
+- the accepted trailing positive-integer route decision, immutable match/parameter delivery, literal precedence, and ambiguity rejection remain covered by repository tests;
 - PHP runtime-input superglobals are read only in the example and skeleton front controllers, and `$_SESSION` is read only in `src/Session/SessionLifecycle.php`;
 - native `session_*` calls occur only in `SessionLifecycle`, with the same restriction enforced in consuming applications;
 - the consumer contract, installed knowledge map, and every required application context template file remain present;
@@ -17,15 +18,17 @@
 - the canonical check and CI workflow preserve the SQLite, MySQL, and PostgreSQL PDO transport certification path;
 - the SQL data-versus-finite-structure decision, Contract version 3, Strict Profile version 2, application authority template, and PHT006 implementation remain present;
 - Markdown files outnumber PHP files;
-- core source stays within 1,700 physical lines during Phase 1;
+- core source stays within the 2,050-physical-line ceiling enforced for Phase 1;
 - PHPStan baseline files are absent;
 - `phpstan.neon` keeps strict-rules, every strict rule, and the PHPThis extension enabled without `ignoreErrors`.
 
 Runtime query budgets enforce a separate limit before each statement executes. Request-scoped query traces add bounded, redacted evidence about executed statement shapes, repetition, timing, and failures.
 
-The Phase 1 cap increase is scoped to ADR 015's explicit cookie and native-session slice. It does not authorize another mechanism. Repository checks also retain the accepted session decision, session knowledge route, Consumer Contract version 3, and the application context fields that force session transport and each applicable policy to be verified or explicitly not applicable.
+The Phase 1 cap increases are scoped to ADR 015's explicit cookie/native-session slice and ADR 017's bounded trailing positive-integer routing slice. The reviewed implementation occupies 2,010 of the 2,050 allowed physical lines; the remaining 40-line maintenance margin does not authorize a general dynamic router or another mechanism. Repository checks also retain both accepted decisions, their knowledge routes, Consumer Contract version 3, Strict Profile version 2, and the application context fields that keep adjacent policy application-owned.
 
-The cache guard retains documentation and application-context policy, not a cache implementation. It keeps the current absence of a generic framework cache explicit, preserves separate HTTP and application data-cache decisions, requires the health-only skeleton to mark its headerless HTTP cache policy unresolved, and resolves only server-side caching as not applicable. It does not claim that an application has adopted a backend or that PHPThis certifies one.
+The routing lookup check follows direct helper calls from `Router::match` and `Router::allowedMethodsForPath`. It rejects explicit loops and reviewed array-traversal functions anywhere in that reachable method graph, while leaving constructor-only indexing helpers outside it. Stable negative fixtures prove that a helper loop and PHP 8.4 `array_find` or `array_filter` traversal fail; a construction-only loop fixture proves that startup indexing remains allowed.
+
+The cache guard retains documentation and application-context policy, not a cache implementation. It keeps the current absence of a generic framework cache explicit, preserves separate HTTP and application data-cache decisions, requires the health-only skeleton to record its explicit `no-store` response policy, and resolves only server-side caching as not applicable. Framework and behavior tests cover explicit `no-store` on the current 404, 405, 500, skeleton, and example paths; arbitrary application responses remain application-owned. This does not claim that an application has adopted a backend or that PHPThis certifies one.
 
 The CRUD profile guard checks only that the installed authority and context route remain available. It deliberately does not inspect consumer directory names: an application may record one canonical alternative structure while remaining subject to the hard consumer contract and Strict Profile.
 

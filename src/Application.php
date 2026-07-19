@@ -17,10 +17,12 @@ final readonly class Application implements RequestHandler
 
     public function handle(Request $request): Response
     {
-        $route = $this->router->match($request);
+        $match = $this->router->match($request);
 
-        if ($route !== null) {
-            return $route->handler->handle($request);
+        if ($match !== null) {
+            return $match->route->handler->handle(
+                $request->withPathParameters($match->pathParameters),
+            );
         }
 
         $allowedMethods = $this->router->allowedMethodsForPath($request->path);
@@ -30,6 +32,7 @@ final readonly class Application implements RequestHandler
                 status: 405,
                 headers: [
                     'Allow' => implode(', ', $allowedMethods),
+                    'Cache-Control' => 'no-store',
                     'Content-Type' => 'text/plain; charset=utf-8',
                 ],
                 body: "Method Not Allowed\n",
@@ -38,7 +41,10 @@ final readonly class Application implements RequestHandler
 
         return new Response(
             status: 404,
-            headers: ['Content-Type' => 'text/plain; charset=utf-8'],
+            headers: [
+                'Cache-Control' => 'no-store',
+                'Content-Type' => 'text/plain; charset=utf-8',
+            ],
             body: "Not Found\n",
         );
     }

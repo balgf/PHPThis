@@ -20,3 +20,4 @@ Accepted records:
 - `014-sql-data-and-finite-structure.md`
 - `015-explicit-native-session-lifecycle.md`
 - `016-cache-policy-before-cache-mechanism.md`
+- `017-bounded-trailing-positive-integer-routes.md`

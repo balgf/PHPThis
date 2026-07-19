@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+final readonly class Router
+{
+    /** @var array<string, object> */
+    private array $routesByPath;
+
+    /** @param list<object> $routes */
+    public function __construct(array $routes)
+    {
+        $this->routesByPath = $this->indexRoutes($routes);
+    }
+
+    public function match(object $request): ?object
+    {
+        return null;
+    }
+
+    /** @return list<string> */
+    public function allowedMethodsForPath(string $path): array
+    {
+        return [];
+    }
+
+    /**
+     * @param list<object> $routes
+     * @return array<string, object>
+     */
+    private function indexRoutes(array $routes): array
+    {
+        $indexed = [];
+
+        foreach (array_filter($routes) as $index => $route) {
+            $indexed[(string) $index] = $route;
+        }
+
+        return $indexed;
+    }
+}

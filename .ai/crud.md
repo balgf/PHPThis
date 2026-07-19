@@ -24,6 +24,7 @@ src/
     GetUser/
       GetUserHandler.php
       UserDetails.php
+      UserId.php
     ListUsers/
       ListUsersHandler.php
       UserActivitySummary.php
@@ -55,4 +56,4 @@ Do not infer these facts from the directory name or from another application's e
 
 Test every adopted behavior rather than the spelling of directories. Cover route and method matching, boundary rejection, success and missing-resource behavior, authorization denial, create conflicts, bounded and stable pagination, concurrent updates, deletion and retention policy, and required audit effects. Database-backed behavior also needs engine-specific integration evidence, explicit query budgets, bounded traces, and constant statement counts across materially different fixture sizes.
 
-The current executable reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List; it does not prove their authorization, identity/conflict, or continuation policies. Do not present Get, Update, or Delete as supported examples until their typed item-route design and application-owned semantics have executable evidence.
+The current executable reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List; it does not prove their authorization, identity/conflict, or continuation policies. Its first Get slice proves the typed trailing route, immediate `UserId` conversion, explicit missing response, concrete projection, and one bounded query, but not authorization or tenant scope. Update and Delete remain absent.

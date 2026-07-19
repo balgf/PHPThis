@@ -23,7 +23,9 @@ The human supplies intent and remains accountable for the outcome. Surface missi
 - Represent response cookies with `ResponseCookie`; do not encode `Set-Cookie` in the ordinary header map.
 - Keep optional session state behind narrowly named typed services over one `SessionLifecycle`; give them explicit non-overlapping keys and do not access `$_SESSION`, native session calls, or generic session helpers from application code.
 - Keep session mutation callbacks bounded and free of I/O or external side effects; complete fallible domain work before the final immediately committed session mutation.
-- Keep routes in an explicit list. Do not add discovery, attributes, reflection, or string class resolution.
+- Keep routes in an explicit list. A route path is literal or has the one accepted trailing full-segment `{name:positive-int}` form; do not add other dynamic shapes, discovery, attributes, reflection, or string class resolution.
+- Keep request-time routing indexed. Literal routes retain direct lookup; typed routes use the bounded prefix index, literal matches take precedence, and ambiguous typed declarations fail at construction rather than being resolved by order.
+- Deliver matched parameters only through immutable `PathParameters` on the immutable `Request` copy created by `Application`; keep `RequestHandler::handle(Request): Response`, and immediately wrap a validated path integer in a concrete route-specific identifier.
 - Keep SQL in the handler or its narrowly named query object and execute it only through direct `Connection` calls.
 - Treat `Connection` as native PDO transport, not a dialect abstraction; keep SQL visibly specific to the recorded engine, bind every data value, and give every placeholder occurrence a distinct portable name.
 - Pass only SQL that PHPStan resolves natively to a finite set of non-blank compile-time constant strings. Map structural choices to finite reviewed code-owned statements or fragments, prefer complete statements, and reject an unknown selector before database work.

@@ -33,13 +33,13 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 - Consuming applications run one installed `phpthis check` binary whose maximum-level PHPStan configuration cannot be weakened by project files.
 - An installed knowledge map routes framework questions to the relevant contract, decision, source, and test instead of relying on model memory.
 - Handlers implement one visible `handle` method and receive dependencies through normal constructors.
-- Routes are explicit method, path, and already-constructed handler objects, composed from named route-area lists into one visible manifest.
-- An optional feature-first [CRUD reference profile](docs/crud.md) gives AI-authored Create and List work one compartmentalized default without adding a generic CRUD runtime or enforcing application directories.
+- Routes are explicit method, path declaration, and already-constructed handler objects, composed from named route-area lists into one visible manifest. Paths are literal or use the one bounded trailing `{name:positive-int}` form; dispatch remains indexed and handlers keep `handle(Request)`.
+- An optional feature-first [CRUD reference profile](docs/crud.md) gives AI-authored Create, List, and bounded item-Get work one compartmentalized default without adding a generic CRUD runtime or enforcing application directories.
 - One request boundary normalizes bounded PHP runtime input and maps only explicitly registered exception classes.
 - Optional session state uses one lazy native-PHP lifecycle with bounded scalar snapshots, explicit secure response cookies, short lock duration, and no session helper or session field on the request.
 - Caching begins with an explicit application policy, not a framework helper: HTTP response caching and server-side data caching are separate concerns, and PHPThis currently provides no generic cache runtime.
 - Markdown is part of the framework interface. The guardrail command requires more Markdown files than PHP files.
-- The core is intentionally capped at 1,700 physical lines for Phase 1 after security and concurrency review of the accepted cookie and native-session decision; that margin does not pre-authorize another mechanism.
+- The Phase 1 core ceiling is 2,050 physical lines after review of the cookie/session and bounded typed-routing slices. The reviewed implementation occupies 2,010 lines; the remaining 40-line maintenance margin does not pre-authorize any adjacent mechanism.
 
 Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis combines visible SQL with query budgets and scale-sensitive tests so that query count cannot silently grow with result size.
 
@@ -49,12 +49,12 @@ Finite SQL and parameter binding do not prove authorization or least privilege. 
 
 **Status: experimental pre-alpha.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
 
-This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, exact-path routing, explicit handlers, and instrumented PDO access. It does not include a cache client, cache interface, cache helper, or automatic HTTP cache policy. Its sample application includes a bounded `GET /users` List operation and a transactional `POST /users` Create operation. Get, Update, and Delete are not yet claimed; item operations wait for typed path parameters and application-owned policy decisions. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
+This is a zero third-party runtime-dependency foundation. The current proof slice supports bounded runtime request ingestion, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, directly indexed literal routes, one indexed trailing positive-integer route shape, explicit handlers, and instrumented PDO access. It does not include a cache client, cache interface, cache helper, or general automatic HTTP cache policy. Framework-generated 404, 405, and 500 responses and the current skeleton/example response paths explicitly use `Cache-Control: no-store`; arbitrary application handler responses remain application-owned. The sample application includes a bounded `GET /users` List operation, a transactional `POST /users` Create operation, and the first bounded `GET /users/{user_id}` item proof. That Get slice proves typed routing, concrete identifier conversion, and bounded query cost, not complete authorization or tenant policy. Update and Delete are not yet claimed. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
 
 The executable query-scaling proof holds the accepted read at one statement as its fixture grows from 2 to 50 users. An isolated N+1 negative control produces the same JSON response body while growing from 3 to 51 statements; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
 ```text
-PHP runtime -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> Handler -> Response
+PHP runtime -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> Handler -> Response
 ```
 
 ## Try it
@@ -70,6 +70,7 @@ composer example:setup
 php -S 127.0.0.1:8080 -t example/public
 curl -i http://127.0.0.1:8080/health
 curl -i http://127.0.0.1:8080/users
+curl -i http://127.0.0.1:8080/users/1
 curl -i -X POST http://127.0.0.1:8080/users \
   -H 'Content-Type: application/json' \
   --data '{"name":"Katherine Johnson","email":"katherine@example.com"}'

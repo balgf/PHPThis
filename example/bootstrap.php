@@ -26,9 +26,17 @@ if (!is_file($databasePath)) {
 
 $dsn = 'sqlite:' . $databasePath;
 $listUsersConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
+$getUserConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
 $createUserConnection = Connection::connect($dsn, new QueryBudget(2), new QueryTrace(2));
-$application = new Application(new Router(Routes::create($listUsersConnection, $createUserConnection)));
-$jsonHeaders = ['Content-Type' => 'application/json; charset=utf-8'];
+$application = new Application(new Router(Routes::create(
+    $listUsersConnection,
+    $getUserConnection,
+    $createUserConnection,
+)));
+$jsonHeaders = [
+    'Content-Type' => 'application/json; charset=utf-8',
+    'Cache-Control' => 'no-store',
+];
 $errorResponses = new ErrorResponseRegistry([
     InvalidRequest::class => new Response(
         400,

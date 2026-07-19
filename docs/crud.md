@@ -16,7 +16,7 @@ PHPThis never discovers or validates a feature from its directory name. Routes, 
 
 ## Reference placement
 
-Use application vocabulary for the feature and operation names. For a `Users` feature whose proven operations are Create and List:
+Use application vocabulary for the feature and operation names. For the `Users` feature whose current proof covers Create, List, and a first Get slice:
 
 ```text
 src/
@@ -25,15 +25,20 @@ src/
     CreateUser/
       CreateUserCommand.php
       CreateUserHandler.php
+    GetUser/
+      GetUserHandler.php
+      UserDetails.php
+      UserId.php
     ListUsers/
       ListUsersHandler.php
       UserActivitySummary.php
 ```
 
-The feature route list explicitly constructs literal routes for already-constructed handlers. Each operation directory contains only the boundary values and behavior needed by that use case:
+The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Each operation directory contains only the boundary values and behavior needed by that use case:
 
 - a Create command parses and validates external input before database work;
 - a Create handler owns the visible transaction, write SQL, expected failure behavior, and response;
+- a Get handler immediately wraps its validated positive-integer path parameter in `UserId`, owns one bounded item query and explicit missing behavior, and parses a concrete `UserDetails` projection;
 - a List handler owns a bounded, deterministically ordered read and its response;
 - a List projection parses each selected row into a concrete final readonly value;
 - a narrowly named query object is introduced only when visible SQL no longer remains clear in its handler.
@@ -59,9 +64,10 @@ Every database operation still uses engine-specific visible SQL through direct `
 The framework repository's runnable example currently proves these structural and query-cost properties:
 
 - `POST /users`: a concrete command, explicit transactional Create handler, named SQL parameters, and a statement count that remains constant as pre-existing data grows;
-- `GET /users`: a bounded List handler with concrete projections and aggregate SQL whose statement count remains constant as the fixture grows.
+- `GET /users`: a bounded List handler with concrete projections and aggregate SQL whose statement count remains constant as the fixture grows;
+- `GET /users/{user_id}`: the declared trailing positive-integer route, immediate `UserId` conversion, a concrete `UserDetails` projection, explicit missing response, and one bounded database statement.
 
-This is not complete Create or List policy evidence. The example has no authorization behavior, Create still lacks a named identity/conflict contract, and List returns one fixed first page without continuation. Get, Update, and Delete have no executable reference. Item operations wait for the typed item-route decision and implementation, and every operation still requires application-owned decisions for pagination, concurrency, deletion, authorization, and conflict behavior as applicable; PHPThis does not invent those policies.
+This is not complete Create, List, or Get policy evidence. The example has no authorization behavior, Create still lacks a named identity/conflict contract, List returns one fixed first page without continuation, and Get does not establish authorization or tenant scope. Update and Delete have no executable reference. Every operation still requires the relevant application-owned decisions for pagination, concurrency, deletion, authorization, tenant scope, and conflict behavior; PHPThis does not invent those policies.
 
 ## Selecting an alternate structure
 

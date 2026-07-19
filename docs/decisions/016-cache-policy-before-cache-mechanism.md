@@ -20,7 +20,7 @@ Server-side data caching remains an application-owned optimization over derived,
 
 Handlers do not receive a generic cache, PSR pool, PSR simple-cache interface, global helper, facade, arbitrary key/value bag, or `remember` callback. An application may place an intentionally selected PSR implementation behind its typed service, but the application's domain-specific contract owns all policy and PHPThis does not require that dependency.
 
-PHPThis adds `.ai/cache.md`, `docs/caching.md`, application-context decision fields, and this record. It adds no runtime source, dependency, automatic response header, generic cache API, cache backend certification, Strict Profile rule, consumer-checker rule, or Consumer Contract version change before Alpha.
+PHPThis adds `.ai/cache.md`, `docs/caching.md`, application-context decision fields, and this record. Framework-owned 404, 405, and unknown-failure 500 responses, plus every current skeleton and example response path, explicitly emit `Cache-Control: no-store`. This is a narrow visible policy for paths PHPThis owns, not automatic rewriting of arbitrary handler responses. PHPThis adds no cache client or backend dependency, generic cache API, conditional-request middleware, cache backend certification, Strict Profile rule, consumer-checker rule, or Consumer Contract version change before Alpha.
 
 The first backend-specific application proof occurs after Alpha. It must test hits, misses, finite expiry, early eviction, malformed values, backend failure, tenant isolation, write invalidation and its failure, a miss racing a committed write, concurrent cold misses, and cold-cache query scaling. A warm cache cannot satisfy database query-scaling evidence.
 
@@ -30,7 +30,7 @@ An AI can distinguish accepted cache policy from a nonexistent framework mechani
 
 Applications repeat small typed cache-aside services rather than sharing a premature universal abstraction. This can cost more application code initially, but it exposes which semantics are actually stable across backends and workloads. Applications that do not adopt server-side caching may record `NOT_APPLICABLE(CACHE)` without weakening their HTTP response decisions.
 
-HTTP caching remains possible through ordinary explicit response headers, but PHPThis does not yet enforce completeness or correctness. In particular, the current `UnknownFailureBoundary` does not inject a policy; this accepted record names the gap without presenting it as implemented protection. Server-side cache observability, backend availability, capacity, eviction, stampede control, and stale-data risk remain application and deployment responsibilities.
+HTTP caching remains possible through ordinary explicit response headers. PHPThis now proves `no-store` on its current framework-owned 404, 405, and unknown-failure 500 paths and on every current skeleton/example response path, but it does not enforce completeness or correctness for new application responses. Each application still owns success, mapped failure, redirect, personalized, validator, and `Vary` decisions that fall outside those explicit paths. Server-side cache observability, backend availability, capacity, eviction, stampede control, and stale-data risk remain application and deployment responsibilities.
 
 ## References
 

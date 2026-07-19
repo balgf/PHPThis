@@ -35,7 +35,7 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 
 ### HTTP response cache
 
-`UNRESOLVED(HTTP_CACHE_POLICY)`: the starter emits no `Cache-Control`, validator, or `Vary` policy for `GET /health`; that absence does not make HTTP caching inapplicable. Before deployment, choose explicit `no-store`, `private`, or `public` behavior for each response-producing path, record finite freshness or revalidation plus validators and complete `Vary` dimensions where applicable, and test personalized, authorization-sensitive, and cookie-bearing responses independently from server-side cached data.
+`HTTP_CACHE_POLICY(NO_STORE)`: `GET /health`, route misses, method rejections, mapped invalid or oversized input, and unknown failures each emit `Cache-Control: no-store` at their explicit response-producing path. No current response is intentionally storable, so freshness, validators, conditional requests, and `Vary` are not applicable. Every response path added later starts with explicit `no-store` and requires its own recorded and tested decision before it may use `private` or `public`; no helper, middleware, or response post-processor supplies a default.
 
 ### Optional server-side data cache
 

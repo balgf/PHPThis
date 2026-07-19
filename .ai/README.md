@@ -14,7 +14,7 @@ Then read only what the task needs:
 | Task | Read | Inspect |
 | --- | --- | --- |
 | Explain PHPThis behavior or answer a usage question | `VISION.md`, `docs/knowledge-map.md`, relevant contract or decision | current framework source, tests, and application pattern |
-| Add or change a route | `.ai/routing.md` | `example/src/Routes.php`, `src/Routing/` |
+| Add or change a route | `.ai/routing.md`, ADR 017 | `example/src/Routes.php`, `src/Routing/`, `src/Http/Request.php`, route and application tests |
 | Add or change a CRUD-shaped resource profile or example | `.ai/crud.md`, `.ai/routing.md`, `.ai/database.md` as applicable | `docs/crud.md`, ADR 013, resource route list, operation directories, and behavior tests |
 | Read or write database data or map a structural SQL choice | `.ai/database.md`, `.ai/strict-profile.md` | `src/Database/`, relevant handler or query object, application data authority, selector tests |
 | Change PDO transport or database-driver certification | `.ai/database.md`, `.ai/testing.md` | `src/Database/Connection.php`, `tools/test-database-drivers.php`, database CI job |

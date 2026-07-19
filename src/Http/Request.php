@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace PHPThis\Http;
 
 use InvalidArgumentException;
+use PHPThis\Routing\PathParameters;
 
 final readonly class Request
 {
+    public PathParameters $pathParameters;
+
     /**
      * @param array<string, mixed> $query
      * @param array<string, string> $headers
@@ -18,7 +21,10 @@ final readonly class Request
         public array $query = [],
         public string $body = '',
         public array $headers = [],
+        ?PathParameters $pathParameters = null,
     ) {
+        $this->pathParameters = $pathParameters ?? PathParameters::none();
+
         if (preg_match('/^[A-Z]+$/D', $method) !== 1) {
             throw new InvalidArgumentException('Request method must contain uppercase letters only.');
         }
@@ -45,5 +51,17 @@ final readonly class Request
                 throw new InvalidArgumentException('Request header values must be strings without control bytes.');
             }
         }
+    }
+
+    public function withPathParameters(PathParameters $pathParameters): self
+    {
+        return new self(
+            $this->method,
+            $this->path,
+            $this->query,
+            $this->body,
+            $this->headers,
+            $pathParameters,
+        );
     }
 }

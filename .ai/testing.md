@@ -2,6 +2,8 @@
 
 The repository currently uses a zero-dependency test runner in `tests/run.php`.
 
+Routing tests must prove literal dispatch with empty `PathParameters`; typed trailing-segment matches for `1` and `PHP_INT_MAX`; rejection of invalid parameter names, zero, leading zeroes, signed values, whitespace, decimal and exponent forms, Unicode digits, overflow, empty and extra segments, and URL-encoded spellings; literal precedence; startup rejection of ambiguous same-method typed patterns and inconsistent names across methods sharing a prefix; correct 404, 405, and allowed-method behavior; and unchanged `RequestHandler::handle(Request): Response` delivery through an immutable `Request` copy. The first item-handler proof must immediately convert the validated integer into a concrete identifier and keep its query count bounded. Route-scaling evidence must cover large literal and typed tables and prove request-time lookup does not scan either table.
+
 Every behavior test should name one outcome and arrange dependencies directly. For database handlers, include:
 
 - expected rows or affected count;

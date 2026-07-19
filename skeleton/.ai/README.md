@@ -28,7 +28,7 @@ Then read only what the task needs:
 
 `NOT_APPLICABLE(SESSION)`: the health-only starter does not configure `SessionLifecycle` or issue cookies. Authentication, authorization, credential expiry, revocation, and CSRF remain independent application concerns if later introduced without sessions.
 
-`UNRESOLVED(HTTP_CACHE_POLICY)`: the health-only starter emits no cache-specific response headers and therefore remains subject to HTTP caching semantics without making a safe production cacheability claim. Before deployment, record and emit an explicit policy for the health response and verify every browser, proxy, gateway, or CDN layer involved.
+`HTTP_CACHE_POLICY(NO_STORE)`: every response path currently shipped by the starter emits `Cache-Control: no-store`: health success, route miss, method rejection, mapped invalid or oversized input, and unknown failure. No current response is intentionally storable, so validators and `Vary` are not applicable. Every response path added later still requires its own explicit policy and behavior test; the framework does not inject a cache default.
 
 `NOT_APPLICABLE(CACHE)`: the health-only starter has no server-side cache, cache backend, typed cache service, cache key or payload schema, TTL, invalidation, stampede control, or cache operation metrics. No cache code or dependency is included.
 

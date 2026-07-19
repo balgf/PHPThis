@@ -3,7 +3,7 @@
 ## Phase 0: foundation - complete
 
 - Product principles and AI context map.
-- Exact-path router and explicit handler interface.
+- Directly indexed literal router and explicit handler interface.
 - Request, response, and response emitter.
 - Thin PDO connection with named parameters and a query budget.
 - Bounded, redacted query tracing with a versioned JSON-compatible snapshot.
@@ -27,8 +27,10 @@
 - Complete: Consumer Contract and Strict Profile version 2 with PHT006 finite direct SQL, adversarial bound-data evidence, and explicit application-owned database-authority policy.
 - Complete: Consumer Contract version 3 with explicit response cookies and one optional lazy native-file session lifecycle; authentication, authorization, expiry, revocation, and CSRF remain application policy.
 - Complete: accepted cache policy that separates explicit application-owned HTTP response caching from server-side derived-data caching while adding no pre-Alpha generic cache mechanism or Consumer Contract version.
-- Current: specify typed path parameters before implementing dynamic routes.
-- After typed item routes: prove Get, Update, and Delete only after the example records pagination, concurrency, deletion, authorization, and conflict decisions.
+- Complete: one bounded trailing `{name:positive-int}` route grammar, immutable `RouteMatch` and `PathParameters` delivery without changing the handler interface, literal precedence, ambiguity rejection, and indexed request-time lookup.
+- Complete: first bounded `GET /users/{user_id}` proof with immediate concrete-identifier conversion; this does not claim complete authorization or tenant policy.
+- Current: finish the remaining Create identity/conflict, List continuation, and Get authorization/tenant decisions and evidence.
+- After those decisions: prove Update and Delete only after the example also records mutation concurrency, deletion, authorization, and conflict behavior.
 
 ## Phase 2: type-aware AI guardrails
 
@@ -44,7 +46,7 @@
 ## Phase 3: production evaluation
 
 - Define request IDs, structured request/query-summary log emission, security headers, streaming, uploads, and worker behavior explicitly.
-- Benchmark routing and database boundaries against equivalent base PHP.
+- Benchmark literal and bounded typed routing plus database boundaries against equivalent base PHP.
 - Run the same endpoint tasks across several AI models and classify mistakes.
 - Prove one application-owned backend-specific typed cache-aside path, including cold-cache query scaling, invalidation failure, isolation, eviction, and concurrent-miss evidence; do not promote a generic framework API from one application.
 - Stabilize the public API only after evidence from real applications.

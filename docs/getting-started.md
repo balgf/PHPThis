@@ -44,9 +44,9 @@ Replace the skeleton's generic project facts with verified product, architecture
 
 ## Add context to an existing application
 
-For an existing application adopting only the context template:
+For an existing application adopting the context template and, when applicable, the runtime:
 
-1. Add PHPThis plus `phpstan/phpstan:^2.1` and `phpstan/phpstan-strict-rules:^2.0` as development dependencies using the installation method appropriate to the version being evaluated.
+1. When application code executes PHPThis classes, declare `phpthis/framework` under Composer `require`, not only `require-dev`. Declare `phpstan/phpstan:^2.1` and `phpstan/phpstan-strict-rules:^2.0` under `require-dev`.
 2. Copy the contents of `vendor/phpthis/framework/templates/application/` into the new application root, preserving the hidden `.ai/` directory. When evaluating from a PHPThis source checkout instead, use its `templates/application/` directory.
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
@@ -55,13 +55,19 @@ For an existing application adopting only the context template:
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.
 
-When PHPThis is installed in Composer's default vendor directory, the contract referenced by the template is:
+When PHPThis is installed in Composer's default vendor directory, one contract path referenced by the template is:
 
 ```text
 vendor/phpthis/framework/docs/consumer-contract.md
 ```
 
-If the project uses a different vendor directory, update that path in its `AGENTS.md`. For an existing application, merge the template deliberately; never overwrite established project instructions or decisions.
+The copied `AGENTS.md` and `.ai/` guides contain multiple `vendor/phpthis/framework/` routes to installed contracts and knowledge. If the project uses a different vendor directory, update every occurrence together rather than correcting only the consumer-contract link. For an existing application, merge the template deliberately; never overwrite established project instructions or decisions.
+
+Review the complete assumption with:
+
+```bash
+rg -n 'vendor/phpthis/framework/' AGENTS.md .ai
+```
 
 From the application root, this command should return no matches after customization:
 
@@ -82,6 +88,8 @@ PHPThis already defines framework mechanics. The application context should add 
 - external services, timeouts, idempotency requirements, retry ownership, and observable side effects;
 - authentication and authorization boundaries;
 - session adoption or explicit non-adoption, typed state schema and key ownership, cookie policy, isolated native file-storage ownership and cleanup, deployment topology, concurrent-request evidence, and each applicable regeneration, expiry, logout, revocation, and CSRF policy with absent concerns explicitly not applicable;
+- one explicit HTTP response policy covering success, mapped and unknown failure, redirect, not-found, cookie-emitting, personalized, authenticated, and sensitive paths as applicable, including exact `Cache-Control`, validator, and `Vary` behavior; framework-owned 404, 405, and 500 `no-store` behavior does not decide arbitrary application responses;
+- separately, either `NOT_APPLICABLE(CACHE)` for server-side data caching or an accepted application-owned typed cache-service policy naming backend/topology, bounded versioned tenant-aware keys and payloads, finite lifetime, invalidation and stale-refill behavior, failure and stampede behavior, redacted aggregate observability, and cold-cache plus concurrency evidence;
 - runtime, deployment, worker, logging, and incident-response assumptions;
 - the one complete check command and any focused verification commands.
 

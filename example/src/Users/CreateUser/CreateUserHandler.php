@@ -75,7 +75,10 @@ final class CreateUserHandler implements RequestHandler
 
         return new Response(
             status: 201,
-            headers: ['Content-Type' => 'application/json; charset=utf-8'],
+            headers: [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'Cache-Control' => 'no-store',
+            ],
             body: $responseBody . "\n",
         );
     }

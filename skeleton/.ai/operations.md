@@ -21,7 +21,7 @@
 
 ## HTTP cache runtime
 
-`UNRESOLVED(HTTP_CACHE_POLICY)`: the starter records no browser, reverse-proxy, gateway, or CDN topology, cache-header transformation, purge behavior, or HTTP cache observability. Local execution is not evidence of production intermediary behavior, and missing cache headers do not disable HTTP caching.
+`HTTP_CACHE_POLICY(NO_STORE)`: every currently shipped response emits `Cache-Control: no-store`, and application behavior tests assert that exact field for health, route miss, method rejection, mapped client failure, and unknown failure. The starter records no production reverse-proxy, gateway, or CDN topology; before deployment, verify that every intermediary preserves the field. New response paths require an explicit application-owned policy and test.
 
 ## Server-side cache runtime
 
@@ -36,7 +36,7 @@
 - Unknown failures use `PHPThis\Http\UnknownFailureBoundary` and remain generic to clients.
 - `GET /health` is the starter liveness path; no readiness path exists.
 - Query summaries are `NOT_APPLICABLE(no database)`.
-- HTTP cache status, revalidation, and intermediary metrics are `UNRESOLVED(HTTP_CACHE_POLICY)`.
+- HTTP cache storage and revalidation metrics are `NOT_APPLICABLE(no-store responses only)`; behavior tests verify the emitted policy, while production intermediary verification remains deployment-owned.
 - Cache-operation summaries and hit, miss, failure, invalidation, and stampede metrics are `NOT_APPLICABLE(CACHE)`.
 
 Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, cache keys or payloads, request bodies, SQL parameters, customer data, or unknown exception messages.
