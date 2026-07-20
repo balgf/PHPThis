@@ -44,12 +44,13 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
 - Direct database calls resolve to finite reviewed statements, SQL-looking values remain bound data, and unknown structural choices fail before database work.
 - Complete raw engine-specific SQL and explicit named parameter arrays remain visible at direct call sites; bounded list cardinalities and cursor choices do not create generated SQL, binding helpers, or a generic paginator.
+- One application-owned terminal summary correlates a selected response with bounded per-connection query evidence through exactly one failure-isolated sink invocation attempt, without claiming durable delivery or adding a framework logger.
 - CRUD-shaped work follows the optional feature-first reference profile or one recorded application-owned alternative without runtime discovery or filesystem enforcement.
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
 - Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,300-line Alpha 2 limit enforced by repository guardrails after review of the cookie/session, initial typed-routing, and bounded multiple-typed-routing slices. The reviewed implementation occupies 2,246 lines; its 54-line maintenance margin pre-authorizes no adjacent mechanism.
+- Core source remains at or below the 2,300-line Alpha 2 limit enforced by repository guardrails. After the bounded query-budget observation and removal of the framework-owned unknown-failure log call, the reviewed implementation occupies 2,250 lines; its 50-line maintenance margin pre-authorizes no adjacent mechanism.
 
 ## Non-goals
 
@@ -62,6 +63,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Forcing an application directory layout or turning CRUD into a generic persistence API.
 - Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
 - Providing a generic middleware, request-context, identity, tenant, or authorization engine that hides application policy or its I/O.
+- Providing a global logger, facade, middleware logger, event bus, automatically discovered sink, per-query logging, or hidden database instrumentation.
 - Supporting multiple equivalent styles for the same task.
 - Eliminating the need for PHP, database, security, and operational expertise when reviewing or operating a real system.
 - Claiming that raw SQL by itself prevents inefficient access patterns.

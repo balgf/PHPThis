@@ -2,7 +2,7 @@
 
 PHPThis has one explicit boundary between the PHP runtime and application handlers.
 
-`example/public/index.php` is the only repository file allowed to read `$_SERVER` and `$_GET`. It passes both arrays to the manually constructed `RequestBoundary`. The boundary uses `RequestReader` to read the configured input URI with a hard byte limit, create one immutable `Request`, optionally begin one session lifecycle, and delegate it to `Application` through `RequestHandler`.
+`example/public/index.php` is the only repository file allowed to read `$_SERVER` and `$_GET`. It passes both arrays to the manually constructed application-owned `TerminalRequestCoordinator`, which calls the one `RequestBoundary`. The boundary uses `RequestReader` to read the configured input URI with a hard byte limit, create one immutable `Request`, optionally begin one session lifecycle, and delegate it to `Application` through `RequestHandler`.
 
 ## Normalization contract
 
@@ -59,6 +59,12 @@ Request headers retain the raw `cookie` field as bounded transport input. PHPThi
 Beginning a configured lifecycle records the header but does not start storage. A handler that never uses sessions remains stateless. Normal and registered-error responses pass through `SessionLifecycle::finish`, which adds a pending validated cookie without leaving a native lock active. An unknown failure triggers `abort` before it escapes; this destroys never-issued state but cannot roll back an earlier commit to a browser-owned identifier. Session mutation is therefore the final small operation after fallible work. Session state is not added to `Request`.
 
 `Response` carries validated `ResponseCookie` values separately from its ordinary single-value header map. `ResponseEmitter` emits each cookie as a distinct `Set-Cookie` field. Application code does not manually encode that field. The complete state, cookie, native-runtime, and application-policy contract is in [Session state](sessions.md).
+
+## Terminal request summary
+
+The application front-controller composition generates one 128-bit lowercase-hex correlation ID before bounded request ingestion and adds it as `X-Request-ID` to the final immutable response. After normal, mapped-failure, or generic unknown-failure response selection and any session finalization, one application-owned coordinator builds the closed bounded ADR 023 event and makes exactly one sink invocation attempt before `ResponseEmitter`.
+
+The event contains no method, path, query data, headers, cookies, body, response body, session data, domain identifiers, SQL, or bindings. Known denials contribute only the generic known-failure outcome and status; an unknown failure contributes only its concrete class. A sink failure is swallowed without retry or fallback and cannot replace or mutate the response. This scope records application response selection, not durable event delivery or successful network emission. See [Terminal request summaries](logging.md) and [ADR 023](decisions/023-application-owned-terminal-request-summaries.md).
 
 ## HTTP cache policy
 

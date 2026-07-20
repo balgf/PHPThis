@@ -18,6 +18,7 @@ Rules:
 - Keep cookie names, values, paths, expiration, and security attributes explicit. `SameSite=None` and the `__Secure-` or `__Host-` prefixes require `Secure`; `__Host-` also requires `Path=/`.
 - Encode JSON with `JSON_THROW_ON_ERROR` and set its content type.
 - Emit the response only after `RequestBoundary::handle` returns.
+- Before emission, preserve the application-owned ADR 023 coordinator's generated `X-Request-ID` and one failure-isolated terminal sink attempt. Do not add this behavior to `RequestBoundary`, `ResponseEmitter`, middleware, or a global logger.
 - Treat redirects, files, and streams as future explicit response types, not array conventions.
 
-ADR 021's Create proof uses the application-owned `CreateUserOperation` seam and `TransactionalCreateUser` as the concrete operation directly owning that transaction's complete SQL, without adding a framework input, query object, helper, or service API. Consumer Contract v4 and Strict Profile v2 remain unchanged.
+ADR 021's Create proof uses the application-owned `CreateUserOperation` seam and `TransactionalCreateUser` as the concrete operation directly owning that transaction's complete SQL, without adding a framework input, query object, helper, or service API. Consumer Contract v5 carries Strict Profile v2 forward unchanged.

@@ -34,6 +34,7 @@ docs/decisions/019-bounded-multiple-typed-routes.md
 docs/decisions/020-application-owned-request-policy.md
 docs/decisions/021-application-owned-typed-input-boundaries.md
 docs/decisions/022-application-owned-finite-data-paths.md
+docs/decisions/023-application-owned-terminal-request-summaries.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -41,6 +42,12 @@ docs/getting-started.md
 docs/guardrails.md
 docs/knowledge-map.md
 docs/logging.md
+docs/observability/README.md
+docs/observability/correlation-id.md
+docs/observability/database-evidence.md
+docs/observability/event-schema.md
+docs/observability/sink-failure.md
+docs/observability/testing.md
 docs/performance.md
 docs/releases/0.1.0-alpha.1.md
 docs/request-handling.md
@@ -84,6 +91,7 @@ templates/application/.ai/architecture.md
 templates/application/.ai/change-workflow.md
 templates/application/.ai/data.md
 templates/application/.ai/integrations.md
+templates/application/.ai/observability.md
 templates/application/.ai/operations.md
 templates/application/.ai/project.md
 templates/application/.ai/request-policy.md

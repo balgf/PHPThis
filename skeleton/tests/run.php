@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Routes;
+use App\Observability\TerminalRequestCoordinator;
 use PHPThis\Application;
 use PHPThis\Http\Request;
-use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Router;
 
@@ -48,25 +48,46 @@ $expectSame(
     'An unknown route must return the explicit no-store policy.',
 );
 
-/** @var RequestBoundary $boundary */
-$boundary = require dirname(__DIR__) . '/bootstrap.php';
-$runtimeHealth = $boundary->handle(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/health'], []);
+/** @var TerminalRequestCoordinator $healthCoordinator */
+$healthCoordinator = require dirname(__DIR__) . '/bootstrap.php';
+$runtimeHealth = $healthCoordinator->handle(
+    ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/health'],
+    [],
+);
 $expectSame(200, $runtimeHealth->status, 'Valid PHP runtime input must reach GET /health.');
 $expectSame(
     'no-store',
     $runtimeHealth->headers['Cache-Control'] ?? null,
     'Runtime GET /health must preserve the explicit no-store policy.',
 );
+$requestId = $runtimeHealth->headers['X-Request-ID'] ?? null;
 
-$invalid = $boundary->handle([], []);
+if (!is_string($requestId) || preg_match('/\A[a-f0-9]{32}\z/D', $requestId) !== 1) {
+    throw new RuntimeException('Runtime GET /health must expose one generated correlation ID.');
+}
+
+/** @var TerminalRequestCoordinator $invalidCoordinator */
+$invalidCoordinator = require dirname(__DIR__) . '/bootstrap.php';
+$invalid = $invalidCoordinator->handle([], []);
 $expectSame(400, $invalid->status, 'Invalid PHP runtime input must map to 400.');
 $expectSame(
     'no-store',
     $invalid->headers['Cache-Control'] ?? null,
     'Mapped invalid input must return the explicit no-store policy.',
 );
+$invalidRequestId = $invalid->headers['X-Request-ID'] ?? null;
 
-$oversized = $boundary->handle([
+if (
+    !is_string($invalidRequestId)
+    || preg_match('/\A[a-f0-9]{32}\z/D', $invalidRequestId) !== 1
+    || $invalidRequestId === $requestId
+) {
+    throw new RuntimeException('Each terminal coordinator must expose fresh request-scoped state.');
+}
+
+/** @var TerminalRequestCoordinator $oversizedCoordinator */
+$oversizedCoordinator = require dirname(__DIR__) . '/bootstrap.php';
+$oversized = $oversizedCoordinator->handle([
     'REQUEST_METHOD' => 'POST',
     'REQUEST_URI' => '/health',
     'CONTENT_LENGTH' => '1025',
@@ -78,22 +99,7 @@ $expectSame(
     'Mapped oversized input must return the explicit no-store policy.',
 );
 
-$unknownLog = tempnam(sys_get_temp_dir(), 'phpthis-unknown-');
-$previousErrorLog = ini_get('error_log');
-
-if (!is_string($unknownLog) || !is_string($previousErrorLog) || ini_set('error_log', $unknownLog) === false) {
-    throw new RuntimeException('Unable to isolate the expected unknown-failure log.');
-}
-
-try {
-    $unknown = (new UnknownFailureBoundary())->logAndRespond(new RuntimeException('private test failure'));
-} finally {
-    ini_set('error_log', $previousErrorLog);
-
-    if (is_file($unknownLog) && !unlink($unknownLog)) {
-        throw new RuntimeException('Unable to remove the expected unknown-failure log.');
-    }
-}
+$unknown = (new UnknownFailureBoundary())->respond();
 
 $expectSame(500, $unknown->status, 'An unknown failure must return 500.');
 $expectSame(

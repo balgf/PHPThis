@@ -117,6 +117,7 @@ try {
     requireSuccess($completeResult, 'The clean skeleton failed its complete application check.');
     requireOutputContains($completeResult, 'PASS application behavior and front controller');
 
+    proveObservabilityContextIsRequired($project, $profileCommand, $environment);
     proveEveryApplicationDirectoryIsChecked($project, $profileCommand, $environment);
     proveValidExtensionlessExecutableIsChecked($project, $profileCommand, $environment);
     proveMagicMethodsAreRejected($project, $profileCommand, $environment);
@@ -588,6 +589,38 @@ function lockedVersion(string $root, string $package): string
  * @param list<string> $profileCommand
  * @param array<string, string> $environment
  */
+function proveObservabilityContextIsRequired(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $path = $project . '/.ai/observability.md';
+    $contents = file_get_contents($path);
+
+    if (!is_string($contents)) {
+        throw new RuntimeException('Unable to read the consumer observability context control.');
+    }
+
+    if (!unlink($path)) {
+        throw new RuntimeException('Unable to remove the consumer observability context control.');
+    }
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'A consumer without observability context unexpectedly passed.');
+        requireOutputContains(
+            $result,
+            'Required application context file is missing: .ai/observability.md.',
+        );
+    } finally {
+        writeFile($path, $contents);
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
 function proveEveryApplicationDirectoryIsChecked(string $project, array $profileCommand, array $environment): void
 {
     $paths = [
@@ -666,7 +699,7 @@ PHP;
     try {
         $result = runProcess($profileCommand, $project, $environment);
         requireSuccess($result, 'A valid extensionless PHP executable was rejected.');
-        requireOutputContains($result, 'PASS application guardrails: 7 PHP files');
+        requireOutputContains($result, 'PASS application guardrails: 13 PHP files');
     } finally {
         unlink($path);
         rmdir(dirname($path));

@@ -22,7 +22,7 @@ Complete this guide before protecting a route. Read installed `vendor/phpthis/fr
 - Credential scheme, parser, verifier, expiry, and revocation: {{CREDENTIAL_POLICY}}
 - Unauthenticated response and challenge: {{UNAUTHENTICATED_RESPONSE}}
 - Ordinary forbidden and cross-tenant response: {{FORBIDDEN_RESPONSE}}
-- Known-denial and unexpected-failure logging: {{POLICY_LOGGING}}
+- Terminal summary: use `.ai/observability.md`; this policy adds no denial-specific field or event.
 - Authenticated and denial cache policy: {{POLICY_RESPONSE_CACHE_CONTROL}}
 - Policy dependency outage behavior: {{POLICY_DEPENDENCY_FAILURE}}
 

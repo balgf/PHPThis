@@ -15,6 +15,11 @@
 | runtime database authority | engine-specific objects and actions granted to one runtime connection | schema ownership, migration credential, administrator access |
 | CRUD reference profile | optional feature-first placement and naming guidance for explicit application operations | generic CRUD engine, enforced directory layout |
 | query budget | maximum statements for one connection/request | throttle, limiter |
+| terminal request summary | one closed redacted application-owned event built after response selection with correlation, status, duration, and bounded finite database-source evidence | request log bag, audit record, per-query event |
+| correlation ID | application-generated 128 random bits encoded as exactly 32 lowercase hexadecimal characters and propagated as `X-Request-ID` | trusted caller identity, trace payload, domain identifier |
+| request-summary sink | application-owned destination boundary invoked once with the final summary | framework logger, facade, global helper |
+| sink invocation attempt | one synchronous call after response selection whose failure cannot alter the response and whose return does not prove durable delivery | guaranteed log, retry policy, delivery receipt |
+| database source | one bounded code-owned label paired with a distinct connection budget and trace in the terminal summary | connection registry, DSN metadata, database facade |
 | projection | final readonly typed value parsed from a selected database row | model, entity, active record |
 | command | final readonly typed input parsed at an external boundary | request array, payload bag |
 | Strict Profile | versioned subset of PHP accepted by the complete check gate | style guide, optional lint |

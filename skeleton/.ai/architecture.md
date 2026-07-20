@@ -10,7 +10,7 @@
 ## Dependency direction
 
 ```text
-public/index.php -> bootstrap.php -> Routes -> HealthRoutes -> HealthHandler -> PHPThis
+public/index.php -> bootstrap.php -> TerminalRequestCoordinator -> RequestBoundary -> Routes -> HealthRoutes -> HealthHandler -> Response -> RequestSummarySink -> ResponseEmitter
 ```
 
 Dependencies may point only in the direction shown above. Record a deliberate exception in `docs/decisions/` before implementation.
@@ -19,7 +19,8 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
-| HTTP runtime | `public/index.php` | Read PHP runtime globals, invoke the request boundary, map unknown failures, and emit one response. |
+| HTTP runtime | `public/index.php` | Load request-scoped composition, read PHP runtime globals, invoke the terminal coordinator, and emit its unchanged response. |
+| Terminal request summary | `src/Observability/` | Own correlation, finite database-source observation, the closed redacted event, one injected sink, and failure-isolated attempt semantics. |
 | Inbound operation data | `NOT_APPLICABLE(INPUT)` | The public health operation accepts no application-owned fields and constructs no request or command. |
 | Typed session services | `NOT_APPLICABLE` | The starter does not configure session state. |
 | Typed cache services | `NOT_APPLICABLE(CACHE)` | The starter does not cache server-side data. |
@@ -41,6 +42,10 @@ Before an operation accepts external data, record one path from its bounded raw 
 
 Before protecting a route, record its named action, concrete principal and tenant types, credential source and lifecycle, action-specific adapter, replaceable policies, fixed `authenticate -> resolve tenant -> authorize -> handler` order, generic denial responses, current authorization source, separate policy and protected query budgets and traces, explicitly tenant-scoped protected SQL, authorization-to-write race policy, redaction, and tests. Do not add middleware, a request-context bag, hidden tenant resolution, or an implicit scope.
 
+## Terminal request summary
+
+`.ai/observability.md` is the single project authority for starter correlation, source registration, sink, scope, and evidence facts. The architecture constraint is `public/index.php -> bootstrap.php -> TerminalRequestCoordinator -> RequestBoundary -> selected Response -> RequestSummarySink -> ResponseEmitter`; the types remain application-owned under `src/Observability/`.
+
 ## Cache policies
 
 ### HTTP response cache
@@ -60,4 +65,5 @@ Before protecting a route, record its named action, concrete principal and tenan
 - Group routes in narrowly named `src/*Routes.php` route-area classes.
 - Place handlers at `src/*Handler.php`.
 - Add commands and projections only at explicit external-data boundaries.
+- Keep terminal coordinator, summary, source, correlation, and sink types under `src/Observability/` and wire them manually in `bootstrap.php`.
 - Do not invent providers, middleware, policy registries, request-context bags, discovery, helper layers, or a generic cache service.

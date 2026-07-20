@@ -12,9 +12,10 @@
 - Keep every adopted cache read, write, and invalidation visible behind a narrowly named typed application service and an explicitly wired backend; parse cache hits as untrusted external values before use.
 - Keep protected request policy in one application-owned action-specific adapter with explicit `authenticate -> resolve tenant -> authorize -> handler` order, concrete immutable principal and tenant values, and independently replaceable constructor-injected policies.
 - Give any policy reads distinct named connections, budgets, and traces from protected handler work; every denial must stop before protected queries, writes, session mutation, cache mutation, or external business side effects.
+- Keep one application-owned ADR 023 terminal coordinator and sink at the visible front-controller boundary, with generated correlation, finite distinct database sources, complete redaction, and exactly one failure-isolated invocation attempt.
 - Pass the complete Strict Profile; PHP execution without `composer check` is not sufficient verification.
 - Add a test for success, expected failure, and resource bounds when relevant.
-- Use one stable term for each concept: route, handler, connection, request, response, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, HTTP cache policy, application cache service, stale-refill race.
+- Use one stable term for each concept: route, handler, connection, request, response, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, terminal request summary, correlation ID, sink invocation attempt, HTTP cache policy, application cache service, stale-refill race.
 
 ## Forbidden
 
@@ -29,6 +30,7 @@
 - Direct application access to `$_SESSION`, native `session_*` calls, generic session helpers, or authentication state stored without a typed application boundary.
 - Middleware or policy registries, generic request-context or attribute bags, service-located policies, hidden tenant resolution, implicit or global authorization scopes, and treating stored or cached identity as current authorization.
 - Generic cache facades or bags, remember-style callbacks, implicit cache fallback or retries, automatic query caching, hidden cache middleware, unbounded keys or values, implicit forever lifetimes, and claims that distinct backends are behaviorally interchangeable.
+- Core logging event, sink, or coordinator types; logger facades, global log helpers, logging middleware, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or claims that one sink invocation attempt guarantees delivery.
 - Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
 - Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.
 

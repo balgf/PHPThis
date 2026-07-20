@@ -9,6 +9,10 @@ use Example\Documents\DenyAllDocumentAuthorization;
 use Example\Documents\DenyAllDocumentTenantResolution;
 use Example\Documents\Forbidden;
 use Example\Documents\Unauthenticated;
+use Example\Observability\CorrelationId;
+use Example\Observability\ErrorLogRequestSummarySink;
+use Example\Observability\QuerySummarySource;
+use Example\Observability\TerminalRequestCoordinator;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -20,6 +24,7 @@ use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\RequestReader;
 use PHPThis\Http\Response;
 use PHPThis\Http\UnsupportedMediaType;
+use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Router;
 
 require dirname(__DIR__) . '/autoload.php';
@@ -31,11 +36,25 @@ if (!is_file($databasePath)) {
 }
 
 $dsn = 'sqlite:' . $databasePath;
-$listUsersConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
-$getUserConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
-$createUserConnection = Connection::connect($dsn, new QueryBudget(2), new QueryTrace(2));
-$getDocumentConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
-$listDocumentsConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
+$listUsersBudget = new QueryBudget(1);
+$listUsersTrace = new QueryTrace(1);
+$getUserBudget = new QueryBudget(1);
+$getUserTrace = new QueryTrace(1);
+$createUserBudget = new QueryBudget(2);
+$createUserTrace = new QueryTrace(2);
+$getDocumentBudget = new QueryBudget(1);
+$getDocumentTrace = new QueryTrace(1);
+$listDocumentsBudget = new QueryBudget(1);
+$listDocumentsTrace = new QueryTrace(1);
+$listUsersConnection = Connection::connect($dsn, $listUsersBudget, $listUsersTrace);
+$getUserConnection = Connection::connect($dsn, $getUserBudget, $getUserTrace);
+$createUserConnection = Connection::connect($dsn, $createUserBudget, $createUserTrace);
+$getDocumentConnection = Connection::connect($dsn, $getDocumentBudget, $getDocumentTrace);
+$listDocumentsConnection = Connection::connect(
+    $dsn,
+    $listDocumentsBudget,
+    $listDocumentsTrace,
+);
 $documentAuthorization = new DenyAllDocumentAuthorization();
 $application = new Application(new Router(Routes::create(
     $listUsersConnection,
@@ -90,8 +109,24 @@ $errorResponses = new ErrorResponseRegistry([
     ),
 ]);
 
-return new RequestBoundary(
-    new RequestReader(8_192, 'php://input'),
-    $application,
-    $errorResponses,
+return new TerminalRequestCoordinator(
+    new RequestBoundary(
+        new RequestReader(8_192, 'php://input'),
+        $application,
+        $errorResponses,
+    ),
+    new UnknownFailureBoundary(),
+    CorrelationId::generate(),
+    new ErrorLogRequestSummarySink(),
+    [
+        new QuerySummarySource('list_users', $listUsersBudget, $listUsersTrace),
+        new QuerySummarySource('get_user', $getUserBudget, $getUserTrace),
+        new QuerySummarySource('create_user', $createUserBudget, $createUserTrace),
+        new QuerySummarySource('get_document', $getDocumentBudget, $getDocumentTrace),
+        new QuerySummarySource(
+            'list_documents',
+            $listDocumentsBudget,
+            $listDocumentsTrace,
+        ),
+    ],
 );

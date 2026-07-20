@@ -23,9 +23,9 @@ The reference proof is stateless. `RequestReader` supplies one bounded `authoriz
 
 - Missing, malformed, and rejected credentials map to one generic `401` with `WWW-Authenticate: Bearer`.
 - Ordinary forbidden and cross-tenant decisions map to the same generic `403`.
-- Known denials are not logged.
+- Known denials produce only the common terminal summary's generic `known_failure` outcome and selected status; no denial-specific field or event is permitted.
 - Public error bodies and headers contain no credential, principal, tenant, or resource identifier.
-- Unexpected failures retain the existing class-only unknown-failure log and generic `500` response.
+- Unexpected failures retain the generic `500` response and contribute only their concrete class to that same terminal summary.
 - Authenticated and denied responses start with `Cache-Control: private, no-store`.
 
 The application uses named failure classes and exact `ErrorResponseRegistry` entries. It does not expose policy exception messages or register a broad built-in exception type.
@@ -38,7 +38,7 @@ Authorization is evaluated for every protected request. A successful decision is
 
 ## Required evidence
 
-Tests cover unauthenticated, ordinary forbidden, cross-tenant, permitted, and unexpected policy-failure paths. They assert the exact call sequence, zero later calls after failure, zero protected query and write work on every denial, exact generic responses, redaction from bodies, headers, logs, and query-trace snapshots, and explicit principal and tenant delivery on success. A concrete credential parser additionally covers absent, malformed, wrong-scheme, oversized, expired, revoked, and rejected credentials according to its recorded policy.
+Tests cover unauthenticated, ordinary forbidden, cross-tenant, permitted, and unexpected policy-failure paths. They assert the exact call sequence, zero later calls after failure, zero protected query and write work on every denial, exact generic responses, status-only denial summaries, class-only unknown-failure summaries, redaction from bodies, headers, summaries, and query-trace snapshots, and explicit principal and tenant delivery on success. A concrete credential parser additionally covers absent, malformed, wrong-scheme, oversized, expired, revoked, and rejected credentials according to its recorded policy.
 
 The consumer proof replaces each authenticator, tenant resolver, and authorizer independently through the composition root. A test double or alternate implementation must require no framework edit, discovery metadata, or service-container configuration.
 

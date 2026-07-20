@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 4
+Contract version: 5
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -48,6 +48,7 @@ A PHPThis application must:
 - expose one documented project check command that runs static analysis, profile checks, and behavior tests;
 - keep every application-owned named class final and expose an interface when an extension point is required;
 - use ordinary constructors and a visible composition root instead of runtime discovery or service location;
+- own one explicit terminal request-summary coordinator and one sink at the front-controller composition boundary, without adding framework logging types or hidden instrumentation;
 - keep one canonical spelling and execution pattern for each framework operation;
 - own every required application-context file listed below and resolve every template placeholder before feature work;
 - fix findings at their cause rather than adding baselines, broad ignores, consumer PHPStan configuration, or comment suppressions.
@@ -76,11 +77,11 @@ The installed checker can verify the canonical gate wiring, but it cannot determ
 
 `phpthis check` discovers every application-owned PHP file, runs structural profile checks, and invokes PHPStan with a temporary framework-owned configuration. The same discovered file manifest drives both stages. It excludes only the resolved Composer dependency directory and version-control metadata; source under `config/`, `bin/`, migrations, hidden directories, or `tmp/` remains application-owned and checked. PHP files use the `.php` extension; extensionless executables beginning with `<?php` or `#!/usr/bin/env php` followed by `<?php` are also checked. A canonical PHP opening prefix under another extension is rejected rather than silently excluded. Symlinked source directories and checked source files are rejected instead of silently skipped.
 
-Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 4.
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in contract version 5.
 
 ## HTTP and application flow
 
-- `public/index.php` is the one front controller permitted to read PHP runtime globals and pass them to one bounded request boundary.
+- `public/index.php` is the one front controller permitted to read PHP runtime globals. It passes them to one application-owned terminal coordinator that calls one bounded `RequestBoundary`.
 - Requests and responses are immutable values.
 - Routes are explicit method, path declaration, and already-constructed handler objects. A path is literal or contains at most two named typed placeholders. Each placeholder occupies one complete segment, uses only `positive-int` or `token`, and has a name beginning with a lowercase ASCII letter followed only by lowercase letters, digits, or underscores; names are unique within one route.
 - A root route manifest combines named route-area lists; request-time route lookup remains indexed.
@@ -92,11 +93,30 @@ Applications must not add PHPStan configuration artifacts named `phpstan*.neon`,
 - `PathParameters` exposes only `positiveInteger(name): int` and `token(name): string`. Route-specific code immediately converts each validated value into a concrete identifier. Path parameters are not a mixed domain bag and do not supply authorization, tenant scope, or record existence.
 - Handlers receive dependencies through constructors.
 - External `mixed` input is parsed once into a concrete final readonly boundary value before it enters typed application behavior: an operation-specific request or command for inbound data, or a projection for returned data.
-- Known public failures use named exception classes and exact-class response registration. Unknown failures remain generic externally and are logged once by exception class without the exception message or sensitive request or database data.
+- Known public failures use named exception classes and exact-class response registration. Unknown failures remain generic externally. The application-owned terminal summary records a known failure only through its generic outcome and response status and records only the concrete exception class for an unknown failure.
 - Response cookies use validated `ResponseCookie` values and remain separate from the ordinary single-value header map; application code does not manually encode `Set-Cookie`.
 - Framework-generated 404, 405, and unknown-failure 500 responses explicitly use `Cache-Control: no-store`. PHPThis does not rewrite arbitrary handler responses; each application response path owns its exact cache policy.
 
 Do not add a third path parameter, another parameter type, partial-segment placeholders, regular-expression or callback routes, arbitrary strings, route or index scanning, route discovery, automatic input or domain binding, middleware pipelines, facades, global helpers, macros, dynamic proxies, reflection-based hydration, or magic methods other than constructors.
+
+## Application-owned terminal request summary
+
+ADR 023 defines the mandatory request-level observability boundary without adding a framework runtime API. Each application must:
+
+- generate 128 random bits during request-scoped composition before bounded request ingestion, encode them as exactly 32 lowercase hexadecimal characters, and propagate that value as both event `correlation_id` and the single `X-Request-ID` response header on every selected response, replacing any case-insensitive application response spelling;
+- use one application-owned coordinator and one explicitly injected sink in the visible front-controller path;
+- build the closed version-1 `application.request_summary` event after the final immutable `Response` is selected and before response emission;
+- include monotonic duration, selected response status, generic outcome, nullable class-only unknown failure, aggregate query counts, failures, execution time, and budget-exceeded state;
+- register every request-scoped connection that can execute inside the coordinator path through one finite list of at most eight database sources, using unique non-sensitive names matching `[a-z][a-z0-9_]{0,31}` and ensuring that no two sources share a `QueryBudget` or `QueryTrace`;
+- preserve the existing bounded redacted `QueryTrace` version-1 evidence, keep the rejected budget call absent from the trace, and never include SQL or parameter values;
+- give a known authentication, authorization, validation, routing, or other mapped failure only the generic `known_failure` outcome and selected status, with no denial type, class, reason, principal, tenant, resource, or credential field;
+- give a named unknown failure only its concrete class name; for an anonymous throwable, use its nearest named parent class because PHP's anonymous-class name embeds source location; never include its message, code, previous exception, source location, or stack;
+- omit request method, path, query data, headers, cookies, authorization data, body, response body, session and CSRF values, cache keys or values, customer and domain identifiers, SQL, bindings, DSNs, credentials, and driver details; and
+- make exactly one sink invocation attempt after the response and event are fixed, catch any sink `Throwable`, and preserve that same response without retry, fallback logging, a second event, or a delivery guarantee.
+
+The closed top-level keys are exactly `schema_version`, `event`, `correlation_id`, `duration_us`, `response_status`, `outcome`, `unknown_failure_class`, `query_count`, `query_failures`, `query_execute_duration_us`, `query_budget_exceeded`, and `database_sources`. Each source contains exactly `name`, `budget_limit`, `budget_used`, `budget_exceeded`, and the existing bounded `query_trace` snapshot. Numeric aggregates saturate at `PHP_INT_MAX`. `outcome` is `unknown_failure` only for a caught unknown `Throwable`; otherwise a status below 400 is `success` and a status of 400 or above is `known_failure`.
+
+Exactly one sink invocation attempt is not durable delivery. The event records application response selection, not successful response emission or network delivery. Bootstrap failures before the coordinator, process-fatal errors outside the handled path, and emitter or client-connection failures require separate application evidence. Do not add a core event, sink, coordinator, logger, facade, middleware, service locator, global helper, per-query log, discovery hook, or hidden `Connection` instrumentation.
 
 ## Application-owned request policy
 
@@ -109,7 +129,7 @@ An application adopting this pattern must:
 - keep principal, tenant, and authorization state out of `Request`, `PathParameters`, globals, generic context bags, session snapshots, and application data caches;
 - give any policy reads separately named connections, budgets, and traces from protected handler work and prove that every denial stops before protected queries, writes, session mutation, cache mutation, or external business side effects;
 - keep protected SQL explicitly tenant- and resource-scoped after authorization rather than relying on an implicit or global scope;
-- use named exact-class denial failures, generic disclosure-safe responses, no denial logging, class-only unknown-failure logging, and an explicit authenticated-response cache policy;
+- use named exact-class denial failures, generic disclosure-safe responses, status-only known-failure summaries, class-only unknown-failure summaries, and an explicit authenticated-response cache policy;
 - test missing or rejected credentials, ordinary forbidden access, cross-tenant access, permitted access, every failing stage, exact call order, zero protected denial work, redaction, and policy replacement.
 
 The accepted reference proof is stateless, exposes the bounded authorization header to a replaceable authenticator, wires deny-all in its checked-in composition, uses I/O-free synthetic consumer policies, maps unauthenticated requests to one generic `401` with `WWW-Authenticate: Bearer`, maps ordinary forbidden and cross-tenant access to the same generic `403`, re-evaluates authorization on every protected request, and starts authenticated and denied responses with `private, no-store`. PHPThis supplies no credential parser or verifier. These are the proof's application decisions, not a framework identity provider, token format, permission store, tenant model, audit contract, or middleware facility. A public route may record request policy as not applicable.
@@ -159,7 +179,7 @@ When an application uses a database:
 - treat `Connection` as PDO transport, not a portable SQL abstraction; write each query for the selected engine and never infer that SQLite evidence proves MySQL or PostgreSQL behavior;
 - use a distinct portable name for every placeholder occurrence and a unique column name or alias for every selected expression;
 - give every request connection an explicit `QueryBudget` and bounded `QueryTrace`;
-- give separately named connections explicit budgets and distinct traces, document any deliberately shared request-wide budget, and do not claim atomicity across connections;
+- give separately named connections and terminal-summary sources distinct budgets and traces, never share observation state across sources, and do not claim atomicity across connections;
 - name selected columns and bound every collection read;
 - never execute a database statement from a loop or recursive traversal;
 - parse selected rows immediately into concrete projections;
@@ -189,6 +209,7 @@ AGENTS.md
   architecture.md
   data.md
   integrations.md
+  observability.md
   operations.md
   testing.md
 docs/
@@ -202,7 +223,9 @@ Keep the context compact and route tasks through `.ai/README.md`; do not load ev
 
 ## Contract evolution
 
-Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. The automated-behavior-evidence language clarifies the existing behavior-test stage while leaving its library, runner, file placement, and organization application-owned. ADR 020 records an application-owned protected-request composition, ADR 021 records operation-owned typed input parsing and evidence, and ADR 022 records one finite SQLite application data path using the existing request, error, database, static-analysis, and application-testing contracts. None adds a core API, required mechanism, accepted PHP syntax, or diagnostic, so Consumer Contract version 4 and Strict Profile version 2 remain unchanged. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+Clarifications may update wording without changing the contract version. The AI-authoring and accountability model clarifies how the existing application context is used; it does not change the accepted PHP program set. The automated-behavior-evidence language clarifies the existing behavior-test stage while leaving its library, runner, file placement, and organization application-owned. ADR 020 records an application-owned protected-request composition, ADR 021 records operation-owned typed input parsing and evidence, and ADR 022 records one finite SQLite application data path using the existing request, error, database, static-analysis, and application-testing contracts. ADR 023 adds one required application-owned terminal request-summary path without adding core event, sink, or coordinator types, accepted PHP syntax, or a diagnostic. Consumer Contract version 5 carries Strict Profile version 2 forward unchanged. A change that accepts or rejects a materially different class of application code requires a new contract or Strict Profile version and explicit upgrade notes. Updating PHPThis never grants permission to overwrite an application's project-owned context.
+
+Contract version 5 carries contract version 4 and Strict Profile version 2 forward. Before adopting version 5, replace the separate `UnknownFailureBoundary` global-error-log flow with one application-owned terminal coordinator and sink, generate and propagate the required `X-Request-ID`, register a finite list of at most eight distinct database budget and trace sources, and add success, mapped failure, known denial where applicable, unknown failure, duplicate-query, budget-overrun, trace-bound, redaction, identifier, exactly-one-attempt, and throwing-sink tests. A sink attempt does not establish durable delivery. Complete raw SQL and explicit named parameter arrays remain application-owned at direct `Connection` call sites; version 5 does not add an ORM, repository, query builder, SQL generator, SQL/binding/placeholder helper, logger facade, middleware, service locator, discovery mechanism, or hidden instrumentation.
 
 Contract version 4 carries contract version 3 and Strict Profile version 2 forward. It replaces ADR 017's one-trailing-positive-integer grammar with ADR 019's at-most-two full-segment grammar, adds the bounded `token` type and type-specific token access, and replaces the one-prefix metadata and index with immutable `Route::segments()` metadata and a deterministic state index. Existing literal and one-trailing-positive-integer declarations remain valid. Before adopting version 4, migrate any direct calls to `Route::literalPrefix()` or `Route::parameterName()` to `Route::segments()`, reject any newly exposed route overlap at construction, add malformed, oversized, encoded, 404, 405, and scale evidence, and run the complete application gate.
 

@@ -966,45 +966,18 @@ function requestPolicyTests(): array
         'unexpected document policy failures use the generic redacted boundary' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-unexpected-failure', 0);
             $trace = new RequestPolicyTestTrace();
-            $logPath = __DIR__ . '/../tmp/request-policy-unexpected.log';
-
-            if (file_put_contents($logPath, '') !== 0) {
-                throw new RuntimeException('Unable to reset the unexpected-policy test log.');
-            }
-
-            $previousErrorLog = ini_get('error_log');
-
-            if (ini_set('error_log', $logPath) === false) {
-                throw new RuntimeException('Unable to redirect the unexpected-policy test log.');
-            }
 
             try {
-                try {
-                    handleDocumentPolicyRequest(
-                        requestPolicyApplication($trace, 'unexpected', $fixture['retrieve']),
-                        '/accounts/42/documents/SecretDocumentMarker',
-                    );
-                } catch (UnexpectedValueException $failure) {
-                    $response = (new UnknownFailureBoundary())->logAndRespond($failure);
-                }
-            } finally {
-                if (is_string($previousErrorLog)) {
-                    ini_set('error_log', $previousErrorLog);
-                }
+                handleDocumentPolicyRequest(
+                    requestPolicyApplication($trace, 'unexpected', $fixture['retrieve']),
+                    '/accounts/42/documents/SecretDocumentMarker',
+                );
+            } catch (UnexpectedValueException) {
+                $response = (new UnknownFailureBoundary())->respond();
             }
-
-            $log = file_get_contents($logPath);
 
             if (
                 !isset($response)
-                || !is_string($log)
-                || substr_count(
-                    $log,
-                    'phpthis.request.unhandled exception=UnexpectedValueException',
-                ) !== 1
-                || str_contains($log, 'CredentialSecretMarker')
-                || str_contains($log, '9001001')
-                || str_contains($log, 'SecretDocumentMarker')
                 || $response->status !== 500
                 || $response->headers !== [
                     'Content-Type' => 'application/json; charset=utf-8',
@@ -1016,7 +989,7 @@ function requestPolicyTests(): array
                 || $fixture['budget']->used() !== 0
                 || $fixture['trace']->snapshot()['statements'] !== 0
             ) {
-                throw new RuntimeException('Expected an unexpected policy failure to be logged once without secrets.');
+                throw new RuntimeException('Expected an unexpected policy failure to receive the generic response.');
             }
         },
     ];

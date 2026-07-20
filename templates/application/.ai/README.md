@@ -24,8 +24,9 @@ Then read only what the task needs:
 | Read or write application data or map a structural SQL selector | `.ai/data.md`, `.ai/testing.md` | schema source, direct `Connection` call, finite code-owned SQL mapping, authority record, and adversarial and scale tests |
 | Change an external service or side effect | `.ai/integrations.md` | client boundary, contract fixture, failure tests |
 | Change runtime, logging, workers, or deployment behavior | `.ai/operations.md` | composition root, deployment configuration, operational tests |
+| Change request correlation or terminal summaries | installed `vendor/phpthis/framework/docs/observability/README.md`, `.ai/observability.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | front controller, application-owned coordinator and sink, finite database sources, response propagation, redaction, budget, trace, and throwing-sink tests |
 | Add or change tests | `.ai/testing.md` | nearest behavior tests and complete project check |
 
-The CRUD reference profile is optional application structure. Record its adoption or one coherent alternate placement and naming rule; neither may weaken Consumer Contract v4 or Strict Profile v2.
+The CRUD reference profile is optional application structure. Record its adoption or one coherent alternate placement and naming rule; neither may weaken Consumer Contract v5 or Strict Profile v2.
 
 Accepted architectural decisions and durable rationale live in `docs/decisions/`. AI may draft and update a decision record, but acceptance requires explicit approval from an accountable human. Add a narrowly named area guide when a recurring task needs context that does not fit this map; do not turn this index into a complete project description.

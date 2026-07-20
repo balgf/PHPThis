@@ -9,6 +9,7 @@ use InvalidArgumentException;
 final class QueryBudget
 {
     private int $used = 0;
+    private bool $exceeded = false;
 
     public function __construct(private readonly int $limit)
     {
@@ -20,6 +21,8 @@ final class QueryBudget
     public function recordStatement(): void
     {
         if ($this->used >= $this->limit) {
+            $this->exceeded = true;
+
             throw new QueryBudgetExceeded(
                 sprintf('Query budget of %d statements was exceeded.', $this->limit),
             );
@@ -36,5 +39,10 @@ final class QueryBudget
     public function limit(): int
     {
         return $this->limit;
+    }
+
+    public function exceeded(): bool
+    {
+        return $this->exceeded;
     }
 }

@@ -10,7 +10,7 @@ Before protecting a route, read installed `vendor/phpthis/framework/docs/request
 - fixed `authenticate -> resolve tenant -> authorize -> protected operation` order;
 - credential parser, verifier, expiry, revocation, and dependency-failure policy;
 - generic unauthenticated, ordinary forbidden, and cross-tenant disclosure policy;
-- known-denial, unexpected-failure, redaction, and response-cache policy;
+- status-only known-denial summary, class-only unexpected-failure, redaction, and response-cache policy;
 - I/O-free policies or separately named policy connections, budgets, and traces;
 - protected connection, budget, trace, tenant/resource SQL scope, and authorization race policy;
 - denial, order, zero-protected-work, redaction, replacement, and credential-parser tests.

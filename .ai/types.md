@@ -28,4 +28,4 @@ Do not use scalar casts, `intval`, `floatval`, `boolval`, `strval`, `settype`, i
 
 PHPStan `list<T>`, array shapes, and `@template` are static contracts only. They supplement boundary parsing; they never replace it.
 
-ADR 021 adds application-owned evidence and guidance only. It adds no core input API or diagnostic; Consumer Contract v4 and Strict Profile v2 remain unchanged.
+ADR 021 adds application-owned evidence and guidance only. It adds no core input API or diagnostic; Consumer Contract v5 and Strict Profile v2 are current.

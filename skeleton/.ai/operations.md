@@ -21,7 +21,7 @@
 
 ## Request-policy runtime
 
-`NOT_APPLICABLE(REQUEST_POLICY)`: the public health-only starter accepts no credential and has no identity, tenant, authorization, credential verifier, expiry, rotation, revocation, or policy-source dependency. Before protecting a route, record those runtime facts, authorization-header forwarding, fail-closed dependency behavior, and the no-denial-log plus unexpected-failure-redaction policy without copying secrets or sensitive identifiers.
+`NOT_APPLICABLE(REQUEST_POLICY)`: the public health-only starter accepts no credential and has no identity, tenant, authorization, credential verifier, expiry, rotation, revocation, or policy-source dependency. Before protecting a route, record those runtime facts, authorization-header forwarding, fail-closed dependency behavior, status-only known-denial summaries, and class-only unexpected-failure redaction without copying secrets or sensitive identifiers.
 
 ## HTTP cache runtime
 
@@ -37,13 +37,13 @@
 
 ## Logging and observability
 
-- Unknown failures use `PHPThis\Http\UnknownFailureBoundary` and remain generic to clients.
+- Terminal request-summary runtime authority: `.ai/observability.md`; do not duplicate its correlation, sink, source, scope, or delivery facts here.
 - `GET /health` is the starter liveness path; no readiness path exists.
-- Query summaries are `NOT_APPLICABLE(no database)`.
+- Database sources are `NOT_APPLICABLE(no database)`; query aggregates remain zero and the source list remains empty.
 - HTTP cache storage and revalidation metrics are `NOT_APPLICABLE(no-store responses only)`; behavior tests verify the emitted policy, while production intermediary verification remains deployment-owned.
 - Cache-operation summaries and hit, miss, failure, invalidation, and stampede metrics are `NOT_APPLICABLE(CACHE)`.
 
-Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, cache keys or payloads, request bodies, SQL parameters, customer data, or unknown exception messages.
+The sink invocation attempt does not guarantee durable delivery. `.ai/observability.md` owns the current destination and redaction facts.
 
 ## Prohibited operational actions
 

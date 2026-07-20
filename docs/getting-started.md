@@ -52,7 +52,7 @@ For an existing application adopting the context template and, when applicable, 
 2. Copy the contents of `vendor/phpthis/framework/templates/application/` into the new application root, preserving the hidden `.ai/` directory. When evaluating from a PHPThis source checkout instead, use its `templates/application/` directory.
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
-5. Use the contract-version-4 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, record input and session policy as verified or not applicable, and run `composer check`.
+5. Use the contract-version-5 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, replace any separate unknown-failure global log with the application-owned terminal summary path, record input and session policy as verified or not applicable, and run `composer check`.
 6. Commit the completed application context before asking the project AI to implement the first feature.
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.
@@ -94,6 +94,7 @@ PHPThis already defines framework mechanics. The application context should add 
 - one explicit HTTP response policy covering success, mapped and unknown failure, redirect, not-found, cookie-emitting, personalized, authenticated, and sensitive paths as applicable, including exact `Cache-Control`, validator, and `Vary` behavior; framework-owned 404, 405, and 500 `no-store` behavior does not decide arbitrary application responses;
 - separately, either `NOT_APPLICABLE(CACHE)` for server-side data caching or an accepted application-owned typed cache-service policy naming backend/topology, bounded versioned tenant-aware keys and payloads, finite lifetime, invalidation and stale-refill behavior, failure and stampede behavior, redacted aggregate observability, and cold-cache plus concurrency evidence;
 - runtime, deployment, worker, logging, and incident-response assumptions;
+- the application-owned terminal coordinator and sink paths, generated correlation-ID policy, finite database-source names and bounds, destination behavior, and tests proving response propagation, redaction, exactly one invocation attempt, and sink-failure isolation;
 - the one complete check command and any focused verification commands.
 
 Do not restate ordinary PHP syntax or copy the framework repository's maintainer `.ai/` directory. That directory refers to PHPThis internals such as its example, framework tests, and profile tooling. The application template is intentionally separate.

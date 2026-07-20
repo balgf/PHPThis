@@ -20,8 +20,8 @@ The Phase 1 core-source cap increases from 550 to 900 physical lines. The implem
 
 Runtime input has one tested normalization path, handlers no longer read global state, and public client failures are stable without broad exception catches. Unknown failures retain their identity until the top-level log and generic 500 response. The boundary adds no controller, middleware chain, automatic binding, or service container.
 
-The example's basic unknown-failure log contains no request ID, exception message, stack, or query summary. That limits diagnostics but prevents accidental leakage until a structured logging contract exists.
+The original example's basic unknown-failure log contained no request ID, exception message, stack, or query summary. ADR 023 supersedes that separate line with one application-owned terminal summary attempt and leaves unknown-failure response selection in this boundary.
 
 ## Reconsider when
 
-A real application requires streaming bodies, trusted proxy rules, uploads, richer query parsing, conflict translation, request IDs, or structured request-level logging. Each must preserve one visible request path and receive its own cost and failure tests.
+A real application requires streaming bodies, trusted proxy rules, uploads, richer query parsing, or conflict translation. Each must preserve one visible request path and receive its own cost and failure tests. ADR 023 separately accepts the bounded application-owned correlation and terminal-summary contract.

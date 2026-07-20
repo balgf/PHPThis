@@ -227,6 +227,7 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
         }
 
         requireDatabaseCertification($databaseFailed, "{$driver} database failure was not rethrown.");
+        requireDatabaseCertification(!$budget->exceeded(), "{$driver} exact query budget use was marked exceeded.");
 
         $budgetRejected = false;
 
@@ -241,6 +242,7 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
 
         $snapshot = $trace->snapshot();
         requireDatabaseCertification($budgetRejected, "{$driver} query budget did not reject statement ten.");
+        requireDatabaseCertification($budget->exceeded(), "{$driver} query budget rejection was not observable.");
         requireDatabaseCertification($budget->used() === 9, "{$driver} query budget count changed.");
         requireDatabaseCertification($snapshot['statements'] === 9, "{$driver} query trace count changed.");
         requireDatabaseCertification($snapshot['failures'] === 1, "{$driver} query trace failure count changed.");

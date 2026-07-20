@@ -416,6 +416,7 @@ $requiredRepositoryFiles = [
     '.ai/crud.md',
     '.ai/database.md',
     '.ai/http.md',
+    '.ai/observability.md',
     '.ai/request-policy.md',
     '.ai/routing.md',
     '.ai/session.md',
@@ -424,6 +425,12 @@ $requiredRepositoryFiles = [
     'docs/crud.md',
     'docs/getting-started.md',
     'docs/knowledge-map.md',
+    'docs/observability/README.md',
+    'docs/observability/correlation-id.md',
+    'docs/observability/database-evidence.md',
+    'docs/observability/event-schema.md',
+    'docs/observability/sink-failure.md',
+    'docs/observability/testing.md',
     'docs/request-policy.md',
     'docs/releases/0.1.0-alpha.1.md',
     'docs/security.md',
@@ -440,9 +447,18 @@ $requiredRepositoryFiles = [
     'docs/decisions/020-application-owned-request-policy.md',
     'docs/decisions/021-application-owned-typed-input-boundaries.md',
     'docs/decisions/022-application-owned-finite-data-paths.md',
+    'docs/decisions/023-application-owned-terminal-request-summaries.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/data.md',
+    'example/.ai/observability.md',
+    'example/src/Observability/CorrelationId.php',
+    'example/src/Observability/ErrorLogRequestSummarySink.php',
+    'example/src/Observability/QuerySummarySource.php',
+    'example/src/Observability/README.md',
+    'example/src/Observability/RequestSummary.php',
+    'example/src/Observability/RequestSummarySink.php',
+    'example/src/Observability/TerminalRequestCoordinator.php',
     'example/src/Documents/DocumentRoutes.php',
     'example/src/Documents/AccountId.php',
     'example/src/Documents/AuthenticateDocumentRequest.php',
@@ -477,6 +493,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/change-workflow.md',
     'templates/application/.ai/data.md',
     'templates/application/.ai/integrations.md',
+    'templates/application/.ai/observability.md',
     'templates/application/.ai/operations.md',
     'templates/application/.ai/project.md',
     'templates/application/.ai/request-policy.md',
@@ -493,6 +510,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/change-workflow.md',
     'skeleton/.ai/data.md',
     'skeleton/.ai/integrations.md',
+    'skeleton/.ai/observability.md',
     'skeleton/.ai/operations.md',
     'skeleton/.ai/project.md',
     'skeleton/.ai/request-policy.md',
@@ -504,6 +522,13 @@ $requiredRepositoryFiles = [
     'skeleton/public/index.php',
     'skeleton/src/HealthHandler.php',
     'skeleton/src/HealthRoutes.php',
+    'skeleton/src/Observability/CorrelationId.php',
+    'skeleton/src/Observability/ErrorLogRequestSummarySink.php',
+    'skeleton/src/Observability/QuerySummarySource.php',
+    'skeleton/src/Observability/README.md',
+    'skeleton/src/Observability/RequestSummary.php',
+    'skeleton/src/Observability/RequestSummarySink.php',
+    'skeleton/src/Observability/TerminalRequestCoordinator.php',
     'skeleton/src/Routes.php',
     'skeleton/tests/run.php',
     'bin/phpthis',
@@ -528,6 +553,7 @@ $requiredRepositoryFiles = [
     'src/Session/SessionLifecycle.php',
     'src/Session/SessionSnapshot.php',
     'src/Session/SessionUnavailable.php',
+    'tests/observability.php',
     'tests/request-policy.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
     'tests/fixtures/routing-lookup-index-loop.php.fixture',
@@ -968,7 +994,7 @@ $typedInputBoundaryArtifactMarkers = [
     '.ai/types.md' => [
         'No normalization is implicit.',
         'Native `json_decode` does not expose duplicate object keys and retains the last value',
-        'Consumer Contract v4 and Strict Profile v2 remain unchanged.',
+        'Consumer Contract v5 and Strict Profile v2 are current.',
     ],
     'docs/type-safety.md' => [
         'external mixed data -> named parser factory -> final readonly value -> native typed code',
@@ -1085,7 +1111,7 @@ $finiteDataPathArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         'ADR 022 records one finite SQLite application data path',
-        'Consumer Contract version 4 and Strict Profile version 2 remain unchanged.',
+        'Consumer Contract version 5 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/guardrails.md' => [
         'The finite-data-path guard retains ADR 022',
@@ -1203,6 +1229,280 @@ foreach ($finiteDataPathArtifactMarkers as $relativePath => $markers) {
     }
 }
 
+$observabilityArtifactMarkers = [
+    '.ai/README.md' => [
+        '`.ai/observability.md`',
+        'ADR 023',
+    ],
+    '.ai/observability.md' => [
+        'application.request_summary',
+        'at most eight finite code-owned database sources',
+        'exactly one sink invocation attempt',
+        'Never claim durable delivery',
+    ],
+    'docs/consumer-contract.md' => [
+        'ADR 023 defines the mandatory request-level observability boundary',
+        'application.request_summary',
+        'at most eight database sources',
+        'make exactly one sink invocation attempt',
+        'Exactly one sink invocation attempt is not durable delivery.',
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/observability/README.md`',
+        'ADR 023',
+    ],
+    'docs/logging.md' => [
+        '[0-9a-f]{32}',
+        '`application.request_summary`',
+        'at most eight explicitly registered `database_sources`',
+        "anonymous-class runtime name embeds source path and line",
+        'make exactly one sink invocation attempt',
+        'not durable delivery',
+        '`phpthis.request.unhandled`',
+    ],
+    'docs/observability/README.md' => [
+        'ADR 023 is the accepted decision',
+        '`tests/observability.php`',
+    ],
+    'docs/observability/correlation-id.md' => [
+        '[0-9a-f]{32}',
+        'X-Request-ID',
+        'TerminalRequestCoordinator::handle',
+    ],
+    'docs/observability/database-evidence.md' => [
+        'at most eight unique names',
+        'no two sources share a `QueryBudget` or `QueryTrace`',
+        'A rejected over-budget call sets exceeded state',
+    ],
+    'docs/observability/event-schema.md' => [
+        'version-1 `application.request_summary` schema',
+        'Known denials gain no denial-specific field',
+        'anonymous throwable uses its nearest named parent',
+    ],
+    'docs/observability/sink-failure.md' => [
+        'exactly one synchronous sink invocation attempt',
+        'An invocation attempt is not durable delivery.',
+    ],
+    'docs/observability/testing.md' => [
+        '`tests/observability.php`',
+        'exactly one sink invocation attempt',
+        'They do not prove durable storage',
+    ],
+    'docs/decisions/023-application-owned-terminal-request-summaries.md' => [
+        'Status: accepted',
+        'Consumer Contract version 5 carries Strict Profile version 2 forward unchanged.',
+        '[0-9a-f]{32}',
+        'application.request_summary',
+        'at most eight entries',
+        'exactly one sink invocation attempt',
+        'does not mean durable delivery',
+        '`phpthis.request.unhandled`',
+        'No ORM, repository, query builder, SQL generator, SQL/binding/placeholder helper, logger facade, global helper, middleware, event pipeline, discovery mechanism, or hidden database instrumentation is accepted by this decision.',
+    ],
+    'docs/decisions/README.md' => [
+        '023-application-owned-terminal-request-summaries.md',
+    ],
+    'verification/ApplicationChecker.php' => [
+        "'.ai/observability.md',",
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveObservabilityContextIsRequired(',
+        'Required application context file is missing: .ai/observability.md.',
+    ],
+    'src/Database/QueryBudget.php' => [
+        'private bool $exceeded = false;',
+        '$this->exceeded = true;',
+        'public function exceeded(): bool',
+    ],
+    'src/Http/UnknownFailureBoundary.php' => [
+        'public function respond(): Response',
+    ],
+    'example/.ai/observability.md' => [
+        '`list_users`, `get_user`, `create_user`, `get_document`, and `list_documents`',
+        'one attempt is not durable delivery',
+    ],
+    'example/bootstrap.php' => [
+        'return new TerminalRequestCoordinator(',
+        'CorrelationId::generate()',
+        "new QuerySummarySource('list_users'",
+        "new QuerySummarySource('get_user'",
+        "new QuerySummarySource('create_user'",
+        "new QuerySummarySource('get_document'",
+        "'list_documents',",
+    ],
+    'example/public/index.php' => [
+        '$coordinator->handle($_SERVER, $_GET)',
+    ],
+    'example/src/Observability/CorrelationId.php' => [
+        'bin2hex(random_bytes(16))',
+    ],
+    'example/src/Observability/QuerySummarySource.php' => [
+        "'budget_exceeded' => \$this->budget->exceeded(),",
+        'sharesObservationStateWith',
+    ],
+    'example/src/Observability/RequestSummary.php' => [
+        "public const string EVENT = 'application.request_summary';",
+        "'database_sources' => \$this->querySources,",
+        'private static function saturatedAdd',
+        'private static function safeFailureClass',
+        "str_contains(\$class, '@anonymous')",
+    ],
+    'example/src/Observability/ErrorLogRequestSummarySink.php' => [
+        'JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES',
+        'error_log($encoded)',
+    ],
+    'example/src/Observability/TerminalRequestCoordinator.php' => [
+        'private const int MAXIMUM_QUERY_SOURCES = 8;',
+        '$this->summarySink->emit($summary);',
+        '$headers[\'X-Request-ID\'] = $this->correlationId->value;',
+    ],
+    'templates/application/.ai/observability.md' => [
+        '{{TERMINAL_REQUEST_SUMMARY_COORDINATOR_PATH}}',
+        '{{TERMINAL_SUMMARY_DATABASE_SOURCES_OR_EMPTY}}',
+        '{{TERMINAL_SUMMARY_TEST_COMMAND}}',
+        'One invocation attempt never means durable delivery.',
+    ],
+    'skeleton/.ai/observability.md' => [
+        '`NOT_APPLICABLE(no database)`',
+        'delivery is not guaranteed',
+    ],
+    'skeleton/bootstrap.php' => [
+        'return new TerminalRequestCoordinator(',
+        'CorrelationId::generate()',
+        'new ErrorLogRequestSummarySink()',
+    ],
+    'skeleton/public/index.php' => [
+        '$coordinator->handle($_SERVER, $_GET)',
+    ],
+    'skeleton/src/Observability/CorrelationId.php' => [
+        'bin2hex(random_bytes(16))',
+    ],
+    'skeleton/src/Observability/RequestSummary.php' => [
+        "public const string EVENT = 'application.request_summary';",
+        "'database_sources' => \$this->querySources,",
+        'private static function safeFailureClass',
+        "str_contains(\$class, '@anonymous')",
+    ],
+    'skeleton/src/Observability/ErrorLogRequestSummarySink.php' => [
+        'JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES',
+        'error_log($encoded)',
+    ],
+    'skeleton/src/Observability/TerminalRequestCoordinator.php' => [
+        'private const int MAXIMUM_QUERY_SOURCES = 8;',
+        '$this->summarySink->emit($summary);',
+        '$headers[\'X-Request-ID\'] = $this->correlationId->value;',
+    ],
+    'skeleton/tests/run.php' => [
+        'Runtime GET /health must expose one generated correlation ID.',
+        'Each terminal coordinator must expose fresh request-scoped state.',
+    ],
+    'tests/run.php' => [
+        "require __DIR__ . '/observability.php';",
+        'foreach (observabilityTests() as $name => $test)',
+    ],
+    'tests/observability.php' => [
+        'correlation IDs are generated with 128 random bits in canonical form',
+        'terminal coordinator emits one success summary and owns the response request ID',
+        'default error-log sink serializes exactly one closed request summary',
+        'terminal coordinator emits one status-only summary for every mapped or routed failure',
+        'terminal coordinator emits one class-only summary for an unknown failure',
+        "str_contains(\$encoded, '@anonymous')",
+        'terminal coordinator reports repeated exact SQL without retaining SQL or bindings',
+        'terminal coordinator aggregates ordered sources failures and bounded trace truncation',
+        'terminal coordinator distinguishes exact budget use from one rejected attempt',
+        'terminal coordinator keeps success and unknown responses unchanged when the sink throws',
+        'terminal request summary excludes request response database and exception secrets',
+        'query summary sources are finite uniquely named and connection local',
+        'sequential terminal requests use fresh IDs budgets and traces',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/023-application-owned-terminal-request-summaries.md',
+        'docs/observability/README.md',
+        'docs/observability/correlation-id.md',
+        'docs/observability/database-evidence.md',
+        'docs/observability/event-schema.md',
+        'docs/observability/sink-failure.md',
+        'docs/observability/testing.md',
+        'templates/application/.ai/observability.md',
+    ],
+];
+
+foreach ($observabilityArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read observability artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Observability artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+if (is_dir($root . '/src/Observability')) {
+    $failures[] = 'Terminal request-summary types must remain application-owned outside framework core.';
+}
+
+$unknownFailureBoundary = file_get_contents($root . '/src/Http/UnknownFailureBoundary.php');
+
+if (is_string($unknownFailureBoundary)) {
+    foreach (['logAndRespond', 'error_log(', 'phpthis.request.unhandled', 'Throwable'] as $forbiddenMarker) {
+        if (str_contains($unknownFailureBoundary, $forbiddenMarker)) {
+            $failures[] = "UnknownFailureBoundary must not retain terminal logging marker {$forbiddenMarker}.";
+        }
+    }
+}
+
+foreach (
+    [
+        'example/src/Observability/TerminalRequestCoordinator.php',
+        'skeleton/src/Observability/TerminalRequestCoordinator.php',
+    ] as $coordinatorPath
+) {
+    $coordinator = file_get_contents($root . '/' . $coordinatorPath);
+
+    if (
+        is_string($coordinator)
+        && substr_count($coordinator, '$this->summarySink->emit($summary);') !== 1
+    ) {
+        $failures[] = "Terminal request coordinator must retain exactly one sink invocation: {$coordinatorPath}.";
+    }
+}
+
+foreach (
+    [
+        'example/src/Observability/CorrelationId.php',
+        'skeleton/src/Observability/CorrelationId.php',
+    ] as $correlationIdPath
+) {
+    $correlationId = file_get_contents($root . '/' . $correlationIdPath);
+
+    if (is_string($correlationId) && str_contains($correlationId, 'fromString')) {
+        $failures[] = "Correlation IDs must remain generated-only: {$correlationIdPath}.";
+    }
+}
+
+$observabilityPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (is_string($observabilityPackageInventory)) {
+    foreach (
+        [
+            '/^\.ai\/observability\.md$/m',
+            '/^example\//m',
+            '/^skeleton\//m',
+            '/^tests\/observability\.php$/m',
+            '/^src\/Observability\//m',
+        ] as $forbiddenPackagePattern
+    ) {
+        if (preg_match($forbiddenPackagePattern, $observabilityPackageInventory) === 1) {
+            $failures[] = 'Application-owned observability artifacts must remain outside the framework package inventory.';
+        }
+    }
+}
+
 $listDocumentsHandlerPath = $root . '/example/src/Documents/ListDocuments/ListDocumentsHandler.php';
 $listDocumentsHandler = file_get_contents($listDocumentsHandlerPath);
 
@@ -1310,8 +1610,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 4$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 4.';
+        if (preg_match('/^Contract version: 5$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 5.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {

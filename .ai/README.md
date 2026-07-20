@@ -21,6 +21,7 @@ Then read only what the task needs:
 | Change PDO transport or database-driver certification | `.ai/database.md`, `.ai/testing.md` | `src/Database/Connection.php`, `tools/test-database-drivers.php`, database CI job |
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php` |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | `src/Http/RequestReader.php`, `src/Http/RequestBoundary.php`, front controller |
+| Change request correlation or terminal summaries | `.ai/observability.md`, `docs/observability/README.md`, `.ai/request-boundary.md`, ADR 023 | application front controller, application-owned coordinator and sink, finite database-source registration, response propagation, redaction, budget, trace, and throwing-sink tests |
 | Add, use, or change cookie-backed session state | `.ai/session.md`, `.ai/http.md`, `.ai/request-boundary.md` | `src/Session/`, `src/Http/ResponseCookie.php`, typed service key ownership, composition root, isolated save path, and transport plus applicable policy tests |
 | Propose or adopt HTTP or application data caching | `.ai/cache.md`, `.ai/http.md`, `.ai/testing.md` | `docs/caching.md`, ADR 016, application cache policy, explicit call sites, cold-cache database proof, and applicable cache tests |
 | Change the consumer contract, checker, skeleton, or application context | `.ai/application-context.md`, `.ai/crud.md`, `.ai/static-analysis.md`, `.ai/testing.md` | `docs/consumer-contract.md`, `verification/`, `bin/phpthis`, `skeleton/`, `templates/application/` |

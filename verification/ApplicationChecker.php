@@ -19,6 +19,7 @@ final class ApplicationChecker
         '.ai/change-workflow.md',
         '.ai/data.md',
         '.ai/integrations.md',
+        '.ai/observability.md',
         '.ai/operations.md',
         '.ai/project.md',
         '.ai/rules.md',

@@ -29,6 +29,7 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 - The finite data-path proof keeps eight complete raw SQLite document-list statements and their explicit parameter arrays at direct `Connection` call sites. It proves two orders, a composite cursor, bounded categories, parsed empty-selection zero-SQL behavior, and one statement per non-empty page without turning that evidence into a framework paginator.
 - Every database connection has an explicit query budget that fails before an excessive statement executes.
 - Every database connection has a bounded query trace that reports repeated SQL fingerprints, execution timing, and failures without retaining SQL or parameters.
+- Every application owns one explicit terminal request-summary coordinator and sink. It generates a 128-bit lowercase-hex correlation ID, propagates `X-Request-ID`, and makes one failure-isolated sink invocation attempt with bounded per-connection budget and trace evidence; PHPThis adds no core logger, middleware, facade, or hidden instrumentation.
 - External database and JSON values are parsed once into concrete final readonly projections and commands. Inbound [typed input boundaries](docs/type-safety.md) distinguish missing and null, reject non-canonical values, keep public failures generic, and permit downstream operation behavior only after complete parsing—without a generic validator or mandatory service layer.
 - A versioned Strict Profile rejects legal-but-unsafe PHP with stable, repair-oriented `PHT` diagnostics.
 - Consuming applications run one installed `phpthis check` binary whose maximum-level PHPStan configuration cannot be weakened by project files.
@@ -41,7 +42,7 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 - Optional session state uses one lazy native-PHP lifecycle with bounded scalar snapshots, explicit secure response cookies, short lock duration, and no session helper or session field on the request.
 - Caching begins with an explicit application policy, not a framework helper: HTTP response caching and server-side data caching are separate concerns, and PHPThis currently provides no generic cache runtime.
 - Markdown is part of the framework interface. The guardrail command requires more Markdown files than PHP files.
-- The Alpha 2 core ceiling is 2,300 physical lines after review of the cookie/session, initial typed-routing, and bounded multiple-typed-routing slices. The reviewed implementation occupies 2,246 lines; its 54-line maintenance margin does not pre-authorize any adjacent mechanism.
+- The Alpha 2 core ceiling remains 2,300 physical lines. After the bounded query-budget observation and removal of the framework-owned unknown-failure log call, the reviewed implementation occupies 2,250 lines; its 50-line maintenance margin does not pre-authorize any adjacent mechanism.
 
 Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis combines visible SQL with query budgets and scale-sensitive tests so that query count cannot silently grow with result size.
 
@@ -58,7 +59,7 @@ This is a zero third-party runtime-dependency foundation. The current proof slic
 The executable query-scaling proof holds every accepted page at one statement while traversing 125 users as 50, 50, and 25 rows without gaps or duplicates. Its isolated N+1 negative control grows from 3 statements for 2 users to 51 for 50 users; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
 ```text
-PHP runtime -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> route policy adapter -> protected Handler -> Response
+PHP runtime -> application terminal coordinator -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> route policy adapter -> protected Handler -> Response + X-Request-ID -> one sink attempt -> ResponseEmitter
 ```
 
 ## Try it
@@ -98,6 +99,7 @@ Ask the project AI to follow the [application bootstrap contract](docs/getting-s
 - [Knowledge map](docs/knowledge-map.md) routes an AI to the smallest relevant installed source of authority.
 - [CRUD reference profile](docs/crud.md) defines the optional feature-first application structure and its current evidence boundary.
 - [Finite data paths](docs/decisions/022-application-owned-finite-data-paths.md) records the application-owned raw-SQL collection proof and its SQLite-only limits.
+- [Terminal request summaries](docs/logging.md) and [ADR 023](docs/decisions/023-application-owned-terminal-request-summaries.md) define application-owned correlation, redaction, bounded database evidence, one-attempt semantics, and sink-failure isolation.
 - [Security baseline](docs/security.md) defines SQL data/structure separation, least-privilege obligations, and the limits of automated proof.
 - [Session state](docs/sessions.md) defines the optional native lifecycle, explicit cookie contract, deployment requirements, and application-policy boundary.
 - [Request policy](docs/request-policy.md) defines the application-owned authentication, tenant-resolution, and authorization composition.

@@ -34,9 +34,9 @@
 - Authorization-header forwarding and trusted-proxy policy: {{AUTHORIZATION_HEADER_FORWARDING_POLICY_OR_NOT_APPLICABLE}}
 - Credential expiry, rotation, revocation, and verifier-failure behavior: {{CREDENTIAL_LIFECYCLE_AND_FAILURE_POLICY_OR_NOT_APPLICABLE}}
 - Tenant and permission source availability and failure behavior: {{TENANT_AND_AUTHORIZATION_SOURCE_FAILURE_POLICY_OR_NOT_APPLICABLE}}
-- Known-denial logging and unexpected-failure redaction: {{REQUEST_POLICY_LOGGING_POLICY_OR_NOT_APPLICABLE}}
+- Known-denial status-only summary and unexpected-failure class-only redaction: {{REQUEST_POLICY_LOGGING_POLICY_OR_NOT_APPLICABLE}}
 
-Known denials are not logged under the ADR 020 reference policy. Never record credentials, complete sensitive identifiers, or internal policy messages. A separately accepted observability decision is required before adding bounded request-policy events.
+ADR 023 supersedes the earlier no-denial-log wording. A known denial receives only the common terminal summary's generic known-failure outcome and response status; an unexpected failure contributes only its concrete class. Never record credentials, complete sensitive identifiers, or internal policy messages, and do not add a second policy event.
 
 ## HTTP cache runtime
 
@@ -71,15 +71,13 @@ Cache availability never establishes application correctness. Record whether eac
 
 ## Logging and observability
 
-- Request identifier policy: {{REQUEST_IDENTIFIER_POLICY}}
-- Structured log destination: {{LOG_DESTINATION}}
-- Query-summary policy: {{QUERY_SUMMARY_POLICY}}
+- Terminal request-summary runtime authority: `.ai/observability.md`
 - HTTP cache status, revalidation, and intermediary observability: {{HTTP_CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
 - Cache-operation summary and hit, miss, failure, invalidation, and stampede metrics: {{CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
 - Health and readiness paths: {{HEALTH_AND_READINESS_PATHS}}
 - Alert or incident reference: `{{INCIDENT_REFERENCE}}`
 
-Logs must not contain credentials, tokens, session identifiers, cookie values, CSRF tokens, session snapshots, cache keys or payloads, request bodies, SQL parameters, customer data, or unknown exception messages. A separately reviewed logging contract may permit only explicitly safe structured fields that do not copy an unknown exception message.
+Keep destination buffering, retention, backpressure, outage, and incident facts in `.ai/observability.md`; do not restate the installed event schema here. A sink invocation attempt is not durable delivery.
 
 ## Prohibited operational actions
 

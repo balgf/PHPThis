@@ -42,8 +42,13 @@ use PHPThis\Routing\Router;
 require dirname(__DIR__) . '/autoload.php';
 
 require __DIR__ . '/request-policy.php';
+require __DIR__ . '/observability.php';
 
 $tests = requestPolicyTests();
+
+foreach (observabilityTests() as $name => $test) {
+    $tests[$name] = $test;
+}
 
 $tests['example composes explicit route modules'] = static function (): void {
     $application = new Application(new Router(Routes::create(
@@ -706,43 +711,18 @@ $tests['session lifecycle is lazy strict scoped and fixation resistant'] = stati
     }
 };
 
-$tests['unknown failure boundary logs once and returns one generic response'] = static function (): void {
-    $logPath = __DIR__ . '/../tmp/unknown-failure.log';
-
-    if (is_file($logPath) && !unlink($logPath)) {
-        throw new RuntimeException('Unable to reset the unknown-failure test log.');
-    }
-
-    $previousErrorLog = ini_get('error_log');
-
-    if (ini_set('error_log', $logPath) === false) {
-        throw new RuntimeException('Unable to redirect the unknown-failure test log.');
-    }
-
-    try {
-        $response = (new UnknownFailureBoundary())->logAndRespond(
-            new RuntimeException('private failure message'),
-        );
-    } finally {
-        if (is_string($previousErrorLog)) {
-            ini_set('error_log', $previousErrorLog);
-        }
-    }
-
-    $log = file_get_contents($logPath);
+$tests['unknown failure boundary returns one generic response without logging'] = static function (): void {
+    $response = (new UnknownFailureBoundary())->respond();
 
     if (
-        !is_string($log)
-        || substr_count($log, 'phpthis.request.unhandled exception=RuntimeException') !== 1
-        || str_contains($log, 'private failure message')
-        || $response->status !== 500
+        $response->status !== 500
         || $response->headers !== [
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'no-store',
         ]
         || $response->body !== "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n"
     ) {
-        throw new RuntimeException('Expected one redacted unknown-failure log and generic 500 response.');
+        throw new RuntimeException('Expected the pure unknown-failure boundary to return one generic 500 response.');
     }
 };
 
@@ -2487,8 +2467,12 @@ $tests['connection binds named values and enforces its budget'] = static functio
         ['id' => 7],
     );
 
-    if ($row !== ['id' => 7, 'name' => 'Ada'] || $budget->used() !== 3) {
-        throw new RuntimeException('Expected a typed row and three recorded statements.');
+    if (
+        $row !== ['id' => 7, 'name' => 'Ada']
+        || $budget->used() !== 3
+        || $budget->exceeded()
+    ) {
+        throw new RuntimeException('Expected exact-limit success without an exceeded budget state.');
     }
 
     $user = UserSummary::fromDatabaseRow($row);
@@ -2497,16 +2481,29 @@ $tests['connection binds named values and enforces its budget'] = static functio
         throw new RuntimeException('Expected the raw PDO row to be parsed immediately.');
     }
 
+    $overrunBudget = new QueryBudget(1);
+    $overrunTrace = new QueryTrace(1);
+    $overrunConnection = Connection::connect(
+        'sqlite::memory:',
+        $overrunBudget,
+        $overrunTrace,
+    );
+    $overrunConnection->selectOneRow('SELECT :value AS value', ['value' => 1]);
     $budgetWasExceeded = false;
 
     try {
-        $connection->selectOneRow('SELECT id, name FROM users WHERE id = :id', ['id' => 7]);
+        $overrunConnection->selectOneRow('SELECT :value AS value', ['value' => 2]);
     } catch (QueryBudgetExceeded) {
         $budgetWasExceeded = true;
     }
 
-    if (!$budgetWasExceeded || $trace->snapshot()['statements'] !== 3) {
-        throw new RuntimeException('Expected the fourth statement to exceed the budget without being traced.');
+    if (
+        !$budgetWasExceeded
+        || !$overrunBudget->exceeded()
+        || $overrunBudget->used() !== 1
+        || $overrunTrace->snapshot()['statements'] !== 1
+    ) {
+        throw new RuntimeException('Expected an over-budget statement to be rejected without being traced.');
     }
 };
 

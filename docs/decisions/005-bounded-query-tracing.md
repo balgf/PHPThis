@@ -10,7 +10,9 @@ Query budgets stop excessive statement counts but do not explain which SQL shape
 
 Every `Connection` requires a request-scoped `QueryTrace`. It aggregates SHA-256 fingerprints of exact SQL strings, execution counts, failures, and prepare/bind/execute duration without retaining SQL, parameters, exceptions, or credentials. Retained fingerprints have an explicit bound; overflow remains visible in the snapshot.
 
-The stable snapshot is an in-memory, JSON-compatible record. Tests inspect it directly. The request boundary does not yet add request context or emit the snapshot; the database layer performs no logging I/O.
+The stable snapshot is an in-memory, JSON-compatible record. Tests inspect it directly. The database layer performs no logging I/O.
+
+ADR 023 later accepts one application-owned terminal request summary that derives a bounded per-source record from this snapshot. `Connection` still emits nothing, and the framework adds no logger, sink, event, coordinator, or hidden instrumentation.
 
 The temporary core-source limit increased from 500 to 550 physical lines so this behavior remained direct and typed instead of compressed or hidden behind a dependency. ADR 008 supersedes that Phase 0 limit for the explicit request boundary.
 
@@ -20,4 +22,4 @@ Repetitive statements become machine-readable while sensitive values stay absent
 
 ## Reconsider when
 
-A production application proves that the snapshot schema, fingerprint bound, or request-boundary emission needs a different explicit contract.
+A production application proves that the snapshot schema, fingerprint bound, or application-owned terminal summary needs a different explicit contract.

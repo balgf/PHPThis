@@ -14,7 +14,7 @@ The harness uses fixed, code-owned table names so its statements remain finite u
 
 Certification does not make SQL dialects interchangeable. Complete SQL, DDL, schema and migration policy, identifier quoting, generated identifiers, returned scalar representations, error translation, isolation, locking, execution plans, charset, timezone, TLS, and timeouts remain application-owned and engine-specific. Other PDO drivers may be passed to the same connection API, but PHPThis does not call them certified until they pass the reviewed base harness.
 
-An application using multiple databases constructs separately named `Connection` objects in its composition root. Connections do not participate in a distributed transaction. Give each connection an explicit budget and a distinct trace: a query trace contains no connection identity, so sharing one across engines could merge identical SQL fingerprints. A deliberately shared request-wide budget is valid only when the application records that combined limit.
+An application using multiple databases constructs separately named `Connection` objects in its composition root. Connections do not participate in a distributed transaction. Give each connection an explicit budget and a distinct trace: a query trace contains no connection identity, so sharing one across engines could merge identical SQL fingerprints. Consumer Contract v5's terminal summary requires each registered source to own distinct budget and trace observation state; do not share a request-wide budget across those sources.
 
 ## Why no ORM or query builder
 
@@ -66,7 +66,7 @@ Each request constructs one `QueryTrace` per connection with an explicit retaine
 
 The trace never retains SQL text, parameter names or values, DSNs, credentials, exception messages, driver details, or stack traces. Different bindings for the same SQL therefore produce one fingerprint without exposing the bindings. When the fingerprint bound is full, global counts and timing continue while `truncated` and `untracked_statements` make the missing detail explicit.
 
-`QueryTrace::snapshot()` is a versioned JSON-compatible record. Tests inspect it in memory. A request boundary may later add request metadata and emit the record once; `Connection` never writes one log entry per statement. Calls rejected by `QueryBudget` are absent because PDO was never attempted. Timing does not include fetch or row conversion.
+`QueryTrace::snapshot()` is a versioned JSON-compatible record. Tests inspect it in memory. ADR 023 permits one application-owned terminal coordinator to derive a bounded per-source record from it; `Connection` still never writes one log entry per statement. Calls rejected by `QueryBudget` are absent because PDO was never attempted, while the source's budget state records that rejection. Timing does not include fetch or row conversion.
 
 ```json
 {

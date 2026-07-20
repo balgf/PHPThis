@@ -1,6 +1,6 @@
 # Application rules
 
-These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile v2. They must not alias or weaken those framework rules.
+These rules supplement installed PHPThis Consumer Contract v5 and Strict Profile v2. They must not alias or weaken those framework rules.
 
 ## Required
 
@@ -16,6 +16,7 @@ These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile
 - Preserve the identity, tenant, and authorization boundaries defined in `.ai/architecture.md`.
 - Keep each protected route behind its recorded action-specific request-policy adapter with explicit `authenticate -> resolve tenant -> authorize -> handler` order, concrete immutable principal and tenant values, and manually replaceable policies.
 - Keep any policy reads on their recorded connections, budgets, and traces, separate from protected handler work; a denial executes no protected query, write, session mutation, cache mutation, or external business side effect.
+- Keep one application-owned terminal request-summary coordinator and sink in the visible front-controller path, generated correlation and `X-Request-ID`, at most eight finite database sources, complete redaction, and exactly one failure-isolated sink invocation attempt.
 - Keep adopted session state behind typed application services and the deployment policy recorded in `.ai/architecture.md` and `.ai/operations.md`; mutate only owned keys and preserve every unowned key from the supplied snapshot.
 - Keep session mutation callbacks bounded and side-effect-free; finish fallible work before the final immediately committed mutation.
 - Keep adopted server-side caching behind narrowly named typed services with explicit hit, miss, authoritative-read, write, and invalidation paths; apply the key, payload, TTL, tenant, invalidation, stale-refill, failure, stampede, and observability policies recorded in `.ai/data.md` and `.ai/operations.md`.
@@ -37,6 +38,7 @@ These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile
 - Do not invent human approval or claim unsupported framework or application behavior.
 - Do not bypass authentication, authorization, validation, audit, or data-retention requirements to simplify a change.
 - Do not add middleware or policy registries, a request-context or attribute bag, service-located policy, hidden tenant resolution, an implicit or global authorization scope, or stored or cached authorization decisions.
+- Do not add framework logging event, sink, or coordinator types; logger facades, global logging helpers, logging middleware, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or durable-delivery claims.
 - Do not read `$_SESSION`, call native `session_*` functions, manually emit the framework session cookie, add a generic session helper, or treat stored identity as authorization.
 - Do not accept SQL text from external input, invent an SQL sanitizer, interpolate data, or grant the runtime database identity migration or administrative authority to simplify a change.
 - Do not claim that PHT006, tenant predicates, adversarial bindings, or base PDO transport tests universally prove authorization, tenant isolation, injection safety, or application-SQL portability.

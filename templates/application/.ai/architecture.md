@@ -60,9 +60,13 @@ No normalization is implicit. A deliberate field transformation records its orde
 - Current per-request authorization, expiry, and revocation source: {{CURRENT_AUTHORIZATION_SOURCE_OR_NOT_APPLICABLE}}
 - Separately named policy and protected query connections, budgets, and traces: {{REQUEST_POLICY_QUERY_BOUNDS_OR_NOT_APPLICABLE}}
 - Tenant- and resource-scoped protected SQL and authorization-to-write race policy: {{TENANT_SQL_AND_AUTHORIZATION_RACE_POLICY_OR_NOT_APPLICABLE}}
-- Known-denial and unexpected-failure logging policy: {{REQUEST_POLICY_LOGGING_OR_NOT_APPLICABLE}}
+- Terminal-summary authority for every protected outcome: `.ai/observability.md`; no route-specific denial field or event.
 
 For each protected route, use one action-specific adapter with visible `authenticate -> resolve tenant -> authorize -> protected handler` order. Pass concrete immutable principal and tenant values explicitly; do not add them to `Request`, session state, a generic context bag, or a global. Every denial stops before protected queries, writes, session mutation, cache mutation, and external business side effects.
+
+## Terminal request summary
+
+Project-owned correlation, coordinator, sink, database-source, destination, and attempt facts live only in `.ai/observability.md`. The dependency position is `front controller -> application terminal coordinator -> RequestBoundary -> selected Response -> one sink attempt -> ResponseEmitter`. Keep this application-owned and explicit; do not copy the installed schema here or add a core logging type, facade, global helper, middleware, event pipeline, automatic discovery, per-query I/O, or hidden `Connection` instrumentation.
 
 ## Cache policies
 

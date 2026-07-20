@@ -24,10 +24,11 @@ Rules:
 - Never call any connection method from a loop.
 - Give each request a deliberately chosen `QueryBudget` in the composition root.
 - Give each request a bounded `QueryTrace` and pass it explicitly to `Connection::connect` after the query budget.
-- Give each separately named connection an explicit budget and distinct trace; document any deliberately shared request-wide budget, and do not share a trace across engines or claim cross-connection atomicity.
+- Give each separately named connection and terminal-summary source an explicit distinct budget and trace; do not share observation state across sources or engines or claim cross-connection atomicity.
 - Test the same handler with small and large fixtures and assert equal query counts.
 - Test adversarial strings as ordinary bound data and prove unsupported structural selectors and oversized list shapes fail before a statement is attempted.
 - Inspect `QueryTrace::snapshot()` directly in tests; do not create broad query-log files.
+- Register at most eight application-owned terminal-summary database sources through a finite code-owned list. Give each a bounded lower-ASCII label, its own budget, and a distinct trace; do not move event emission into `Connection` or add SQL/binding helpers.
 
 For each connection, the application context must record the code authority for structural SQL choices, bounded-list policy, runtime identity and required capabilities, explicitly prohibited runtime capabilities, separate migration or administrative authority, the isolation mechanism, and the source and date of verification. Least privilege limits damage after a defect; it does not make unsafe SQL safe.
 

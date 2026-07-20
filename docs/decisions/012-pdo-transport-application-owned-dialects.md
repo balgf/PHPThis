@@ -27,7 +27,7 @@ Applications own complete SQL strings and all engine-specific behavior. Every ap
 
 Every placeholder occurrence uses a distinct name because native prepared-statement behavior for repeated names differs by driver. Selected expressions use unique column names or aliases because associative fetching cannot preserve duplicate keys. `rowCount()` is not used for reads, and application tests establish any update semantics they rely on.
 
-Multiple databases are wired as separately named `Connection` objects in the composition root. Each receives an explicit `QueryBudget` and a distinct `QueryTrace`; traces have no connection identity and must not be shared across engines. A shared request-wide budget is allowed only when the application documents that combined limit deliberately. Transactions are local to one connection. PHPThis provides no distributed transaction or cross-database atomicity guarantee.
+Multiple databases are wired as separately named `Connection` objects in the composition root. Each receives an explicit `QueryBudget` and a distinct `QueryTrace`; traces have no connection identity and must not be shared across engines. This decision originally allowed a deliberately documented shared request-wide budget. ADR 023 supersedes that option for terminal-summary sources: no two registered sources may share a budget or trace. Transactions are local to one connection. PHPThis provides no distributed transaction or cross-database atomicity guarantee.
 
 ## Consequences
 

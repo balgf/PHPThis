@@ -39,6 +39,7 @@
 - Complete: ADR 020 application-owned protected-request composition with visible stateless authentication, tenant resolution, current per-request authorization, replaceable policies, denial bounds, and no new core runtime contract.
 - Complete: ADR 021 application-owned typed input parsing with exact canonical representations, generic safe failures, PHPStan-verified command delivery, and executable Create proof that rejected input never enters its typed operation or performs Create-owned side effects; no generic validator or core contract was added.
 - Complete: ADR 022 application-owned finite document-list data path with eight complete raw SQLite statements, explicit named parameter arrays, two orders, a versioned composite cursor, bounded category cardinalities, explicit-empty zero-SQL behavior, and constant one-statement non-empty pages; no core, ORM, repository, helper, paginator, or dialect mechanism was added.
+- Complete: Consumer Contract version 5 and ADR 023 application-owned terminal request summaries with generated 128-bit correlation IDs, `X-Request-ID` propagation, bounded per-connection budget and trace evidence, status-only known denials, class-only unknown failures, one sink invocation attempt, and sink-failure isolation; Strict Profile version 2 and the 2,300-line core ceiling remain unchanged.
 - Alpha 1 publication state is external; `RELEASING.md` defines the proof without embedding mutable tag, package-host, or announcement state in the tagged artifact.
 - Alpha 1 requires the contents of `skeleton/` to be exported as their own package root, the source-evaluation VCS override to be removed, `dev-main` to be replaced with the approved Packagist alpha constraint, and the resulting lockfile to be committed.
 - Alpha 1 public proof installs the actual Packagist-preferred framework dist, compares it with `tools/package-files.txt`, and proves the documented `composer create-project --stability=alpha` path before announcement.
@@ -52,7 +53,7 @@
 
 ## Phase 3: production evaluation
 
-- Define request IDs, structured request/query-summary log emission, security headers, streaming, uploads, and worker behavior explicitly.
+- Evaluate destination-specific terminal-summary buffering, retention, backpressure, and outage behavior without converting one sink invocation attempt into a durable-delivery claim; define security headers, streaming, uploads, and worker behavior explicitly.
 - Benchmark literal and bounded typed routing plus database boundaries against equivalent base PHP.
 - Run the same endpoint tasks across several AI models and classify mistakes.
 - Prove one application-owned backend-specific typed cache-aside path, including cold-cache query scaling, invalidation failure, isolation, eviction, and concurrent-miss evidence; do not promote a generic framework API from one application.

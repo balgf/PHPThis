@@ -29,7 +29,7 @@ Every observable behavior change must add or update application-owned automated 
 
 ## Authority
 
-- The installed PHPThis Consumer Contract v4 and Strict Profile v2 are the minimum accepted rules, including bounded multiple-typed routing, explicit cookie/session boundaries, and PHT006 finite compile-time-constant SQL.
+- The installed PHPThis Consumer Contract v5 and Strict Profile v2 are the minimum accepted rules, including bounded multiple-typed routing, explicit cookie/session boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - Preserve the installed contract when a project instruction conflicts with it, and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
@@ -42,6 +42,8 @@ Every observable behavior change must add or update application-owned automated 
 `NOT_APPLICABLE(REQUEST_POLICY)`: the health-only starter has no identity, tenant, or protected action. Before protecting a route, read installed `docs/request-policy.md` and replace the request-policy sections in `.ai/architecture.md` and `.ai/testing.md` with verified principal, tenant, credential, current authorization, disclosure, query-bound, transaction, redaction, and replacement decisions. Use one explicit action-specific adapter; do not add middleware, a request-context bag, hidden tenant resolution, or an implicit authorization scope.
 
 `NOT_APPLICABLE(SESSION)`: before introducing session-backed behavior, replace the session sections in `.ai/architecture.md`, `.ai/operations.md`, and `.ai/testing.md` with verified typed key ownership, cookie and isolated native-file storage, concurrency and transport evidence, plus each applicable identity, expiry, revocation, and CSRF policy or explicit non-applicability.
+
+The starter's terminal request summary is mandatory rather than optional: preserve its application-owned front-controller coordinator and injected sink, generated 128-bit lowercase-hex correlation ID, `X-Request-ID`, closed redacted event, and exactly one failure-isolated sink invocation attempt. Before database adoption, register every request-scoped connection that can execute in this path through at most eight finite code-owned sources with distinct budgets and traces. Do not add framework logging types, middleware, facades, helpers, discovery, per-query log I/O, hidden instrumentation, or a durable-delivery claim.
 
 `HTTP_CACHE_POLICY(NO_STORE)`: the starter emits explicit `Cache-Control: no-store` on health success, route miss, method rejection, mapped invalid or oversized input, and unknown failure. Preserve that explicit policy for every current path. Start a path added later with `no-store`; use `private` or `public` only after its application-owned freshness or revalidation, validators, `Vary`, intermediary topology, observability, and tests are recorded. Do not add a helper, middleware default, or response post-processor, and keep this decision separate from server-side data caching.
 

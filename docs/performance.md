@@ -26,6 +26,8 @@ Cache observability is a separate bounded aggregate from `QueryBudget` and `Quer
 
 `QueryTrace` performs monotonic timing and one bounded in-memory aggregate update per PDO attempt. It does not perform logging I/O. Repeated exact-SQL fingerprints reveal indirect N+1 behavior that remains under a generous query budget, while fixture-size tests still provide the proof that query count is constant.
 
+ADR 023 permits one application-owned terminal event to summarize at most eight explicitly registered database sources. It reports aggregate and per-source budget and trace evidence without adding per-query I/O. A sink attempt is outside query timing, may fail without changing the response, and does not prove delivery latency or durable storage.
+
 Reported `execute_duration_us` values cover prepare, parameter binding, and execute. They do not claim to measure result fetching, hydration, network log delivery, or complete request latency.
 
 ## Query-scaling proof
