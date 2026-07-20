@@ -20,10 +20,17 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `public/index.php` | Read PHP runtime globals, invoke the request boundary, map unknown failures, and emit one response. |
+| Inbound operation data | `NOT_APPLICABLE(INPUT)` | The public health operation accepts no application-owned fields and constructs no request or command. |
 | Typed session services | `NOT_APPLICABLE` | The starter does not configure session state. |
 | Typed cache services | `NOT_APPLICABLE(CACHE)` | The starter does not cache server-side data. |
 | Database | `NOT_APPLICABLE` | The starter application has no database. |
 | External services | `NOT_APPLICABLE` | The starter application has no external integrations. |
+
+## Inbound data boundaries
+
+`NOT_APPLICABLE(INPUT)`: `GET /health` accepts no application-owned body, query, form, or header fields. The outer `RequestBoundary` still bounds and validates PHP runtime transport data, but no operation-specific parser or typed command is needed for this health-only state.
+
+Before an operation accepts external data, record one path from its bounded raw representation through an operation-specific named parser factory into a final readonly request or command with a private constructor, then into downstream typed behavior. Add a separate typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership. Record byte, depth, field, list, item, and scalar bounds; required, optional, absent, explicit-null, and unknown-field behavior; exact boolean, integer, string, enum, date, list, and object representations; deterministic validation order; field-specific normalization or explicit none; parser position relative to request policy; generic public failure and redaction; exclusion from operation-owned downstream work; and the native JSON duplicate-key limitation where applicable. Do not add a generic validator, result wrapper, rule-string language, reflection hydration, mass assignment, sanitization magic, or automatic request binding.
 
 ## Identity and authorization
 

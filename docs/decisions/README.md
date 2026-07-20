@@ -24,3 +24,4 @@ Accepted records:
 - `018-bounded-alpha-1-release-scope.md`
 - `019-bounded-multiple-typed-routes.md`
 - `020-application-owned-request-policy.md`
+- `021-application-owned-typed-input-boundaries.md`

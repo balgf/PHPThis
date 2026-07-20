@@ -28,7 +28,7 @@ The versioned Markdown in this repository is not a linear tutorial. It is compac
 - Strict Profile version 2 keeps data in unique named parameters and limits direct `Connection` SQL to finite, non-blank compile-time constant statements; application-owned structural choices map to reviewed statements rather than a sanitizer or query builder.
 - Every database connection has an explicit query budget that fails before an excessive statement executes.
 - Every database connection has a bounded query trace that reports repeated SQL fingerprints, execution timing, and failures without retaining SQL or parameters.
-- External database and JSON values are parsed once into concrete final readonly projections and commands before entering typed code.
+- External database and JSON values are parsed once into concrete final readonly projections and commands. Inbound [typed input boundaries](docs/type-safety.md) distinguish missing and null, reject non-canonical values, keep public failures generic, and permit downstream operation behavior only after complete parsing—without a generic validator or mandatory service layer.
 - A versioned Strict Profile rejects legal-but-unsafe PHP with stable, repair-oriented `PHT` diagnostics.
 - Consuming applications run one installed `phpthis check` binary whose maximum-level PHPStan configuration cannot be weakened by project files.
 - An installed knowledge map routes framework questions to the relevant contract, decision, source, and test instead of relying on model memory.

@@ -42,6 +42,16 @@ This pattern does not alter `RequestBoundary`, `Application`, `Request`, `PathPa
 
 The generic reader does not guess which representation a route accepts. `CreateUserHandler` explicitly requires `application/json`, allowing parameters such as `charset=utf-8`, before it parses the command or performs database work. Missing or incompatible media types cross the boundary as `UnsupportedMediaType`.
 
+## Operation input boundaries
+
+After transport and route-specific media checks, an accepting operation parses the complete raw representation once through its own named factory. `CreateUserCommand::fromJson` owns the create-user JSON shape and bounds; `ListUsersPageRequest::fromQuery` owns its query shape. PHPThis does not add a validation helper, string-rule language, automatic binding, mass assignment, sanitizer, or reflection hydrator.
+
+The parser distinguishes missing keys from explicit `null`, rejects unknown fields and non-canonical types, applies deterministic operation-owned bounds, and constructs its final readonly value only after every field succeeds. Downstream behavior uses that value, not the raw `Request`, body, or mixed array. `ListUsersHandler` keeps its small typed post-parse behavior local. Create separates HTTP media/parsing/response work from its independently meaningful transaction through `CreateUserOperation`; `TransactionalCreateUser` owns the direct two-statement transaction. Invalid Create input consequently produces zero operation calls and zero Create database work.
+
+For an ADR 020 protected route, its action-specific adapter retains `authenticate -> resolve tenant -> authorize -> protected handler` order. A body command parsed inside that protected handler is therefore validated before protected operation behavior but after any separately bounded policy work. Input rejection prevents the protected operation and its I/O; it does not claim that earlier authentication, tenant, authorization, or policy reads never occurred. Validation never grants access, and the typed command never installs an implicit tenant or database scope.
+
+See [Type safety](type-safety.md) and [ADR 021](decisions/021-application-owned-typed-input-boundaries.md) for canonical scalar, enum, date, list, normalization, and error rules.
+
 ## Cookies and optional sessions
 
 Request headers retain the raw `cookie` field as bounded transport input. PHPThis does not add a generic request cookie helper. The optional `SessionLifecycle` alone parses its configured session-cookie name; application handlers do not read `$_COOKIE`, `$_SESSION`, or native session state.

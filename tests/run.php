@@ -8,6 +8,8 @@ use Example\Documents\GetDocument\DenyAllGetDocumentTenantResolution;
 use Example\Routes;
 use Example\Users\CreateUser\CreateUserCommand;
 use Example\Users\CreateUser\CreateUserHandler;
+use Example\Users\CreateUser\CreateUserOperation;
+use Example\Users\CreateUser\TransactionalCreateUser;
 use Example\Users\GetUser\GetUserHandler;
 use Example\Users\GetUser\UserDetails;
 use Example\Users\GetUser\UserId;
@@ -1422,57 +1424,160 @@ $tests['HTTP command parses one exact JSON object'] = static function (): void {
     $unicodeCommand = CreateUserCommand::fromJson(
         '{"name":"Jos\u00e9","email":"jose@example.com"}',
     );
+    $preservedUnicodeSpaceCommand = CreateUserCommand::fromJson(
+        '{"name":"\u00a0Ada\u00a0","email":"unicode-space@example.com"}',
+    );
+    $preservedEmailCommand = CreateUserCommand::fromJson(
+        '{"name":"Ada","email":"Ada+Tag@Example.COM"}',
+    );
+    $exactLimitBody = exactCreateUserBody(2_048);
+    $exactLimitCommand = CreateUserCommand::fromJson($exactLimitBody);
 
     if (
         $command->name !== 'Ada Lovelace'
         || $command->email !== 'ada@example.com'
         || $unicodeCommand->name !== 'José'
+        || $preservedUnicodeSpaceCommand->name !== "\u{00a0}Ada\u{00a0}"
+        || $preservedEmailCommand->email !== 'Ada+Tag@Example.COM'
+        || strlen($exactLimitBody) !== 2_048
+        || strlen($exactLimitCommand->name) !== 2_013
+        || $exactLimitCommand->email !== 'a@example.com'
     ) {
         throw new RuntimeException('Expected strict JSON to become a typed command.');
     }
 };
 
-$tests['HTTP command rejects malformed coercive and unknown input'] = static function (): void {
-    $tooDeep = str_repeat('{"value":', 17) . 'null' . str_repeat('}', 17);
-    $invalidBodies = [
-        '',
-        '{',
-        '{}{}',
-        '"text"',
-        '7',
-        'true',
-        'null',
-        '[]',
-        "\xB1\x31",
-        $tooDeep,
-        str_repeat('x', 2_049),
-        '{"name":"Ada"}',
-        '{"name":"Ada","email":"ada@example.com","is_admin":true}',
-        '{"Name":"Ada","email":"ada@example.com"}',
-        '{"name":"","email":"ada@example.com"}',
-        '{"name":"   ","email":"ada@example.com"}',
-        '{"name":null,"email":"ada@example.com"}',
-        '{"name":7,"email":"ada@example.com"}',
-        '{"name":true,"email":"ada@example.com"}',
-        '{"name":[],"email":"ada@example.com"}',
-        '{"name":{},"email":"ada@example.com"}',
-        '{"name":" Ada","email":"ada@example.com"}',
-        '{"name":"Ada","email":null}',
-        '{"name":"Ada","email":false}',
-        '{"name":"Ada","email":[]}',
-        '{"name":"Ada","email":{}}',
-        '{"name":"Ada","email":"not-an-email"}',
-        '{"name":"Ada","email":" ada@example.com"}',
-    ];
+$tests['HTTP command exposes native duplicate-key last-value behavior'] = static function (): void {
+    $command = CreateUserCommand::fromJson(
+        '{"name":"First","email":"first@example.com","name":"Final","email":"final@example.com"}',
+    );
 
-    foreach ($invalidBodies as $body) {
+    if ($command->name !== 'Final' || $command->email !== 'final@example.com') {
+        throw new RuntimeException('Expected the documented json_decode duplicate-key limitation.');
+    }
+};
+
+$tests['HTTP command rejects malformed coercive and unknown input'] = static function (): void {
+    foreach (invalidCreateUserBodies() as $case => $body) {
         try {
             CreateUserCommand::fromJson($body);
         } catch (InvalidRequest | RequestBodyTooLarge) {
             continue;
         }
 
-        throw new RuntimeException('Expected malformed or coercive JSON input to be rejected.');
+        throw new RuntimeException(sprintf('Expected create-user input case "%s" to be rejected.', $case));
+    }
+};
+
+$tests['HTTP handler invokes only its typed create-user operation'] = static function (): void {
+    $operation = new class implements CreateUserOperation {
+        public int $calls = 0;
+
+        public ?CreateUserCommand $received = null;
+
+        public function execute(CreateUserCommand $command): void
+        {
+            ++$this->calls;
+            $this->received = $command;
+        }
+    };
+    $handler = new CreateUserHandler($operation);
+    $response = $handler->handle(new Request(
+        'POST',
+        '/users',
+        body: '{"name":"Ada Lovelace","email":"ada@example.com"}',
+        headers: ['content-type' => 'application/json'],
+    ));
+
+    if (
+        $response->status !== 201
+        || $response->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
+        || $response->body !== "{\"user\":{\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
+        || $operation->calls !== 1
+        || !$operation->received instanceof CreateUserCommand
+        || $operation->received->name !== 'Ada Lovelace'
+        || $operation->received->email !== 'ada@example.com'
+    ) {
+        throw new RuntimeException('Expected the handler to pass one typed command to its operation.');
+    }
+};
+
+$tests['HTTP request boundary accepts the exact endpoint byte limit'] = static function (): void {
+    $operation = new class implements CreateUserOperation {
+        public int $calls = 0;
+
+        public ?CreateUserCommand $received = null;
+
+        public function execute(CreateUserCommand $command): void
+        {
+            ++$this->calls;
+            $this->received = $command;
+        }
+    };
+    $body = exactCreateUserBody(2_048);
+    $application = new Application(new Router([
+        new Route('POST', '/users', new CreateUserHandler($operation)),
+    ]));
+    $response = (new RequestBoundary(
+        requestReaderForBody($body, 8_192),
+        $application,
+        exampleErrorResponseRegistry(),
+    ))->handle(
+        [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/users',
+            'CONTENT_TYPE' => 'application/json',
+            'CONTENT_LENGTH' => (string) strlen($body),
+        ],
+        [],
+    );
+
+    if (
+        strlen($body) !== 2_048
+        || $response->status !== 201
+        || $operation->calls !== 1
+        || !$operation->received instanceof CreateUserCommand
+        || strlen($operation->received->name) !== 2_013
+        || $operation->received->email !== 'a@example.com'
+    ) {
+        throw new RuntimeException('Expected the exact endpoint byte limit to reach the typed operation.');
+    }
+};
+
+$tests['HTTP handler rejects invalid commands before use-case invocation'] = static function (): void {
+    $operation = new class implements CreateUserOperation {
+        public int $calls = 0;
+
+        public function execute(CreateUserCommand $command): void
+        {
+            ++$this->calls;
+        }
+    };
+    $handler = new CreateUserHandler($operation);
+
+    foreach (invalidCreateUserBodies() as $case => $body) {
+        try {
+            $handler->handle(new Request(
+                'POST',
+                '/users',
+                body: $body,
+                headers: ['content-type' => 'application/json'],
+            ));
+        } catch (InvalidRequest | RequestBodyTooLarge) {
+            continue;
+        }
+
+        throw new RuntimeException(sprintf(
+            'Expected create-user input case "%s" to fail before use-case invocation.',
+            $case,
+        ));
+    }
+
+    if ($operation->calls !== 0) {
+        throw new RuntimeException('Expected invalid create-user input to make zero use-case calls.');
     }
 };
 
@@ -1493,20 +1598,24 @@ $tests['example request boundary maps client failures before database work'] = s
         new DenyAllGetDocumentAuthorization(),
     )));
     $registry = exampleErrorResponseRegistry();
-    $invalidBody = '{"name":"Ada"}';
-    $invalidResponse = (new RequestBoundary(
-        requestReaderForBody($invalidBody, 8_192),
-        $application,
-        $registry,
-    ))->handle(
-        [
-            'REQUEST_METHOD' => 'POST',
-            'REQUEST_URI' => '/users',
-            'CONTENT_TYPE' => 'application/json',
-            'CONTENT_LENGTH' => (string) strlen($invalidBody),
-        ],
-        [],
-    );
+    $invalidResponses = [];
+
+    foreach (invalidCreateUserBodies() as $case => $invalidBody) {
+        $invalidResponses[$case] = (new RequestBoundary(
+            requestReaderForBody($invalidBody, 8_192),
+            $application,
+            $registry,
+        ))->handle(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/users',
+                'CONTENT_TYPE' => 'application/json',
+                'CONTENT_LENGTH' => (string) strlen($invalidBody),
+            ],
+            [],
+        );
+    }
+
     $validBody = '{"name":"Ada","email":"ada@example.com"}';
     $unsupportedResponse = (new RequestBoundary(
         requestReaderForBody($validBody, 8_192),
@@ -1517,20 +1626,6 @@ $tests['example request boundary maps client failures before database work'] = s
             'REQUEST_METHOD' => 'POST',
             'REQUEST_URI' => '/users',
             'CONTENT_LENGTH' => (string) strlen($validBody),
-        ],
-        [],
-    );
-    $endpointOversizeBody = str_repeat('x', 2_049);
-    $tooLargeResponse = (new RequestBoundary(
-        requestReaderForBody($endpointOversizeBody, 8_192),
-        $application,
-        $registry,
-    ))->handle(
-        [
-            'REQUEST_METHOD' => 'POST',
-            'REQUEST_URI' => '/users',
-            'CONTENT_TYPE' => 'application/json',
-            'CONTENT_LENGTH' => (string) strlen($endpointOversizeBody),
         ],
         [],
     );
@@ -1548,29 +1643,111 @@ $tests['example request boundary maps client failures before database work'] = s
         [],
     );
 
+    $expectedHeaders = [
+        'Content-Type' => 'application/json; charset=utf-8',
+        'Cache-Control' => 'no-store',
+    ];
+    $expectedInvalidBody = "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n";
+    $expectedTooLargeBody = "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n";
+
+    foreach ($invalidResponses as $case => $invalidResponse) {
+        $expectedStatus = $case === 'exact_endpoint_overflow' ? 413 : 400;
+        $expectedBody = $case === 'exact_endpoint_overflow'
+            ? $expectedTooLargeBody
+            : $expectedInvalidBody;
+
+        if (
+            $invalidResponse->status !== $expectedStatus
+            || $invalidResponse->headers !== $expectedHeaders
+            || $invalidResponse->body !== $expectedBody
+            || str_contains($invalidResponse->body, createUserSecretProbe())
+            || str_contains(implode("\n", $invalidResponse->headers), createUserSecretProbe())
+        ) {
+            throw new RuntimeException(sprintf(
+                'Expected create-user input case "%s" to receive one generic redacted response.',
+                $case,
+            ));
+        }
+    }
+
     if (
-        $invalidResponse->status !== 400
-        || $invalidResponse->headers !== [
-            'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'no-store',
-        ]
-        || $invalidResponse->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
-        || str_contains($invalidResponse->body, 'exactly name and email')
-        || $unsupportedResponse->status !== 415
-        || $unsupportedResponse->headers !== $invalidResponse->headers
+        $unsupportedResponse->status !== 415
+        || $unsupportedResponse->headers !== $expectedHeaders
         || $unsupportedResponse->body !== "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n"
-        || $tooLargeResponse->status !== 413
-        || $tooLargeResponse->headers !== $invalidResponse->headers
-        || $tooLargeResponse->body !== "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n"
         || $outerTooLargeResponse->status !== 413
-        || $outerTooLargeResponse->headers !== $invalidResponse->headers
-        || $outerTooLargeResponse->body !== $tooLargeResponse->body
+        || $outerTooLargeResponse->headers !== $expectedHeaders
+        || $outerTooLargeResponse->body !== $expectedTooLargeBody
         || $readBudget->used() !== 0
         || $getBudget->used() !== 0
         || $writeBudget->used() !== 0
         || $writeTrace->snapshot()['statements'] !== 0
     ) {
         throw new RuntimeException('Expected explicit public client failures before database work.');
+    }
+};
+
+$tests['mapped input failures emit no submitted data or log entry'] = static function (): void {
+    $logPath = __DIR__ . '/../tmp/mapped-input-failure.log';
+
+    if (file_put_contents($logPath, '') !== 0) {
+        throw new RuntimeException('Unable to reset the mapped-input test log.');
+    }
+
+    $operation = new class implements CreateUserOperation {
+        public int $calls = 0;
+
+        public function execute(CreateUserCommand $command): void
+        {
+            ++$this->calls;
+        }
+    };
+    $secret = createUserSecretProbe();
+    $body = '{"name":"Ada","email":"ada@example.com","api_token":"' . $secret . '"}';
+    $application = new Application(new Router([
+        new Route('POST', '/users', new CreateUserHandler($operation)),
+    ]));
+    $previousErrorLog = ini_get('error_log');
+
+    if (ini_set('error_log', $logPath) === false) {
+        throw new RuntimeException('Unable to redirect the mapped-input test log.');
+    }
+
+    try {
+        $response = (new RequestBoundary(
+            requestReaderForBody($body, 8_192),
+            $application,
+            exampleErrorResponseRegistry(),
+        ))->handle(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/users',
+                'CONTENT_TYPE' => 'application/json',
+                'CONTENT_LENGTH' => (string) strlen($body),
+            ],
+            [],
+        );
+    } finally {
+        if (is_string($previousErrorLog)) {
+            ini_set('error_log', $previousErrorLog);
+        }
+    }
+
+    $log = file_get_contents($logPath);
+
+    if (
+        !is_string($log)
+        || $log !== ''
+        || $operation->calls !== 0
+        || $response->status !== 400
+        || $response->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ]
+        || $response->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
+        || str_contains($response->body, $secret)
+        || str_contains(implode("\n", $response->headers), $secret)
+    ) {
+        throw new RuntimeException('Expected one generic mapped input failure with no submitted data or log entry.');
     }
 };
 
@@ -1881,7 +2058,7 @@ $tests['transactional user creation rolls back when its budget rejects the event
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
-    $handler = new CreateUserHandler($connection);
+    $handler = new CreateUserHandler(new TransactionalCreateUser($connection));
     $budgetFailed = false;
 
     try {
@@ -1936,7 +2113,7 @@ $tests['transactional user creation rolls back when the event statement fails'] 
     $budget = new QueryBudget(2);
     $trace = new QueryTrace(2);
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
-    $handler = new CreateUserHandler($connection);
+    $handler = new CreateUserHandler(new TransactionalCreateUser($connection));
     $statementFailed = false;
 
     try {
@@ -1977,23 +2154,28 @@ $tests['transactional user creation rejects invalid input before database work']
     $budget = new QueryBudget(2);
     $trace = new QueryTrace(2);
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
-    $handler = new CreateUserHandler($connection);
-    $inputFailed = false;
+    $handler = new CreateUserHandler(new TransactionalCreateUser($connection));
 
-    try {
-        $handler->handle(new Request(
-            'POST',
-            '/users',
-            body: '{"name":"Ada"}',
-            headers: ['content-type' => 'application/json'],
+    foreach (invalidCreateUserBodies() as $case => $body) {
+        try {
+            $handler->handle(new Request(
+                'POST',
+                '/users',
+                body: $body,
+                headers: ['content-type' => 'application/json'],
+            ));
+        } catch (InvalidRequest | RequestBodyTooLarge) {
+            continue;
+        }
+
+        throw new RuntimeException(sprintf(
+            'Expected create-user input case "%s" to fail before database work.',
+            $case,
         ));
-    } catch (InvalidRequest) {
-        $inputFailed = true;
     }
 
     if (
-        !$inputFailed
-        || $connection->inTransaction()
+        $connection->inTransaction()
         || $budget->used() !== 0
         || $trace->snapshot()['statements'] !== 0
     ) {
@@ -2351,6 +2533,77 @@ function runListUsersPageScenario(string $databasePath, ?string $afterUserId): a
     ];
 }
 
+function createUserSecretProbe(): string
+{
+    return 'submitted-secret-issue-4';
+}
+
+function exactCreateUserBody(int $bytes): string
+{
+    $prefix = '{"name":"';
+    $suffix = '","email":"a@example.com"}';
+    $nameBytes = $bytes - strlen($prefix) - strlen($suffix);
+
+    if ($nameBytes < 1) {
+        throw new InvalidArgumentException('Exact create-user body requires room for a non-empty name.');
+    }
+
+    return $prefix . str_repeat('a', $nameBytes) . $suffix;
+}
+
+/**
+ * @return array<string, string>
+ */
+function invalidCreateUserBodies(): array
+{
+    $tooDeep = str_repeat('{"value":', 17) . 'null' . str_repeat('}', 17);
+
+    return [
+        'empty' => '',
+        'unfinished_object' => '{',
+        'multiple_documents' => '{}{}',
+        'top_level_string' => '"text"',
+        'top_level_integer' => '7',
+        'top_level_boolean' => 'true',
+        'top_level_null' => 'null',
+        'top_level_list' => '[]',
+        'malformed_utf8_document' => "\xB1\x31",
+        'excessive_depth' => $tooDeep,
+        'exact_endpoint_overflow' => exactCreateUserBody(2_049),
+        'missing_name' => '{"email":"ada@example.com"}',
+        'missing_email' => '{"name":"Ada"}',
+        'null_name' => '{"name":null,"email":"ada@example.com"}',
+        'null_email' => '{"name":"Ada","email":null}',
+        'unknown_field' => '{"name":"Ada","email":"ada@example.com","is_admin":true}',
+        'unknown_secret_field' => '{"name":"Ada","email":"ada@example.com","api_token":"'
+            . createUserSecretProbe()
+            . '"}',
+        'case_mismatched_name' => '{"Name":"Ada","email":"ada@example.com"}',
+        'empty_name' => '{"name":"","email":"ada@example.com"}',
+        'blank_name' => '{"name":"   ","email":"ada@example.com"}',
+        'integer_name' => '{"name":7,"email":"ada@example.com"}',
+        'float_name' => '{"name":7.5,"email":"ada@example.com"}',
+        'boolean_name' => '{"name":true,"email":"ada@example.com"}',
+        'list_name' => '{"name":[],"email":"ada@example.com"}',
+        'object_name' => '{"name":{},"email":"ada@example.com"}',
+        'nested_name' => '{"name":{"value":["Ada"]},"email":"ada@example.com"}',
+        'padded_name' => '{"name":" Ada","email":"ada@example.com"}',
+        'integer_email' => '{"name":"Ada","email":7}',
+        'boolean_email' => '{"name":"Ada","email":false}',
+        'list_email' => '{"name":"Ada","email":[]}',
+        'object_email' => '{"name":"Ada","email":{}}',
+        'nested_email' => '{"name":"Ada","email":{"value":["ada@example.com"]}}',
+        'invalid_email' => '{"name":"Ada","email":"not-an-email"}',
+        'unicode_local_email' => '{"name":"Ada","email":"jos\u00e9@example.com"}',
+        'double_dot_email' => '{"name":"Ada","email":"ada@example..com"}',
+        'local_domain_email' => '{"name":"Ada","email":"ada@localhost"}',
+        'trailing_dot_email' => '{"name":"Ada","email":"ada@example.com."}',
+        'padded_email' => '{"name":"Ada","email":" ada@example.com"}',
+        'malformed_utf8_in_name' => "{\"name\":\"\xB1\",\"email\":\"ada@example.com\"}",
+        'lone_surrogate_in_name' => '{"name":"\uD800","email":"ada@example.com"}',
+    ];
+}
+
 /**
  * @return array{status: int, body: string, used: int, statements: int, repeated_fingerprints: int, maximum_executions: int, created_users: int, created_events: int}
  */
@@ -2360,7 +2613,9 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
     $budget = new QueryBudget(2);
     $trace = new QueryTrace(2);
     $handler = new CreateUserHandler(
-        Connection::connect('sqlite:' . $databasePath, $budget, $trace),
+        new TransactionalCreateUser(
+            Connection::connect('sqlite:' . $databasePath, $budget, $trace),
+        ),
     );
     $response = $handler->handle(new Request(
         'POST',

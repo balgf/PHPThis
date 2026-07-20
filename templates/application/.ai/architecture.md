@@ -20,10 +20,25 @@ Dependencies may point only in the direction shown above. Document every deliber
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `{{HTTP_BOUNDARY_PATH}}` | {{HTTP_BOUNDARY_RESPONSIBILITY}} |
+| Inbound operation data | `{{INPUT_BOUNDARY_PATHS_OR_NOT_APPLICABLE}}` | {{INPUT_BOUNDARY_RESPONSIBILITIES_OR_NOT_APPLICABLE}} |
 | Typed session services | `{{SESSION_SERVICE_PATHS_OR_NOT_APPLICABLE}}` | {{SESSION_SERVICE_KEY_OWNERSHIP_OR_NOT_APPLICABLE}} |
 | Typed cache services | `{{CACHE_SERVICE_PATHS_OR_NOT_APPLICABLE}}` | {{CACHE_SERVICE_PROJECTION_OWNERSHIP_OR_NOT_APPLICABLE}} |
 | Database | `{{DATABASE_BOUNDARY_PATH_OR_NOT_APPLICABLE}}` | {{DATABASE_BOUNDARY_RESPONSIBILITY}} |
 | External services | `{{INTEGRATION_BOUNDARY_PATH_OR_NOT_APPLICABLE}}` | {{INTEGRATION_BOUNDARY_RESPONSIBILITY}} |
+
+## Inbound data boundaries
+
+- Adoption or `NOT_APPLICABLE(INPUT)`: {{INPUT_BOUNDARY_ADOPTION_OR_NOT_APPLICABLE}}
+- Canonical path: `bounded raw representation -> operation-specific named parser factory -> final readonly command or request -> downstream typed behavior or one justified typed operation seam`
+
+| Operation | Raw source and complete bounds | Parser factory and typed result | Field shape and canonical representations | Normalization policy | Failure, disclosure, and side-effect barrier |
+| --- | --- | --- | --- | --- | --- |
+| `{{INPUT_OPERATION_1}}` | {{INPUT_OPERATION_1_SOURCE_AND_BOUNDS}} | `{{INPUT_OPERATION_1_FACTORY_AND_TYPE}}` | {{INPUT_OPERATION_1_FIELDS_AND_REPRESENTATIONS}} | {{INPUT_OPERATION_1_NORMALIZATION_OR_NONE}} | {{INPUT_OPERATION_1_FAILURE_AND_SIDE_EFFECT_POLICY}} |
+| `{{INPUT_OPERATION_2_OR_NOT_APPLICABLE}}` | {{INPUT_OPERATION_2_SOURCE_AND_BOUNDS_OR_NOT_APPLICABLE}} | `{{INPUT_OPERATION_2_FACTORY_AND_TYPE_OR_NOT_APPLICABLE}}` | {{INPUT_OPERATION_2_FIELDS_AND_REPRESENTATIONS_OR_NOT_APPLICABLE}} | {{INPUT_OPERATION_2_NORMALIZATION_OR_NONE}} | {{INPUT_OPERATION_2_FAILURE_AND_SIDE_EFFECT_POLICY_OR_NOT_APPLICABLE}} |
+
+For each operation, record complete byte, depth, field-count, list-count, item, and scalar limits as applicable; required and optional fields; absent-versus-explicit-null behavior; rejection of unknown fields; exact boolean, integer, string, enum, date, list, and object representations; deterministic validation order; and the native JSON duplicate-key limitation or a separately accepted parser. The factory checks runtime types before conversion and owns a private constructor. Downstream behavior uses only the completed value. Add a separate typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership, and record whether parsing occurs before or after authentication, tenant resolution, and authorization.
+
+No normalization is implicit. A deliberate field transformation records its order, pre- and post-transform bounds, collision behavior, and retained canonical value. Validation decides whether input is accepted; sink-specific output encoding, named SQL bindings, and current authorization remain separate responsibilities. Rejection prevents operation-owned downstream I/O and mutation and makes zero calls to a typed seam when present. Earlier transport or request-policy work remains separately bounded under its recorded order. Keep the public failure finite, stable, generic, and free of submitted values or internal messages. Do not introduce a generic validator, result wrapper, rule-string language, reflection hydration, mass assignment, sanitization magic, or automatic request binding.
 
 ## Identity and authorization
 

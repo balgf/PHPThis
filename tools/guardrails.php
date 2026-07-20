@@ -438,6 +438,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/018-bounded-alpha-1-release-scope.md',
     'docs/decisions/019-bounded-multiple-typed-routes.md',
     'docs/decisions/020-application-owned-request-policy.md',
+    'docs/decisions/021-application-owned-typed-input-boundaries.md',
     'example/src/Documents/DocumentRoutes.php',
     'example/src/Documents/GetDocument/AccountId.php',
     'example/src/Documents/GetDocument/AuthenticateGetDocumentRequest.php',
@@ -452,6 +453,8 @@ $requiredRepositoryFiles = [
     'example/src/Users/GetUser/GetUserHandler.php',
     'example/src/Users/GetUser/UserDetails.php',
     'example/src/Users/GetUser/UserId.php',
+    'example/src/Users/CreateUser/CreateUserOperation.php',
+    'example/src/Users/CreateUser/TransactionalCreateUser.php',
     'example/src/Users/UserRoutes.php',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
@@ -938,6 +941,115 @@ foreach ($requestPolicyArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "Request-policy artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$typedInputBoundaryArtifactMarkers = [
+    '.ai/application-context.md' => [
+        'every adopted inbound operation',
+        '`NOT_APPLICABLE(INPUT)`',
+    ],
+    '.ai/types.md' => [
+        'No normalization is implicit.',
+        'Native `json_decode` does not expose duplicate object keys and retains the last value',
+        'Consumer Contract v4 and Strict Profile v2 remain unchanged.',
+    ],
+    'docs/type-safety.md' => [
+        'external mixed data -> named parser factory -> final readonly value -> native typed code',
+        'Invalid input makes zero seam calls when one exists and cannot trigger operation-owned downstream I/O or mutation.',
+        'A duplicate-key-aware parser requires a separate decision',
+    ],
+    'docs/getting-started.md' => [
+        "each inbound operation's raw representation",
+        '`NOT_APPLICABLE(INPUT)`',
+    ],
+    'docs/guardrails.md' => [
+        'The typed-input guard retains ADR 021',
+    ],
+    'VISION.md' => [
+        'at most one operation-specific typed seam',
+    ],
+    'docs/decisions/021-application-owned-typed-input-boundaries.md' => [
+        'Status: accepted',
+        'Each accepting operation owns one named parser factory',
+        'This decision adds application-owned example evidence and authoring guidance only.',
+        'Consumer Contract version 4 and Strict Profile version 2 remain unchanged.',
+    ],
+    'docs/decisions/013-optional-crud-reference-profile.md' => [
+        'ADR 021 supersedes this record only where the earlier Create tree',
+        'List remains handler-local after parsing its concrete `ListUsersPageRequest`',
+    ],
+    'example/src/Users/CreateUser/CreateUserCommand.php' => [
+        'private function __construct(',
+        'public static function fromJson(string $json): self',
+        'array_key_exists(\'name\', $values)',
+        'JSON_THROW_ON_ERROR',
+        'FILTER_VALIDATE_EMAIL, 0',
+    ],
+    'example/src/Users/CreateUser/CreateUserHandler.php' => [
+        '$command = CreateUserCommand::fromJson($request->body);',
+        '$this->createUser->execute($command);',
+    ],
+    'example/src/Users/CreateUser/CreateUserOperation.php' => [
+        'interface CreateUserOperation',
+        'execute(CreateUserCommand $command): void',
+    ],
+    'example/src/Users/CreateUser/TransactionalCreateUser.php' => [
+        'final readonly class TransactionalCreateUser implements CreateUserOperation',
+        'public function execute(CreateUserCommand $command): void',
+    ],
+    'tests/run.php' => [
+        'HTTP command parses one exact JSON object',
+        'HTTP command exposes native duplicate-key last-value behavior',
+        'HTTP command rejects malformed coercive and unknown input',
+        'HTTP handler invokes only its typed create-user operation',
+        'HTTP handler rejects invalid commands before use-case invocation',
+        'mapped input failures emit no submitted data or log entry',
+        '$expectedStatus = $case === \'exact_endpoint_overflow\' ? 413 : 400;',
+        'example request boundary maps client failures before database work',
+        'transactional user creation rejects invalid input before database work',
+    ],
+    'templates/application/.ai/architecture.md' => [
+        '{{INPUT_BOUNDARY_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{INPUT_OPERATION_1_FACTORY_AND_TYPE}}',
+        'No normalization is implicit.',
+    ],
+    'templates/application/.ai/testing.md' => [
+        '{{INPUT_BOUNDARY_TEST_COMMAND_OR_NOT_APPLICABLE}}',
+        'no operation-owned downstream database work',
+        'When a separate typed operation seam exists, assert zero calls.',
+        'duplicate-key-aware contract requires a separately accepted parser decision',
+    ],
+    'skeleton/.ai/README.md' => [
+        'NOT_APPLICABLE(INPUT)',
+        'do not add a generic input guide or validation mechanism',
+    ],
+    'skeleton/.ai/architecture.md' => [
+        'NOT_APPLICABLE(INPUT)',
+        'operation-specific named parser factory',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'NOT_APPLICABLE(INPUT_EVIDENCE)',
+        'no operation-owned downstream I/O or mutation',
+        'zero typed-seam calls when one exists',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/021-application-owned-typed-input-boundaries.md',
+    ],
+];
+
+foreach ($typedInputBoundaryArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read typed-input-boundary artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Typed-input-boundary artifact marker is missing from {$relativePath}.";
         }
     }
 }

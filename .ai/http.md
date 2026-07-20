@@ -8,6 +8,8 @@ Rules:
 - Pass parsed input explicitly. Do not read superglobals in handlers.
 - Store normalized request header names as lowercase keys and use explicit array access; do not add a header helper.
 - Parse a JSON body once with a concrete `Command::fromJson` factory; reject missing, unknown, and wrongly typed fields.
+- Construct the complete final readonly command before downstream operation behavior. When a separate typed operation seam is justified, call it only with that command. Invalid input causes zero seam calls and no operation-owned downstream I/O or mutation; record any protected-request policy work deliberately ordered before parsing.
+- Keep validation, deliberate field normalization, output encoding or escaping, and authorization as separate visible decisions; none is a generic input helper.
 - Set the outer body limit in the composition root, enforce endpoint-specific limits before decoding, and use `JSON_THROW_ON_ERROR` with an explicit depth.
 - Enforce route-specific media types in the handler before parsing or database work.
 - Set status, body, and headers explicitly.
@@ -17,3 +19,5 @@ Rules:
 - Encode JSON with `JSON_THROW_ON_ERROR` and set its content type.
 - Emit the response only after `RequestBoundary::handle` returns.
 - Treat redirects, files, and streams as future explicit response types, not array conventions.
+
+ADR 021's Create proof uses the application-owned `CreateUserOperation` seam and `TransactionalCreateUser` as that transaction's one operation-specific SQL owner/query object, without adding a framework input or service API. Consumer Contract v4 and Strict Profile v2 remain unchanged.

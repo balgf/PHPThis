@@ -10,6 +10,7 @@ use Example\Documents\GetDocument\AuthorizeGetDocument;
 use Example\Documents\GetDocument\ResolveGetDocumentTenant;
 use Example\Documents\GetDocument\SelectAuthorizedDocument;
 use Example\Users\CreateUser\CreateUserHandler;
+use Example\Users\CreateUser\TransactionalCreateUser;
 use Example\Users\GetUser\GetUserHandler;
 use Example\Users\ListUsers\ListUsersHandler;
 use Example\Users\UserRoutes;
@@ -32,7 +33,7 @@ final class Routes
         $retrieveDocument = new SelectAuthorizedDocument($getDocumentConnection);
         $listUsersHandler = new ListUsersHandler($listUsersConnection);
         $getUserHandler = new GetUserHandler($getUserConnection);
-        $createUserHandler = new CreateUserHandler($createUserConnection);
+        $createUserHandler = new CreateUserHandler(new TransactionalCreateUser($createUserConnection));
 
         return [
             ...HealthRoutes::create($healthHandler),

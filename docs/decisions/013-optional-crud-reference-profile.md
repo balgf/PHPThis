@@ -6,7 +6,7 @@ Status: accepted
 
 Create, read, update, and delete work is a recurring shape in database-backed PHP applications. Giving that work a predictable source layout reduces the number of plausible placements an AI must infer, but treating CRUD as one generic operation erases important differences between its use cases. Create, list, item read, update, and delete can have different input types, authorization rules, query shapes, transaction boundaries, concurrency behavior, conflicts, and response semantics.
 
-PHPThis has executable evidence for two collection operations: a transactional Create handler and a bounded List handler whose query count is tested at materially different fixture sizes. The example List now records and proves its own keyset contract: optional canonical `after_user_id`, ascending identifiers, fixed 50-row pages, one-row lookahead, a canonical string continuation or `null`, and one statement per accepted page. ADR 017 adds the single bounded trailing positive-integer route shape and a first item Get proof with immediate concrete-identifier conversion, explicit missing behavior, and one query. These examples do not choose another application's pagination contract, tenant scope, update concurrency policy, deletion semantics, authorization rules, or conflict behavior.
+PHPThis has executable evidence for two collection operations: a transactional Create path and a bounded List handler whose query count is tested at materially different fixture sizes. The example List now records and proves its own keyset contract: optional canonical `after_user_id`, ascending identifiers, fixed 50-row pages, one-row lookahead, a canonical string continuation or `null`, and one statement per accepted page. ADR 017 adds the single bounded trailing positive-integer route shape and a first item Get proof with immediate concrete-identifier conversion, explicit missing behavior, and one query. These examples do not choose another application's pagination contract, tenant scope, update concurrency policy, deletion semantics, authorization rules, or conflict behavior.
 
 Consumers need a clear PHPThis-shaped default without making their directories part of framework runtime behavior or preventing a project from selecting a better structure for its domain.
 
@@ -23,6 +23,8 @@ src/
     CreateUser/
       CreateUserCommand.php
       CreateUserHandler.php
+      CreateUserOperation.php
+      TransactionalCreateUser.php
     GetUser/
       GetUserHandler.php
       UserDetails.php
@@ -33,7 +35,9 @@ src/
       UserActivitySummary.php
 ```
 
-Feature and operation names use the application's domain vocabulary. Route lists remain explicit. A handler keeps the complete request path visible and may move SQL only into a narrowly named query object when that responsibility no longer remains clear in the handler. Operation requests, commands, and projections stay specific to one boundary instead of becoming generic records, models, or collections.
+Feature and operation names use the application's domain vocabulary. Route lists remain explicit. A handler keeps the complete request path visible and may move SQL only into a narrowly named query object when that responsibility no longer remains clear in the handler. When HTTP adaptation and an independently meaningful business transaction need separate ownership, one narrowly typed operation interface and one direct SQL-owning implementation may replace handler-owned SQL without adding a service or repository layer. Operation requests, commands, and projections stay specific to one boundary instead of becoming generic records, models, or collections.
+
+ADR 021 supersedes this record only where the earlier Create tree showed `CreateUserCommand` and `CreateUserHandler` alone and where its transaction was described as handler-owned. The current path adds `CreateUserOperation` and `TransactionalCreateUser` because HTTP adaptation and the two-statement transaction have distinct responsibilities; rejected-input exclusion is evidence for that boundary, not its sole reason to exist. List remains handler-local after parsing its concrete `ListUsersPageRequest`; no automatic handler split is authorized.
 
 An application may use this reference placement or record one coherent alternate placement and naming rule in its `.ai/architecture.md`. That selection guides authoring within the application; it does not add a second framework runtime API. An alternate structure may strengthen the installed consumer contract but cannot weaken its typing, explicit routing, visible SQL, bounded database work, analysis, or verification requirements.
 

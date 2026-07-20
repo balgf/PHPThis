@@ -18,6 +18,7 @@ Every observable behavior change must add or update application-owned automated 
 
 - Framework-owned profile and static analysis: `vendor/bin/phpthis check`
 - Application behavior tests: `composer test`
+- Inbound-data boundary tests: `NOT_APPLICABLE(INPUT)`
 - Database integration tests: `NOT_APPLICABLE(no database)`
 - Request-policy tests: `NOT_APPLICABLE(public liveness route only)`
 - HTTP cache policy tests: `composer test`
@@ -29,6 +30,7 @@ Focused commands shorten feedback but never replace the complete gate.
 
 - Automated tests for every observable behavior change cover expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits.
 - Test the exact health response, unknown route, unsupported method, malformed runtime input, oversized declared body, and real front controller.
+- `NOT_APPLICABLE(INPUT_EVIDENCE)`: the health-only operation accepts no application-owned fields and constructs no typed request or command. Before adding product input, prove the exact final readonly value used by downstream behavior; absent and explicit-null behavior; unknown, wrongly typed, coercive, malformed, nested, and oversized representations; exact boolean, integer, enum, date, string, list, and object policy as applicable; every recorded preservation, rejection, or explicit normalization; stable generic secret-free failures; no operation-owned downstream I/O or mutation; and zero typed-seam calls when one exists. Record and separately bound any request-policy work ordered before parsing, and record the native JSON duplicate-key limitation unless a separately accepted parser proves rejection.
 - `NOT_APPLICABLE(REQUEST_POLICY_EVIDENCE)`: before protecting a route, test unauthenticated, ordinary forbidden, cross-tenant, permitted, and unexpected policy-failure paths, exact policy order, every failing stage, zero protected queries and writes on denial, explicit principal and tenant delivery, generic disclosure and cache policy, redaction from responses, logs, and traces, and independent replacement of every policy implementation. A concrete credential parser also tests malformed and rejected input, and any policy I/O has a budget and trace distinct from protected work.
 - `NOT_APPLICABLE(CRUD_EVIDENCE)`: the starter has no CRUD-shaped operations. For each operation later added, test its applicable route, identifier, conflict, pagination, missing-resource, concurrency, deletion, authorization, and audit policies; keep absent operations and concerns explicitly not applicable.
 - `NOT_APPLICABLE(DATABASE_EVIDENCE)`: before database adoption, add engine integration and scale tests, adversarial bound-data tests, unknown-selector and oversized-list rejection before database work, query-budget and trace assertions, and dated evidence that runtime authority excludes migration and administrative capabilities.

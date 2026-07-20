@@ -21,6 +21,8 @@ src/
     CreateUser/
       CreateUserCommand.php
       CreateUserHandler.php
+      CreateUserOperation.php
+      TransactionalCreateUser.php
     GetUser/
       GetUserHandler.php
       UserDetails.php
@@ -36,7 +38,7 @@ src/
       DeleteUserHandler.php
 ```
 
-Include only files the operation needs. SQL may stay in a narrowly scoped handler or move to a narrowly named query object when that makes the operation clearer. The application may record another layout without adding a second way to perform the same task inside that application.
+Include only files the operation needs. SQL may stay in a narrowly scoped handler or move to one narrowly named operation-specific SQL owner/query object when that makes the operation clearer. ADR 021's accepted Create path uses `CreateUserOperation` to separate HTTP adaptation from an independently meaningful transaction and `TransactionalCreateUser` as that transaction's direct-`Connection`, two-statement SQL owner. Rejection evidence follows from that responsibility split; it does not authorize a generic service, repository, command bus, or automatic handler split. The application may record another layout without adding a second way to perform the same task inside that application.
 
 ## Required application decisions
 
@@ -57,4 +59,4 @@ Do not infer these facts from the directory name or from another application's e
 
 Test every adopted behavior rather than the spelling of directories. Cover route and method matching, boundary rejection, success and missing-resource behavior, authorization denial, create conflicts, bounded and stable pagination, concurrent updates, deletion and retention policy, and required audit effects. Database-backed behavior also needs engine-specific integration evidence, explicit query budgets, bounded traces, and constant statement counts across materially different fixture sizes.
 
-The current executable reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List. List additionally proves one application-owned keyset contract: optional canonical `after_user_id`, ascending identifiers, a fixed 50-row page, one up-to-51-row lookahead statement, and a canonical string continuation or `null`. It does not provide a generic pagination policy, and List authorization remains unresolved. Create still lacks authorization and identity/conflict policy. The first Get slice proves the typed trailing route, immediate `UserId` conversion, explicit missing response, concrete projection, and one bounded query, but not authorization or tenant scope. Update and Delete remain absent.
+The current executable reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List. Create proves that its exact command reaches `CreateUserOperation` only after complete validation, rejected input causes zero operation calls and database work, and `TransactionalCreateUser` retains the visible two-statement transaction. List additionally proves one application-owned keyset contract: optional canonical `after_user_id`, ascending identifiers, a fixed 50-row page, one up-to-51-row lookahead statement, and a canonical string continuation or `null`. It does not provide a generic pagination policy, and List authorization remains unresolved. Create still lacks authorization and identity/conflict policy. The first Get slice proves the typed trailing route, immediate `UserId` conversion, explicit missing response, concrete projection, and one bounded query, but not authorization or tenant scope. Update and Delete remain absent.

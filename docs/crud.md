@@ -25,6 +25,8 @@ src/
     CreateUser/
       CreateUserCommand.php
       CreateUserHandler.php
+      CreateUserOperation.php
+      TransactionalCreateUser.php
     GetUser/
       GetUserHandler.php
       UserDetails.php
@@ -37,13 +39,15 @@ src/
 
 The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Each operation directory contains only the boundary values and behavior needed by that use case:
 
-- a Create command parses and validates external input before database work;
-- a Create handler owns the visible transaction, write SQL, expected failure behavior, and response;
+- a Create command parses and validates the complete external input before typed use-case entry;
+- a Create handler owns HTTP media and parsing order, response encoding, and delegation through the concrete command;
+- the example-owned `CreateUserOperation` interface separates HTTP adaptation from the independently meaningful Create transaction and accepts only the final command;
+- `TransactionalCreateUser` owns the visible transaction, direct `Connection` calls, write SQL, and expected database failure behavior;
 - a Get handler immediately wraps its validated positive-integer path parameter in `UserId`, owns one bounded item query and explicit missing behavior, and parses a concrete `UserDetails` projection;
 - a List page request parses its exact query-parameter contract before database work;
 - a List handler owns a bounded, deterministically ordered read, continuation behavior, and response;
 - a List projection parses each selected row into a concrete final readonly value;
-- a narrowly named query object is introduced only when visible SQL no longer remains clear in its handler.
+- a narrowly named query object is introduced only when visible SQL no longer remains clear in its handler. `TransactionalCreateUser` is the one operation-specific SQL owner/query object because the Create transaction is separate from HTTP adaptation; the resulting rejection proof does not authorize a generic service or repository layer.
 
 Do not create a generic feature record shared across write input, selected rows, and responses. Those boundaries change for different reasons and require their own concrete types.
 
@@ -65,7 +69,7 @@ Every database operation still uses engine-specific visible SQL through direct `
 
 The framework repository's runnable example currently proves these structural and query-cost properties:
 
-- `POST /users`: a concrete command, explicit transactional Create handler, named SQL parameters, and a statement count that remains constant as pre-existing data grows;
+- `POST /users`: a concrete command, a handler that admits only that command to `CreateUserOperation`, explicit `TransactionalCreateUser` SQL and transaction ownership, generic safe input failures, named SQL parameters, zero rejected-input operation calls, and a statement count that remains constant as pre-existing data grows;
 - `GET /users`: a bounded List handler with a concrete page request and projections. Its example-owned contract accepts only optional canonical `after_user_id`, orders by ascending user ID, returns at most 50 users, probes one extra row, emits the last returned ID as the next canonical string or `null`, and keeps every page to one aggregate statement;
 - `GET /users/{user_id}`: the declared trailing positive-integer route, immediate `UserId` conversion, a concrete `UserDetails` projection, explicit missing response, and one bounded database statement.
 

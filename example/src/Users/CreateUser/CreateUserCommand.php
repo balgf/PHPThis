@@ -53,10 +53,10 @@ final readonly class CreateUserCommand
         $email = $values['email'];
 
         if (!is_string($name) || $name === '' || trim($name) !== $name) {
-            throw new InvalidRequest('Create-user name must be a non-empty trimmed string.');
+            throw new InvalidRequest('Create-user name must be non-empty and unchanged by PHP trim.');
         }
 
-        if (!is_string($email) || filter_var($email, FILTER_VALIDATE_EMAIL) !== $email) {
+        if (!is_string($email) || filter_var($email, FILTER_VALIDATE_EMAIL, 0) !== $email) {
             throw new InvalidRequest('Create-user email must be a valid unmodified string.');
         }
 

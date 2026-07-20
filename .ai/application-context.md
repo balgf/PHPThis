@@ -1,6 +1,6 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, ADR 016, ADR 017, or ADR 018.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 021.
 
 Rules:
 
@@ -18,6 +18,7 @@ Rules:
 - Keep the CRUD reference profile optional application structure. Consumers may record one coherent alternate placement and naming rule, but cannot weaken the installed consumer contract or Strict Profile.
 - Route consumer CRUD work through installed `vendor/phpthis/framework/docs/crud.md`, never the maintainer-only `.ai/crud.md`.
 - Require application context to record identifier and route policy, including immediate conversion of a validated path integer to a concrete identifier, plus pagination, create identity and conflicts, `PUT`/`PATCH` and concurrency, missing behavior, delete and retention, authorization, and audit ownership.
+- Require application context to record every adopted inbound operation's raw source, effective bounds, exact representations, absent-versus-null and unknown-field policy, normalization or explicit non-normalization, final readonly request or command, downstream typed behavior or justified seam, parser position relative to request policy, public failure contract, duplicate-key proof limit, and adversarial exclusion from operation-owned work; a health-only application records `NOT_APPLICABLE(INPUT)`.
 - When sessions are adopted, require application context to record typed service boundaries and key ownership, cookie policy, native file-storage topology, cleanup, verified PHP settings, and each applicable authentication, regeneration, expiry, logout, revocation, and CSRF policy; mark absent concerns explicitly not applicable.
 - Require application context to record an explicit HTTP response policy and separately adopt or reject server-side data caching. An adopted data cache records its narrowly named typed services, backend and topology, bounded versioned tenant-aware keys and payloads, finite lifetimes, invalidation and stale-refill behavior, failure and stampede behavior, redacted aggregate observability, and cold-cache plus cache-specific concurrency evidence.
 - Keep authentication, authorization, session state, permissions, secrets, and other security decisions outside an initial application data-cache slice unless a later accepted decision defines stronger invariants and evidence.

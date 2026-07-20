@@ -38,7 +38,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - An AI can answer a framework question from the installed version and name the contract, source, test, or decision that supports its answer.
 - After the universal contract, knowledge map, and application entrypoints are loaded, an AI can add a simple endpoint after reading at most four task-specific guide or code files.
 - A completed change reports its behavior, evidence, resource cost, and any consequential decision that still belongs to a human.
-- The request path can be traced in four application hops: route, handler, database, response.
+- The request path remains directly traceable through route, handler, at most one operation-specific typed seam when required, database, and response.
 - A protected request exposes its fixed authentication, tenant-resolution, authorization, and handler order with independently replaceable application policies and separately bounded policy and protected data work.
 - Database tests compare small and large fixtures and assert a constant query count.
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.

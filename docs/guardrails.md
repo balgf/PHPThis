@@ -13,6 +13,7 @@
 - native `session_*` calls occur only in `SessionLifecycle`, with the same restriction enforced in consuming applications;
 - the consumer contract, installed knowledge map, and every required application context template file remain present;
 - the optional CRUD reference profile, its accepted decision, and its AI routing context remain present;
+- the application-owned typed-input decision, canonical parser-to-command-to-use-case path, adversarial example proof, application-context fields, and explicit health-only `NOT_APPLICABLE(INPUT)` state remain present;
 - the cache policy guide, policy-before-mechanism decision, AI route, required HTTP policy fields, and explicit server-side adoption or not-applicable fields remain present;
 - the vision, consumer contract, skeleton, and application template preserve the AI authoring and human-accountability route;
 - the canonical check and CI workflow preserve the SQLite, MySQL, and PostgreSQL PDO transport certification path;
@@ -31,6 +32,8 @@ The routing lookup check follows direct helper calls from `Router::match` and `R
 The cache guard retains documentation and application-context policy, not a cache implementation. It keeps the current absence of a generic framework cache explicit, preserves separate HTTP and application data-cache decisions, requires the health-only skeleton to record its explicit `no-store` response policy, and resolves only server-side caching as not applicable. Framework and behavior tests cover explicit `no-store` on the current 404, 405, 500, skeleton, and example paths; arbitrary application responses remain application-owned. This does not claim that an application has adopted a backend or that PHPThis certifies one.
 
 The CRUD profile guard checks only that the installed authority and context route remain available. It deliberately does not inspect consumer directory names: an application may record one canonical alternative structure while remaining subject to the hard consumer contract and Strict Profile.
+
+The typed-input guard retains ADR 021, the operation-specific Create seam and adversarial evidence, the installed type guidance, and the template and skeleton context fields. It does not inspect arbitrary consumer field semantics or add a validator diagnostic; PHPStan proves native boundary types and any typed seam while application tests own representations, effective bounds, generic disclosure-safe failures, parser-versus-policy order, and exclusion from operation-owned downstream work.
 
 PHPStan runs separately at maximum level with strict rules. It owns static type correctness; `PHT005` resolves literal, imported, aliased, fully qualified, and typed dynamic PDO construction so the framework connection remains the sole boundary. `PHT006` resolves the native SQL-expression type at direct `Connection` database calls and rejects non-finite, blank, annotation-only, unpacked, or indirectly invoked SQL. The repository guardrail retains only lightweight repository-shape checks rather than attempting SQL parsing or taint analysis.
 

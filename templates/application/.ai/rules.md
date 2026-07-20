@@ -7,6 +7,10 @@ These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile
 - Use the canonical domain terms defined in `.ai/project.md`.
 - Preserve the dependency direction and boundaries defined in `.ai/architecture.md`.
 - Apply the data and resource limits defined in `.ai/data.md`.
+- Parse each complete inbound operation representation exactly once through the operation-specific named factory recorded in `.ai/architecture.md`, into a concrete final readonly request or command with a private constructor, before downstream operation behavior. Add a typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership.
+- Enforce every recorded byte, depth, field, list, item, and scalar bound; distinguish absence with `array_key_exists`, reject unknown fields, check runtime types before conversion, and accept only the operation's recorded canonical representations.
+- Keep field normalization opt-in and exactly recorded with transformation order, pre- and post-transform bounds, collision behavior, and retained canonical value. Keep validation separate from output encoding, SQL binding, and current authorization.
+- Keep parser position relative to authentication, tenant resolution, and authorization explicit. Rejection prevents operation-owned downstream I/O and mutation; it does not erase separately bounded policy work deliberately ordered before parsing.
 - Keep every SQL structural selector, bounded-list shape, runtime capability, prohibited capability, migration-authority boundary, and verification source current in `.ai/data.md`.
 - Make every external side effect and failure path named in `.ai/integrations.md` visible in the execution path.
 - Preserve the identity, tenant, and authorization boundaries defined in `.ai/architecture.md`.
@@ -23,6 +27,8 @@ These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile
 ## Forbidden
 
 - Do not invent missing product behavior, schema meaning, production limits, or external-service semantics.
+- Do not add a generic validator, result wrapper, string-rule language, automatic request binding, reflection hydration, mass assignment, sanitization magic, or unvalidated array beyond its named boundary.
+- Do not parse the same inbound representation again downstream, silently transform or coerce an application field, or treat validation as output encoding or authorization.
 - Do not introduce an undocumented side effect, retry, fallback, cache, queue, or scheduled operation.
 - Do not add a generic cache service, global cache helper, hidden cache-aside behavior, automatic query caching, implicit forever TTL, or arbitrary PHP object deserialization.
 - Do not use cached data as a source of truth or cache sessions, authentication state, authorization decisions, permissions, credentials, secrets, or another class prohibited by `.ai/architecture.md`.

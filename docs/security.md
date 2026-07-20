@@ -8,8 +8,10 @@ AI-oriented explicitness does not replace security review.
 - Do not interpolate data or use a generic SQL sanitizer, escaping helper, identifier validator, query builder, or SQL template engine to turn arbitrary input into structure.
 - Validate untrusted input before domain or database use.
 - Reject unknown fields and coercive values at the boundary; do not cast malformed input into an accepted type.
+- Distinguish absent keys from explicit `null`, apply the operation's recorded total and applicable field or collection bounds, and validate in a deterministic code-owned order before downstream operation behavior.
 - Enforce `PHT001` so scalar conversion cannot silently turn unresolved `mixed` input into a trusted value.
-- Encode output for its actual context.
+- Keep normalization operation-specific and explicit; never strip or rewrite malformed input into an apparently valid default.
+- Encode or escape output only for its actual sink; sink encoding is not input validation or authorization.
 - Keep credentials outside committed configuration.
 - Map only named client failures to generic public responses; broad built-in exceptions remain unknown failures.
 - Log an unknown failure once without its message, SQL, parameters, or stack, then return the generic 500 response.
@@ -26,6 +28,14 @@ AI-oriented explicitness does not replace security review.
 - Do not deserialize untrusted PHP values or execute generated PHP.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
+
+## Typed input boundaries
+
+ADR 021 keeps field validation and any deliberate normalization in one operation-owned parser. The parser constructs a final readonly command only after the exact object or list shape, runtime types, ranges, and bounds succeed. Invalid input stops before operation-owned downstream I/O and mutation and makes zero calls to a separate typed operation seam when one exists. On a protected route, ADR 020's separately bounded authentication, tenant, and authorization work may deliberately occur before the protected handler parses its operation input.
+
+Validation answers whether a representation is accepted. Normalization changes it under a recorded field policy. Output encoding answers how an accepted value is represented at one sink. Authorization answers whether the current principal may perform the named action. None substitutes for another: a normalized value can remain unauthorized, HTML encoding does not make SQL interpolation safe, and a validated SQL value remains a named parameter.
+
+The first proof returns only generic prebuilt input failures and never includes submitted values or internal validation messages. Native JSON decoding rejects malformed UTF-8 but does not expose duplicate object keys and does not normalize valid Unicode. Applications must not claim either property without a separately reviewed parser or Unicode policy. See [Type safety](type-safety.md) and [ADR 021](decisions/021-application-owned-typed-input-boundaries.md).
 
 ## Request policy
 

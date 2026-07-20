@@ -15,6 +15,7 @@ Then read only what the task needs:
 | Explain framework or application behavior | installed PHPThis knowledge map, matching application guide | installed framework source, application execution path, and tests |
 | Change structure or dependencies | `.ai/architecture.md` | `bootstrap.php` and the affected source boundary |
 | Add or change a route | `.ai/architecture.md` | `src/Routes.php`, the route area, handler, and tests |
+| Introduce inbound operation data | installed `vendor/phpthis/framework/docs/type-safety.md`, `.ai/architecture.md`, `.ai/testing.md` | raw representation and bounds, operation-specific parser factory, final readonly request or command, downstream typed behavior or justified seam, request-policy order, public error mapping, and adversarial tests |
 | Protect a route or change identity, tenant, or authorization policy | installed `vendor/phpthis/framework/docs/request-policy.md`, `.ai/request-policy.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/testing.md` | `bootstrap.php`, action-specific policy adapter, concrete principal and tenant values, policy and protected connections, exact denial registrations, and order, denial, redaction, and replacement tests |
 | Introduce cookie-backed session state | installed `vendor/phpthis/framework/docs/sessions.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | `bootstrap.php`, typed key ownership, isolated save path, mandatory transport evidence, and each applicable security-policy test |
 | Resolve or change HTTP response cache policy | installed `vendor/phpthis/framework/docs/caching.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | response-producing path, explicit `no-store`, `private`, or `public` policy, freshness or revalidation, validators, `Vary`, intermediary topology, and behavior tests |
@@ -26,6 +27,8 @@ Then read only what the task needs:
 | Add or change tests | `.ai/testing.md` | `tests/run.php` and `composer check` |
 
 `NOT_APPLICABLE(CRUD_PROFILE)`: the health-only starter has no CRUD-shaped resource behavior or CRUD directory convention. Before adding one, record adoption of the installed optional profile or one coherent alternate organization. Consumer Contract v4 and Strict Profile v2 remain mandatory.
+
+`NOT_APPLICABLE(INPUT)`: the health-only starter accepts no application-owned body, query, form, or header fields and creates no operation request or command. Its outer `RequestBoundary` still validates and bounds PHP runtime transport input. Before adding product input, record and test one operation-specific typed boundary in the existing `.ai/architecture.md` and `.ai/testing.md`; do not add a generic input guide or validation mechanism.
 
 `NOT_APPLICABLE(REQUEST_POLICY)`: the health-only starter has no credential, principal, tenant, protected action, policy query, or authorization decision. Before protecting a route, adopt the installed application-owned request-policy composition and record every project-specific security decision and test.
 

@@ -12,6 +12,10 @@ The example registers only these client failures:
 
 Their internal exception messages explain the rejected boundary to developers but never enter the response. The registry returns a prebuilt generic JSON value with an explicit content type.
 
+ADR 021 keeps operation-input failures on this static disclosure-safe path. Missing fields, explicit `null`, wrong types, unknown fields, malformed Unicode, and other invalid values share the stable `invalid_request` code; endpoint and outer body-limit failures share `request_body_too_large`. The parser uses a deterministic code-owned validation order, but neither the submitted value nor its internal rule message becomes public or enters the class-only unknown-failure log. Tests include secret-looking submitted fields and values and prove their absence from bodies, headers, logs, query traces, and operation calls.
+
+A consumer that needs field-addressable issue codes, localization, or a different status owns that finite response contract and its compatibility policy. It must not change `ErrorResponseRegistry` into a callback renderer, expose exception messages, or add a generic validation-result convention merely to produce details.
+
 Broad runtime types are never registered. A database projection `UnexpectedValueException`, response-encoding `JsonException`, `PDOException`, `QueryBudgetExceeded`, cardinality `RuntimeException`, or other unknown failure is rethrown unchanged. The front controller passes it to `UnknownFailureBoundary`, which writes one redacted log entry containing only the event and exception class, then returns `internal_server_error` with status 500.
 
 Database conflicts do not become 409 merely because a driver threw `PDOException`; that would misclassify unrelated constraint, connection, and statement failures. A future conflict mapping needs a named application failure translated at a boundary that can prove the specific condition.

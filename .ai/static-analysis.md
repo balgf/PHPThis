@@ -9,6 +9,7 @@ Rules:
 - Do not create a PHPStan baseline.
 - Do not add broad `ignoreErrors` patterns or weaken the configured level.
 - Resolve `mixed` at an input boundary with validation and a typed value.
+- For an ADR 021 input boundary, use PHT001 and maximum-level PHPStan to prove narrowing, the concrete command or request type, and any typed operation signature; use adversarial runtime tests for representations, bounds, deterministic generic errors, zero typed-seam calls when present, and zero operation-owned downstream work. Do not invent PHT007 for application policy.
 - Add precise PHPDoc generics or array shapes only when native PHP cannot express the type.
 - Prefer a tested custom PHPStan rule over a text-based exception for framework architecture.
 - Give every PHPThis-owned rule a permanent `PHT` identifier and positive and negative fixtures.
@@ -20,3 +21,5 @@ Rules:
 - The consumer checker must build one application-file manifest and pass that same manifest to syntax checks and PHPStan.
 
 PHPStan proves static type and code-shape properties. It does not prove that bound data is semantically valid, a selector policy is complete, database privileges are least-privileged, statement counts are bounded, or SQL plans are acceptable. Runtime adversarial tests, authority verification, query budgets, and database integration tests remain mandatory.
+
+ADR 021 adds no diagnostic. Consumer Contract v4 and Strict Profile v2 remain unchanged.

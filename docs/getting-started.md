@@ -52,7 +52,7 @@ For an existing application adopting the context template and, when applicable, 
 2. Copy the contents of `vendor/phpthis/framework/templates/application/` into the new application root, preserving the hidden `.ai/` directory. When evaluating from a PHPThis source checkout instead, use its `templates/application/` directory.
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
-5. Use the contract-version-3 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, record session policy as verified or not applicable, and run `composer check`.
+5. Use the contract-version-4 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, record input and session policy as verified or not applicable, and run `composer check`.
 6. Commit the completed application context before asking the project AI to implement the first feature.
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.
@@ -83,6 +83,7 @@ PHPThis already defines framework mechanics. The application context should add 
 
 - the product purpose, users, accountable human decision roles, non-goals, and canonical domain vocabulary;
 - the actual composition root, route manifest, source boundaries, and dependency direction;
+- each inbound operation's raw representation, effective byte/depth/field/list/scalar bounds, exact field types and representations, absent-versus-null and unknown-field behavior, explicit normalization or rejection policy, final readonly request or command, downstream typed behavior or justified seam, parser position relative to request policy, generic failure disclosure, duplicate-key proof limit, and adversarial exclusion from operation-owned work; or `NOT_APPLICABLE(INPUT)` while no operation accepts application-owned fields;
 - whether the application adopts the installed CRUD reference structure or records one canonical alternative, plus its identifier, pagination, mutation-concurrency, missing-record, deletion, authorization, and audit policies;
 - every database connection's engine and version, PDO extension, non-secret configuration source, schema and dialect ownership, large or sensitive tables, result bounds, query budgets, index expectations, integration command, and connection-local transaction constraints;
 - every operation's variable SQL-structure choices or an explicit static-only statement policy, plus the finite reviewed statement mapping and rejection behavior;
