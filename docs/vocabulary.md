@@ -20,6 +20,12 @@
 | request-summary sink | application-owned destination boundary invoked once with the final summary | framework logger, facade, global helper |
 | sink invocation attempt | one synchronous call after response selection whose failure cannot alter the response and whose return does not prove durable delivery | guaranteed log, retry policy, delivery receipt |
 | database source | one bounded code-owned label paired with a distinct connection budget and trace in the terminal summary | connection registry, DSN metadata, database facade |
+| durable-job envelope | bounded versioned stored JSON parsed as untrusted input into one concrete readonly job value | serialized object, class name, arbitrary event payload |
+| commit-visible job publication | business change and job insert made durable by the same `Connection`, explicit transaction, and database commit | enqueue callback, after-commit hook, cross-connection atomicity |
+| job lease | finite claim ownership identified by job, leased state, attempt number, opaque token, and unexpired deadline | permanent lock, exactly-once ownership, heartbeat service |
+| one-shot worker | fresh application process or invocation that claims and finalizes at most one delivery before exit | daemon loop, framework worker, queue consumer abstraction |
+| at-least-once delivery | a durable job may be delivered again after failure or lease expiry, so its effect must tolerate duplicates | exactly-once execution, unique attempt, single handler call |
+| dead letter | terminal job state with one finite redacted diagnostic code after poison input or exhausted delivery | exception archive, automatic replay queue, failure log payload |
 | projection | final readonly typed value parsed from a selected database row | model, entity, active record |
 | command | final readonly typed input parsed at an external boundary | request array, payload bag |
 | Strict Profile | versioned subset of PHP accepted by the complete check gate | style guide, optional lint |

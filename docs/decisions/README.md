@@ -27,3 +27,4 @@ Accepted records:
 - `021-application-owned-typed-input-boundaries.md`
 - `022-application-owned-finite-data-paths.md`
 - `023-application-owned-terminal-request-summaries.md`
+- `024-application-owned-sqlite-durable-jobs.md`

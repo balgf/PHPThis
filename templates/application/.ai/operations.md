@@ -61,6 +61,15 @@ Do not infer intermediary behavior from local responses. Verify every production
 
 Cache availability never establishes application correctness. Record whether each operation bypasses the cache, fails closed, or returns an explicitly stale bounded result when the backend is unavailable; do not add an implicit fallback or unbounded retry.
 
+## Durable-job runtime
+
+- Adoption or `NOT_APPLICABLE(JOBS)`: `.ai/jobs.md`
+- Worker supervisor and one-shot invocation policy: {{JOBS_SUPERVISOR_AND_INVOCATION_POLICY_OR_NOT_APPLICABLE}}
+- Process timeout, forced termination, restart, and clean-stop policy: {{JOBS_PROCESS_LIFECYCLE_POLICY_OR_NOT_APPLICABLE}}
+- Capacity, retention, dead-letter inspection, and incident policy: {{JOBS_OPERATIONS_POLICY_OR_NOT_APPLICABLE}}
+
+The application supervisor creates repetition by starting fresh one-delivery processes. Do not add an in-process database polling loop, mutable worker container, hidden retry loop, or unrecorded signal behavior.
+
 ## Environments and deployment
 
 - Environment names and purpose: {{ENVIRONMENT_MODEL}}

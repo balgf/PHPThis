@@ -23,6 +23,7 @@ public/index.php
             -> operation-specific transaction owner -> Connection
           -> typed application session service (when needed)
           -> typed application cache service (when deliberately adopted)
+          -> application-owned job insert in the same transaction (when adopted)
           -> Connection (when the handler directly owns its data work)
         <- Response
     -> ErrorResponseRegistry (only after a named failure)
@@ -45,9 +46,11 @@ The router stores objects, not class names, so dispatch does not need reflection
 - `Http`: bounded runtime ingestion, immutable request/response values, exact error mapping, and final emission.
 - `Session`: bounded immutable snapshots and one lazy native-file session lifecycle; authentication, authorization, expiry, and CSRF remain application policy.
 - `Database`: explicit PDO execution and query accounting.
-- `example`: proves the complete manual wiring path, including its application-owned terminal request coordinator and sink; the optional feature-first CRUD profile with bounded application-owned user and document continuations; a typed Create operation with visible transactional data work; bounded typed-item Get use cases; and nested protected document routes with explicitly ordered, replaceable application request-policy adapters.
+- `example`: proves the complete manual wiring path, including its application-owned terminal request coordinator and sink; the optional feature-first CRUD profile with bounded application-owned user and document continuations; a typed Create operation with visible transactional data and job publication; one SQLite-specific one-shot durable-job worker; bounded typed-item Get use cases; and nested protected document routes with explicitly ordered, replaceable application request-policy adapters.
 
-ADR 021 adds no core input or operation namespace. `CreateUserHandler` owns HTTP media checks, complete `CreateUserCommand` parsing, and response preparation. It then calls `CreateUserOperation`, the explicit boundary to the independently meaningful Create transaction. `TransactionalCreateUser` is the one example-owned concrete transaction operation and retains the direct `Connection` calls, exactly two fixed statements, transaction, budget, and trace. This responsibility split makes rejected-input non-entry directly testable; the test does not itself justify a generic service layer, repository, query object, data mapper, command bus, SQL helper, automatic handler split, or second execution path.
+ADR 021 adds no core input or operation namespace. `CreateUserHandler` owns HTTP media checks, complete `CreateUserCommand` parsing, and response preparation. It then calls `CreateUserOperation`, the explicit boundary to the independently meaningful Create transaction. `TransactionalCreateUser` is the one example-owned concrete transaction operation and retains the direct `Connection` calls, exactly three fixed statements, transaction, budget, and trace: user, event, and commit-visible welcome-job insertion. This responsibility split makes rejected-input non-entry directly testable; the test does not itself justify a generic service layer, repository, query object, data mapper, command bus, SQL helper, automatic handler split, or second execution path.
+
+ADR 024 adds no core job namespace. The example parses one bounded stored envelope, dispatches one finite type, and runs one fresh SQLite worker invocation that claims at most one due row. Its complete claim, idempotent effect, completion, retry, and dead-letter SQL remains application-owned and fenced by an unexpired opaque lease token. Repetition belongs to an external supervisor; delivery is at least once and no external exactly-once behavior is claimed.
 
 ADR 020 adds no core policy namespace or request state. One application route adapter owns a fixed `authenticate -> resolve tenant -> authorize -> protected handler` sequence and passes concrete immutable principal and tenant values explicitly. The reference policies are I/O-free; any policy that reads storage uses a named connection, budget, and trace distinct from protected handler work. Authorization remains current per request, and protected SQL remains explicitly tenant- and resource-scoped after the decision.
 

@@ -46,7 +46,7 @@ Transactions are manual: begin, execute, and commit inside `try`; in `finally`, 
 
 A transaction belongs to one PDO connection. Work across two connections or engines is not atomic, even when both local transactions commit successfully.
 
-The sample `POST /users` path performs two writes: one user row and one `user.created` event selected through the unique email. Both affected-row counts must be one. The handler prepares its success response before beginning, commits only after both writes, and rolls back when a failure or query-budget rejection leaves the transaction active.
+The sample `POST /users` path performs three writes: one user row, one `user.created` event selected through the unique email, and one bounded versioned welcome-job row. Every affected-row count must be one. The handler prepares its success response before beginning, commits only after all three writes, and rolls back when a failure or query-budget rejection leaves the transaction active. The job is commit-visible publication on that same SQLite connection, not an after-commit callback.
 
 The sample `GET /users` path binds the validated last-emitted user ID, or the code-owned first-page sentinel `0`, and selects up to 51 ascending users with event counts in one aggregate statement. The handler emits at most 50 rows and uses the extra row only to prove that a continuation exists. The derived user selection applies the keyset predicate and bound before joining events, and `user_events.user_id` is indexed in the sample schema. Every accepted page receives its own one-statement budget and trace; 125-row traversal evidence proves 50/50/25 output with no gaps or duplicates in a static fixture.
 

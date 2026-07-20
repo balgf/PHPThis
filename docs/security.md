@@ -28,6 +28,8 @@ AI-oriented explicitness does not replace security review.
 - Parse every cache hit into its expected typed projection and treat malformed, stale-schema, cross-tenant, or otherwise invalid values as a recorded miss or failure; never deserialize PHP objects from a cache.
 - Keep authentication, authorization, permissions, sessions, CSRF material, secrets, and other security decisions out of the initial application data-cache slice.
 - Give personalized, session-affecting, authenticated, and sensitive HTTP responses an explicit `private, no-store` policy until the application records and tests a different safe policy; test cookie-emitting responses separately because `Set-Cookie` is not a cache prohibition.
+- Treat every stored job envelope as untrusted input: bound bytes and nesting, reject unknown or coercive fields, select handlers only from a finite code-owned type/version map, and never deserialize PHP objects or resolve a class from storage.
+- Fence job completion, retry, and dead-letter writes with the leased state, job identity, attempt, opaque token, and a freshly observed unexpired deadline. Store only finite redacted diagnostic codes, never envelopes, payloads, idempotency keys, exception details, SQL, bindings, credentials, or external response bodies.
 - Do not deserialize untrusted PHP values or execute generated PHP.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
@@ -78,6 +80,12 @@ Each runtime connection uses only the database objects and actions its process n
 
 Least privilege limits impact but does not replace application authorization. A permitted statement can still expose another tenant's data or perform the wrong domain action.
 
+## Durable-job limits
+
+Commit-visible publication is atomic only for the business write and job insert executed through the same `Connection`, explicit transaction, and SQLite database. It does not include another connection, broker, external service, or later handler execution. The worker process receives only the database-file and table authority its one-shot path requires; schema management, replay, cancellation, and inspection use separately authorized operational paths.
+
+Lease ownership does not prevent duplicate or overlapping execution. An idempotency key and unique database effect constrain the exercised local effect but do not prove exactly-once execution or exactly-once external delivery. External destinations require separately reviewed credentials, timeouts, provider idempotency, durable receipts, reconciliation, compensation, redaction, and least privilege. See [Durable jobs](jobs.md) and [ADR 024](decisions/024-application-owned-sqlite-durable-jobs.md).
+
 ## Proof limits
 
-PHT006 recognizes only the three direct canonical `Connection` calls and the native finite string type passed to them. It does not parse SQL, review statement intent, inspect stored procedures or server-side dynamic SQL, validate grants, or cover reflection and non-canonical invocation. A finite statement may still be destructive, logically incorrect, overprivileged, or unsafe inside the database. Parameterization, static analysis, runtime tests, authorization review, least-privilege verification, and engine-specific integration tests are complementary evidence.
+PHT006 recognizes only the three direct canonical `Connection` calls and the native finite string type passed to them. It does not parse SQL, review statement intent, inspect stored procedures or server-side dynamic SQL, validate grants, or cover reflection and non-canonical invocation. A finite statement may still be destructive, logically incorrect, overprivileged, or unsafe inside the database. Parameterization, static analysis, runtime tests, authorization review, least-privilege verification, and engine-specific integration tests are complementary evidence. ADR 024's file-backed SQLite fixtures do not prove production filesystem durability, real concurrency, capacity, clock correctness, backup recovery, dead-letter operations, or another database engine.

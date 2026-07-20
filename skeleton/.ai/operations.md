@@ -12,7 +12,7 @@
 
 - Supported PHP version: 8.4
 - Web runtime: PHP's built-in server for local verification only.
-- Worker and scheduler: `NOT_APPLICABLE`.
+- Worker and scheduler: `NOT_APPLICABLE(JOBS)`; `.ai/jobs.md` owns any future job lifecycle decision.
 - Required extensions: `ext-pdo` and `ext-session` through the installed framework; the starter application opens no database connection and configures no session lifecycle.
 
 ## Session runtime
@@ -30,6 +30,10 @@
 ## Server-side cache runtime
 
 `NOT_APPLICABLE(CACHE)`: the starter configures no cache backend, client, extension, package, storage, or server-side caching. Before adoption, record the backend product and supported version, deployment topology and environment isolation, non-secret configuration source, capacity and eviction behavior, finite TTL policy, invalidation and stale-refill behavior, failure and recovery behavior, stampede owner and bounded lock or lease behavior, and dated operational source. Cache availability must not establish application correctness.
+
+## Durable-job runtime
+
+`NOT_APPLICABLE(JOBS)`: the starter has no job table, worker process, scheduler, supervisor, timeout, forced termination, restart, clean-stop, capacity, retention, dead-letter inspection, replay, or incident policy. Before adoption, record those verified application-specific facts here and the transaction, envelope, idempotency, lease, retry, redaction, and evidence contract in `.ai/jobs.md`. Repetition must come from a supervisor starting fresh one-delivery processes, never an in-process polling or retry loop.
 
 ## Deployment
 

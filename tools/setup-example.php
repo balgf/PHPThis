@@ -54,8 +54,8 @@ if (
 
 $connection = Connection::connect(
     'sqlite:' . $databasePath,
-    new QueryBudget(13),
-    new QueryTrace(13),
+    new QueryBudget(17),
+    new QueryTrace(17),
 );
 
 $connection->executeStatement(
@@ -79,6 +79,118 @@ $connection->executeStatement(
 );
 $connection->executeStatement(
     'CREATE INDEX IF NOT EXISTS user_events_user_id_idx ON user_events (user_id)',
+);
+$connection->executeStatement(
+    <<<'SQL'
+        CREATE TABLE IF NOT EXISTS application_jobs (
+            job_id TEXT PRIMARY KEY
+                CHECK (
+                    length(job_id) = 32
+                    AND job_id NOT GLOB '*[^0-9a-f]*'
+                ),
+            envelope_json TEXT NOT NULL
+                CHECK (length(CAST(envelope_json AS BLOB)) BETWEEN 2 AND 2048),
+            status TEXT NOT NULL
+                CHECK (status IN ('available', 'leased', 'succeeded', 'dead')),
+            available_at INTEGER NOT NULL CHECK (available_at >= 0),
+            attempts_started INTEGER NOT NULL DEFAULT 0
+                CHECK (attempts_started >= 0),
+            max_attempts INTEGER NOT NULL CHECK (max_attempts = 3),
+            lease_token TEXT
+                CHECK (
+                    lease_token IS NULL
+                    OR (
+                        length(lease_token) = 32
+                        AND lease_token NOT GLOB '*[^0-9a-f]*'
+                    )
+                ),
+            lease_expires_at INTEGER
+                CHECK (lease_expires_at IS NULL OR lease_expires_at >= 0),
+            last_failure_code TEXT
+                CHECK (
+                    last_failure_code IS NULL
+                    OR last_failure_code IN (
+                        'handler_failure',
+                        'invalid_envelope',
+                        'lease_expired',
+                        'lease_expired_after_final_attempt'
+                    )
+                ),
+            created_at INTEGER NOT NULL CHECK (created_at >= 0),
+            updated_at INTEGER NOT NULL CHECK (updated_at >= 0),
+            completed_at INTEGER CHECK (completed_at IS NULL OR completed_at >= 0),
+            dead_at INTEGER CHECK (dead_at IS NULL OR dead_at >= 0),
+            CHECK (attempts_started <= max_attempts),
+            CHECK (
+                (
+                    status = 'available'
+                    AND attempts_started < max_attempts
+                    AND lease_token IS NULL
+                    AND lease_expires_at IS NULL
+                    AND completed_at IS NULL
+                    AND dead_at IS NULL
+                )
+                OR (
+                    status = 'leased'
+                    AND attempts_started BETWEEN 1 AND max_attempts
+                    AND lease_token IS NOT NULL
+                    AND lease_expires_at IS NOT NULL
+                    AND completed_at IS NULL
+                    AND dead_at IS NULL
+                )
+                OR (
+                    status = 'succeeded'
+                    AND attempts_started BETWEEN 1 AND max_attempts
+                    AND lease_token IS NULL
+                    AND lease_expires_at IS NULL
+                    AND completed_at IS NOT NULL
+                    AND dead_at IS NULL
+                )
+                OR (
+                    status = 'dead'
+                    AND attempts_started BETWEEN 1 AND max_attempts
+                    AND lease_token IS NULL
+                    AND lease_expires_at IS NULL
+                    AND completed_at IS NULL
+                    AND dead_at IS NOT NULL
+                    AND last_failure_code IS NOT NULL
+                )
+            )
+        ) STRICT
+        SQL,
+);
+$connection->executeStatement(
+    <<<'SQL'
+        CREATE INDEX IF NOT EXISTS application_jobs_available_due_idx
+        ON application_jobs (available_at, created_at, job_id)
+        WHERE status = 'available'
+        SQL,
+);
+$connection->executeStatement(
+    <<<'SQL'
+        CREATE INDEX IF NOT EXISTS application_jobs_expired_lease_idx
+        ON application_jobs (lease_expires_at, created_at, job_id)
+        WHERE status = 'leased'
+        SQL,
+);
+$connection->executeStatement(
+    <<<'SQL'
+        CREATE TABLE IF NOT EXISTS welcome_deliveries (
+            idempotency_key TEXT PRIMARY KEY
+                CHECK (
+                    length(idempotency_key) = 64
+                    AND idempotency_key NOT GLOB '*[^0-9a-f]*'
+                ),
+            job_id TEXT NOT NULL
+                CHECK (
+                    length(job_id) = 32
+                    AND job_id NOT GLOB '*[^0-9a-f]*'
+                ),
+            recipient_email TEXT NOT NULL
+                CHECK (length(CAST(recipient_email AS BLOB)) BETWEEN 3 AND 254),
+            created_at INTEGER NOT NULL CHECK (created_at >= 0)
+        ) STRICT
+        SQL,
 );
 $connection->executeStatement(
     <<<'SQL'

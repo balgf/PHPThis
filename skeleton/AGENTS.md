@@ -49,6 +49,8 @@ The starter's terminal request summary is mandatory rather than optional: preser
 
 `NOT_APPLICABLE(CACHE)`: before introducing server-side caching, replace the cache sections in `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, and `.ai/testing.md` with verified narrowly named typed service ownership, backend and topology, versioned environment- and tenant-scoped keys, bounded payloads and finite TTLs, invalidation, stale-refill and failure behavior, stampede ownership, observability, and cold, warm, failure, isolation, stale-refill race, and concurrency evidence. Do not add a generic cache helper or treat cached data as authoritative.
 
+`NOT_APPLICABLE(JOBS)`: before introducing durable deferred work, read installed `docs/jobs.md` and replace `.ai/jobs.md` with verified backend, transaction, envelope, idempotency, lease, retry, dead-letter, worker, supervisor, redaction, and test decisions. Do not add a framework queue, discovery, event bus, transaction callback, worker loop, or exactly-once external-effect claim.
+
 ## Context safety
 
 Do not write credentials, tokens, private keys, customer data, production payloads, or secrets into AI context, source comments, fixtures, logs, or reports. Use documented secret references and redacted examples.

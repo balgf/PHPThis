@@ -43,6 +43,7 @@ require dirname(__DIR__) . '/autoload.php';
 
 require __DIR__ . '/request-policy.php';
 require __DIR__ . '/observability.php';
+require __DIR__ . '/jobs.php';
 
 $tests = requestPolicyTests();
 
@@ -50,11 +51,15 @@ foreach (observabilityTests() as $name => $test) {
     $tests[$name] = $test;
 }
 
+foreach (jobTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
 $tests['example composes explicit route modules'] = static function (): void {
     $application = new Application(new Router(Routes::create(
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
-        Connection::connect('sqlite::memory:', new QueryBudget(2), new QueryTrace(2)),
+        Connection::connect('sqlite::memory:', new QueryBudget(3), new QueryTrace(3)),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         new DenyAllDocumentAuthentication(),
@@ -1850,8 +1855,8 @@ $tests['example request boundary maps client failures before database work'] = s
     $databasePath = createUserDatabaseFixture('request-client-failures', 0, false);
     $readBudget = new QueryBudget(1);
     $getBudget = new QueryBudget(1);
-    $writeBudget = new QueryBudget(2);
-    $writeTrace = new QueryTrace(2);
+    $writeBudget = new QueryBudget(3);
+    $writeTrace = new QueryTrace(3);
     $dsn = 'sqlite:' . $databasePath;
     $application = new Application(new Router(Routes::create(
         Connection::connect($dsn, $readBudget, new QueryTrace(1)),
@@ -2024,8 +2029,8 @@ $tests['user routes execute bounded reads and one transactional write end to end
     $readTrace = new QueryTrace(1);
     $getBudget = new QueryBudget(1);
     $getTrace = new QueryTrace(1);
-    $writeBudget = new QueryBudget(2);
-    $writeTrace = new QueryTrace(2);
+    $writeBudget = new QueryBudget(3);
+    $writeTrace = new QueryTrace(3);
     $dsn = 'sqlite:' . $databasePath;
     $application = new Application(new Router(Routes::create(
         Connection::connect($dsn, $readBudget, $readTrace),
@@ -2061,10 +2066,10 @@ $tests['user routes execute bounded reads and one transactional write end to end
         || $listed->status !== 200
         || $listed->headers !== $created->headers
         || $listed->body !== "{\"users\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"next_after_user_id\":null}\n"
-        || $writeBudget->used() !== 2
+        || $writeBudget->used() !== 3
         || $readBudget->used() !== 1
         || $getBudget->used() !== 1
-        || $writeTrace->snapshot()['statements'] !== 2
+        || $writeTrace->snapshot()['statements'] !== 3
         || $readTrace->snapshot()['statements'] !== 1
         || $getTrace->snapshot()['statements'] !== 1
     ) {
@@ -2303,7 +2308,7 @@ $tests['user item route separates missing records from malformed identifiers'] =
     }
 };
 
-$tests['transactional user creation keeps two queries across dataset sizes'] = static function (): void {
+$tests['transactional user creation publishes one job with three writes across dataset sizes'] = static function (): void {
     $empty = runCreateUserScenario('write-empty', 0);
     $large = runCreateUserScenario('write-large', 500);
 
@@ -2311,14 +2316,15 @@ $tests['transactional user creation keeps two queries across dataset sizes'] = s
         $empty !== $large
         || $empty['status'] !== 201
         || $empty['body'] !== "{\"user\":{\"name\":\"New User\",\"email\":\"new@example.com\"}}\n"
-        || $empty['used'] !== 2
-        || $empty['statements'] !== 2
+        || $empty['used'] !== 3
+        || $empty['statements'] !== 3
         || $empty['repeated_fingerprints'] !== 0
         || $empty['maximum_executions'] !== 1
         || $empty['created_users'] !== 1
         || $empty['created_events'] !== 1
+        || $empty['published_jobs'] !== 1
     ) {
-        throw new RuntimeException('Expected transactional creation to keep two writes at scale.');
+        throw new RuntimeException('Expected transactional creation to publish one job at constant cost.');
     }
 };
 
@@ -2379,8 +2385,8 @@ $tests['transactional user creation rolls back when the event statement fails'] 
             SQL,
     );
 
-    $budget = new QueryBudget(2);
-    $trace = new QueryTrace(2);
+    $budget = new QueryBudget(3);
+    $trace = new QueryTrace(3);
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
     $handler = new CreateUserHandler(new TransactionalCreateUser($connection));
     $statementFailed = false;
@@ -2891,13 +2897,13 @@ function invalidCreateUserBodies(): array
 }
 
 /**
- * @return array{status: int, body: string, used: int, statements: int, repeated_fingerprints: int, maximum_executions: int, created_users: int, created_events: int}
+ * @return array{status: int, body: string, used: int, statements: int, repeated_fingerprints: int, maximum_executions: int, created_users: int, created_events: int, published_jobs: int}
  */
 function runCreateUserScenario(string $name, int $preexistingUsers): array
 {
     $databasePath = createUserDatabaseFixture($name, $preexistingUsers, $preexistingUsers > 0);
-    $budget = new QueryBudget(2);
-    $trace = new QueryTrace(2);
+    $budget = new QueryBudget(3);
+    $trace = new QueryTrace(3);
     $handler = new CreateUserHandler(
         new TransactionalCreateUser(
             Connection::connect('sqlite:' . $databasePath, $budget, $trace),
@@ -2911,8 +2917,8 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
     ));
     $verification = Connection::connect(
         'sqlite:' . $databasePath,
-        new QueryBudget(2),
-        new QueryTrace(2),
+        new QueryBudget(3),
+        new QueryTrace(3),
     );
     $userCount = $verification->selectOneRow(
         'SELECT COUNT(users.id) AS row_count FROM users WHERE users.email = :email',
@@ -2928,10 +2934,19 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
             SQL,
         ['email' => 'new@example.com', 'event_type' => 'user.created'],
     );
+    $jobCount = $verification->selectOneRow(
+        <<<'SQL'
+            SELECT COUNT(application_jobs.job_id) AS row_count
+            FROM application_jobs
+            WHERE application_jobs.status = :status
+            SQL,
+        ['status' => 'available'],
+    );
     $createdUsers = $userCount['row_count'] ?? null;
     $createdEvents = $eventCount['row_count'] ?? null;
+    $publishedJobs = $jobCount['row_count'] ?? null;
 
-    if (!is_int($createdUsers) || !is_int($createdEvents)) {
+    if (!is_int($createdUsers) || !is_int($createdEvents) || !is_int($publishedJobs)) {
         throw new RuntimeException('Expected SQLite count results to be integers.');
     }
 
@@ -2945,6 +2960,7 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
         'maximum_executions' => $summary['maximum_executions_per_fingerprint'],
         'created_users' => $createdUsers,
         'created_events' => $createdEvents,
+        'published_jobs' => $publishedJobs,
     ];
 }
 
@@ -2968,8 +2984,8 @@ function createUserDatabaseFixture(string $name, int $userCount, bool $seedEvent
 
     $connection = Connection::connect(
         'sqlite:' . $databasePath,
-        new QueryBudget(5),
-        new QueryTrace(5),
+        new QueryBudget(9),
+        new QueryTrace(9),
     );
     $connection->executeStatement(
         <<<'SQL'
@@ -2992,6 +3008,118 @@ function createUserDatabaseFixture(string $name, int $userCount, bool $seedEvent
     );
     $connection->executeStatement(
         'CREATE INDEX user_events_user_id_idx ON user_events (user_id)',
+    );
+    $connection->executeStatement(
+        <<<'SQL'
+            CREATE TABLE application_jobs (
+                job_id TEXT PRIMARY KEY
+                    CHECK (
+                        length(job_id) = 32
+                        AND job_id NOT GLOB '*[^0-9a-f]*'
+                    ),
+                envelope_json TEXT NOT NULL
+                    CHECK (length(CAST(envelope_json AS BLOB)) BETWEEN 2 AND 2048),
+                status TEXT NOT NULL
+                    CHECK (status IN ('available', 'leased', 'succeeded', 'dead')),
+                available_at INTEGER NOT NULL CHECK (available_at >= 0),
+                attempts_started INTEGER NOT NULL DEFAULT 0
+                    CHECK (attempts_started >= 0),
+                max_attempts INTEGER NOT NULL CHECK (max_attempts = 3),
+                lease_token TEXT
+                    CHECK (
+                        lease_token IS NULL
+                        OR (
+                            length(lease_token) = 32
+                            AND lease_token NOT GLOB '*[^0-9a-f]*'
+                        )
+                    ),
+                lease_expires_at INTEGER
+                    CHECK (lease_expires_at IS NULL OR lease_expires_at >= 0),
+                last_failure_code TEXT
+                    CHECK (
+                        last_failure_code IS NULL
+                        OR last_failure_code IN (
+                            'handler_failure',
+                            'invalid_envelope',
+                            'lease_expired',
+                            'lease_expired_after_final_attempt'
+                        )
+                    ),
+                created_at INTEGER NOT NULL CHECK (created_at >= 0),
+                updated_at INTEGER NOT NULL CHECK (updated_at >= 0),
+                completed_at INTEGER CHECK (completed_at IS NULL OR completed_at >= 0),
+                dead_at INTEGER CHECK (dead_at IS NULL OR dead_at >= 0),
+                CHECK (attempts_started <= max_attempts),
+                CHECK (
+                    (
+                        status = 'available'
+                        AND attempts_started < max_attempts
+                        AND lease_token IS NULL
+                        AND lease_expires_at IS NULL
+                        AND completed_at IS NULL
+                        AND dead_at IS NULL
+                    )
+                    OR (
+                        status = 'leased'
+                        AND attempts_started BETWEEN 1 AND max_attempts
+                        AND lease_token IS NOT NULL
+                        AND lease_expires_at IS NOT NULL
+                        AND completed_at IS NULL
+                        AND dead_at IS NULL
+                    )
+                    OR (
+                        status = 'succeeded'
+                        AND attempts_started BETWEEN 1 AND max_attempts
+                        AND lease_token IS NULL
+                        AND lease_expires_at IS NULL
+                        AND completed_at IS NOT NULL
+                        AND dead_at IS NULL
+                    )
+                    OR (
+                        status = 'dead'
+                        AND attempts_started BETWEEN 1 AND max_attempts
+                        AND lease_token IS NULL
+                        AND lease_expires_at IS NULL
+                        AND completed_at IS NULL
+                        AND dead_at IS NOT NULL
+                        AND last_failure_code IS NOT NULL
+                    )
+                )
+            ) STRICT
+            SQL,
+    );
+    $connection->executeStatement(
+        <<<'SQL'
+            CREATE INDEX application_jobs_available_due_idx
+            ON application_jobs (available_at, created_at, job_id)
+            WHERE status = 'available'
+            SQL,
+    );
+    $connection->executeStatement(
+        <<<'SQL'
+            CREATE INDEX application_jobs_expired_lease_idx
+            ON application_jobs (lease_expires_at, created_at, job_id)
+            WHERE status = 'leased'
+            SQL,
+    );
+    $connection->executeStatement(
+        <<<'SQL'
+            CREATE TABLE welcome_deliveries (
+                idempotency_key TEXT PRIMARY KEY
+                    CHECK (
+                        length(idempotency_key) = 64
+                        AND idempotency_key NOT GLOB '*[^0-9a-f]*'
+                    ),
+                job_id TEXT NOT NULL
+                    CHECK (
+                        length(job_id) = 32
+                        AND job_id NOT GLOB '*[^0-9a-f]*'
+                    ),
+                recipient_email TEXT NOT NULL
+                    CHECK (length(CAST(recipient_email AS BLOB)) BETWEEN 3 AND 254),
+                created_at INTEGER NOT NULL CHECK (created_at >= 0)
+            ) STRICT
+            SQL,
     );
 
     if ($userCount === 0) {

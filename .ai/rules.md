@@ -10,6 +10,7 @@
 - Execute application SQL only through direct `Connection` calls, bind every data value with a distinct named placeholder per occurrence, and keep the final SQL a finite non-blank compile-time constant.
 - Map external SQL-structure selectors to finite reviewed code-owned choices and reject unknown selectors before database work.
 - Keep every adopted cache read, write, and invalidation visible behind a narrowly named typed application service and an explicitly wired backend; parse cache hits as untrusted external values before use.
+- Keep durable-job publication, claim, effect, completion, retry, and dead-letter SQL visible in the application-owned backend-specific path; parse stored envelopes as untrusted values and dispatch only finite code-owned type/version combinations.
 - Keep protected request policy in one application-owned action-specific adapter with explicit `authenticate -> resolve tenant -> authorize -> handler` order, concrete immutable principal and tenant values, and independently replaceable constructor-injected policies.
 - Give any policy reads distinct named connections, budgets, and traces from protected handler work; every denial must stop before protected queries, writes, session mutation, cache mutation, or external business side effects.
 - Keep one application-owned ADR 023 terminal coordinator and sink at the visible front-controller boundary, with generated correlation, finite distinct database sources, complete redaction, and exactly one failure-isolated invocation attempt.
@@ -30,6 +31,7 @@
 - Direct application access to `$_SESSION`, native `session_*` calls, generic session helpers, or authentication state stored without a typed application boundary.
 - Middleware or policy registries, generic request-context or attribute bags, service-located policies, hidden tenant resolution, implicit or global authorization scopes, and treating stored or cached identity as current authorization.
 - Generic cache facades or bags, remember-style callbacks, implicit cache fallback or retries, automatic query caching, hidden cache middleware, unbounded keys or values, implicit forever lifetimes, and claims that distinct backends are behaviorally interchangeable.
+- Framework job types, generic queue or worker facades, event buses, automatic job discovery, serialized PHP objects, hidden after-commit callbacks, in-process polling or retry loops, and exactly-once external-effect claims.
 - Core logging event, sink, or coordinator types; logger facades, global log helpers, logging middleware, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or claims that one sink invocation attempt guarantees delivery.
 - Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
 - Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.

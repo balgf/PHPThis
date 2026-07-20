@@ -6,11 +6,17 @@ This file records only the checked-in example's current data-path decisions and 
 
 - Engine: SQLite through the current `ext-pdo_sqlite` runtime used by `tools/setup-example.php` and the isolated behavior fixtures. The repository does not pin an exact SQLite application version; a consuming application records and tests its deployed version.
 - Execution: direct `PHPThis\Database\Connection` calls with operation-specific `QueryBudget` and `QueryTrace` values.
-- SQL ownership: complete raw SQLite statements remain visible in their handler or the one independently justified Create transaction owner.
+- SQL ownership: complete raw SQLite statements remain visible in the operation handler, the independently justified Create transaction owner, or the application-owned one-shot job worker and concrete effect handler.
 - Bindings: explicit named parameter arrays remain beside each direct call; each placeholder occurrence has a distinct name.
 - Forbidden: ORM, Active Record, query builder, repository, generic paginator, SQL helper, binding helper, placeholder helper, generated or dynamic SQL, transaction callback, and dialect abstraction.
-- Driver claim: MySQL and PostgreSQL are certified only for the base PDO transport harness. No document-list application SQL is certified on those engines.
+- Driver claim: MySQL and PostgreSQL are certified only for the base PDO transport harness. No document-list or durable-job application SQL is certified on those engines.
 - Runtime authority: the local SQLite file/process boundary is evaluation evidence only; it is not production least-privilege proof.
+
+## Durable-job tables
+
+`application_jobs` and `welcome_deliveries` belong only to the ADR 024 example. Setup creates SQLite `STRICT` tables plus partial due-row indexes; the application therefore records and tests an exact SQLite runtime with `STRICT` table and `UPDATE ... RETURNING` support before adoption. `TransactionalCreateUser` writes the user, user event, and one bounded versioned job envelope through the same connection and transaction. The worker uses that same database for its idempotent delivery record and fenced completion.
+
+The repository does not claim that the setup defaults prove production journal mode, synchronization, local-filesystem durability, busy-timeout suitability, writer concurrency, query plans, power-loss recovery, capacity, or retention. MySQL and PostgreSQL transport certification does not certify this schema or any durable-job statement on those engines. See `.ai/jobs.md` for the exact lease, retry, dead-letter, lifecycle, and evidence contract.
 
 ## Protected document list
 
@@ -43,7 +49,7 @@ The finite statement family is selected in ordinary typed PHP, and every complet
 - Missing, empty, and one-to-three-category behavior is distinct and tested.
 - SQL-looking category values remain bound data, document-key values are also bound, and identifier-shaped structural attacks are rejected before protected SQL.
 - Denied policy paths execute no protected document SQL.
-- `TransactionalCreateUser` remains the transaction and rollback proof; it is not duplicated here.
+- `TransactionalCreateUser` remains the three-statement transaction, rollback, and commit-visible job-publication proof; it is not duplicated here.
 - The existing user-list N+1 negative control remains the growth-detection proof; it is not duplicated here.
 
 Explicit tenant predicates and membership bindings do not prove universal authorization. PHT006 and adversarial values do not prove universal injection safety. One statement does not prove bounded rows scanned or a production execution plan. SQLite evidence does not certify this application SQL on another engine.

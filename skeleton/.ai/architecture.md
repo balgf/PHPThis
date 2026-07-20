@@ -24,6 +24,7 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | Inbound operation data | `NOT_APPLICABLE(INPUT)` | The public health operation accepts no application-owned fields and constructs no request or command. |
 | Typed session services | `NOT_APPLICABLE` | The starter does not configure session state. |
 | Typed cache services | `NOT_APPLICABLE(CACHE)` | The starter does not cache server-side data. |
+| Durable jobs | `NOT_APPLICABLE(JOBS)` | The starter has no deferred work or worker runtime. |
 | Database | `NOT_APPLICABLE` | The starter application has no database. |
 | External services | `NOT_APPLICABLE` | The starter application has no external integrations. |
 

@@ -23,6 +23,7 @@ Every observable behavior change must add or update application-owned automated 
 - Request-policy tests: `{{REQUEST_POLICY_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 - HTTP cache policy tests: `{{HTTP_CACHE_TEST_COMMAND}}`
 - Cache integration tests: `{{CACHE_TEST_COMMAND_OR_NOT_APPLICABLE}}`
+- Durable-job integration and lifecycle tests: `{{JOBS_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 
 Focused commands shorten feedback but never replace the complete validity gate.
 
@@ -51,6 +52,7 @@ Terminal request-summary evidence covers success, mapped failure, known denial w
 - HTTP cache policy evidence proves exact `Cache-Control` behavior for every success, redirect, route miss, method rejection, mapped client error, unknown server error, authenticated response, and cookie-emitting response the application can produce. New and unreviewed paths prove `no-store`; every storable response proves finite freshness or revalidation, validators and `304` behavior where applicable, every `Vary` dimension, and the recorded browser or intermediary behavior. Public-cache tests prove that one identity, tenant, encoding, or representation cannot receive another's response.
 - Adopted cache behavior proves cold miss and authoritative rebuild, warm hit without hidden database work, finite expiry, bounded payload parsing, corruption handling, backend failure and recovery, environment and tenant isolation, versioned-key rollover, post-commit invalidation and invalidation failure, a concurrent miss racing an authoritative write, and the recorded stampede behavior under concurrent requests. Cold-cache database tests still prove constant query scaling; a warm cache cannot conceal N+1 access.
 - Cache evidence inspects bounded operation summaries for hits, misses, writes, invalidations, failures, and stampede outcomes without logging keys or payloads.
+- Adopted durable jobs prove commit-visible publication and rollback exclusion, bounded stored-envelope parsing and finite dispatch, idle and success, exact retry delays from freshly observed failure time, completion rollback when handler time reaches lease expiry, lease expiry and stale-token fencing, final-attempt and poison dead letters, duplicate idempotent effects, real subprocess termination and post-expiry recovery, one delivery per fresh process, complete diagnostics redaction, and constant transition statement counts across small and materially larger queues.
 - External integrations test timeout, malformed response, idempotency, and retry ownership without contacting production systems.
 
 ## Test data safety

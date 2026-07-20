@@ -416,6 +416,7 @@ $requiredRepositoryFiles = [
     '.ai/crud.md',
     '.ai/database.md',
     '.ai/http.md',
+    '.ai/jobs.md',
     '.ai/observability.md',
     '.ai/request-policy.md',
     '.ai/routing.md',
@@ -424,6 +425,13 @@ $requiredRepositoryFiles = [
     'docs/caching.md',
     'docs/crud.md',
     'docs/getting-started.md',
+    'docs/jobs.md',
+    'docs/jobs/README.md',
+    'docs/jobs/envelope.md',
+    'docs/jobs/lifecycle.md',
+    'docs/jobs/operations.md',
+    'docs/jobs/schema.md',
+    'docs/jobs/testing.md',
     'docs/knowledge-map.md',
     'docs/observability/README.md',
     'docs/observability/correlation-id.md',
@@ -435,6 +443,7 @@ $requiredRepositoryFiles = [
     'docs/releases/0.1.0-alpha.1.md',
     'docs/security.md',
     'docs/sessions.md',
+    'docs/vocabulary.md',
     'docs/decisions/011-ai-first-authoring.md',
     'docs/decisions/012-pdo-transport-application-owned-dialects.md',
     'docs/decisions/013-optional-crud-reference-profile.md',
@@ -448,10 +457,23 @@ $requiredRepositoryFiles = [
     'docs/decisions/021-application-owned-typed-input-boundaries.md',
     'docs/decisions/022-application-owned-finite-data-paths.md',
     'docs/decisions/023-application-owned-terminal-request-summaries.md',
+    'docs/decisions/024-application-owned-sqlite-durable-jobs.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/data.md',
+    'example/.ai/jobs.md',
     'example/.ai/observability.md',
+    'example/bin/run-one-job.php',
+    'example/src/Jobs/InvalidUserWelcomeJobEnvelope.php',
+    'example/src/Jobs/README.md',
+    'example/src/Jobs/RecordUserWelcomeDelivery.php',
+    'example/src/Jobs/SqliteUserWelcomeJobLease.php',
+    'example/src/Jobs/SqliteUserWelcomeJobWorker.php',
+    'example/src/Jobs/SystemUserWelcomeJobClock.php',
+    'example/src/Jobs/UserWelcomeJobClock.php',
+    'example/src/Jobs/UserWelcomeJobEnvelope.php',
+    'example/src/Jobs/UserWelcomeJobHandler.php',
+    'example/src/Jobs/UserWelcomeJobOutcome.php',
     'example/src/Observability/CorrelationId.php',
     'example/src/Observability/ErrorLogRequestSummarySink.php',
     'example/src/Observability/QuerySummarySource.php',
@@ -493,6 +515,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/change-workflow.md',
     'templates/application/.ai/data.md',
     'templates/application/.ai/integrations.md',
+    'templates/application/.ai/jobs.md',
     'templates/application/.ai/observability.md',
     'templates/application/.ai/operations.md',
     'templates/application/.ai/project.md',
@@ -510,6 +533,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/change-workflow.md',
     'skeleton/.ai/data.md',
     'skeleton/.ai/integrations.md',
+    'skeleton/.ai/jobs.md',
     'skeleton/.ai/observability.md',
     'skeleton/.ai/operations.md',
     'skeleton/.ai/project.md',
@@ -554,6 +578,8 @@ $requiredRepositoryFiles = [
     'src/Session/SessionSnapshot.php',
     'src/Session/SessionUnavailable.php',
     'tests/observability.php',
+    'tests/jobs.php',
+    'tests/job-worker-crash.php',
     'tests/request-policy.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
     'tests/fixtures/routing-lookup-index-loop.php.fixture',
@@ -561,6 +587,7 @@ $requiredRepositoryFiles = [
     'tests/fixtures/routing-path-segment-traversal.php.fixture',
     'tests/fixtures/routing-lookup-traversal.php.fixture',
     'tools/package-files.txt',
+    'tools/setup-example.php',
     'tools/test-database-drivers.php',
 ];
 
@@ -1440,6 +1467,251 @@ foreach ($observabilityArtifactMarkers as $relativePath => $markers) {
             $failures[] = "Observability artifact marker is missing from {$relativePath}.";
         }
     }
+}
+
+$durableJobArtifactMarkers = [
+    '.ai/README.md' => [
+        'Add or change durable deferred work',
+        '`.ai/jobs.md`',
+        'ADR 024',
+    ],
+    '.ai/jobs.md' => [
+        '# Durable jobs contract',
+        'same `Connection`, in the same explicit SQLite transaction',
+        'Treat delivery as at-least-once.',
+        'claim and finalize zero or one delivery',
+        'generic framework command map',
+        'Do not add an ORM',
+    ],
+    '.ai/testing.md' => [
+        'exact finite retry delays from freshly observed failure time',
+        'completion rollback when handler time reaches lease expiry',
+    ],
+    'docs/jobs.md' => [
+        'one accepted durable-job recipe and no framework queue mechanism',
+        'This is at-least-once delivery.',
+        'one finite complete `UPDATE ... RETURNING` statement',
+        'claim-time snapshot is not sufficient',
+        'PHPThis ships no job or envelope type',
+    ],
+    'docs/jobs/README.md' => [
+        'Durable-job knowledge index',
+        'SQLite schema',
+    ],
+    'docs/jobs/envelope.md' => [
+        'bounded untrusted input',
+        'Dispatch is an exhaustive finite `match`',
+    ],
+    'docs/jobs/lifecycle.md' => [
+        'same `Connection`, explicit transaction, and SQLite database',
+        'freshly observed transition time',
+    ],
+    'docs/jobs/operations.md' => [
+        'Each invocation creates a fresh connection',
+        'repository proves behavior on file-backed fixtures',
+    ],
+    'docs/jobs/schema.md' => [
+        'SQLite `STRICT` tables',
+        'partial index',
+        'PHPThis supplies no migration runner',
+    ],
+    'docs/jobs/testing.md' => [
+        'real worker subprocess terminated after claim',
+        'sample it again before every fenced transition',
+    ],
+    'docs/decisions/024-application-owned-sqlite-durable-jobs.md' => [
+        'Status: accepted',
+        'Consumer Contract version 5 and Strict Profile version 2 remain unchanged.',
+        'entirely application-owned and SQLite-specific',
+        'claims at most one due job',
+        'Delivery is at least once.',
+        'No Consumer Contract, Strict Profile, framework core, generic job lifecycle, reusable worker API, or cross-engine queue claim is introduced.',
+    ],
+    'docs/consumer-contract.md' => [
+        '## Optional application-owned durable jobs',
+        'Contract version 5 does not make that additional file a checker requirement',
+        'Delivery remains at least once.',
+    ],
+    'docs/decisions/README.md' => [
+        '024-application-owned-sqlite-durable-jobs.md',
+    ],
+    'docs/getting-started.md' => [
+        '`NOT_APPLICABLE(JOBS)` in `.ai/jobs.md`',
+        'fresh-time lease fencing',
+    ],
+    'docs/guardrails.md' => [
+        'The durable-job guard retains ADR 024',
+        'continued absence from framework core and package runtime APIs',
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/jobs.md`, `docs/security.md`',
+        'verify that no framework queue mechanism exists',
+    ],
+    'docs/security.md' => [
+        'Treat every stored job envelope as untrusted input',
+        '## Durable-job limits',
+        'do not prove exactly-once execution',
+    ],
+    'docs/vocabulary.md' => [
+        '| durable-job envelope |',
+        '| commit-visible job publication |',
+        '| one-shot worker |',
+        '| at-least-once delivery |',
+        '| dead letter |',
+    ],
+    'README.md' => [
+        'Durable deferred work begins with one application-owned SQLite recipe',
+        'without adding a framework queue or exactly-once claim',
+    ],
+    'ROADMAP.md' => [
+        'ADR 024 accepts one application-owned SQLite durable-job proof',
+        'not core job, worker, dispatcher, scheduler, broker, or exactly-once contracts',
+    ],
+    'example/.ai/README.md' => [
+        'Change durable-job publication, envelopes, worker lifecycle, retries, or dead letters',
+        '`.ai/jobs.md`, `.ai/data.md`, `.ai/observability.md`',
+    ],
+    'example/.ai/data.md' => [
+        '## Durable-job tables',
+        '`application_jobs` and `welcome_deliveries`',
+        'No document-list or durable-job application SQL is certified on those engines.',
+    ],
+    'example/.ai/jobs.md' => [
+        'The executable example follows ADR 024',
+        'Every lease lasts 30 seconds.',
+        'At most three claimed deliveries are permitted',
+        'Each invocation emits exactly one bounded redacted JSON result',
+    ],
+    'example/src/Jobs/README.md' => [
+        'application-owned evidence for ADR 024',
+        'fresh-time lease fencing',
+    ],
+    'example/src/Jobs/UserWelcomeJobEnvelope.php' => [
+        "public const string TYPE = 'user.welcome';",
+        'public static function fromStored(string $jobId, string $json): self',
+        'hash_equals(self::idempotencyKeyForEmail($email), $idempotencyKey)',
+    ],
+    'example/src/Jobs/UserWelcomeJobClock.php' => [
+        'interface UserWelcomeJobClock',
+        'public function now(): int;',
+    ],
+    'example/src/Jobs/SystemUserWelcomeJobClock.php' => [
+        'final readonly class SystemUserWelcomeJobClock implements UserWelcomeJobClock',
+        'return time();',
+    ],
+    'example/src/Jobs/SqliteUserWelcomeJobWorker.php' => [
+        'public function runOne(string $leaseToken): UserWelcomeJobOutcome',
+        '$claimNow = $this->currentTime(0);',
+        '$completionNow = $this->currentTime($handlerNow);',
+        'UPDATE application_jobs',
+        'AND lease_expires_at > :completion_checked_at',
+        'lease_expired_after_final_attempt',
+    ],
+    'example/src/Jobs/RecordUserWelcomeDelivery.php' => [
+        'ON CONFLICT (idempotency_key) DO NOTHING',
+    ],
+    'example/src/Users/CreateUser/TransactionalCreateUser.php' => [
+        '$job = UserWelcomeJobEnvelope::forEmail($command->email);',
+        'INSERT INTO application_jobs (',
+        '$this->connection->commit();',
+    ],
+    'example/bin/run-one-job.php' => [
+        'new SystemUserWelcomeJobClock()',
+        '$worker->runOne(bin2hex(random_bytes(16)))',
+        'unexpected_failure',
+    ],
+    'tests/run.php' => [
+        "require __DIR__ . '/jobs.php';",
+        'foreach (jobTests() as $name => $test)',
+        'transactional user creation publishes one job with three writes across dataset sizes',
+    ],
+    'tests/jobs.php' => [
+        'durable job publication rolls back business event and job together',
+        'durable job worker is idle and keeps three statements across queue sizes',
+        'durable job samples fresh time before dispatch and skips an expired lease',
+        'durable job completion samples fresh time and rejects an expired lease',
+        'durable job retry backoff starts from freshly observed failure time',
+        'durable job subprocess crash is fenced and safely redelivered after lease expiry',
+        'durable job one-shot command handles one delivery per fresh process',
+    ],
+    'tests/job-worker-crash.php' => [
+        'fwrite(STDOUT, "READY\\n")',
+        'sleep(60);',
+    ],
+    'tools/setup-example.php' => [
+        'CREATE TABLE IF NOT EXISTS application_jobs',
+        'CREATE INDEX IF NOT EXISTS application_jobs_available_due_idx',
+        'CREATE INDEX IF NOT EXISTS application_jobs_expired_lease_idx',
+        'CREATE TABLE IF NOT EXISTS welcome_deliveries',
+    ],
+    'templates/application/.ai/jobs.md' => [
+        '{{JOBS_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{JOBS_WORKER_LIFECYCLE_OR_NOT_APPLICABLE}}',
+        'PHPThis provides no core queue or worker API.',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'exact retry delays from freshly observed failure time',
+        'completion rollback when handler time reaches lease expiry',
+    ],
+    'skeleton/.ai/jobs.md' => [
+        '`NOT_APPLICABLE(JOBS)`',
+        'Never claim cross-connection atomicity or exactly-once external effects.',
+    ],
+    'skeleton/.ai/testing.md' => [
+        '`NOT_APPLICABLE(JOBS_EVIDENCE)`',
+        'completion rollback when handler time reaches lease expiry',
+    ],
+    'skeleton/.ai/operations.md' => [
+        '## Durable-job runtime',
+        'fresh one-delivery processes',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/024-application-owned-sqlite-durable-jobs.md',
+        'docs/jobs/schema.md',
+        'templates/application/.ai/jobs.md',
+    ],
+];
+
+foreach ($durableJobArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read durable-job artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Durable-job artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+foreach (['src/Jobs', 'src/Queue'] as $forbiddenCoreDirectory) {
+    if (is_dir($root . '/' . $forbiddenCoreDirectory)) {
+        $failures[] = "Durable-job runtime must remain application-owned outside {$forbiddenCoreDirectory}.";
+    }
+}
+
+$applicationChecker = file_get_contents($root . '/verification/ApplicationChecker.php');
+
+if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/jobs.md',")) {
+    $failures[] = 'Contract version 5 must not checker-require the optional durable-job context file.';
+}
+
+$consumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
+
+if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveJobsContextIsRequired')) {
+    $failures[] = 'Contract version 5 must not reject an existing consumer only because .ai/jobs.md is absent.';
+}
+
+$durableJobPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (
+    is_string($durableJobPackageInventory)
+    && preg_match('/^src\/(?:Jobs|Queue)\//m', $durableJobPackageInventory) === 1
+) {
+    $failures[] = 'Application-owned durable-job runtime must remain outside the framework package API.';
 }
 
 if (is_dir($root . '/src/Observability')) {

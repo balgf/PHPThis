@@ -1,6 +1,6 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 023.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 024.
 
 Rules:
 
@@ -22,6 +22,7 @@ Rules:
 - When sessions are adopted, require application context to record typed service boundaries and key ownership, cookie policy, native file-storage topology, cleanup, verified PHP settings, and each applicable authentication, regeneration, expiry, logout, revocation, and CSRF policy; mark absent concerns explicitly not applicable.
 - Require application context to record an explicit HTTP response policy and separately adopt or reject server-side data caching. An adopted data cache records its narrowly named typed services, backend and topology, bounded versioned tenant-aware keys and payloads, finite lifetimes, invalidation and stale-refill behavior, failure and stampede behavior, redacted aggregate observability, and cold-cache plus cache-specific concurrency evidence.
 - Require every application to own `.ai/observability.md` naming its terminal coordinator and sink, generated correlation policy, at most eight finite database-source labels and distinct budgets/traces, destination behavior, redaction evidence, and exactly-one-attempt plus throwing-sink tests. Do not template core logging types or a durable-delivery claim.
+- Include `.ai/jobs.md` in the current skeleton and template with `NOT_APPLICABLE(JOBS)` or the adopted backend, same-transaction publication, finite envelope, idempotency, lease, bounded retry, redacted dead-letter, one-shot worker, supervisor, and complete test policies. Contract version 5 does not checker-require that new file from an existing application with no durable-job path; an application must add it before adopting or changing durable jobs. Do not template a framework queue or exactly-once external-effect claim.
 - Keep authentication, authorization, session state, permissions, secrets, and other security decisions outside an initial application data-cache slice unless a later accepted decision defines stronger invariants and evidence.
 - Do not add a generic CRUD runtime, discovery mechanism, filesystem enforcement, or checker rule for directories and names.
 - Require `.ai/data.md` to name every connection's engine/version, PDO extension, non-secret configuration source, schema/dialect authority, integration command, and lack of cross-connection atomicity.
