@@ -12,7 +12,8 @@
 
 - Supported PHP version: 8.4
 - Web runtime: PHP's built-in server for local verification only.
-- Worker and scheduler: `NOT_APPLICABLE(JOBS)`; `.ai/jobs.md` owns any future job lifecycle decision.
+- Worker runtime: `NOT_APPLICABLE(JOBS)`; `.ai/jobs.md` owns any future durable-job lifecycle decision.
+- Operational application console and scheduler: `NOT_APPLICABLE(CLI)`; `.ai/cli.md` owns any future adoption.
 - Required extensions: `ext-pdo` and `ext-session` through the installed framework; the starter application opens no database connection and configures no session lifecycle.
 
 ## Session runtime
@@ -33,7 +34,13 @@
 
 ## Durable-job runtime
 
-`NOT_APPLICABLE(JOBS)`: the starter has no job table, worker process, scheduler, supervisor, timeout, forced termination, restart, clean-stop, capacity, retention, dead-letter inspection, replay, or incident policy. Before adoption, record those verified application-specific facts here and the transaction, envelope, idempotency, lease, retry, redaction, and evidence contract in `.ai/jobs.md`. Repetition must come from a supervisor starting fresh one-delivery processes, never an in-process polling or retry loop.
+`NOT_APPLICABLE(JOBS)`: the starter has no job table, worker process, supervisor, timeout, forced termination, restart, clean-stop, capacity, retention, dead-letter inspection, replay, or incident policy. Before adoption, record those verified application-specific facts here and the transaction, envelope, idempotency, lease, retry, redaction, and evidence contract in `.ai/jobs.md`. Repetition must come from a supervisor starting fresh one-delivery processes, never an in-process polling or retry loop.
+
+## Application CLI and scheduler
+
+`NOT_APPLICABLE(CLI)`: the starter exposes no operational application console or scheduled pass. `composer check`, `composer test`, and `vendor/bin/phpthis check` are development and validity commands; they are not an application command map.
+
+Before adoption, read installed `vendor/phpthis/framework/docs/cli.md` and replace `.ai/cli.md` with the sole console path, every finite command and operation, exact typed argument grammar and bounds, exit and stdout/stderr JSON contract, fresh composition, explicit clock and timezone, cadence, one-pass maximum, missed-run and catch-up policy, external invocation frequency, application-private same-host lock path and permissions, filesystem topology, contention and lock-failure behavior, timeout, restart, redaction, and incident owner. Keep distributed coordination explicitly not applicable unless a separate backend-specific decision and evidence establish it.
 
 ## Deployment
 

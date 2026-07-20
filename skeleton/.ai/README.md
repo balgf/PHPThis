@@ -21,6 +21,7 @@ Then read only what the task needs:
 | Resolve or change HTTP response cache policy | installed `vendor/phpthis/framework/docs/caching.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | response-producing path, explicit `no-store`, `private`, or `public` policy, freshness or revalidation, validators, `Vary`, intermediary topology, and behavior tests |
 | Introduce server-side cached data | installed `vendor/phpthis/framework/docs/caching.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md` | `bootstrap.php`, narrowly named typed service, authoritative data path, backend boundary, key and tenant ownership, bounds, invalidation, observability, and cold, warm, failure, and concurrency tests |
 | Introduce durable deferred work | installed `vendor/phpthis/framework/docs/jobs.md`, `.ai/jobs.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md` | producer transaction, complete job SQL, versioned envelope parser, finite dispatch, idempotent effect, lease and retry policy, one-shot worker composition, and crash plus redaction tests |
+| Introduce an operational application command or scheduled pass | installed `vendor/phpthis/framework/docs/cli.md`, `.ai/cli.md`, `.ai/operations.md`, `.ai/testing.md`, and `.ai/jobs.md` when invoking durable work | sole application console, finite command map, typed argument boundary, exit and stream contract, explicit clock and cadence, one-pass operation, same-host overlap lock, supervisor, composition root, and real-console tests |
 | Introduce CRUD-shaped resource operations | installed `vendor/phpthis/framework/docs/crud.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/testing.md` | explicit resource routes, operation area, data path, and behavior tests |
 | Add data access or a structural SQL selector | `.ai/data.md`, `.ai/testing.md` | schema authority, direct `Connection` call, finite code-owned SQL mapping, runtime authority, and adversarial and scale tests |
 | Add an external side effect | `.ai/integrations.md` | the named client boundary and failure tests |
@@ -40,6 +41,8 @@ Then read only what the task needs:
 
 `NOT_APPLICABLE(CACHE)`: the health-only starter has no server-side cache, cache backend, typed cache service, cache key or payload schema, TTL, invalidation, stampede control, or cache operation metrics. No cache code or dependency is included.
 
-`NOT_APPLICABLE(JOBS)`: the health-only starter has no durable deferred work, job backend, worker, lease, retry, dead letter, scheduler, or supervisor. No job code or dependency is included.
+`NOT_APPLICABLE(JOBS)`: the health-only starter has no durable deferred work, job backend, worker, lease, retry, dead letter, or supervisor. No job code or dependency is included.
+
+`NOT_APPLICABLE(CLI)`: the health-only starter has no operational application console, finite command map, typed command argument, scheduled pass, application clock, overlap lock, cron policy, or CLI-specific output. `.ai/cli.md` owns any future adoption. Composer scripts and the installed `phpthis check` remain development gates only.
 
 Accepted architectural decisions live in `docs/decisions/`. AI may draft and update a decision record, but acceptance requires explicit approval from an accountable human.

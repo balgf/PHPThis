@@ -601,54 +601,6 @@ function jobTests(): array
             }
         },
 
-        'durable job one-shot command handles one delivery per fresh process' => static function (): void {
-            $databasePath = createUserDatabaseFixture('job-one-shot-command', 0, false);
-            $firstJob = UserWelcomeJobEnvelope::forEmail('process-one@example.com');
-            $secondJob = UserWelcomeJobEnvelope::forEmail('process-two@example.com');
-            insertAvailableJob($databasePath, $firstJob->jobId, $firstJob->toJson(), 0);
-            insertAvailableJob($databasePath, $secondJob->jobId, $secondJob->toJson(), 0);
-            $entrypoint = dirname(__DIR__) . '/example/bin/run-one-job.php';
-
-            $first = runIsolatedPhpTest($entrypoint, [$databasePath]);
-            $afterFirst = jobAggregate($databasePath);
-            $second = runIsolatedPhpTest($entrypoint, [$databasePath]);
-            $afterSecond = jobAggregate($databasePath);
-            $idle = runIsolatedPhpTest($entrypoint, [$databasePath]);
-            $missingPath = $databasePath . '.missing';
-            $missing = runIsolatedPhpTest($entrypoint, [$missingPath]);
-
-            if (
-                $first !== [
-                    'exit_code' => 0,
-                    'stdout' => "{\"outcome\":\"completed\"}\n",
-                    'stderr' => '',
-                ]
-                || $afterFirst['available_count'] !== 1
-                || $afterFirst['succeeded_count'] !== 1
-                || $afterFirst['effect_count'] !== 1
-                || $second !== [
-                    'exit_code' => 0,
-                    'stdout' => "{\"outcome\":\"completed\"}\n",
-                    'stderr' => '',
-                ]
-                || $afterSecond['available_count'] !== 0
-                || $afterSecond['succeeded_count'] !== 2
-                || $afterSecond['effect_count'] !== 2
-                || $idle !== [
-                    'exit_code' => 0,
-                    'stdout' => "{\"outcome\":\"idle\"}\n",
-                    'stderr' => '',
-                ]
-                || $missing !== [
-                    'exit_code' => 1,
-                    'stdout' => "{\"outcome\":\"unexpected_failure\"}\n",
-                    'stderr' => '',
-                ]
-                || str_contains($missing['stdout'], $missingPath)
-            ) {
-                throw new RuntimeException('Each worker process must emit one redacted outcome for at most one delivery.');
-            }
-        },
     ];
 }
 

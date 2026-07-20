@@ -13,6 +13,7 @@ These rules supplement installed PHPThis Consumer Contract v5 and Strict Profile
 - Preserve the application-owned terminal request-summary coordinator and sink, generated correlation and `X-Request-ID`, at most eight finite distinct database sources, complete redaction, and exactly one failure-isolated sink invocation attempt.
 - Preserve the current explicit `Cache-Control: no-store` policy for health success, route miss, method rejection, mapped client failure, and unknown failure. Start every response path added later with explicit `no-store`, then adopt `private` or `public` only after recording finite freshness or revalidation, validators, `Vary`, intermediary topology, observability, and tests where applicable.
 - Before cache adoption, verify and record narrowly named typed service ownership, authoritative rebuild paths, backend topology, versioned environment- and tenant-scoped keys, bounded payloads and finite TTLs, invalidation, stale-refill, failure and stampede behavior, observability, and cold, warm, failure, isolation, stale-refill race, and concurrency evidence.
+- Keep `NOT_APPLICABLE(CLI)` until one operational application console and any scheduler policy are recorded in `.ai/cli.md`, `.ai/operations.md`, and `.ai/testing.md`. An adopted console has one finite command map, typed bounded arguments, stable exit and stream behavior, fresh composition, an explicit clock, one-pass work, and an application-private overlap policy.
 - Run `composer check` before reporting completion.
 
 ## Forbidden
@@ -21,6 +22,7 @@ These rules supplement installed PHPThis Consumer Contract v5 and Strict Profile
 - Do not add a generic validator, result wrapper, string-rule language, automatic request binding, reflection hydration, mass assignment, sanitization magic, or unvalidated array beyond its named boundary.
 - Do not parse the same inbound representation again downstream, silently transform or coerce an application field, or treat validation as output encoding or authorization.
 - Do not add an undocumented side effect, retry, fallback, cache, queue, or scheduled operation.
+- Do not add application commands to framework `phpthis`, command discovery, class-name dispatch, a service-container command resolver, generic console or scheduler facade, daemon, hidden loop, persistent slot behavior, catch-up, or distributed coordination without an accepted application decision and evidence.
 - Do not add a generic cache service, global cache helper, hidden cache-aside behavior, automatic query caching, implicit forever TTL, or arbitrary PHP object deserialization.
 - Do not use cached data as a source of truth or cache sessions, authentication state, authorization decisions, permissions, credentials, or secrets.
 - Do not infer that `Set-Cookie`, a server-side cache miss, or a server-side cache hit makes an HTTP response safely private, uncacheable, or public.
@@ -42,4 +44,5 @@ These rules supplement installed PHPThis Consumer Contract v5 and Strict Profile
 - When session state is adopted, keep mutation callbacks bounded and side-effect-free and complete fallible work before the final immediately committed mutation.
 - Keep `HTTP_CACHE_POLICY(NO_STORE)` for every currently shipped response. A new path owns and tests its explicit policy before replacing `no-store`; server-side caching remains a separate decision.
 - Keep `NOT_APPLICABLE(CACHE)` until the cache contract is recorded across `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, and `.ai/testing.md`; the starter includes no cache code or dependency.
+- Keep `NOT_APPLICABLE(CLI)` until the sole console, command and argument grammar, exit and stream contract, clock and cadence, one-pass behavior, overlap topology, supervisor, redaction, and real-console tests are recorded; the starter includes no operational console or scheduler.
 - Replace these starter constraints with verified product constraints before feature work.

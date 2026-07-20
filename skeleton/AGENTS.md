@@ -51,6 +51,8 @@ The starter's terminal request summary is mandatory rather than optional: preser
 
 `NOT_APPLICABLE(JOBS)`: before introducing durable deferred work, read installed `docs/jobs.md` and replace `.ai/jobs.md` with verified backend, transaction, envelope, idempotency, lease, retry, dead-letter, worker, supervisor, redaction, and test decisions. Do not add a framework queue, discovery, event bus, transaction callback, worker loop, or exactly-once external-effect claim.
 
+`NOT_APPLICABLE(CLI)`: the health-only starter has no operational application console or scheduled pass. Composer scripts and `vendor/bin/phpthis check` are development gates, not an adopted application CLI. Before adding one, read installed `docs/cli.md` and replace `.ai/cli.md` plus the CLI sections in `.ai/operations.md` and `.ai/testing.md` with the sole console path, finite command and typed-argument map, closed exit and stream contract, fresh composition, explicit clock and cadence, one-pass behavior, same-host lock and topology, supervisor, redaction, and real-console evidence. Do not add application commands to `vendor/bin/phpthis`, command discovery, a service container, scheduler facade, daemon, hidden loop, or distributed-coordination claim.
+
 ## Context safety
 
 Do not write credentials, tokens, private keys, customer data, production payloads, or secrets into AI context, source comments, fixtures, logs, or reports. Use documented secret references and redacted examples.

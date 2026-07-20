@@ -28,3 +28,4 @@ Accepted records:
 - `022-application-owned-finite-data-paths.md`
 - `023-application-owned-terminal-request-summaries.md`
 - `024-application-owned-sqlite-durable-jobs.md`
+- `025-application-owned-explicit-cli-and-scheduler.md`

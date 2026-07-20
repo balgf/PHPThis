@@ -9,6 +9,12 @@ bin/phpthis
 composer.json
 docs/architecture.md
 docs/caching.md
+docs/cli.md
+docs/cli/README.md
+docs/cli/arguments-output.md
+docs/cli/composition.md
+docs/cli/scheduling-locking.md
+docs/cli/testing.md
 docs/consumer-contract.md
 docs/crud.md
 docs/database.md
@@ -36,6 +42,7 @@ docs/decisions/021-application-owned-typed-input-boundaries.md
 docs/decisions/022-application-owned-finite-data-paths.md
 docs/decisions/023-application-owned-terminal-request-summaries.md
 docs/decisions/024-application-owned-sqlite-durable-jobs.md
+docs/decisions/025-application-owned-explicit-cli-and-scheduler.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -97,6 +104,7 @@ src/Session/SessionUnavailable.php
 templates/application/.ai/README.md
 templates/application/.ai/architecture.md
 templates/application/.ai/change-workflow.md
+templates/application/.ai/cli.md
 templates/application/.ai/data.md
 templates/application/.ai/integrations.md
 templates/application/.ai/jobs.md

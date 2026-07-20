@@ -67,7 +67,7 @@ Each worker process or invocation performs exactly one bounded cycle:
 6. finalize a successful idempotent database effect and completion together, or record one retry or dead-letter transition; and
 7. emit one bounded redacted terminal result and exit.
 
-A supervisor creates the repetition by starting another process. The recipe deliberately has no long-running loop, reused container or connection, mutable state carried between deliveries, signal subsystem, automatic heartbeat, implicit retry, or graceful-stop protocol. Stopping cleanly means the supervisor does not launch the next invocation. General CLI command maps, scheduler composition, process naming, and deployment integration remain Issue #8 work.
+A supervisor creates repetition by starting another process. The recipe deliberately has no long-running loop, reused container or connection, mutable state carried between deliveries, signal subsystem, automatic heartbeat, implicit retry, or graceful-stop protocol. Stopping cleanly means the supervisor does not launch the next invocation. ADR 025 keeps this composition application-owned: the accepted example routes the one-job operation through its sole console as `jobs:run-one`, and `schedule:run` may call that exact in-process operation once under its explicit UTC and same-host-overlap policy. Neither decision adds a framework command map, scheduler, process manager, or second job path.
 
 ## Claim, lease, and fencing
 
@@ -112,7 +112,7 @@ The application uses a real file-backed SQLite fixture and proves:
 - output and durable diagnostics omit the envelope, payload, idempotency key, exception message, stack, SQL, bindings, DSN, credentials, and external response values; and
 - every transition has an explicit query budget and bounded trace, with constant statement counts across materially different fixture cardinalities.
 
-Expected worker outcomes may use exit status `0`; an unexpected bootstrap or worker failure may reserve exit status `1`. That is the checked application recipe's supervisor contract, not a framework CLI API.
+ADR 025 fixes the checked example's console mapping: every finite worker outcome exits `0` as one redacted `{"command":"jobs:run-one","outcome":"..."}` stdout line, while operational or unexpected failure exits `1` with only `{"error":"command_failed"}` on stderr. That is an application supervisor contract, not a framework CLI API. See [the application CLI and scheduler guide](cli.md).
 
 ## Unsupported boundary
 

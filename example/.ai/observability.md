@@ -8,6 +8,6 @@ The executable example follows ADR 023 with application types under `src/Observa
 - Event: the closed ADR 023 schema only. Denials carry generic known-failure outcome and status; unknown failures add only concrete class.
 - Evidence: `tests/observability.php`, included by the repository test runner, owns schema, correlation, source, budget, redaction, freshness, and throwing-sink proof.
 
-The one-shot durable-job process is not an HTTP request and does not enter this terminal request-summary event. It emits only its finite result from `example/bin/run-one-job.php`; `.ai/jobs.md` owns job outcome, durable diagnostic, redaction, and supervisor decisions. Do not place an envelope, payload, idempotency key, SQL, binding, or exception detail in either channel.
+The application console is not an HTTP request and does not enter this terminal request-summary event. `example/bin/console.php` emits only ADR 025's one-line stdout success or generic stderr error. `.ai/cli.md` owns command, stream, cadence, lock, and console-redaction facts; `.ai/jobs.md` owns job outcomes, durable diagnostics, and worker lifecycle. Do not place an argument, database or lock path, envelope, payload, idempotency key, SQL, binding, request value, or exception detail in any channel.
 
 All SQL remains complete raw SQLite text with explicit named parameter arrays at direct `Connection` call sites. Do not add an ORM, repository, query builder, paginator, SQL/binding/placeholder helper, generated SQL, framework logger, middleware, facade, per-query event, or hidden instrumentation.

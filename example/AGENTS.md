@@ -15,8 +15,10 @@ Keep terminal observability in `src/Observability/` application-owned and explic
 
 Keep durable jobs in `src/Jobs/` application-owned and SQLite-specific. The Create transaction publishes one versioned welcome job through the same connection; one fresh worker invocation claims and finalizes at most one delivery through finite raw SQL, fenced leases, bounded retries, redacted dead letters, and one idempotent database effect. Do not add a generic queue, worker loop, discovery, event bus, transaction callback, or external exactly-once claim.
 
+Keep `bin/console.php` as the sole application operational console. Its finite `jobs:run-one` and `schedule:run` commands use the argument, exit, stream, explicit-clock, one-pass, and app-private same-host-lock contracts in `.ai/cli.md`. Preserve fresh `ApplicationComposition::http()` and `ApplicationComposition::commands()` graphs over only the immutable canonical database path. Do not add another entrypoint, command discovery, a service container, scheduler facade, daemon, persistent slot ledger, catch-up, or distributed-coordination claim.
+
 Do not add or use an ORM, Active Record, query builder, repository, generic paginator, SQL helper, binding helper, placeholder helper, generated or dynamic SQL, transaction callback, dialect abstraction, logging facade, middleware logger, discovery, global helper, or service container. Do not move example policy into framework `src/`.
 
 The document-list SQL is SQLite-specific application evidence. Do not describe it as MySQL or PostgreSQL application-SQL support; the three-driver harness certifies only the framework PDO transport boundary.
 
-Run `composer check` from the repository root. Report the exact behavior, query cost, engine scope, and proof limit; do not infer production authorization, injection safety, snapshot pagination, or query-plan guarantees from a passing example.
+Run `composer check` from the repository root. Report the exact behavior, query cost, engine and lock topology scope, and proof limit; do not infer production authorization, injection safety, snapshot pagination, query-plan guarantees, sequential schedule deduplication, or distributed coordination from a passing example.

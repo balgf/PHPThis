@@ -23,6 +23,7 @@ These rules supplement installed PHPThis Consumer Contract v5 and Strict Profile
 - Treat cached payloads as untrusted derived data, parse them into bounded typed projections, and preserve correctness when an entry is absent or evicted.
 - Keep HTTP response caching separate from server-side data caching and give each response-producing path an explicit `no-store`, `private`, or `public` policy with finite freshness or revalidation, validators, and complete `Vary` behavior where applicable.
 - Start every new or unreviewed response path with an explicit `Cache-Control: no-store` header, including success, redirect, mapped client-error, unknown server-error, and cookie-emitting responses; change that path only after its recorded policy and tests support reuse.
+- Keep every adopted operational command behind the sole application console with the finite command and typed-argument map, exit and stream contract, fresh composition, clock, cadence, one-pass work, local overlap topology, supervisor, redaction, and tests recorded in `.ai/cli.md`, `.ai/operations.md`, and `.ai/testing.md`.
 - Run the complete application validity gate defined in `.ai/testing.md` before reporting completion.
 
 ## Forbidden
@@ -31,6 +32,7 @@ These rules supplement installed PHPThis Consumer Contract v5 and Strict Profile
 - Do not add a generic validator, result wrapper, string-rule language, automatic request binding, reflection hydration, mass assignment, sanitization magic, or unvalidated array beyond its named boundary.
 - Do not parse the same inbound representation again downstream, silently transform or coerce an application field, or treat validation as output encoding or authorization.
 - Do not introduce an undocumented side effect, retry, fallback, cache, queue, or scheduled operation.
+- Do not add application commands to framework `phpthis`, command discovery, class-name dispatch, a service-container command resolver, generic console or scheduler facade, daemon, hidden loop, unrecorded persistent slot or catch-up behavior, or distributed coordination without an accepted application decision and evidence.
 - Do not add a generic cache service, global cache helper, hidden cache-aside behavior, automatic query caching, implicit forever TTL, or arbitrary PHP object deserialization.
 - Do not use cached data as a source of truth or cache sessions, authentication state, authorization decisions, permissions, credentials, secrets, or another class prohibited by `.ai/architecture.md`.
 - Do not infer that `Set-Cookie`, a server-side cache miss, or a server-side cache hit makes an HTTP response safely private, uncacheable, or public.

@@ -413,6 +413,7 @@ $requiredRepositoryFiles = [
     '.github/workflows/ci.yml',
     'RELEASING.md',
     '.ai/cache.md',
+    '.ai/cli.md',
     '.ai/crud.md',
     '.ai/database.md',
     '.ai/http.md',
@@ -423,6 +424,12 @@ $requiredRepositoryFiles = [
     '.ai/session.md',
     'docs/consumer-contract.md',
     'docs/caching.md',
+    'docs/cli.md',
+    'docs/cli/README.md',
+    'docs/cli/arguments-output.md',
+    'docs/cli/composition.md',
+    'docs/cli/scheduling-locking.md',
+    'docs/cli/testing.md',
     'docs/crud.md',
     'docs/getting-started.md',
     'docs/jobs.md',
@@ -458,12 +465,26 @@ $requiredRepositoryFiles = [
     'docs/decisions/022-application-owned-finite-data-paths.md',
     'docs/decisions/023-application-owned-terminal-request-summaries.md',
     'docs/decisions/024-application-owned-sqlite-durable-jobs.md',
+    'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
+    'example/.ai/cli.md',
     'example/.ai/data.md',
     'example/.ai/jobs.md',
     'example/.ai/observability.md',
-    'example/bin/run-one-job.php',
+    'example/bin/console.php',
+    'example/src/ApplicationComposition.php',
+    'example/src/ApplicationDatabasePath.php',
+    'example/src/InvalidApplicationDatabasePath.php',
+    'example/src/Cli/ApplicationCommandExecution.php',
+    'example/src/Cli/ApplicationCommandLine.php',
+    'example/src/Cli/ApplicationCommandName.php',
+    'example/src/Cli/ApplicationCommandOutcome.php',
+    'example/src/Cli/ApplicationCommands.php',
+    'example/src/Cli/InvalidApplicationCommandArguments.php',
+    'example/src/Cli/LocalScheduleLock.php',
+    'example/src/Cli/README.md',
+    'example/src/Cli/UnknownApplicationCommand.php',
     'example/src/Jobs/InvalidUserWelcomeJobEnvelope.php',
     'example/src/Jobs/README.md',
     'example/src/Jobs/RecordUserWelcomeDelivery.php',
@@ -513,6 +534,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/README.md',
     'templates/application/.ai/architecture.md',
     'templates/application/.ai/change-workflow.md',
+    'templates/application/.ai/cli.md',
     'templates/application/.ai/data.md',
     'templates/application/.ai/integrations.md',
     'templates/application/.ai/jobs.md',
@@ -531,6 +553,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/README.md',
     'skeleton/.ai/architecture.md',
     'skeleton/.ai/change-workflow.md',
+    'skeleton/.ai/cli.md',
     'skeleton/.ai/data.md',
     'skeleton/.ai/integrations.md',
     'skeleton/.ai/jobs.md',
@@ -579,6 +602,8 @@ $requiredRepositoryFiles = [
     'src/Session/SessionUnavailable.php',
     'tests/observability.php',
     'tests/jobs.php',
+    'tests/cli.php',
+    'tests/cli-schedule-lock-holder.php',
     'tests/job-worker-crash.php',
     'tests/request-policy.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
@@ -971,6 +996,11 @@ $requestPolicyArtifactMarkers = [
         'account_memberships.account_id = :membership_tenant_account_id',
     ],
     'example/bootstrap.php' => [
+        'ApplicationDatabasePath::fromString(',
+        'new ApplicationComposition($databasePath)',
+        '->http()',
+    ],
+    'example/src/ApplicationComposition.php' => [
         'new DenyAllDocumentAuthentication()',
         'Unauthenticated::class => new Response(',
         'Forbidden::class => $forbiddenResponse',
@@ -1349,6 +1379,11 @@ $observabilityArtifactMarkers = [
         'one attempt is not durable delivery',
     ],
     'example/bootstrap.php' => [
+        'ApplicationDatabasePath::fromString(',
+        'new ApplicationComposition($databasePath)',
+        '->http()',
+    ],
+    'example/src/ApplicationComposition.php' => [
         'return new TerminalRequestCoordinator(',
         'CorrelationId::generate()',
         "new QuerySummarySource('list_users'",
@@ -1565,7 +1600,7 @@ $durableJobArtifactMarkers = [
     ],
     'ROADMAP.md' => [
         'ADR 024 accepts one application-owned SQLite durable-job proof',
-        'not core job, worker, dispatcher, scheduler, broker, or exactly-once contracts',
+        'ADR 024 accepts one SQLite-specific application recipe, not core job, worker, dispatcher, broker, or exactly-once contracts',
     ],
     'example/.ai/README.md' => [
         'Change durable-job publication, envelopes, worker lifecycle, retries, or dead letters',
@@ -1580,7 +1615,7 @@ $durableJobArtifactMarkers = [
         'The executable example follows ADR 024',
         'Every lease lasts 30 seconds.',
         'At most three claimed deliveries are permitted',
-        'Each invocation emits exactly one bounded redacted JSON result',
+        'both console commands emit one redacted result with the recorded exit and stream contract',
     ],
     'example/src/Jobs/README.md' => [
         'application-owned evidence for ADR 024',
@@ -1615,10 +1650,15 @@ $durableJobArtifactMarkers = [
         'INSERT INTO application_jobs (',
         '$this->connection->commit();',
     ],
-    'example/bin/run-one-job.php' => [
-        'new SystemUserWelcomeJobClock()',
+    'example/src/Cli/ApplicationCommands.php' => [
+        'private function runOneJob(): ApplicationCommandOutcome',
         '$worker->runOne(bin2hex(random_bytes(16)))',
-        'unexpected_failure',
+        'new QueryBudget(3)',
+        'new QueryTrace(3)',
+    ],
+    'example/bin/console.php' => [
+        'new SystemUserWelcomeJobClock()',
+        '"{\"error\":\"command_failed\"}\n"',
     ],
     'tests/run.php' => [
         "require __DIR__ . '/jobs.php';",
@@ -1632,7 +1672,10 @@ $durableJobArtifactMarkers = [
         'durable job completion samples fresh time and rejects an expired lease',
         'durable job retry backoff starts from freshly observed failure time',
         'durable job subprocess crash is fenced and safely redelivered after lease expiry',
-        'durable job one-shot command handles one delivery per fresh process',
+    ],
+    'tests/cli.php' => [
+        'jobs run-one command handles at most one delivery in each fresh process',
+        'schedule run uses explicit UTC five-minute slots and handles at most one delivery',
     ],
     'tests/job-worker-crash.php' => [
         'fwrite(STDOUT, "READY\\n")',
@@ -1712,6 +1755,322 @@ if (
     && preg_match('/^src\/(?:Jobs|Queue)\//m', $durableJobPackageInventory) === 1
 ) {
     $failures[] = 'Application-owned durable-job runtime must remain outside the framework package API.';
+}
+
+$applicationCliArtifactMarkers = [
+    '.ai/README.md' => [
+        'Add or change an application command or scheduled pass',
+        '`.ai/cli.md`, `.ai/jobs.md`',
+        'ADR 025',
+    ],
+    '.ai/application-context.md' => [
+        '`NOT_APPLICABLE(CLI)`',
+        'installed `vendor/phpthis/framework/docs/cli.md`',
+        'framework-owned check',
+    ],
+    '.ai/cli.md' => [
+        '# Application CLI and scheduler contract',
+        'PHPThis provides no core CLI command, command map, argument parser, scheduler, lock, daemon, or process manager.',
+        'Reject an unknown command separately from invalid, duplicate, misplaced, oversized, or unsupported arguments before application I/O.',
+        'HTTP and CLI may share immutable configuration and explicit application construction code',
+        'same-host scheduled pass with one application-private nonblocking exclusive `flock`',
+    ],
+    '.ai/testing.md' => [
+        'execute its real console in fresh subprocesses',
+        'explicit-clock cadence boundaries',
+        'Do not mock a generic console or scheduler',
+    ],
+    'docs/cli.md' => [
+        '# Application CLI and scheduler',
+        'PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API.',
+        'php example/bin/console.php <jobs:run-one|schedule:run> [--database=/absolute/path]',
+        'intdiv(epoch_seconds, 60) % 5 === 0',
+        'flock(LOCK_EX | LOCK_NB)',
+        '`Example\\ApplicationComposition`',
+        '## Unsupported boundary',
+    ],
+    'docs/cli/README.md' => [
+        '# Application CLI knowledge index',
+        'Arguments and output',
+        'Scheduling and locking',
+        'Composition',
+        'Testing',
+    ],
+    'docs/cli/arguments-output.md' => [
+        '# CLI arguments and output',
+        'Unknown command and invalid, duplicate, reordered, alternate, or extra arguments fail before application I/O.',
+        '`command`, then `outcome`',
+    ],
+    'docs/cli/composition.md' => [
+        '# CLI composition',
+        'HTTP and CLI share only immutable application configuration and visible construction code.',
+        'not a container, service locator, registry, generic factory, framework extension point, or global',
+    ],
+    'docs/cli/scheduling-locking.md' => [
+        '# CLI scheduling and locking',
+        'intdiv(epoch_seconds, 60) % 5 === 0',
+        'Sequential invocations in the same due minute are not deduplicated',
+    ],
+    'docs/cli/testing.md' => [
+        '# CLI testing',
+        'For production adoption, execute the real application console in fresh subprocesses.',
+        'The current example proof is intentionally narrower',
+        'It does not inject lock-operation or arbitrary throwable failures.',
+    ],
+    'docs/consumer-contract.md' => [
+        '## Optional application-owned CLI and scheduler',
+        'Contract-version-5-compatible optional application clarification, not a new checker requirement',
+        'Consumer Contract version 5 carries Strict Profile version 2 forward unchanged.',
+    ],
+    'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
+        'Status: accepted',
+        'Consumer Contract version 5 and Strict Profile version 2 remain unchanged.',
+        'PHPThis adds no core command, command interface, registry, argument parser, scheduler, clock, lock, daemon, process manager, service-container integration, or command discovery.',
+        'intdiv(epoch_seconds, 60) % 5 === 0',
+        'nonblocking exclusive `flock`',
+        'No framework core, Consumer Contract version, Strict Profile version, diagnostic, checker rule, durable-job guarantee, or distributed-coordination claim changes.',
+    ],
+    'docs/decisions/README.md' => [
+        '025-application-owned-explicit-cli-and-scheduler.md',
+    ],
+    'docs/knowledge-map.md' => [
+        'Add or assess an operational application command or scheduled pass',
+        '`docs/cli.md`',
+        'no framework CLI or scheduler API exists',
+    ],
+    'README.md' => [
+        'php example/bin/console.php jobs:run-one',
+        'php example/bin/console.php schedule:run',
+        'Application CLI and scheduler',
+    ],
+    'ROADMAP.md' => [
+        'ADR 025 accepts one application-owned explicit console and cron-friendly scheduled pass',
+        'not core CLI, scheduler, daemon, persistent slot, catch-up, process-manager, or distributed-coordination contracts',
+    ],
+    'example/.ai/README.md' => [
+        'Change an application command, argument, exit, stream, cadence, or overlap policy',
+        '`bin/console.php`, `ApplicationComposition`, `src/Cli/`',
+    ],
+    'example/.ai/cli.md' => [
+        '# Example application CLI and scheduler context',
+        'php example/bin/console.php jobs:run-one [--database=/absolute/path]',
+        'php example/bin/console.php schedule:run [--database=/absolute/path]',
+        'intdiv(epochSeconds, 60) % 5 === 0',
+        'nonblocking exclusive `flock`',
+        'No live connection, budget, trace, request, session, correlation ID, or mutable clock is shared between HTTP and CLI',
+    ],
+    'example/src/Cli/README.md' => [
+        '# Example application CLI source',
+        'application-owned evidence for ADR 025, not PHPThis core runtime code',
+        '`example/bin/console.php` is the only operational entrypoint',
+        'Do not add command discovery, dynamic class or service resolution, a second console, generic parser or scheduler facade, daemon, polling loop, subprocess recursion, persistent slot ledger, catch-up, or distributed-coordination claim.',
+    ],
+    'example/AGENTS.md' => [
+        'Keep `bin/console.php` as the sole application operational console.',
+        'Do not add another entrypoint, command discovery, a service container, scheduler facade, daemon, persistent slot ledger, catch-up, or distributed-coordination claim.',
+    ],
+    'templates/application/.ai/cli.md' => [
+        '{{CLI_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{CLI_COMMAND_MAP_AND_BOUNDS_OR_NOT_APPLICABLE}}',
+        '{{CLI_OVERLAP_POLICY_OR_NOT_APPLICABLE}}',
+        'PHPThis provides no core application CLI or scheduler API',
+    ],
+    'skeleton/.ai/cli.md' => [
+        '`NOT_APPLICABLE(CLI)`',
+        'Keep framework `phpthis` dedicated to `check`.',
+        'Do not add command discovery, class-name dispatch, a service-container resolver, generic console or scheduler facade, daemon, hidden loop, or distributed-coordination claim.',
+    ],
+    'skeleton/.ai/rules.md' => [
+        'Keep `NOT_APPLICABLE(CLI)` until one operational application console',
+        'Do not add application commands to framework `phpthis`',
+    ],
+    'skeleton/AGENTS.md' => [
+        '`NOT_APPLICABLE(CLI)`',
+        'Do not add application commands to `vendor/bin/phpthis`',
+    ],
+    'tools/package-files.txt' => [
+        'docs/cli.md',
+        'docs/cli/testing.md',
+        'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md',
+        'templates/application/.ai/cli.md',
+    ],
+    'example/bootstrap.php' => [
+        'new ApplicationComposition($databasePath)',
+        '->http()',
+    ],
+    'example/src/ApplicationComposition.php' => [
+        'final readonly class ApplicationComposition',
+        'public function http(): TerminalRequestCoordinator',
+        'public function commands(UserWelcomeJobClock $clock): ApplicationCommands',
+        "new LocalScheduleLock(\$this->databasePath . '.schedule.lock')",
+    ],
+    'example/src/ApplicationDatabasePath.php' => [
+        'strlen($value) > 4_096',
+        "str_ends_with(\$value, '\\\\')",
+        "preg_match('/[\\x00-\\x1F\\x7F]/', \$value)",
+    ],
+    'example/src/Cli/ApplicationCommandName.php' => [
+        "case JobsRunOne = 'jobs:run-one';",
+        "case ScheduleRun = 'schedule:run';",
+    ],
+    'example/src/Cli/ApplicationCommandOutcome.php' => [
+        "case Idle = 'idle';",
+        "case Completed = 'completed';",
+        "case RetryScheduled = 'retry_scheduled';",
+        "case DeadLettered = 'dead_lettered';",
+        "case NotDue = 'not_due';",
+        "case OverlapSkipped = 'overlap_skipped';",
+    ],
+    'example/src/Cli/ApplicationCommandLine.php' => [
+        "str_starts_with(\$arguments[1], '--')",
+        'ApplicationCommandName::tryFrom($arguments[1])',
+        'count($arguments) > 3',
+        "str_starts_with(\$submitted, '--database=')",
+        'ApplicationDatabasePath::fromString($databasePath)',
+    ],
+    'example/src/Cli/ApplicationCommands.php' => [
+        'return match ($command)',
+        'intdiv($this->clock->now(), 60)',
+        '$currentMinute % 5 !== 0',
+        'if (!$this->scheduleLock->acquire())',
+        '$this->scheduleLock->release();',
+        'private function runOneJob(): ApplicationCommandOutcome',
+    ],
+    'example/src/Cli/LocalScheduleLock.php' => [
+        "fopen(\$this->path, 'c+b')",
+        'flock($handle, LOCK_EX | LOCK_NB, $wouldBlock)',
+        'if ($wouldBlock === 1)',
+        'flock($handle, LOCK_UN)',
+    ],
+    'example/bin/console.php' => [
+        'ApplicationCommandLine::fromArguments(',
+        '->commands(new SystemUserWelcomeJobClock())',
+        '"{\"error\":\"unknown_command\"}\n"',
+        '"{\"error\":\"invalid_arguments\"}\n"',
+        '"{\"error\":\"command_failed\"}\n"',
+    ],
+    'tests/cli.php' => [
+        'application console rejects unknown commands before database work',
+        'application console rejects every invalid argument shape before database work',
+        'application command parser accepts exactly 4096 absolute path bytes',
+        'application console reports missing databases as one redacted operational failure',
+        'jobs run-one command handles at most one delivery in each fresh process',
+        'schedule run uses explicit UTC five-minute slots and handles at most one delivery',
+        'schedule run skips a subprocess-held same-host lock without blocking or delivering',
+        'application composition keeps CLI execution outside fresh HTTP request state',
+    ],
+    'tests/cli-schedule-lock-holder.php' => [
+        "fwrite(STDOUT, \"READY\\n\")",
+        "flock(\$handle, LOCK_EX | LOCK_NB)",
+        "\$databasePath . '.schedule.lock'",
+    ],
+];
+
+foreach ($applicationCliArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read application CLI artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Application CLI artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+if (is_file($root . '/example/bin/run-one-job.php')) {
+    $failures[] = 'The superseded one-shot job entrypoint must not coexist with the explicit application command map.';
+}
+
+foreach (['src/Cli', 'src/Command', 'src/Commands', 'src/Scheduler'] as $forbiddenCoreDirectory) {
+    if (is_dir($root . '/' . $forbiddenCoreDirectory)) {
+        $failures[] = "Application CLI and schedule runtime must remain outside framework core: {$forbiddenCoreDirectory}.";
+    }
+}
+
+$applicationCliPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (
+    is_string($applicationCliPackageInventory)
+    && preg_match('/^src\/(?:Cli|Command|Commands|Scheduler)\//m', $applicationCliPackageInventory) === 1
+) {
+    $failures[] = 'Application CLI and schedule runtime must remain outside the framework package API.';
+}
+
+$frameworkEntrypoint = file_get_contents($root . '/bin/phpthis');
+
+if (is_string($frameworkEntrypoint)) {
+    if (!str_contains($frameworkEntrypoint, 'Usage: phpthis check [--debug]')) {
+        $failures[] = 'The framework entrypoint must retain its check-only usage contract.';
+    }
+
+    foreach (['jobs:run-one', 'schedule:run'] as $applicationCommand) {
+        if (str_contains($frameworkEntrypoint, $applicationCommand)) {
+            $failures[] = "The application command {$applicationCommand} must not enter bin/phpthis.";
+        }
+    }
+}
+
+$composerManifest = file_get_contents($root . '/composer.json');
+
+if (is_string($composerManifest) && str_contains($composerManifest, 'example/bin/console.php')) {
+    $failures[] = 'The application console must not be exported as a framework Composer binary.';
+}
+
+if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/cli.md',")) {
+    $failures[] = 'Contract version 5 must not checker-require the optional application CLI context file.';
+}
+
+if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveCliContextIsRequired')) {
+    $failures[] = 'Contract version 5 must not reject an existing consumer only because .ai/cli.md is absent.';
+}
+
+$applicationCliSourceFiles = [
+    'example/bin/console.php',
+    'example/src/Cli/ApplicationCommandExecution.php',
+    'example/src/Cli/ApplicationCommandLine.php',
+    'example/src/Cli/ApplicationCommandName.php',
+    'example/src/Cli/ApplicationCommandOutcome.php',
+    'example/src/Cli/ApplicationCommands.php',
+    'example/src/Cli/InvalidApplicationCommandArguments.php',
+    'example/src/Cli/LocalScheduleLock.php',
+    'example/src/Cli/UnknownApplicationCommand.php',
+];
+$forbiddenApplicationCliMarkers = [
+    'class_exists(',
+    'get_declared_classes(',
+    'glob(',
+    'scandir(',
+    'DirectoryIterator',
+    'ReflectionClass',
+    'ContainerInterface',
+    'ServiceLocator',
+    'sleep(',
+    'usleep(',
+];
+
+foreach ($applicationCliSourceFiles as $relativePath) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        continue;
+    }
+
+    foreach ($forbiddenApplicationCliMarkers as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "Application CLI source {$relativePath} contains forbidden discovery container or daemon marker {$marker}.";
+        }
+    }
+
+    foreach (token_get_all($contents) as $token) {
+        if (is_array($token) && in_array($token[0], [T_FOR, T_FOREACH, T_WHILE, T_DO], true)) {
+            $failures[] = "Application CLI source {$relativePath} must remain one-shot without an in-process loop.";
+            break;
+        }
+    }
 }
 
 if (is_dir($root . '/src/Observability')) {

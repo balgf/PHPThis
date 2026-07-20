@@ -13,7 +13,7 @@
 - Supported PHP version: 8.4
 - Web runtime: {{WEB_RUNTIME}}
 - Worker runtime: {{WORKER_RUNTIME_OR_NOT_APPLICABLE}}
-- Scheduler: {{SCHEDULER_OR_NOT_APPLICABLE}}
+- Operational application console and scheduler: `.ai/cli.md`
 - Required extensions: `ext-session` plus {{ADDITIONAL_REQUIRED_PHP_EXTENSIONS_OR_NONE}}
 
 ## Session runtime
@@ -69,6 +69,16 @@ Cache availability never establishes application correctness. Record whether eac
 - Capacity, retention, dead-letter inspection, and incident policy: {{JOBS_OPERATIONS_POLICY_OR_NOT_APPLICABLE}}
 
 The application supervisor creates repetition by starting fresh one-delivery processes. Do not add an in-process database polling loop, mutable worker container, hidden retry loop, or unrecorded signal behavior.
+
+## Application CLI and scheduler
+
+- Adoption or `NOT_APPLICABLE(CLI)`: `.ai/cli.md`
+- Console process identity and non-secret configuration source: {{CLI_PROCESS_IDENTITY_AND_CONFIGURATION_OR_NOT_APPLICABLE}}
+- Lock-file ownership, permissions, cleanup, and filesystem topology: {{CLI_LOCK_OPERATIONS_OR_NOT_APPLICABLE}}
+- Cron or supervisor frequency, timeout, forced termination, restart, and incident policy: {{CLI_SUPERVISOR_POLICY_OR_NOT_APPLICABLE}}
+- Operational assumptions source and verified date: {{CLI_OPERATIONS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
+
+Keep command, argument, exit, stream, clock, cadence, one-pass, repeated-slot, composition, and evidence facts in `.ai/cli.md`. Framework `vendor/bin/phpthis` remains the checker, not the application console. Do not add command discovery, dynamic class or service resolution, a generic scheduler facade, daemon, hidden loop, or an unrecorded second command path. A same-host file lock is topology-dependent and does not prove distributed or sequential-in-slot deduplication.
 
 ## Environments and deployment
 

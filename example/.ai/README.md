@@ -11,6 +11,7 @@ Always read `../AGENTS.md`, then load only what the task needs:
 | Change user Create, List, or Get | `../../.ai/crud.md` and the relevant installed decision | concrete `src/Users/` operation and tests |
 | Change request correlation, terminal summaries, or query-source registration | `.ai/observability.md`, `../../docs/observability/README.md`, ADR 023 | `src/Observability/`, `bootstrap.php`, `public/index.php`, distinct operation budgets and traces, summary and throwing-sink tests |
 | Change durable-job publication, envelopes, worker lifecycle, retries, or dead letters | `.ai/jobs.md`, `.ai/data.md`, `.ai/observability.md`, `../../docs/jobs.md`, ADR 024 | Create transaction, `src/Jobs/`, one-shot worker entrypoint, complete SQLite SQL and bindings, job tests, and subprocess crash proof |
+| Change an application command, argument, exit, stream, cadence, or overlap policy | `.ai/cli.md`, `.ai/jobs.md`, `.ai/observability.md`, `../../docs/cli.md`, ADR 025 | `bin/console.php`, `ApplicationComposition`, `src/Cli/`, explicit clock, one-job operation, lock path, and real-console tests |
 | Change framework behavior | leave the example boundary and follow `../../.ai/README.md` | framework `src/`, contract, decisions, and repository tests |
 
 The document-list proof keeps complete raw SQLite SQL and explicit named parameter arrays at direct `Connection` call sites. It has no ORM, query builder, repository, generic paginator, SQL/binding/placeholder helper, generated or dynamic SQL, transaction callback, or dialect abstraction.

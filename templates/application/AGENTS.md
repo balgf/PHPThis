@@ -47,6 +47,8 @@ Before cache work, record HTTP response caching and server-side data caching as 
 
 Before durable-job work, read installed `docs/jobs.md` and record adoption or `NOT_APPLICABLE(JOBS)` in `.ai/jobs.md`. An adopted path must name its backend and version, same-transaction producer boundary, finite envelope and parser, idempotency owner, lease and bounded retry policy, redacted dead-letter codes, one-shot worker lifecycle, supervisor, and complete tests. Do not add core job types, a generic queue facade, event bus, discovery, serialized PHP objects, transaction callback, hidden retry or polling loop, or exactly-once external-effect claim.
 
+Before operational CLI or scheduler work, read installed `docs/cli.md` and record adoption or `NOT_APPLICABLE(CLI)` in `.ai/cli.md`, `.ai/operations.md`, and `.ai/testing.md`. An adopted pattern must name the sole application console, finite command and typed-argument map, closed exit and stream contract, fresh composition, explicit clock and cadence, one-pass behavior, same-host overlap lock and topology, supervisor, redaction, and real-console evidence. Keep framework `vendor/bin/phpthis` dedicated to `check`; do not add command discovery, a container resolver, scheduler facade, daemon, hidden loop, or distributed-coordination claim.
+
 ## Context safety
 
 Do not write credentials, tokens, private keys, customer data, production payloads, or secrets into `AGENTS.md`, `.ai/`, source comments, fixtures, logs, or reports. Use documented secret references and redacted examples.

@@ -1,0 +1,115 @@
+# Application CLI and scheduler
+
+PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API. The application keeps its finite command map, typed arguments, dependencies, exit codes, output, clock, overlap policy, and process lifecycle explicit. The installed `vendor/bin/phpthis` executable remains the framework-owned `check` boundary; it is not an application command host.
+
+ADR 025 records the first proof through the executable example. The concrete names and cadence below are evidence for that application, not reserved PHPThis APIs that every consumer must copy.
+
+## Adoption boundary
+
+An application with no operational command or scheduler records `NOT_APPLICABLE(CLI)`. Composer development scripts and `vendor/bin/phpthis check` do not by themselves mean that an application CLI has been adopted.
+
+Before adoption, the accountable human records:
+
+- the sole application console path and deployment identity;
+- every finite command name, operation owner, typed argument, bound, default, and normalization or explicit non-normalization policy;
+- exact exit codes, stdout and stderr JSON schemas, outcome vocabulary, redaction, and compatibility policy;
+- fresh composition ownership and the immutable configuration, if any, shared with HTTP composition;
+- explicit clock, timezone, cadence, due test, missed-run and catch-up behavior, maximum work per pass, and cron or supervisor invocation frequency;
+- same-host overlap lock path, permissions, filesystem topology, acquisition mode, contention outcome, failure behavior, and release evidence;
+- timeout, forced termination, restart, capacity, and incident behavior; and
+- tests for parsing, output bytes, time boundaries, overlap, failure, resource bounds, and secrets exclusion.
+
+Do not add a command framework, registry, or scheduler in anticipation of future operations.
+
+## One explicit console
+
+The accepted example owns one executable PHP file:
+
+```text
+example/bin/console.php
+```
+
+Its complete public grammar is:
+
+```text
+php example/bin/console.php <jobs:run-one|schedule:run> [--database=/absolute/path]
+```
+
+The command occupies the first application argument. Zero or one option may follow it, and the only option spelling is one token beginning `--database=`. The value is 1 through 4,096 bytes, must be absolute under the current host operating system, contains no ASCII control byte or DEL, and ends with neither `/` nor `\`. A duplicate option, an option before the command, an empty value, an unsupported spelling, an extra argument, or any other shape is invalid. The console rejects unknown and invalid input before filesystem, lock, or database I/O.
+
+The database path is operational configuration, not output. The example has one code-owned default for local evaluation; a supplied path does not appear in stdout, stderr, durable diagnostics, or request summaries. A real application records how its trusted supervisor supplies non-secret configuration and protects the selected database and lock paths.
+
+The parser selects from a finite code-owned map and constructs typed command behavior directly. It does not convert submitted text into a PHP class, callback, service identifier, executable path, SQL fragment, or environment-variable name. No command discovery, filesystem scan, reflection, service container, facade, alias, abbreviation, or fallback command exists.
+
+## Exit and output contract
+
+The accepted example writes exactly one JSON object followed by `\n` to exactly one stream:
+
+| Condition | Exit | stdout | stderr |
+| --- | ---: | --- | --- |
+| `jobs:run-one` expected result | `0` | `{"command":"jobs:run-one","outcome":"<job-outcome>"}\n` | empty |
+| `schedule:run` expected result | `0` | `{"command":"schedule:run","outcome":"<schedule-outcome>"}\n` | empty |
+| unknown command | `2` | empty | `{"error":"unknown_command"}\n` |
+| invalid arguments | `2` | empty | `{"error":"invalid_arguments"}\n` |
+| operational or unexpected failure | `1` | empty | `{"error":"command_failed"}\n` |
+
+The job outcomes are `idle`, `completed`, `retry_scheduled`, and `dead_lettered`. The schedule outcomes add `not_due` and `overlap_skipped`; when a due scheduled pass invokes the job operation, it returns that operation's finite outcome under the `schedule:run` command name. Idle, not-due, overlap, retry, and dead-letter states are expected scriptable results rather than process failures.
+
+Key order and bytes are stable. The generic errors intentionally omit submitted command and option text, paths, DSNs, environment values, credentials, exception classes and messages, stacks, SQL, bindings, job identities, envelopes, payloads, idempotency keys, and domain values. PHP warnings or diagnostics must not become a second output line.
+
+## Direct one-job command
+
+`jobs:run-one` freshly composes the application-owned SQLite job connection, query budget, bounded trace, clock, finite envelope dispatcher, and concrete handler. It calls the exact one-job operation accepted by ADR 024 in the current process. That operation claims and finalizes zero or one delivery, and the console exits after mapping its finite outcome.
+
+There is no worker loop, polling, recursive console call, subprocess handoff, implicit retry, daemon, hidden supervisor, or second job command. A deployment that wants continual work explicitly starts fresh `jobs:run-one` processes under its recorded supervisor policy.
+
+## UTC five-minute scheduled pass
+
+`schedule:run` uses the injected Unix clock as UTC. It ignores seconds and is due precisely when:
+
+```text
+intdiv(epoch_seconds, 60) % 5 === 0
+```
+
+A non-due minute returns `not_due` without application work. There is no persistent slot ledger, missed-run replay, or catch-up. The external cron or supervisor invokes the command at most once per minute. If it misses a due minute, the next ordinary minute remains not due and the next five-minute boundary is the next opportunity.
+
+On a due minute, the example resolves the canonical database path and derives one application-private lock path by appending `.schedule.lock`. It opens that lock on a filesystem shared by every same-host scheduled invocation for this application and attempts `flock(LOCK_EX | LOCK_NB)`. Contention returns `overlap_skipped` immediately. A lock-file open error, an acquisition error other than ordinary contention, or an unlock error fails closed as `command_failed`. The acquired lock is released in `finally` and process termination also releases the operating-system lock.
+
+While holding the lock, the scheduler synchronously calls the exact same in-process one-job operation as `jobs:run-one`, once. It does not spawn the console, enqueue through another path, loop, or maintain a second operation. If work throws, `finally` releases the lock and the console reports `command_failed`. No slot is marked, so a later invocation during that same due minute may try again.
+
+The lock prevents only overlapping cooperating scheduled processes that resolve the same database and lock file on one host. It does not deduplicate two sequential `schedule:run` invocations in the same due minute; both may perform one pass. It does not coordinate hosts, containers without one shared host filesystem, direct `jobs:run-one` invocations, or uncooperative processes. Job leases and idempotent effects remain necessary. Distributed coordination belongs to a separately accepted backend-specific lease decision.
+
+## Composition boundary
+
+HTTP and CLI entrypoints may share immutable application configuration and narrowly named explicit construction code. They do not share live connections, budgets, traces, request objects, session state, correlation state, clocks with mutable test state, or other invocation-scoped objects. Each HTTP request and each console process receives fresh dependencies appropriate to its boundary.
+
+The accepted example uses `Example\ApplicationComposition` for this visible ownership. Its constructor receives one validated `ApplicationDatabasePath` and retains only the canonical immutable database-path configuration. `http()` builds a fresh terminal request coordinator and complete request-scoped graph. `commands(UserWelcomeJobClock)` returns one explicit `ApplicationCommands` boundary; that boundary constructs the fresh job connection, budget, trace, and worker only when a due or direct command reaches the one-job operation. This is ordinary application composition, not a service container, framework extension point, global registry, generic factory API, or object injected into business behavior.
+
+## Consumer adoption evidence
+
+A production adopter must execute its real console in fresh subprocesses and add evidence for every applicable item below. These are adoption requirements, not claims about the current example test suite:
+
+- every accepted command and exact finite outcome, including idle and failure-shaped expected outcomes;
+- missing, unknown, duplicate, reordered, malformed, empty, control-byte, relative, trailing-separator, 4,096-byte, and 4,097-byte option cases;
+- unknown commands and invalid arguments perform no filesystem, lock, database, job, or external I/O;
+- exact exit codes, stream exclusivity, key order, one-line JSON bytes, and final newline;
+- a missing or inaccessible database, lock open error, non-contention lock failure, unlock failure, and unexpected throwable produce only `command_failed`;
+- UTC minute boundaries immediately before, on, and after the five-minute cadence using an explicit deterministic clock;
+- `not_due` performs no scheduled application work;
+- two concurrently held same-host lock attempts produce one bounded pass and one `overlap_skipped` without waiting;
+- sequential invocations in one due minute are not misreported as deduplicated;
+- one due pass invokes the same one-job operation at most once and handles at most one delivery;
+- HTTP and CLI composition create fresh mutable state while sharing only the recorded immutable configuration; and
+- stdout, stderr, durable job state, terminal request summaries, and traces omit every submitted or sensitive value.
+
+The complete application gate remains mandatory. Focused CLI tests shorten feedback but do not replace static analysis, the Strict Profile, or the application's other behavior evidence.
+
+The current example's real-console proof covers exact unknown and invalid failures, redacted missing-database failure, and `jobs:run-one` `completed` and `idle` output with at most one delivery per fresh process. A direct parser test covers the exact 4,096/4,097-byte boundary. Direct command tests cover deterministic `not_due` and `completed` cadence behavior, two sequential passes within one due minute, immediate subprocess-held-lock contention, and completion after that lock is released. Composition tests cover distinct HTTP and command boundary objects plus fresh HTTP correlation state. ADR 024 worker tests cover retry and dead-letter transitions; exhaustive typed mapping and static analysis cover their CLI mapping. The current suite does not inject lock open, non-contention acquisition, release, or arbitrary throwable failures, and it does not run every scheduled or worker outcome through the real console.
+
+## Unsupported boundary
+
+PHPThis ships no application console, command interface, command registry, argument parser, input or output helper, scheduler, cadence type, clock, lock, daemon, worker manager, process manager, signal handler, cron installer, deployment unit, or distributed coordinator. It adds no operational command to `bin/phpthis`.
+
+The example proves one application-owned single-host pattern. It does not promise command compatibility across applications, distributed exclusion, persistent schedule deduplication, catch-up, production cron delivery, filesystem lock correctness on an unverified topology, exactly-once job execution, or exactly-once external effects.
+
+See [ADR 025](decisions/025-application-owned-explicit-cli-and-scheduler.md) for the accepted decision boundary.

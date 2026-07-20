@@ -83,7 +83,8 @@ curl -i 'http://127.0.0.1:8080/accounts/42/documents?order=rank_asc'
 curl -i -X POST http://127.0.0.1:8080/users \
   -H 'Content-Type: application/json' \
   --data '{"name":"Katherine Johnson","email":"katherine@example.com"}'
-php example/bin/run-one-job.php
+php example/bin/console.php jobs:run-one
+php example/bin/console.php schedule:run
 ```
 
 ## Start an application
@@ -102,6 +103,7 @@ Ask the project AI to follow the [application bootstrap contract](docs/getting-s
 - [CRUD reference profile](docs/crud.md) defines the optional feature-first application structure and its current evidence boundary.
 - [Finite data paths](docs/decisions/022-application-owned-finite-data-paths.md) records the application-owned raw-SQL collection proof and its SQLite-only limits.
 - [Terminal request summaries](docs/logging.md) and [ADR 023](docs/decisions/023-application-owned-terminal-request-summaries.md) define application-owned correlation, redaction, bounded database evidence, one-attempt semantics, and sink-failure isolation.
+- [Application CLI and scheduler](docs/cli.md) and [ADR 025](docs/decisions/025-application-owned-explicit-cli-and-scheduler.md) define one application-owned console, finite command and output contracts, explicit UTC cadence, and bounded single-host overlap without adding a core CLI or scheduler API.
 - [Security baseline](docs/security.md) defines SQL data/structure separation, least-privilege obligations, and the limits of automated proof.
 - [Session state](docs/sessions.md) defines the optional native lifecycle, explicit cookie contract, deployment requirements, and application-policy boundary.
 - [Request policy](docs/request-policy.md) defines the application-owned authentication, tenant-resolution, and authorization composition.

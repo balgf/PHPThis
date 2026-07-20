@@ -44,6 +44,7 @@ require dirname(__DIR__) . '/autoload.php';
 require __DIR__ . '/request-policy.php';
 require __DIR__ . '/observability.php';
 require __DIR__ . '/jobs.php';
+require __DIR__ . '/cli.php';
 
 $tests = requestPolicyTests();
 
@@ -52,6 +53,10 @@ foreach (observabilityTests() as $name => $test) {
 }
 
 foreach (jobTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
+foreach (cliTests() as $name => $test) {
     $tests[$name] = $test;
 }
 

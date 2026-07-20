@@ -17,8 +17,9 @@ The executable example follows ADR 024 as one application-owned SQLite proof. It
 - A successful handler records one idempotent database effect and completion in one explicit SQLite transaction. Replaying the same idempotency key produces no second effect.
 - Every lease lasts 30 seconds. At most three claimed deliveries are permitted: failure after attempt one schedules 5 seconds, failure after attempt two schedules 30 seconds, and failure or lease expiry on attempt three becomes a dead letter without incrementing beyond three. A claim consumes an attempt even when a crash, poison envelope, or pre-handler lease expiry prevents a handler start.
 - Invalid JSON, malformed envelopes, unsupported version, and unsupported type are poison jobs and become dead letters immediately with finite code-owned diagnostic codes; they are not retried.
-- Each invocation emits exactly one bounded redacted JSON result: `idle`, `completed`, `retry_scheduled`, or `dead_lettered`. Expected outcomes exit `0`; unexpected bootstrap or worker failures exit `1`.
-- The process exits after that single result. A supervisor repeats invocations. Clean stopping means not launching another invocation; the example has no worker loop, heartbeat, signal subsystem, reused connection, or general command map.
+- `bin/console.php jobs:run-one` is the only direct worker command. It maps `idle`, `completed`, `retry_scheduled`, or `dead_lettered` to one `{"command":"jobs:run-one","outcome":"..."}` stdout line and exit `0`; operational or unexpected failure maps to the generic `command_failed` stderr line and exit `1`.
+- `bin/console.php schedule:run` calls this exact in-process one-job operation at most once on a due pass under `.ai/cli.md`'s explicit clock and nonblocking same-host lock. It does not enqueue, spawn, or select another worker path.
+- The process exits after that single result. A supervisor repeats invocations. Clean stopping means not launching another invocation; the example has no worker loop, heartbeat, signal subsystem, reused connection, alternate worker entrypoint, or generic command map.
 
 ## Redaction
 
@@ -38,9 +39,9 @@ The example's file-backed SQLite tests prove:
 - a real subprocess terminated after claim is recovered by a fresh post-expiry invocation;
 - multiple queued rows require multiple fresh subprocesses and each invocation handles at most one;
 - an empty queue returns `idle` without handler work;
-- every invocation emits one redacted result with the recorded exit status; and
+- both console commands emit one redacted result with the recorded exit and stream contract; and
 - each transition stays within its explicit query budget and bounded trace across small and materially larger fixtures.
 
 This proves at-least-once delivery and one idempotent database effect only for the exercised SQLite schema. It does not prove exactly-once execution, exactly-once external effects, cross-database atomicity, production SQLite concurrency or capacity, automatic replay safety, or MySQL/PostgreSQL job behavior.
 
-Forbidden in this example: framework-core job types, ORM, Active Record, repository, query builder, SQL/binding/placeholder helper, transaction callback, queue facade, generic dispatcher, event bus, runtime discovery, dynamic class resolution, service container, hidden retry loop, and long-running worker state. Issue #8 owns any general application command-map or scheduler investigation.
+Forbidden in this example: framework-core job types, ORM, Active Record, repository, query builder, SQL/binding/placeholder helper, transaction callback, queue facade, generic dispatcher, event bus, runtime or command discovery, dynamic class resolution, service container, hidden retry or polling loop, long-running worker state, generic scheduler facade, and distributed-coordination claim. ADR 025 keeps the console and scheduler application-owned.
