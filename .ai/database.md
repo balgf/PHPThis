@@ -4,6 +4,8 @@ Use `PHPThis\Database\Connection`. It is an instrumented PDO boundary, not a que
 
 Read `docs/decisions/012-pdo-transport-application-owned-dialects.md` before changing connection behavior or driver certification. Preserve native PDO DSNs and application-owned SQL; do not add a driver enum, connection registry, dialect interface, SQL rewriting, or portability helper.
 
+Read ADR 022 before changing the protected document-list proof. That application path deliberately keeps complete raw SQLite SQL and explicit named parameter arrays together at direct `Connection` calls. Do not replace them with an ORM, query builder, repository, generic paginator, SQL/binding/placeholder helper, generated or dynamic SQL, transaction callback, or dialect abstraction.
+
 Rules:
 
 - Execute SQL only through direct calls to `Connection`; do not add a second database execution boundary.
@@ -33,4 +35,6 @@ Raw `array<string, mixed>` rows must not reach a response or business operation.
 
 The base transport harness defaults to SQLite. A requested driver must be installed and configured or the harness fails; dedicated CI runs SQLite, MySQL, and PostgreSQL. Changes to `Connection` must pass `composer test:database-drivers` locally and the complete three-engine CI job. Engine-specific application behavior still needs tests against the exact deployed version.
 
-The sample read uses one bounded aggregate statement for user event counts. Its small and large fixtures must keep the same query count and output contract. The sample write performs exactly two named statements inside one explicit transaction; a one-statement budget must reject the second write and leave both tables unchanged. Do not replace either path with per-row queries or a transaction callback.
+The sample user read uses one bounded aggregate statement for user event counts. Its small and large fixtures must keep the same query count and output contract. The sample write performs exactly two named statements inside one explicit transaction; a one-statement budget must reject the second write and leave both tables unchanged. Do not replace either path with per-row queries or a transaction callback.
+
+The protected document list is SQLite-only application evidence. It maps `order=rank_asc` and `order=rank_desc`, cursor presence, and omitted or one-to-three-category filters to eight complete statements; a direct empty list or parsed `['']` shape returns an empty page with zero protected SQL, and native PHP inputs such as `?categories[]=` produce that parsed shape. Every non-empty page binds requested account, resolved tenant, principal membership, cursor presence and values, category values, and the 51-row lookahead limit explicitly and uses one statement. Its exact `v1:<order>:<sort_rank>:<document_key>` cursor orders numeric `sort_rank` then `document_key COLLATE BINARY`; traversal is not a snapshot. MySQL and PostgreSQL remain base PDO transport claims only.

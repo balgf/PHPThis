@@ -28,6 +28,7 @@ These rules supplement installed PHPThis Consumer Contract v4 and Strict Profile
 - Do not add middleware or policy registries, a request-context or attribute bag, hidden tenant resolution, an implicit or global authorization scope, or stored or cached authorization decisions.
 - Do not copy secrets or real customer data into code, context, fixtures, logs, or reports.
 - Do not add runtime-built SQL, an SQL sanitizer, or a runtime database identity with migration or administrative authority.
+- Do not claim that PHT006, tenant predicates, adversarial bindings, or base PDO transport tests universally prove authorization, tenant isolation, injection safety, or application-SQL portability.
 - Do not read `$_SESSION`, call native `session_*` functions, manually emit a framework session cookie, or add a generic session helper.
 - Do not add a second spelling or execution path for an existing operation.
 

@@ -439,17 +439,32 @@ $requiredRepositoryFiles = [
     'docs/decisions/019-bounded-multiple-typed-routes.md',
     'docs/decisions/020-application-owned-request-policy.md',
     'docs/decisions/021-application-owned-typed-input-boundaries.md',
+    'docs/decisions/022-application-owned-finite-data-paths.md',
+    'example/AGENTS.md',
+    'example/.ai/README.md',
+    'example/.ai/data.md',
     'example/src/Documents/DocumentRoutes.php',
-    'example/src/Documents/GetDocument/AccountId.php',
-    'example/src/Documents/GetDocument/AuthenticateGetDocumentRequest.php',
-    'example/src/Documents/GetDocument/AuthenticatedPrincipal.php',
+    'example/src/Documents/AccountId.php',
+    'example/src/Documents/AuthenticateDocumentRequest.php',
+    'example/src/Documents/AuthenticatedPrincipal.php',
+    'example/src/Documents/CrossTenant.php',
+    'example/src/Documents/DenyAllDocumentAuthentication.php',
+    'example/src/Documents/DenyAllDocumentAuthorization.php',
+    'example/src/Documents/DenyAllDocumentTenantResolution.php',
+    'example/src/Documents/DocumentKey.php',
+    'example/src/Documents/Forbidden.php',
+    'example/src/Documents/ResolveDocumentTenant.php',
+    'example/src/Documents/ResolvedTenant.php',
+    'example/src/Documents/Unauthenticated.php',
     'example/src/Documents/GetDocument/AuthorizeGetDocument.php',
-    'example/src/Documents/GetDocument/DocumentKey.php',
+    'example/src/Documents/GetDocument/DocumentDetails.php',
     'example/src/Documents/GetDocument/GetDocumentHandler.php',
-    'example/src/Documents/GetDocument/ResolveGetDocumentTenant.php',
-    'example/src/Documents/GetDocument/ResolvedTenant.php',
     'example/src/Documents/GetDocument/RetrieveAuthorizedDocument.php',
     'example/src/Documents/GetDocument/SelectAuthorizedDocument.php',
+    'example/src/Documents/ListDocuments/AuthorizeListDocuments.php',
+    'example/src/Documents/ListDocuments/ListDocumentsPageRequest.php',
+    'example/src/Documents/ListDocuments/DocumentSummary.php',
+    'example/src/Documents/ListDocuments/ListDocumentsHandler.php',
     'example/src/Users/GetUser/GetUserHandler.php',
     'example/src/Users/GetUser/UserDetails.php',
     'example/src/Users/GetUser/UserId.php',
@@ -903,7 +918,7 @@ $requestPolicyArtifactMarkers = [
         'account_memberships.account_id = :membership_tenant_account_id',
     ],
     'example/bootstrap.php' => [
-        'new DenyAllGetDocumentAuthentication()',
+        'new DenyAllDocumentAuthentication()',
         'Unauthenticated::class => new Response(',
         'Forbidden::class => $forbiddenResponse',
         'CrossTenant::class => $forbiddenResponse',
@@ -1052,6 +1067,204 @@ foreach ($typedInputBoundaryArtifactMarkers as $relativePath => $markers) {
             $failures[] = "Typed-input-boundary artifact marker is missing from {$relativePath}.";
         }
     }
+}
+
+$finiteDataPathArtifactMarkers = [
+    'docs/decisions/022-application-owned-finite-data-paths.md' => [
+        'Status: accepted',
+        'The protected document-list proof remains entirely application-owned.',
+        'Consumer Contract version 4 and Strict Profile version 2 remain unchanged.',
+        'eight complete application-owned statements',
+        'an explicit empty list means an empty page and zero protected SQL',
+        'each category is 1–64 bytes, valid UTF-8, and free of ASCII control bytes and DEL, with no normalization',
+        'Cursor traversal is not a snapshot',
+        'exercised only as SQLite-specific evidence by the repository\'s current PDO SQLite runtime',
+        'not universal authentication, authorization, tenant-isolation, or row-security proof',
+        'No ORM, query builder, repository, generic paginator, SQL/binding/placeholder helper, transaction callback, dialect abstraction, generated SQL, or dynamic SQL is accepted by this decision.',
+        'No framework core, dependency, Consumer Contract version, Strict Profile version, or diagnostic changes.',
+    ],
+    'docs/consumer-contract.md' => [
+        'ADR 022 records one finite SQLite application data path',
+        'Consumer Contract version 4 and Strict Profile version 2 remain unchanged.',
+    ],
+    'docs/guardrails.md' => [
+        'The finite-data-path guard retains ADR 022',
+        'three-driver harness remains PDO transport evidence only',
+    ],
+    'example/AGENTS.md' => [
+        'complete raw engine-specific SQL visible',
+        'complete SQL string and its explicit named parameter array together at that call site',
+        'Do not add or use an ORM',
+        'The document-list SQL is SQLite-specific application evidence.',
+    ],
+    'example/.ai/README.md' => [
+        'evidence-oriented application context, not a traditional framework manual',
+        'complete raw SQLite SQL and explicit named parameter arrays',
+        'generic paginator',
+    ],
+    'example/.ai/data.md' => [
+        'exactly one, two, or three category placeholders',
+        'empty page, zero protected SQL',
+        'Each accepted non-empty category is an exact 1–64-byte string',
+        'v1:<order>:<sort_rank>:<document_key>',
+        'traversal is not a snapshot',
+        'MySQL and PostgreSQL are certified only for the base PDO transport harness.',
+        'do not prove universal authorization',
+    ],
+    'example/src/Documents/DocumentRoutes.php' => [
+        '/accounts/{account_id:positive-int}/documents',
+        'new ListDocumentsHandler(',
+    ],
+    'example/src/Documents/ListDocuments/AuthorizeListDocuments.php' => [
+        'interface AuthorizeListDocuments',
+        'public function authorizeList(',
+        'AuthenticatedPrincipal $principal',
+        'ResolvedTenant $tenant',
+    ],
+    'example/src/Documents/ListDocuments/ListDocumentsPageRequest.php' => [
+        'final readonly class ListDocumentsPageRequest',
+        'if ($field !== \'order\' && $field !== \'categories\' && $field !== \'cursor\')',
+        'return \'rank_asc\';',
+        'count($submitted) > 3',
+        "if (\$submitted === [''])",
+        '$cursorOrder !== $order',
+        '$cursorRank < 0 || $cursorRank > 1_000_000',
+    ],
+    'example/src/Documents/ListDocuments/DocumentSummary.php' => [
+        'final readonly class DocumentSummary',
+        'public static function fromDatabaseRow(array $row): self',
+        'Document summary row must contain exactly document_key, title, category, and sort_rank.',
+        '$parsed < 0 || $parsed > 1_000_000',
+    ],
+    'example/src/Documents/ListDocuments/ListDocumentsHandler.php' => [
+        'private const int PAGE_SIZE = 50;',
+        'private const int FETCH_LIMIT = self::PAGE_SIZE + 1;',
+        '$pageRequest->categories === []',
+        'documents.account_id = :requested_account_id',
+        'documents.account_id = :resolved_tenant_account_id',
+        'account_memberships.principal_id = :principal_id',
+        'account_memberships.account_id = :membership_tenant_account_id',
+        ':cursor_is_absent = 1',
+        'documents.category IN (:category_1, :category_2, :category_3)',
+        'ORDER BY documents.sort_rank ASC, documents.document_key COLLATE BINARY ASC',
+        'ORDER BY documents.sort_rank DESC, documents.document_key COLLATE BINARY DESC',
+        '\'cursor_primary_sort_rank\' => $cursorRank',
+        '\'cursor_tie_sort_rank\' => $cursorRank',
+        '\'cursor_document_key\' => $cursorDocumentKey',
+        '\'cursor_is_absent\' => $cursorIsAbsent',
+        '\'fetch_limit\' => self::FETCH_LIMIT',
+        'DocumentSummary::fromDatabaseRow($row)',
+        '\'next_cursor\' => $nextCursor',
+    ],
+    'tests/request-policy.php' => [
+        'document list page request accepts only finite orders categories and canonical composite cursors',
+        'document list page request rejects adversarial shapes and malformed cursors before SQL',
+        'protected document list preserves policy order and rejects denials before SQL',
+        'protected document list passes typed authority and rejects invalid query before protected SQL',
+        'document list executes eight finite raw SQL branches and empty filters use zero SQL',
+        'document list binds SQL-shaped category data and preserves tenant isolation',
+        'document list composite cursor covers exact lookahead and stable 125-document traversal',
+        'document list page keeps one statement and fingerprint across fixture sizes',
+        'document list source uses direct raw SQL without ORM binding or pagination helpers',
+    ],
+    'templates/application/.ai/data.md' => [
+        'finite code-owned fragments are necessary',
+        'every bounded list or cursor',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'Every adopted cursor or bounded list proves its recorded omitted and empty-input behavior',
+        'not universal authorization, tenant-isolation, or SQL-injection proof',
+    ],
+    'skeleton/.ai/data.md' => [
+        'finite code-owned mapping',
+        "cursor's version, stable tie-break and snapshot policy",
+    ],
+    'skeleton/.ai/testing.md' => [
+        'exact zero- versus non-zero-statement bounds',
+        'base PDO transport evidence as application-SQL certification',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/022-application-owned-finite-data-paths.md',
+    ],
+];
+
+foreach ($finiteDataPathArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read finite-data-path artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Finite-data-path artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$listDocumentsHandlerPath = $root . '/example/src/Documents/ListDocuments/ListDocumentsHandler.php';
+$listDocumentsHandler = file_get_contents($listDocumentsHandlerPath);
+
+if (!is_string($listDocumentsHandler)) {
+    $failures[] = 'Cannot read the direct raw-SQL document-list handler.';
+} else {
+    $finiteSqlCounts = [
+        "<<<'SQL'" => 8,
+        '$this->connection->selectAllRows(' => 8,
+        'documents.category IN (:category_1)' => 2,
+        'documents.category IN (:category_1, :category_2)' => 2,
+        'documents.category IN (:category_1, :category_2, :category_3)' => 2,
+        'ORDER BY documents.sort_rank ASC, documents.document_key COLLATE BINARY ASC' => 4,
+        'ORDER BY documents.sort_rank DESC, documents.document_key COLLATE BINARY DESC' => 4,
+        "'requested_account_id' =>" => 8,
+        "'resolved_tenant_account_id' =>" => 8,
+        "'principal_id' =>" => 8,
+        "'membership_tenant_account_id' =>" => 8,
+        ':cursor_is_absent = 1' => 8,
+        "'cursor_is_absent' =>" => 8,
+        "'cursor_primary_sort_rank' =>" => 8,
+        "'cursor_tie_sort_rank' =>" => 8,
+        "'cursor_document_key' =>" => 8,
+        "'category_1' =>" => 6,
+        "'category_2' =>" => 4,
+        "'category_3' =>" => 2,
+        "'fetch_limit' =>" => 8,
+    ];
+
+    foreach ($finiteSqlCounts as $marker => $expectedCount) {
+        if (substr_count($listDocumentsHandler, $marker) !== $expectedCount) {
+            $failures[] = sprintf(
+                'Document-list raw-SQL marker %s must occur exactly %d times.',
+                $marker,
+                $expectedCount,
+            );
+        }
+    }
+
+    foreach (
+        [
+            'Repository',
+            'QueryBuilder',
+            'Paginator',
+            'Hydrator',
+            'bindValue',
+            'bindParam',
+            'buildPlaceholders',
+            'sprintf(',
+            'implode(',
+        ] as $forbiddenDataHelper
+    ) {
+        if (str_contains($listDocumentsHandler, $forbiddenDataHelper)) {
+            $failures[] = "Document-list SQL must remain direct and helper-free: {$forbiddenDataHelper}.";
+        }
+    }
+}
+
+$packageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (is_string($packageInventory) && preg_match('/^example\//m', $packageInventory) === 1) {
+    $failures[] = 'The application-owned example must remain excluded from the framework release inventory.';
 }
 
 $composerPath = $root . '/composer.json';

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Example\Documents\GetDocument;
 
+use Example\Documents\AccountId;
+use Example\Documents\AuthenticatedPrincipal;
+use Example\Documents\DocumentKey;
+use Example\Documents\ResolvedTenant;
 use PHPThis\Database\Connection;
 
 final readonly class SelectAuthorizedDocument implements RetrieveAuthorizedDocument

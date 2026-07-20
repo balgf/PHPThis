@@ -25,3 +25,4 @@ Accepted records:
 - `019-bounded-multiple-typed-routes.md`
 - `020-application-owned-request-policy.md`
 - `021-application-owned-typed-input-boundaries.md`
+- `022-application-owned-finite-data-paths.md`

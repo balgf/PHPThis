@@ -9,17 +9,53 @@ use PHPThis\Database\QueryTrace;
 require dirname(__DIR__) . '/autoload.php';
 
 $root = dirname(__DIR__);
-$tmpDirectory = $root . '/tmp';
+$defaultDatabasePath = $root . '/tmp/example.sqlite';
+/** @var list<string> $arguments */
+$arguments = $argv;
 
-if (!is_dir($tmpDirectory) && !mkdir($tmpDirectory, 0777, true) && !is_dir($tmpDirectory)) {
+if (count($arguments) > 2) {
+    throw new InvalidArgumentException('Usage: php tools/setup-example.php [absolute-database-path]');
+}
+
+$databasePath = $defaultDatabasePath;
+$usesExplicitDatabasePath = array_key_exists(1, $arguments);
+
+if ($usesExplicitDatabasePath) {
+    $submittedDatabasePath = $arguments[1];
+    $isAbsoluteDatabasePath = DIRECTORY_SEPARATOR === '\\'
+        ? preg_match('/\A[A-Za-z]:[\\\\\/]/D', $submittedDatabasePath) === 1
+        : str_starts_with($submittedDatabasePath, '/');
+
+    if (
+        $submittedDatabasePath === ''
+        || strlen($submittedDatabasePath) > 4_096
+        || !$isAbsoluteDatabasePath
+        || str_ends_with($submittedDatabasePath, '/')
+        || str_ends_with($submittedDatabasePath, '\\')
+        || preg_match('/[\x00-\x1F\x7F]/', $submittedDatabasePath) === 1
+    ) {
+        throw new InvalidArgumentException(
+            'The optional example database path must be a safe non-empty absolute file path.',
+        );
+    }
+
+    $databasePath = $submittedDatabasePath;
+}
+
+$databaseDirectory = dirname($databasePath);
+
+if (
+    !is_dir($databaseDirectory)
+    && !mkdir($databaseDirectory, 0777, true)
+    && !is_dir($databaseDirectory)
+) {
     throw new RuntimeException('Unable to create the example database directory.');
 }
 
-$databasePath = $tmpDirectory . '/example.sqlite';
 $connection = Connection::connect(
     'sqlite:' . $databasePath,
-    new QueryBudget(9),
-    new QueryTrace(9),
+    new QueryBudget(13),
+    new QueryTrace(13),
 );
 
 $connection->executeStatement(
@@ -83,8 +119,43 @@ $connection->executeStatement(
             account_id INTEGER NOT NULL,
             document_key TEXT NOT NULL,
             title TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'general',
+            sort_rank INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY (account_id, document_key)
         )
+        SQL,
+);
+$documentColumns = $connection->selectAllRows('PRAGMA table_info(documents)');
+$hasDocumentCategory = false;
+$hasDocumentSortRank = false;
+
+foreach ($documentColumns as $documentColumn) {
+    $columnName = $documentColumn['name'] ?? null;
+
+    if ($columnName === 'category') {
+        $hasDocumentCategory = true;
+    }
+
+    if ($columnName === 'sort_rank') {
+        $hasDocumentSortRank = true;
+    }
+}
+
+if (!$hasDocumentCategory) {
+    $connection->executeStatement(
+        "ALTER TABLE documents ADD COLUMN category TEXT NOT NULL DEFAULT 'general'",
+    );
+}
+
+if (!$hasDocumentSortRank) {
+    $connection->executeStatement(
+        'ALTER TABLE documents ADD COLUMN sort_rank INTEGER NOT NULL DEFAULT 0',
+    );
+}
+$connection->executeStatement(
+    <<<'SQL'
+        CREATE INDEX IF NOT EXISTS documents_account_rank_key_idx
+        ON documents (account_id, sort_rank, document_key COLLATE BINARY)
         SQL,
 );
 $connection->executeStatement(
@@ -98,13 +169,28 @@ $connection->executeStatement(
 );
 $connection->executeStatement(
     <<<'SQL'
-        INSERT OR IGNORE INTO documents (account_id, document_key, title)
-        VALUES (:account_id, :document_key, :title)
+        INSERT INTO documents (account_id, document_key, title, category, sort_rank)
+        VALUES (
+            :insert_account_id,
+            :insert_document_key,
+            :insert_title,
+            :insert_category,
+            :insert_sort_rank
+        )
+        ON CONFLICT (account_id, document_key) DO UPDATE SET
+            title = :update_title,
+            category = :update_category,
+            sort_rank = :update_sort_rank
         SQL,
     [
-        'account_id' => 42,
-        'document_key' => 'Doc_9-z',
-        'title' => 'Example document',
+        'insert_account_id' => 42,
+        'insert_document_key' => 'Doc_9-z',
+        'insert_title' => 'Example document',
+        'insert_category' => 'general',
+        'insert_sort_rank' => 10,
+        'update_title' => 'Example document',
+        'update_category' => 'general',
+        'update_sort_rank' => 10,
     ],
 );
 $connection->executeStatement(
@@ -118,4 +204,5 @@ $connection->executeStatement(
     ],
 );
 
-fwrite(STDOUT, "Example database ready at tmp/example.sqlite\n");
+$displayPath = $usesExplicitDatabasePath ? $databasePath : 'tmp/example.sqlite';
+fwrite(STDOUT, "Example database ready at {$displayPath}\n");

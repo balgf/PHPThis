@@ -28,6 +28,7 @@ The human supplies intent and remains accountable for the outcome. Surface missi
 - Deliver matched parameters only through type-specific access on immutable `PathParameters` carried by the immutable `Request` copy created by `Application`; keep `RequestHandler::handle(Request): Response`, and immediately wrap each validated integer or token in a concrete route-specific identifier.
 - Keep SQL in the handler. When HTTP adaptation and an independently meaningful business transaction require separate ownership, SQL may instead live in the one narrowly named concrete operation that directly receives the final command and owns that transaction. Execute only through direct `Connection` calls; do not add a repository, service, or query layer beneath that operation.
 - Treat `Connection` as native PDO transport, not a dialect abstraction; keep SQL visibly specific to the recorded engine, bind every data value, and give every placeholder occurrence a distinct portable name.
+- In the ADR 022 protected document-list proof, keep every complete raw SQLite statement and its explicit named parameter array visible together at the direct `Connection` call. Do not introduce an ORM, query builder, repository, SQL/binding/placeholder helper, generic paginator, transaction callback, generated SQL, or dialect abstraction into that proof.
 - Pass only SQL that PHPStan resolves natively to a finite set of non-blank compile-time constant strings. Map structural choices to finite reviewed code-owned statements or fragments, prefer complete statements, and reject an unknown selector before database work.
 - Do not add an SQL sanitizer or use escaping, filtering, or validation as a substitute for bound values and compile-time-constant SQL structure.
 - Give the runtime database identity only the capabilities the application path needs; keep migration and administrative authority isolated and record how that separation was verified.
@@ -58,5 +59,7 @@ composer check
 `composer check` runs repository guardrails, maximum-level PHPStan analysis with strict rules, and tests.
 
 For database behavior, also prove that query count stays constant when fixture cardinality increases, inspect the structured query trace for repetition, submit adversarial values through bindings, and reject unsupported structural selectors before database work. A small fixture passing under a query budget is not enough evidence.
+
+For a finite collection path, exercise every accepted sort and bounded-list cardinality, prove its recorded omitted and empty-input behavior with exact statement counts, traverse equal sort values in both directions without gaps or duplicates in a static fixture, and record whether cursor traversal is a snapshot. Tenant predicates, PHT006, and adversarial binding probes remain path-specific evidence rather than universal authorization or injection proof.
 
 For an application that adopts caching, preserve the same database proof with a cold cache. A warm-cache result does not prove bounded SQL behavior.

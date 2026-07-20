@@ -25,7 +25,7 @@ Every data value is bound with a distinct named placeholder for each occurrence.
 | `{{SQL_STRUCTURE_1_CONNECTION_AND_OPERATION}}` | {{SQL_STRUCTURE_1_CHOICE}} | {{SQL_STRUCTURE_1_SELECTORS_AND_MAPPING_SOURCE}} | {{SQL_STRUCTURE_1_LIST_BOUND_AND_SHAPES}} | {{SQL_STRUCTURE_1_FINAL_SQL_SOURCE}} | {{SQL_STRUCTURE_1_VERIFICATION_SOURCE_AND_DATE}} |
 | `{{SQL_STRUCTURE_2_CONNECTION_AND_OPERATION_OR_NOT_APPLICABLE}}` | {{SQL_STRUCTURE_2_CHOICE_OR_NOT_APPLICABLE}} | {{SQL_STRUCTURE_2_SELECTORS_AND_MAPPING_SOURCE_OR_NOT_APPLICABLE}} | {{SQL_STRUCTURE_2_LIST_BOUND_AND_SHAPES_OR_NOT_APPLICABLE}} | {{SQL_STRUCTURE_2_FINAL_SQL_SOURCE_OR_NOT_APPLICABLE}} | {{SQL_STRUCTURE_2_VERIFICATION_SOURCE_AND_DATE_OR_NOT_APPLICABLE}} |
 
-Unknown selectors and unsupported or oversized list shapes fail before database work. Prefer a finite mapping to complete statements; if finite code-owned fragments are necessary, identify the final assembly whose inferred type remains a constant-string union.
+Unknown selectors and unsupported or oversized list shapes fail before database work. Prefer a finite mapping to complete statements; if finite code-owned fragments are necessary, identify the final assembly whose inferred type remains a constant-string union. For every bounded list or cursor, record omitted and empty-input behavior, each accepted cardinality, stable tie-break ordering, cursor version and compatibility, and whether traversal is a snapshot.
 
 ## Runtime and migration authority
 

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Example\Documents\GetDocument;
 
+use Example\Documents\AccountId;
+use Example\Documents\AuthenticateDocumentRequest;
+use Example\Documents\DocumentKey;
+use Example\Documents\ResolveDocumentTenant;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
@@ -11,8 +15,8 @@ use PHPThis\Http\Response;
 final readonly class GetDocumentHandler implements RequestHandler
 {
     public function __construct(
-        private AuthenticateGetDocumentRequest $authenticate,
-        private ResolveGetDocumentTenant $resolveTenant,
+        private AuthenticateDocumentRequest $authenticate,
+        private ResolveDocumentTenant $resolveTenant,
         private AuthorizeGetDocument $authorize,
         private RetrieveAuthorizedDocument $retrieve,
     ) {

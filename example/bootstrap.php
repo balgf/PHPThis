@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use Example\Routes;
-use Example\Documents\GetDocument\CrossTenant;
-use Example\Documents\GetDocument\DenyAllGetDocumentAuthentication;
-use Example\Documents\GetDocument\DenyAllGetDocumentAuthorization;
-use Example\Documents\GetDocument\DenyAllGetDocumentTenantResolution;
-use Example\Documents\GetDocument\Forbidden;
-use Example\Documents\GetDocument\Unauthenticated;
+use Example\Documents\CrossTenant;
+use Example\Documents\DenyAllDocumentAuthentication;
+use Example\Documents\DenyAllDocumentAuthorization;
+use Example\Documents\DenyAllDocumentTenantResolution;
+use Example\Documents\Forbidden;
+use Example\Documents\Unauthenticated;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -35,14 +35,18 @@ $listUsersConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTr
 $getUserConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
 $createUserConnection = Connection::connect($dsn, new QueryBudget(2), new QueryTrace(2));
 $getDocumentConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
+$listDocumentsConnection = Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1));
+$documentAuthorization = new DenyAllDocumentAuthorization();
 $application = new Application(new Router(Routes::create(
     $listUsersConnection,
     $getUserConnection,
     $createUserConnection,
     $getDocumentConnection,
-    new DenyAllGetDocumentAuthentication(),
-    new DenyAllGetDocumentTenantResolution(),
-    new DenyAllGetDocumentAuthorization(),
+    $listDocumentsConnection,
+    new DenyAllDocumentAuthentication(),
+    new DenyAllDocumentTenantResolution(),
+    $documentAuthorization,
+    $documentAuthorization,
 )));
 $jsonHeaders = [
     'Content-Type' => 'application/json; charset=utf-8',

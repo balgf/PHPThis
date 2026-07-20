@@ -23,3 +23,5 @@ Rules:
 PHPStan proves static type and code-shape properties. It does not prove that bound data is semantically valid, a selector policy is complete, database privileges are least-privileged, statement counts are bounded, or SQL plans are acceptable. Runtime adversarial tests, authority verification, query budgets, and database integration tests remain mandatory.
 
 ADR 021 adds no diagnostic. Consumer Contract v4 and Strict Profile v2 remain unchanged.
+
+ADR 022 likewise adds no diagnostic. PHT006 still proves only the finite constant-string SQL argument at direct calls; runtime tests own exact SQLite semantics, explicit parameter arrays, bounded category cardinalities, cursor traversal, tenant predicates, query counts, and proof limits. Consumer Contract v4 and Strict Profile v2 remain unchanged.

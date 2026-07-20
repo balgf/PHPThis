@@ -2,17 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Example\Documents\GetDocument;
+namespace Example\Documents\ListDocuments;
 
 use Example\Documents\AuthenticatedPrincipal;
-use Example\Documents\DocumentKey;
 use Example\Documents\ResolvedTenant;
 
-interface AuthorizeGetDocument
+interface AuthorizeListDocuments
 {
-    public function authorize(
+    public function authorizeList(
         AuthenticatedPrincipal $principal,
         ResolvedTenant $tenant,
-        DocumentKey $documentKey,
     ): void;
 }

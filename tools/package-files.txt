@@ -33,6 +33,7 @@ docs/decisions/018-bounded-alpha-1-release-scope.md
 docs/decisions/019-bounded-multiple-typed-routes.md
 docs/decisions/020-application-owned-request-policy.md
 docs/decisions/021-application-owned-typed-input-boundaries.md
+docs/decisions/022-application-owned-finite-data-paths.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

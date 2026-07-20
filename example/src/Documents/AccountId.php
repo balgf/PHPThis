@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Example\Documents\GetDocument;
+namespace Example\Documents;
 
 use InvalidArgumentException;
 

@@ -17,6 +17,8 @@ Rules:
 
 Tests record the exact call order, stop the sequence at every failing stage, assert zero protected queries and writes on denial, inspect redacted output and traces, prove explicit principal and tenant delivery on success, and replace every policy implementation through manual composition.
 
+The document-list proof reuses the shared application principal, account, authentication, and tenant-resolution types but keeps `AuthorizeListDocuments` action-specific. Its complete SQLite statements bind requested account, resolved tenant account, and principal membership separately. Those predicates are defense-in-depth evidence for that path, not a global tenant scope or universal authorization proof.
+
 The checked-in composition is deny-all and the consumer proof uses I/O-free synthetic policies. PHPThis provides no credential parser or verifier. A concrete authenticator owns and tests its missing, malformed, expired, revoked, and rejected inputs; a policy that performs I/O owns a separate named connection, budget, trace, and failure proof.
 
 Do not add middleware, a policy registry, service location, discovery, a request-context bag, model binding, a generic permission API, or hidden tenant resolution. This pattern changes no core source, Consumer Contract version, or Strict Profile version.

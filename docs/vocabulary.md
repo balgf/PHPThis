@@ -11,6 +11,7 @@
 | application-owned SQL dialect | complete engine-specific SQL and database semantics recorded and tested by the consuming application | framework query language, automatic dialect selection |
 | SQL data | a complete value passed through one unique named parameter | interpolated value, escaped SQL text |
 | finite SQL structure | one or more non-blank compile-time constant statements selected from code-owned reviewed choices | arbitrary SQL string, sanitized identifier |
+| finite application data path | operation-owned parser, complete engine-specific statements, explicit named parameter arrays, projections, resource bounds, and tests for one data behavior | ORM, repository, generic paginator, generated SQL, dialect abstraction |
 | runtime database authority | engine-specific objects and actions granted to one runtime connection | schema ownership, migration credential, administrator access |
 | CRUD reference profile | optional feature-first placement and naming guidance for explicit application operations | generic CRUD engine, enforced directory layout |
 | query budget | maximum statements for one connection/request | throttle, limiter |

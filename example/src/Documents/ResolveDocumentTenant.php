@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Example\Documents\GetDocument;
+namespace Example\Documents;
 
-interface ResolveGetDocumentTenant
+interface ResolveDocumentTenant
 {
     public function resolve(
         AuthenticatedPrincipal $principal,

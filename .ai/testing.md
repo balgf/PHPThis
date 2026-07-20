@@ -15,6 +15,8 @@ Every behavior test should name one outcome and arrange dependencies directly. F
 - adversarial strings passed as bound data and retrieved or matched as data rather than SQL structure;
 - rejection of unknown structural selectors and oversized bounded-list shapes before database work.
 
+For the ADR 022 finite collection proof, also cover both sort directions, cursor present and absent, equal-rank binary-key tie breaks, omitted versus direct and parsed `['']` empty selection, every supported one-to-three-category statement shape, duplicate and oversized category rejection, and SQL-looking values that remain bound data. Every accepted non-empty statement shape stays at one statement across small and materially larger SQLite fixtures; the empty selection uses zero protected statements. State that this is neither snapshot pagination nor universal authorization or injection proof.
+
 `composer test:database-drivers` certifies the narrow PDO transport boundary. It defaults to SQLite; the dedicated CI job sets `PHPTHIS_DATABASE_TEST_DRIVERS=sqlite,mysql,pgsql` and supplies real services. Do not treat an unconfigured driver as a pass or fold driver-specific SQL into a runtime dialect abstraction.
 
 Inspect the in-memory query trace directly and print its redacted JSON snapshot only when useful for a focused failure. Do not write every query during the full test suite.
@@ -37,4 +39,4 @@ The consumer proof must install a mirrored framework package into a fresh tempor
 
 An intentionally invalid performance control uses a `.php.fixture` suffix so it cannot be mistaken for accepted repository PHP. A proof must pass its source to the real Strict Profile checker, assert the stable rejection, execute it only in an isolated subprocess, and compare its output with the accepted implementation. Never exclude an invalid `.php` file from guardrails.
 
-Do not mock fluent APIs or framework internals. Prefer real value objects and an in-memory database when its behavior matches the production database feature under test. Database-specific SQL still requires integration tests against that database. Record the source and date of runtime-credential and migration-authority verification; a passing query test does not prove least privilege.
+Do not mock fluent APIs or framework internals. Do not introduce an ORM, query builder, repository, generic paginator, SQL/binding/placeholder helper, runtime SQL generator, arbitrary SQL string, transaction callback, or dialect abstraction to make a test convenient. Prefer real value objects and an in-memory database when its behavior matches the production database feature under test. Database-specific SQL still requires integration tests against that database. Record the source and date of runtime-credential and migration-authority verification; a passing query test does not prove least privilege.

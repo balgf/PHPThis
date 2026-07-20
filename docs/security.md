@@ -5,7 +5,7 @@ AI-oriented explicitness does not replace security review.
 - Separate SQL data from SQL structure. Bind every application or external data value with a unique named parameter, even after validation.
 - Keep SQL passed to the three canonical direct `Connection` calls within the finite non-blank compile-time constant-string set enforced by `PHT006`.
 - Keep statements static by default. Map a genuine structural choice to finite, code-owned, operation-specific reviewed statements and reject unknown choices before database work.
-- Do not interpolate data or use a generic SQL sanitizer, escaping helper, identifier validator, query builder, or SQL template engine to turn arbitrary input into structure.
+- Do not interpolate data or use an ORM, repository, generic SQL sanitizer, escaping helper, identifier validator, query builder, SQL/binding/placeholder helper, generic paginator, generated or dynamic SQL, transaction callback, SQL template engine, or dialect abstraction to hide statement structure or parameter ownership.
 - Validate untrusted input before domain or database use.
 - Reject unknown fields and coercive values at the boundary; do not cast malformed input into an accepted type.
 - Distinguish absent keys from explicit `null`, apply the operation's recorded total and applicable field or collection bounds, and validate in a deterministic code-owned order before downstream operation behavior.
@@ -66,6 +66,8 @@ PDO placeholders represent complete data literals. They cannot stand for identif
 When an operation needs variable structure, prefer mapping a typed choice to complete constant statements. A finite constant fragment is acceptable only when it is code-owned, local to that operation, and every resulting statement remains a compile-time constant-string choice. Unknown external choices fail rather than being stripped, escaped, or silently converted to a default. OWASP likewise recommends parameterized queries, finite allowlisting where binding cannot represent structure, and least privilege; it warns that generic table validation can be unsafe across different query contexts. See the [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html).
 
 Tests use valid domain values containing quotes, semicolons, SQL comment markers, and Unicode and prove exact round-trip through parameters without a changed statement fingerprint or leaked trace value. Every variable structural option has success evidence, and malformed or unknown choices fail before the query budget or trace records work. These adversarial examples test a separation property; they are not a blacklist of forbidden characters.
+
+ADR 022's protected document-list statements additionally bind requested account, resolved tenant account, principal membership, cursor values, and every category separately in complete raw SQLite statements. The explicit predicates prove only the exercised path and are not a global authorization scope. Identifier-shaped structural input is rejected, SQL-looking category values remain bound data, and document-key values are also bound; those probes are not universal SQL-injection certification. The composite cursor is not a snapshot and cannot by itself prevent changes between requests.
 
 ## Database authority
 

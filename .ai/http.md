@@ -20,4 +20,4 @@ Rules:
 - Emit the response only after `RequestBoundary::handle` returns.
 - Treat redirects, files, and streams as future explicit response types, not array conventions.
 
-ADR 021's Create proof uses the application-owned `CreateUserOperation` seam and `TransactionalCreateUser` as that transaction's one operation-specific SQL owner/query object, without adding a framework input or service API. Consumer Contract v4 and Strict Profile v2 remain unchanged.
+ADR 021's Create proof uses the application-owned `CreateUserOperation` seam and `TransactionalCreateUser` as the concrete operation directly owning that transaction's complete SQL, without adding a framework input, query object, helper, or service API. Consumer Contract v4 and Strict Profile v2 remain unchanged.

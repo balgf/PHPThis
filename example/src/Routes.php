@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Example;
 
+use Example\Documents\AuthenticateDocumentRequest;
+use Example\Documents\ResolveDocumentTenant;
 use Example\Documents\DocumentRoutes;
-use Example\Documents\GetDocument\AuthenticateGetDocumentRequest;
 use Example\Documents\GetDocument\AuthorizeGetDocument;
-use Example\Documents\GetDocument\ResolveGetDocumentTenant;
 use Example\Documents\GetDocument\SelectAuthorizedDocument;
+use Example\Documents\ListDocuments\AuthorizeListDocuments;
 use Example\Users\CreateUser\CreateUserHandler;
 use Example\Users\CreateUser\TransactionalCreateUser;
 use Example\Users\GetUser\GetUserHandler;
@@ -25,9 +26,11 @@ final class Routes
         Connection $getUserConnection,
         Connection $createUserConnection,
         Connection $getDocumentConnection,
-        AuthenticateGetDocumentRequest $authenticateGetDocument,
-        ResolveGetDocumentTenant $resolveGetDocumentTenant,
+        Connection $listDocumentsConnection,
+        AuthenticateDocumentRequest $authenticateDocument,
+        ResolveDocumentTenant $resolveDocumentTenant,
         AuthorizeGetDocument $authorizeGetDocument,
+        AuthorizeListDocuments $authorizeListDocuments,
     ): array {
         $healthHandler = new HealthHandler();
         $retrieveDocument = new SelectAuthorizedDocument($getDocumentConnection);
@@ -38,10 +41,12 @@ final class Routes
         return [
             ...HealthRoutes::create($healthHandler),
             ...DocumentRoutes::create(
-                $authenticateGetDocument,
-                $resolveGetDocumentTenant,
+                $authenticateDocument,
+                $resolveDocumentTenant,
                 $authorizeGetDocument,
                 $retrieveDocument,
+                $authorizeListDocuments,
+                $listDocumentsConnection,
             ),
             ...UserRoutes::create($listUsersHandler, $getUserHandler, $createUserHandler),
         ];

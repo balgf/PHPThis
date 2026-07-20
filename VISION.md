@@ -43,6 +43,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Database tests compare small and large fixtures and assert a constant query count.
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
 - Direct database calls resolve to finite reviewed statements, SQL-looking values remain bound data, and unknown structural choices fail before database work.
+- Complete raw engine-specific SQL and explicit named parameter arrays remain visible at direct call sites; bounded list cardinalities and cursor choices do not create generated SQL, binding helpers, or a generic paginator.
 - CRUD-shaped work follows the optional feature-first reference profile or one recorded application-owned alternative without runtime discovery or filesystem enforcement.
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
@@ -57,6 +58,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Recreating a convention-heavy full-stack framework with different names.
 - Hiding SQL behind models or a fluent query language.
 - Treating a generic sanitizer, identifier-quoting helper, or query builder as a substitute for bound data and finite reviewed statement choices.
+- Hiding complete statements or parameter ownership behind an ORM, repository, SQL/binding/placeholder helper, generic paginator, transaction callback, generated SQL, or dialect abstraction.
 - Forcing an application directory layout or turning CRUD into a generic persistence API.
 - Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
 - Providing a generic middleware, request-context, identity, tenant, or authorization engine that hides application policy or its I/O.
