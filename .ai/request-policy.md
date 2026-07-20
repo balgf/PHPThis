@@ -21,4 +21,4 @@ The document-list proof reuses the shared application principal, account, authen
 
 The checked-in composition is deny-all and the consumer proof uses I/O-free synthetic policies. PHPThis provides no credential parser or verifier. A concrete authenticator owns and tests its missing, malformed, expired, revoked, and rejected inputs; a policy that performs I/O owns a separate named connection, budget, trace, and failure proof.
 
-Do not add middleware, a policy registry, service location, discovery, a request-context bag, model binding, a generic permission API, or hidden tenant resolution. ADR 023 adds no policy logger or core source; Consumer Contract v5 carries Strict Profile v2 forward.
+Do not add middleware, a policy registry, service location, discovery, a request-context bag, model binding, a generic permission API, or hidden tenant resolution. ADR 023 adds no policy logger or core source; Consumer Contract v6 carries Strict Profile v2 forward.

@@ -32,8 +32,10 @@
 | composition root | file that manually constructs the object graph | provider, container config |
 | request | immutable normalized HTTP input | context, payload |
 | request boundary | one bounded runtime-reader, handler, and exact error-map sequence | middleware, pipeline |
+| request upload | immutable one-file transport value whose client filename and media type are explicitly untrusted | uploaded-file helper, storage object, trusted document |
 | error response registry | exact exception-class to immutable response map | global exception helper |
 | response | immutable HTTP output | result, reply |
+| local file body | immutable absolute local path plus expected byte count for exact fixed-chunk response emission | generic stream, storage abstraction, callback body |
 | response cookie | validated cookie value emitted as its own `Set-Cookie` field | encoded header string, cookie array convention |
 | session lifecycle | one lazy request-scoped boundary over PHP's certified native file session engine | helper, middleware, session repository |
 | session snapshot | bounded immutable scalar or `null` state returned by the lifecycle | session bag, domain object store |

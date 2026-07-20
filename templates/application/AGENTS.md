@@ -27,7 +27,7 @@ Every observable behavior change must add or update application-owned automated 
 
 ## Authority
 
-- The installed PHPThis Consumer Contract v5 and Strict Profile v2 are the minimum accepted rules, including bounded multiple-typed routing, explicit cookie/session boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
+- The installed PHPThis Consumer Contract v6 and Strict Profile v2 are the minimum accepted rules, including bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - If a project instruction conflicts with the consumer contract, preserve the contract and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
@@ -36,6 +36,8 @@ Every observable behavior change must add or update application-owned automated 
 Before database work, `.ai/data.md` must identify the reviewed SQL-structure mappings and bounded-list choices, runtime database authority and prohibited capabilities, isolated migration or administrative authority, and the source and date that those facts were verified. Do not infer them from successful connectivity.
 
 Before an operation accepts JSON, query values, form data, headers, or another external representation, `.ai/architecture.md` must record its raw source, byte/depth/field/list/scalar bounds, absent-versus-null and unknown-field policy, exact canonical representations, field-specific normalization or explicit lack of normalization, typed request or command, downstream behavior or justified typed seam, parser position relative to request policy, public failure contract, and duplicate-key proof limit where applicable. Parse once through one operation-specific named factory into a final readonly value with a private constructor; `.ai/testing.md` must prove invalid input performs no operation-owned downstream I/O or mutation and makes zero typed-seam calls when one exists. Separately record and bound any transport, session, authentication, tenant, or authorization work ordered before parsing. Do not add a generic validator, string-rule language, automatic hydration, mass assignment, or sanitization magic.
+
+Before a file upload or download is accepted, read installed `docs/file-transfers/README.md` and complete `.ai/file-transfers.md` with the exact routes, transport and per-file limits, cardinality, metadata treatment, concrete file lifecycle, permissions, response headers, range policy, failures, redaction, and end-to-end evidence. Forward the runtime's parsed form and file values explicitly at the front controller, and enable multipart only with a recorded finite request limit.
 
 Before adding a protected route, read the installed `docs/request-policy.md` and record the application principal, tenant, action, credential, expiry, revocation, failure-disclosure, policy-query, protected-query, transaction, and test decisions in `.ai/architecture.md`, `.ai/operations.md`, and `.ai/testing.md`. Keep one visible action-specific `authenticate -> resolve tenant -> authorize -> handler` adapter with independently replaceable policies; do not add middleware, a request-context bag, hidden tenant resolution, or an implicit authorization scope.
 

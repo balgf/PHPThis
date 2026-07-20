@@ -52,6 +52,12 @@ Native `json_decode` keeps the final value when a JSON object repeats a key. Thi
 
 When constructed through `RequestReader`, `Request::$query` receives at most 64 string-named top-level entries with `mixed` values. Each accepting operation parses the complete array through a concrete factory before I/O, rejects unknown keys and non-canonical representations, and exposes only native typed state afterward. The example `ListUsersPageRequest::fromQuery` turns its optional canonical decimal `after_user_id` string into `?int`; it does not create a generic query bag or coercive input helper.
 
+## Multipart upload values
+
+`$_FILES` is an irregular external array rather than a static generic contract. ADR 026 narrows it once in `RequestReader`: one PHP-normalized flat field with exact known metadata keys and runtime types becomes `RequestUpload`, while nested and multiple normalized shapes fail. Duplicate raw scalar parts may already have collapsed and are an explicit proof limit. `RequestUploadError` is a backed enum covering PHP's recognized finite outcomes; an unknown integer remains an operational failure rather than an invented default.
+
+The resulting value is still transport state, not an application command or stored-file object. Its filename and media type are explicitly named untrusted, its size is explicitly reported rather than verified, and client `full_path` is discarded. The operation parses the complete upload map into a narrower application value only after exact field, error, operation limit, PHP provenance, and actual-size checks. No PHPStan annotation can prove those runtime properties or make the client metadata trustworthy.
+
 ## Static generics
 
 PHPStan types such as `list<UserSummary>`, array shapes, `class-string<T>`, and `@template T` provide compile-time relationships but have no runtime effect. PHPThis reserves templates for genuinely generic infrastructure. Domain data uses concrete operation requests, commands, and projections; a generic collection is not the default.
@@ -60,4 +66,4 @@ PHPStan types such as `list<UserSummary>`, array shapes, `class-string<T>`, and 
 
 Factories use private constructors, exact validation, precise return types, PHPStan maximum-level analysis, and adversarial tests. Strict Profile rule `PHT001` rejects scalar coercion while the operand remains `mixed`; explicit validation must narrow it first. In the Create proof, PHPStan proves that `CreateUserOperation` receives a `CreateUserCommand`, not that its field policies, bounds, normalization, errors, or authorization are correct. Runtime tests own those claims and assert zero operation calls and database work for invalid Create input. Handler-local operations instead prove that rejection occurs before their own I/O and mutation.
 
-ADR 021 adds no core input API or new diagnostic. Consumer Contract version 5 and Strict Profile version 2 are current; ADR 023 changes only the required application-owned terminal summary path. Phase 2 may prevent `array<string, mixed>` from escaping named boundaries after current raw request and database APIs are narrowed. A token-wide cast ban remains incorrect because validated internal numeric conversions are legitimate.
+ADR 021 adds no generic core input API or new diagnostic. ADR 026 adds only the concrete multipart transport value and local-file response value. Consumer Contract version 6 and Strict Profile version 2 are current; ADR 023 changes only the required application-owned terminal summary path. Phase 2 may prevent other `array<string, mixed>` values from escaping named boundaries after current raw request and database APIs are narrowed. A token-wide cast ban remains incorrect because validated internal numeric conversions are legitimate.

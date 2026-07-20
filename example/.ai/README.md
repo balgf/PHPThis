@@ -7,6 +7,7 @@ Always read `../AGENTS.md`, then load only what the task needs:
 | Task | Read | Inspect |
 | --- | --- | --- |
 | Change document SQL, ordering, cursor, categories, query cost, or engine claims | `.ai/data.md`, `../../docs/decisions/022-application-owned-finite-data-paths.md` | `src/Documents/ListDocuments/`, `src/Documents/DocumentRoutes.php`, composition in `bootstrap.php`, and document-list tests |
+| Change document-file upload, storage, download, or emission | `.ai/file-transfers.md`, `../../docs/file-transfers/README.md` | `public/index.php`, `ApplicationComposition`, `src/DocumentFiles/`, and document-file, upload-boundary, and response-emitter tests |
 | Change document authentication, tenant resolution, or authorization | `.ai/data.md`, `../../docs/request-policy.md`, ADR 020 | shared types under `src/Documents/`, action-specific authorization interface, handler order, error registration, and policy tests |
 | Change user Create, List, or Get | `../../.ai/crud.md` and the relevant installed decision | concrete `src/Users/` operation and tests |
 | Change request correlation, terminal summaries, or query-source registration | `.ai/observability.md`, `../../docs/observability/README.md`, ADR 023 | `src/Observability/`, `bootstrap.php`, `public/index.php`, distinct operation budgets and traces, summary and throwing-sink tests |

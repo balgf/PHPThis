@@ -2,7 +2,7 @@
 
 PHPThis has one explicit boundary between the PHP runtime and application handlers.
 
-`example/public/index.php` is the only repository file allowed to read `$_SERVER` and `$_GET`. It passes both arrays to the manually constructed application-owned `TerminalRequestCoordinator`, which calls the one `RequestBoundary`. The boundary uses `RequestReader` to read the configured input URI with a hard byte limit, create one immutable `Request`, optionally begin one session lifecycle, and delegate it to `Application` through `RequestHandler`.
+Within each runnable application, `public/index.php` is the sole runtime entrypoint that reads `$_SERVER`, `$_GET`, `$_POST`, and `$_FILES`. It passes all four arrays to the manually constructed application-owned `TerminalRequestCoordinator`, which calls the one `RequestBoundary`. The boundary uses `RequestReader` to read an ordinary configured input URI or normalize bounded parsed multipart input, create one immutable `Request`, optionally begin one session lifecycle, and delegate it to `Application` through `RequestHandler`.
 
 ## Normalization contract
 
@@ -12,7 +12,8 @@ PHPThis has one explicit boundary between the PHP runtime and application handle
 - remove the query suffix from `REQUEST_URI` without URL-decoding or rewriting the path;
 - preserve top-level query values as external `mixed` values under validated string keys;
 - translate `HTTP_*`, `CONTENT_TYPE`, and `CONTENT_LENGTH` runtime entries into lowercase header names;
-- read at most the configured body limit plus one byte.
+- read at most the configured ordinary body limit plus one byte; or
+- for multipart `POST`, require canonical bounded framing and normalize at most one flat PHP file entry without reading `php://input`; this cannot distinguish duplicate raw scalar parts already collapsed by PHP.
 
 It rejects missing or wrongly typed method and URI values, relative or fragmented paths, invalid or conflicting headers, non-canonical content lengths, length mismatches, and excessive metadata. Some SAPIs expose `CONTENT_TYPE` and `CONTENT_LENGTH` again as identical `HTTP_*` entries; the reader collapses those identical normalized duplicates but rejects different values. The fixed profile bounds are 8,192 request-target bytes, 64 top-level query parameters, 64 headers, and 8,192 bytes per header value. The example configures an 8,192-byte outer body limit; `CreateUserCommand` applies its stricter 2,048-byte endpoint limit before JSON decoding.
 
@@ -42,6 +43,14 @@ This pattern does not alter `RequestBoundary`, `Application`, `Request`, `PathPa
 
 The generic reader does not guess which representation a route accepts. `CreateUserHandler` explicitly requires `application/json`, allowing parameters such as `charset=utf-8`, before it parses the command or performs database work. Missing or incompatible media types cross the boundary as `UnsupportedMediaType`.
 
+## Multipart file input
+
+ADR 026 adds one narrow parsed multipart path. The composition root configures a separate total multipart request limit; `null` leaves multipart disabled. `RequestReader` accepts multipart only for `POST`, one syntactically valid non-empty boundary parameter, canonical `Content-Length`, no `Transfer-Encoding`, no parsed text fields, and zero or one normalized flat top-level file entry. It rejects nested or multiple normalized files, unknown or wrongly typed metadata, controls, an unreasonable temporary path, contradictory no-file metadata, and reported bytes greater than the total request. PHP may already have collapsed repeated raw scalar fields, which this path records as a proof limit rather than a rejection claim.
+
+The immutable request carries at most one `RequestUpload` under its original field name. `untrustedClientFilename` and `untrustedClientMediaType` remain visibly hostile; optional client `full_path` is validated and discarded; `reportedSizeBytes` is not actual-size evidence. Routing preserves the upload while adding `PathParameters`.
+
+The application then parses the complete upload map into its operation-specific value. The example requires exactly `document`, exhaustively maps `RequestUploadError`, applies a 1 MiB file limit inside the 2 MiB transport limit, verifies `is_uploaded_file` and actual size, and calls one concrete local-filesystem storage operation. See [File transfers](file-transfers/README.md).
+
 ## Operation input boundaries
 
 After transport and route-specific media checks, an accepting operation parses the complete raw representation once through its own named factory. `CreateUserCommand::fromJson` owns the create-user JSON shape and bounds; `ListUsersPageRequest::fromQuery` owns its query shape. PHPThis does not add a validation helper, string-rule language, automatic binding, mass assignment, sanitizer, or reflection hydrator.
@@ -58,7 +67,7 @@ Request headers retain the raw `cookie` field as bounded transport input. PHPThi
 
 Beginning a configured lifecycle records the header but does not start storage. A handler that never uses sessions remains stateless. Normal and registered-error responses pass through `SessionLifecycle::finish`, which adds a pending validated cookie without leaving a native lock active. An unknown failure triggers `abort` before it escapes; this destroys never-issued state but cannot roll back an earlier commit to a browser-owned identifier. Session mutation is therefore the final small operation after fallible work. Session state is not added to `Request`.
 
-`Response` carries validated `ResponseCookie` values separately from its ordinary single-value header map. `ResponseEmitter` emits each cookie as a distinct `Set-Cookie` field. Application code does not manually encode that field. The complete state, cookie, native-runtime, and application-policy contract is in [Session state](sessions.md).
+`Response` carries validated `ResponseCookie` values separately from its ordinary single-value header map. Header names are unique case-insensitively and values contain no ASCII control byte or DEL. `ResponseEmitter` emits each cookie as a distinct `Set-Cookie` field. Application code does not manually encode that field. The complete state, cookie, native-runtime, and application-policy contract is in [Session state](sessions.md).
 
 ## Terminal request summary
 
@@ -66,8 +75,14 @@ The application front-controller composition generates one 128-bit lowercase-hex
 
 The event contains no method, path, query data, headers, cookies, body, response body, session data, domain identifiers, SQL, or bindings. Known denials contribute only the generic known-failure outcome and status; an unknown failure contributes only its concrete class. A sink failure is swallowed without retry or fallback and cannot replace or mutate the response. This scope records application response selection, not durable event delivery or successful network emission. See [Terminal request summaries](logging.md) and [ADR 023](decisions/023-application-owned-terminal-request-summaries.md).
 
+## Local-file response emission
+
+An application returns a local file only through `LocalFileBody` on an immutable `Response`. The handler resolves the application-owned absolute path and expected bytes, leaves the ordinary body empty, and sets exact `Content-Length` plus its explicit media, disposition, cache, sniffing, and range policy. Correlation and session response copies preserve the file body.
+
+`ResponseEmitter` rejects already-sent headers, then opens and verifies the regular file and exact size before headers, emits at most 8,192 bytes per read, and closes the handle in `finally`. A pre-header `ResponseEmissionFailed` may receive one generic fallback in the front controller; after output starts, a replacement response is impossible. Range support is deferred: the example returns the complete `200` with `Accept-Ranges: none` even when `Range` is present. The terminal request summary precedes emission and makes no delivery claim.
+
 ## HTTP cache policy
 
 Framework-generated 404 and 405 responses and the unknown-failure 500 response explicitly emit `Cache-Control: no-store`. Every current skeleton and example handler includes the `no-store` directive; protected responses additionally use `private`. PHPThis does not add or replace headers on an arbitrary application handler response: every additional success, mapped failure, redirect, or other response path remains application-owned and must record and test its exact HTTP cache policy. Server-side data caching is a separate optional application decision and is not implied by these headers.
 
-Uploads, streaming bodies, trusted proxy interpretation, and generic request-cookie parsing require separate evidence and contracts before they enter the HTTP request boundary. ADR 024's one-shot durable-job process is a separate CLI boundary and never enters `RequestBoundary`.
+Redirects, non-local or callback streams, multiple or mixed multipart forms, resumable uploads, trusted proxy interpretation, and generic request-cookie parsing require separate evidence and contracts before they enter the HTTP boundary. ADR 024's one-shot durable-job process is a separate CLI boundary and never enters `RequestBoundary`.

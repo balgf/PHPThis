@@ -8,6 +8,8 @@ Canonical factories:
 - `Command::fromJson(string)` for a JSON request body.
 - `PageRequest::fromQuery(array<string, mixed>)` for operation-specific query parameters.
 
+ADR 026 adds one framework runtime boundary value before application parsing: `RequestReader` converts the flat PHP upload entry to `RequestUpload`. The operation still parses the complete `Request::$uploads` map into its own narrow value, requires its exact field, exhaustively maps `RequestUploadError`, applies its file limit, and verifies provenance and actual size. Client filename and media type remain untrusted; client `full_path` is discarded.
+
 Every factory must:
 
 1. Reject missing required fields and unknown fields; use `array_key_exists` to distinguish absence from an allowed explicit `null`.
@@ -28,4 +30,4 @@ Do not use scalar casts, `intval`, `floatval`, `boolval`, `strval`, `settype`, i
 
 PHPStan `list<T>`, array shapes, and `@template` are static contracts only. They supplement boundary parsing; they never replace it.
 
-ADR 021 adds application-owned evidence and guidance only. It adds no core input API or diagnostic; Consumer Contract v5 and Strict Profile v2 are current.
+ADR 021 adds application-owned command and projection evidence without a generic input API or diagnostic. ADR 026 adds only the concrete typed upload value. Consumer Contract v6 and Strict Profile v2 are current.

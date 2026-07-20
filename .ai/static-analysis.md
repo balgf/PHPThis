@@ -17,11 +17,11 @@ Rules:
 - Enforce `PHT006` at direct `Connection` call sites: the SQL argument must be a finite union of non-blank constant strings inferred by PHPStan itself. Reject argument unpacking and first-class or callable-array indirection. Do not accept a PHPDoc assertion, `literal-string`, sanitizer return type, path exception, or suppression as a substitute.
 - Treat a `match` or other finite mapping from an external structural selector to reviewed code-owned SQL as valid only when PHPStan infers the final SQL as constant strings and the unknown branch rejects the request.
 - Consumer applications run the installed `phpthis check` binary; they do not own a PHPStan configuration, baseline, or inline suppression path.
-- Keep Contract version 5's carried-forward `$_SESSION`, direct/imported native session call, and literal indirect-reference restrictions in the application checker's structural stage; dynamically obscured calls remain forbidden by contract, and this is not a new Strict Profile v2 `PHT` rule.
+- Keep Contract version 6's carried-forward `$_SESSION`, direct/imported native session call, and literal indirect-reference restrictions in the application checker's structural stage; dynamically obscured calls remain forbidden by contract, and this is not a new Strict Profile v2 `PHT` rule.
 - The consumer checker must build one application-file manifest and pass that same manifest to syntax checks and PHPStan.
 
 PHPStan proves static type and code-shape properties. It does not prove that bound data is semantically valid, a selector policy is complete, database privileges are least-privileged, statement counts are bounded, or SQL plans are acceptable. Runtime adversarial tests, authority verification, query budgets, and database integration tests remain mandatory.
 
-ADR 021 adds no diagnostic. Consumer Contract v5 and Strict Profile v2 are current.
+ADR 021 and ADR 026 add no diagnostic. Consumer Contract v6 and Strict Profile v2 are current.
 
-ADR 022 likewise adds no diagnostic. PHT006 still proves only the finite constant-string SQL argument at direct calls; runtime tests own exact SQLite semantics, explicit parameter arrays, bounded category cardinalities, cursor traversal, tenant predicates, query counts, and proof limits. ADR 023 also adds no diagnostic or core logging type. Consumer Contract v5 carries Strict Profile v2 forward unchanged.
+ADR 022 likewise adds no diagnostic. PHT006 still proves only the finite constant-string SQL argument at direct calls; runtime tests own exact SQLite semantics, explicit parameter arrays, bounded category cardinalities, cursor traversal, tenant predicates, query counts, and proof limits. ADR 023 adds no diagnostic or core logging type, and ADR 026 relies on native types plus runtime transport and file evidence. Consumer Contract v6 carries Strict Profile v2 forward unchanged.

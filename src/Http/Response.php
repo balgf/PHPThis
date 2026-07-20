@@ -20,23 +20,45 @@ final readonly class Response
         public array $headers,
         public string $body,
         array $cookies = [],
+        public ?LocalFileBody $fileBody = null,
     ) {
         if ($status < 100 || $status > 599) {
             throw new InvalidArgumentException('Response status must be between 100 and 599.');
         }
 
+        $normalizedHeaderNames = [];
+        $contentLength = null;
         foreach ($headers as $name => $value) {
-            if ($name === '' || preg_match('/^[A-Za-z0-9-]+$/D', $name) !== 1) {
-                throw new InvalidArgumentException('Response contains an invalid header name.');
+            $normalizedName = strtolower($name);
+            if (
+                $name === ''
+                || preg_match('/^[A-Za-z0-9-]+$/D', $name) !== 1
+                || isset($normalizedHeaderNames[$normalizedName])
+            ) {
+                throw new InvalidArgumentException('Response contains an invalid or duplicate header name.');
             }
 
-            if (strtolower($name) === 'set-cookie') {
-                throw new InvalidArgumentException('Set-Cookie must use an explicit ResponseCookie value.');
+            $normalizedHeaderNames[$normalizedName] = true;
+            if ($normalizedName === 'content-length') {
+                $contentLength = $value;
             }
+            if (
+                $normalizedName === 'set-cookie'
+                || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
+            ) {
+                throw new InvalidArgumentException('Response contains an invalid header value.');
+            }
+        }
 
-            if (str_contains($value, "\r") || str_contains($value, "\n")) {
-                throw new InvalidArgumentException('Response header values cannot contain newlines.');
-            }
+        if ($fileBody !== null && (
+            $body !== ''
+            || $status < 200
+            || in_array($status, [204, 205, 206, 304], true)
+            || isset($normalizedHeaderNames['content-range'])
+            || isset($normalizedHeaderNames['transfer-encoding'])
+            || $contentLength !== (string) $fileBody->bytes
+        )) {
+            throw new InvalidArgumentException('Local file response framing is invalid or unsupported.');
         }
 
         $cookieScopes = [];
@@ -48,11 +70,9 @@ final readonly class Response
             }
 
             $scope = $cookie->name . "\0" . $cookie->path;
-
             if (isset($cookieScopes[$scope])) {
                 throw new InvalidArgumentException('Response contains a duplicate cookie name and path.');
             }
-
             $cookieScopes[$scope] = true;
             $parsedCookies[] = $cookie;
         }

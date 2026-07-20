@@ -416,6 +416,7 @@ $requiredRepositoryFiles = [
     '.ai/cli.md',
     '.ai/crud.md',
     '.ai/database.md',
+    '.ai/file-transfers.md',
     '.ai/http.md',
     '.ai/jobs.md',
     '.ai/observability.md',
@@ -431,6 +432,20 @@ $requiredRepositoryFiles = [
     'docs/cli/scheduling-locking.md',
     'docs/cli/testing.md',
     'docs/crud.md',
+    'docs/file-transfers/README.md',
+    'docs/file-transfers/deployment.md',
+    'docs/file-transfers/emission.md',
+    'docs/file-transfers/exclusions.md',
+    'docs/file-transfers/failures.md',
+    'docs/file-transfers/local-file-response.md',
+    'docs/file-transfers/metadata-trust.md',
+    'docs/file-transfers/range-policy.md',
+    'docs/file-transfers/request-ingestion.md',
+    'docs/file-transfers/security.md',
+    'docs/file-transfers/storage-ownership.md',
+    'docs/file-transfers/testing.md',
+    'docs/file-transfers/upload-errors.md',
+    'docs/file-transfers/upload-value.md',
     'docs/getting-started.md',
     'docs/jobs.md',
     'docs/jobs/README.md',
@@ -466,10 +481,12 @@ $requiredRepositoryFiles = [
     'docs/decisions/023-application-owned-terminal-request-summaries.md',
     'docs/decisions/024-application-owned-sqlite-durable-jobs.md',
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md',
+    'docs/decisions/026-bounded-file-transfers.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cli.md',
     'example/.ai/data.md',
+    'example/.ai/file-transfers.md',
     'example/.ai/jobs.md',
     'example/.ai/observability.md',
     'example/bin/console.php',
@@ -524,6 +541,14 @@ $requiredRepositoryFiles = [
     'example/src/Documents/ListDocuments/ListDocumentsPageRequest.php',
     'example/src/Documents/ListDocuments/DocumentSummary.php',
     'example/src/Documents/ListDocuments/ListDocumentsHandler.php',
+    'example/src/DocumentFiles/DocumentFileId.php',
+    'example/src/DocumentFiles/DocumentFileNotFound.php',
+    'example/src/DocumentFiles/DocumentFileRoutes.php',
+    'example/src/DocumentFiles/DocumentFileUnavailable.php',
+    'example/src/DocumentFiles/DownloadDocumentFileHandler.php',
+    'example/src/DocumentFiles/LocalDocumentFiles.php',
+    'example/src/DocumentFiles/PendingDocumentUpload.php',
+    'example/src/DocumentFiles/UploadDocumentFileHandler.php',
     'example/src/Users/GetUser/GetUserHandler.php',
     'example/src/Users/GetUser/UserDetails.php',
     'example/src/Users/GetUser/UserId.php',
@@ -536,6 +561,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/change-workflow.md',
     'templates/application/.ai/cli.md',
     'templates/application/.ai/data.md',
+    'templates/application/.ai/file-transfers.md',
     'templates/application/.ai/integrations.md',
     'templates/application/.ai/jobs.md',
     'templates/application/.ai/observability.md',
@@ -555,6 +581,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/change-workflow.md',
     'skeleton/.ai/cli.md',
     'skeleton/.ai/data.md',
+    'skeleton/.ai/file-transfers.md',
     'skeleton/.ai/integrations.md',
     'skeleton/.ai/jobs.md',
     'skeleton/.ai/observability.md',
@@ -589,7 +616,12 @@ $requiredRepositoryFiles = [
     'verification/phpstan/MixedScalarCoercionRule.php',
     'verification/phpstan/extension.php',
     'src/Http/CookieSameSite.php',
+    'src/Http/LocalFileBody.php',
+    'src/Http/RequestUpload.php',
+    'src/Http/RequestUploadError.php',
     'src/Http/ResponseCookie.php',
+    'src/Http/ResponseEmissionFailed.php',
+    'src/Http/ResponseEmitter.php',
     'src/Routing/PathParameters.php',
     'src/Routing/Route.php',
     'src/Routing/RouteMatch.php',
@@ -600,7 +632,11 @@ $requiredRepositoryFiles = [
     'src/Session/SessionLifecycle.php',
     'src/Session/SessionSnapshot.php',
     'src/Session/SessionUnavailable.php',
+    'tests/document-files.php',
+    'tests/large-file-emitter.php',
     'tests/observability.php',
+    'tests/response-emitter.php',
+    'tests/upload-request-boundary.php',
     'tests/jobs.php',
     'tests/cli.php',
     'tests/cli-schedule-lock-holder.php',
@@ -1051,7 +1087,7 @@ $typedInputBoundaryArtifactMarkers = [
     '.ai/types.md' => [
         'No normalization is implicit.',
         'Native `json_decode` does not expose duplicate object keys and retains the last value',
-        'Consumer Contract v5 and Strict Profile v2 are current.',
+        'Consumer Contract v6 and Strict Profile v2 are current.',
     ],
     'docs/type-safety.md' => [
         'external mixed data -> named parser factory -> final readonly value -> native typed code',
@@ -1168,7 +1204,7 @@ $finiteDataPathArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         'ADR 022 records one finite SQLite application data path',
-        'Consumer Contract version 5 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 6 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/guardrails.md' => [
         'The finite-data-path guard retains ADR 022',
@@ -1393,7 +1429,7 @@ $observabilityArtifactMarkers = [
         "'list_documents',",
     ],
     'example/public/index.php' => [
-        '$coordinator->handle($_SERVER, $_GET)',
+        '$coordinator->handle($_SERVER, $_GET, $_POST, $_FILES)',
     ],
     'example/src/Observability/CorrelationId.php' => [
         'bin2hex(random_bytes(16))',
@@ -1434,7 +1470,7 @@ $observabilityArtifactMarkers = [
         'new ErrorLogRequestSummarySink()',
     ],
     'skeleton/public/index.php' => [
-        '$coordinator->handle($_SERVER, $_GET)',
+        '$coordinator->handle($_SERVER, $_GET, $_POST, $_FILES)',
     ],
     'skeleton/src/Observability/CorrelationId.php' => [
         'bin2hex(random_bytes(16))',
@@ -1564,7 +1600,7 @@ $durableJobArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned durable jobs',
-        'Contract version 5 does not make that additional file a checker requirement',
+        'Contract version 6 does not make that additional file a checker requirement',
         'Delivery remains at least once.',
     ],
     'docs/decisions/README.md' => [
@@ -1739,13 +1775,13 @@ foreach (['src/Jobs', 'src/Queue'] as $forbiddenCoreDirectory) {
 $applicationChecker = file_get_contents($root . '/verification/ApplicationChecker.php');
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/jobs.md',")) {
-    $failures[] = 'Contract version 5 must not checker-require the optional durable-job context file.';
+    $failures[] = 'Contract version 6 must not checker-require the optional durable-job context file.';
 }
 
 $consumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveJobsContextIsRequired')) {
-    $failures[] = 'Contract version 5 must not reject an existing consumer only because .ai/jobs.md is absent.';
+    $failures[] = 'Contract version 6 must not reject an existing consumer only because .ai/jobs.md is absent.';
 }
 
 $durableJobPackageInventory = file_get_contents($root . '/tools/package-files.txt');
@@ -1819,8 +1855,8 @@ $applicationCliArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned CLI and scheduler',
-        'Contract-version-5-compatible optional application clarification, not a new checker requirement',
-        'Consumer Contract version 5 carries Strict Profile version 2 forward unchanged.',
+        'Contract-version-6-compatible optional application clarification, not a new checker requirement',
+        'Consumer Contract version 6 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
         'Status: accepted',
@@ -2021,11 +2057,11 @@ if (is_string($composerManifest) && str_contains($composerManifest, 'example/bin
 }
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/cli.md',")) {
-    $failures[] = 'Contract version 5 must not checker-require the optional application CLI context file.';
+    $failures[] = 'Contract version 6 must not checker-require the optional application CLI context file.';
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveCliContextIsRequired')) {
-    $failures[] = 'Contract version 5 must not reject an existing consumer only because .ai/cli.md is absent.';
+    $failures[] = 'Contract version 6 must not reject an existing consumer only because .ai/cli.md is absent.';
 }
 
 $applicationCliSourceFiles = [
@@ -2233,6 +2269,114 @@ if (!is_string($ciContents)) {
     $failures[] = 'CI must preserve SQLite, MySQL, and PostgreSQL PDO transport certification.';
 }
 
+$fileTransferArtifactMarkers = [
+    '.ai/README.md' => [
+        'Add, change, or review file uploads or local-file responses',
+        '`.ai/file-transfers.md`',
+    ],
+    '.ai/file-transfers.md' => [
+        'A `null` multipart limit disables multipart input.',
+        'Do not add a generic storage interface, facade, disk registry, binding helper',
+        'Do not claim rejection of duplicate raw scalar parts',
+        'After headers, do not attempt a replacement response',
+        'Do not introduce an ORM',
+    ],
+    'docs/consumer-contract.md' => [
+        '## Optional bounded file transfers',
+        'Raw `$_FILES` never enters a handler.',
+        'Consumer Contract version 6 carries Strict Profile version 2 forward unchanged.',
+    ],
+    'docs/decisions/026-bounded-file-transfers.md' => [
+        'Status: accepted',
+        'Duplicate raw parts using the same scalar name collapse to one normalized entry',
+        'The accepted implementation occupies 2,495 physical core lines',
+        'PHPThis adds no ORM behavior, automatic or domain binding',
+    ],
+    'docs/file-transfers/README.md' => [
+        'This knowledge set routes an AI through PHPThis\'s one accepted file-transfer path.',
+        'The installed example uses a 2 MiB multipart transport ceiling and a separate 1 MiB document limit.',
+    ],
+    'example/.ai/file-transfers.md' => [
+        '`POST /document-files`',
+        '`GET /document-files/{file_id:token}`',
+        'application.response_emission_failed',
+    ],
+    'skeleton/.ai/file-transfers.md' => [
+        '`NOT_APPLICABLE(FILE_TRANSFER)`',
+        'multipart input remains disabled',
+    ],
+    'templates/application/.ai/file-transfers.md' => [
+        '{{FILE_TRANSFER_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{FILE_TRANSFER_EVIDENCE_OR_NOT_APPLICABLE}}',
+    ],
+    'src/Http/RequestReader.php' => [
+        'private ?int $maximumMultipartBytes;',
+        'array $parsedFields = [],',
+        'array $files = [],',
+        'RequestUploadError::tryFrom',
+    ],
+    'src/Http/ResponseEmitter.php' => [
+        'private const int FILE_CHUNK_BYTES = 8_192;',
+        'if (headers_sent())',
+        'throw new ResponseEmissionFailed(false);',
+        'throw new ResponseEmissionFailed(true);',
+    ],
+    'example/src/DocumentFiles/LocalDocumentFiles.php' => [
+        'move_uploaded_file($upload->temporaryPath, $destination)',
+        'requirePrivateDirectory($this->directory)',
+        "DIRECTORY_SEPARATOR . 'content'",
+    ],
+    'example/src/DocumentFiles/DownloadDocumentFileHandler.php' => [
+        "'Accept-Ranges' => 'none'",
+        "'Content-Disposition' => 'attachment; filename=\"document.bin\"'",
+    ],
+    'example/public/index.php' => [
+        '$coordinator->handle($_SERVER, $_GET, $_POST, $_FILES)',
+        "error_log('application.response_emission_failed')",
+        'if (!$failure->responseStarted)',
+    ],
+    'skeleton/public/index.php' => [
+        '$coordinator->handle($_SERVER, $_GET, $_POST, $_FILES)',
+        "error_log('application.response_emission_failed')",
+        'if (!$failure->responseStarted)',
+    ],
+    'tests/document-files.php' => [
+        'real multipart upload and download remain bounded and metadata-blind',
+        'large local file emission stays below a fixed memory delta',
+        "'scalar-duplicate'",
+        "'display_errors=1'",
+    ],
+    'tests/upload-request-boundary.php' => [
+        'Expected multipart input to require an explicit configured cap.',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/026-bounded-file-transfers.md',
+        'docs/file-transfers/README.md',
+        'src/Http/RequestUpload.php',
+        'src/Http/LocalFileBody.php',
+        'templates/application/.ai/file-transfers.md',
+    ],
+    'README.md' => [
+        'The Alpha 2 core ceiling is 2,500 physical lines.',
+        'the reviewed implementation occupies 2,495 lines',
+    ],
+];
+
+foreach ($fileTransferArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read file-transfer artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "File-transfer artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
 $consumerContractPath = $root . '/docs/consumer-contract.md';
 
 if (is_file($consumerContractPath)) {
@@ -2241,8 +2385,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 5$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 5.';
+        if (preg_match('/^Contract version: 6$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 6.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -2371,6 +2515,10 @@ if (is_file($applicationAgentInstructionsPath)) {
         if (!str_contains($applicationAgentInstructions, 'explicit approval from an accountable human')) {
             $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
         }
+
+        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v6 and Strict Profile v2')) {
+            $failures[] = 'Application AGENTS.md must identify Consumer Contract v6 and Strict Profile v2.';
+        }
     }
 }
 
@@ -2385,8 +2533,9 @@ if (is_file($skeletonAgentInstructionsPath)) {
         !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
         || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
         || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
+        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v6 and Strict Profile v2')
     ) {
-        $failures[] = 'Skeleton AGENTS.md must preserve the installed knowledge route, AI authoring role, and human decision boundary.';
+        $failures[] = 'Skeleton AGENTS.md must preserve Contract v6, the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 
@@ -2615,8 +2764,8 @@ foreach ($phpFiles as $relativePath => $path) {
     $coreLines += is_array($lines) ? count($lines) : 0;
 }
 
-if ($coreLines > 2_300) {
-    $failures[] = "Core source has {$coreLines} physical lines; the Alpha 2 limit is 2300.";
+if ($coreLines > 2_500) {
+    $failures[] = "Core source has {$coreLines} physical lines; the Alpha 2 limit is 2500.";
 }
 
 if ($failures !== []) {

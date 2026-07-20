@@ -22,6 +22,12 @@ Cache observability is a separate bounded aggregate from `QueryBudget` and `Quer
 
 `RequestReader` bounds body materialization at the configured maximum plus one detection byte. It also bounds request-target bytes, top-level query count, header count, and each header value. These are allocation guards, not complete request-latency or denial-of-service protection; the web server must enforce compatible transport limits before PHP.
 
+## File transfers
+
+Multipart ingestion does not read or duplicate the raw multipart body. PHP has already materialized the configured bounded `$_POST` and `$_FILES` metadata and temporary file; `RequestReader` accepts no text fields and at most one normalized flat file, and enforces a separate canonical total request length. Duplicate raw scalar parts may already have collapsed and cannot be counted here. The example uses a 2 MiB transport ceiling and a 1 MiB operation file ceiling. PHP, server, proxy, temporary-storage, timeout, and concurrency limits remain part of the measured deployment path.
+
+`ResponseEmitter` does not materialize `LocalFileBody` into `Response::$body`. It opens and checks the file, then reads at most 8,192 bytes per loop iteration until the exact expected length is emitted. The unit proof verifies exact chunked output and framing; the real-SAPI proof directs client output to files and compares hashes. Those facts bound the application's read allocation, not PHP output buffers, web-server or proxy buffering, TLS, kernel caching, client memory, latency, or throughput. Production performance evidence records peak memory and buffering at each deployed layer with representative maximum files and concurrency.
+
 ## Database observability
 
 `QueryTrace` performs monotonic timing and one bounded in-memory aggregate update per PDO attempt. It does not perform logging I/O. Repeated exact-SQL fingerprints reveal indirect N+1 behavior that remains under a generous query budget, while fixture-size tests still provide the proof that query count is constant.

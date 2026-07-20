@@ -52,7 +52,7 @@ For an existing application adopting the context template and, when applicable, 
 2. Copy the contents of `vendor/phpthis/framework/templates/application/` into the new application root, preserving the hidden `.ai/` directory. When evaluating from a PHPThis source checkout instead, use its `templates/application/` directory.
 3. Replace every `{{PLACEHOLDER}}` in `AGENTS.md` and `.ai/`.
 4. Add the application's accepted architectural decisions to `docs/decisions/README.md`.
-5. Use the contract-version-5 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, replace any separate unknown-failure global log with the application-owned terminal summary path, record input and session policy as verified or not applicable, and run `composer check`.
+5. Use the contract-version-6 Composer scripts, remove consumer-owned PHPStan configuration and copied guard runners, resolve PHT006 findings with finite direct SQL and bound data, replace any separate unknown-failure global log with the application-owned terminal summary path, record input, session, and file-transfer policy as verified or not applicable, and run `composer check`.
 6. Commit the completed application context before asking the project AI to implement the first feature.
 
 The template contains representative rows for terms, datasets, integrations, and constraints. Delete unused optional rows or replace the relevant section with `NOT_APPLICABLE(reason)`; never invent filler merely to remove a placeholder.

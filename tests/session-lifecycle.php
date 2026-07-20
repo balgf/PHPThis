@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use PHPThis\Http\CookieSameSite;
 use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\LocalFileBody;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\RequestHandler;
@@ -216,15 +217,28 @@ try {
 
     $cartSession = new TestCartSession($sessions);
     $authenticationSession = new TestAuthenticationSession($sessions);
-    $cartHandler = new class ($cartSession) implements RequestHandler {
-        public function __construct(private readonly TestCartSession $session)
-        {
+    $fileResponsePath = $directory . '/download-body';
+
+    if (file_put_contents($fileResponsePath, 'F') !== 1) {
+        throw new RuntimeException('Unable to create the session file-response fixture.');
+    }
+
+    $cartHandler = new class ($cartSession, $fileResponsePath) implements RequestHandler {
+        public function __construct(
+            private readonly TestCartSession $session,
+            private readonly string $fileResponsePath,
+        ) {
         }
 
         public function handle(Request $request): Response
         {
             $this->session->establishCart('cart-7');
-            return new Response(204, [], '');
+            return new Response(
+                200,
+                ['Content-Length' => '1'],
+                '',
+                fileBody: new LocalFileBody($this->fileResponsePath, 1),
+            );
         }
     };
     $cartBoundary = new RequestBoundary(
@@ -235,7 +249,11 @@ try {
     );
     $cartResponse = $cartBoundary->handle(['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/cart'], []);
     $cartCookie = requireLiveCookie($cartResponse);
-    requireSessionTest(count(sessionFiles($directory)) === 1, 'Writable update must persist exactly one session.');
+    requireSessionTest(
+        count(sessionFiles($directory)) === 1
+        && $cartResponse->fileBody?->path === $fileResponsePath,
+        'Writable update must persist one session and preserve a local-file response body.',
+    );
 
     $sessions->begin(requestWithSessionId($configuration, $cartCookie->value, '/cart'));
     $cart = $sessions->read();

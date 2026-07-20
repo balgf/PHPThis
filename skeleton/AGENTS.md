@@ -29,7 +29,7 @@ Every observable behavior change must add or update application-owned automated 
 
 ## Authority
 
-- The installed PHPThis Consumer Contract v5 and Strict Profile v2 are the minimum accepted rules, including bounded multiple-typed routing, explicit cookie/session boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
+- The installed PHPThis Consumer Contract v6 and Strict Profile v2 are the minimum accepted rules, including bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - Preserve the installed contract when a project instruction conflicts with it, and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
@@ -38,6 +38,8 @@ Every observable behavior change must add or update application-owned automated 
 `NOT_APPLICABLE(DATABASE)`: before introducing database work, replace `.ai/data.md` with verified SQL-structure and bounded-list choices, least-privileged runtime authority and prohibited capabilities, isolated migration or administrative authority, and verification sources and dates.
 
 `NOT_APPLICABLE(INPUT)`: the health-only starter accepts no application-owned body, query, form, or header fields and creates no operation command. Before an operation accepts external data, record its raw source, complete bounds, absent-versus-null and unknown-field policy, exact canonical representations, field-specific normalization or explicit lack of normalization, typed request or command, downstream behavior or justified typed seam, parser position relative to request policy, generic failure contract, and duplicate-key proof limit in `.ai/architecture.md`; prove in `.ai/testing.md` that invalid input performs no operation-owned downstream I/O or mutation and makes zero typed-seam calls when one exists. Separately bound any policy work ordered before parsing. Do not add a generic validator, string-rule language, automatic hydration, mass assignment, or sanitization magic.
+
+`NOT_APPLICABLE(FILE_TRANSFER)`: the health-only starter has no upload or download route, multipart byte limit, temporary-file ownership, application file path, or file-body response. The front controller still forwards PHP's parsed form and file arrays through the terminal coordinator; that wiring does not enable multipart. Before adoption, read installed `docs/file-transfers/README.md` and replace `.ai/file-transfers.md` with the exact accepted routes, limits, metadata treatment, file lifecycle, response headers, failures, redaction, and evidence.
 
 `NOT_APPLICABLE(REQUEST_POLICY)`: the health-only starter has no identity, tenant, or protected action. Before protecting a route, read installed `docs/request-policy.md` and replace the request-policy sections in `.ai/architecture.md` and `.ai/testing.md` with verified principal, tenant, credential, current authorization, disclosure, query-bound, transaction, redaction, and replacement decisions. Use one explicit action-specific adapter; do not add middleware, a request-context bag, hidden tenant resolution, or an implicit authorization scope.
 

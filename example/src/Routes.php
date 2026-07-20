@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Example;
 
+use Example\DocumentFiles\DocumentFileRoutes;
+use Example\DocumentFiles\LocalDocumentFiles;
 use Example\Documents\AuthenticateDocumentRequest;
 use Example\Documents\ResolveDocumentTenant;
 use Example\Documents\DocumentRoutes;
@@ -31,6 +33,7 @@ final class Routes
         ResolveDocumentTenant $resolveDocumentTenant,
         AuthorizeGetDocument $authorizeGetDocument,
         AuthorizeListDocuments $authorizeListDocuments,
+        LocalDocumentFiles $documentFiles,
     ): array {
         $healthHandler = new HealthHandler();
         $retrieveDocument = new SelectAuthorizedDocument($getDocumentConnection);
@@ -49,6 +52,7 @@ final class Routes
                 $listDocumentsConnection,
             ),
             ...UserRoutes::create($listUsersHandler, $getUserHandler, $createUserHandler),
+            ...DocumentFileRoutes::create($documentFiles),
         ];
     }
 }

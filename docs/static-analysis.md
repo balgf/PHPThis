@@ -18,7 +18,7 @@ This is a greenfield project. A generated baseline would turn known violations i
 
 ## Consumer configuration ownership
 
-Contract-version-4 applications do not own `phpstan.neon`. `vendor/bin/phpthis check` discovers all application PHP, creates a temporary maximum-level configuration with strict rules and the installed PHPThis extension, runs PHPStan, and removes the configuration. The application cannot weaken that command with a baseline, `ignoreErrors`, an alternate level, or an inline suppression; `PHT004` rejects those paths.
+Contract-version-6 applications do not own `phpstan.neon`. `vendor/bin/phpthis check` discovers all application PHP, creates a temporary maximum-level configuration with strict rules and the installed PHPThis extension, runs PHPStan, and removes the configuration. The application cannot weaken that command with a baseline, `ignoreErrors`, an alternate level, or an inline suppression; `PHT004` rejects those paths.
 
 Normal checks reuse a profile-owned PHPStan cache under the resolved Composer dependency directory and use PHPStan parallel workers when the host permits a local loopback coordinator. Restricted hosts fall back to the same analysis serially. `phpthis check --debug` is an explicit diagnostic mode that prints analyzed paths and intentionally bypasses normal incremental behavior; it is not the canonical project gate.
 
@@ -38,9 +38,9 @@ The framework repository retains its reviewed `phpstan.neon` because it verifies
 
 Over time, syntax checks that need type information should move from the handwritten guardrail into tested PHPStan extensions.
 
-ADR 021 does not add `PHT007`. `PHT001` already rejects scalar coercion while an external value remains `mixed`, and maximum-level PHPStan verifies the typed result after explicit narrowing. A broad ban on trimming, enum conversion, date parsing, array functions, or other potentially valid boundary operations would have no reliable understanding of application policy. Consumer Contract version 5 and Strict Profile version 2 remain current; ADR 023 adds no syntax diagnostic.
+ADR 021 does not add `PHT007`. `PHT001` already rejects scalar coercion while an external value remains `mixed`, and maximum-level PHPStan verifies the typed result after explicit narrowing. A broad ban on trimming, enum conversion, date parsing, array functions, or other potentially valid boundary operations would have no reliable understanding of application policy. Consumer Contract version 6 and Strict Profile version 2 remain current; ADR 023 adds no syntax diagnostic.
 
-ADR 022 also adds no diagnostic or profile version. PHT006 proves the eight document-list SQL arguments remain a finite compile-time set at direct calls; it does not inspect the explicit parameter arrays, SQLite semantics, tenant predicates, list cardinalities, cursor traversal, query counts, authorization, or injection safety. Those remain application runtime and review evidence. Consumer Contract version 5 carries Strict Profile version 2 forward unchanged.
+ADR 022 also adds no diagnostic or profile version. PHT006 proves the eight document-list SQL arguments remain a finite compile-time set at direct calls; it does not inspect the explicit parameter arrays, SQLite semantics, tenant predicates, list cardinalities, cursor traversal, query counts, authorization, or injection safety. Those remain application runtime and review evidence. ADR 026 likewise uses native `RequestUpload`, `RequestUploadError`, and `LocalFileBody` types plus runtime transport, provenance, filesystem, framing, and real-SAPI tests; it adds no `PHT007`. Consumer Contract version 6 carries Strict Profile version 2 forward unchanged.
 
 PHT006 uses PHPStan's native inferred type rather than trusting PHPDoc to turn an arbitrary string into a constant. It accepts finite compile-time choices, not merely one literal spelling, so an operation may select between reviewed engine-specific statements without adding a query builder. It does not parse SQL or perform general taint analysis: stored procedures, server-side dynamic SQL, reflection, authorization, and actual database privileges remain outside its proof.
 

@@ -12,4 +12,6 @@ Failures must cross named boundaries as exceptions or explicit response values.
 
 The sample maps `InvalidRequest` to 400, `RequestBodyTooLarge` to 413, and `UnsupportedMediaType` to 415. Unknown failures receive a generic 500 response and put only their class name in the one common terminal event. Add a new mapping only with a named failure, exact public response, status-only terminal summary, and tests proving that internal messages do not escape.
 
+For file uploads, malformed multipart shape, partial input, and missing required file use the generic 400; total or operation file overflow uses 413; disabled or route-incompatible multipart uses 415. PHP temporary-storage, extension, provenance, move, permission, unknown upload-code, and other operational failures remain generic 500 outcomes. `ResponseEmissionFailed` occurs after request response selection and belongs to the visible front-controller emission boundary, not `ErrorResponseRegistry`.
+
 ADR 021 retains those prebuilt generic responses. A field-addressable error schema or different status is an application API decision, not permission to make `ErrorResponseRegistry` dynamic.

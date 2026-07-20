@@ -19,6 +19,10 @@ AI-oriented explicitness does not replace security review.
 - Give known denials only the common generic known-failure outcome and selected status. Omit credentials, request values, principals, tenants, resources, SQL, bindings, and all other denial-specific data.
 - Isolate the single terminal sink invocation attempt from the already selected response. Do not retry, fall back to another logger, expose sink failure, or claim durable delivery.
 - Keep superglobal reads in the front controller and enforce body, request-target, query-count, header-count, and header-value bounds in `RequestReader`.
+- Keep raw `$_FILES` in the front controller and normalize only the ADR 026 POST-only, no-text, one-normalized-file shape. Record that PHP may already have collapsed duplicate raw scalar parts. Configure compatible PHP, server, proxy, transport, and operation limits.
+- Treat upload filename, path, media type, reported size, and temporary path as untrusted until their specific boundary is proved. Client metadata never selects a storage path, executable behavior, response header, or log value.
+- Verify `is_uploaded_file` and actual bytes before one visible `move_uploaded_file`; generate the durable identity and fixed destination server-side, restrict authority and permissions, and record exactly when cleanup ownership passes from PHP to the application.
+- Keep local-file download authorization and storage resolution application-owned. Use exact full-response framing, `nosniff`, an explicit cache policy, a code-owned download name, and `Accept-Ranges: none` while ranges remain deferred.
 - Query traces contain only SHA-256 SQL fingerprints and aggregate metrics; never add SQL, parameters, credentials, exception messages, or driver details.
 - Keep application code out of `$_SESSION` and native `session_*` calls. Access optional session state through narrowly named typed services with non-overlapping key ownership over one `SessionLifecycle`.
 - Regenerate the session identifier before committing authenticated identity or another privilege elevation, invalidate it at logout, and reject malformed, attacker-selected, and obsolete identifiers.
@@ -41,6 +45,14 @@ ADR 021 keeps field validation and any deliberate normalization in one operation
 Validation answers whether a representation is accepted. Normalization changes it under a recorded field policy. Output encoding answers how an accepted value is represented at one sink. Authorization answers whether the current principal may perform the named action. None substitutes for another: a normalized value can remain unauthorized, HTML encoding does not make SQL interpolation safe, and a validated SQL value remains a named parameter.
 
 The first proof returns only generic prebuilt input failures and never includes submitted values or internal validation messages. Native JSON decoding rejects malformed UTF-8 but does not expose duplicate object keys and does not normalize valid Unicode. Applications must not claim either property without a separately reviewed parser or Unicode policy. See [Type safety](type-safety.md) and [ADR 021](decisions/021-application-owned-typed-input-boundaries.md).
+
+## File-transfer limits
+
+ADR 026 narrows PHP's normalized multipart runtime shape but does not certify uploaded content or reject duplicate raw scalar parts that PHP already collapsed. `RequestUpload` deliberately labels the client filename and media type as untrusted, discards client `full_path`, and labels the parsed byte count as reported. The application requires its exact field, maps every upload error, applies a smaller file limit, verifies PHP provenance and actual size, then calls one concrete storage operation. Sanitizing a filename, trusting an extension, or echoing a media type is not a substitute for that path.
+
+The example stores opaque bytes under a server-generated identifier outside the public tree and returns `application/octet-stream` with a fixed attachment name. Applications separately own authentication, authorization, tenant isolation, quota, malware/content inspection, archive and decompression limits, retention, deletion, legal hold, backup, recovery, audit, and incident response. `LocalFileBody` is not authorization and a file identifier is not access permission.
+
+The emitter checks regular-file type and exact size before headers and reads fixed chunks, but other layers may buffer. Production deployment evidence covers PHP upload settings, temporary storage, server and proxy limits, filesystem authority, output buffering, timeouts, disconnects, and multi-host topology. See [File transfers](file-transfers/README.md) and [ADR 026](decisions/026-bounded-file-transfers.md).
 
 ## Request policy
 

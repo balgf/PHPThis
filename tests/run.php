@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Example\Documents\DenyAllDocumentAuthentication;
 use Example\Documents\DenyAllDocumentAuthorization;
 use Example\Documents\DenyAllDocumentTenantResolution;
+use Example\DocumentFiles\LocalDocumentFiles;
 use Example\Routes;
 use Example\Users\CreateUser\CreateUserCommand;
 use Example\Users\CreateUser\CreateUserHandler;
@@ -45,6 +46,7 @@ require __DIR__ . '/request-policy.php';
 require __DIR__ . '/observability.php';
 require __DIR__ . '/jobs.php';
 require __DIR__ . '/cli.php';
+require __DIR__ . '/document-files.php';
 
 $tests = requestPolicyTests();
 
@@ -60,6 +62,10 @@ foreach (cliTests() as $name => $test) {
     $tests[$name] = $test;
 }
 
+foreach (documentFileTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
 $tests['example composes explicit route modules'] = static function (): void {
     $application = new Application(new Router(Routes::create(
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
@@ -71,6 +77,7 @@ $tests['example composes explicit route modules'] = static function (): void {
         new DenyAllDocumentTenantResolution(),
         new DenyAllDocumentAuthorization(),
         new DenyAllDocumentAuthorization(),
+        new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
     $response = $application->handle(new Request('GET', '/health'));
 
@@ -707,6 +714,18 @@ $tests['response emitter preserves repeated Set-Cookie fields'] = static functio
         ]
     ) {
         throw new RuntimeException('Expected ordinary replacement headers and repeated cookie fields.');
+    }
+};
+
+$tests['request boundary normalizes one bounded multipart upload'] = static function (): void {
+    $result = runIsolatedPhpTest(__DIR__ . '/upload-request-boundary.php');
+
+    if (
+        $result['exit_code'] !== 0
+        || $result['stdout'] !== "upload request boundary: ok\n"
+        || $result['stderr'] !== ''
+    ) {
+        throw new RuntimeException('Multipart request-boundary subprocess failed.');
     }
 };
 
@@ -1873,6 +1892,7 @@ $tests['example request boundary maps client failures before database work'] = s
         new DenyAllDocumentTenantResolution(),
         new DenyAllDocumentAuthorization(),
         new DenyAllDocumentAuthorization(),
+        new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
     $registry = exampleErrorResponseRegistry();
     $invalidResponses = [];
@@ -1950,7 +1970,7 @@ $tests['example request boundary maps client failures before database work'] = s
     if (
         $unsupportedResponse->status !== 415
         || $unsupportedResponse->headers !== $expectedHeaders
-        || $unsupportedResponse->body !== "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n"
+        || $unsupportedResponse->body !== "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n"
         || $outerTooLargeResponse->status !== 413
         || $outerTooLargeResponse->headers !== $expectedHeaders
         || $outerTooLargeResponse->body !== $expectedTooLargeBody
@@ -2047,6 +2067,7 @@ $tests['user routes execute bounded reads and one transactional write end to end
         new DenyAllDocumentTenantResolution(),
         new DenyAllDocumentAuthorization(),
         new DenyAllDocumentAuthorization(),
+        new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
 
     $created = $application->handle(new Request(
@@ -2728,7 +2749,7 @@ function exampleErrorResponseRegistry(): ErrorResponseRegistry
         UnsupportedMediaType::class => new Response(
             415,
             $headers,
-            "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n",
+            "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n",
         ),
     ]);
 }

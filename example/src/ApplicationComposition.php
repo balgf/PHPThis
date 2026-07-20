@@ -6,6 +6,8 @@ namespace Example;
 
 use Example\Cli\ApplicationCommands;
 use Example\Cli\LocalScheduleLock;
+use Example\DocumentFiles\DocumentFileNotFound;
+use Example\DocumentFiles\LocalDocumentFiles;
 use Example\Documents\CrossTenant;
 use Example\Documents\DenyAllDocumentAuthentication;
 use Example\Documents\DenyAllDocumentAuthorization;
@@ -84,6 +86,7 @@ final readonly class ApplicationComposition
             new DenyAllDocumentTenantResolution(),
             $documentAuthorization,
             $documentAuthorization,
+            new LocalDocumentFiles($this->databasePath . '.files'),
         )));
         $jsonHeaders = [
             'Content-Type' => 'application/json; charset=utf-8',
@@ -123,13 +126,18 @@ final readonly class ApplicationComposition
             UnsupportedMediaType::class => new Response(
                 415,
                 $jsonHeaders,
-                "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type must be application/json.\"}}\n",
+                "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n",
+            ),
+            DocumentFileNotFound::class => new Response(
+                404,
+                $privateJsonHeaders,
+                "{\"error\":{\"code\":\"document_file_not_found\",\"message\":\"Document file was not found.\"}}\n",
             ),
         ]);
 
         return new TerminalRequestCoordinator(
             new RequestBoundary(
-                new RequestReader(8_192, 'php://input'),
+                new RequestReader(8_192, 'php://input', 2_097_152),
                 $application,
                 $errorResponses,
             ),

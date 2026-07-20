@@ -50,7 +50,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
 - Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,300-line Alpha 2 limit enforced by repository guardrails. After the bounded query-budget observation and removal of the framework-owned unknown-failure log call, the reviewed implementation occupies 2,250 lines; its 50-line maintenance margin pre-authorizes no adjacent mechanism.
+- Core source remains at or below the 2,500-line Alpha 2 limit enforced by repository guardrails. ADR 026 raises that ceiling only for bounded typed multipart ingestion and concrete local-file emission; the accepted implementation occupies 2,495 lines, and its five-line maintenance margin pre-authorizes no adjacent mechanism.
 
 ## Non-goals
 
@@ -64,6 +64,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
 - Providing a generic middleware, request-context, identity, tenant, or authorization engine that hides application policy or its I/O.
 - Providing a global logger, facade, middleware logger, event bus, automatically discovered sink, per-query logging, or hidden database instrumentation.
+- Providing a generic upload, storage, filesystem, or stream facade; trusting client filenames or media types; or hiding persistence, cleanup, ranges, content processing, or file ownership.
 - Supporting multiple equivalent styles for the same task.
 - Eliminating the need for PHP, database, security, and operational expertise when reviewing or operating a real system.
 - Claiming that raw SQL by itself prevents inefficient access patterns.

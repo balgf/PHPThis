@@ -56,14 +56,21 @@ final readonly class TerminalRequestCoordinator
     /**
      * @param array<array-key, mixed> $server
      * @param array<array-key, mixed> $query
+     * @param array<array-key, mixed> $parsedFields
+     * @param array<array-key, mixed> $files
      */
-    public function handle(array $server, array $query): Response
+    public function handle(
+        array $server,
+        array $query,
+        array $parsedFields = [],
+        array $files = [],
+    ): Response
     {
         $startedAt = (float) hrtime(true);
         $unknownFailure = null;
 
         try {
-            $response = $this->requestBoundary->handle($server, $query);
+            $response = $this->requestBoundary->handle($server, $query, $parsedFields, $files);
         } catch (Throwable $failure) {
             $unknownFailure = $failure;
             $response = $this->unknownFailures->respond();
@@ -105,6 +112,7 @@ final readonly class TerminalRequestCoordinator
             $headers,
             $response->body,
             $response->cookies,
+            $response->fileBody,
         );
     }
 }

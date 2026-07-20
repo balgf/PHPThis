@@ -1,0 +1,11 @@
+# File-transfer testing
+
+Test the boundary and operation separately, then execute the real HTTP path.
+
+Boundary evidence covers multipart disabled, POST-only, boundary missing/empty/duplicate/oversized and disallowed unquoted characters, canonical and overflowing `Content-Length`, total cap, transfer encoding, text fields, empty upload map, every upload error, unknown error, nested and multiple normalized shapes, missing/unknown/wrongly typed keys, controls, temporary-path bound, contradictory metadata, reported size, ordinary-body compatibility, and route-copy preservation.
+
+Application evidence covers exact field ownership, 1 MiB exact and overflow limits, rejection before storage, `is_uploaded_file`, hostile filename/media/path non-use, generated identifier grammar, private root and retained modes, successful move ownership, stored byte hash, missing file, and public/terminal redaction. The example intentionally has public routes and therefore proves no authorization policy. It does not inject an actual-size race, kernel move/chmod failure, or cleanup failure; an adopter must add those applicable fault proofs before making stronger operational claims.
+
+Response evidence covers absolute path and byte invariants, empty ordinary body, exact `Content-Length`, duplicate and control-bearing headers, prohibited transfer/range framing, prior-output rejection, regular-file and changed-size checks before headers, exact byte output, fixed chunking, handle closure, path-free errors, pre-header fallback, and the response-started no-replacement policy. It does not inject a mid-read failure after headers.
+
+The repository real-SAPI proof starts PHP's built-in server with explicit upload settings and displayed errors enabled, uses `curl --form`, writes downloads to files, verifies hashes, modes, headers, and redaction, tests exact-limit/oversized/missing/normalized-multiple/duplicate-scalar/hostile metadata, and proves a range request receives the full `200`. The scalar-duplicate case records PHP's pre-boundary collapse rather than claiming rejection. The fixed 8,192-byte loop is application-level memory evidence; record separately whether deployed PHP, server, proxy, and client buffering were measured.

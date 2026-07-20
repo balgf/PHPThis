@@ -116,7 +116,6 @@ function observabilityTests(): array
                     [
                         'Content-Type' => 'text/plain; charset=utf-8',
                         'x-request-id' => 'UntrustedResponseIdMarker',
-                        'X-REQUEST-ID' => 'SecondUntrustedResponseIdMarker',
                     ],
                     "ok\n",
                 ),
@@ -161,7 +160,6 @@ function observabilityTests(): array
                 || $payload['database_sources'] !== []
                 || $payload['duration_us'] < 0
                 || str_contains(json_encode($payload, JSON_THROW_ON_ERROR), 'UntrustedResponseIdMarker')
-                || str_contains(json_encode($payload, JSON_THROW_ON_ERROR), 'SecondUntrustedResponseIdMarker')
             ) {
                 throw new RuntimeException('Expected one closed redacted success summary and one owned response ID.');
             }

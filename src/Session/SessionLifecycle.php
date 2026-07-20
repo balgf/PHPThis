@@ -240,6 +240,7 @@ final class SessionLifecycle
                 $response->headers,
                 $response->body,
                 [...$response->cookies, $this->pendingCookie],
+                $response->fileBody,
             );
         } catch (Throwable $failure) {
             $this->abortActiveNativeSession();

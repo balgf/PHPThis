@@ -146,4 +146,18 @@ if (!is_string($frontControllerOutput) || !is_string($frontControllerError)) {
 $expectSame(0, $frontControllerExitCode, 'The real front controller must exit successfully: ' . $frontControllerError);
 $expectSame("{\"status\":\"ok\"}\n", $frontControllerOutput, 'The real front controller must emit the health body.');
 
+$frontControllerSource = file_get_contents(dirname(__DIR__) . '/public/index.php');
+
+if (
+    !is_string($frontControllerSource)
+    || substr_count($frontControllerSource, "error_log('application.response_emission_failed');") !== 1
+    || !str_contains($frontControllerSource, 'catch (ResponseEmissionFailed $failure)')
+    || !str_contains($frontControllerSource, 'if (!$failure->responseStarted)')
+    || !str_contains($frontControllerSource, "'Cache-Control' => 'no-store'")
+) {
+    throw new RuntimeException(
+        'The front controller must retain one redacted, response-start-aware emission fallback.',
+    );
+}
+
 fwrite(STDOUT, "PASS application behavior and front controller\n");

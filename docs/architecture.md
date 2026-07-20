@@ -6,7 +6,7 @@ PHPThis uses a flat request pipeline:
 public/index.php
   -> RequestBoundary
     -> RequestReader
-      <- PHP runtime arrays and bounded input stream
+      <- PHP runtime arrays, bounded ordinary input stream, or typed multipart upload
     -> SessionLifecycle (optional; lazy storage access)
     -> Application
       -> Router
@@ -19,21 +19,23 @@ public/index.php
             -> authorize named action
             -> protected operation with explicit principal and tenant context
           -> operation-specific parser -> final readonly command or request
+          -> exact upload-field parser -> verified application upload (when adopted)
+            -> narrow application-owned storage operation
           -> typed application operation (when business or transaction ownership requires a seam)
             -> operation-specific transaction owner -> Connection
           -> typed application session service (when needed)
           -> typed application cache service (when deliberately adopted)
           -> application-owned job insert in the same transaction (when adopted)
           -> Connection (when the handler directly owns its data work)
-        <- Response
+        <- Response (string body or optional LocalFileBody)
     -> ErrorResponseRegistry (only after a named failure)
     -> SessionLifecycle finish or abort (when configured)
-  -> ResponseEmitter
+  -> ResponseEmitter (ordinary body or verified fixed-chunk local file)
 ```
 
 The composition root constructs the complete graph, including the body limit and exact error-response registrations. Its root route manifest explicitly combines named route-area lists, keeping the complete application map visible without placing every endpoint in one file. These lists are composition fragments, not discoverable providers.
 
-Only `public/index.php` reads PHP superglobals and passes them to the application-owned terminal coordinator. `RequestReader` receives those arrays through the one `RequestBoundary`, reads at most its configured body limit plus one byte, and creates one immutable `Request`. `RequestBoundary` then begins the optional session lifecycle, calls the application, maps only exact registered failure classes, and performs one finalization outside that error-mapping catch. Unknown failures abort active and never-issued session work before being rethrown to `TerminalRequestCoordinator`, which calls `UnknownFailureBoundary::respond()` to select one generic 500 response with `Cache-Control: no-store`. A completed update to a browser-owned identifier is already committed and is not rolled back. Beginning a session lifecycle does not open native storage; only an explicit application session operation does.
+Only `public/index.php` reads PHP superglobals and passes `$_SERVER`, `$_GET`, `$_POST`, and `$_FILES` to the application-owned terminal coordinator. `RequestReader` receives those arrays through the one `RequestBoundary`. For an ordinary request it reads at most its configured body limit plus one byte. For an enabled multipart `POST` it requires bounded canonical framing, rejects text, nested, and multiple normalized shapes, and creates at most one typed `RequestUpload` without exposing raw `$_FILES`; duplicate raw scalar parts may already have collapsed and are not claimed as rejected. It then creates one immutable `Request`. `RequestBoundary` begins the optional session lifecycle, calls the application, maps only exact registered failure classes, and performs one finalization outside that error-mapping catch. Unknown failures abort active and never-issued session work before being rethrown to `TerminalRequestCoordinator`, which calls `UnknownFailureBoundary::respond()` to select one generic 500 response with `Cache-Control: no-store`. A completed update to a browser-owned identifier is already committed and is not rolled back. Beginning a session lifecycle does not open native storage; only an explicit application session operation does.
 
 ADR 023 places one application-owned terminal coordinator around that path without changing `RequestBoundary`, `UnknownFailureBoundary`, or `Connection`. It generates the correlation ID, adds `X-Request-ID` to the final immutable response, derives one closed bounded event from a finite list of distinct connection budgets and traces, and makes exactly one sink invocation attempt before `ResponseEmitter`. Sink failure is isolated and cannot replace the response. This is explicit front-controller composition, not middleware, a global logger, a facade, a service locator, an event pipeline, or hidden instrumentation.
 
@@ -46,7 +48,9 @@ The router stores objects, not class names, so dispatch does not need reflection
 - `Http`: bounded runtime ingestion, immutable request/response values, exact error mapping, and final emission.
 - `Session`: bounded immutable snapshots and one lazy native-file session lifecycle; authentication, authorization, expiry, and CSRF remain application policy.
 - `Database`: explicit PDO execution and query accounting.
-- `example`: proves the complete manual wiring path, including its application-owned terminal request coordinator and sink; the optional feature-first CRUD profile with bounded application-owned user and document continuations; a typed Create operation with visible transactional data and job publication; one SQLite-specific one-shot durable-job worker; bounded typed-item Get use cases; and nested protected document routes with explicitly ordered, replaceable application request-policy adapters.
+- `example`: proves the complete manual wiring path, including its application-owned terminal request coordinator and sink; the optional feature-first CRUD profile with bounded application-owned user and document continuations; a typed Create operation with visible transactional data and job publication; one SQLite-specific one-shot durable-job worker; bounded typed-item Get use cases; nested protected document routes with explicitly ordered, replaceable application request-policy adapters; and one application-owned local document-file upload and full-download path.
+
+ADR 026 adds only the concrete transport values `RequestUpload`, `RequestUploadError`, and `LocalFileBody` plus exact framing and emission behavior. The example parser requires one `document` field, applies an operation-specific limit, verifies PHP provenance and actual size, and calls the concrete `LocalDocumentFiles` operation. That operation generates its destination, moves the temporary upload, and owns permissions and cleanup. The download handler resolves a fixed stored file and returns a full `200`; `ResponseEmitter` verifies its regular-file type and expected length before headers and reads fixed chunks. Range, remote storage, client metadata trust, content inspection, authorization, retention, and deployment topology remain explicit application concerns.
 
 ADR 021 adds no core input or operation namespace. `CreateUserHandler` owns HTTP media checks, complete `CreateUserCommand` parsing, and response preparation. It then calls `CreateUserOperation`, the explicit boundary to the independently meaningful Create transaction. `TransactionalCreateUser` is the one example-owned concrete transaction operation and retains the direct `Connection` calls, exactly three fixed statements, transaction, budget, and trace: user, event, and commit-visible welcome-job insertion. This responsibility split makes rejected-input non-entry directly testable; the test does not itself justify a generic service layer, repository, query object, data mapper, command bus, SQL helper, automatic handler split, or second execution path.
 

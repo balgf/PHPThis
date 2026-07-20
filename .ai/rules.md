@@ -14,9 +14,10 @@
 - Keep protected request policy in one application-owned action-specific adapter with explicit `authenticate -> resolve tenant -> authorize -> handler` order, concrete immutable principal and tenant values, and independently replaceable constructor-injected policies.
 - Give any policy reads distinct named connections, budgets, and traces from protected handler work; every denial must stop before protected queries, writes, session mutation, cache mutation, or external business side effects.
 - Keep one application-owned ADR 023 terminal coordinator and sink at the visible front-controller boundary, with generated correlation, finite distinct database sources, complete redaction, and exactly one failure-isolated invocation attempt.
+- Keep ADR 026 file transfer explicit: one typed bounded multipart upload, application-owned provenance and storage, one concrete local-file body, exact framing, fixed-chunk emission, and no range implementation.
 - Pass the complete Strict Profile; PHP execution without `composer check` is not sufficient verification.
 - Add a test for success, expected failure, and resource bounds when relevant.
-- Use one stable term for each concept: route, handler, connection, request, response, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, terminal request summary, correlation ID, sink invocation attempt, HTTP cache policy, application cache service, stale-refill race.
+- Use one stable term for each concept: route, handler, connection, request, request upload, response, local file body, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, terminal request summary, correlation ID, sink invocation attempt, HTTP cache policy, application cache service, stale-refill race.
 
 ## Forbidden
 
@@ -33,6 +34,7 @@
 - Generic cache facades or bags, remember-style callbacks, implicit cache fallback or retries, automatic query caching, hidden cache middleware, unbounded keys or values, implicit forever lifetimes, and claims that distinct backends are behaviorally interchangeable.
 - Framework job types, generic queue or worker facades, event buses, automatic job discovery, serialized PHP objects, hidden after-commit callbacks, in-process polling or retry loops, and exactly-once external-effect claims.
 - Core logging event, sink, or coordinator types; logger facades, global log helpers, logging middleware, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or claims that one sink invocation attempt guarantees delivery.
+- Raw `$_FILES` outside the front controller, trusted client file metadata, generic storage or stream facades, automatic file persistence or cleanup, image processing, and partial range support.
 - Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
 - Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.
 

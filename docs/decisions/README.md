@@ -29,3 +29,4 @@ Accepted records:
 - `023-application-owned-terminal-request-summaries.md`
 - `024-application-owned-sqlite-durable-jobs.md`
 - `025-application-owned-explicit-cli-and-scheduler.md`
+- `026-bounded-file-transfers.md`
