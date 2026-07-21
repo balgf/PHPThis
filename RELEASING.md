@@ -1,6 +1,6 @@
 # PHPThis release process
 
-Alpha 1 scope is preserved in `docs/decisions/018-bounded-alpha-1-release-scope.md`. The current Alpha 2 claim is accepted in `docs/decisions/029-alpha-2-consumer-profile-rollup.md`. Publication state is external: this reusable checklist intentionally does not claim whether either release has been published.
+Alpha 1 scope is preserved in `docs/decisions/018-bounded-alpha-1-release-scope.md`, and Alpha 2 in `docs/decisions/029-alpha-2-consumer-profile-rollup.md`. The current Alpha 3 claim is accepted in `docs/decisions/031-bounded-alpha-3-release-scope.md` and carries ADR 030's report-only duplication advisory. Publication state is external: this reusable checklist intentionally does not claim whether any release has been published.
 
 This is the maintainer release gate, not an application programming manual. Copy the checklist into the release work item and attach evidence there. Keep this canonical checklist unchecked and reusable.
 
@@ -28,16 +28,27 @@ The accountable human approved the following release identity and gated publicat
 
 This approves the exact version and tag names and authorizes the following operations only after their preceding gates pass: commit and push the framework candidate; create and push both approved tags; submit or refresh both Packagist packages; create both GitHub prereleases; and announce Alpha 2 only after the clean public-installation proof succeeds. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
 
-## Alpha 2 release gate
+## Approved Alpha 3 identity
+
+The accountable human approved the following release identity and gated publication sequence on 2026-07-21 (Asia/Manila):
+
+- Composer version: `0.1.0-alpha.3`
+- Framework tag: `v0.1.0-alpha.3`
+- Skeleton tag: `v0.1.0-alpha.3`
+- Release notes: `docs/releases/0.1.0-alpha.3.md`
+
+This approves the exact version and tag names and authorizes the following ordered operations only after their preceding gates pass: commit and push the framework candidate; create and push the framework tag; submit or refresh the framework Packagist package and verify its distribution; update, prove, commit, push, and tag the dedicated skeleton; submit or refresh the skeleton Packagist package and verify its distribution; prove the clean public installation path; create both GitHub prereleases; and announce Alpha 3. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
+
+## Alpha 3 release gate
 
 ### 1. Freeze the release candidate
 
 - [ ] Record the exact framework prerelease version, tag, candidate commit, release date, and accountable-human publication authorization.
 - [ ] Confirm maintainer access to the intended GitHub repositories and Packagist package names `phpthis/framework` and `phpthis/skeleton`; do not infer availability from local package metadata.
 - [ ] Confirm GitHub private vulnerability reporting is enabled for the public framework repository.
-- [ ] Confirm the candidate scope matches ADR 029 and release notes do not imply production readiness, backward compatibility, complete CRUD, framework-owned authentication, authorization, tenancy, cache, queue, migration, or SQL dialect portability.
+- [ ] Confirm the candidate scope matches ADR 031, carries forward ADR 029, and keeps ADR 030 report-only. Release notes must not imply production readiness, backward compatibility, complete CRUD, framework-owned authentication, authorization, tenancy, cache, queue, migration, SQL dialect portability, DRY validity, or automatic refactoring.
 - [ ] Confirm the worktree is clean and the candidate commit is pushed.
-- [ ] Review every public API, Consumer Contract version, Strict Profile version, permanent diagnostic identifier, and upgrade note changed since the previous release.
+- [ ] Review every public API, Consumer Contract version, Strict Profile version, permanent diagnostic identifier, checker output change, and upgrade note changed since the previous release.
 - [ ] Confirm `README.md`, `ROADMAP.md`, `SECURITY.md`, `docs/getting-started.md`, and the package metadata describe the same release state.
 
 ### 2. Prove the framework candidate
@@ -62,7 +73,7 @@ composer check
 - [ ] Submit or refresh `phpthis/framework` on Packagist and wait until the exact prerelease is indexed with a preferred distribution artifact.
 - [ ] Record the framework tag, commit, Packagist version, and distribution reference in the release evidence.
 
-At the end of this step, treat the public artifact and skeleton path as unproved until Steps 4 and 5 pass. Do not announce Alpha 2 yet.
+At the end of this step, treat the public artifact and skeleton path as unproved until Steps 4 and 5 pass. Do not announce Alpha 3 yet.
 
 ### 4. Publish the skeleton prerelease
 
@@ -97,9 +108,9 @@ composer check
 
 ### 6. Announce or stop
 
-- [ ] Update mutable repository landing-page or announcement wording only after both packages and the clean public path are proven; keep tagged package authority independent of mutable publication state.
+- [ ] Update mutable repository availability or announcement wording only after both packages and the clean public path are proven; keep tagged package authority independent of mutable publication state.
 - [ ] Publish the approved GitHub prereleases for both proven tags without moving either tag.
-- [ ] Publish the approved Alpha 2 announcement with direct links to both tagged packages, release notes, ADR 029, the security policy, and the installation command.
+- [ ] Publish the approved Alpha 3 announcement with direct links to both tagged packages, release notes, ADR 031, ADR 030, the security policy, and the installation command.
 - [ ] Preserve the release evidence with the release work item.
 
 If any mandatory check fails, stop the announcement and fix the cause on a new candidate commit. Never move a published tag or replace a published artifact. When a public prerelease is defective, document it, mark it appropriately in the package host, and publish a new prerelease version after the complete gate passes.

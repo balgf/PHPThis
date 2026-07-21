@@ -483,6 +483,8 @@ if (!is_string($phpstanConfig)) {
 }
 
 $requiredRepositoryFiles = [
+    '.gitattributes',
+    '.github/assets/phpthis-readme-banner.png',
     '.github/workflows/ci.yml',
     'RELEASING.md',
     '.ai/cache.md',
@@ -554,6 +556,7 @@ $requiredRepositoryFiles = [
     'docs/redis/topology.md',
     'docs/releases/0.1.0-alpha.1.md',
     'docs/releases/0.1.0-alpha.2.md',
+    'docs/releases/0.1.0-alpha.3.md',
     'docs/security.md',
     'docs/sessions.md',
     'docs/vocabulary.md',
@@ -577,6 +580,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
     'docs/decisions/030-report-only-consumer-duplication-advisory.md',
+    'docs/decisions/031-bounded-alpha-3-release-scope.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -895,21 +899,23 @@ $alphaReleaseContractMarkers = [
     '.ai/README.md' => 'Prepare, assess, or publish a release',
     '.ai/application-context.md' => 'Keep Alpha scope approval separate from authorization to create tags',
     '.ai/testing.md' => 'The Git export comparison requires a clean worktree',
-    'README.md' => 'The bounded [Alpha 2 consumer profile]',
-    'RELEASING.md' => '## Alpha 2 release gate',
-    'ROADMAP.md' => 'Alpha 2 publication state is external',
-    'SECURITY.md' => 'An Alpha 2 release may be announced only after the public-artifact gate',
-    'docs/getting-started.md' => 'The bounded Alpha 2 consumer profile is accepted',
-    'docs/knowledge-map.md' => '`docs/releases/0.1.0-alpha.2.md`, ADR 029',
+    'README.md' => 'The bounded [Alpha 3 scope]',
+    'RELEASING.md' => '## Alpha 3 release gate',
+    'ROADMAP.md' => 'Alpha 3 publication state is external',
+    'SECURITY.md' => 'An Alpha 3 release may be announced only after the public-artifact gate',
+    'docs/getting-started.md' => 'The bounded Alpha 3 scope is accepted',
+    'docs/knowledge-map.md' => '`docs/releases/0.1.0-alpha.3.md`, ADR 031, ADR 030',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'No capability has an overall `defer` exit.',
-    'tools/package-files.txt' => 'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
+    'docs/decisions/030-report-only-consumer-duplication-advisory.md' => 'This advisory has no `PHT` identifier',
+    'docs/decisions/031-bounded-alpha-3-release-scope.md' => 'Alpha 3 is accepted as a tooling-only release',
+    'tools/package-files.txt' => 'docs/decisions/031-bounded-alpha-3-release-scope.md',
 ];
 
 foreach ($alphaReleaseContractMarkers as $relativePath => $marker) {
     $contents = file_get_contents($root . '/' . $relativePath);
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
-        $failures[] = "The accepted bounded Alpha 2 release contract is missing from {$relativePath}.";
+        $failures[] = "The accepted bounded Alpha 3 release contract is missing from {$relativePath}.";
     }
 }
 
@@ -959,9 +965,6 @@ foreach ($historicalAlpha1IdentityArtifactMarkers as $relativePath => $markers) 
 }
 
 $alpha2ReleaseIdentityArtifactMarkers = [
-    '.ai/README.md' => [
-        '`docs/releases/0.1.0-alpha.2.md`',
-    ],
     'RELEASING.md' => [
         '## Approved Alpha 2 identity',
         'Composer version: `0.1.0-alpha.2`',
@@ -970,9 +973,6 @@ $alpha2ReleaseIdentityArtifactMarkers = [
         'The accountable human approved the following release identity and gated publication sequence on 2026-07-21',
         'This approves the exact version and tag names and authorizes the following operations only after their preceding gates pass',
         'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
-    ],
-    'docs/knowledge-map.md' => [
-        '`docs/releases/0.1.0-alpha.2.md`',
     ],
     'docs/releases/0.1.0-alpha.2.md' => [
         'Release identity: `0.1.0-alpha.2`. Publication state is external',
@@ -1001,6 +1001,74 @@ foreach ($alpha2ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "The approved Alpha 2 identity marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$alpha3ReleaseIdentityArtifactMarkers = [
+    '.ai/README.md' => [
+        '`docs/releases/0.1.0-alpha.3.md`',
+        'ADR 031, ADR 030, ADR 029 for the inherited Alpha 2 surface',
+    ],
+    '.ai/application-context.md' => [
+        'ADR 015 through ADR 031.',
+    ],
+    '.gitattributes' => [
+        '/.DS_Store export-ignore',
+    ],
+    'README.md' => [
+        'https://raw.githubusercontent.com/balgf/PHPThis/main/.github/assets/phpthis-readme-banner.png',
+    ],
+    'RELEASING.md' => [
+        '## Approved Alpha 3 identity',
+        'Composer version: `0.1.0-alpha.3`',
+        'Framework tag: `v0.1.0-alpha.3`',
+        'Skeleton tag: `v0.1.0-alpha.3`',
+        'The accountable human approved the following release identity and gated publication sequence on 2026-07-21',
+        'prove the clean public installation path; create both GitHub prereleases; and announce Alpha 3.',
+        'The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence',
+        'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/releases/0.1.0-alpha.3.md`',
+        'ADR 031, ADR 030, ADR 029 for the inherited Alpha 2 surface',
+    ],
+    'docs/releases/0.1.0-alpha.3.md' => [
+        'Release identity: `0.1.0-alpha.3`. Publication state is external',
+        'Identity and gated publication authorization do not announce either tag, either package, or the public installation path.',
+        'It is not production-ready and makes no backward-compatibility promise across prereleases.',
+        'external release evidence recorded through `RELEASING.md`',
+        'composer create-project --stability=alpha phpthis/skeleton',
+    ],
+    'docs/decisions/031-bounded-alpha-3-release-scope.md' => [
+        'Status: accepted',
+        'Alpha 3 is accepted as a tooling-only release',
+        'Publication state is external.',
+        'Consumer Contract version 7, Strict Profile version 2, diagnostics `PHT001` through `PHT006`',
+    ],
+    'docs/decisions/README.md' => [
+        '`031-bounded-alpha-3-release-scope.md`',
+    ],
+    'composer.json' => [
+        '"/.DS_Store"',
+    ],
+    'tools/package-files.txt' => [
+        'docs/releases/0.1.0-alpha.3.md',
+        'docs/decisions/031-bounded-alpha-3-release-scope.md',
+    ],
+];
+
+foreach ($alpha3ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read approved Alpha 3 identity artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "The approved Alpha 3 identity marker is missing from {$relativePath}.";
         }
     }
 }
@@ -1039,6 +1107,14 @@ $mutableReleaseStateForbiddenMarkers = [
     'Alpha 2 is now available',
     'the Alpha 2 packages are available',
     'the public Alpha 2 installation path is available',
+    'Alpha 3 is published',
+    'Alpha 3 has been published',
+    'Alpha 3 is available',
+    '0.1.0-alpha.3 is published',
+    '0.1.0-alpha.3 is available',
+    'Alpha 3 is now available',
+    'the Alpha 3 packages are available',
+    'the public Alpha 3 installation path is available',
 ];
 
 $mutableReleaseStateAuthorityFiles = [
@@ -1049,21 +1125,25 @@ $mutableReleaseStateAuthorityFiles = [
     'docs/getting-started.md',
     'docs/releases/0.1.0-alpha.1.md',
     'docs/releases/0.1.0-alpha.2.md',
+    'docs/releases/0.1.0-alpha.3.md',
     'docs/decisions/018-bounded-alpha-1-release-scope.md',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
+    'docs/decisions/031-bounded-alpha-3-release-scope.md',
     'skeleton/README.md',
 ];
 
 $externalReleaseStateMarkers = [
     'README.md' => 'Package availability and current release state are external facts',
     'RELEASING.md' => 'Publication state is external',
-    'ROADMAP.md' => 'Alpha 2 publication state is external',
+    'ROADMAP.md' => 'Alpha 3 publication state is external',
     'SECURITY.md' => 'This tracked policy does not record current publication state',
     'docs/getting-started.md' => 'Package availability is an external fact',
     'docs/releases/0.1.0-alpha.1.md' => 'Publication state is external',
     'docs/releases/0.1.0-alpha.2.md' => 'Publication state is external',
+    'docs/releases/0.1.0-alpha.3.md' => 'Publication state is external',
     'docs/decisions/018-bounded-alpha-1-release-scope.md' => 'This decision does not record mutable publication state',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'not mutable tag, package, GitHub release, or installation availability',
+    'docs/decisions/031-bounded-alpha-3-release-scope.md' => 'Publication state is external',
     'skeleton/README.md' => 'Package availability is an external fact',
 ];
 

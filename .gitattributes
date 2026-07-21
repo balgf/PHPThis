@@ -1,4 +1,5 @@
 /.ai export-ignore
+/.DS_Store export-ignore
 /.github export-ignore
 /.gitattributes export-ignore
 /.gitignore export-ignore

@@ -23,7 +23,7 @@ The first version has these fixed bounds:
 - at most 2,048 maximal-extension attempts, 1,000,000 exact token comparisons, 256 groups, 256 locations per group, and 32,768 containment-propagation checks are evaluated; and
 - debug output shows at most ten groups, eight locations per group, and 160 source-path bytes per location before JSON-safe truncation.
 
-Reaching any bound produces one deterministic incomplete-scan advisory. An unavailable scanner produces one fixed unavailable advisory without exception details. Neither case changes application validity or prevents PHPStan from running.
+Reaching any bound produces one deterministic incomplete-scan advisory. A failure thrown while generating or writing the report after source collection produces one fixed unavailable advisory without exception details. Neither case changes application validity or prevents PHPStan from running.
 
 A complete no-match scan prints one concise pass line. A possible match prints one concise normal-mode advisory stating that application validity is unaffected and directs detailed review to `phpthis check --debug`. Debug details contain only JSON-safe application-relative filenames, line ranges, normalized token counts, group counts, and truncation state. They never contain PHP source snippets or normalized token text—including source-level symbols, identifiers, literals, and comments—and they omit fingerprints, hashes, absolute paths, and exception text. Since debug intentionally reveals relative filenames and line topology, application paths must not contain secrets or customer data.
 

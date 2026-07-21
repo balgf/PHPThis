@@ -34,3 +34,4 @@ Accepted records:
 - `028-application-owned-redis-cache-and-schedule-lease.md`
 - `029-alpha-2-consumer-profile-rollup.md`
 - `030-report-only-consumer-duplication-advisory.md`
+- `031-bounded-alpha-3-release-scope.md`

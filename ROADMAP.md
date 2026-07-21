@@ -52,7 +52,7 @@
 - Complete: extend the accepted application-owned request-policy evidence to account-scoped Create without presenting domain policy as framework behavior; the example's named Create identity/conflict contract and applicable List/Get policy evidence remain next.
 - After those decisions: prove Update and Delete only after the example also records mutation concurrency, deletion, authorization, and conflict behavior.
 
-## Phase 3: Alpha 2 publication and production evaluation
+## Phase 3: Alpha 2 publication and independent consumer evaluation
 
 - Complete: ADR 029 records every Alpha 2 capability exit, one sanitized integrated consumer request, the PHP 8.4.x support boundary, complete-gate evidence, and permanent no-magic boundaries without adding framework runtime behavior.
 - Alpha 2 publication state is external; `RELEASING.md` defines the coordinated framework, skeleton, Packagist, clean-install, and announcement proof without embedding mutable publication state in the tagged artifact.
@@ -64,6 +64,15 @@
 - Run the same endpoint tasks across several AI models and classify mistakes.
 - Complete: ADR 028 accepts one application-owned Redis document-cache and schedule-lease proof with current authorization before cache access, cold-cache query scaling, bounded stale-refill, invalidation failure, isolation, eviction, owner-token coordination, and explicit backend limits; it adds no generic framework cache, Redis, lock, or lease API.
 - Stabilize the public API only after evidence from real applications.
+
+## Phase 4: Alpha 3 consumer hardening and independent evaluation
+
+- Complete: ADR 030 adds one bounded report-only duplication advisory to the installed consumer checker without changing application validity, the Consumer Contract version, the Strict Profile, or framework runtime behavior.
+- Alpha 3 publication state is external; ADR 031 and `RELEASING.md` define the inherited scope, coordinated packages, clean public-installation proof, and announcement boundary without embedding mutable availability in the tagged artifact.
+- Freeze core mechanisms except for a demonstrated release blocker, correctness defect, or security defect within the accepted surface.
+- Exercise the Packagist-installed release through at least two independent consumer applications with materially different work, recording task outcomes, incorrect AI assumptions, file and token churn, checker evidence, and human decisions.
+- Run the same bounded consumer tasks across several AI models and classify unsupported claims, contract violations, query-scaling mistakes, unnecessary abstraction, and successful self-repair.
+- Outside a demonstrated release blocker, correctness defect, or security defect within the accepted surface, reconsider runtime or checker changes only from reproducible consumer evidence; do not add convenience mechanisms merely to broaden feature count.
 
 ## Deferred by design
 

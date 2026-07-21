@@ -58,6 +58,7 @@
     "archive": {
         "exclude": [
             "/.ai",
+            "/.DS_Store",
             "/.github",
             "/.gitattributes",
             "/.gitignore",

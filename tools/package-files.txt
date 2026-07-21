@@ -62,6 +62,7 @@ docs/decisions/027-application-owned-explicit-sqlite-migrations.md
 docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md
 docs/decisions/029-alpha-2-consumer-profile-rollup.md
 docs/decisions/030-report-only-consumer-duplication-advisory.md
+docs/decisions/031-bounded-alpha-3-release-scope.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -100,6 +101,7 @@ docs/observability/testing.md
 docs/performance.md
 docs/releases/0.1.0-alpha.1.md
 docs/releases/0.1.0-alpha.2.md
+docs/releases/0.1.0-alpha.3.md
 docs/request-handling.md
 docs/request-policy.md
 docs/security.md
