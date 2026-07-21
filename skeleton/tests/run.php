@@ -103,9 +103,9 @@ $unknown = (new UnknownFailureBoundary())->respond();
 
 $expectSame(500, $unknown->status, 'An unknown failure must return 500.');
 $expectSame(
-    'no-store',
+    'private, no-store',
     $unknown->headers['Cache-Control'] ?? null,
-    'An unknown failure must return the explicit no-store policy.',
+    'An unknown failure must return the explicit private no-store policy.',
 );
 
 $frontControllerProgram = <<<'PHP'

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Example\Documents;
+namespace Example\Accounts;
 
-final readonly class DenyAllDocumentTenantResolution implements ResolveDocumentTenant
+final readonly class DenyAllAccountTenantResolution implements ResolveAccountTenant
 {
     public function resolve(
         AuthenticatedPrincipal $principal,

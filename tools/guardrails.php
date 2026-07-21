@@ -358,10 +358,83 @@ function routingTokenText(array|string $token): string
     return is_array($token) ? $token[1] : $token;
 }
 
+function frameworkMechanismPathIsForbidden(string $relativePath): bool
+{
+    if (!str_starts_with($relativePath, 'src/')) {
+        return false;
+    }
+
+    foreach (explode('/', substr($relativePath, 4)) as $segment) {
+        $name = str_ends_with(strtolower($segment), '.php')
+            ? substr($segment, 0, -4)
+            : $segment;
+
+        $exactMechanismSegment = preg_match(
+            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing))\z/i',
+            $name,
+        ) === 1;
+        $camelCaseMechanismSuffix = preg_match(
+            '/(?:\A|(?<=[A-Za-z0-9]))(?:ORM|Orm|Models?|Repositories|Repository|Facades?|Discovery|Observers?|Scopes?|Containers?)(?:Interface|Provider|Factory)?\z/',
+            $name,
+        ) === 1;
+        $explicitHiddenMechanismSuffix = preg_match(
+            '/(?:\A|(?<=[A-Za-z0-9]))(?:QueryBuilder|BindingHelper|PlaceholderHelper|AutoWire|Autowire)(?:Interface|Provider|Factory)?\z/',
+            $name,
+        ) === 1;
+
+        if ($exactMechanismSegment || $camelCaseMechanismSuffix || $explicitHiddenMechanismSuffix) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 $root = dirname(__DIR__);
 $phpFiles = [];
 $markdownFiles = [];
 $failures = [];
+$forbiddenFrameworkMechanismFixtures = [
+    'src/Orm/IdentityMap.php',
+    'src/Domain/UserModel.php',
+    'src/Domain/UserRepository.php',
+    'src/Domain/UserRepositoryInterface.php',
+    'src/repository/SqlAccess.php',
+    'src/Domain/AccountFacade.php',
+    'src/Domain/AccountFacadeProvider.php',
+    'src/Discovery/AttributeScanner.php',
+    'src/Domain/UserObserver.php',
+    'src/Domain/GlobalScope.php',
+    'src/Domain/ServiceContainer.php',
+    'src/Domain/UserQueryBuilder.php',
+    'src/Domain/UserQueryBuilderInterface.php',
+    'src/Database/QueryBuilders/SqlSelect.php',
+    'src/Database/SqlBindingHelper.php',
+    'src/Database/SqlBindingHelperFactory.php',
+    'src/Composition/AutoWire.php',
+    'src/Composition/AutoWireProvider.php',
+];
+$allowedFrameworkMechanismFixtures = [
+    'src/Application.php',
+    'src/Database/Connection.php',
+    'src/Http/Request.php',
+    'src/Support/Transform.php',
+    'src/Observability/Telescope.php',
+    'example/src/Domain/UserRepository.php',
+    'docs/repository-boundary.md',
+];
+
+foreach ($forbiddenFrameworkMechanismFixtures as $fixture) {
+    if (!frameworkMechanismPathIsForbidden($fixture)) {
+        $failures[] = "Permanent framework-boundary fixture must fail: {$fixture}.";
+    }
+}
+
+foreach ($allowedFrameworkMechanismFixtures as $fixture) {
+    if (frameworkMechanismPathIsForbidden($fixture)) {
+        $failures[] = "Permanent framework-boundary fixture must remain allowed: {$fixture}.";
+    }
+}
 $nativeSessionFunctions = [
     'session_abort',
     'session_cache_expire',
@@ -414,6 +487,7 @@ $requiredRepositoryFiles = [
     'RELEASING.md',
     '.ai/cache.md',
     '.ai/cli.md',
+    '.ai/consumer-profile.md',
     '.ai/crud.md',
     '.ai/database.md',
     '.ai/file-transfers.md',
@@ -425,6 +499,7 @@ $requiredRepositoryFiles = [
     '.ai/routing.md',
     '.ai/session.md',
     'docs/consumer-contract.md',
+    'docs/consumer-profile.md',
     'docs/caching.md',
     'docs/cli.md',
     'docs/cli/README.md',
@@ -499,6 +574,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/026-bounded-file-transfers.md',
     'docs/decisions/027-application-owned-explicit-sqlite-migrations.md',
     'docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md',
+    'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -551,19 +627,19 @@ $requiredRepositoryFiles = [
     'example/src/Observability/RequestSummary.php',
     'example/src/Observability/RequestSummarySink.php',
     'example/src/Observability/TerminalRequestCoordinator.php',
+    'example/src/Accounts/AccountId.php',
+    'example/src/Accounts/AuthenticateAccountRequest.php',
+    'example/src/Accounts/AuthenticatedPrincipal.php',
+    'example/src/Accounts/CrossTenant.php',
+    'example/src/Accounts/DenyAllAccountAuthentication.php',
+    'example/src/Accounts/DenyAllAccountAuthorization.php',
+    'example/src/Accounts/DenyAllAccountTenantResolution.php',
+    'example/src/Accounts/Forbidden.php',
+    'example/src/Accounts/ResolveAccountTenant.php',
+    'example/src/Accounts/ResolvedTenant.php',
+    'example/src/Accounts/Unauthenticated.php',
     'example/src/Documents/DocumentRoutes.php',
-    'example/src/Documents/AccountId.php',
-    'example/src/Documents/AuthenticateDocumentRequest.php',
-    'example/src/Documents/AuthenticatedPrincipal.php',
-    'example/src/Documents/CrossTenant.php',
-    'example/src/Documents/DenyAllDocumentAuthentication.php',
-    'example/src/Documents/DenyAllDocumentAuthorization.php',
-    'example/src/Documents/DenyAllDocumentTenantResolution.php',
     'example/src/Documents/DocumentKey.php',
-    'example/src/Documents/Forbidden.php',
-    'example/src/Documents/ResolveDocumentTenant.php',
-    'example/src/Documents/ResolvedTenant.php',
-    'example/src/Documents/Unauthenticated.php',
     'example/src/Documents/GetDocument/AuthorizeGetDocument.php',
     'example/src/Documents/GetDocument/DocumentDetails.php',
     'example/src/Documents/GetDocument/DocumentDetailsCacheReadOutcome.php',
@@ -581,6 +657,7 @@ $requiredRepositoryFiles = [
     'example/src/Documents/UpdateDocumentTitle/DocumentTitleUpdateOutcome.php',
     'example/src/Documents/UpdateDocumentTitle/RedisInvalidatingDocumentTitleUpdate.php',
     'example/src/Documents/UpdateDocumentTitle/RedisInvalidatingDocumentTitleUpdateResult.php',
+    'example/src/Users/CreateUser/AuthorizeCreateUser.php',
     'example/src/DocumentFiles/DocumentFileId.php',
     'example/src/DocumentFiles/DocumentFileNotFound.php',
     'example/src/DocumentFiles/DocumentFileRoutes.php',
@@ -684,6 +761,7 @@ $requiredRepositoryFiles = [
     'tests/cli.php',
     'tests/cli-migration-lock-holder.php',
     'tests/cache.php',
+    'tests/consumer-profile.php',
     'tests/redis-coordination.php',
     'tests/redis-schedule-lease-holder.php',
     'tests/job-worker-crash.php',
@@ -1083,7 +1161,7 @@ $requestPolicyArtifactMarkers = [
         '->http()',
     ],
     'example/src/ApplicationComposition.php' => [
-        'new DenyAllDocumentAuthentication()',
+        'new DenyAllAccountAuthentication()',
         'Unauthenticated::class => new Response(',
         'Forbidden::class => $forbiddenResponse',
         'CrossTenant::class => $forbiddenResponse',
@@ -1133,7 +1211,7 @@ $typedInputBoundaryArtifactMarkers = [
     '.ai/types.md' => [
         'No normalization is implicit.',
         'Native `json_decode` does not expose duplicate object keys and retains the last value',
-        'Consumer Contract v6 and Strict Profile v2 are current.',
+        'Consumer Contract v7 and Strict Profile v2 are current.',
     ],
     'docs/type-safety.md' => [
         'external mixed data -> named parser factory -> final readonly value -> native typed code',
@@ -1169,15 +1247,20 @@ $typedInputBoundaryArtifactMarkers = [
     ],
     'example/src/Users/CreateUser/CreateUserHandler.php' => [
         '$command = CreateUserCommand::fromJson($request->body);',
-        '$this->createUser->execute($command);',
+        '$this->createUser->execute($principal, $tenant, $accountId, $command);',
     ],
     'example/src/Users/CreateUser/CreateUserOperation.php' => [
         'interface CreateUserOperation',
-        'execute(CreateUserCommand $command): void',
+        'AuthenticatedPrincipal $principal,',
+        'ResolvedTenant $tenant,',
+        'AccountId $accountId,',
+        'CreateUserCommand $command,',
     ],
     'example/src/Users/CreateUser/TransactionalCreateUser.php' => [
         'final readonly class TransactionalCreateUser implements CreateUserOperation',
-        'public function execute(CreateUserCommand $command): void',
+        'four-statement transaction',
+        'INSERT INTO account_users (user_id, account_id)',
+        'INSERT INTO application_jobs (',
     ],
     'tests/run.php' => [
         'HTTP command parses one exact JSON object',
@@ -1188,7 +1271,7 @@ $typedInputBoundaryArtifactMarkers = [
         'mapped input failures emit no submitted data or log entry',
         '$expectedStatus = $case === \'exact_endpoint_overflow\' ? 413 : 400;',
         'example request boundary maps client failures before database work',
-        'transactional user creation rejects invalid input before database work',
+        'account-scoped user creation rejects invalid input before database work',
     ],
     'templates/application/.ai/architecture.md' => [
         '{{INPUT_BOUNDARY_ADOPTION_OR_NOT_APPLICABLE}}',
@@ -1250,7 +1333,7 @@ $finiteDataPathArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         'ADR 022 records one finite SQLite application data path',
-        'Consumer Contract version 6 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 7 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/guardrails.md' => [
         'The finite-data-path guard retains ADR 022',
@@ -1649,7 +1732,7 @@ $durableJobArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned durable jobs',
-        'Contract version 6 does not make that additional file a checker requirement',
+        'Contract version 7 does not make that additional file a checker requirement',
         'Delivery remains at least once.',
     ],
     'docs/decisions/README.md' => [
@@ -1748,7 +1831,7 @@ $durableJobArtifactMarkers = [
     'tests/run.php' => [
         "require __DIR__ . '/jobs.php';",
         'foreach (jobTests() as $name => $test)',
-        'transactional user creation publishes one job with three writes across dataset sizes',
+        'account-scoped user creation publishes one job with four writes across dataset sizes',
     ],
     'tests/jobs.php' => [
         'durable job publication rolls back business event and job together',
@@ -1835,13 +1918,13 @@ foreach (['src/Jobs', 'src/Queue'] as $forbiddenCoreDirectory) {
 $applicationChecker = file_get_contents($root . '/verification/ApplicationChecker.php');
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/jobs.md',")) {
-    $failures[] = 'Contract version 6 must not checker-require the optional durable-job context file.';
+    $failures[] = 'Contract version 7 must not checker-require the optional durable-job context file.';
 }
 
 $consumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveJobsContextIsRequired')) {
-    $failures[] = 'Contract version 6 must not reject an existing consumer only because .ai/jobs.md is absent.';
+    $failures[] = 'Contract version 7 must not reject an existing consumer only because .ai/jobs.md is absent.';
 }
 
 $durableJobPackageInventory = file_get_contents($root . '/tools/package-files.txt');
@@ -1916,8 +1999,8 @@ $applicationCliArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned CLI and scheduler',
-        'Contract-version-6-compatible optional application clarification, not a new checker requirement',
-        'Consumer Contract version 6 carries Strict Profile version 2 forward unchanged.',
+        'Contract-version-7-compatible optional application clarification, not a new checker requirement',
+        'Consumer Contract version 7 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
         'Status: accepted',
@@ -2131,11 +2214,11 @@ if (is_string($composerManifest) && str_contains($composerManifest, 'example/bin
 }
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/cli.md',")) {
-    $failures[] = 'Contract version 6 must not checker-require the optional application CLI context file.';
+    $failures[] = 'Contract version 7 must not checker-require the optional application CLI context file.';
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveCliContextIsRequired')) {
-    $failures[] = 'Contract version 6 must not reject an existing consumer only because .ai/cli.md is absent.';
+    $failures[] = 'Contract version 7 must not reject an existing consumer only because .ai/cli.md is absent.';
 }
 
 $applicationCliSourceFiles = [
@@ -2392,7 +2475,7 @@ $migrationArtifactMarkers = [
     ],
     '.ai/application-context.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
-        'Contract version 6 does not checker-require that new file',
+        'Contract version 7 does not checker-require that new file',
     ],
     '.ai/migrations.md' => [
         '# Migration authoring contract',
@@ -2410,6 +2493,8 @@ $migrationArtifactMarkers = [
         'PHPThis accepts one application-owned SQLite migration-ledger pattern and provides no core migration runtime.',
         'PHPStan must resolve every direct SQL argument to finite non-blank compile-time constants.',
         'The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`.',
+        '`0007_create_account_users`',
+        '23-statement budget and trace',
         'Do not expose it through HTTP configuration or compose the coordinator during request startup.',
     ],
     'docs/decisions/027-application-owned-explicit-sqlite-migrations.md' => [
@@ -2426,7 +2511,7 @@ $migrationArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned database migrations',
-        'Contract version 6 does not make that additional file a checker requirement',
+        'Contract version 7 does not make that additional file a checker requirement',
         'It never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
     ],
     'docs/decisions/README.md' => [
@@ -2452,6 +2537,8 @@ $migrationArtifactMarkers = [
         '# Example SQLite migration context',
         '`Example\\Migrations\\SqliteApplicationMigrations` coordinator',
         'The manifest cap is 512 migrations and the ordered position/identifier/checksum history read uses `LIMIT 513`',
+        '`0007_create_account_users`',
+        'QueryBudget(23)',
         'The migration lock path is the canonical database path plus `.migration.lock`.',
         '`tools/setup-example.php` delegates schema work to this exact coordinator',
     ],
@@ -2515,13 +2602,15 @@ $migrationArtifactMarkers = [
     ],
     'example/src/Migrations/SqliteApplicationMigrations.php' => [
         'final readonly class SqliteApplicationMigrations',
-        'private const int QUERY_LIMIT = 21;',
+        'private const int QUERY_LIMIT = 23;',
         "private const string USER_SCHEMA_IDENTIFIER = '0001_create_user_schema';",
         "private const string JOB_SCHEMA_IDENTIFIER = '0002_create_job_schema';",
         "private const string PREPARE_DOCUMENT_IDENTIFIER = '0003_prepare_document_schema';",
         "private const string DOCUMENT_CATEGORY_IDENTIFIER = '0004_add_document_category';",
         "private const string DOCUMENT_SORT_RANK_IDENTIFIER = '0005_add_document_sort_rank';",
         "private const string DOCUMENT_ACCESS_IDENTIFIER = '0006_create_document_access_schema';",
+        "private const string ACCOUNT_USERS_IDENTIFIER = '0007_create_account_users';",
+        'private const string CREATE_ACCOUNT_USERS_SQL',
         'new QueryBudget(self::QUERY_LIMIT)',
         'new QueryTrace(self::QUERY_LIMIT)',
         'options: [PDO::ATTR_TIMEOUT => 5]',
@@ -2545,6 +2634,7 @@ $migrationArtifactMarkers = [
     ],
     'tests/migrations.php' => [
         'database migrate applies an ordered inspectable ledger and reruns as a no-op',
+        'database migrate adds account users without conflating principal identities',
         'database migrate rejects checksum drift before pending migration work',
         'database migrate rejects an incompatible preexisting ledger schema',
         'database migrate reports exact redacted ledger and lock failures',
@@ -2631,11 +2721,11 @@ if (is_string($migrationPackageInventory)) {
 }
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/migrations.md',")) {
-    $failures[] = 'Contract version 6 must not checker-require the optional migration context file.';
+    $failures[] = 'Contract version 7 must not checker-require the optional migration context file.';
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveMigrationsContextIsRequired')) {
-    $failures[] = 'Contract version 6 must not reject an existing consumer only because .ai/migrations.md is absent.';
+    $failures[] = 'Contract version 7 must not reject an existing consumer only because .ai/migrations.md is absent.';
 }
 
 $runtimeSqlRoots = ['src', 'example', 'skeleton', 'templates/application', 'tools'];
@@ -2769,11 +2859,11 @@ $migrationCoordinator = file_get_contents(
 if (is_string($migrationCoordinator)) {
     foreach (
         [
-            'if (!$history->contains(' => 6,
-            '$connection->beginTransaction();' => 6,
-            '$ledger->record(' => 6,
-            '$connection->commit();' => 6,
-            '$connection->rollBack();' => 6,
+            'if (!$history->contains(' => 7,
+            '$connection->beginTransaction();' => 7,
+            '$ledger->record(' => 7,
+            '$connection->commit();' => 7,
+            '$connection->rollBack();' => 7,
         ] as $migrationCoordinatorMarker => $expectedCount
     ) {
         if (substr_count($migrationCoordinator, $migrationCoordinatorMarker) !== $expectedCount) {
@@ -2840,6 +2930,11 @@ if (is_string($migrationCoordinator)) {
             self::DOCUMENT_ACCESS_IDENTIFIER . "\0"
                 . self::CREATE_DOCUMENT_INDEX_SQL . "\0"
                 . self::CREATE_ACCOUNT_MEMBERSHIPS_SQL,
+            PHP,
+        '$connection->executeStatement(self::CREATE_ACCOUNT_USERS_SQL);',
+        <<<'PHP'
+            self::ACCOUNT_USERS_IDENTIFIER . "\0"
+                . self::CREATE_ACCOUNT_USERS_SQL,
             PHP,
     ];
 
@@ -3122,6 +3217,129 @@ if (!is_string($ciContents)) {
     $failures[] = 'CI must preserve SQLite, MySQL, and PostgreSQL PDO transport certification.';
 }
 
+$consumerProfileArtifactMarkers = [
+    '.ai/README.md' => [
+        'Review the Alpha 2 consumer profile or a capability exit',
+        '`.ai/consumer-profile.md`',
+    ],
+    '.ai/consumer-profile.md' => [
+        'framework behavior lives only in `src/` and the Consumer Contract',
+        'commit-visible job publication',
+        'Do not add an ORM, repository, binding helper',
+    ],
+    'docs/consumer-profile.md' => [
+        '`POST /accounts/{account_id:positive-int}/users`',
+        'four complete raw SQL statements',
+        'The checked-in HTTP composition remains deny-all.',
+        'Framework and skeleton Composer metadata use `~8.4.0`',
+    ],
+    'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => [
+        'Status: accepted',
+        '| #2 | bounded multiple typed routes, ADR 019 | `core` |',
+        '| #3 | request policy, ADR 020 | `application pattern` |',
+        '| #4 | typed input boundaries, ADR 021 | `application pattern` |',
+        '| #5 | finite data paths, ADR 022 | `application pattern` |',
+        '| #6 | terminal request summaries, ADR 023 | `application pattern` |',
+        '| #7 | SQLite durable jobs, ADR 024 | `application pattern` |',
+        '| #8 | explicit CLI and scheduler, ADR 025 | `application pattern` |',
+        '| #9 | bounded file transfers, ADR 026 | `core` |',
+        '| #10 | explicit SQLite migrations, ADR 027 | `application pattern` |',
+        '| #11 | Redis cache and schedule lease, ADR 028 | `application pattern` |',
+        'No capability has an overall `defer` exit.',
+        'The supported PHP runtime is exactly the PHP 8.4.x Composer range `~8.4.0`.',
+    ],
+    'docs/decisions/README.md' => [
+        '`029-alpha-2-consumer-profile-rollup.md`',
+    ],
+    'docs/evaluation.md' => [
+        'The Alpha 2 rollup is recorded in `docs/consumer-profile.md` and ADR 029.',
+    ],
+    'docs/knowledge-map.md' => [
+        'Assess the Alpha 2 consumer profile or a capability exit',
+    ],
+    'example/src/Users/UserRoutes.php' => [
+        'new Route(\'POST\', \'/accounts/{account_id:positive-int}/users\', $createUserHandler)',
+    ],
+    'example/src/Users/CreateUser/CreateUserHandler.php' => [
+        '$this->authenticate->authenticate($request)',
+        '$this->resolveTenant->resolve($principal, $accountId)',
+        '$this->authorize->authorizeCreate($principal, $tenant)',
+        '$command = CreateUserCommand::fromJson($request->body);',
+        '$this->createUser->execute($principal, $tenant, $accountId, $command);',
+    ],
+    'example/src/Users/CreateUser/TransactionalCreateUser.php' => [
+        'four-statement transaction',
+        'INSERT INTO users (name, email)',
+        'INSERT INTO account_users (user_id, account_id)',
+        'INSERT INTO user_events (user_id, event_type)',
+        'INSERT INTO application_jobs (',
+        '$this->connection->commit();',
+    ],
+    'tests/consumer-profile.php' => [
+        'consumer profile composes policy typed input transaction job and correlation',
+        'consumer profile denials and invalid input stop before protected SQL',
+        'consumer profile job and budget failures roll back every scoped write',
+        'consumer profile SQL rejects mismatched tenant and missing actor membership',
+        'new QuerySummarySource(\'create_user\', $budget, $queryTrace)',
+    ],
+    'tests/run.php' => [
+        "require __DIR__ . '/consumer-profile.php';",
+        'foreach (consumerProfileTests() as $name => $test)',
+    ],
+    'composer.json' => [
+        '"php": "~8.4.0"',
+    ],
+    'skeleton/composer.json' => [
+        '"php": "~8.4.0"',
+    ],
+    '.github/workflows/ci.yml' => [
+        "php: ['8.4']",
+        'php-version: ${{ matrix.php }}',
+    ],
+    'tools/package-files.txt' => [
+        'docs/consumer-profile.md',
+        'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
+    ],
+    'ROADMAP.md' => [
+        'ADR 029 records every Alpha 2 capability exit',
+    ],
+];
+
+foreach ($consumerProfileArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read consumer-profile artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Consumer-profile artifact marker is missing from {$relativePath}: {$marker}.";
+        }
+    }
+}
+
+foreach (['composer.json', 'skeleton/composer.json'] as $phpManifestPath) {
+    $manifestContents = file_get_contents($root . '/' . $phpManifestPath);
+    $manifest = is_string($manifestContents) ? json_decode($manifestContents, true) : null;
+    $requirements = is_array($manifest) ? ($manifest['require'] ?? null) : null;
+
+    if (!is_array($requirements) || ($requirements['php'] ?? null) !== '~8.4.0') {
+        $failures[] = "{$phpManifestPath} must support exactly PHP 8.4.x through ~8.4.0.";
+    }
+}
+
+if (is_string($packageInventory)) {
+    $packagePaths = preg_split('/\R/', $packageInventory);
+
+    foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
+        if (frameworkMechanismPathIsForbidden($packagePath)) {
+            $failures[] = "Permanent framework boundary forbids packaged runtime mechanism path: {$packagePath}.";
+        }
+    }
+}
+
 $fileTransferArtifactMarkers = [
     '.ai/README.md' => [
         'Add, change, or review file uploads or local-file responses',
@@ -3137,7 +3355,7 @@ $fileTransferArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional bounded file transfers',
         'Raw `$_FILES` never enters a handler.',
-        'Consumer Contract version 6 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 7 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/decisions/026-bounded-file-transfers.md' => [
         'Status: accepted',
@@ -3238,8 +3456,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 6$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 6.';
+        if (preg_match('/^Contract version: 7$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 7.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -3369,8 +3587,8 @@ if (is_file($applicationAgentInstructionsPath)) {
             $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
         }
 
-        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v6 and Strict Profile v2')) {
-            $failures[] = 'Application AGENTS.md must identify Consumer Contract v6 and Strict Profile v2.';
+        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v7 and Strict Profile v2')) {
+            $failures[] = 'Application AGENTS.md must identify Consumer Contract v7 and Strict Profile v2.';
         }
     }
 }
@@ -3386,9 +3604,9 @@ if (is_file($skeletonAgentInstructionsPath)) {
         !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
         || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
         || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
-        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v6 and Strict Profile v2')
+        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v7 and Strict Profile v2')
     ) {
-        $failures[] = 'Skeleton AGENTS.md must preserve Contract v6, the installed knowledge route, AI authoring role, and human decision boundary.';
+        $failures[] = 'Skeleton AGENTS.md must preserve Contract v7, the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 
@@ -3430,6 +3648,10 @@ foreach ($iterator as $file) {
 }
 
 foreach ($phpFiles as $relativePath => $path) {
+    if (frameworkMechanismPathIsForbidden($relativePath)) {
+        $failures[] = "Permanent framework boundary forbids core runtime mechanism path: {$relativePath}.";
+    }
+
     $contents = file_get_contents($path);
 
     if (!is_string($contents)) {

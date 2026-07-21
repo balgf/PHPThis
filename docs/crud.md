@@ -41,7 +41,7 @@ The feature route list explicitly constructs literal or bounded typed routes for
 
 - a Create command parses and validates the complete external input before typed use-case entry;
 - a Create handler owns HTTP media and parsing order, response encoding, and delegation through the concrete command;
-- the example-owned `CreateUserOperation` interface separates HTTP adaptation from the independently meaningful Create transaction and accepts only the final command;
+- the example-owned `CreateUserOperation` interface separates HTTP adaptation from the independently meaningful Create transaction and accepts only the authenticated principal, resolved tenant, requested account, and final command;
 - `TransactionalCreateUser` owns the visible transaction, direct `Connection` calls, write SQL, and expected database failure behavior;
 - a Get handler immediately wraps its validated positive-integer path parameter in `UserId`, owns one bounded item query and explicit missing behavior, and parses a concrete `UserDetails` projection;
 - a List page request parses its exact query-parameter contract before database work;
@@ -55,14 +55,15 @@ The protected document proof uses the same optional feature-first shape without 
 
 ```text
 src/
-  Documents/
-    DocumentRoutes.php
+  Accounts/
     AccountId.php
     AuthenticatedPrincipal.php
-    DocumentKey.php
     ResolvedTenant.php
-    AuthenticateDocumentRequest.php
-    ResolveDocumentTenant.php
+    AuthenticateAccountRequest.php
+    ResolveAccountTenant.php
+  Documents/
+    DocumentRoutes.php
+    DocumentKey.php
     GetDocument/
       GetDocumentHandler.php
       AuthorizeGetDocument.php
@@ -76,7 +77,7 @@ src/
       DocumentSummary.php
 ```
 
-Shared document boundary values carry only stable application meaning. Get and List retain action-specific authorization and data behavior. The List handler itself owns its eight complete raw SQLite statements and explicit parameter arrays; no repository, query object, generic paginator, or binding helper sits below it.
+Shared account boundary values carry only stable application meaning. Create, document Get, and document List retain action-specific authorization and data behavior. The List handler itself owns its eight complete raw SQLite statements and explicit parameter arrays; no repository, query object, generic paginator, or binding helper sits below it.
 
 ## Operation-specific decisions
 
@@ -96,12 +97,12 @@ Every database operation still uses complete engine-specific visible SQL and exp
 
 The framework repository's runnable example currently proves these structural and query-cost properties:
 
-- `POST /users`: a concrete command, a handler that admits only that command to `CreateUserOperation`, explicit `TransactionalCreateUser` SQL and transaction ownership, generic safe input failures, named SQL parameters, zero rejected-input operation calls, and a statement count that remains constant as pre-existing data grows;
+- `POST /accounts/{account_id:positive-int}/users`: a concrete command after explicit account authentication, tenant resolution, and action authorization; a handler that admits only typed authority and that command to `CreateUserOperation`; explicit `TransactionalCreateUser` SQL and transaction ownership; generic safe failures; named SQL parameters; zero rejected-input operation calls; and a four-statement count that remains constant as pre-existing data grows;
 - `GET /users`: a bounded List handler with a concrete page request and projections. Its example-owned contract accepts only optional canonical `after_user_id`, orders by ascending user ID, returns at most 50 users, probes one extra row, emits the last returned ID as the next canonical string or `null`, and keeps every page to one aggregate statement;
 - `GET /users/{user_id}`: the declared trailing positive-integer route, immediate `UserId` conversion, a concrete `UserDetails` projection, explicit missing response, and one bounded database statement.
 - `GET /accounts/{account_id}/documents`: a protected SQLite-only List handler with `order=rank_asc|rank_desc`, an exact versioned rank/key cursor, omitted, parsed `['']` empty-selection (produced by native PHP inputs such as `?categories[]=`), and one-to-three-category behavior, eight complete raw statements, explicit account/tenant/membership and page bindings, at most 50 returned rows from a 51-row lookahead, and one statement per non-empty page.
 
-This is not complete Create, List, or Get policy evidence. Create still lacks a named identity/conflict contract, and user Get does not establish authorization or tenant scope. Each List proves only its specific continuation contract; neither becomes a framework default or provides snapshot consistency during concurrent writes. The document tenant predicates and adversarial binding probes are not universal authorization or injection proof, and its application SQL is only SQLite-specific evidence under the current unpinned PDO SQLite runtime. Update and Delete have no executable reference. Every operation still requires the relevant application-owned decisions for pagination, concurrency, deletion, authorization, tenant scope, and conflict behavior; PHPThis does not invent those policies.
+This is not complete Create, List, or Get policy evidence. Account-scoped Create now proves visible policy order and tenant-bound mutation but still lacks a named identity/conflict contract, and user Get does not establish authorization or tenant scope. Each List proves only its specific continuation contract; neither becomes a framework default or provides snapshot consistency during concurrent writes. The tenant predicates and adversarial binding probes are not universal authorization or injection proof, and the application SQL is only SQLite-specific evidence under the current unpinned PDO SQLite runtime. Update and Delete have no executable reference. Every operation still requires the relevant application-owned decisions for pagination, concurrency, deletion, authorization, tenant scope, and conflict behavior; PHPThis does not invent those policies.
 
 ## Selecting an alternate structure
 

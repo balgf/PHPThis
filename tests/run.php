@@ -2,15 +2,21 @@
 
 declare(strict_types=1);
 
-use Example\Documents\DenyAllDocumentAuthentication;
-use Example\Documents\DenyAllDocumentAuthorization;
-use Example\Documents\DenyAllDocumentTenantResolution;
+use Example\Accounts\AccountId;
+use Example\Accounts\AuthenticateAccountRequest;
+use Example\Accounts\AuthenticatedPrincipal;
+use Example\Accounts\DenyAllAccountAuthentication;
+use Example\Accounts\DenyAllAccountAuthorization;
+use Example\Accounts\DenyAllAccountTenantResolution;
+use Example\Accounts\ResolveAccountTenant;
+use Example\Accounts\ResolvedTenant;
 use Example\Documents\GetDocument\SelectAuthorizedDocument;
 use Example\DocumentFiles\LocalDocumentFiles;
 use Example\Routes;
 use Example\Users\CreateUser\CreateUserCommand;
 use Example\Users\CreateUser\CreateUserHandler;
 use Example\Users\CreateUser\CreateUserOperation;
+use Example\Users\CreateUser\AuthorizeCreateUser;
 use Example\Users\CreateUser\TransactionalCreateUser;
 use Example\Users\GetUser\GetUserHandler;
 use Example\Users\GetUser\UserDetails;
@@ -51,6 +57,31 @@ require __DIR__ . '/migrations.php';
 require __DIR__ . '/document-files.php';
 require __DIR__ . '/cache.php';
 require __DIR__ . '/redis-coordination.php';
+require __DIR__ . '/consumer-profile.php';
+
+final readonly class RunTestAllowCreateUserPolicy implements
+    AuthenticateAccountRequest,
+    ResolveAccountTenant,
+    AuthorizeCreateUser
+{
+    public function authenticate(Request $request): AuthenticatedPrincipal
+    {
+        return AuthenticatedPrincipal::fromPositiveInteger(7);
+    }
+
+    public function resolve(
+        AuthenticatedPrincipal $principal,
+        AccountId $accountId,
+    ): ResolvedTenant {
+        return ResolvedTenant::forAccount($accountId);
+    }
+
+    public function authorizeCreate(
+        AuthenticatedPrincipal $principal,
+        ResolvedTenant $tenant,
+    ): void {
+    }
+}
 
 $tests = requestPolicyTests();
 
@@ -82,19 +113,24 @@ foreach (redisCoordinationTests() as $name => $test) {
     $tests[$name] = $test;
 }
 
+foreach (consumerProfileTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
 $tests['example composes explicit route modules'] = static function (): void {
     $application = new Application(new Router(Routes::create(
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
-        Connection::connect('sqlite::memory:', new QueryBudget(3), new QueryTrace(3)),
+        Connection::connect('sqlite::memory:', new QueryBudget(4), new QueryTrace(4)),
         new SelectAuthorizedDocument(
             Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         ),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
-        new DenyAllDocumentAuthentication(),
-        new DenyAllDocumentTenantResolution(),
-        new DenyAllDocumentAuthorization(),
-        new DenyAllDocumentAuthorization(),
+        new DenyAllAccountAuthentication(),
+        new DenyAllAccountTenantResolution(),
+        new DenyAllAccountAuthorization(),
+        new DenyAllAccountAuthorization(),
+        new DenyAllAccountAuthorization(),
         new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
     $response = $application->handle(new Request('GET', '/health'));
@@ -255,6 +291,7 @@ $tests['example setup creates and reseeds a fresh database idempotently'] = stat
                       AND documents.document_key = :seed_document_key
                 ) AS seed_document_count,
                 (SELECT COUNT(*) FROM account_memberships) AS membership_count,
+                (SELECT COUNT(*) FROM account_users) AS account_user_count,
                 (SELECT COUNT(*) FROM users) AS user_count,
                 (SELECT COUNT(*) FROM user_events) AS event_count
             SQL,
@@ -317,6 +354,7 @@ $tests['example setup creates and reseeds a fresh database idempotently'] = stat
             'document_count' => 1,
             'seed_document_count' => 1,
             'membership_count' => 1,
+            'account_user_count' => 0,
             'user_count' => 2,
             'event_count' => 1,
         ]
@@ -701,7 +739,7 @@ $tests['unknown failure boundary returns one generic response without logging'] 
         $response->status !== 500
         || $response->headers !== [
             'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'no-store',
+            'Cache-Control' => 'private, no-store',
         ]
         || $response->body !== "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n"
     ) {
@@ -1611,11 +1649,11 @@ $tests['list users rejects invalid continuation before database work'] = static 
             $response->status !== 400
             || $response->headers !== [
                 'Content-Type' => 'application/json; charset=utf-8',
-                'Cache-Control' => 'no-store',
+                'Cache-Control' => 'private, no-store',
             ]
             || $response->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
         ) {
-            throw new RuntimeException('Expected invalid list continuation to map to the public 400 response.');
+            throw new RuntimeException('Expected invalid list continuation to map to the conservative 400 response.');
         }
     }
 
@@ -1723,27 +1761,32 @@ $tests['HTTP handler invokes only its typed create-user operation'] = static fun
 
         public ?CreateUserCommand $received = null;
 
-        public function execute(CreateUserCommand $command): void
-        {
+        public function execute(
+            AuthenticatedPrincipal $principal,
+            ResolvedTenant $tenant,
+            AccountId $accountId,
+            CreateUserCommand $command,
+        ): void {
             ++$this->calls;
             $this->received = $command;
         }
     };
-    $handler = new CreateUserHandler($operation);
+    $handler = createUserTestHandler($operation);
     $response = $handler->handle(new Request(
         'POST',
-        '/users',
+        '/accounts/42/users',
         body: '{"name":"Ada Lovelace","email":"ada@example.com"}',
         headers: ['content-type' => 'application/json'],
+        pathParameters: PathParameters::onePositiveInteger('account_id', 42),
     ));
 
     if (
         $response->status !== 201
         || $response->headers !== [
             'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'no-store',
+            'Cache-Control' => 'private, no-store',
         ]
-        || $response->body !== "{\"user\":{\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
+        || $response->body !== "{\"user\":{\"account_id\":42,\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
         || $operation->calls !== 1
         || !$operation->received instanceof CreateUserCommand
         || $operation->received->name !== 'Ada Lovelace'
@@ -1759,15 +1802,23 @@ $tests['HTTP request boundary accepts the exact endpoint byte limit'] = static f
 
         public ?CreateUserCommand $received = null;
 
-        public function execute(CreateUserCommand $command): void
-        {
+        public function execute(
+            AuthenticatedPrincipal $principal,
+            ResolvedTenant $tenant,
+            AccountId $accountId,
+            CreateUserCommand $command,
+        ): void {
             ++$this->calls;
             $this->received = $command;
         }
     };
     $body = exactCreateUserBody(2_048);
     $application = new Application(new Router([
-        new Route('POST', '/users', new CreateUserHandler($operation)),
+        new Route(
+            'POST',
+            '/accounts/{account_id:positive-int}/users',
+            createUserTestHandler($operation),
+        ),
     ]));
     $response = (new RequestBoundary(
         requestReaderForBody($body, 8_192),
@@ -1776,7 +1827,7 @@ $tests['HTTP request boundary accepts the exact endpoint byte limit'] = static f
     ))->handle(
         [
             'REQUEST_METHOD' => 'POST',
-            'REQUEST_URI' => '/users',
+            'REQUEST_URI' => '/accounts/42/users',
             'CONTENT_TYPE' => 'application/json',
             'CONTENT_LENGTH' => (string) strlen($body),
         ],
@@ -1799,20 +1850,25 @@ $tests['HTTP handler rejects invalid commands before use-case invocation'] = sta
     $operation = new class implements CreateUserOperation {
         public int $calls = 0;
 
-        public function execute(CreateUserCommand $command): void
-        {
+        public function execute(
+            AuthenticatedPrincipal $principal,
+            ResolvedTenant $tenant,
+            AccountId $accountId,
+            CreateUserCommand $command,
+        ): void {
             ++$this->calls;
         }
     };
-    $handler = new CreateUserHandler($operation);
+    $handler = createUserTestHandler($operation);
 
     foreach (invalidCreateUserBodies() as $case => $body) {
         try {
             $handler->handle(new Request(
                 'POST',
-                '/users',
+                '/accounts/42/users',
                 body: $body,
                 headers: ['content-type' => 'application/json'],
+                pathParameters: PathParameters::onePositiveInteger('account_id', 42),
             ));
         } catch (InvalidRequest | RequestBodyTooLarge) {
             continue;
@@ -1833,9 +1889,10 @@ $tests['example request boundary maps client failures before database work'] = s
     $databasePath = createUserDatabaseFixture('request-client-failures', 0, false);
     $readBudget = new QueryBudget(1);
     $getBudget = new QueryBudget(1);
-    $writeBudget = new QueryBudget(3);
-    $writeTrace = new QueryTrace(3);
+    $writeBudget = new QueryBudget(4);
+    $writeTrace = new QueryTrace(4);
     $dsn = 'sqlite:' . $databasePath;
+    $createPolicy = new RunTestAllowCreateUserPolicy();
     $application = new Application(new Router(Routes::create(
         Connection::connect($dsn, $readBudget, new QueryTrace(1)),
         Connection::connect($dsn, $getBudget, new QueryTrace(1)),
@@ -1844,10 +1901,11 @@ $tests['example request boundary maps client failures before database work'] = s
             Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
         ),
         Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
-        new DenyAllDocumentAuthentication(),
-        new DenyAllDocumentTenantResolution(),
-        new DenyAllDocumentAuthorization(),
-        new DenyAllDocumentAuthorization(),
+        $createPolicy,
+        $createPolicy,
+        $createPolicy,
+        new DenyAllAccountAuthorization(),
+        new DenyAllAccountAuthorization(),
         new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
     $registry = exampleErrorResponseRegistry();
@@ -1861,7 +1919,7 @@ $tests['example request boundary maps client failures before database work'] = s
         ))->handle(
             [
                 'REQUEST_METHOD' => 'POST',
-                'REQUEST_URI' => '/users',
+                'REQUEST_URI' => '/accounts/42/users',
                 'CONTENT_TYPE' => 'application/json',
                 'CONTENT_LENGTH' => (string) strlen($invalidBody),
             ],
@@ -1877,7 +1935,7 @@ $tests['example request boundary maps client failures before database work'] = s
     ))->handle(
         [
             'REQUEST_METHOD' => 'POST',
-            'REQUEST_URI' => '/users',
+            'REQUEST_URI' => '/accounts/42/users',
             'CONTENT_LENGTH' => (string) strlen($validBody),
         ],
         [],
@@ -1889,7 +1947,7 @@ $tests['example request boundary maps client failures before database work'] = s
     ))->handle(
         [
             'REQUEST_METHOD' => 'POST',
-            'REQUEST_URI' => '/users',
+            'REQUEST_URI' => '/accounts/42/users',
             'CONTENT_TYPE' => 'application/json',
             'CONTENT_LENGTH' => '8193',
         ],
@@ -1898,7 +1956,7 @@ $tests['example request boundary maps client failures before database work'] = s
 
     $expectedHeaders = [
         'Content-Type' => 'application/json; charset=utf-8',
-        'Cache-Control' => 'no-store',
+        'Cache-Control' => 'private, no-store',
     ];
     $expectedInvalidBody = "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n";
     $expectedTooLargeBody = "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n";
@@ -1949,15 +2007,23 @@ $tests['mapped input failures emit no submitted data or log entry'] = static fun
     $operation = new class implements CreateUserOperation {
         public int $calls = 0;
 
-        public function execute(CreateUserCommand $command): void
-        {
+        public function execute(
+            AuthenticatedPrincipal $principal,
+            ResolvedTenant $tenant,
+            AccountId $accountId,
+            CreateUserCommand $command,
+        ): void {
             ++$this->calls;
         }
     };
     $secret = createUserSecretProbe();
     $body = '{"name":"Ada","email":"ada@example.com","api_token":"' . $secret . '"}';
     $application = new Application(new Router([
-        new Route('POST', '/users', new CreateUserHandler($operation)),
+        new Route(
+            'POST',
+            '/accounts/{account_id:positive-int}/users',
+            createUserTestHandler($operation),
+        ),
     ]));
     $previousErrorLog = ini_get('error_log');
 
@@ -1973,7 +2039,7 @@ $tests['mapped input failures emit no submitted data or log entry'] = static fun
         ))->handle(
             [
                 'REQUEST_METHOD' => 'POST',
-                'REQUEST_URI' => '/users',
+                'REQUEST_URI' => '/accounts/42/users',
                 'CONTENT_TYPE' => 'application/json',
                 'CONTENT_LENGTH' => (string) strlen($body),
             ],
@@ -1994,7 +2060,7 @@ $tests['mapped input failures emit no submitted data or log entry'] = static fun
         || $response->status !== 400
         || $response->headers !== [
             'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'no-store',
+            'Cache-Control' => 'private, no-store',
         ]
         || $response->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
         || str_contains($response->body, $secret)
@@ -2010,9 +2076,10 @@ $tests['user routes execute bounded reads and one transactional write end to end
     $readTrace = new QueryTrace(1);
     $getBudget = new QueryBudget(1);
     $getTrace = new QueryTrace(1);
-    $writeBudget = new QueryBudget(3);
-    $writeTrace = new QueryTrace(3);
+    $writeBudget = new QueryBudget(4);
+    $writeTrace = new QueryTrace(4);
     $dsn = 'sqlite:' . $databasePath;
+    $createPolicy = new RunTestAllowCreateUserPolicy();
     $application = new Application(new Router(Routes::create(
         Connection::connect($dsn, $readBudget, $readTrace),
         Connection::connect($dsn, $getBudget, $getTrace),
@@ -2021,16 +2088,17 @@ $tests['user routes execute bounded reads and one transactional write end to end
             Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
         ),
         Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
-        new DenyAllDocumentAuthentication(),
-        new DenyAllDocumentTenantResolution(),
-        new DenyAllDocumentAuthorization(),
-        new DenyAllDocumentAuthorization(),
+        $createPolicy,
+        $createPolicy,
+        $createPolicy,
+        new DenyAllAccountAuthorization(),
+        new DenyAllAccountAuthorization(),
         new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
 
     $created = $application->handle(new Request(
         'POST',
-        '/users',
+        '/accounts/42/users',
         body: '{"name":"Ada Lovelace","email":"ada@example.com"}',
         headers: ['content-type' => 'application/json'],
     ));
@@ -2041,19 +2109,22 @@ $tests['user routes execute bounded reads and one transactional write end to end
         $created->status !== 201
         || $created->headers !== [
             'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'private, no-store',
+        ]
+        || $created->body !== "{\"user\":{\"account_id\":42,\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
+        || $got->status !== 200
+        || $got->headers !== [
+            'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'no-store',
         ]
-        || $created->body !== "{\"user\":{\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
-        || $got->status !== 200
-        || $got->headers !== $created->headers
         || $got->body !== "{\"user\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n"
         || $listed->status !== 200
-        || $listed->headers !== $created->headers
+        || $listed->headers !== $got->headers
         || $listed->body !== "{\"users\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"next_after_user_id\":null}\n"
-        || $writeBudget->used() !== 3
+        || $writeBudget->used() !== 4
         || $readBudget->used() !== 1
         || $getBudget->used() !== 1
-        || $writeTrace->snapshot()['statements'] !== 3
+        || $writeTrace->snapshot()['statements'] !== 4
         || $readTrace->snapshot()['statements'] !== 1
         || $getTrace->snapshot()['statements'] !== 1
     ) {
@@ -2292,19 +2363,20 @@ $tests['user item route separates missing records from malformed identifiers'] =
     }
 };
 
-$tests['transactional user creation publishes one job with three writes across dataset sizes'] = static function (): void {
+$tests['account-scoped user creation publishes one job with four writes across dataset sizes'] = static function (): void {
     $empty = runCreateUserScenario('write-empty', 0);
     $large = runCreateUserScenario('write-large', 500);
 
     if (
         $empty !== $large
         || $empty['status'] !== 201
-        || $empty['body'] !== "{\"user\":{\"name\":\"New User\",\"email\":\"new@example.com\"}}\n"
-        || $empty['used'] !== 3
-        || $empty['statements'] !== 3
+        || $empty['body'] !== "{\"user\":{\"account_id\":42,\"name\":\"New User\",\"email\":\"new@example.com\"}}\n"
+        || $empty['used'] !== 4
+        || $empty['statements'] !== 4
         || $empty['repeated_fingerprints'] !== 0
         || $empty['maximum_executions'] !== 1
         || $empty['created_users'] !== 1
+        || $empty['created_account_users'] !== 1
         || $empty['created_events'] !== 1
         || $empty['published_jobs'] !== 1
     ) {
@@ -2312,20 +2384,80 @@ $tests['transactional user creation publishes one job with three writes across d
     }
 };
 
-$tests['transactional user creation rolls back when its budget rejects the event write'] = static function (): void {
+$tests['account-scoped user creation keeps principal and user identities separate'] = static function (): void {
+    $databasePath = createUserDatabaseFixture('write-principal-user-separation', 0, false);
+    $budget = new QueryBudget(32);
+    $trace = new QueryTrace(4);
+    $operation = new TransactionalCreateUser(
+        Connection::connect('sqlite:' . $databasePath, $budget, $trace),
+    );
+    $accountId = AccountId::fromPositiveInteger(42);
+
+    foreach (range(1, 8) as $number) {
+        $operation->execute(
+            AuthenticatedPrincipal::fromPositiveInteger(7),
+            ResolvedTenant::forAccount($accountId),
+            $accountId,
+            CreateUserCommand::fromJson(json_encode(
+                [
+                    'name' => 'Created User ' . $number,
+                    'email' => 'created' . $number . '@example.com',
+                ],
+                JSON_THROW_ON_ERROR,
+            )),
+        );
+    }
+
+    $verification = Connection::connect(
+        'sqlite:' . $databasePath,
+        new QueryBudget(1),
+        new QueryTrace(1),
+    )->selectOneRow(
+        <<<'SQL'
+            SELECT
+                (SELECT COUNT(*) FROM users) AS user_count,
+                (SELECT COUNT(*) FROM account_users) AS account_user_count,
+                (SELECT COUNT(*) FROM account_memberships) AS actor_membership_count,
+                (SELECT COUNT(*) FROM user_events) AS event_count,
+                (SELECT COUNT(*) FROM application_jobs) AS job_count
+            SQL,
+    );
+    $summary = $trace->snapshot();
+
+    if (
+        $verification !== [
+            'user_count' => 8,
+            'account_user_count' => 8,
+            'actor_membership_count' => 1,
+            'event_count' => 8,
+            'job_count' => 8,
+        ]
+        || $budget->used() !== 32
+        || $summary['statements'] !== 32
+        || $summary['tracked_fingerprints'] !== 4
+        || $summary['repeated_fingerprints'] !== 4
+        || $summary['maximum_executions_per_fingerprint'] !== 8
+        || $summary['failures'] !== 0
+    ) {
+        throw new RuntimeException('Principal membership must never collide with created user identity.');
+    }
+};
+
+$tests['account-scoped user creation rolls back when its budget rejects account relation'] = static function (): void {
     $databasePath = createUserDatabaseFixture('write-rollback', 0, false);
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
-    $handler = new CreateUserHandler(new TransactionalCreateUser($connection));
+    $handler = createUserTestHandler(new TransactionalCreateUser($connection));
     $budgetFailed = false;
 
     try {
         $handler->handle(new Request(
             'POST',
-            '/users',
+            '/accounts/42/users',
             body: '{"name":"Ada","email":"ada@example.com"}',
             headers: ['content-type' => 'application/json'],
+            pathParameters: PathParameters::onePositiveInteger('account_id', 42),
         ));
     } catch (QueryBudgetExceeded) {
         $budgetFailed = true;
@@ -2333,11 +2465,14 @@ $tests['transactional user creation rolls back when its budget rejects the event
 
     $verification = Connection::connect(
         'sqlite:' . $databasePath,
-        new QueryBudget(2),
-        new QueryTrace(2),
+        new QueryBudget(3),
+        new QueryTrace(3),
     );
     $userCount = $verification->selectOneRow('SELECT COUNT(users.id) AS row_count FROM users');
     $eventCount = $verification->selectOneRow('SELECT COUNT(user_events.id) AS row_count FROM user_events');
+    $accountUserCount = $verification->selectOneRow(
+        'SELECT COUNT(account_users.user_id) AS row_count FROM account_users',
+    );
 
     if (
         !$budgetFailed
@@ -2346,12 +2481,13 @@ $tests['transactional user creation rolls back when its budget rejects the event
         || $trace->snapshot()['statements'] !== 1
         || ($userCount['row_count'] ?? null) !== 0
         || ($eventCount['row_count'] ?? null) !== 0
+        || ($accountUserCount['row_count'] ?? null) !== 0
     ) {
         throw new RuntimeException('Expected the first write to roll back after the second exceeds its budget.');
     }
 };
 
-$tests['transactional user creation rolls back when the event statement fails'] = static function (): void {
+$tests['account-scoped user creation rolls back when the event statement fails'] = static function (): void {
     $databasePath = createUserDatabaseFixture('write-statement-failure', 0, false);
     $schemaConnection = Connection::connect(
         'sqlite:' . $databasePath,
@@ -2372,15 +2508,16 @@ $tests['transactional user creation rolls back when the event statement fails'] 
     $budget = new QueryBudget(3);
     $trace = new QueryTrace(3);
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
-    $handler = new CreateUserHandler(new TransactionalCreateUser($connection));
+    $handler = createUserTestHandler(new TransactionalCreateUser($connection));
     $statementFailed = false;
 
     try {
         $handler->handle(new Request(
             'POST',
-            '/users',
+            '/accounts/42/users',
             body: '{"name":"Ada","email":"ada@example.com"}',
             headers: ['content-type' => 'application/json'],
+            pathParameters: PathParameters::onePositiveInteger('account_id', 42),
         ));
     } catch (PDOException) {
         $statementFailed = true;
@@ -2388,40 +2525,45 @@ $tests['transactional user creation rolls back when the event statement fails'] 
 
     $verification = Connection::connect(
         'sqlite:' . $databasePath,
-        new QueryBudget(2),
-        new QueryTrace(2),
+        new QueryBudget(3),
+        new QueryTrace(3),
     );
     $userCount = $verification->selectOneRow('SELECT COUNT(users.id) AS row_count FROM users');
     $eventCount = $verification->selectOneRow('SELECT COUNT(user_events.id) AS row_count FROM user_events');
+    $accountUserCount = $verification->selectOneRow(
+        'SELECT COUNT(account_users.user_id) AS row_count FROM account_users',
+    );
     $summary = $trace->snapshot();
 
     if (
         !$statementFailed
         || $connection->inTransaction()
-        || $budget->used() !== 2
-        || $summary['statements'] !== 2
+        || $budget->used() !== 3
+        || $summary['statements'] !== 3
         || $summary['failures'] !== 1
         || ($userCount['row_count'] ?? null) !== 0
         || ($eventCount['row_count'] ?? null) !== 0
+        || ($accountUserCount['row_count'] ?? null) !== 0
     ) {
         throw new RuntimeException('Expected an executed event failure to roll back the user insert.');
     }
 };
 
-$tests['transactional user creation rejects invalid input before database work'] = static function (): void {
+$tests['account-scoped user creation rejects invalid input before database work'] = static function (): void {
     $databasePath = createUserDatabaseFixture('write-invalid', 0, false);
     $budget = new QueryBudget(2);
     $trace = new QueryTrace(2);
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
-    $handler = new CreateUserHandler(new TransactionalCreateUser($connection));
+    $handler = createUserTestHandler(new TransactionalCreateUser($connection));
 
     foreach (invalidCreateUserBodies() as $case => $body) {
         try {
             $handler->handle(new Request(
                 'POST',
-                '/users',
+                '/accounts/42/users',
                 body: $body,
                 headers: ['content-type' => 'application/json'],
+                pathParameters: PathParameters::onePositiveInteger('account_id', 42),
             ));
         } catch (InvalidRequest | RequestBodyTooLarge) {
             continue;
@@ -2686,11 +2828,18 @@ function requestReaderForBody(string $body, int $maximumBodyBytes): RequestReade
     return new RequestReader($maximumBodyBytes, $path);
 }
 
+function createUserTestHandler(CreateUserOperation $operation): CreateUserHandler
+{
+    $policy = new RunTestAllowCreateUserPolicy();
+
+    return new CreateUserHandler($policy, $policy, $policy, $operation);
+}
+
 function exampleErrorResponseRegistry(): ErrorResponseRegistry
 {
     $headers = [
         'Content-Type' => 'application/json; charset=utf-8',
-        'Cache-Control' => 'no-store',
+        'Cache-Control' => 'private, no-store',
     ];
 
     return new ErrorResponseRegistry([
@@ -2881,28 +3030,29 @@ function invalidCreateUserBodies(): array
 }
 
 /**
- * @return array{status: int, body: string, used: int, statements: int, repeated_fingerprints: int, maximum_executions: int, created_users: int, created_events: int, published_jobs: int}
+ * @return array{status: int, body: string, used: int, statements: int, repeated_fingerprints: int, maximum_executions: int, created_users: int, created_account_users: int, created_events: int, published_jobs: int}
  */
 function runCreateUserScenario(string $name, int $preexistingUsers): array
 {
     $databasePath = createUserDatabaseFixture($name, $preexistingUsers, $preexistingUsers > 0);
-    $budget = new QueryBudget(3);
-    $trace = new QueryTrace(3);
-    $handler = new CreateUserHandler(
+    $budget = new QueryBudget(4);
+    $trace = new QueryTrace(4);
+    $handler = createUserTestHandler(
         new TransactionalCreateUser(
             Connection::connect('sqlite:' . $databasePath, $budget, $trace),
         ),
     );
     $response = $handler->handle(new Request(
         'POST',
-        '/users',
+        '/accounts/42/users',
         body: '{"name":"New User","email":"new@example.com"}',
         headers: ['content-type' => 'application/json'],
+        pathParameters: PathParameters::onePositiveInteger('account_id', 42),
     ));
     $verification = Connection::connect(
         'sqlite:' . $databasePath,
-        new QueryBudget(3),
-        new QueryTrace(3),
+        new QueryBudget(4),
+        new QueryTrace(4),
     );
     $userCount = $verification->selectOneRow(
         'SELECT COUNT(users.id) AS row_count FROM users WHERE users.email = :email',
@@ -2918,6 +3068,16 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
             SQL,
         ['email' => 'new@example.com', 'event_type' => 'user.created'],
     );
+    $accountUserCount = $verification->selectOneRow(
+        <<<'SQL'
+            SELECT COUNT(account_users.user_id) AS row_count
+            FROM account_users
+            INNER JOIN users ON users.id = account_users.user_id
+            WHERE users.email = :email
+              AND account_users.account_id = :account_id
+            SQL,
+        ['email' => 'new@example.com', 'account_id' => 42],
+    );
     $jobCount = $verification->selectOneRow(
         <<<'SQL'
             SELECT COUNT(application_jobs.job_id) AS row_count
@@ -2927,10 +3087,16 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
         ['status' => 'available'],
     );
     $createdUsers = $userCount['row_count'] ?? null;
+    $createdAccountUsers = $accountUserCount['row_count'] ?? null;
     $createdEvents = $eventCount['row_count'] ?? null;
     $publishedJobs = $jobCount['row_count'] ?? null;
 
-    if (!is_int($createdUsers) || !is_int($createdEvents) || !is_int($publishedJobs)) {
+    if (
+        !is_int($createdUsers)
+        || !is_int($createdAccountUsers)
+        || !is_int($createdEvents)
+        || !is_int($publishedJobs)
+    ) {
         throw new RuntimeException('Expected SQLite count results to be integers.');
     }
 
@@ -2943,6 +3109,7 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
         'repeated_fingerprints' => $summary['repeated_fingerprints'],
         'maximum_executions' => $summary['maximum_executions_per_fingerprint'],
         'created_users' => $createdUsers,
+        'created_account_users' => $createdAccountUsers,
         'created_events' => $createdEvents,
         'published_jobs' => $publishedJobs,
     ];
@@ -2968,8 +3135,8 @@ function createUserDatabaseFixture(string $name, int $userCount, bool $seedEvent
 
     $connection = Connection::connect(
         'sqlite:' . $databasePath,
-        new QueryBudget(9),
-        new QueryTrace(9),
+        new QueryBudget(12),
+        new QueryTrace(12),
     );
     $connection->executeStatement(
         <<<'SQL'
@@ -3103,6 +3270,29 @@ function createUserDatabaseFixture(string $name, int $userCount, bool $seedEvent
                     CHECK (length(CAST(recipient_email AS BLOB)) BETWEEN 3 AND 254),
                 created_at INTEGER NOT NULL CHECK (created_at >= 0)
             ) STRICT
+        SQL,
+    );
+    $connection->executeStatement(
+        <<<'SQL'
+            CREATE TABLE account_memberships (
+                principal_id INTEGER NOT NULL,
+                account_id INTEGER NOT NULL,
+                PRIMARY KEY (principal_id, account_id)
+            )
+            SQL,
+    );
+    $connection->executeStatement(
+        'INSERT INTO account_memberships (principal_id, account_id) VALUES (:principal_id, :account_id)',
+        ['principal_id' => 7, 'account_id' => 42],
+    );
+    $connection->executeStatement(
+        <<<'SQL'
+            CREATE TABLE account_users (
+                user_id INTEGER NOT NULL,
+                account_id INTEGER NOT NULL,
+                PRIMARY KEY (user_id, account_id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
             SQL,
     );
 

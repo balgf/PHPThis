@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use Example\Documents\DocumentRoutes;
-use Example\Documents\AccountId;
-use Example\Documents\AuthenticateDocumentRequest;
-use Example\Documents\AuthenticatedPrincipal;
-use Example\Documents\CrossTenant;
+use Example\Accounts\AccountId;
+use Example\Accounts\AuthenticateAccountRequest;
+use Example\Accounts\AuthenticatedPrincipal;
+use Example\Accounts\CrossTenant;
 use Example\Documents\DocumentKey;
-use Example\Documents\Forbidden;
+use Example\Accounts\Forbidden;
 use Example\Documents\GetDocument\AuthorizeGetDocument;
 use Example\Documents\GetDocument\DocumentDetails;
 use Example\Documents\GetDocument\RetrieveAuthorizedDocument;
@@ -17,9 +17,9 @@ use Example\Documents\ListDocuments\AuthorizeListDocuments;
 use Example\Documents\ListDocuments\DocumentSummary;
 use Example\Documents\ListDocuments\ListDocumentsHandler;
 use Example\Documents\ListDocuments\ListDocumentsPageRequest;
-use Example\Documents\ResolveDocumentTenant;
-use Example\Documents\ResolvedTenant;
-use Example\Documents\Unauthenticated;
+use Example\Accounts\ResolveAccountTenant;
+use Example\Accounts\ResolvedTenant;
+use Example\Accounts\Unauthenticated;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -981,7 +981,7 @@ function requestPolicyTests(): array
                 || $response->status !== 500
                 || $response->headers !== [
                     'Content-Type' => 'application/json; charset=utf-8',
-                    'Cache-Control' => 'no-store',
+                    'Cache-Control' => 'private, no-store',
                 ]
                 || $response->body
                     !== "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n"
@@ -1004,7 +1004,7 @@ function requestPolicyApplication(
     RetrieveAuthorizedDocument $retrieve,
 ): Application {
     $principal = AuthenticatedPrincipal::fromPositiveInteger(7);
-    $authenticate = new class ($trace, $principal, $failureStage) implements AuthenticateDocumentRequest {
+    $authenticate = new class ($trace, $principal, $failureStage) implements AuthenticateAccountRequest {
         public function __construct(
             private RequestPolicyTestTrace $trace,
             private AuthenticatedPrincipal $principal,
@@ -1027,7 +1027,7 @@ function requestPolicyApplication(
             return $this->principal;
         }
     };
-    $resolveTenant = new class ($trace, $failureStage) implements ResolveDocumentTenant {
+    $resolveTenant = new class ($trace, $failureStage) implements ResolveAccountTenant {
         public function __construct(
             private RequestPolicyTestTrace $trace,
             private ?string $failureStage,
@@ -1118,7 +1118,7 @@ function requestPolicyListApplication(
     $resolvedAccount = $resolvedAccountId === null
         ? null
         : AccountId::fromPositiveInteger($resolvedAccountId);
-    $authenticate = new class ($trace, $principal, $failureStage) implements AuthenticateDocumentRequest {
+    $authenticate = new class ($trace, $principal, $failureStage) implements AuthenticateAccountRequest {
         public function __construct(
             private RequestPolicyTestTrace $trace,
             private AuthenticatedPrincipal $principal,
@@ -1137,7 +1137,7 @@ function requestPolicyListApplication(
             return $this->principal;
         }
     };
-    $resolveTenant = new class ($trace, $failureStage, $resolvedAccount) implements ResolveDocumentTenant {
+    $resolveTenant = new class ($trace, $failureStage, $resolvedAccount) implements ResolveAccountTenant {
         public function __construct(
             private RequestPolicyTestTrace $trace,
             private ?string $failureStage,

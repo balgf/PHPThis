@@ -45,7 +45,7 @@ function migrationTests(): array
                         application_migrations.applied_at_epoch
                     FROM application_migrations
                     ORDER BY application_migrations.position ASC
-                    LIMIT 7
+                    LIMIT 8
                     SQL,
             );
             $tableCount = $connection->selectOneRow(
@@ -60,7 +60,8 @@ function migrationTests(): array
                           :jobs_table,
                           :deliveries_table,
                           :documents_table,
-                          :memberships_table
+                          :memberships_table,
+                          :account_users_table
                       )
                     SQL,
                 [
@@ -72,6 +73,7 @@ function migrationTests(): array
                     'deliveries_table' => 'welcome_deliveries',
                     'documents_table' => 'documents',
                     'memberships_table' => 'account_memberships',
+                    'account_users_table' => 'account_users',
                 ],
             );
             $manifest = SqliteApplicationMigrations::manifest();
@@ -80,7 +82,7 @@ function migrationTests(): array
                 $first !== successfulConsoleResult('database:migrate', 'applied')
                 || $second !== successfulConsoleResult('database:migrate', 'up_to_date')
                 || count($history) !== count($manifest)
-                || $tableCount !== ['table_count' => 7]
+                || $tableCount !== ['table_count' => 8]
             ) {
                 throw new RuntimeException('The explicit migration command must apply once and then be a no-op.');
             }
@@ -110,6 +112,65 @@ function migrationTests(): array
 
             if (!is_int($permissions) || ($permissions & 0777) !== 0600) {
                 throw new RuntimeException('The application-private migration lock must use mode 0600.');
+            }
+        },
+
+        'database migrate adds account users without conflating principal identities' => static function (): void {
+            $databasePath = freshMigrationDatabasePath('account-users-forward-step');
+            $initial = runApplicationConsole([
+                'database:migrate',
+                '--database=' . $databasePath,
+            ]);
+            $connection = Connection::connect(
+                'sqlite:' . $databasePath,
+                new QueryBudget(4),
+                new QueryTrace(4),
+            );
+            $connection->executeStatement('DROP TABLE account_users');
+            $connection->executeStatement(
+                'DELETE FROM application_migrations WHERE position = :position',
+                ['position' => 7],
+            );
+            $connection->executeStatement(
+                'INSERT INTO users (id, name, email) VALUES (:id, :name, :email)',
+                ['id' => 7, 'name' => 'Identity Boundary', 'email' => 'identity@example.com'],
+            );
+            $connection->executeStatement(
+                <<<'SQL'
+                    INSERT INTO account_memberships (principal_id, account_id)
+                    VALUES (:principal_id, :account_id)
+                    SQL,
+                ['principal_id' => 7, 'account_id' => 42],
+            );
+            $upgraded = runApplicationConsole([
+                'database:migrate',
+                '--database=' . $databasePath,
+            ]);
+            $state = Connection::connect(
+                'sqlite:' . $databasePath,
+                new QueryBudget(1),
+                new QueryTrace(1),
+            )->selectOneRow(
+                <<<'SQL'
+                    SELECT
+                        (SELECT COUNT(*) FROM application_migrations) AS migration_count,
+                        (SELECT COUNT(*) FROM account_memberships) AS principal_membership_count,
+                        (SELECT COUNT(*) FROM account_users) AS account_user_count
+                    SQL,
+            );
+
+            if (
+                $initial !== successfulConsoleResult('database:migrate', 'applied')
+                || $upgraded !== successfulConsoleResult('database:migrate', 'applied')
+                || $state !== [
+                    'migration_count' => 7,
+                    'principal_membership_count' => 1,
+                    'account_user_count' => 0,
+                ]
+            ) {
+                throw new RuntimeException(
+                    'The forward migration must not infer user ownership from principal ids.',
+                );
             }
         },
 
@@ -202,7 +263,7 @@ function migrationTests(): array
             if (
                 $initial !== successfulConsoleResult('database:migrate', 'applied')
                 || $result !== migrationFailureResult('history_invalid', null)
-                || $ledgerCount !== ['migration_count' => 5]
+                || $ledgerCount !== ['migration_count' => 6]
                 || str_contains($result['stderr'], $databasePath)
             ) {
                 throw new RuntimeException('A gapped migration history must fail without repair or inference.');
@@ -390,7 +451,7 @@ function migrationTests(): array
                         application_migrations.migration_id
                     FROM application_migrations
                     ORDER BY application_migrations.position ASC
-                    LIMIT 7
+                    LIMIT 8
                     SQL,
             );
             $userTables = $verification->selectOneRow(

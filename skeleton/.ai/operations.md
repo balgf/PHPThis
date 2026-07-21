@@ -27,7 +27,7 @@
 
 ## HTTP cache runtime
 
-`HTTP_CACHE_POLICY(NO_STORE)`: every currently shipped response emits `Cache-Control: no-store`, and application behavior tests assert that exact field for health, route miss, method rejection, mapped client failure, and unknown failure. The starter records no production reverse-proxy, gateway, or CDN topology; before deployment, verify that every intermediary preserves the field. New response paths require an explicit application-owned policy and test.
+`HTTP_CACHE_POLICY(NO_STORE)`: every currently shipped response includes the `no-store` directive. Application behavior tests assert exact `Cache-Control: no-store` for health, route miss, method rejection, and mapped client failure, and exact `Cache-Control: private, no-store` for unknown failure. The starter records no production reverse-proxy, gateway, or CDN topology; before deployment, verify that every intermediary preserves the field. New response paths require an explicit application-owned policy and test.
 
 ## Server-side cache runtime
 

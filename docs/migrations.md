@@ -29,7 +29,7 @@ Never load executable SQL from a runtime file, ledger row, environment value, co
 
 Do not perform a database call in a loop. The manifest is deliberately unrolled so execution order and the maximum number of calls remain visible. A finite loop may validate already fetched bounded ledger values when it performs no I/O.
 
-The accepted example uses final `Example\Migrations\SqliteApplicationMigrations`. Its six permanent steps are `0001_create_user_schema`, `0002_create_job_schema`, `0003_prepare_document_schema`, `0004_add_document_category`, `0005_add_document_sort_rank`, and `0006_create_document_access_schema`. The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`. Those names and limits document the proof; they are not reserved consumer migrations.
+The accepted example uses final `Example\Migrations\SqliteApplicationMigrations`. Its seven permanent steps are `0001_create_user_schema`, `0002_create_job_schema`, `0003_prepare_document_schema`, `0004_add_document_category`, `0005_add_document_sort_rank`, `0006_create_document_access_schema`, and `0007_create_account_users`. The final step creates `account_users(user_id, account_id)` without deriving rows from principal-owned `account_memberships`. The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`. Those names and limits document the proof; they are not reserved consumer migrations.
 
 ## Bounded inspectable ledger
 
@@ -60,7 +60,7 @@ finally rollback only if still active
 
 The migration statements and ledger insert commit together. A failed migration leaves neither its schema changes nor its row when the selected SQLite statement supports the exercised transaction. Earlier migrations remain committed. Do not wrap the manifest in one transaction, hide cleanup in a callback, retry implicitly, or continue after a failure.
 
-Use a fresh migration-scoped `Connection`, `QueryBudget`, and `QueryTrace`. The accepted six-step example uses a 21-statement budget and trace plus PDO SQLite timeout 5. The migration identity is separate from the web runtime and receives only the schema and ledger authority required by this command. Do not expose it through HTTP configuration or compose the coordinator during request startup.
+Use a fresh migration-scoped `Connection`, `QueryBudget`, and `QueryTrace`. The accepted seven-step example uses a 23-statement budget and trace plus PDO SQLite timeout 5; applying only 0007 to a valid six-step history uses four statements, and an unchanged run uses two. The migration identity is separate from the web runtime and receives only the schema and ledger authority required by this command. Do not expose it through HTTP configuration or compose the coordinator during request startup.
 
 ## Command and output
 

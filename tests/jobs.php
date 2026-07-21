@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Example\Accounts\AccountId;
+use Example\Accounts\AuthenticatedPrincipal;
+use Example\Accounts\ResolvedTenant;
 use Example\Jobs\RecordUserWelcomeDelivery;
 use Example\Jobs\SqliteUserWelcomeJobWorker;
 use Example\Jobs\UserWelcomeJobEnvelope;
@@ -65,17 +68,23 @@ function jobTests(): array
                     END
                     SQL,
             );
-            $budget = new QueryBudget(3);
-            $trace = new QueryTrace(3);
+            $budget = new QueryBudget(4);
+            $trace = new QueryTrace(4);
             $operation = new TransactionalCreateUser(
                 Connection::connect('sqlite:' . $databasePath, $budget, $trace),
             );
             $failed = false;
 
             try {
-                $operation->execute(CreateUserCommand::fromJson(
-                    '{"name":"Ada","email":"ada@example.com"}',
-                ));
+                $accountId = AccountId::fromPositiveInteger(42);
+                $operation->execute(
+                    AuthenticatedPrincipal::fromPositiveInteger(7),
+                    ResolvedTenant::forAccount($accountId),
+                    $accountId,
+                    CreateUserCommand::fromJson(
+                        '{"name":"Ada","email":"ada@example.com"}',
+                    ),
+                );
             } catch (PDOException) {
                 $failed = true;
             }
@@ -85,10 +94,11 @@ function jobTests(): array
 
             if (
                 !$failed
-                || $budget->used() !== 3
-                || $summary['statements'] !== 3
+                || $budget->used() !== 4
+                || $summary['statements'] !== 4
                 || $summary['failures'] !== 1
                 || $counts['user_count'] !== 0
+                || $counts['account_user_count'] !== 0
                 || $counts['event_count'] !== 0
                 || $counts['job_count'] !== 0
                 || $counts['effect_count'] !== 0
@@ -910,6 +920,7 @@ function jobState(string $databasePath, string $jobId): array
 /**
  * @return array{
  *     user_count: int,
+ *     account_user_count: int,
  *     event_count: int,
  *     job_count: int,
  *     available_count: int,
@@ -930,6 +941,7 @@ function jobAggregate(string $databasePath): array
         <<<'SQL'
             SELECT
                 (SELECT COUNT(users.id) FROM users) AS user_count,
+                (SELECT COUNT(account_users.user_id) FROM account_users) AS account_user_count,
                 (SELECT COUNT(user_events.id) FROM user_events) AS event_count,
                 COUNT(application_jobs.job_id) AS job_count,
                 COUNT(CASE WHEN application_jobs.status = 'available' THEN 1 END) AS available_count,
@@ -956,9 +968,10 @@ function jobAggregate(string $databasePath): array
     }
 
     if (
-        count($values) !== 8
+        count($values) !== 9
         || !isset(
             $values['user_count'],
+            $values['account_user_count'],
             $values['event_count'],
             $values['job_count'],
             $values['available_count'],
@@ -973,6 +986,7 @@ function jobAggregate(string $databasePath): array
 
     return [
         'user_count' => $values['user_count'],
+        'account_user_count' => $values['account_user_count'],
         'event_count' => $values['event_count'],
         'job_count' => $values['job_count'],
         'available_count' => $values['available_count'],

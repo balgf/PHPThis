@@ -49,11 +49,12 @@
 - Detect raw mixed arrays escaping named boundaries and add profile rules only after measuring false positives.
 - Measure how many files and tokens common changes require.
 - Build grounded-answer evaluations across installed revisions and measure unsupported claims, citation accuracy, uncertainty, and correct escalation of human decisions.
-- After Alpha 1: finish the example's Create identity/conflict and extend the accepted application-owned request-policy evidence to additional applicable Create/List/Get operations without presenting domain policy as framework behavior.
+- Complete: extend the accepted application-owned request-policy evidence to account-scoped Create without presenting domain policy as framework behavior; the example's named Create identity/conflict contract and applicable List/Get policy evidence remain next.
 - After those decisions: prove Update and Delete only after the example also records mutation concurrency, deletion, authorization, and conflict behavior.
 
 ## Phase 3: production evaluation
 
+- Complete: ADR 029 records every Alpha 2 capability exit, one sanitized integrated consumer request, the PHP 8.4.x support boundary, complete-gate evidence, and permanent no-magic boundaries without adding framework runtime behavior.
 - Evaluate destination-specific terminal-summary buffering, retention, backpressure, and outage behavior without converting one sink invocation attempt into a durable-delivery claim; extend security headers only through explicit application evidence.
 - Complete: ADR 024 accepts one application-owned SQLite durable-job proof with commit-visible publication, finite envelopes, one-shot workers, fenced leases, bounded retries, redacted dead letters, and one idempotent database effect; it adds no framework queue API or cross-engine claim.
 - Complete: ADR 025 accepts one application-owned explicit console and cron-friendly scheduled pass with typed bounded arguments, stable exit and stream behavior, an explicit UTC clock, fresh composition, and nonblocking same-host overlap; it adds no framework CLI, scheduler, daemon, slot ledger, catch-up, or distributed-coordination API.

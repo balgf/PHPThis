@@ -32,3 +32,4 @@ Accepted records:
 - `026-bounded-file-transfers.md`
 - `027-application-owned-explicit-sqlite-migrations.md`
 - `028-application-owned-redis-cache-and-schedule-lease.md`
+- `029-alpha-2-consumer-profile-rollup.md`

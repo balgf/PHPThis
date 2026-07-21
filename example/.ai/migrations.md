@@ -10,7 +10,7 @@ No PHPThis core migration type or dependency is added. The front controller, `Ap
 
 ## Finite immutable manifest
 
-The final coordinator names and invokes these six concrete migration steps through unrolled private methods in this permanent order:
+The final coordinator names and invokes these seven concrete migration steps through unrolled private methods in this permanent order:
 
 1. `0001_create_user_schema`
 2. `0002_create_job_schema`
@@ -18,10 +18,11 @@ The final coordinator names and invokes these six concrete migration steps throu
 4. `0004_add_document_category`
 5. `0005_add_document_sort_rank`
 6. `0006_create_document_access_schema`
+7. `0007_create_account_users`
 
 Every step lives in `example/src/Migrations/SqliteApplicationMigrations.php`, owns complete raw SQLite compile-time-constant SQL, and calls `Connection` directly with explicit bindings where data exists. The manifest and private method calls are unrolled: no database call occurs in a loop, no directory is scanned, and no filename, class string, attribute, ledger value, or runtime `.sql` file selects work.
 
-Each permanent identifier and its exact ordered statement bytes determine one lowercase-hex SHA-256 checksum. The same SQL constants are executed and checksummed, and all six pending schema steps are unconditional. An applied identifier, position, or checksum-covered statement sequence is immutable. A correction is a new forward migration; there is no inferred or automatic down migration.
+Each permanent identifier and its exact ordered statement bytes determine one lowercase-hex SHA-256 checksum. The same SQL constants are executed and checksummed, and all seven pending schema steps are unconditional. An applied identifier, position, or checksum-covered statement sequence is immutable. A correction is a new forward migration; there is no inferred or automatic down migration. Migration 0007 creates `account_users(user_id, account_id)` without backfilling from `account_memberships(principal_id, account_id)` because principal and user identities are separate application namespaces.
 
 ## Bounded ledger and transactions
 
@@ -29,7 +30,7 @@ The SQLite ledger is a `STRICT` `application_migrations` table with exact column
 
 Each pending migration step and its exact ledger insert use one explicit transaction. Commit occurs only after both succeed; `finally` rolls back when the transaction remains active. A failed migration leaves neither its changes nor its row, while earlier committed migration transactions remain. The next explicitly authorized run may continue only after the source is corrected without editing applied history.
 
-The command freshly composes its migration `Connection` with `QueryBudget(21)`, `QueryTrace(21)`, and PDO SQLite timeout `5`, plus one application-private lock. A complete empty-database run consumes the accepted 21-statement ceiling; an unchanged run performs only the exact ledger-object read and bounded history selection. The migration process owns SQLite schema authority; the example's local file/process separation is evaluation evidence only, not production least-privilege proof.
+The command freshly composes its migration `Connection` with `QueryBudget(23)`, `QueryTrace(23)`, and PDO SQLite timeout `5`, plus one application-private lock. A complete empty-database run consumes the accepted 23-statement ceiling; applying only 0007 to a valid six-step history consumes four statements, and an unchanged run performs only the exact ledger-object read and bounded history selection. The migration process owns SQLite schema authority; the example's local file/process separation is evaluation evidence only, not production least-privilege proof.
 
 The database parent directory must already resolve. The database file may be absent and is then created by SQLite; an existing path must be a regular non-symlink file whose canonical path can be resolved. A missing or unsafe parent or database path fails as `ledger_unavailable` without reflecting the path.
 
@@ -56,7 +57,7 @@ Every migration failure exits `1`, leaves stdout empty, and writes exactly this 
 {"error":"migration_failed","reason":"<reason>","migration":null}
 ```
 
-The finite reasons are `busy`, `checksum_drift`, `history_invalid`, `ledger_unavailable`, `apply_failed`, and `lock_failed`. `migration` is either one of the six code-owned manifest identifiers above or `null`; no submitted or stored identifier is reflected. Unknown command and invalid arguments retain the console's existing exit-2 errors.
+The finite reasons are `busy`, `checksum_drift`, `history_invalid`, `ledger_unavailable`, `apply_failed`, and `lock_failed`. `migration` is either one of the seven code-owned manifest identifiers above or `null`; no submitted or stored identifier is reflected. Unknown command and invalid arguments retain the console's existing exit-2 errors.
 
 Output omits submitted values, database and lock paths, DSNs, credentials, SQL, bindings, exception classes and messages, stacks, ledger rows, schema contents, request data, and domain data.
 

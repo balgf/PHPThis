@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "~8.4.0",
         "phpthis/framework": "dev-main"
     },
     "require-dev": {

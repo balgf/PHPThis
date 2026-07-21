@@ -39,6 +39,8 @@ Feature and operation names use the application's domain vocabulary. Route lists
 
 ADR 021 supersedes this record only where the earlier Create tree showed `CreateUserCommand` and `CreateUserHandler` alone and where its transaction was described as handler-owned. The current path adds `CreateUserOperation` and `TransactionalCreateUser` because HTTP adaptation and the independently meaningful transaction have distinct responsibilities; ADR 024 later adds the third commit-visible job statement. Rejected-input exclusion is evidence for that boundary, not its sole reason to exist. List remains handler-local after parsing its concrete `ListUsersPageRequest`; no automatic handler split is authorized.
 
+ADR 029 later makes the example Create path account-scoped and adds the fourth `account_users` relation write. That newer application evidence does not change this decision's optional placement rule or authorize a shared identity or persistence layer.
+
 An application may use this reference placement or record one coherent alternate placement and naming rule in its `.ai/architecture.md`. That selection guides authoring within the application; it does not add a second framework runtime API. An alternate structure may strengthen the installed consumer contract but cannot weaken its typing, explicit routing, visible SQL, bounded database work, analysis, or verification requirements.
 
 PHPThis does not add a CRUD base handler, generic repository, resource registration API, automatic routes, mass assignment, SQL generation, runtime discovery, filesystem enforcement, or code-generation requirement. The framework dispatches the explicitly constructed objects supplied by the application regardless of their directories.

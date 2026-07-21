@@ -2,7 +2,7 @@
 
 Profile version: 2
 
-PHPThis runs as ordinary PHP 8.4. The profile is a smaller set of accepted programs enforced during development; it is not a PHP fork, transpiler, runtime wrapper, or second language.
+PHPThis runs as ordinary PHP 8.4.x. The profile is a smaller set of accepted programs enforced during development; it is not a PHP fork, transpiler, runtime wrapper, or second language. The supported Composer range excludes PHP 8.5 until that runtime receives separate review and CI evidence.
 
 `composer check` is the compiler-like gate. In an application, it runs the installed `phpthis check` profile stage followed by application-owned behavior tests. In the framework repository, it additionally runs maintainer guardrails, permanent profile fixtures, the query-scaling proof, and framework behavior tests. A program that skips its complete gate may be valid PHP but is not verified PHPThis.
 

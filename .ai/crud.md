@@ -16,12 +16,19 @@ Prefer a resource area containing its explicit route list and one directory per 
 
 ```text
 src/
+  Accounts/
+    AccountId.php
+    AuthenticatedPrincipal.php
+    ResolvedTenant.php
+    AuthenticateAccountRequest.php
+    ResolveAccountTenant.php
   Users/
     UserRoutes.php
     CreateUser/
       CreateUserCommand.php
       CreateUserHandler.php
       CreateUserOperation.php
+      AuthorizeCreateUser.php
       TransactionalCreateUser.php
     GetUser/
       GetUserHandler.php
@@ -59,6 +66,6 @@ Do not infer these facts from the directory name or from another application's e
 
 Test every adopted behavior rather than the spelling of directories. Cover route and method matching, boundary rejection, success and missing-resource behavior, authorization denial, create conflicts, bounded and stable pagination, concurrent updates, deletion and retention policy, and required audit effects. Database-backed behavior also needs engine-specific integration evidence, explicit query budgets, bounded traces, and constant statement counts across materially different fixture sizes.
 
-The current executable user reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List. Create proves that its exact command reaches `CreateUserOperation` only after complete validation, rejected input causes zero operation calls and database work, and `TransactionalCreateUser` retains the visible three-statement user, event, and commit-visible job transaction. User List proves one application-owned keyset contract: optional canonical `after_user_id`, ascending identifiers, a fixed 50-row page, one up-to-51-row lookahead statement, and a canonical string continuation or `null`. It does not provide a generic pagination policy, and user List authorization remains unresolved. Create still lacks authorization and identity/conflict policy. The first user Get slice proves the typed trailing route, immediate `UserId` conversion, explicit missing response, concrete projection, and one bounded query, but not authorization or tenant scope. Update and Delete remain absent.
+The current executable user reference provides partial structural, boundary, transaction, and query-cost evidence for Create and List. Account-scoped Create proves explicit authentication, tenant resolution, action authorization, exact command parsing, zero rejected-input operation calls and database work, and the visible four-statement user, account-user relation, event, and commit-visible job transaction. Authenticated principals remain distinct from users: actor access uses `account_memberships`, while created-user association uses `account_users`, and migration 0007 performs no ID-based backfill. User List proves one application-owned keyset contract: optional canonical `after_user_id`, ascending identifiers, a fixed 50-row page, one up-to-51-row lookahead statement, and a canonical string continuation or `null`. It does not provide a generic pagination policy, and user List authorization remains unresolved. Create still lacks a named identity/conflict policy. The first user Get slice proves the typed trailing route, immediate `UserId` conversion, explicit missing response, concrete projection, and one bounded query, but not authorization or tenant scope. Update and Delete remain absent.
 
 ADR 022 adds a distinct protected document-list proof, not a framework paginator: two finite sort choices, a versioned numeric-rank/binary-key cursor, omitted, parsed-empty-selection, and one-to-three-category behavior, explicit tenant and membership bindings, and one raw complete SQLite statement per non-empty page. Its SQL and parameter arrays stay together in `ListDocumentsHandler`; the parsed `['']` convention, produced by native PHP inputs such as `?categories[]=`, performs zero protected SQL. The example does not certify that application SQL on MySQL or PostgreSQL and does not claim snapshot traversal or universal authorization or injection safety.

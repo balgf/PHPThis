@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Example\Documents\UpdateDocumentTitle;
 
-use Example\Documents\AccountId;
-use Example\Documents\AuthenticatedPrincipal;
+use Example\Accounts\AccountId;
+use Example\Accounts\AuthenticatedPrincipal;
 use Example\Documents\DocumentKey;
 use Example\Documents\GetDocument\RedisDocumentDetailsCache;
 use Example\Documents\GetDocument\RedisDocumentDetailsInvalidationOutcome;
-use Example\Documents\ResolvedTenant;
+use Example\Accounts\ResolvedTenant;
 use InvalidArgumentException;
 use LogicException;
 use PHPThis\Database\Connection;

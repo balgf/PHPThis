@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Example\Documents\GetDocument;
 
-use Example\Documents\AccountId;
-use Example\Documents\AuthenticatedPrincipal;
+use Example\Accounts\AccountId;
+use Example\Accounts\AuthenticatedPrincipal;
 use Example\Documents\DocumentKey;
-use Example\Documents\ResolvedTenant;
+use Example\Accounts\ResolvedTenant;
 use InvalidArgumentException;
 use JsonException;
 use Redis;

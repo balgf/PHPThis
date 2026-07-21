@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Example\Users\CreateUser;
 
-use Example\Accounts\AccountId;
 use Example\Accounts\AuthenticatedPrincipal;
 use Example\Accounts\ResolvedTenant;
 
-interface CreateUserOperation
+interface AuthorizeCreateUser
 {
-    public function execute(
+    public function authorizeCreate(
         AuthenticatedPrincipal $principal,
         ResolvedTenant $tenant,
-        AccountId $accountId,
-        CreateUserCommand $command,
     ): void;
 }

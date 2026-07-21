@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use Example\Documents\AccountId;
-use Example\Documents\AuthenticateDocumentRequest;
-use Example\Documents\AuthenticatedPrincipal;
+use Example\Accounts\AccountId;
+use Example\Accounts\AuthenticateAccountRequest;
+use Example\Accounts\AuthenticatedPrincipal;
 use Example\Documents\DocumentRoutes;
 use Example\Documents\DocumentKey;
-use Example\Documents\Forbidden;
+use Example\Accounts\Forbidden;
 use Example\Documents\GetDocument\DocumentDetails;
 use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
 use Example\Documents\GetDocument\AuthorizeGetDocument;
@@ -15,8 +15,8 @@ use Example\Documents\GetDocument\RedisDocumentDetailsCache;
 use Example\Documents\GetDocument\RedisDocumentDetailsInvalidationOutcome;
 use Example\Documents\GetDocument\RetrieveAuthorizedDocument;
 use Example\Documents\GetDocument\SelectAuthorizedDocument;
-use Example\Documents\ResolvedTenant;
-use Example\Documents\ResolveDocumentTenant;
+use Example\Accounts\ResolvedTenant;
+use Example\Accounts\ResolveAccountTenant;
 use Example\Documents\ListDocuments\AuthorizeListDocuments;
 use Example\Documents\UpdateDocumentTitle\DocumentTitleUpdateOutcome;
 use Example\Documents\UpdateDocumentTitle\RedisInvalidatingDocumentTitleUpdate;
@@ -615,13 +615,13 @@ function cacheTests(): array
                 1,
             );
             $application = new Application(new Router(DocumentRoutes::create(
-                new class implements AuthenticateDocumentRequest {
+                new class implements AuthenticateAccountRequest {
                     public function authenticate(Request $request): AuthenticatedPrincipal
                     {
                         return AuthenticatedPrincipal::fromPositiveInteger(7);
                     }
                 },
-                new class implements ResolveDocumentTenant {
+                new class implements ResolveAccountTenant {
                     public function resolve(
                         AuthenticatedPrincipal $principal,
                         AccountId $accountId,

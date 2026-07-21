@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Example\Documents;
 
+use Example\Accounts\AuthenticateAccountRequest;
+use Example\Accounts\ResolveAccountTenant;
 use Example\Documents\GetDocument\AuthorizeGetDocument;
 use Example\Documents\GetDocument\GetDocumentHandler;
 use Example\Documents\GetDocument\RetrieveAuthorizedDocument;
@@ -16,8 +18,8 @@ final class DocumentRoutes
 {
     /** @return list<Route> */
     public static function create(
-        AuthenticateDocumentRequest $authenticate,
-        ResolveDocumentTenant $resolveTenant,
+        AuthenticateAccountRequest $authenticate,
+        ResolveAccountTenant $resolveTenant,
         AuthorizeGetDocument $authorizeGet,
         RetrieveAuthorizedDocument $retrieve,
         AuthorizeListDocuments $authorizeList,

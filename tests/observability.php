@@ -626,7 +626,7 @@ function observabilityTests(): array
                 || $failure->status !== 500
                 || $failure->headers !== [
                     'Content-Type' => 'application/json; charset=utf-8',
-                    'Cache-Control' => 'no-store',
+                    'Cache-Control' => 'private, no-store',
                     'X-Request-ID' => $failureCorrelationId->value,
                 ]
                 || $failure->body

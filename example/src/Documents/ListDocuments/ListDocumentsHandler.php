@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Example\Documents\ListDocuments;
 
-use Example\Documents\AccountId;
-use Example\Documents\AuthenticateDocumentRequest;
-use Example\Documents\ResolveDocumentTenant;
+use Example\Accounts\AccountId;
+use Example\Accounts\AuthenticateAccountRequest;
+use Example\Accounts\ResolveAccountTenant;
 use LogicException;
 use PHPThis\Database\Connection;
 use PHPThis\Http\InvalidRequest;
@@ -20,8 +20,8 @@ final readonly class ListDocumentsHandler implements RequestHandler
     private const int FETCH_LIMIT = self::PAGE_SIZE + 1;
 
     public function __construct(
-        private AuthenticateDocumentRequest $authenticate,
-        private ResolveDocumentTenant $resolveTenant,
+        private AuthenticateAccountRequest $authenticate,
+        private ResolveAccountTenant $resolveTenant,
         private AuthorizeListDocuments $authorize,
         private Connection $connection,
     ) {

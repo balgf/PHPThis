@@ -2,13 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Example\Documents;
+namespace Example\Accounts;
 
+use Example\Documents\DocumentKey;
 use Example\Documents\GetDocument\AuthorizeGetDocument;
 use Example\Documents\ListDocuments\AuthorizeListDocuments;
+use Example\Users\CreateUser\AuthorizeCreateUser;
 
-final readonly class DenyAllDocumentAuthorization implements AuthorizeGetDocument, AuthorizeListDocuments
+final readonly class DenyAllAccountAuthorization implements
+    AuthorizeCreateUser,
+    AuthorizeGetDocument,
+    AuthorizeListDocuments
 {
+    public function authorizeCreate(
+        AuthenticatedPrincipal $principal,
+        ResolvedTenant $tenant,
+    ): void {
+        throw new Forbidden();
+    }
+
     public function authorize(
         AuthenticatedPrincipal $principal,
         ResolvedTenant $tenant,

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Example\Documents\ListDocuments;
 
-use Example\Documents\AuthenticatedPrincipal;
-use Example\Documents\ResolvedTenant;
+use Example\Accounts\AuthenticatedPrincipal;
+use Example\Accounts\ResolvedTenant;
 
 interface AuthorizeListDocuments
 {

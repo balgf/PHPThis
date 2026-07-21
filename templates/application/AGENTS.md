@@ -27,7 +27,7 @@ Every observable behavior change must add or update application-owned automated 
 
 ## Authority
 
-- The installed PHPThis Consumer Contract v6 and Strict Profile v2 are the minimum accepted rules, including bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
+- The installed PHPThis Consumer Contract v7 and Strict Profile v2 are the minimum accepted rules, including the PHP 8.4 runtime boundary, bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - If a project instruction conflicts with the consumer contract, preserve the contract and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.

@@ -22,6 +22,8 @@ Handlers do not receive a generic cache, PSR pool, PSR simple-cache interface, g
 
 PHPThis adds `.ai/cache.md`, `docs/caching.md`, application-context decision fields, and this record. Framework-owned 404, 405, and unknown-failure 500 responses, plus every current skeleton and example response path, explicitly include the `no-store` directive; protected responses additionally use `private`. This is a narrow visible policy for paths PHPThis owns, not automatic rewriting of arbitrary handler responses. PHPThis adds no cache client or backend dependency, generic cache API, conditional-request middleware, cache backend certification, Strict Profile rule, consumer-checker rule, or Consumer Contract version change before Alpha.
 
+ADR 029 later strengthens the fixed unknown-failure 500 to `private, no-store` and makes the example registry conservatively private for mapped client failures. The original `no-store` prohibition remains intact; no cache mechanism or route-sensitive policy is introduced.
+
 The first backend-specific application proof occurs after Alpha. It must test hits, misses, finite expiry, early eviction, malformed values, backend failure, tenant isolation, write invalidation and its failure, a miss racing a committed write, concurrent cold misses, and cold-cache query scaling. A warm cache cannot satisfy database query-scaling evidence.
 
 ## Consequences

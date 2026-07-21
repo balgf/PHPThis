@@ -6,6 +6,8 @@ Status: accepted
 
 PHPThis already keeps PDO execution behind `Connection`, limits statements with `QueryBudget`, records bounded redacted evidence with `QueryTrace`, exposes explicit transaction methods, and requires PHT006-finite SQL at every direct database call. At this decision's acceptance, the existing user examples proved one fixed-order collection, a two-statement transaction and rollback, and an isolated N+1 negative control; ADR 024 later adds a third commit-visible job statement to that transaction. They did not yet prove a protected tenant-owned collection with more than one ordering, a composite cursor, and a bounded list filter.
 
+ADR 029 later adds explicit account policy and a fourth `account_users` relation statement to the Create transaction. The two- and three-statement descriptions above remain chronological context for this decision rather than current Create guidance.
+
 That proof must not become an ORM, query builder, repository, SQL generator, binding or placeholder helper, generic paginator, transaction callback, or dialect abstraction. Each of those would move statement shape, parameter ownership, pagination cost, or transaction control away from the operation an AI and human need to review.
 
 ## Decision

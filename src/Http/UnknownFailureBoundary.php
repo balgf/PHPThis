@@ -10,7 +10,7 @@ final class UnknownFailureBoundary
     {
         return new Response(
             500,
-            ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store'],
+            ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
             "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n",
         );
     }

@@ -14,7 +14,7 @@ This file records only the checked-in example's current data-path decisions and 
 
 ## Schema migration authority
 
-`Example\Migrations\SqliteApplicationMigrations` is the sole schema path for the executable example. The application console invokes it as `database:migrate`; `tools/setup-example.php` delegates to the same coordinator and then seeds evaluation data. HTTP composition performs no migration work. The coordinator owns a six-entry finite unrolled manifest, a 512-entry maximum, `LIMIT 513` bounded ledger inspection, immutable SHA-256 checksums, per-migration transactions, and the `application_migrations` ledger. See `.ai/migrations.md` for exact identifiers, lock, output, failure, recovery, and evidence policy.
+`Example\Migrations\SqliteApplicationMigrations` is the sole schema path for the executable example. The application console invokes it as `database:migrate`; `tools/setup-example.php` delegates to the same coordinator and then seeds evaluation data. HTTP composition performs no migration work. The coordinator owns a seven-entry finite unrolled manifest, a 512-entry maximum, `LIMIT 513` bounded ledger inspection, immutable SHA-256 checksums, per-migration transactions, and the `application_migrations` ledger. Migration 0007 adds `account_users` without copying `account_memberships`: principal and user identities are distinct unless an application proves an explicit mapping. See `.ai/migrations.md` for exact identifiers, lock, output, failure, recovery, and evidence policy.
 
 The migration command has schema authority over the example SQLite file. Web runtime authority remains separate in policy even though this source-checkout proof cannot demonstrate database-role grants. Production adoption records and dates its exact file ownership, process identities, configuration isolation, and backup or restore policy.
 
@@ -26,7 +26,7 @@ The schedule lease stores only one fresh bounded owner token under one applicati
 
 ## Durable-job tables
 
-`application_jobs` and `welcome_deliveries` belong only to the ADR 024 example. Setup creates SQLite `STRICT` tables plus partial due-row indexes; the application therefore records and tests an exact SQLite runtime with `STRICT` table and `UPDATE ... RETURNING` support before adoption. `TransactionalCreateUser` writes the user, user event, and one bounded versioned job envelope through the same connection and transaction. The worker uses that same database for its idempotent delivery record and fenced completion.
+`application_jobs` and `welcome_deliveries` belong only to the ADR 024 example. Setup creates SQLite `STRICT` tables plus partial due-row indexes; the application therefore records and tests an exact SQLite runtime with `STRICT` table and `UPDATE ... RETURNING` support before adoption. `TransactionalCreateUser` writes the user, its explicit `account_users` relation, user event, and one bounded versioned job envelope through the same connection and transaction. The worker uses that same database for its idempotent delivery record and fenced completion.
 
 The repository does not claim that the setup defaults prove production journal mode, synchronization, local-filesystem durability, busy-timeout suitability, writer concurrency, query plans, power-loss recovery, capacity, or retention. MySQL and PostgreSQL transport certification does not certify this schema or any durable-job statement on those engines. See `.ai/jobs.md` for the exact lease, retry, dead-letter, lifecycle, and evidence contract.
 
@@ -61,7 +61,7 @@ The finite statement family is selected in ordinary typed PHP, and every complet
 - Missing, empty, and one-to-three-category behavior is distinct and tested.
 - SQL-looking category values remain bound data, document-key values are also bound, and identifier-shaped structural attacks are rejected before protected SQL.
 - Denied policy paths execute no protected document SQL.
-- `TransactionalCreateUser` remains the three-statement transaction, rollback, and commit-visible job-publication proof; it is not duplicated here.
+- `TransactionalCreateUser` remains the four-statement account-scoped user, account-user relation, event, rollback, and commit-visible job-publication proof; it is not duplicated here.
 - The existing user-list N+1 negative control remains the growth-detection proof; it is not duplicated here.
 
 Explicit tenant predicates and membership bindings do not prove universal authorization. PHT006 and adversarial values do not prove universal injection safety. One statement does not prove bounded rows scanned or a production execution plan. SQLite evidence does not certify this application SQL on another engine.

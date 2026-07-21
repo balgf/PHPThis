@@ -51,7 +51,7 @@ Before protecting a route, record its named action, concrete principal and tenan
 
 ### HTTP response cache
 
-`HTTP_CACHE_POLICY(NO_STORE)`: `GET /health`, route misses, method rejections, mapped invalid or oversized input, and unknown failures each emit `Cache-Control: no-store` at their explicit response-producing path. No current response is intentionally storable, so freshness, validators, conditional requests, and `Vary` are not applicable. Every response path added later starts with explicit `no-store` and requires its own recorded and tested decision before it may use `private` or `public`; no helper, middleware, or response post-processor supplies a default.
+`HTTP_CACHE_POLICY(NO_STORE)`: `GET /health`, route misses, method rejections, and mapped invalid or oversized input emit `Cache-Control: no-store` at their explicit response-producing path; the generic unknown-failure response emits `Cache-Control: private, no-store`. No current response is intentionally storable, so freshness, validators, conditional requests, and `Vary` are not applicable. Every response path added later starts with explicit `no-store` and requires its own recorded and tested decision before it may use `private` or `public`; no helper, middleware, or response post-processor supplies a default.
 
 ### Optional server-side data cache
 

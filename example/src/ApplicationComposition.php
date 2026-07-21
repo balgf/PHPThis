@@ -7,15 +7,15 @@ namespace Example;
 use Example\Cli\ApplicationCommands;
 use Example\DocumentFiles\DocumentFileNotFound;
 use Example\DocumentFiles\LocalDocumentFiles;
-use Example\Documents\CrossTenant;
-use Example\Documents\DenyAllDocumentAuthentication;
-use Example\Documents\DenyAllDocumentAuthorization;
-use Example\Documents\DenyAllDocumentTenantResolution;
-use Example\Documents\Forbidden;
+use Example\Accounts\CrossTenant;
+use Example\Accounts\DenyAllAccountAuthentication;
+use Example\Accounts\DenyAllAccountAuthorization;
+use Example\Accounts\DenyAllAccountTenantResolution;
+use Example\Accounts\Forbidden;
 use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
 use Example\Documents\GetDocument\RedisDocumentDetailsCache;
 use Example\Documents\GetDocument\SelectAuthorizedDocument;
-use Example\Documents\Unauthenticated;
+use Example\Accounts\Unauthenticated;
 use Example\Jobs\UserWelcomeJobClock;
 use Example\Observability\CorrelationId;
 use Example\Observability\ErrorLogRequestSummarySink;
@@ -75,8 +75,8 @@ final readonly class ApplicationComposition
         $listUsersTrace = new QueryTrace(1);
         $getUserBudget = new QueryBudget(1);
         $getUserTrace = new QueryTrace(1);
-        $createUserBudget = new QueryBudget(3);
-        $createUserTrace = new QueryTrace(3);
+        $createUserBudget = new QueryBudget(4);
+        $createUserTrace = new QueryTrace(4);
         $getDocumentBudget = new QueryBudget(1);
         $getDocumentTrace = new QueryTrace(1);
         $listDocumentsBudget = new QueryBudget(1);
@@ -90,7 +90,7 @@ final readonly class ApplicationComposition
             $listDocumentsBudget,
             $listDocumentsTrace,
         );
-        $documentAuthorization = new DenyAllDocumentAuthorization();
+        $accountAuthorization = new DenyAllAccountAuthorization();
         $documentCacheTrace = new DocumentDetailsCacheTrace();
         $retrieveDocument = new RedisDocumentDetailsCache(
             $this->cacheRedisHost,
@@ -107,16 +107,13 @@ final readonly class ApplicationComposition
             $createUserConnection,
             $retrieveDocument,
             $listDocumentsConnection,
-            new DenyAllDocumentAuthentication(),
-            new DenyAllDocumentTenantResolution(),
-            $documentAuthorization,
-            $documentAuthorization,
+            new DenyAllAccountAuthentication(),
+            new DenyAllAccountTenantResolution(),
+            $accountAuthorization,
+            $accountAuthorization,
+            $accountAuthorization,
             new LocalDocumentFiles($databasePath . '.files'),
         )));
-        $jsonHeaders = [
-            'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'no-store',
-        ];
         $privateJsonHeaders = [
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'private, no-store',
@@ -140,17 +137,17 @@ final readonly class ApplicationComposition
             CrossTenant::class => $forbiddenResponse,
             InvalidRequest::class => new Response(
                 400,
-                $jsonHeaders,
+                $privateJsonHeaders,
                 "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
             ),
             RequestBodyTooLarge::class => new Response(
                 413,
-                $jsonHeaders,
+                $privateJsonHeaders,
                 "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n",
             ),
             UnsupportedMediaType::class => new Response(
                 415,
-                $jsonHeaders,
+                $privateJsonHeaders,
                 "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n",
             ),
             DocumentFileNotFound::class => new Response(

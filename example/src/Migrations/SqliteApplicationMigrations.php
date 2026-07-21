@@ -12,7 +12,7 @@ use Throwable;
 
 final readonly class SqliteApplicationMigrations
 {
-    private const int QUERY_LIMIT = 21;
+    private const int QUERY_LIMIT = 23;
 
     private const string USER_SCHEMA_IDENTIFIER = '0001_create_user_schema';
     private const string JOB_SCHEMA_IDENTIFIER = '0002_create_job_schema';
@@ -20,6 +20,7 @@ final readonly class SqliteApplicationMigrations
     private const string DOCUMENT_CATEGORY_IDENTIFIER = '0004_add_document_category';
     private const string DOCUMENT_SORT_RANK_IDENTIFIER = '0005_add_document_sort_rank';
     private const string DOCUMENT_ACCESS_IDENTIFIER = '0006_create_document_access_schema';
+    private const string ACCOUNT_USERS_IDENTIFIER = '0007_create_account_users';
 
     private const string CREATE_USERS_SQL = <<<'SQL'
         CREATE TABLE users (
@@ -176,6 +177,15 @@ final readonly class SqliteApplicationMigrations
         )
         SQL;
 
+    private const string CREATE_ACCOUNT_USERS_SQL = <<<'SQL'
+        CREATE TABLE account_users (
+            user_id INTEGER NOT NULL,
+            account_id INTEGER NOT NULL,
+            PRIMARY KEY (user_id, account_id),
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+        SQL;
+
     public function __construct(
         private string $databasePath,
         private LocalMigrationLock $lock,
@@ -217,6 +227,11 @@ final readonly class SqliteApplicationMigrations
                 'position' => 6,
                 'identifier' => self::DOCUMENT_ACCESS_IDENTIFIER,
                 'checksum' => self::documentAccessChecksum(),
+            ],
+            [
+                'position' => 7,
+                'identifier' => self::ACCOUNT_USERS_IDENTIFIER,
+                'checksum' => self::accountUsersChecksum(),
             ],
         ];
     }
@@ -284,6 +299,11 @@ final readonly class SqliteApplicationMigrations
 
             if (!$history->contains(6)) {
                 $this->createDocumentAccessSchema($connection, $ledger);
+                $applied = true;
+            }
+
+            if (!$history->contains(7)) {
+                $this->createAccountUsers($connection, $ledger);
                 $applied = true;
             }
 
@@ -506,6 +526,40 @@ final readonly class SqliteApplicationMigrations
         }
     }
 
+    private function createAccountUsers(
+        Connection $connection,
+        SqliteMigrationLedger $ledger,
+    ): void {
+        try {
+            $connection->beginTransaction();
+            $connection->executeStatement(self::CREATE_ACCOUNT_USERS_SQL);
+            $ledger->record(
+                7,
+                self::ACCOUNT_USERS_IDENTIFIER,
+                self::accountUsersChecksum(),
+            );
+            $connection->commit();
+        } catch (Throwable $exception) {
+            throw new ApplicationMigrationFailed(
+                ApplicationMigrationFailureReason::ApplyFailed,
+                self::ACCOUNT_USERS_IDENTIFIER,
+                $exception,
+            );
+        } finally {
+            if ($connection->inTransaction()) {
+                try {
+                    $connection->rollBack();
+                } catch (Throwable $rollbackFailure) {
+                    throw new ApplicationMigrationFailed(
+                        ApplicationMigrationFailureReason::ApplyFailed,
+                        self::ACCOUNT_USERS_IDENTIFIER,
+                        $rollbackFailure,
+                    );
+                }
+            }
+        }
+    }
+
     /** @return non-empty-string */
     private static function userSchemaChecksum(): string
     {
@@ -563,6 +617,15 @@ final readonly class SqliteApplicationMigrations
             self::DOCUMENT_ACCESS_IDENTIFIER . "\0"
                 . self::CREATE_DOCUMENT_INDEX_SQL . "\0"
                 . self::CREATE_ACCOUNT_MEMBERSHIPS_SQL,
+        );
+    }
+
+    /** @return non-empty-string */
+    private static function accountUsersChecksum(): string
+    {
+        return self::checksum(
+            self::ACCOUNT_USERS_IDENTIFIER . "\0"
+                . self::CREATE_ACCOUNT_USERS_SQL,
         );
     }
 

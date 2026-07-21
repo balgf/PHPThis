@@ -20,6 +20,8 @@ One final application-owned migration coordinator names every concrete migration
 
 The accepted example uses final `Example\Migrations\SqliteApplicationMigrations` and these permanent identifiers in order: `0001_create_user_schema`, `0002_create_job_schema`, `0003_prepare_document_schema`, `0004_add_document_category`, `0005_add_document_sort_rank`, and `0006_create_document_access_schema`. Its manifest cap is 512 and its ledger query uses `LIMIT 513` to expose overflow. These names and bounds are example evidence, not a framework registry or consumer schema.
 
+This paragraph records the six-step acceptance state of ADR 027. ADR 029 later appends the forward `0007_create_account_users` migration without rewriting any applied checksum and raises the current fresh-run ceiling from 21 to 23 statements. The new table deliberately receives no ID-based backfill from `account_memberships`, because authenticated-principal and user identities are not interchangeable.
+
 Each migration owns:
 
 - one permanent bounded identifier whose position in the manifest never changes;

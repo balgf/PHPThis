@@ -10,7 +10,7 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "php": "^8.4",
+        "php": "~8.4.0",
         "ext-pdo": "*",
         "ext-session": "*"
     },
