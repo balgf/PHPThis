@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/assets/phpthis-readme-banner.png" alt="PHPThis" width="100%">
+</p>
+
 # PHPThis
 
 PHPThis is an experimental, checked PHP profile and minimal web framework for **AI-first authoring with human accountability**. AI is the primary code author and knowledge interface. Humans provide intent, decide consequential tradeoffs, and remain accountable for the resulting software.
