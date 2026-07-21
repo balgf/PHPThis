@@ -92,6 +92,14 @@ Each runtime connection uses only the database objects and actions its process n
 
 Least privilege limits impact but does not replace application authorization. A permitted statement can still expose another tenant's data or perform the wrong domain action.
 
+## Migration authority and history
+
+ADR 027 migrations run only from the application's explicit operational console under separately authorized schema authority. The web runtime does not receive migration credentials or SQLite file permissions and never migrates during request startup. Protect the migration command, database, ledger, and lock path through the deployment identity, filesystem or database privileges, and an explicit human-approved release procedure.
+
+Treat the ledger as untrusted persisted state. Read its position, identifier, and checksum history with a finite maximum, parse every selected scalar, and reject unknown, duplicate, missing, reordered, malformed, overflowing, or checksum-mismatched history before pending SQL. Constrain the separately inspected timestamp in the engine schema and never use it for order or authorization. Never execute SQL, PHP classes, callbacks, or paths stored in the ledger. Output only finite code-owned redacted results; omit paths, DSNs, credentials, SQL, bindings, exception details, schema contents, and application data.
+
+A checksum detects divergence from the reviewed identifier and statement bytes; it does not prove statement safety, authorization, reversibility, availability, or recovery. Per-migration transactions and a same-host `flock` likewise do not prove another engine's DDL atomicity or distributed exclusion. Production use requires exact-engine privilege, lock, timeout, backup, restore, capacity, and incident evidence. See [Explicit application migrations](migrations.md) and [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md).
+
 ## Durable-job limits
 
 Commit-visible publication is atomic only for the business write and job insert executed through the same `Connection`, explicit transaction, and SQLite database. It does not include another connection, broker, external service, or later handler execution. The worker process receives only the database-file and table authority its one-shot path requires; schema management, replay, cancellation, and inspection use separately authorized operational paths.

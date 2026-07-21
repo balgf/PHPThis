@@ -14,6 +14,7 @@
 - Web runtime: {{WEB_RUNTIME}}
 - Worker runtime: {{WORKER_RUNTIME_OR_NOT_APPLICABLE}}
 - Operational application console and scheduler: `.ai/cli.md`
+- Database migrations: `.ai/migrations.md`
 - Required extensions: `ext-session` plus {{ADDITIONAL_REQUIRED_PHP_EXTENSIONS_OR_NONE}}
 
 ## Session runtime
@@ -79,6 +80,17 @@ The application supervisor creates repetition by starting fresh one-delivery pro
 - Operational assumptions source and verified date: {{CLI_OPERATIONS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
 
 Keep command, argument, exit, stream, clock, cadence, one-pass, repeated-slot, composition, and evidence facts in `.ai/cli.md`. Framework `vendor/bin/phpthis` remains the checker, not the application console. Do not add command discovery, dynamic class or service resolution, a generic scheduler facade, daemon, hidden loop, or an unrecorded second command path. A same-host file lock is topology-dependent and does not prove distributed or sequential-in-slot deduplication.
+
+## Database migrations
+
+- Adoption or `NOT_APPLICABLE(MIGRATIONS)`: `.ai/migrations.md`
+- Migration process identity and non-secret configuration source: {{MIGRATION_PROCESS_IDENTITY_AND_CONFIGURATION_OR_NOT_APPLICABLE}}
+- Lock-file ownership, permissions, cleanup, and filesystem topology: {{MIGRATION_LOCK_OPERATIONS_OR_NOT_APPLICABLE}}
+- DDL timeout, maintenance window, availability, capacity, and termination policy: {{MIGRATION_EXECUTION_OPERATIONS_OR_NOT_APPLICABLE}}
+- Backup, restore, failed-deployment, and incident procedure: {{MIGRATION_RECOVERY_OPERATIONS_OR_NOT_APPLICABLE}}
+- Operational assumptions source and verified date: {{MIGRATION_OPERATIONS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
+
+Keep identifier, manifest, checksum, ledger, transaction, immutable-history, output, redaction, and evidence facts in `.ai/migrations.md`. The application console is the only execution path; never migrate from HTTP startup, framework `vendor/bin/phpthis`, or dependency hooks. Shared-data migration requires separate explicit human authorization even when the command exists.
 
 ## Environments and deployment
 

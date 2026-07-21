@@ -25,6 +25,7 @@ Every observable behavior change must add or update application-owned automated 
 - Cache integration tests: `{{CACHE_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 - Durable-job integration and lifecycle tests: `{{JOBS_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 - Application CLI and scheduler tests: `{{CLI_TEST_COMMAND_OR_NOT_APPLICABLE}}`
+- Database migration tests: `{{MIGRATION_TEST_COMMAND_OR_NOT_APPLICABLE}}`
 
 Focused commands shorten feedback but never replace the complete validity gate.
 
@@ -55,6 +56,7 @@ Terminal request-summary evidence covers success, mapped failure, known denial w
 - Cache evidence inspects bounded operation summaries for hits, misses, writes, invalidations, failures, and stampede outcomes without logging keys or payloads.
 - Adopted durable jobs prove commit-visible publication and rollback exclusion, bounded stored-envelope parsing and finite dispatch, idle and success, exact retry delays from freshly observed failure time, completion rollback when handler time reaches lease expiry, lease expiry and stale-token fencing, final-attempt and poison dead letters, duplicate idempotent effects, real subprocess termination and post-expiry recovery, one delivery per fresh process, complete diagnostics redaction, and constant transition statement counts across small and materially larger queues.
 - An adopted operational console executes in fresh subprocesses and proves every finite command and argument bound, rejection before application I/O, exact exit and stdout/stderr bytes, every expected outcome, operational and unexpected failure redaction, explicit-clock cadence boundaries, not-due exclusion from scheduled work, nonblocking same-host overlap and lock cleanup, one-pass resource bounds, fresh HTTP and CLI state, and every recorded missed-run, catch-up, repeated-slot, supervisor, and topology limit. A same-host lock is not distributed-coordination evidence.
+- Adopted migrations execute through the real application console in fresh subprocesses and prove fresh-database manifest order, exact bounded ledger identifiers, positions, checksums, and application timestamps, unchanged no-op rerun, edited-content and malformed or overflowing ledger rejection before pending work, nonblocking same-host lock contention with no database state change, per-migration rollback with earlier commits preserved, forward continuation, exact exits and stream bytes, complete redaction, fresh migration composition, and no schema work during HTTP startup. SQLite transaction and file-lock evidence is not another engine or host-topology claim.
 - External integrations test timeout, malformed response, idempotency, and retry ownership without contacting production systems.
 
 ## Test data safety

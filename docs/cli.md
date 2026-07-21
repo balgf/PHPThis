@@ -2,7 +2,7 @@
 
 PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API. The application keeps its finite command map, typed arguments, dependencies, exit codes, output, clock, overlap policy, and process lifecycle explicit. The installed `vendor/bin/phpthis` executable remains the framework-owned `check` boundary; it is not an application command host.
 
-ADR 025 records the first proof through the executable example. The concrete names and cadence below are evidence for that application, not reserved PHPThis APIs that every consumer must copy.
+ADR 025 records the initial job and scheduler proof through the executable example. ADR 027 extends that same application-owned console with one explicit SQLite migration command without adding a framework migration API. The concrete names and cadence below are evidence for that application, not reserved PHPThis APIs that every consumer must copy.
 
 ## Adoption boundary
 
@@ -32,7 +32,7 @@ example/bin/console.php
 Its complete public grammar is:
 
 ```text
-php example/bin/console.php <jobs:run-one|schedule:run> [--database=/absolute/path]
+php example/bin/console.php <jobs:run-one|schedule:run|database:migrate> [--database=/absolute/path]
 ```
 
 The command occupies the first application argument. Zero or one option may follow it, and the only option spelling is one token beginning `--database=`. The value is 1 through 4,096 bytes, must be absolute under the current host operating system, contains no ASCII control byte or DEL, and ends with neither `/` nor `\`. A duplicate option, an option before the command, an empty value, an unsupported spelling, an extra argument, or any other shape is invalid. The console rejects unknown and invalid input before filesystem, lock, or database I/O.
@@ -49,13 +49,17 @@ The accepted example writes exactly one JSON object followed by `\n` to exactly 
 | --- | ---: | --- | --- |
 | `jobs:run-one` expected result | `0` | `{"command":"jobs:run-one","outcome":"<job-outcome>"}\n` | empty |
 | `schedule:run` expected result | `0` | `{"command":"schedule:run","outcome":"<schedule-outcome>"}\n` | empty |
+| `database:migrate` expected result | `0` | `{"command":"database:migrate","outcome":"<applied|up_to_date>"}\n` | empty |
+| finite migration failure | `1` | empty | `{"error":"migration_failed","reason":"<finite-reason>","migration":<code-owned-id-or-null>}\n` |
 | unknown command | `2` | empty | `{"error":"unknown_command"}\n` |
 | invalid arguments | `2` | empty | `{"error":"invalid_arguments"}\n` |
 | operational or unexpected failure | `1` | empty | `{"error":"command_failed"}\n` |
 
 The job outcomes are `idle`, `completed`, `retry_scheduled`, and `dead_lettered`. The schedule outcomes add `not_due` and `overlap_skipped`; when a due scheduled pass invokes the job operation, it returns that operation's finite outcome under the `schedule:run` command name. Idle, not-due, overlap, retry, and dead-letter states are expected scriptable results rather than process failures.
 
-Key order and bytes are stable. The generic errors intentionally omit submitted command and option text, paths, DSNs, environment values, credentials, exception classes and messages, stacks, SQL, bindings, job identities, envelopes, payloads, idempotency keys, and domain values. PHP warnings or diagnostics must not become a second output line.
+Key order and bytes are stable. The generic and migration errors intentionally omit submitted command and option text, paths, DSNs, environment values, credentials, exception classes and messages, stacks, SQL, bindings, ledger contents, schema contents, job identities, envelopes, payloads, idempotency keys, and domain values. PHP warnings or diagnostics must not become a second output line.
+
+The migration failure reasons are exactly `busy`, `checksum_drift`, `history_invalid`, `ledger_unavailable`, `apply_failed`, and `lock_failed`. Its `migration` field is one code-owned manifest identifier or `null`; submitted or stored identifiers are never reflected.
 
 ## Direct one-job command
 
@@ -79,6 +83,12 @@ While holding the lock, the scheduler synchronously calls the exact same in-proc
 
 The lock prevents only overlapping cooperating scheduled processes that resolve the same database and lock file on one host. It does not deduplicate two sequential `schedule:run` invocations in the same due minute; both may perform one pass. It does not coordinate hosts, containers without one shared host filesystem, direct `jobs:run-one` invocations, or uncooperative processes. Job leases and idempotent effects remain necessary. Distributed coordination belongs to a separately accepted backend-specific lease decision.
 
+## Explicit SQLite migration command
+
+`database:migrate` is the sole migration spelling in the accepted example. It freshly composes the separately authorized migration connection, final concrete coordinator, finite ordered manifest, unrolled private migration-step calls, bounded ledger, budget, trace, and application-private nonblocking same-host lock. The ledger insert explicitly records SQLite `unixepoch()`; no PHP migration clock exists. The command applies every pending migration once in manifest order and exits; an unchanged database returns `up_to_date`.
+
+The command does not run from HTTP startup, `schedule:run`, Composer dependency hooks, or framework `vendor/bin/phpthis`. It neither discovers migration files nor loads runtime SQL. Each migration and its ledger row use one explicit transaction, and a later failure preserves earlier committed entries. See [Explicit application migrations](migrations.md) and [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the ledger, checksum, authority, transaction, lock, recovery, and engine boundary.
+
 ## Composition boundary
 
 HTTP and CLI entrypoints may share immutable application configuration and narrowly named explicit construction code. They do not share live connections, budgets, traces, request objects, session state, correlation state, clocks with mutable test state, or other invocation-scoped objects. Each HTTP request and each console process receives fresh dependencies appropriate to its boundary.
@@ -101,6 +111,7 @@ A production adopter must execute its real console in fresh subprocesses and add
 - one due pass invokes the same one-job operation at most once and handles at most one delivery;
 - HTTP and CLI composition create fresh mutable state while sharing only the recorded immutable configuration; and
 - stdout, stderr, durable job state, terminal request summaries, and traces omit every submitted or sensitive value.
+- an adopted migration command also proves fresh-database manifest order, exact bounded ledger, unchanged no-op rerun, checksum drift rejection before pending work, malformed and overflowing ledger rejection, nonblocking migration-lock contention, per-migration rollback with earlier commits preserved, forward continuation, and no HTTP migration path.
 
 The complete application gate remains mandatory. Focused CLI tests shorten feedback but do not replace static analysis, the Strict Profile, or the application's other behavior evidence.
 
@@ -108,8 +119,8 @@ The current example's real-console proof covers exact unknown and invalid failur
 
 ## Unsupported boundary
 
-PHPThis ships no application console, command interface, command registry, argument parser, input or output helper, scheduler, cadence type, clock, lock, daemon, worker manager, process manager, signal handler, cron installer, deployment unit, or distributed coordinator. It adds no operational command to `bin/phpthis`.
+PHPThis ships no application console, command interface, command registry, argument parser, input or output helper, scheduler, cadence type, clock, lock, daemon, worker manager, migration API, schema builder, process manager, signal handler, cron installer, deployment unit, or distributed coordinator. It adds no operational command to `bin/phpthis`.
 
 The example proves one application-owned single-host pattern. It does not promise command compatibility across applications, distributed exclusion, persistent schedule deduplication, catch-up, production cron delivery, filesystem lock correctness on an unverified topology, exactly-once job execution, or exactly-once external effects.
 
-See [ADR 025](decisions/025-application-owned-explicit-cli-and-scheduler.md) for the accepted decision boundary.
+See [ADR 025](decisions/025-application-owned-explicit-cli-and-scheduler.md) for the console and scheduler boundary and [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the migration boundary.

@@ -4,13 +4,19 @@ This file records only the checked-in example's current data-path decisions and 
 
 ## Engine and execution boundary
 
-- Engine: SQLite through the current `ext-pdo_sqlite` runtime used by `tools/setup-example.php` and the isolated behavior fixtures. The repository does not pin an exact SQLite application version; a consuming application records and tests its deployed version.
+- Engine: SQLite through the current `ext-pdo_sqlite` runtime used by `Example\Migrations\SqliteApplicationMigrations`, `tools/setup-example.php`, and the isolated behavior fixtures. The repository does not pin an exact SQLite application version; a consuming application records and tests its deployed version.
 - Execution: direct `PHPThis\Database\Connection` calls with operation-specific `QueryBudget` and `QueryTrace` values.
-- SQL ownership: complete raw SQLite statements remain visible in the operation handler, the independently justified Create transaction owner, or the application-owned one-shot job worker and concrete effect handler.
+- SQL ownership: complete raw SQLite statements remain visible in the operation handler, the independently justified Create transaction owner, the application-owned one-shot job worker and concrete effect handler, or the final migration coordinator's named unrolled private step.
 - Bindings: explicit named parameter arrays remain beside each direct call; each placeholder occurrence has a distinct name.
 - Forbidden: ORM, Active Record, query builder, repository, generic paginator, SQL helper, binding helper, placeholder helper, generated or dynamic SQL, transaction callback, and dialect abstraction.
 - Driver claim: MySQL and PostgreSQL are certified only for the base PDO transport harness. No document-list or durable-job application SQL is certified on those engines.
 - Runtime authority: the local SQLite file/process boundary is evaluation evidence only; it is not production least-privilege proof.
+
+## Schema migration authority
+
+`Example\Migrations\SqliteApplicationMigrations` is the sole schema path for the executable example. The application console invokes it as `database:migrate`; `tools/setup-example.php` delegates to the same coordinator and then seeds evaluation data. HTTP composition performs no migration work. The coordinator owns a six-entry finite unrolled manifest, a 512-entry maximum, `LIMIT 513` bounded ledger inspection, immutable SHA-256 checksums, per-migration transactions, and the `application_migrations` ledger. See `.ai/migrations.md` for exact identifiers, lock, output, failure, recovery, and evidence policy.
+
+The migration command has schema authority over the example SQLite file. Web runtime authority remains separate in policy even though this source-checkout proof cannot demonstrate database-role grants. Production adoption records and dates its exact file ownership, process identities, configuration isolation, and backup or restore policy.
 
 ## Durable-job tables
 

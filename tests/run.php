@@ -46,6 +46,7 @@ require __DIR__ . '/request-policy.php';
 require __DIR__ . '/observability.php';
 require __DIR__ . '/jobs.php';
 require __DIR__ . '/cli.php';
+require __DIR__ . '/migrations.php';
 require __DIR__ . '/document-files.php';
 
 $tests = requestPolicyTests();
@@ -59,6 +60,10 @@ foreach (jobTests() as $name => $test) {
 }
 
 foreach (cliTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
+foreach (migrationTests() as $name => $test) {
     $tests[$name] = $test;
 }
 
@@ -93,7 +98,7 @@ $tests['example composes explicit route modules'] = static function (): void {
     }
 };
 
-$tests['example setup upgrades and reseeds an old document schema idempotently'] = static function (): void {
+$tests['example setup creates and reseeds a fresh database idempotently'] = static function (): void {
     $directory = __DIR__ . '/../tmp/application-tests';
 
     if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
@@ -106,49 +111,11 @@ $tests['example setup upgrades and reseeds an old document schema idempotently']
         throw new RuntimeException('Unable to resolve the setup migration test directory.');
     }
 
-    $databasePath = $resolvedDirectory . '/setup-example-old-schema.sqlite';
+    $databasePath = $resolvedDirectory . '/setup-example-fresh.sqlite';
 
     if (is_file($databasePath) && !unlink($databasePath)) {
         throw new RuntimeException('Unable to reset the setup migration test database.');
     }
-
-    $oldSchema = Connection::connect(
-        'sqlite:' . $databasePath,
-        new QueryBudget(3),
-        new QueryTrace(3),
-    );
-    $oldSchema->executeStatement(
-        <<<'SQL'
-            CREATE TABLE documents (
-                account_id INTEGER NOT NULL,
-                document_key TEXT NOT NULL,
-                title TEXT NOT NULL,
-                PRIMARY KEY (account_id, document_key)
-            )
-            SQL,
-    );
-    $oldSchema->executeStatement(
-        <<<'SQL'
-            INSERT INTO documents (account_id, document_key, title)
-            VALUES (:account_id, :document_key, :title)
-            SQL,
-        [
-            'account_id' => 42,
-            'document_key' => 'LegacyDocument',
-            'title' => 'Retained legacy document',
-        ],
-    );
-    $oldSchema->executeStatement(
-        <<<'SQL'
-            INSERT INTO documents (account_id, document_key, title)
-            VALUES (:account_id, :document_key, :title)
-            SQL,
-        [
-            'account_id' => 42,
-            'document_key' => 'Doc_9-z',
-            'title' => 'Stale seed title',
-        ],
-    );
 
     $setupPath = __DIR__ . '/../tools/setup-example.php';
     $defaultDatabasePath = dirname(__DIR__) . '/tmp/example.sqlite';
@@ -245,24 +212,12 @@ $tests['example setup upgrades and reseeds an old document schema idempotently']
 
     $verification = Connection::connect(
         'sqlite:' . $databasePath,
-        new QueryBudget(7),
-        new QueryTrace(7),
+        new QueryBudget(5),
+        new QueryTrace(5),
     );
     $columns = $verification->selectAllRows('PRAGMA table_info(documents)');
     $indexColumns = $verification->selectAllRows(
         'PRAGMA index_xinfo(documents_account_rank_key_idx)',
-    );
-    $legacyDocument = $verification->selectOneRow(
-        <<<'SQL'
-            SELECT
-                documents.title,
-                documents.category,
-                documents.sort_rank
-            FROM documents
-            WHERE documents.account_id = :account_id
-              AND documents.document_key = :document_key
-            SQL,
-        ['account_id' => 42, 'document_key' => 'LegacyDocument'],
     );
     $seededDocument = $verification->selectOneRow(
         <<<'SQL'
@@ -283,12 +238,6 @@ $tests['example setup upgrades and reseeds an old document schema idempotently']
                 (
                     SELECT COUNT(*)
                     FROM documents
-                    WHERE documents.account_id = :legacy_account_id
-                      AND documents.document_key = :legacy_document_key
-                ) AS legacy_document_count,
-                (
-                    SELECT COUNT(*)
-                    FROM documents
                     WHERE documents.account_id = :seed_account_id
                       AND documents.document_key = :seed_document_key
                 ) AS seed_document_count,
@@ -297,8 +246,6 @@ $tests['example setup upgrades and reseeds an old document schema idempotently']
                 (SELECT COUNT(*) FROM user_events) AS event_count
             SQL,
         [
-            'legacy_account_id' => 42,
-            'legacy_document_key' => 'LegacyDocument',
             'seed_account_id' => 42,
             'seed_document_key' => 'Doc_9-z',
         ],
@@ -348,19 +295,13 @@ $tests['example setup upgrades and reseeds an old document schema idempotently']
         $columnNames !== ['account_id', 'document_key', 'title', 'category', 'sort_rank']
         || $indexedNames !== ['account_id', 'sort_rank', 'document_key']
         || $documentKeyCollation !== 'BINARY'
-        || $legacyDocument !== [
-            'title' => 'Retained legacy document',
-            'category' => 'general',
-            'sort_rank' => 0,
-        ]
         || $seededDocument !== [
             'title' => 'Example document',
             'category' => 'general',
             'sort_rank' => 10,
         ]
         || $counts !== [
-            'document_count' => 2,
-            'legacy_document_count' => 1,
+            'document_count' => 1,
             'seed_document_count' => 1,
             'membership_count' => 1,
             'user_count' => 2,
@@ -371,7 +312,7 @@ $tests['example setup upgrades and reseeds an old document schema idempotently']
         || !str_contains($indexDefinition['sql'], 'document_key COLLATE BINARY')
     ) {
         throw new RuntimeException(
-            'Expected retained data, upgraded columns/indexes, and idempotent seed counts.',
+            'Expected fresh schema columns, indexes, and idempotent seed counts.',
         );
     }
 };

@@ -14,6 +14,7 @@
 - Web runtime: PHP's built-in server for local verification only.
 - Worker runtime: `NOT_APPLICABLE(JOBS)`; `.ai/jobs.md` owns any future durable-job lifecycle decision.
 - Operational application console and scheduler: `NOT_APPLICABLE(CLI)`; `.ai/cli.md` owns any future adoption.
+- Database migrations: `NOT_APPLICABLE(MIGRATIONS)`; `.ai/migrations.md` owns any future adoption.
 - Required extensions: `ext-pdo` and `ext-session` through the installed framework; the starter application opens no database connection and configures no session lifecycle.
 
 ## Session runtime
@@ -41,6 +42,12 @@
 `NOT_APPLICABLE(CLI)`: the starter exposes no operational application console or scheduled pass. `composer check`, `composer test`, and `vendor/bin/phpthis check` are development and validity commands; they are not an application command map.
 
 Before adoption, read installed `vendor/phpthis/framework/docs/cli.md` and replace `.ai/cli.md` with the sole console path, every finite command and operation, exact typed argument grammar and bounds, exit and stdout/stderr JSON contract, fresh composition, explicit clock and timezone, cadence, one-pass maximum, missed-run and catch-up policy, external invocation frequency, application-private same-host lock path and permissions, filesystem topology, contention and lock-failure behavior, timeout, restart, redaction, and incident owner. Keep distributed coordination explicitly not applicable unless a separate backend-specific decision and evidence establish it.
+
+## Database migrations
+
+`NOT_APPLICABLE(MIGRATIONS)`: the starter has no migration process, identity, database or lock path, DDL timeout, maintenance window, backup, restore, or recovery procedure. HTTP startup performs no schema work.
+
+Before adoption, read installed `vendor/phpthis/framework/docs/migrations.md` and complete `.ai/migrations.md` with the exact engine, sole console command, separate migration authority, manifest and ledger bounds, transaction and lock topology, immutable forward-recovery policy, DDL availability and timeout behavior, backup and restore requirements, exact finite output and redaction, operational source and verification date, and real-console evidence. Shared-data execution still requires separate explicit human authorization.
 
 ## Deployment
 

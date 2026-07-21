@@ -34,6 +34,7 @@ function cliTests(): array
                 || str_contains($withOption['stderr'], $missingDatabasePath)
                 || is_file($missingDatabasePath)
                 || is_file($missingDatabasePath . '.schedule.lock')
+                || is_file($missingDatabasePath . '.migration.lock')
             ) {
                 throw new RuntimeException('Unknown commands must fail before I/O with one redacted stderr line.');
             }
@@ -65,6 +66,7 @@ function cliTests(): array
                 ],
                 ['jobs:run-one', '--database=' . $missingDatabasePath, 'unexpected'],
                 ['schedule:run', '--database=' . $missingDatabasePath, 'unexpected'],
+                ['database:migrate', '--database=' . $missingDatabasePath, 'unexpected'],
             ];
 
             foreach ($invalidArguments as $arguments) {
@@ -81,6 +83,7 @@ function cliTests(): array
             if (
                 is_file($missingDatabasePath)
                 || is_file($missingDatabasePath . '.schedule.lock')
+                || is_file($missingDatabasePath . '.migration.lock')
             ) {
                 throw new RuntimeException('Invalid CLI arguments must perform no database or lock I/O.');
             }
@@ -343,7 +346,13 @@ function successfulConsoleLine(string $command, string $outcome): string
 
 function resetCliMissingPath(string $databasePath): void
 {
-    foreach ([$databasePath, $databasePath . '.schedule.lock'] as $path) {
+    foreach (
+        [
+            $databasePath,
+            $databasePath . '.schedule.lock',
+            $databasePath . '.migration.lock',
+        ] as $path
+    ) {
         if (is_file($path) && !unlink($path)) {
             throw new RuntimeException('Unable to reset a CLI missing-path test artifact.');
         }

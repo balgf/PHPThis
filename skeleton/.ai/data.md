@@ -2,6 +2,8 @@
 
 `NOT_APPLICABLE`: the starter has no database, persisted resource, or CRUD-shaped behavior. It therefore has no SQL, structural selectors, bounded data lists, database identities or privileges, migrations, CRUD resource identifiers or item/collection routes, pagination, create identity or conflicts, `PUT`/`PATCH` or concurrency policy, missing-resource semantics, deletion or retention policy, resource authorization, or audit events.
 
+`NOT_APPLICABLE(MIGRATIONS)`: `.ai/migrations.md` owns any future migration engine, command, manifest, checksum, ledger, authority, transaction, lock, recovery, and evidence decision. Do not infer schema authority from this general data file.
+
 `NOT_APPLICABLE(CACHE)`: the starter has no typed cache projection, authoritative rebuild source, versioned key schema, environment or tenant cache namespace, payload parser or bound, TTL or staleness bound, invalidation policy, or corruption and eviction behavior.
 
 `NOT_APPLICABLE(REQUEST_POLICY)`: the starter has no authentication, tenant-resolution, authorization, or protected-handler connection, query budget, trace, protected write, or authorization-to-write race.

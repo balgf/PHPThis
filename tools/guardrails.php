@@ -419,6 +419,7 @@ $requiredRepositoryFiles = [
     '.ai/file-transfers.md',
     '.ai/http.md',
     '.ai/jobs.md',
+    '.ai/migrations.md',
     '.ai/observability.md',
     '.ai/request-policy.md',
     '.ai/routing.md',
@@ -455,6 +456,7 @@ $requiredRepositoryFiles = [
     'docs/jobs/schema.md',
     'docs/jobs/testing.md',
     'docs/knowledge-map.md',
+    'docs/migrations.md',
     'docs/observability/README.md',
     'docs/observability/correlation-id.md',
     'docs/observability/database-evidence.md',
@@ -482,17 +484,26 @@ $requiredRepositoryFiles = [
     'docs/decisions/024-application-owned-sqlite-durable-jobs.md',
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md',
     'docs/decisions/026-bounded-file-transfers.md',
+    'docs/decisions/027-application-owned-explicit-sqlite-migrations.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cli.md',
     'example/.ai/data.md',
     'example/.ai/file-transfers.md',
     'example/.ai/jobs.md',
+    'example/.ai/migrations.md',
     'example/.ai/observability.md',
     'example/bin/console.php',
     'example/src/ApplicationComposition.php',
     'example/src/ApplicationDatabasePath.php',
     'example/src/InvalidApplicationDatabasePath.php',
+    'example/src/Migrations/ApplicationMigrationFailed.php',
+    'example/src/Migrations/ApplicationMigrationFailureReason.php',
+    'example/src/Migrations/ApplicationMigrationOutcome.php',
+    'example/src/Migrations/LocalMigrationLock.php',
+    'example/src/Migrations/MigrationHistory.php',
+    'example/src/Migrations/SqliteApplicationMigrations.php',
+    'example/src/Migrations/SqliteMigrationLedger.php',
     'example/src/Cli/ApplicationCommandExecution.php',
     'example/src/Cli/ApplicationCommandLine.php',
     'example/src/Cli/ApplicationCommandName.php',
@@ -564,6 +575,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/file-transfers.md',
     'templates/application/.ai/integrations.md',
     'templates/application/.ai/jobs.md',
+    'templates/application/.ai/migrations.md',
     'templates/application/.ai/observability.md',
     'templates/application/.ai/operations.md',
     'templates/application/.ai/project.md',
@@ -584,6 +596,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/file-transfers.md',
     'skeleton/.ai/integrations.md',
     'skeleton/.ai/jobs.md',
+    'skeleton/.ai/migrations.md',
     'skeleton/.ai/observability.md',
     'skeleton/.ai/operations.md',
     'skeleton/.ai/project.md',
@@ -638,7 +651,9 @@ $requiredRepositoryFiles = [
     'tests/response-emitter.php',
     'tests/upload-request-boundary.php',
     'tests/jobs.php',
+    'tests/migrations.php',
     'tests/cli.php',
+    'tests/cli-migration-lock-holder.php',
     'tests/cli-schedule-lock-holder.php',
     'tests/job-worker-crash.php',
     'tests/request-policy.php',
@@ -1687,7 +1702,7 @@ $durableJobArtifactMarkers = [
         '$this->connection->commit();',
     ],
     'example/src/Cli/ApplicationCommands.php' => [
-        'private function runOneJob(): ApplicationCommandOutcome',
+        'private function runOneJob(?string $databasePath = null): ApplicationCommandOutcome',
         '$worker->runOne(bin2hex(random_bytes(16)))',
         'new QueryBudget(3)',
         'new QueryTrace(3)',
@@ -1718,10 +1733,9 @@ $durableJobArtifactMarkers = [
         'sleep(60);',
     ],
     'tools/setup-example.php' => [
-        'CREATE TABLE IF NOT EXISTS application_jobs',
-        'CREATE INDEX IF NOT EXISTS application_jobs_available_due_idx',
-        'CREATE INDEX IF NOT EXISTS application_jobs_expired_lease_idx',
-        'CREATE TABLE IF NOT EXISTS welcome_deliveries',
+        'new ApplicationComposition($applicationDatabasePath)',
+        '->commands(new SystemUserWelcomeJobClock())',
+        '->run(ApplicationCommandName::DatabaseMigrate);',
     ],
     'templates/application/.ai/jobs.md' => [
         '{{JOBS_ADOPTION_OR_NOT_APPLICABLE}}',
@@ -1764,6 +1778,18 @@ foreach ($durableJobArtifactMarkers as $relativePath => $markers) {
             $failures[] = "Durable-job artifact marker is missing from {$relativePath}.";
         }
     }
+}
+
+$exampleSetup = file_get_contents($root . '/tools/setup-example.php');
+
+if (
+    is_string($exampleSetup)
+    && preg_match(
+        '/\b(?:CREATE\s+(?:TABLE|INDEX|TRIGGER|VIEW)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX|TRIGGER|VIEW)|REINDEX|VACUUM)\b/i',
+        $exampleSetup,
+    ) === 1
+) {
+    $failures[] = 'tools/setup-example.php must delegate schema DDL instead of duplicating it.';
 }
 
 foreach (['src/Jobs', 'src/Queue'] as $forbiddenCoreDirectory) {
@@ -1819,7 +1845,8 @@ $applicationCliArtifactMarkers = [
     'docs/cli.md' => [
         '# Application CLI and scheduler',
         'PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API.',
-        'php example/bin/console.php <jobs:run-one|schedule:run> [--database=/absolute/path]',
+        'php example/bin/console.php <jobs:run-one|schedule:run|database:migrate> [--database=/absolute/path]',
+        '`database:migrate` is the sole migration spelling in the accepted example.',
         'intdiv(epoch_seconds, 60) % 5 === 0',
         'flock(LOCK_EX | LOCK_NB)',
         '`Example\\ApplicationComposition`',
@@ -1891,6 +1918,7 @@ $applicationCliArtifactMarkers = [
         '# Example application CLI and scheduler context',
         'php example/bin/console.php jobs:run-one [--database=/absolute/path]',
         'php example/bin/console.php schedule:run [--database=/absolute/path]',
+        'php example/bin/console.php database:migrate [--database=/absolute/path]',
         'intdiv(epochSeconds, 60) % 5 === 0',
         'nonblocking exclusive `flock`',
         'No live connection, budget, trace, request, session, correlation ID, or mutable clock is shared between HTTP and CLI',
@@ -1938,7 +1966,8 @@ $applicationCliArtifactMarkers = [
         'final readonly class ApplicationComposition',
         'public function http(): TerminalRequestCoordinator',
         'public function commands(UserWelcomeJobClock $clock): ApplicationCommands',
-        "new LocalScheduleLock(\$this->databasePath . '.schedule.lock')",
+        'return new ApplicationCommands(',
+        '$this->databasePath,',
     ],
     'example/src/ApplicationDatabasePath.php' => [
         'strlen($value) > 4_096',
@@ -1946,6 +1975,7 @@ $applicationCliArtifactMarkers = [
         "preg_match('/[\\x00-\\x1F\\x7F]/', \$value)",
     ],
     'example/src/Cli/ApplicationCommandName.php' => [
+        "case DatabaseMigrate = 'database:migrate';",
         "case JobsRunOne = 'jobs:run-one';",
         "case ScheduleRun = 'schedule:run';",
     ],
@@ -1956,6 +1986,8 @@ $applicationCliArtifactMarkers = [
         "case DeadLettered = 'dead_lettered';",
         "case NotDue = 'not_due';",
         "case OverlapSkipped = 'overlap_skipped';",
+        "case Applied = 'applied';",
+        "case UpToDate = 'up_to_date';",
     ],
     'example/src/Cli/ApplicationCommandLine.php' => [
         "str_starts_with(\$arguments[1], '--')",
@@ -1966,11 +1998,14 @@ $applicationCliArtifactMarkers = [
     ],
     'example/src/Cli/ApplicationCommands.php' => [
         'return match ($command)',
+        'ApplicationCommandName::DatabaseMigrate => new ApplicationCommandExecution(',
         'intdiv($this->clock->now(), 60)',
         '$currentMinute % 5 !== 0',
-        'if (!$this->scheduleLock->acquire())',
-        '$this->scheduleLock->release();',
-        'private function runOneJob(): ApplicationCommandOutcome',
+        "new LocalScheduleLock(\$databasePath . '.schedule.lock')",
+        'if (!$scheduleLock->acquire())',
+        '$scheduleLock->release();',
+        'private function runOneJob(?string $databasePath = null): ApplicationCommandOutcome',
+        'private function runMigrations(): ApplicationCommandOutcome',
     ],
     'example/src/Cli/LocalScheduleLock.php' => [
         "fopen(\$this->path, 'c+b')",
@@ -2043,7 +2078,7 @@ if (is_string($frameworkEntrypoint)) {
         $failures[] = 'The framework entrypoint must retain its check-only usage contract.';
     }
 
-    foreach (['jobs:run-one', 'schedule:run'] as $applicationCommand) {
+    foreach (['jobs:run-one', 'schedule:run', 'database:migrate'] as $applicationCommand) {
         if (str_contains($frameworkEntrypoint, $applicationCommand)) {
             $failures[] = "The application command {$applicationCommand} must not enter bin/phpthis.";
         }
@@ -2105,6 +2140,583 @@ foreach ($applicationCliSourceFiles as $relativePath) {
         if (is_array($token) && in_array($token[0], [T_FOR, T_FOREACH, T_WHILE, T_DO], true)) {
             $failures[] = "Application CLI source {$relativePath} must remain one-shot without an in-process loop.";
             break;
+        }
+    }
+}
+
+$migrationArtifactMarkers = [
+    '.ai/README.md' => [
+        'Add, change, or review database migrations',
+        '`.ai/migrations.md`, `.ai/database.md`, `.ai/cli.md`, `.ai/testing.md`, ADR 027',
+    ],
+    '.ai/application-context.md' => [
+        '`NOT_APPLICABLE(MIGRATIONS)`',
+        'Contract version 6 does not checker-require that new file',
+    ],
+    '.ai/migrations.md' => [
+        '# Migration authoring contract',
+        'PHPThis provides no core migration API.',
+        'Never run it during HTTP startup or through framework `bin/phpthis`.',
+        'Do not scan files, discover classes, resolve strings, or load runtime `.sql` files.',
+        'Never call a database method in a loop',
+    ],
+    '.ai/testing.md' => [
+        'An application that adopts ADR 027 migrations must execute the real console in fresh subprocesses',
+        'zero migration work during HTTP startup',
+    ],
+    'docs/migrations.md' => [
+        '# Explicit application migrations',
+        'PHPThis accepts one application-owned SQLite migration-ledger pattern and provides no core migration runtime.',
+        'PHPStan must resolve every direct SQL argument to finite non-blank compile-time constants.',
+        'The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`.',
+        'Do not expose it through HTTP configuration or compose the coordinator during request startup.',
+    ],
+    'docs/decisions/027-application-owned-explicit-sqlite-migrations.md' => [
+        'Status: accepted',
+        'Consumer Contract version 6, Strict Profile version 2, and the 2,500-line core ceiling remain unchanged.',
+        'final `Example\\Migrations\\SqliteApplicationMigrations`',
+        '`0001_create_user_schema`',
+        '`0006_create_document_access_schema`',
+        '`application_migrations`',
+        '`LIMIT 513`',
+        '21-statement budget and trace',
+        'mode `0600`',
+        'No framework migration API, schema abstraction, reusable runner, discovery rule, core change, Consumer Contract version, Strict Profile version, or cross-engine claim is introduced.',
+    ],
+    'docs/consumer-contract.md' => [
+        '## Optional application-owned database migrations',
+        'Contract version 6 does not make that additional file a checker requirement',
+        'It never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
+    ],
+    'docs/decisions/README.md' => [
+        '027-application-owned-explicit-sqlite-migrations.md',
+    ],
+    'docs/knowledge-map.md' => [
+        'Add, apply, explain, or recover a database migration',
+        '`docs/migrations.md`, `docs/database.md`, `docs/security.md`',
+    ],
+    'README.md' => [
+        'Schema evolution begins with one application-owned SQLite migration ledger',
+        'php example/bin/console.php database:migrate',
+    ],
+    'ROADMAP.md' => [
+        'ADR 027 accepts one application-owned SQLite migration ledger',
+        'not a core schema API, migration discovery, down-migration engine, HTTP bootstrap behavior, or portable DDL contract',
+    ],
+    'example/.ai/README.md' => [
+        'Change schema migrations, migration history, or migration recovery',
+        '`bin/console.php`, `ApplicationComposition`, `src/Migrations/`',
+    ],
+    'example/.ai/migrations.md' => [
+        '# Example SQLite migration context',
+        '`Example\\Migrations\\SqliteApplicationMigrations` coordinator',
+        'The manifest cap is 512 migrations and the ordered position/identifier/checksum history read uses `LIMIT 513`',
+        'The migration lock path is the canonical database path plus `.migration.lock`.',
+        '`tools/setup-example.php` delegates schema work to this exact coordinator',
+    ],
+    'example/AGENTS.md' => [
+        'Keep `database:migrate` as the sole application migration command',
+        '`tools/setup-example.php` may delegate to that exact coordinator before seeding; it must not duplicate schema SQL.',
+    ],
+    'templates/application/.ai/migrations.md' => [
+        '{{MIGRATION_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_MANIFEST_SOURCE_OR_NOT_APPLICABLE}}',
+        'no database call occurs in a loop',
+        'A non-SQLite adoption requires a separate engine-specific DDL, transaction, locking, privilege, recovery, and integration decision.',
+    ],
+    'skeleton/.ai/migrations.md' => [
+        '`NOT_APPLICABLE(MIGRATIONS)`',
+        'No migration code or dependency is included, and HTTP startup performs no schema work.',
+        'runtime `.sql` loading',
+    ],
+    'example/src/Migrations/ApplicationMigrationFailureReason.php' => [
+        "case Busy = 'busy';",
+        "case ChecksumDrift = 'checksum_drift';",
+        "case HistoryInvalid = 'history_invalid';",
+        "case LedgerUnavailable = 'ledger_unavailable';",
+        "case ApplyFailed = 'apply_failed';",
+        "case LockFailed = 'lock_failed';",
+    ],
+    'example/src/Migrations/ApplicationMigrationOutcome.php' => [
+        "case Applied = 'applied';",
+        "case UpToDate = 'up_to_date';",
+    ],
+    'example/src/Migrations/ApplicationMigrationFailed.php' => [
+        "'error' => 'migration_failed'",
+        "'reason' => \$this->reason->value",
+        "'migration' => \$this->migrationIdentifier",
+    ],
+    'example/src/Migrations/LocalMigrationLock.php' => [
+        "fopen(\$this->path, 'c+b')",
+        '@chmod($this->path, 0600)',
+        '@fstat($handle)',
+        '@lstat($this->path)',
+        "\$handleStatus['nlink'] === 1",
+        "\$handleStatus['ino'] === \$pathStatus['ino']",
+        'flock($handle, LOCK_EX | LOCK_NB, $wouldBlock)',
+        'flock($handle, LOCK_UN)',
+    ],
+    'example/src/Migrations/MigrationHistory.php' => [
+        'count($rows) > 512',
+        "array_keys(\$row) !== ['position', 'migration_id', 'checksum_sha256']",
+        "ApplicationMigrationFailureReason::ChecksumDrift",
+    ],
+    'example/src/Migrations/SqliteMigrationLedger.php' => [
+        'CREATE TABLE application_migrations',
+        'position INTEGER PRIMARY KEY',
+        'migration_id TEXT NOT NULL UNIQUE',
+        'checksum_sha256 TEXT NOT NULL',
+        'applied_at_epoch INTEGER NOT NULL',
+        'sqlite_autoindex_application_migrations_1',
+        'ORDER BY sqlite_master.type ASC, sqlite_master.name ASC',
+        'LIMIT 513',
+        'unixepoch()',
+    ],
+    'example/src/Migrations/SqliteApplicationMigrations.php' => [
+        'final readonly class SqliteApplicationMigrations',
+        'private const int QUERY_LIMIT = 21;',
+        "private const string USER_SCHEMA_IDENTIFIER = '0001_create_user_schema';",
+        "private const string JOB_SCHEMA_IDENTIFIER = '0002_create_job_schema';",
+        "private const string PREPARE_DOCUMENT_IDENTIFIER = '0003_prepare_document_schema';",
+        "private const string DOCUMENT_CATEGORY_IDENTIFIER = '0004_add_document_category';",
+        "private const string DOCUMENT_SORT_RANK_IDENTIFIER = '0005_add_document_sort_rank';",
+        "private const string DOCUMENT_ACCESS_IDENTIFIER = '0006_create_document_access_schema';",
+        'new QueryBudget(self::QUERY_LIMIT)',
+        'new QueryTrace(self::QUERY_LIMIT)',
+        'options: [PDO::ATTR_TIMEOUT => 5]',
+        '$connection->beginTransaction();',
+        '$ledger->record(',
+        '$connection->commit();',
+    ],
+    'example/src/Cli/ApplicationCommands.php' => [
+        'new SqliteApplicationMigrations(',
+        "new LocalMigrationLock(\$databasePath . '.migration.lock')",
+        'ApplicationMigrationOutcome::Applied => ApplicationCommandOutcome::Applied',
+        'ApplicationMigrationOutcome::UpToDate => ApplicationCommandOutcome::UpToDate',
+    ],
+    'example/bin/console.php' => [
+        'catch (ApplicationMigrationFailed $exception)',
+        'fwrite(STDERR, $exception->stderrLine());',
+    ],
+    'tests/run.php' => [
+        "require __DIR__ . '/migrations.php';",
+        'foreach (migrationTests() as $name => $test)',
+    ],
+    'tests/migrations.php' => [
+        'database migrate applies an ordered inspectable ledger and reruns as a no-op',
+        'database migrate rejects checksum drift before pending migration work',
+        'database migrate rejects an incompatible preexisting ledger schema',
+        'database migrate reports exact redacted ledger and lock failures',
+        'migration history rejects malformed and oversized database snapshots',
+        'database migrate preserves earlier commits across a later migration failure',
+        'database migrate refuses to infer a baseline for an unledgered existing schema',
+        'database migrate fails fast under a subprocess-held migration lock',
+        'HTTP startup must not create the database or migration ledger.',
+    ],
+    'tests/cli-migration-lock-holder.php' => [
+        "\$databasePath . '.migration.lock'",
+        'chmod($lockPath, 0600)',
+        'flock($handle, LOCK_EX | LOCK_NB)',
+        'fwrite(STDOUT, "READY\\n")',
+    ],
+    'tools/setup-example.php' => [
+        '->run(ApplicationCommandName::DatabaseMigrate);',
+    ],
+    'tools/package-files.txt' => [
+        'docs/migrations.md',
+        'docs/decisions/027-application-owned-explicit-sqlite-migrations.md',
+        'templates/application/.ai/migrations.md',
+    ],
+];
+
+foreach ($migrationArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read migration artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Migration artifact marker is missing from {$relativePath}: {$marker}.";
+        }
+    }
+}
+
+foreach (
+    ['src/Migration', 'src/Migrations', 'src/Schema', 'src/SchemaBuilder']
+    as $forbiddenCoreDirectory
+) {
+    if (is_dir($root . '/' . $forbiddenCoreDirectory)) {
+        $failures[] = "Migration runtime must remain application-owned outside framework core: {$forbiddenCoreDirectory}.";
+    }
+}
+
+$databaseCoreDirectory = $root . '/src/Database';
+
+if (is_dir($databaseCoreDirectory)) {
+    foreach (new DirectoryIterator($databaseCoreDirectory) as $databaseCoreEntry) {
+        if ($databaseCoreEntry->isDot()) {
+            continue;
+        }
+
+        if (
+            str_starts_with($databaseCoreEntry->getFilename(), 'Migration')
+            || str_starts_with($databaseCoreEntry->getFilename(), 'Schema')
+        ) {
+            $failures[] = 'Migration or schema-building runtime must not enter src/Database.';
+        }
+    }
+}
+
+$migrationPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (is_string($migrationPackageInventory)) {
+    foreach (
+        [
+            '/^src\/(?:Migration|Migrations|Schema|SchemaBuilder)(?:\/|\.php$)/m',
+            '/^src\/Database\/(?:Migration|Schema)/m',
+            '/^\.ai\/migrations\.md$/m',
+            '/^example\/src\/Migrations\//m',
+            '/^skeleton\/\.ai\/migrations\.md$/m',
+            '/^tests\/(?:migrations|cli-migration-lock-holder)\.php$/m',
+        ] as $forbiddenMigrationPackagePattern
+    ) {
+        if (preg_match($forbiddenMigrationPackagePattern, $migrationPackageInventory) === 1) {
+            $failures[] = 'Application-owned migration runtime and evidence must remain outside the framework package inventory.';
+        }
+    }
+}
+
+if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/migrations.md',")) {
+    $failures[] = 'Contract version 6 must not checker-require the optional migration context file.';
+}
+
+if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveMigrationsContextIsRequired')) {
+    $failures[] = 'Contract version 6 must not reject an existing consumer only because .ai/migrations.md is absent.';
+}
+
+$runtimeSqlRoots = ['src', 'example', 'skeleton', 'templates/application', 'tools'];
+
+foreach ($runtimeSqlRoots as $runtimeSqlRoot) {
+    $runtimeSqlPath = $root . '/' . $runtimeSqlRoot;
+
+    if (!is_dir($runtimeSqlPath)) {
+        continue;
+    }
+
+    $runtimeSqlFiles = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($runtimeSqlPath, FilesystemIterator::SKIP_DOTS),
+    );
+
+    foreach ($runtimeSqlFiles as $runtimeSqlFile) {
+        if (
+            $runtimeSqlFile instanceof SplFileInfo
+            && $runtimeSqlFile->isFile()
+            && strtolower($runtimeSqlFile->getExtension()) === 'sql'
+        ) {
+            $relativeSqlPath = substr($runtimeSqlFile->getPathname(), strlen($root) + 1);
+            $failures[] = "Runtime .sql files are forbidden; keep direct finite SQL in PHP source: {$relativeSqlPath}.";
+        }
+    }
+}
+
+$migrationRuntimeSourceFiles = ['example/src/Cli/ApplicationCommands.php'];
+$migrationRuntimeDirectory = $root . '/example/src/Migrations';
+$migrationRuntimeFiles = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($migrationRuntimeDirectory, FilesystemIterator::SKIP_DOTS),
+);
+
+foreach ($migrationRuntimeFiles as $migrationRuntimeFile) {
+    if (
+        $migrationRuntimeFile instanceof SplFileInfo
+        && $migrationRuntimeFile->isFile()
+        && strtolower($migrationRuntimeFile->getExtension()) === 'php'
+    ) {
+        $migrationRuntimeSourceFiles[] = substr(
+            $migrationRuntimeFile->getPathname(),
+            strlen($root) + 1,
+        );
+    }
+}
+
+sort($migrationRuntimeSourceFiles);
+$forbiddenMigrationDiscoveryMarkers = [
+    'class_exists(',
+    'get_declared_classes(',
+    'get_declared_interfaces(',
+    'get_declared_traits(',
+    'glob(',
+    'scandir(',
+    'DirectoryIterator',
+    'FilesystemIterator',
+    'RecursiveDirectoryIterator',
+    'RecursiveIteratorIterator',
+    'ReflectionClass',
+    'ReflectionFunction',
+    'ReflectionMethod',
+    'SplFileObject',
+];
+$forbiddenMigrationFileFunctions = [
+    'file',
+    'file_get_contents',
+    'fgets',
+    'fread',
+    'parse_ini_file',
+    'readfile',
+    'stream_get_line',
+    'stream_get_contents',
+];
+$forbiddenMigrationAbstractions = [
+    'MigrationInterface',
+    'MigrationRegistry',
+    'QueryBuilder',
+    'SchemaBuilder',
+    'TransactionCallback',
+    'bindParam(',
+    'bindValue(',
+];
+
+foreach ($migrationRuntimeSourceFiles as $relativePath) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        continue;
+    }
+
+    foreach (array_merge($forbiddenMigrationDiscoveryMarkers, $forbiddenMigrationAbstractions) as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "Migration runtime source {$relativePath} contains forbidden discovery loading or abstraction marker {$marker}.";
+        }
+    }
+
+    foreach (token_get_all($contents) as $token) {
+        if (!is_array($token)) {
+            continue;
+        }
+
+        if (in_array($token[0], [T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE], true)) {
+            $failures[] = "Migration runtime source {$relativePath} must not load executable source at runtime.";
+            continue;
+        }
+
+        if (!in_array($token[0], [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED], true)) {
+            continue;
+        }
+
+        $functionName = strtolower(ltrim($token[1], '\\'));
+        $separator = strrpos($functionName, '\\');
+
+        if ($separator !== false) {
+            $functionName = substr($functionName, $separator + 1);
+        }
+
+        if (
+            in_array($functionName, $forbiddenMigrationFileFunctions, true)
+            || ($functionName === 'fopen' && $relativePath !== 'example/src/Migrations/LocalMigrationLock.php')
+        ) {
+            $failures[] = "Migration runtime source {$relativePath} must not load migration SQL or source from runtime files.";
+        }
+    }
+}
+
+$migrationCoordinator = file_get_contents(
+    $root . '/example/src/Migrations/SqliteApplicationMigrations.php',
+);
+
+if (is_string($migrationCoordinator)) {
+    foreach (
+        [
+            'if (!$history->contains(' => 6,
+            '$connection->beginTransaction();' => 6,
+            '$ledger->record(' => 6,
+            '$connection->commit();' => 6,
+            '$connection->rollBack();' => 6,
+        ] as $migrationCoordinatorMarker => $expectedCount
+    ) {
+        if (substr_count($migrationCoordinator, $migrationCoordinatorMarker) !== $expectedCount) {
+            $failures[] = sprintf(
+                'SqliteApplicationMigrations marker %s must occur exactly %d times.',
+                $migrationCoordinatorMarker,
+                $expectedCount,
+            );
+        }
+    }
+
+    foreach (token_get_all($migrationCoordinator) as $token) {
+        if (is_array($token) && in_array($token[0], [T_FOR, T_FOREACH, T_WHILE, T_DO], true)) {
+            $failures[] = 'SqliteApplicationMigrations must keep every migration and database call explicitly unrolled.';
+            break;
+        }
+    }
+
+    $migrationSqlOrderMarkers = [
+        <<<'PHP'
+            $connection->executeStatement(self::CREATE_USERS_SQL);
+            $connection->executeStatement(self::CREATE_USER_EVENTS_SQL);
+            $connection->executeStatement(self::CREATE_USER_EVENTS_INDEX_SQL);
+            PHP,
+        <<<'PHP'
+            self::USER_SCHEMA_IDENTIFIER . "\0"
+                . self::CREATE_USERS_SQL . "\0"
+                . self::CREATE_USER_EVENTS_SQL . "\0"
+                . self::CREATE_USER_EVENTS_INDEX_SQL,
+            PHP,
+        <<<'PHP'
+            $connection->executeStatement(self::CREATE_APPLICATION_JOBS_SQL);
+            $connection->executeStatement(self::CREATE_APPLICATION_JOBS_AVAILABLE_INDEX_SQL);
+            $connection->executeStatement(self::CREATE_APPLICATION_JOBS_LEASE_INDEX_SQL);
+            $connection->executeStatement(self::CREATE_WELCOME_DELIVERIES_SQL);
+            PHP,
+        <<<'PHP'
+            self::JOB_SCHEMA_IDENTIFIER . "\0"
+                . self::CREATE_APPLICATION_JOBS_SQL . "\0"
+                . self::CREATE_APPLICATION_JOBS_AVAILABLE_INDEX_SQL . "\0"
+                . self::CREATE_APPLICATION_JOBS_LEASE_INDEX_SQL . "\0"
+                . self::CREATE_WELCOME_DELIVERIES_SQL,
+            PHP,
+        '$connection->executeStatement(self::CREATE_DOCUMENTS_SQL);',
+        <<<'PHP'
+            self::PREPARE_DOCUMENT_IDENTIFIER . "\0"
+                . self::CREATE_DOCUMENTS_SQL,
+            PHP,
+        '$connection->executeStatement(self::ADD_DOCUMENT_CATEGORY_SQL);',
+        <<<'PHP'
+            self::DOCUMENT_CATEGORY_IDENTIFIER . "\0"
+                . self::ADD_DOCUMENT_CATEGORY_SQL,
+            PHP,
+        '$connection->executeStatement(self::ADD_DOCUMENT_SORT_RANK_SQL);',
+        <<<'PHP'
+            self::DOCUMENT_SORT_RANK_IDENTIFIER . "\0"
+                . self::ADD_DOCUMENT_SORT_RANK_SQL,
+            PHP,
+        <<<'PHP'
+            $connection->executeStatement(self::CREATE_DOCUMENT_INDEX_SQL);
+            $connection->executeStatement(self::CREATE_ACCOUNT_MEMBERSHIPS_SQL);
+            PHP,
+        <<<'PHP'
+            self::DOCUMENT_ACCESS_IDENTIFIER . "\0"
+                . self::CREATE_DOCUMENT_INDEX_SQL . "\0"
+                . self::CREATE_ACCOUNT_MEMBERSHIPS_SQL,
+            PHP,
+    ];
+
+    $normalizedMigrationCoordinator = preg_replace('/\s+/', ' ', $migrationCoordinator);
+
+    foreach ($migrationSqlOrderMarkers as $migrationSqlOrderMarker) {
+        $normalizedMigrationSqlOrderMarker = preg_replace(
+            '/\s+/',
+            ' ',
+            trim($migrationSqlOrderMarker),
+        );
+
+        if (
+            !is_string($normalizedMigrationCoordinator)
+            || !is_string($normalizedMigrationSqlOrderMarker)
+            || !str_contains($normalizedMigrationCoordinator, $normalizedMigrationSqlOrderMarker)
+        ) {
+            $failures[] = 'Migration execution order and checksum-covered SQL order must remain paired explicitly.';
+        }
+    }
+}
+
+$httpMigrationBoundaryFiles = [
+    'example/bootstrap.php',
+    'example/public/index.php',
+    'example/src/ApplicationComposition.php',
+    'skeleton/bootstrap.php',
+    'skeleton/public/index.php',
+];
+$forbiddenHttpMigrationMarkers = [
+    'ApplicationCommandName::DatabaseMigrate',
+    'SqliteApplicationMigrations',
+    'application_migrations',
+    'database:migrate',
+    'setup-example.php',
+];
+
+foreach ($httpMigrationBoundaryFiles as $relativePath) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        continue;
+    }
+
+    foreach ($forbiddenHttpMigrationMarkers as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "HTTP startup boundary {$relativePath} must not wire migration marker {$marker}.";
+        }
+    }
+}
+
+$frameworkRuntimePaths = ['bin/phpthis'];
+$frameworkSourceFiles = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),
+);
+
+foreach ($frameworkSourceFiles as $frameworkSourceFile) {
+    if (
+        $frameworkSourceFile instanceof SplFileInfo
+        && $frameworkSourceFile->isFile()
+        && strtolower($frameworkSourceFile->getExtension()) === 'php'
+    ) {
+        $frameworkRuntimePaths[] = substr($frameworkSourceFile->getPathname(), strlen($root) + 1);
+    }
+}
+
+foreach ($frameworkRuntimePaths as $frameworkRuntimePath) {
+    $frameworkRuntime = file_get_contents($root . '/' . $frameworkRuntimePath);
+
+    if (
+        is_string($frameworkRuntime)
+        && preg_match('/\bmigrat(?:e|es|ed|ing|ion|ions)\b/i', $frameworkRuntime) === 1
+    ) {
+        $failures[] = "Migration behavior must remain outside framework runtime source: {$frameworkRuntimePath}.";
+    }
+}
+
+$composerLifecycleEvents = [
+    'pre-install-cmd',
+    'post-install-cmd',
+    'pre-update-cmd',
+    'post-update-cmd',
+    'post-root-package-install',
+    'post-create-project-cmd',
+    'pre-autoload-dump',
+    'post-autoload-dump',
+    'pre-status-cmd',
+    'post-package-install',
+    'post-package-update',
+    'pre-package-uninstall',
+    'post-package-uninstall',
+];
+
+foreach (['composer.json', 'skeleton/composer.json'] as $composerLifecyclePath) {
+    $contents = file_get_contents($root . '/' . $composerLifecyclePath);
+    $manifest = is_string($contents) ? json_decode($contents, true) : null;
+    $scripts = is_array($manifest) ? ($manifest['scripts'] ?? null) : null;
+
+    if (!is_array($scripts)) {
+        continue;
+    }
+
+    foreach ($composerLifecycleEvents as $composerLifecycleEvent) {
+        $commands = $scripts[$composerLifecycleEvent] ?? null;
+
+        if ($commands === null) {
+            continue;
+        }
+
+        $encodedCommands = json_encode($commands, JSON_THROW_ON_ERROR);
+
+        foreach (
+            ['database:migrate', 'SqliteApplicationMigrations', 'setup-example.php', '@example:setup']
+            as $migrationLifecycleMarker
+        ) {
+            if (str_contains($encodedCommands, $migrationLifecycleMarker)) {
+                $failures[] = "Composer lifecycle {$composerLifecyclePath}:{$composerLifecycleEvent} must not run migrations.";
+            }
         }
     }
 }

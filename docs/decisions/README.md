@@ -30,3 +30,4 @@ Accepted records:
 - `024-application-owned-sqlite-durable-jobs.md`
 - `025-application-owned-explicit-cli-and-scheduler.md`
 - `026-bounded-file-transfers.md`
+- `027-application-owned-explicit-sqlite-migrations.md`

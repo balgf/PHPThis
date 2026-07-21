@@ -44,6 +44,7 @@ docs/decisions/023-application-owned-terminal-request-summaries.md
 docs/decisions/024-application-owned-sqlite-durable-jobs.md
 docs/decisions/025-application-owned-explicit-cli-and-scheduler.md
 docs/decisions/026-bounded-file-transfers.md
+docs/decisions/027-application-owned-explicit-sqlite-migrations.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -72,6 +73,7 @@ docs/jobs/schema.md
 docs/jobs/testing.md
 docs/knowledge-map.md
 docs/logging.md
+docs/migrations.md
 docs/observability/README.md
 docs/observability/correlation-id.md
 docs/observability/database-evidence.md
@@ -128,6 +130,7 @@ templates/application/.ai/data.md
 templates/application/.ai/file-transfers.md
 templates/application/.ai/integrations.md
 templates/application/.ai/jobs.md
+templates/application/.ai/migrations.md
 templates/application/.ai/observability.md
 templates/application/.ai/operations.md
 templates/application/.ai/project.md

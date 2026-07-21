@@ -7,6 +7,7 @@ use Example\Cli\ApplicationCommandLine;
 use Example\Cli\InvalidApplicationCommandArguments;
 use Example\Cli\UnknownApplicationCommand;
 use Example\Jobs\SystemUserWelcomeJobClock;
+use Example\Migrations\ApplicationMigrationFailed;
 
 require dirname(__DIR__, 2) . '/autoload.php';
 
@@ -30,6 +31,9 @@ try {
 } catch (InvalidApplicationCommandArguments) {
     fwrite(STDERR, "{\"error\":\"invalid_arguments\"}\n");
     exit(2);
+} catch (ApplicationMigrationFailed $exception) {
+    fwrite(STDERR, $exception->stderrLine());
+    exit(1);
 } catch (Throwable) {
     fwrite(STDERR, "{\"error\":\"command_failed\"}\n");
     exit(1);

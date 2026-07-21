@@ -36,6 +36,8 @@ Unknown selectors and unsupported or oversized list shapes fail before database 
 
 Runtime identities receive only the operations required by named application paths. Keep schema changes, migrations, role or user management, and other administrative capabilities isolated from runtime credentials. Least privilege limits impact; it does not replace PHT006 or bound parameters.
 
+`.ai/migrations.md` is authoritative for adopted migration identifiers, manifest and ledger bounds, checksums, transactions, locks, immutable forward recovery, output, and evidence. This file records only the connection engine and authority boundary shared with other data work.
+
 ## Scale-sensitive data
 
 | Table or dataset | Expected scale | Required access bound | Index or plan requirement | Source and last verified |

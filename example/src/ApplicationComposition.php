@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Example;
 
 use Example\Cli\ApplicationCommands;
-use Example\Cli\LocalScheduleLock;
 use Example\DocumentFiles\DocumentFileNotFound;
 use Example\DocumentFiles\LocalDocumentFiles;
 use Example\Documents\CrossTenant;
@@ -40,22 +39,13 @@ final readonly class ApplicationComposition
 
     public function __construct(ApplicationDatabasePath $databasePath)
     {
-        if (!is_file($databasePath->value)) {
-            throw new RuntimeException('The application database is unavailable.');
-        }
-
-        $resolvedPath = realpath($databasePath->value);
-
-        if (!is_string($resolvedPath)) {
-            throw new RuntimeException('The application database path cannot be resolved.');
-        }
-
-        $this->databasePath = $resolvedPath;
+        $this->databasePath = $databasePath->value;
     }
 
     public function http(): TerminalRequestCoordinator
     {
-        $dsn = 'sqlite:' . $this->databasePath;
+        $databasePath = $this->existingDatabasePath();
+        $dsn = 'sqlite:' . $databasePath;
         $listUsersBudget = new QueryBudget(1);
         $listUsersTrace = new QueryTrace(1);
         $getUserBudget = new QueryBudget(1);
@@ -86,7 +76,7 @@ final readonly class ApplicationComposition
             new DenyAllDocumentTenantResolution(),
             $documentAuthorization,
             $documentAuthorization,
-            new LocalDocumentFiles($this->databasePath . '.files'),
+            new LocalDocumentFiles($databasePath . '.files'),
         )));
         $jsonHeaders = [
             'Content-Type' => 'application/json; charset=utf-8',
@@ -163,7 +153,21 @@ final readonly class ApplicationComposition
         return new ApplicationCommands(
             $this->databasePath,
             $clock,
-            new LocalScheduleLock($this->databasePath . '.schedule.lock'),
         );
+    }
+
+    private function existingDatabasePath(): string
+    {
+        if (!is_file($this->databasePath)) {
+            throw new RuntimeException('The application database is unavailable.');
+        }
+
+        $resolvedPath = realpath($this->databasePath);
+
+        if (!is_string($resolvedPath)) {
+            throw new RuntimeException('The application database path cannot be resolved.');
+        }
+
+        return $resolvedPath;
     }
 }
