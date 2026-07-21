@@ -18,7 +18,8 @@ Rules:
 - Treat a `match` or other finite mapping from an external structural selector to reviewed code-owned SQL as valid only when PHPStan infers the final SQL as constant strings and the unknown branch rejects the request.
 - Consumer applications run the installed `phpthis check` binary; they do not own a PHPStan configuration, baseline, or inline suppression path.
 - Keep Contract version 7's carried-forward `$_SESSION`, direct/imported native session call, and literal indirect-reference restrictions in the application checker's structural stage; dynamically obscured calls remain forbidden by contract, and this is not a new Strict Profile v2 `PHT` rule.
-- The consumer checker must build one application-file manifest and pass that same manifest to syntax checks and PHPStan.
+- The consumer checker must build one application-file manifest and use it for syntax checks, the bounded report-only duplication advisory, and PHPStan; syntax and duplication must reuse one captured source read.
+- Keep the duplication signal advisory-only: no `PHT` identifier, validity effect, suppression, baseline, consumer configuration, automatic refactor, or required layout. Preserve its 48-token minimum, fixed work and debug-output caps, intentional relative-filename and line-only detail, PHP source-token non-disclosure, and continuation into PHPStan and application tests. Application paths must not contain secrets or customer data.
 
 PHPStan proves static type and code-shape properties. It does not prove that bound data is semantically valid, a selector policy is complete, database privileges are least-privileged, statement counts are bounded, or SQL plans are acceptable. Runtime adversarial tests, authority verification, query budgets, and database integration tests remain mandatory.
 

@@ -24,6 +24,16 @@ Normal checks reuse a profile-owned PHPStan cache under the resolved Composer de
 
 The framework repository retains its reviewed `phpstan.neon` because it verifies maintainer source, proof fixtures, tooling, and the skeleton together. That maintainer configuration is not copied into applications.
 
+## Report-only duplication review
+
+ADR 030 adds one lexical advisory over the same consumer manifest used by structural checks and PHPStan, reusing the source captured by the structural read. It requires 48 consecutive normalized tokens, ignoring ordinary `<?php` opening tags, comments, docblocks, and whitespace while preserving identifiers and literal bytes for exact internal comparison. Candidate SHA-256 indexes are always verified token-for-token and never appear in output. Long overlapping windows consolidate into maximal groups; one clone can carry several locations, including separated copies in the same file.
+
+The scan inspects at most 4,096 manifest entries, accepts at most 32 KiB per file and 2 MiB of source in total for tokenization, and retains at most 16,384 tokens per file, 24,000 total tokens, and 24,000 windows. It evaluates at most four exact variants per candidate digest, 2,048 maximal-extension attempts, 1,000,000 exact comparisons, 256 groups, 256 locations per group, and 32,768 containment-propagation checks. Debug output shows at most ten groups and eight locations per group, with JSON-safe application-relative paths limited to 160 source bytes. Reaching a bound prints one incomplete advisory; an internal exception prints one fixed unavailable advisory without exception text. Both continue to PHPStan and have no effect on its exit status. The direct suite also exercises the near-window and dense-token limits under a 64 MiB subprocess budget.
+
+Normal mode prints only the no-match pass or possible-group summary. `--debug` intentionally adds application-relative filenames and line ranges, normalized token and location counts, and bounded truncation notices. The duplication advisory in neither mode prints PHP source snippets or normalized token text—including source-level symbols, identifiers, literals, and comments—and it omits hashes, absolute paths, and parser details. Relative filenames and line topology are review data, so application paths must not contain secrets or customer data. The scan has no `PHT` identifier, suppression, baseline, consumer configuration, automatic rewrite, or validity effect.
+
+This first pass intentionally misses blocks below 48 tokens, renamed identifiers or values, reordered and semantically equivalent code, non-PHP copies, and cap-skipped files. It may flag valid explicit SQL, finite unrolled behavior, security steps, or independent tests. The signal asks an AI and accountable human to review intent; it does not instruct them to generalize the code.
+
 ## Division of responsibility
 
 - PHPStan owns static type correctness and type-aware architectural rules.
@@ -31,6 +41,7 @@ The framework repository retains its reviewed `phpstan.neon` because it verifies
 - `PHT005` owns non-ignorable, type- and name-aware detection of application PDO or PDO-subclass construction.
 - `PHT006` owns non-ignorable detection of non-finite, blank, annotation-only, unpacked, or indirectly invoked SQL at the three canonical `Connection` database methods.
 - `tools/guardrails.php` owns small repository invariants that are not yet PHPStan extensions.
+- `ApplicationDuplicationScanner` owns a bounded lexical review advisory; it does not own valid-code diagnostics or refactoring policy.
 - The application checker's structural stage owns the native-session restrictions introduced by Contract version 3 and carried by version 4: rejection of `$_SESSION`, direct/imported native session calls, and literal indirect references in consumer code; dynamically obscured calls remain a contract violation. This carries Strict Profile version 2 forward without adding a `PHT` rule.
 - `QueryBudget` owns actual runtime statement limits.
 - `QueryTrace` owns bounded runtime query fingerprints, execution timing, and failure counts without logging I/O.

@@ -94,6 +94,11 @@ try {
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     $profileResult = runProcess($profileCommand, $project, $environment);
     requireSuccess($profileResult, 'The clean skeleton failed the installed profile check.');
+    requireStdoutContains(
+        $profileResult,
+        'PASS application duplication advisory: no possible groups (minimum 48 normalized tokens)',
+    );
+    requireStdoutNotContains($profileResult, 'ADVISORY');
     requireOutputContains($profileResult, 'PASS PHPThis application check');
     requireOutputNotContains($profileResult, $project . '/bootstrap.php');
 
@@ -107,6 +112,11 @@ try {
         $environment,
     );
     requireSuccess($debugResult, 'The explicit diagnostic profile check failed.');
+    requireStdoutContains(
+        $debugResult,
+        'PASS application duplication advisory: no possible groups (minimum 48 normalized tokens)',
+    );
+    requireStdoutNotContains($debugResult, 'ADVISORY');
     requireOutputContains($debugResult, $project . '/bootstrap.php');
 
     $completeResult = runProcess(
@@ -117,6 +127,12 @@ try {
     requireSuccess($completeResult, 'The clean skeleton failed its complete application check.');
     requireOutputContains($completeResult, 'PASS application behavior and front controller');
 
+    proveDuplicationAdvisoryIsReportOnly(
+        $project,
+        $composerBinary,
+        $profileCommand,
+        $environment,
+    );
     proveObservabilityContextIsRequired($project, $profileCommand, $environment);
     proveEveryApplicationDirectoryIsChecked($project, $profileCommand, $environment);
     proveValidExtensionlessExecutableIsChecked($project, $profileCommand, $environment);
@@ -262,6 +278,40 @@ function requireOutputNotContains(array $result, string $unexpected): void
     if (str_contains($result['stdout'] . $result['stderr'], $unexpected)) {
         throw new RuntimeException("Expected process output not to contain: {$unexpected}");
     }
+}
+
+/** @param array{exit_code: int, stdout: string, stderr: string} $result */
+function requireStdoutContains(array $result, string $expected): void
+{
+    if (!str_contains($result['stdout'], $expected)) {
+        throw new RuntimeException("Expected process stdout to contain: {$expected}");
+    }
+}
+
+/** @param array{exit_code: int, stdout: string, stderr: string} $result */
+function requireStdoutNotContains(array $result, string $unexpected): void
+{
+    if (str_contains($result['stdout'], $unexpected)) {
+        throw new RuntimeException("Expected process stdout not to contain: {$unexpected}");
+    }
+}
+
+/** @param array{exit_code: int, stdout: string, stderr: string} $result */
+function advisoryOutput(array $result): string
+{
+    $lines = preg_split('/\R/', $result['stdout']);
+
+    if (!is_array($lines)) {
+        throw new RuntimeException('Unable to split checker advisory output.');
+    }
+
+    return implode(
+        "\n",
+        array_values(array_filter(
+            $lines,
+            static fn (string $line): bool => str_starts_with($line, 'ADVISORY'),
+        )),
+    );
 }
 
 /** @return list<string> */
@@ -583,6 +633,278 @@ function lockedVersion(string $root, string $package): string
     }
 
     throw new RuntimeException("Locked package is missing: {$package}");
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveDuplicationAdvisoryIsReportOnly(
+    string $project,
+    string $composerBinary,
+    array $profileCommand,
+    array $environment,
+): void {
+    $firstPath = $project . '/.hidden/duplication/FirstDuplicationProof.php';
+    $secondPath = $project . '/unconventional/duplication/SecondDuplicationProof.php';
+    $frameworkPath = $project . '/vendor/phpthis/framework/duplication-negative-control.php';
+    $dependencyPath = $project . '/vendor/dependency-negative-control/DuplicationProof.php';
+    $vcsPath = $project . '/.git/duplication-negative-control.php';
+    $largeAdvisoryPath = $project . '/unconventional/duplication/LargeAdvisory.php';
+    $structuralFailurePath = $project . '/unconventional/duplication/StructuralFailure.php';
+    $phpStanFailurePath = $project . '/unconventional/duplication/PhpStanFailure.php';
+    $plain = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\DuplicationProof;
+
+final class FirstDuplicationProof
+{
+    public function calculate(): int
+    {
+        $total = 0;
+        $canary = 'DUPLICATION_PRIVATE_CANARY_7b4f';
+        $total += 101;
+        $total += 102;
+        $total += 103;
+        $total += 104;
+        $total += 105;
+        $total += 106;
+        $total += 107;
+        $total += 108;
+        $total += 109;
+        $total += 110;
+        $total += 111;
+        $total += 112;
+
+        return $total + strlen($canary);
+    }
+}
+PHP;
+    $decorated = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\DuplicationProof;
+
+final class SecondDuplicationProof
+{
+    public function calculate(): int
+    {
+        /* Formatting and comments are deliberately different. */
+        $total=0;
+        $canary =
+            'DUPLICATION_PRIVATE_CANARY_7b4f';
+        $total /* one */ += 101;
+        $total += 102;
+        $total += 103;
+        $total += 104;
+        $total += 105;
+        $total += 106;
+        $total += 107;
+        $total += 108;
+        $total += 109;
+        $total += 110;
+        $total += 111;
+        $total += 112;
+
+        return $total +
+            strlen($canary);
+    }
+}
+PHP;
+
+    writeFile($firstPath, $plain . "\n");
+    writeFile($secondPath, $decorated . "\n");
+    writeFile($frameworkPath, $plain . "\n");
+    writeFile($dependencyPath, $decorated . "\n");
+    writeFile($vcsPath, $plain . "\n");
+
+    try {
+        $normal = runProcess($profileCommand, $project, $environment);
+        requireSuccess($normal, 'A possible duplication advisory invalidated the consumer.');
+        requireStdoutContains(
+            $normal,
+            'ADVISORY possible application duplication: 1 group (minimum 48 normalized tokens)',
+        );
+        requireStdoutContains($normal, 'application validity is unaffected');
+        requireStdoutContains($normal, 'PASS PHPThis application check');
+        $normalAdvisories = advisoryOutput($normal);
+
+        if (
+            $normalAdvisories
+                !== 'ADVISORY possible application duplication: 1 group (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected'
+        ) {
+            throw new RuntimeException('The installed normal duplication advisory was not exactly one concise line.');
+        }
+
+        foreach (
+            [
+                '.hidden/duplication/FirstDuplicationProof.php',
+                'unconventional/duplication/SecondDuplicationProof.php',
+                $project,
+                'DUPLICATION_PRIVATE_CANARY_7b4f',
+            ] as $privateNormalValue
+        ) {
+            requireOutputNotContains($normal, $privateNormalValue);
+        }
+
+        $debug = runProcess(
+            [$project . '/vendor/bin/phpthis', 'check', '--debug'],
+            $project,
+            $environment,
+        );
+        requireSuccess($debug, 'The duplication diagnostic mode failed.');
+        $advisories = advisoryOutput($debug);
+
+        if (substr_count($advisories, 'ADVISORY duplication group ') !== 1) {
+            throw new RuntimeException('The installed checker did not consolidate the copied block into one group.');
+        }
+
+        if (substr_count($advisories, 'ADVISORY duplication location 1.') !== 2) {
+            throw new RuntimeException('The installed checker did not report exactly two application-owned locations.');
+        }
+
+        if (
+            preg_match(
+                '/^ADVISORY duplication group 1: [0-9]+ normalized tokens across 2 locations$/m',
+                $advisories,
+            ) !== 1
+        ) {
+            throw new RuntimeException('Duplication debug output omitted its bounded token and location counts.');
+        }
+
+        foreach (
+            [
+                '/^ADVISORY duplication location 1\.1: "\.hidden\/duplication\/FirstDuplicationProof\.php":[0-9]+(?:-[0-9]+)?$/m',
+                '/^ADVISORY duplication location 1\.2: "unconventional\/duplication\/SecondDuplicationProof\.php":[0-9]+(?:-[0-9]+)?$/m',
+            ] as $locationPattern
+        ) {
+            if (preg_match($locationPattern, $advisories) !== 1) {
+                throw new RuntimeException('Duplication debug output omitted a bounded application-relative line range.');
+            }
+        }
+
+        if (str_contains($advisories, $project)) {
+            throw new RuntimeException('Duplication debug output disclosed the temporary project absolute path.');
+        }
+
+        foreach (
+            [
+                '".hidden/duplication/FirstDuplicationProof.php"',
+                '"unconventional/duplication/SecondDuplicationProof.php"',
+            ] as $relativeLocation
+        ) {
+            if (!str_contains($advisories, $relativeLocation)) {
+                throw new RuntimeException("Duplication debug output omitted {$relativeLocation}.");
+            }
+        }
+
+        foreach (
+            [
+                'vendor/phpthis/framework/duplication-negative-control.php',
+                'vendor/dependency-negative-control/DuplicationProof.php',
+                '.git/duplication-negative-control.php',
+                'DUPLICATION_PRIVATE_CANARY_7b4f',
+            ] as $excludedValue
+        ) {
+            if (str_contains($advisories, $excludedValue)) {
+                throw new RuntimeException("Duplication advisory output disclosed excluded content: {$excludedValue}");
+            }
+        }
+
+        $complete = runProcess(
+            composerCommand($composerBinary, ['check']),
+            $project,
+            $environment,
+        );
+        requireSuccess($complete, 'A possible duplication advisory stopped the canonical consumer gate.');
+        requireStdoutContains($complete, 'ADVISORY possible application duplication: 1 group');
+        requireStdoutContains($complete, 'PASS application behavior and front controller');
+
+        $largeAdvisory = "<?php\n\ndeclare(strict_types=1);\n\nnamespace App\\DuplicationProof;\n\n/*"
+            . str_repeat('bounded-advisory-padding-', 1_500)
+            . "*/\nfinal class LargeAdvisory {}\n";
+        writeFile($largeAdvisoryPath, $largeAdvisory);
+        $incomplete = runProcess($profileCommand, $project, $environment);
+        requireSuccess($incomplete, 'A bounded incomplete duplication scan invalidated the consumer.');
+        requireStdoutContains($incomplete, 'found within an incomplete bounded scan');
+        requireStdoutContains($incomplete, 'application validity is unaffected');
+        requireStdoutContains($incomplete, 'PASS PHPThis application check');
+
+        $largeStaticFailure = "<?php\n\ndeclare(strict_types=1);\n\nnamespace App\\DuplicationProof;\n\nfinal class LargeAdvisory\n{\n    public function value(): int\n    {\n        return 'invalid';\n    }\n}\n\n/*"
+            . str_repeat('bounded-advisory-padding-', 1_500)
+            . "*/\n";
+        writeFile($largeAdvisoryPath, $largeStaticFailure);
+        $incompleteStaticFailure = runProcess($profileCommand, $project, $environment);
+        requireFailure(
+            $incompleteStaticFailure,
+            'A scanner-skipped oversized application file was also skipped by PHPStan.',
+        );
+        requireStdoutContains($incompleteStaticFailure, 'found within an incomplete bounded scan');
+        requireOutputContains($incompleteStaticFailure, 'return.type');
+        unlink($largeAdvisoryPath);
+
+        writeFile($structuralFailurePath, "<?php\n\nclass StructuralFailure {}\n");
+        $structuralFailure = runProcess($profileCommand, $project, $environment);
+        requireFailure($structuralFailure, 'A duplication advisory masked a structural failure.');
+        requireOutputContains($structuralFailure, 'PHT002 unconventional/duplication/StructuralFailure.php:3');
+        requireOutputNotContains($structuralFailure, 'ADVISORY possible application duplication');
+        unlink($structuralFailurePath);
+
+        $phpStanFailure = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\DuplicationProof;
+
+final class PhpStanFailure
+{
+    public function value(): int
+    {
+        return 'invalid';
+    }
+}
+PHP;
+        writeFile($phpStanFailurePath, $phpStanFailure . "\n");
+        $staticFailure = runProcess($profileCommand, $project, $environment);
+        requireFailure($staticFailure, 'A duplication advisory masked a PHPStan failure.');
+        requireStdoutContains($staticFailure, 'ADVISORY possible application duplication: 1 group');
+        requireOutputContains($staticFailure, 'return.type');
+        unlink($phpStanFailurePath);
+    } finally {
+        foreach (
+            [
+                $firstPath,
+                $secondPath,
+                $frameworkPath,
+                $dependencyPath,
+                $vcsPath,
+                $largeAdvisoryPath,
+                $structuralFailurePath,
+                $phpStanFailurePath,
+            ] as $path
+        ) {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+
+        foreach (
+            [
+                $project . '/.hidden',
+                $project . '/unconventional',
+                $project . '/vendor/dependency-negative-control',
+                $project . '/.git',
+            ] as $directory
+        ) {
+            removeDirectory($directory);
+        }
+    }
 }
 
 /**

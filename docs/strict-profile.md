@@ -19,6 +19,8 @@ PHPThis runs as ordinary PHP 8.4.x. The profile is a smaller set of accepted pro
 
 PHT identifiers are permanent. Wording may become clearer, but a materially different or broader rule receives a new identifier or a new profile version. Profile rules have no inline suppression, baseline, wildcard exclusion, or comment-based exemption mechanism.
 
+ADR 030's possible-duplication output is deliberately absent from this catalogue. It is a bounded report-only review advisory with no `PHT` identifier, suppression mechanism, or effect on program validity. Promoting it into this profile requires a separate decision and migration; a possible group does not authorize automatic refactoring.
+
 ## Inherited strict rules
 
 The PHPStan strict-rules extension remains the sole owner of these type-aware language restrictions:

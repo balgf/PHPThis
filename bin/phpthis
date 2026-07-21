@@ -6,6 +6,7 @@ declare(strict_types=1);
 use PHPThis\Verification\ApplicationChecker;
 
 require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+require_once dirname(__DIR__) . '/verification/ApplicationDuplicationScanner.php';
 require_once dirname(__DIR__) . '/verification/ApplicationChecker.php';
 
 if (

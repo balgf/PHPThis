@@ -96,13 +96,23 @@ final class ApplicationChecker
 
         $discovery = $this->discoverPhpFiles($root, $vendorDirectory);
         $phpFiles = $discovery['files'];
+        $duplicationScanner = new ApplicationDuplicationScanner();
         $failures = [
             ...$discovery['failures'],
             ...$this->applicationContextFailures($root),
         ];
 
         foreach ($phpFiles as $relativePath => $absolutePath) {
-            foreach ($this->phpFileFailures($absolutePath, $relativePath) as $failure) {
+            $contents = file_get_contents($absolutePath);
+
+            if (!is_string($contents)) {
+                $failures[] = "Cannot read {$relativePath}.";
+                continue;
+            }
+
+            $duplicationScanner->collect($relativePath, $contents);
+
+            foreach ($this->phpFileFailures($contents, $relativePath) as $failure) {
                 $failures[] = $failure;
             }
         }
@@ -116,6 +126,15 @@ final class ApplicationChecker
         }
 
         fwrite(STDOUT, sprintf("PASS application guardrails: %d PHP files\n", count($phpFiles)));
+
+        try {
+            $duplicationScanner->write($debug);
+        } catch (Throwable) {
+            fwrite(
+                STDOUT,
+                "ADVISORY application duplication scan unavailable; application validity is unaffected\n",
+            );
+        }
 
         return $this->runPhpStan($root, $vendorDirectory, array_values($phpFiles), $debug);
     }
@@ -386,14 +405,8 @@ final class ApplicationChecker
     }
 
     /** @return list<string> */
-    private function phpFileFailures(string $absolutePath, string $relativePath): array
+    private function phpFileFailures(string $contents, string $relativePath): array
     {
-        $contents = file_get_contents($absolutePath);
-
-        if (!is_string($contents)) {
-            return ["Cannot read {$relativePath}."];
-        }
-
         $failures = [];
 
         if (preg_match('/\A(?:#!\/usr\/bin\/env php\R)?<\?php\s+declare\(strict_types=1\);/', $contents) !== 1) {

@@ -61,6 +61,7 @@ docs/decisions/026-bounded-file-transfers.md
 docs/decisions/027-application-owned-explicit-sqlite-migrations.md
 docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md
 docs/decisions/029-alpha-2-consumer-profile-rollup.md
+docs/decisions/030-report-only-consumer-duplication-advisory.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -157,6 +158,7 @@ templates/application/.ai/testing.md
 templates/application/AGENTS.md
 templates/application/docs/decisions/README.md
 verification/ApplicationChecker.php
+verification/ApplicationDuplicationScanner.php
 verification/SyntaxProfile.php
 verification/phpstan/ConnectionCallableArrayRule.php
 verification/phpstan/ConnectionMethodCallableRule.php

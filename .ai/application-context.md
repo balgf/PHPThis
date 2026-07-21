@@ -1,6 +1,6 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 029.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 030.
 
 Rules:
 
@@ -32,6 +32,7 @@ Rules:
 - Never place credentials, tokens, private keys, customer data, production payloads, runtime dumps, or chat transcripts in the template.
 - Do not claim that Composer dependency installation inherits root scripts or development dependencies; the skeleton must declare both explicitly.
 - Keep framework `bin/phpthis` and installed `vendor/bin/phpthis` dedicated to the framework-owned check. Application operational commands use the one application-owned console recorded in project context.
+- Keep the installed duplication scan a report-only review signal over the same application manifest. Never turn it into a consumer-configured validity rule, suppression path, automatic refactor, layout convention, or reason to generalize explicit SQL, finite unrolled operations, security sequencing, or independent tests.
 - Keep template links valid after the files are copied to an application root; do not link back with repository-relative `../../` paths. Treat every hardcoded `vendor/phpthis/framework/` path in copied `AGENTS.md` and `.ai/` files as one installation assumption that must be updated together when Composer uses a non-default vendor directory.
 - Keep the role, authority, and human-decision language aligned across the consumer contract, skeleton, and application template.
 - Require every observable behavior change to add or update application-owned automated tests while leaving the test library, runner, file placement, and organization application-owned. Static analysis, documentation, manual verification, and no-op commands are not behavior evidence.

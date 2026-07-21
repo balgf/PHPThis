@@ -576,6 +576,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/027-application-owned-explicit-sqlite-migrations.md',
     'docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
+    'docs/decisions/030-report-only-consumer-duplication-advisory.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -727,6 +728,7 @@ $requiredRepositoryFiles = [
     'skeleton/tests/run.php',
     'bin/phpthis',
     'verification/ApplicationChecker.php',
+    'verification/ApplicationDuplicationScanner.php',
     'verification/SyntaxProfile.php',
     'verification/phpstan/ConnectionCallableArrayRule.php',
     'verification/phpstan/ConnectionMethodCallableRule.php',
@@ -773,6 +775,7 @@ $requiredRepositoryFiles = [
     'tests/fixtures/routing-path-segment-traversal.php.fixture',
     'tests/fixtures/routing-lookup-traversal.php.fixture',
     'tools/package-files.txt',
+    'tools/test-application-duplication.php',
     'tools/setup-example.php',
     'tools/test-database-drivers.php',
 ];
@@ -838,6 +841,54 @@ foreach ($automatedBehaviorEvidenceMarkers as $relativePath => $marker) {
     if (!is_string($contents) || !str_contains($contents, $marker)) {
         $failures[] = "The mandatory automated-behavior-evidence contract is missing from {$relativePath}.";
     }
+}
+
+$duplicationAdvisoryArtifactMarkers = [
+    '.ai/application-context.md' => 'report-only review signal over the same application manifest',
+    '.ai/static-analysis.md' => '48-token minimum',
+    '.ai/testing.md' => 'The duplication advisory requires a fast direct scanner suite',
+    'bin/phpthis' => "verification/ApplicationDuplicationScanner.php",
+    'composer.json' => '"test:duplication": "php tools/test-application-duplication.php"',
+    'docs/consumer-contract.md' => 'The duplication scan is an advisory review signal, not program validity.',
+    'docs/decisions/030-report-only-consumer-duplication-advisory.md' => 'Status: accepted',
+    'docs/decisions/README.md' => '030-report-only-consumer-duplication-advisory.md',
+    'docs/guardrails.md' => '`php tools/test-application-duplication.php`',
+    'docs/knowledge-map.md' => 'Review a possible duplication advisory',
+    'docs/static-analysis.md' => '## Report-only duplication review',
+    'docs/strict-profile.md' => 'possible-duplication output is deliberately absent from this catalogue',
+    'tools/package-files.txt' => 'verification/ApplicationDuplicationScanner.php',
+    'tools/test-application-duplication.php' => 'comments and whitespace do not hide an exact-threshold clone',
+    'tools/test-consumer-project.php' => 'proveDuplicationAdvisoryIsReportOnly(',
+    'verification/ApplicationChecker.php' => '$duplicationScanner->write($debug);',
+    'verification/ApplicationDuplicationScanner.php' => 'private const MINIMUM_TOKENS = 48;',
+];
+
+foreach ($duplicationAdvisoryArtifactMarkers as $relativePath => $marker) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents) || !str_contains($contents, $marker)) {
+        $failures[] = "The report-only consumer-duplication advisory is incomplete in {$relativePath}.";
+    }
+}
+
+$duplicationScanner = file_get_contents($root . '/verification/ApplicationDuplicationScanner.php');
+
+if (is_string($duplicationScanner) && str_contains($duplicationScanner, 'PHT')) {
+    $failures[] = 'The report-only duplication scanner must not create a PHT diagnostic.';
+}
+
+$duplicationComposerContents = file_get_contents($root . '/composer.json');
+$duplicationComposer = is_string($duplicationComposerContents)
+    ? json_decode($duplicationComposerContents, true)
+    : null;
+$duplicationScripts = is_array($duplicationComposer) ? ($duplicationComposer['scripts'] ?? null) : null;
+$duplicationCheck = is_array($duplicationScripts) ? ($duplicationScripts['check'] ?? null) : null;
+$duplicationStage = is_array($duplicationCheck)
+    ? array_search('@test:duplication', $duplicationCheck, true)
+    : false;
+
+if ($duplicationStage === false) {
+    $failures[] = 'The canonical framework check must execute the direct duplication-advisory suite.';
 }
 
 $alphaReleaseContractMarkers = [

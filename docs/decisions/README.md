@@ -33,3 +33,4 @@ Accepted records:
 - `027-application-owned-explicit-sqlite-migrations.md`
 - `028-application-owned-redis-cache-and-schedule-lease.md`
 - `029-alpha-2-consumer-profile-rollup.md`
+- `030-report-only-consumer-duplication-advisory.md`
