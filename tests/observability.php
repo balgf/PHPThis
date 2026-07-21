@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Example\Observability\CorrelationId;
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
+use Example\Documents\GetDocument\DocumentDetailsCacheReadOutcome;
+use Example\Documents\GetDocument\DocumentDetailsCacheWriteOutcome;
 use Example\Observability\ErrorLogRequestSummarySink;
 use Example\Observability\QuerySummarySource;
 use Example\Observability\RequestSummary;
@@ -146,8 +149,9 @@ function observabilityTests(): array
                     'query_execute_duration_us',
                     'query_budget_exceeded',
                     'database_sources',
+                    'document_cache',
                 ]
-                || observabilityRuntimeValue($payload, 'schema_version') !== 1
+                || observabilityRuntimeValue($payload, 'schema_version') !== 2
                 || observabilityRuntimeValue($payload, 'event') !== 'application.request_summary'
                 || $payload['correlation_id'] !== $correlationId->value
                 || $payload['response_status'] !== 200
@@ -158,6 +162,11 @@ function observabilityTests(): array
                 || $payload['query_execute_duration_us'] !== 0
                 || $payload['query_budget_exceeded']
                 || $payload['database_sources'] !== []
+                || observabilityRuntimeValue($payload, 'document_cache') !== [
+                    'read' => 'not_attempted',
+                    'write' => 'not_attempted',
+                    'invalidation' => 'not_attempted',
+                ]
                 || $payload['duration_us'] < 0
                 || str_contains(json_encode($payload, JSON_THROW_ON_ERROR), 'UntrustedResponseIdMarker')
             ) {
@@ -235,8 +244,9 @@ function observabilityTests(): array
                     'query_execute_duration_us',
                     'query_budget_exceeded',
                     'database_sources',
+                    'document_cache',
                 ]
-                || observabilityRuntimeValue($payload, 'schema_version') !== 1
+                || observabilityRuntimeValue($payload, 'schema_version') !== 2
                 || observabilityRuntimeValue($payload, 'event') !== 'application.request_summary'
                 || observabilityRuntimeValue($payload, 'correlation_id') !== $correlationId->value
                 || observabilityRuntimeValue($payload, 'response_status') !== 202
@@ -246,6 +256,33 @@ function observabilityTests(): array
                 || str_contains($encoded, 'SinkPathPrivateMarker')
             ) {
                 throw new RuntimeException('Expected one serialized closed request-summary event.');
+            }
+        },
+        'terminal summary exposes one bounded document-cache outcome without cache data' => static function (): void {
+            $cacheTrace = new DocumentDetailsCacheTrace();
+            $cacheTrace->complete(
+                DocumentDetailsCacheReadOutcome::Hit,
+                DocumentDetailsCacheWriteOutcome::NotAttempted,
+            );
+            $sink = new CapturingRequestSummarySink();
+            observabilityCoordinator(
+                new ObservabilityTestHandler(
+                    static fn (Request $request): Response => new Response(200, [], ''),
+                ),
+                CorrelationId::generate(),
+                $sink,
+                [],
+                null,
+                'php://memory',
+                $cacheTrace,
+            )->handle(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/cached'], []);
+
+            if ($sink->onlyPayload()['document_cache'] !== [
+                'read' => 'hit',
+                'write' => 'not_attempted',
+                'invalidation' => 'not_attempted',
+            ]) {
+                throw new RuntimeException('Expected one redacted cache outcome in the terminal summary.');
             }
         },
         'terminal coordinator emits one status-only summary for every mapped or routed failure' => static function (): void {
@@ -766,6 +803,7 @@ function observabilityCoordinator(
     array $querySources = [],
     ?ErrorResponseRegistry $errorResponses = null,
     string $inputUri = 'php://memory',
+    ?DocumentDetailsCacheTrace $documentCacheTrace = null,
 ): TerminalRequestCoordinator {
     return new TerminalRequestCoordinator(
         new RequestBoundary(
@@ -776,6 +814,7 @@ function observabilityCoordinator(
         new UnknownFailureBoundary(),
         $correlationId,
         $sink,
+        $documentCacheTrace ?? new DocumentDetailsCacheTrace(),
         $querySources,
     );
 }

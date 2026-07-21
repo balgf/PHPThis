@@ -16,6 +16,7 @@
     },
     "require-dev": {
         "ext-pdo_sqlite": "*",
+        "ext-redis": "^6.3",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-strict-rules": "^2.0"
     },

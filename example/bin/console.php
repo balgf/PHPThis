@@ -6,6 +6,7 @@ use Example\ApplicationComposition;
 use Example\Cli\ApplicationCommandLine;
 use Example\Cli\InvalidApplicationCommandArguments;
 use Example\Cli\UnknownApplicationCommand;
+use Example\Coordination\RedisScheduleRunLeaseUnavailable;
 use Example\Jobs\SystemUserWelcomeJobClock;
 use Example\Migrations\ApplicationMigrationFailed;
 
@@ -32,6 +33,9 @@ try {
     fwrite(STDERR, "{\"error\":\"invalid_arguments\"}\n");
     exit(2);
 } catch (ApplicationMigrationFailed $exception) {
+    fwrite(STDERR, $exception->stderrLine());
+    exit(1);
+} catch (RedisScheduleRunLeaseUnavailable $exception) {
     fwrite(STDERR, $exception->stderrLine());
     exit(1);
 } catch (Throwable) {

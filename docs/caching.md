@@ -64,7 +64,7 @@ Each adopted cache records one bounded key grammar containing:
 
 Keys exclude credentials, secrets, session identifiers, CSRF tokens, and raw sensitive values. Payloads exclude credentials, secrets, session identifiers, CSRF tokens, and authorization decisions. Sensitive derived payload fields require an explicit classification plus backend access, transport, retention, and deletion controls. The first application proof also excludes authentication and permission data. Hashing a secret does not automatically make it suitable cache-key material.
 
-Cached payloads are untrusted external values. They have explicit byte and collection bounds, a schema version, and one strict parser into a final typed projection. Malformed, oversized, unknown-version, or wrong-owner data follows the recorded miss or failure policy and never crosses into domain code as an unchecked array or object. Arbitrary PHP object serialization and deserialization are prohibited.
+Cached payloads are untrusted external values. They have explicit byte and collection bounds, a schema version, one canonical encoding when the application records it, and one strict parser into a final typed projection. Malformed, oversized, unknown-version, wrong-owner, duplicate-field, or otherwise non-canonical data follows the recorded miss or failure policy and never crosses into domain code as an unchecked array or object. Arbitrary PHP object serialization and deserialization are prohibited.
 
 PSR-6 and PSR-16 are interoperability interfaces, not the PHPThis application contract. They permit generic PHP values and leave domain keying, invalidation, tenancy, topology, stampede behavior, and observability to callers and implementations. An application may deliberately choose a conforming library behind its narrowly named typed service, but handlers do not receive the PSR interface and PHPThis does not require either package.
 
@@ -98,13 +98,17 @@ Evidence includes:
 - cold-cache or cache-bypassed database query scaling and query traces;
 - response-header behavior through the actual proxy or CDN when HTTP caching is adopted.
 
+The current Redis proof additionally exercises authoritative-source failure after cache-read evidence, backend rejection of a refill without changing the selected SQLite value, committed SQLite state before invalidation, rejected-write non-invalidation, and recovery to the newer authoritative value after an accepted stale refill expires.
+
 A warm cache is not evidence that a database path avoids N+1 queries. Database query budgets and scale tests remain valid with the cache cold or bypassed. Cache instrumentation is separately bounded and must not emit credentials, keys containing sensitive values, complete payloads, or one log line per backend operation.
 
 ## Unsupported boundary
 
 PHPThis currently ships no generic cache API, cache item or pool, adapter, backend dependency, automatic query cache, response-cache middleware, distributed lock, tag invalidation, stampede helper, or cache-specific runtime instrumentation. APCu, Redis, filesystem caches, local memory, and distributed stores have materially different lifetimes, locks, eviction, failure, and deployment semantics; one abstraction must not imply that they are interchangeable.
 
-The first real application may prove one backend-specific typed cache-aside path after Alpha. Promotion into the framework is reconsidered only after at least two independent applications demonstrate the same smaller stable boundary with measured failure and concurrency behavior.
+ADR 028 now records the first real application proof: one tenant-scoped Redis document cache paired with a separate Redis schedule lease. The cache path remains after current authorization, requires its canonical bounded JSON encoding, falls back to SQLite, commits before invalidation, and accepts one finite stale-refill window. The executable proof uses distinct Redis processes at cache `127.0.0.1:6379/0` and lease `127.0.0.1:6380/0` by default. The lease process uses `noeviction` and owner-checked `SET NX PX`, renewal, and release operations without claiming fencing or exactly-once behavior. See [Redis cache and schedule coordination](redis-coordination.md).
+
+That evidence remains application-owned. Promotion into the framework is reconsidered only after at least two independent applications demonstrate the same smaller stable boundary with measured failure and concurrency behavior.
 
 ## References
 

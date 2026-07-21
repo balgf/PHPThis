@@ -49,6 +49,9 @@
 | application cache service | narrowly named typed application-owned cache-aside boundary with one recorded backend and policy | cache facade, generic cache bag, transparent query cache |
 | authoritative data path | source-of-truth read or committed write path that remains correct without a cache | warm-cache shortcut, cached truth |
 | stale-refill race | cache-aside ordering where an in-flight miss reads old authoritative data and repopulates it after a concurrent writer commits and invalidates | invalidation failure, ordinary cache miss |
+| Redis schedule lease | application-owned expiring owner-token coordination for one scheduled pass on one recorded Redis topology | framework lock, job correctness fence, exactly-once execution |
+| owner token | fresh opaque value compared before lease renewal or release | fencing token, authorization credential, durable job identity |
+| fencing token | monotonically ordered value that a protected resource checks to reject stale work; not supplied by ADR 028 | random owner token, Redis expiry, mutual-exclusion claim |
 | application AI context | project-owned root `AGENTS.md` and task-routed `.ai/` guides | framework maintainer context, evaluation harness |
 | AI-first authoring | workflow in which AI is the expected primary code author under human direction | autonomous approval, AI-only development |
 | AI knowledge interface | AI grounded in the installed contract, knowledge map, application context, source, and tests | model memory, framework manual replacement without evidence |

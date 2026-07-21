@@ -9,6 +9,19 @@ bin/phpthis
 composer.json
 docs/architecture.md
 docs/caching.md
+docs/redis-coordination.md
+docs/redis/README.md
+docs/redis/adoption.md
+docs/redis/cache-failures.md
+docs/redis/cache-key.md
+docs/redis/cache-value.md
+docs/redis/invalidation.md
+docs/redis/lease-failures.md
+docs/redis/lease-lifecycle.md
+docs/redis/observability.md
+docs/redis/stale-refill.md
+docs/redis/testing.md
+docs/redis/topology.md
 docs/cli.md
 docs/cli/README.md
 docs/cli/arguments-output.md
@@ -45,6 +58,7 @@ docs/decisions/024-application-owned-sqlite-durable-jobs.md
 docs/decisions/025-application-owned-explicit-cli-and-scheduler.md
 docs/decisions/026-bounded-file-transfers.md
 docs/decisions/027-application-owned-explicit-sqlite-migrations.md
+docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

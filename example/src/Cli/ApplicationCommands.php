@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Example\Cli;
 
+use Example\Coordination\RedisScheduleRunLease;
+use Example\Coordination\RedisScheduleRunLeaseAcquireOutcome;
+use Example\Coordination\RedisScheduleRunLeaseReleaseOutcome;
+use Example\Coordination\RedisScheduleRunLeaseRenewOutcome;
+use Example\Coordination\RedisScheduleRunLeaseTrace;
+use Example\Coordination\RedisScheduleRunLeaseUnavailable;
 use Example\Jobs\RecordUserWelcomeDelivery;
 use Example\Jobs\SqliteUserWelcomeJobWorker;
 use Example\Jobs\UserWelcomeJobClock;
@@ -17,12 +23,17 @@ use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;
 use RuntimeException;
+use Throwable;
 
 final readonly class ApplicationCommands
 {
     public function __construct(
         private string $databasePath,
         private UserWelcomeJobClock $clock,
+        private string $redisHost,
+        private int $redisPort,
+        private int $redisDatabase,
+        private string $scheduleLeaseKey,
     ) {
     }
 
@@ -37,33 +48,68 @@ final readonly class ApplicationCommands
                 $command,
                 $this->runOneJob(),
             ),
-            ApplicationCommandName::ScheduleRun => new ApplicationCommandExecution(
-                $command,
-                $this->runSchedule(),
-            ),
+            ApplicationCommandName::ScheduleRun => $this->runSchedule($command),
         };
     }
 
-    private function runSchedule(): ApplicationCommandOutcome
+    private function runSchedule(ApplicationCommandName $command): ApplicationCommandExecution
     {
         $databasePath = $this->existingDatabasePath();
         $currentMinute = intdiv($this->clock->now(), 60);
 
         if ($currentMinute % 5 !== 0) {
-            return ApplicationCommandOutcome::NotDue;
+            return new ApplicationCommandExecution(
+                $command,
+                ApplicationCommandOutcome::NotDue,
+                [],
+            );
         }
 
-        $scheduleLock = new LocalScheduleLock($databasePath . '.schedule.lock');
+        $trace = new RedisScheduleRunLeaseTrace();
+        $scheduleLease = RedisScheduleRunLease::connect(
+            $this->redisHost,
+            $this->redisPort,
+            $this->redisDatabase,
+            $this->scheduleLeaseKey,
+            $trace,
+        );
 
-        if (!$scheduleLock->acquire()) {
-            return ApplicationCommandOutcome::OverlapSkipped;
+        if ($scheduleLease->acquire() === RedisScheduleRunLeaseAcquireOutcome::Contended) {
+            return new ApplicationCommandExecution(
+                $command,
+                ApplicationCommandOutcome::OverlapSkipped,
+                $trace->snapshot(),
+            );
         }
 
         try {
-            return $this->runOneJob($databasePath);
-        } finally {
-            $scheduleLock->release();
+            if ($scheduleLease->renew() === RedisScheduleRunLeaseRenewOutcome::Lost) {
+                throw new RedisScheduleRunLeaseUnavailable($trace->snapshot());
+            }
+
+            $outcome = $this->runOneJob($databasePath);
+        } catch (Throwable $failure) {
+            $releaseFailed = false;
+
+            try {
+                $releaseFailed = $scheduleLease->release()
+                    === RedisScheduleRunLeaseReleaseOutcome::Lost;
+            } catch (Throwable) {
+                $releaseFailed = true;
+            }
+
+            if ($failure instanceof RedisScheduleRunLeaseUnavailable || $releaseFailed) {
+                throw new RedisScheduleRunLeaseUnavailable($trace->snapshot(), $failure);
+            }
+
+            throw $failure;
         }
+
+        if ($scheduleLease->release() === RedisScheduleRunLeaseReleaseOutcome::Lost) {
+            throw new RedisScheduleRunLeaseUnavailable($trace->snapshot());
+        }
+
+        return new ApplicationCommandExecution($command, $outcome, $trace->snapshot());
     }
 
     private function runOneJob(?string $databasePath = null): ApplicationCommandOutcome

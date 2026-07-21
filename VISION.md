@@ -46,6 +46,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Complete raw engine-specific SQL and explicit named parameter arrays remain visible at direct call sites; bounded list cardinalities and cursor choices do not create generated SQL, binding helpers, or a generic paginator.
 - One application-owned terminal summary correlates a selected response with bounded per-connection query evidence through exactly one failure-isolated sink invocation attempt, without claiming durable delivery or adding a framework logger.
 - An adopted schema history remains application-owned, finite, checksum-locked, forward-only, and engine-specific, with explicit authority, ordering, transaction, lock, and recovery evidence rather than a framework migration abstraction.
+- An adopted cache remains a backend-specific application optimization after current authorization, and any distributed lease states its owner-token, expiry, topology, outage, and non-fencing limits without becoming a generic framework API.
 - CRUD-shaped work follows the optional feature-first reference profile or one recorded application-owned alternative without runtime discovery or filesystem enforcement.
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
@@ -63,6 +64,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Hiding complete statements or parameter ownership behind an ORM, repository, SQL/binding/placeholder helper, generic paginator, transaction callback, generated SQL, or dialect abstraction.
 - Forcing an application directory layout or turning CRUD into a generic persistence API.
 - Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
+- Providing a generic distributed-lock or lease abstraction, automatic renewal, or a fencing or exactly-once claim unsupported by the selected backend and protected operation.
 - Providing a generic middleware, request-context, identity, tenant, or authorization engine that hides application policy or its I/O.
 - Providing a global logger, facade, middleware logger, event bus, automatically discovered sink, per-query logging, or hidden database instrumentation.
 - Providing a generic upload, storage, filesystem, or stream facade; trusting client filenames or media types; or hiding persistence, cleanup, ranges, content processing, or file ownership.

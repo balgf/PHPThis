@@ -18,6 +18,12 @@ This file records only the checked-in example's current data-path decisions and 
 
 The migration command has schema authority over the example SQLite file. Web runtime authority remains separate in policy even though this source-checkout proof cannot demonstrate database-role grants. Production adoption records and dates its exact file ownership, process identities, configuration isolation, and backup or restore policy.
 
+## Redis cache and lease data
+
+ADR 028 adds two application-owned Redis roles without changing SQLite authority. The protected document cache stores only bounded reproducible versioned JSON after current authorization; its key carries application, environment, tenant, purpose, and document identity. SQLite remains authoritative. The cache endpoint may evict entries, and miss, expiry, eviction, corruption, wrong ownership, or outage each returns to the same bounded SQLite read.
+
+The schedule lease stores only one fresh bounded owner token under one application-and-environment key. It defaults to `127.0.0.1:6380`, logical database `0`, on a `noeviction` process operationally separate from the cache at `127.0.0.1:6379`, logical database `0`; a logical database number on the cache process is not sufficient separation. The token carries no authorization or domain identity and is omitted from events and output; only finite code-owned coordination outcomes are emitted. Exact Redis server and client versions, endpoints, authentication, transport, ACL, memory, eviction, timeout, TTL, persistence, restart, failover, replication, and capacity facts remain dated deployment-owned evidence in `.ai/cache.md`.
+
 ## Durable-job tables
 
 `application_jobs` and `welcome_deliveries` belong only to the ADR 024 example. Setup creates SQLite `STRICT` tables plus partial due-row indexes; the application therefore records and tests an exact SQLite runtime with `STRICT` table and `UPDATE ... RETURNING` support before adoption. `TransactionalCreateUser` writes the user, user event, and one bounded versioned job envelope through the same connection and transaction. The worker uses that same database for its idempotent delivery record and fenced completion.

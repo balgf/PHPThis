@@ -33,7 +33,6 @@ function cliTests(): array
                 || $withOption !== $expected
                 || str_contains($withOption['stderr'], $missingDatabasePath)
                 || is_file($missingDatabasePath)
-                || is_file($missingDatabasePath . '.schedule.lock')
                 || is_file($missingDatabasePath . '.migration.lock')
             ) {
                 throw new RuntimeException('Unknown commands must fail before I/O with one redacted stderr line.');
@@ -82,7 +81,6 @@ function cliTests(): array
 
             if (
                 is_file($missingDatabasePath)
-                || is_file($missingDatabasePath . '.schedule.lock')
                 || is_file($missingDatabasePath . '.migration.lock')
             ) {
                 throw new RuntimeException('Invalid CLI arguments must perform no database or lock I/O.');
@@ -137,7 +135,6 @@ function cliTests(): array
                     $result !== $expected
                     || str_contains($result['stderr'], $missingDatabasePath)
                     || is_file($missingDatabasePath)
-                    || is_file($missingDatabasePath . '.schedule.lock')
                 ) {
                     throw new RuntimeException('Operational failures must use one redacted stderr line.');
                 }
@@ -182,6 +179,8 @@ function cliTests(): array
         },
 
         'schedule run uses explicit UTC five-minute slots and handles at most one delivery' => static function (): void {
+            $redisEnvironment = cliRedisEnvironment('schedule-slots');
+            resetScheduleRedisLease($redisEnvironment);
             $databasePath = createUserDatabaseFixture('cli-schedule-slots', 0, false);
 
             foreach (['one', 'two', 'three'] as $suffix) {
@@ -189,9 +188,7 @@ function cliTests(): array
                 insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 0);
             }
 
-            $composition = new ApplicationComposition(
-                ApplicationDatabasePath::fromString($databasePath),
-            );
+            $composition = cliScheduleComposition($databasePath, $redisEnvironment);
             $beforeSlot = $composition
                 ->commands(new TestUserWelcomeJobClock(299))
                 ->run(ApplicationCommandName::ScheduleRun);
@@ -210,33 +207,45 @@ function cliTests(): array
             $afterAfterSlot = jobAggregate($databasePath);
 
             if (
-                $beforeSlot->stdoutLine() !== successfulConsoleLine('schedule:run', 'not_due')
+                $beforeSlot->stdoutLine() !== successfulConsoleLine('schedule:run', 'not_due', [])
                 || $afterBeforeSlot['available_count'] !== 3
                 || $afterBeforeSlot['succeeded_count'] !== 0
                 || $afterBeforeSlot['effect_count'] !== 0
-                || $slotStart->stdoutLine() !== successfulConsoleLine('schedule:run', 'completed')
+                || $slotStart->stdoutLine() !== successfulConsoleLine(
+                    'schedule:run',
+                    'completed',
+                    ['connected', 'acquired', 'renewed', 'released'],
+                )
                 || $afterSlotStart['available_count'] !== 2
                 || $afterSlotStart['succeeded_count'] !== 1
                 || $afterSlotStart['effect_count'] !== 1
-                || $slotEnd->stdoutLine() !== successfulConsoleLine('schedule:run', 'completed')
+                || $slotEnd->stdoutLine() !== successfulConsoleLine(
+                    'schedule:run',
+                    'completed',
+                    ['connected', 'acquired', 'renewed', 'released'],
+                )
                 || $afterSlotEnd['available_count'] !== 1
                 || $afterSlotEnd['succeeded_count'] !== 2
                 || $afterSlotEnd['effect_count'] !== 2
-                || $afterSlot->stdoutLine() !== successfulConsoleLine('schedule:run', 'not_due')
+                || $afterSlot->stdoutLine() !== successfulConsoleLine('schedule:run', 'not_due', [])
                 || $afterAfterSlot !== $afterSlotEnd
             ) {
                 throw new RuntimeException('The explicit clock must select complete UTC five-minute slots without catch-up work.');
             }
         },
 
-        'schedule run skips a subprocess-held same-host lock without blocking or delivering' => static function (): void {
+        'schedule run skips a subprocess-held Redis lease without blocking or delivering' => static function (): void {
+            $redisEnvironment = cliRedisEnvironment('schedule-overlap');
+            resetScheduleRedisLease($redisEnvironment);
             $databasePath = createUserDatabaseFixture('cli-schedule-overlap', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('schedule-overlap@example.com');
             insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 0);
-            $composition = new ApplicationComposition(
-                ApplicationDatabasePath::fromString($databasePath),
+            $composition = cliScheduleComposition($databasePath, $redisEnvironment);
+            $contended = runScheduleWithSubprocessLease(
+                $composition,
+                $databasePath,
+                $redisEnvironment,
             );
-            $contended = runScheduleWithSubprocessLock($composition, $databasePath);
 
             $completed = $composition
                 ->commands(new TestUserWelcomeJobClock(300))
@@ -244,17 +253,49 @@ function cliTests(): array
             $afterRelease = jobAggregate($databasePath);
 
             if (
-                $contended['stdout'] !== successfulConsoleLine('schedule:run', 'overlap_skipped')
+                $contended['stdout'] !== successfulConsoleLine(
+                    'schedule:run',
+                    'overlap_skipped',
+                    ['connected', 'contended'],
+                )
                 || $contended['duration_us'] > 1_000_000
                 || $contended['available_count'] !== 1
                 || $contended['succeeded_count'] !== 0
                 || $contended['effect_count'] !== 0
-                || $completed->stdoutLine() !== successfulConsoleLine('schedule:run', 'completed')
+                || $completed->stdoutLine() !== successfulConsoleLine(
+                    'schedule:run',
+                    'completed',
+                    ['connected', 'acquired', 'renewed', 'released'],
+                )
                 || $afterRelease['available_count'] !== 0
                 || $afterRelease['succeeded_count'] !== 1
                 || $afterRelease['effect_count'] !== 1
             ) {
-                throw new RuntimeException('A subprocess-contended local schedule lock must skip immediately and perform no delivery.');
+                throw new RuntimeException('A subprocess-contended Redis schedule lease must skip immediately and perform no delivery.');
+            }
+        },
+
+        'schedule run recovers after a lease-holder process dies and Redis expires ownership' => static function (): void {
+            $redisEnvironment = cliRedisEnvironment('schedule-crash-recovery');
+            resetScheduleRedisLease($redisEnvironment);
+            $databasePath = createUserDatabaseFixture('cli-schedule-crash-recovery', 0, false);
+            $job = UserWelcomeJobEnvelope::forEmail('schedule-crash-recovery@example.com');
+            insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 0);
+            $composition = cliScheduleComposition($databasePath, $redisEnvironment);
+            $execution = runScheduleAfterCrashedRedisLease($composition, $redisEnvironment);
+            $aggregate = jobAggregate($databasePath);
+
+            if (
+                $execution !== successfulConsoleLine(
+                    'schedule:run',
+                    'completed',
+                    ['connected', 'acquired', 'renewed', 'released'],
+                )
+                || $aggregate['available_count'] !== 0
+                || $aggregate['succeeded_count'] !== 1
+                || $aggregate['effect_count'] !== 1
+            ) {
+                throw new RuntimeException('Redis TTL recovery must permit one later duplicate-safe scheduled pass.');
             }
         },
 
@@ -336,10 +377,20 @@ function successfulConsoleResult(string $command, string $outcome): array
     ];
 }
 
-function successfulConsoleLine(string $command, string $outcome): string
-{
+/** @param list<string>|null $coordination */
+function successfulConsoleLine(
+    string $command,
+    string $outcome,
+    ?array $coordination = null,
+): string {
+    $event = ['command' => $command, 'outcome' => $outcome];
+
+    if ($coordination !== null) {
+        $event['coordination'] = $coordination;
+    }
+
     return json_encode(
-        ['command' => $command, 'outcome' => $outcome],
+        $event,
         JSON_THROW_ON_ERROR,
     ) . "\n";
 }
@@ -349,13 +400,22 @@ function resetCliMissingPath(string $databasePath): void
     foreach (
         [
             $databasePath,
-            $databasePath . '.schedule.lock',
             $databasePath . '.migration.lock',
         ] as $path
     ) {
         if (is_file($path) && !unlink($path)) {
             throw new RuntimeException('Unable to reset a CLI missing-path test artifact.');
         }
+    }
+}
+
+function resetScheduleRedisLease(string $environment): void
+{
+    $redis = cliScheduleRedisConnection();
+    $deleted = $redis->del(cliScheduleRedisKey($environment));
+
+    if ($deleted !== 0 && $deleted !== 1) {
+        throw new RuntimeException('Unable to reset the Redis CLI-test schedule lease.');
     }
 }
 
@@ -368,12 +428,13 @@ function resetCliMissingPath(string $databasePath): void
  *     effect_count: int
  * }
  */
-function runScheduleWithSubprocessLock(
+function runScheduleWithSubprocessLease(
     ApplicationComposition $composition,
     string $databasePath,
+    string $redisEnvironment,
 ): array {
     $process = proc_open(
-        [PHP_BINARY, __DIR__ . '/cli-schedule-lock-holder.php', $databasePath],
+        [PHP_BINARY, __DIR__ . '/redis-schedule-lease-holder.php', $redisEnvironment],
         [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
         $pipes,
         dirname(__DIR__),
@@ -382,10 +443,9 @@ function runScheduleWithSubprocessLock(
     );
 
     if (!is_resource($process)) {
-        throw new RuntimeException('Unable to start the schedule lock-holder process.');
+        throw new RuntimeException('Unable to start the schedule lease-holder process.');
     }
 
-    fclose($pipes[0]);
     stream_set_blocking($pipes[1], false);
     stream_set_blocking($pipes[2], false);
     $stdout = '';
@@ -410,11 +470,9 @@ function runScheduleWithSubprocessLock(
     }
 
     if (!str_contains($stdout, "READY\n")) {
-        proc_terminate($process);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_close($process);
-        throw new RuntimeException('Schedule lock holder did not become ready: ' . $stderr);
+        $completion = finishRedisLeaseHolder($process, $pipes, false);
+        $stderr .= $completion['stderr'];
+        throw new RuntimeException('Schedule lease holder did not become ready: ' . $stderr);
     }
 
     try {
@@ -425,24 +483,17 @@ function runScheduleWithSubprocessLock(
         $durationUs = max(0, intdiv(hrtime(true) - $startedAt, 1_000));
         $aggregate = jobAggregate($databasePath);
     } finally {
-        proc_terminate($process);
-        $remainingStdout = stream_get_contents($pipes[1]);
-        $remainingStderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_close($process);
+        $completion = finishRedisLeaseHolder($process, $pipes, true);
+        $stdout .= $completion['stdout'];
+        $stderr .= $completion['stderr'];
 
-        if (is_string($remainingStdout)) {
-            $stdout .= $remainingStdout;
-        }
-
-        if (is_string($remainingStderr)) {
-            $stderr .= $remainingStderr;
+        if ($completion['exit_code'] !== 0) {
+            throw new RuntimeException('Schedule lease holder did not exit successfully.');
         }
     }
 
     if ($stdout !== "READY\n" || $stderr !== '') {
-        throw new RuntimeException('Schedule lock holder emitted unexpected output.');
+        throw new RuntimeException('Schedule lease holder emitted unexpected output.');
     }
 
     return [
@@ -452,4 +503,209 @@ function runScheduleWithSubprocessLock(
         'succeeded_count' => $aggregate['succeeded_count'],
         'effect_count' => $aggregate['effect_count'],
     ];
+}
+
+function runScheduleAfterCrashedRedisLease(
+    ApplicationComposition $composition,
+    string $redisEnvironment,
+): string {
+    $process = proc_open(
+        [PHP_BINARY, __DIR__ . '/redis-schedule-lease-holder.php', $redisEnvironment],
+        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+        $pipes,
+        dirname(__DIR__),
+        null,
+        ['bypass_shell' => true],
+    );
+
+    if (!is_resource($process)) {
+        throw new RuntimeException('Unable to start the crashing Redis lease-holder process.');
+    }
+
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+    $stdout = '';
+    $stderr = '';
+    $deadline = hrtime(true) + 5_000_000_000;
+
+    while (!str_contains($stdout, "READY\n") && hrtime(true) < $deadline) {
+        $stdoutChunk = stream_get_contents($pipes[1]);
+        $stderrChunk = stream_get_contents($pipes[2]);
+
+        if (is_string($stdoutChunk)) {
+            $stdout .= $stdoutChunk;
+        }
+
+        if (is_string($stderrChunk)) {
+            $stderr .= $stderrChunk;
+        }
+
+        if (!str_contains($stdout, "READY\n")) {
+            usleep(10_000);
+        }
+    }
+
+    if (!str_contains($stdout, "READY\n")) {
+        $completion = finishRedisLeaseHolder($process, $pipes, false);
+        $stderr .= $completion['stderr'];
+        throw new RuntimeException('Crashing Redis lease holder did not become ready: ' . $stderr);
+    }
+
+    $redis = cliScheduleRedisConnection();
+    $redisKey = cliScheduleRedisKey($redisEnvironment);
+
+    if (!$redis->pexpire($redisKey, 150)) {
+        throw new RuntimeException('Unable to shorten the crashing Redis lease fixture.');
+    }
+
+    finishRedisLeaseHolder($process, $pipes, false);
+    $expiryDeadline = hrtime(true) + 2_000_000_000;
+
+    while (
+        $redis->get($redisKey) !== false
+        && hrtime(true) < $expiryDeadline
+    ) {
+        usleep(10_000);
+    }
+
+    if ($redis->get($redisKey) !== false) {
+        throw new RuntimeException('Crashed Redis lease ownership did not expire within the test bound.');
+    }
+
+    return $composition
+        ->commands(new TestUserWelcomeJobClock(300))
+        ->run(ApplicationCommandName::ScheduleRun)
+        ->stdoutLine();
+}
+
+function cliScheduleRedisConnection(): Redis
+{
+    ['host' => $host, 'port' => $port] = cliScheduleRedisTarget();
+
+    $redis = new Redis();
+
+    if (
+        !$redis->connect($host, $port, 0.25, null, 0, 0.25)
+        || !$redis->select(0)
+    ) {
+        throw new RuntimeException('Unable to connect to the Redis CLI-test lease database.');
+    }
+
+    return $redis;
+}
+
+function cliScheduleComposition(
+    string $databasePath,
+    string $redisEnvironment,
+): ApplicationComposition {
+    $target = cliScheduleRedisTarget();
+
+    return new ApplicationComposition(
+        ApplicationDatabasePath::fromString($databasePath),
+        leaseRedisHost: $target['host'],
+        leaseRedisPort: $target['port'],
+        redisEnvironment: $redisEnvironment,
+    );
+}
+
+/** @return array{host: non-empty-string, port: int<1, 65535>} */
+function cliScheduleRedisTarget(): array
+{
+    $hostValue = getenv('PHPTHIS_REDIS_LEASE_HOST');
+    $host = is_string($hostValue) && $hostValue !== '' ? $hostValue : '127.0.0.1';
+    $portValue = getenv('PHPTHIS_REDIS_LEASE_PORT');
+    $port = is_string($portValue) && preg_match('/\A[1-9][0-9]{0,4}\z/D', $portValue) === 1
+        ? (int) $portValue
+        : 6380;
+
+    if ($port < 1 || $port > 65_535) {
+        throw new RuntimeException('Redis CLI-test port is outside the TCP port range.');
+    }
+
+    return ['host' => $host, 'port' => $port];
+}
+
+function cliRedisEnvironment(string $purpose): string
+{
+    return 't' . substr(hash('sha256', $purpose . bin2hex(random_bytes(8))), 0, 20);
+}
+
+function cliScheduleRedisKey(string $environment): string
+{
+    return 'phpthis_example:' . $environment . ':schedule_run:v1';
+}
+
+/**
+ * @param array<int, resource> $pipes
+ * @return array{stdout: string, stderr: string, exit_code: int}
+ */
+function finishRedisLeaseHolder(mixed $process, array $pipes, bool $requestRelease): array
+{
+    if (!is_resource($process) || !isset($pipes[0], $pipes[1], $pipes[2])) {
+        throw new RuntimeException('Redis lease-holder process state is invalid.');
+    }
+
+    if ($requestRelease) {
+        fwrite($pipes[0], "RELEASE\n");
+    } else {
+        proc_terminate($process);
+    }
+
+    fclose($pipes[0]);
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+    $stdout = '';
+    $stderr = '';
+    $deadline = hrtime(true) + 2_000_000_000;
+    $status = proc_get_status($process);
+
+    while ($status['running'] && hrtime(true) < $deadline) {
+        $stdoutChunk = stream_get_contents($pipes[1]);
+        $stderrChunk = stream_get_contents($pipes[2]);
+
+        if (is_string($stdoutChunk)) {
+            $stdout .= $stdoutChunk;
+        }
+
+        if (is_string($stderrChunk)) {
+            $stderr .= $stderrChunk;
+        }
+
+        usleep(10_000);
+        $status = proc_get_status($process);
+    }
+
+    if ($status['running']) {
+        proc_terminate($process, 9);
+        $killDeadline = hrtime(true) + 1_000_000_000;
+
+        while ($status['running'] && hrtime(true) < $killDeadline) {
+            usleep(10_000);
+            $status = proc_get_status($process);
+        }
+    }
+
+    $stdoutChunk = stream_get_contents($pipes[1]);
+    $stderrChunk = stream_get_contents($pipes[2]);
+
+    if (is_string($stdoutChunk)) {
+        $stdout .= $stdoutChunk;
+    }
+
+    if (is_string($stderrChunk)) {
+        $stderr .= $stderrChunk;
+    }
+
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+
+    if ($status['running']) {
+        throw new RuntimeException('Redis lease-holder process exceeded its termination deadline.');
+    }
+
+    $closedExitCode = proc_close($process);
+
+    $exitCode = $status['exitcode'] >= 0 ? $status['exitcode'] : $closedExitCode;
+
+    return ['stdout' => $stdout, 'stderr' => $stderr, 'exit_code' => $exitCode];
 }

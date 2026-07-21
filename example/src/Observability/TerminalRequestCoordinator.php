@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Example\Observability;
 
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
 use InvalidArgumentException;
 use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\Response;
@@ -25,6 +26,7 @@ final readonly class TerminalRequestCoordinator
         private UnknownFailureBoundary $unknownFailures,
         private CorrelationId $correlationId,
         private RequestSummarySink $summarySink,
+        private DocumentDetailsCacheTrace $documentCacheTrace,
         array $querySources,
     ) {
         if (count($querySources) > self::MAXIMUM_QUERY_SOURCES) {
@@ -87,6 +89,7 @@ final readonly class TerminalRequestCoordinator
             $durationUs,
             $response,
             $unknownFailure,
+            $this->documentCacheTrace,
             $this->querySources,
         );
 

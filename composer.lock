@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e5abef9063b470aee8d6c983874a8891",
+    "content-hash": "0cbd616bdc9b2141d8bf6dbd03ea4e76",
     "packages": [],
     "packages-dev": [
         {
@@ -134,7 +134,8 @@
         "ext-session": "*"
     },
     "platform-dev": {
-        "ext-pdo_sqlite": "*"
+        "ext-pdo_sqlite": "*",
+        "ext-redis": "^6.3"
     },
     "plugin-api-version": "2.9.0"
 }

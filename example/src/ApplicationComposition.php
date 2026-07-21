@@ -12,6 +12,9 @@ use Example\Documents\DenyAllDocumentAuthentication;
 use Example\Documents\DenyAllDocumentAuthorization;
 use Example\Documents\DenyAllDocumentTenantResolution;
 use Example\Documents\Forbidden;
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
+use Example\Documents\GetDocument\RedisDocumentDetailsCache;
+use Example\Documents\GetDocument\SelectAuthorizedDocument;
 use Example\Documents\Unauthenticated;
 use Example\Jobs\UserWelcomeJobClock;
 use Example\Observability\CorrelationId;
@@ -31,14 +34,36 @@ use PHPThis\Http\Response;
 use PHPThis\Http\UnsupportedMediaType;
 use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Router;
+use InvalidArgumentException;
 use RuntimeException;
 
 final readonly class ApplicationComposition
 {
     private string $databasePath;
 
-    public function __construct(ApplicationDatabasePath $databasePath)
-    {
+    public function __construct(
+        ApplicationDatabasePath $databasePath,
+        private string $cacheRedisHost = '127.0.0.1',
+        private int $cacheRedisPort = 6379,
+        private string $leaseRedisHost = '127.0.0.1',
+        private int $leaseRedisPort = 6380,
+        private string $redisEnvironment = 'development',
+    ) {
+        if (
+            !self::validRedisHost($cacheRedisHost)
+            || !self::validRedisHost($leaseRedisHost)
+            || $cacheRedisPort < 1
+            || $cacheRedisPort > 65_535
+            || $leaseRedisPort < 1
+            || $leaseRedisPort > 65_535
+            || ($cacheRedisHost === $leaseRedisHost && $cacheRedisPort === $leaseRedisPort)
+            || preg_match('/\A[a-z][a-z0-9_-]{0,31}\z/D', $redisEnvironment) !== 1
+        ) {
+            throw new InvalidArgumentException(
+                'Application Redis cache and lease endpoints must be valid and operationally separate.',
+            );
+        }
+
         $this->databasePath = $databasePath->value;
     }
 
@@ -66,11 +91,21 @@ final readonly class ApplicationComposition
             $listDocumentsTrace,
         );
         $documentAuthorization = new DenyAllDocumentAuthorization();
+        $documentCacheTrace = new DocumentDetailsCacheTrace();
+        $retrieveDocument = new RedisDocumentDetailsCache(
+            $this->cacheRedisHost,
+            $this->cacheRedisPort,
+            0,
+            new SelectAuthorizedDocument($getDocumentConnection),
+            $this->redisEnvironment,
+            30_000,
+            $documentCacheTrace,
+        );
         $application = new Application(new Router(Routes::create(
             $listUsersConnection,
             $getUserConnection,
             $createUserConnection,
-            $getDocumentConnection,
+            $retrieveDocument,
             $listDocumentsConnection,
             new DenyAllDocumentAuthentication(),
             new DenyAllDocumentTenantResolution(),
@@ -134,6 +169,7 @@ final readonly class ApplicationComposition
             new UnknownFailureBoundary(),
             CorrelationId::generate(),
             new ErrorLogRequestSummarySink(),
+            $documentCacheTrace,
             [
                 new QuerySummarySource('list_users', $listUsersBudget, $listUsersTrace),
                 new QuerySummarySource('get_user', $getUserBudget, $getUserTrace),
@@ -153,7 +189,18 @@ final readonly class ApplicationComposition
         return new ApplicationCommands(
             $this->databasePath,
             $clock,
+            $this->leaseRedisHost,
+            $this->leaseRedisPort,
+            0,
+            'phpthis_example:' . $this->redisEnvironment . ':schedule_run:v1',
         );
+    }
+
+    private static function validRedisHost(string $host): bool
+    {
+        return $host !== ''
+            && strlen($host) <= 255
+            && preg_match('/[\x00-\x20\x7f]/D', $host) !== 1;
     }
 
     private function existingDatabasePath(): string

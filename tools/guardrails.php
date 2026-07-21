@@ -464,6 +464,19 @@ $requiredRepositoryFiles = [
     'docs/observability/sink-failure.md',
     'docs/observability/testing.md',
     'docs/request-policy.md',
+    'docs/redis-coordination.md',
+    'docs/redis/README.md',
+    'docs/redis/adoption.md',
+    'docs/redis/cache-failures.md',
+    'docs/redis/cache-key.md',
+    'docs/redis/cache-value.md',
+    'docs/redis/invalidation.md',
+    'docs/redis/lease-failures.md',
+    'docs/redis/lease-lifecycle.md',
+    'docs/redis/observability.md',
+    'docs/redis/stale-refill.md',
+    'docs/redis/testing.md',
+    'docs/redis/topology.md',
     'docs/releases/0.1.0-alpha.1.md',
     'docs/security.md',
     'docs/sessions.md',
@@ -485,8 +498,10 @@ $requiredRepositoryFiles = [
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md',
     'docs/decisions/026-bounded-file-transfers.md',
     'docs/decisions/027-application-owned-explicit-sqlite-migrations.md',
+    'docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
+    'example/.ai/cache.md',
     'example/.ai/cli.md',
     'example/.ai/data.md',
     'example/.ai/file-transfers.md',
@@ -510,9 +525,15 @@ $requiredRepositoryFiles = [
     'example/src/Cli/ApplicationCommandOutcome.php',
     'example/src/Cli/ApplicationCommands.php',
     'example/src/Cli/InvalidApplicationCommandArguments.php',
-    'example/src/Cli/LocalScheduleLock.php',
     'example/src/Cli/README.md',
     'example/src/Cli/UnknownApplicationCommand.php',
+    'example/src/Coordination/RedisScheduleRunLease.php',
+    'example/src/Coordination/RedisScheduleRunLeaseAcquireOutcome.php',
+    'example/src/Coordination/RedisScheduleRunLeaseReleaseOutcome.php',
+    'example/src/Coordination/RedisScheduleRunLeaseRenewOutcome.php',
+    'example/src/Coordination/RedisScheduleRunLeaseTrace.php',
+    'example/src/Coordination/RedisScheduleRunLeaseTraceOutcome.php',
+    'example/src/Coordination/RedisScheduleRunLeaseUnavailable.php',
     'example/src/Jobs/InvalidUserWelcomeJobEnvelope.php',
     'example/src/Jobs/README.md',
     'example/src/Jobs/RecordUserWelcomeDelivery.php',
@@ -545,13 +566,21 @@ $requiredRepositoryFiles = [
     'example/src/Documents/Unauthenticated.php',
     'example/src/Documents/GetDocument/AuthorizeGetDocument.php',
     'example/src/Documents/GetDocument/DocumentDetails.php',
+    'example/src/Documents/GetDocument/DocumentDetailsCacheReadOutcome.php',
+    'example/src/Documents/GetDocument/DocumentDetailsCacheTrace.php',
+    'example/src/Documents/GetDocument/DocumentDetailsCacheWriteOutcome.php',
     'example/src/Documents/GetDocument/GetDocumentHandler.php',
+    'example/src/Documents/GetDocument/RedisDocumentDetailsCache.php',
+    'example/src/Documents/GetDocument/RedisDocumentDetailsInvalidationOutcome.php',
     'example/src/Documents/GetDocument/RetrieveAuthorizedDocument.php',
     'example/src/Documents/GetDocument/SelectAuthorizedDocument.php',
     'example/src/Documents/ListDocuments/AuthorizeListDocuments.php',
     'example/src/Documents/ListDocuments/ListDocumentsPageRequest.php',
     'example/src/Documents/ListDocuments/DocumentSummary.php',
     'example/src/Documents/ListDocuments/ListDocumentsHandler.php',
+    'example/src/Documents/UpdateDocumentTitle/DocumentTitleUpdateOutcome.php',
+    'example/src/Documents/UpdateDocumentTitle/RedisInvalidatingDocumentTitleUpdate.php',
+    'example/src/Documents/UpdateDocumentTitle/RedisInvalidatingDocumentTitleUpdateResult.php',
     'example/src/DocumentFiles/DocumentFileId.php',
     'example/src/DocumentFiles/DocumentFileNotFound.php',
     'example/src/DocumentFiles/DocumentFileRoutes.php',
@@ -654,7 +683,9 @@ $requiredRepositoryFiles = [
     'tests/migrations.php',
     'tests/cli.php',
     'tests/cli-migration-lock-holder.php',
-    'tests/cli-schedule-lock-holder.php',
+    'tests/cache.php',
+    'tests/redis-coordination.php',
+    'tests/redis-schedule-lease-holder.php',
     'tests/job-worker-crash.php',
     'tests/request-policy.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
@@ -1369,7 +1400,7 @@ $observabilityArtifactMarkers = [
         '`phpthis.request.unhandled`',
     ],
     'docs/observability/README.md' => [
-        'ADR 023 is the accepted decision',
+        'ADR 023 is the mandatory request-summary decision',
         '`tests/observability.php`',
     ],
     'docs/observability/correlation-id.md' => [
@@ -1455,6 +1486,8 @@ $observabilityArtifactMarkers = [
     ],
     'example/src/Observability/RequestSummary.php' => [
         "public const string EVENT = 'application.request_summary';",
+        "'schema_version' => self::SCHEMA_VERSION,",
+        "'document_cache' => \$this->documentCache,",
         "'database_sources' => \$this->querySources,",
         'private static function saturatedAdd',
         'private static function safeFailureClass',
@@ -1527,6 +1560,7 @@ $observabilityArtifactMarkers = [
         'terminal request summary excludes request response database and exception secrets',
         'query summary sources are finite uniquely named and connection local',
         'sequential terminal requests use fresh IDs budgets and traces',
+        'terminal summary exposes one bounded document-cache outcome without cache data',
     ],
     'tools/package-files.txt' => [
         'docs/decisions/023-application-owned-terminal-request-summaries.md',
@@ -1832,10 +1866,10 @@ $applicationCliArtifactMarkers = [
     ],
     '.ai/cli.md' => [
         '# Application CLI and scheduler contract',
-        'PHPThis provides no core CLI command, command map, argument parser, scheduler, lock, daemon, or process manager.',
+        'PHPThis provides no core CLI command, command map, argument parser, scheduler, lock, lease, daemon, or process manager.',
         'Reject an unknown command separately from invalid, duplicate, misplaced, oversized, or unsupported arguments before application I/O.',
         'HTTP and CLI may share immutable configuration and explicit application construction code',
-        'same-host scheduled pass with one application-private nonblocking exclusive `flock`',
+        'application-private Redis lease',
     ],
     '.ai/testing.md' => [
         'execute its real console in fresh subprocesses',
@@ -1848,14 +1882,14 @@ $applicationCliArtifactMarkers = [
         'php example/bin/console.php <jobs:run-one|schedule:run|database:migrate> [--database=/absolute/path]',
         '`database:migrate` is the sole migration spelling in the accepted example.',
         'intdiv(epoch_seconds, 60) % 5 === 0',
-        'flock(LOCK_EX | LOCK_NB)',
+        'SET key token NX PX 30000',
         '`Example\\ApplicationComposition`',
         '## Unsupported boundary',
     ],
     'docs/cli/README.md' => [
         '# Application CLI knowledge index',
         'Arguments and output',
-        'Scheduling and locking',
+        'Scheduling and coordination',
         'Composition',
         'Testing',
     ],
@@ -1870,15 +1904,15 @@ $applicationCliArtifactMarkers = [
         'not a container, service locator, registry, generic factory, framework extension point, or global',
     ],
     'docs/cli/scheduling-locking.md' => [
-        '# CLI scheduling and locking',
+        '# CLI scheduling and coordination',
         'intdiv(epoch_seconds, 60) % 5 === 0',
         'Sequential invocations in the same due minute are not deduplicated',
     ],
     'docs/cli/testing.md' => [
         '# CLI testing',
         'For production adoption, execute the real application console in fresh subprocesses.',
-        'The current example proof is intentionally narrower',
-        'It does not inject lock-operation or arbitrary throwable failures.',
+        'The current example proof is intentionally bounded',
+        'stale-owner renewal and release rejection',
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned CLI and scheduler',
@@ -1899,7 +1933,7 @@ $applicationCliArtifactMarkers = [
     'docs/knowledge-map.md' => [
         'Add or assess an operational application command or scheduled pass',
         '`docs/cli.md`',
-        'no framework CLI or scheduler API exists',
+        'no framework CLI, scheduler, lock, or lease API exists',
     ],
     'README.md' => [
         'php example/bin/console.php jobs:run-one',
@@ -1908,7 +1942,7 @@ $applicationCliArtifactMarkers = [
     ],
     'ROADMAP.md' => [
         'ADR 025 accepts one application-owned explicit console and cron-friendly scheduled pass',
-        'not core CLI, scheduler, daemon, persistent slot, catch-up, process-manager, or distributed-coordination contracts',
+        'ADR 028 accepts one Redis-specific application cache and schedule lease',
     ],
     'example/.ai/README.md' => [
         'Change an application command, argument, exit, stream, cadence, or overlap policy',
@@ -1920,18 +1954,18 @@ $applicationCliArtifactMarkers = [
         'php example/bin/console.php schedule:run [--database=/absolute/path]',
         'php example/bin/console.php database:migrate [--database=/absolute/path]',
         'intdiv(epochSeconds, 60) % 5 === 0',
-        'nonblocking exclusive `flock`',
-        'No live connection, budget, trace, request, session, correlation ID, or mutable clock is shared between HTTP and CLI',
+        'SET key token NX PX 30000',
+        'No live Redis client, connection, budget, trace, request, session, correlation ID, or mutable clock is shared between HTTP and CLI',
     ],
     'example/src/Cli/README.md' => [
         '# Example application CLI source',
-        'application-owned evidence for ADR 025, not PHPThis core runtime code',
+        'application-owned evidence for ADR 025 and ADR 028, not PHPThis core runtime code',
         '`example/bin/console.php` is the only operational entrypoint',
-        'Do not add command discovery, dynamic class or service resolution, a second console, generic parser or scheduler facade, daemon, polling loop, subprocess recursion, persistent slot ledger, catch-up, or distributed-coordination claim.',
+        'Do not add command discovery, dynamic class or service resolution, a second console, generic parser or scheduler facade, daemon, polling or renewal loop',
     ],
     'example/AGENTS.md' => [
         'Keep `bin/console.php` as the sole application operational console.',
-        'Do not add another entrypoint, command discovery, a service container, scheduler facade, daemon, persistent slot ledger, catch-up, or distributed-coordination claim.',
+        'Do not add another entrypoint, command discovery, a service container, scheduler facade, daemon, persistent slot ledger, catch-up, or generic distributed-coordination API.',
     ],
     'templates/application/.ai/cli.md' => [
         '{{CLI_ADOPTION_OR_NOT_APPLICABLE}}',
@@ -2001,17 +2035,19 @@ $applicationCliArtifactMarkers = [
         'ApplicationCommandName::DatabaseMigrate => new ApplicationCommandExecution(',
         'intdiv($this->clock->now(), 60)',
         '$currentMinute % 5 !== 0',
-        "new LocalScheduleLock(\$databasePath . '.schedule.lock')",
-        'if (!$scheduleLock->acquire())',
-        '$scheduleLock->release();',
+        'RedisScheduleRunLease::connect(',
+        '$scheduleLease->acquire() === RedisScheduleRunLeaseAcquireOutcome::Contended',
+        '$scheduleLease->renew() === RedisScheduleRunLeaseRenewOutcome::Lost',
+        '$scheduleLease->release() === RedisScheduleRunLeaseReleaseOutcome::Lost',
         'private function runOneJob(?string $databasePath = null): ApplicationCommandOutcome',
         'private function runMigrations(): ApplicationCommandOutcome',
     ],
-    'example/src/Cli/LocalScheduleLock.php' => [
-        "fopen(\$this->path, 'c+b')",
-        'flock($handle, LOCK_EX | LOCK_NB, $wouldBlock)',
-        'if ($wouldBlock === 1)',
-        'flock($handle, LOCK_UN)',
+    'example/src/Coordination/RedisScheduleRunLease.php' => [
+        "'NX'",
+        "'PX' => self::LEASE_TTL_MILLISECONDS",
+        'self::RENEW_SCRIPT',
+        'self::RELEASE_SCRIPT',
+        'MAXIMUM_RENEWALS = 4',
     ],
     'example/bin/console.php' => [
         'ApplicationCommandLine::fromArguments(',
@@ -2027,13 +2063,16 @@ $applicationCliArtifactMarkers = [
         'application console reports missing databases as one redacted operational failure',
         'jobs run-one command handles at most one delivery in each fresh process',
         'schedule run uses explicit UTC five-minute slots and handles at most one delivery',
-        'schedule run skips a subprocess-held same-host lock without blocking or delivering',
+        'schedule run skips a subprocess-held Redis lease without blocking or delivering',
+        'schedule run recovers after a lease-holder process dies and Redis expires ownership',
         'application composition keeps CLI execution outside fresh HTTP request state',
     ],
-    'tests/cli-schedule-lock-holder.php' => [
+    'tests/redis-schedule-lease-holder.php' => [
         "fwrite(STDOUT, \"READY\\n\")",
-        "flock(\$handle, LOCK_EX | LOCK_NB)",
-        "\$databasePath . '.schedule.lock'",
+        'RedisScheduleRunLease::connect(',
+        'RedisScheduleRunLeaseAcquireOutcome::Acquired',
+        'RedisScheduleRunLeaseRenewOutcome::Renewed',
+        'RedisScheduleRunLeaseReleaseOutcome::Released',
     ],
 ];
 
@@ -2107,8 +2146,9 @@ $applicationCliSourceFiles = [
     'example/src/Cli/ApplicationCommandOutcome.php',
     'example/src/Cli/ApplicationCommands.php',
     'example/src/Cli/InvalidApplicationCommandArguments.php',
-    'example/src/Cli/LocalScheduleLock.php',
     'example/src/Cli/UnknownApplicationCommand.php',
+    'example/src/Coordination/RedisScheduleRunLease.php',
+    'example/src/Coordination/RedisScheduleRunLeaseTrace.php',
 ];
 $forbiddenApplicationCliMarkers = [
     'class_exists(',
@@ -2140,6 +2180,207 @@ foreach ($applicationCliSourceFiles as $relativePath) {
         if (is_array($token) && in_array($token[0], [T_FOR, T_FOREACH, T_WHILE, T_DO], true)) {
             $failures[] = "Application CLI source {$relativePath} must remain one-shot without an in-process loop.";
             break;
+        }
+    }
+}
+
+$redisCoordinationArtifactMarkers = [
+    '.ai/cache.md' => [
+        'framework currently provides no generic cache API',
+        'Do not cache credentials, session state, CSRF tokens, or authorization decisions.',
+        'ADR 028',
+    ],
+    '.ai/cli.md' => [
+        'one fresh owner token',
+        '`SET NX PX` acquisition',
+        'Do not add retry, waiting, a renewal loop, a fencing-token claim, or a generic distributed-lock API.',
+    ],
+    'docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md' => [
+        'Status: accepted',
+        'PHPThis accepts one application-owned Redis proof in the executable example and adds no framework cache, Redis, lock, or lease API.',
+        'authentication, tenant resolution, and current authorization complete',
+        'phpthis_example:<environment>:tenant:<account-id>:document_details:v1:<document-key>',
+        'phpthis_example:<environment>:schedule_run:v1',
+        'SET key token NX PX 30000',
+        'not a monotonically increasing fencing token',
+    ],
+    'docs/redis-coordination.md' => [
+        'A logical database number does not create the required separation.',
+        'authenticate -> resolve tenant -> authorize -> cache read',
+        'execute authoritative SQLite autocommit update -> invalidate exact Redis key',
+        'The token is an ownership check, not a fencing token.',
+    ],
+    'docs/redis/topology.md' => [
+        'noeviction',
+        'A logical database number is not separation',
+    ],
+    'example/.ai/cache.md' => [
+        'RedisDocumentDetailsCache',
+        'RedisInvalidatingDocumentTitleUpdate',
+        'The cache excludes not-found results, credentials, principals, memberships, permission data, denials, session state, secrets, and authorization decisions.',
+    ],
+    'example/src/ApplicationComposition.php' => [
+        'new RedisDocumentDetailsCache(',
+        "':schedule_run:v1'",
+    ],
+    'example/src/Documents/GetDocument/RedisDocumentDetailsCache.php' => [
+        'implements RetrieveAuthorizedDocument',
+        'MAXIMUM_PAYLOAD_BYTES = 1_024',
+        'document_details:v1',
+        'setOption(Redis::OPT_MAX_RETRIES, 0)',
+        "['px' => \$this->ttlMilliseconds]",
+    ],
+    'example/src/Documents/UpdateDocumentTitle/RedisInvalidatingDocumentTitleUpdate.php' => [
+        'UPDATE documents',
+        'account_memberships.principal_id = :principal_id',
+        '$this->cache->invalidate($accountId, $documentKey)',
+    ],
+    'example/src/Coordination/RedisScheduleRunLease.php' => [
+        'LEASE_TTL_MILLISECONDS = 30_000',
+        'CONNECT_TIMEOUT_SECONDS = 0.25',
+        'READ_TIMEOUT_SECONDS = 0.25',
+        'setOption(Redis::OPT_MAX_RETRIES, 0)',
+        "'NX'",
+        "'PX' => self::LEASE_TTL_MILLISECONDS",
+        'self::RENEW_SCRIPT',
+        'self::RELEASE_SCRIPT',
+    ],
+    'example/src/Observability/RequestSummary.php' => [
+        "'schema_version' => self::SCHEMA_VERSION,",
+        "'document_cache' => \$this->documentCache,",
+    ],
+    'tests/cache.php' => [
+        'Redis proof uses distinct recorded cache and noeviction lease endpoints',
+        "phpversion('redis')",
+        "version_compare(\$clientVersion, '6.3.0', '<')",
+        "version_compare(\$leaseInfo['redis_version'], '9.0.0', '>=')",
+        'getOption(Redis::OPT_MAX_RETRIES) !== 0',
+        'authorization denial performs no cache or protected source work',
+        'Redis document cache preserves constant authoritative SQL on cold small and large fixtures',
+        'Redis document cache bounds the accepted stale-refill race with finite TTL',
+        'authoritative document update survives explicit invalidation outage',
+    ],
+    'tests/redis-coordination.php' => [
+        'Redis schedule lease cannot renew or delete a successor lease',
+        'Redis schedule lease preserves safe cleanup after an uncertain renewal',
+        'Redis schedule lease bounds renewals and its structured outcome trace',
+    ],
+    'tests/cli.php' => [
+        'schedule run skips a subprocess-held Redis lease without blocking or delivering',
+        'schedule run recovers after a lease-holder process dies and Redis expires ownership',
+    ],
+    'tests/run.php' => [
+        "require __DIR__ . '/cache.php';",
+        "require __DIR__ . '/redis-coordination.php';",
+        'foreach (cacheTests() as $name => $test)',
+        'foreach (redisCoordinationTests() as $name => $test)',
+    ],
+    '.github/workflows/ci.yml' => [
+        'redis-cache:',
+        'redis-lease:',
+        'extensions: pdo, pdo_sqlite, redis',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md',
+        'docs/redis-coordination.md',
+        'docs/redis/topology.md',
+    ],
+];
+
+foreach ($redisCoordinationArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read Redis coordination artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Redis coordination artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+foreach (
+    [
+        'example/src/Documents/GetDocument/RedisDocumentDetailsCache.php',
+        'example/src/Coordination/RedisScheduleRunLease.php',
+    ] as $redisClientSource
+) {
+    $contents = file_get_contents($root . '/' . $redisClientSource);
+
+    if (!is_string($contents)) {
+        continue;
+    }
+
+    $connectPosition = strpos($contents, '->connect(');
+    $retryOptionPosition = strpos($contents, 'setOption(Redis::OPT_MAX_RETRIES, 0)');
+
+    if (
+        $connectPosition === false
+        || $retryOptionPosition === false
+        || $retryOptionPosition <= $connectPosition
+    ) {
+        $failures[] = "Redis client {$redisClientSource} must disable phpredis retries after connect resets client options.";
+    }
+}
+
+$leaseSource = file_get_contents(
+    $root . '/example/src/Coordination/RedisScheduleRunLease.php',
+);
+
+if (
+    is_string($leaseSource)
+    && (
+        substr_count($leaseSource, 'setOption(Redis::OPT_MAX_RETRIES, 0)') !== 2
+        || substr_count(
+            $leaseSource,
+            'setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE)',
+        ) !== 2
+        || substr_count(
+            $leaseSource,
+            'setOption(Redis::OPT_COMPRESSION, Redis::COMPRESSION_NONE)',
+        ) !== 2
+        || substr_count($leaseSource, 'setOption(Redis::OPT_REPLY_LITERAL, false)') !== 2
+    )
+) {
+    $failures[] = 'Every Redis schedule-lease construction path must normalize all correctness-sensitive client options.';
+}
+
+foreach (['src/Cache', 'src/Caching', 'src/Redis', 'src/Coordination', 'src/Lease', 'src/Lock'] as $forbiddenCoreDirectory) {
+    if (is_dir($root . '/' . $forbiddenCoreDirectory)) {
+        $failures[] = "Redis cache and schedule-lease runtime must remain outside framework core: {$forbiddenCoreDirectory}.";
+    }
+}
+
+$redisPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (
+    is_string($redisPackageInventory)
+    && preg_match('/^src\/(?:Cache|Caching|Redis|Coordination|Lease|Lock)\//m', $redisPackageInventory) === 1
+) {
+    $failures[] = 'Redis cache and schedule-lease runtime must remain outside the framework package API.';
+}
+
+if (is_string($composerManifest)) {
+    $redisComposer = json_decode($composerManifest, true);
+
+    if (!is_array($redisComposer)) {
+        $failures[] = 'Cannot decode composer.json for the Redis evidence boundary.';
+    } else {
+        $runtimeRequirements = $redisComposer['require'] ?? null;
+        $developmentRequirements = $redisComposer['require-dev'] ?? null;
+
+        if (is_array($runtimeRequirements) && array_key_exists('ext-redis', $runtimeRequirements)) {
+            $failures[] = 'The Redis extension must not become a framework runtime dependency.';
+        }
+
+        if (
+            !is_array($developmentRequirements)
+            || ($developmentRequirements['ext-redis'] ?? null) !== '^6.3'
+        ) {
+            $failures[] = 'Repository Redis evidence must declare the tested ext-redis ^6.3 development range.';
         }
     }
 }
@@ -3204,8 +3445,28 @@ foreach ($phpFiles as $relativePath => $path) {
         $failures[] = "{$relativePath} must declare strict types immediately after <?php.";
     }
 
-    if (preg_match('/\\beval\\s*\\(/', $contents) === 1) {
-        $failures[] = "{$relativePath} uses eval.";
+    $previousSignificantTokenId = null;
+
+    foreach (token_get_all($contents) as $token) {
+        $tokenId = is_array($token) ? $token[0] : null;
+        $isSignificant = !is_array($token)
+            || !in_array($tokenId, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true);
+
+        if (
+            $tokenId === T_EVAL
+            && !in_array(
+                $previousSignificantTokenId,
+                [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION],
+                true,
+            )
+        ) {
+            $failures[] = "{$relativePath} uses eval.";
+            break;
+        }
+
+        if ($isSignificant) {
+            $previousSignificantTokenId = $tokenId;
+        }
     }
 
     if (preg_match('/\\$\\$[A-Za-z_{]/', $contents) === 1) {

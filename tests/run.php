@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Example\Documents\DenyAllDocumentAuthentication;
 use Example\Documents\DenyAllDocumentAuthorization;
 use Example\Documents\DenyAllDocumentTenantResolution;
+use Example\Documents\GetDocument\SelectAuthorizedDocument;
 use Example\DocumentFiles\LocalDocumentFiles;
 use Example\Routes;
 use Example\Users\CreateUser\CreateUserCommand;
@@ -48,6 +49,8 @@ require __DIR__ . '/jobs.php';
 require __DIR__ . '/cli.php';
 require __DIR__ . '/migrations.php';
 require __DIR__ . '/document-files.php';
+require __DIR__ . '/cache.php';
+require __DIR__ . '/redis-coordination.php';
 
 $tests = requestPolicyTests();
 
@@ -71,12 +74,22 @@ foreach (documentFileTests() as $name => $test) {
     $tests[$name] = $test;
 }
 
+foreach (cacheTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
+foreach (redisCoordinationTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
 $tests['example composes explicit route modules'] = static function (): void {
     $application = new Application(new Router(Routes::create(
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(3), new QueryTrace(3)),
-        Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
+        new SelectAuthorizedDocument(
+            Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
+        ),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         new DenyAllDocumentAuthentication(),
         new DenyAllDocumentTenantResolution(),
@@ -1827,7 +1840,9 @@ $tests['example request boundary maps client failures before database work'] = s
         Connection::connect($dsn, $readBudget, new QueryTrace(1)),
         Connection::connect($dsn, $getBudget, new QueryTrace(1)),
         Connection::connect($dsn, $writeBudget, $writeTrace),
-        Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
+        new SelectAuthorizedDocument(
+            Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
+        ),
         Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
         new DenyAllDocumentAuthentication(),
         new DenyAllDocumentTenantResolution(),
@@ -2002,7 +2017,9 @@ $tests['user routes execute bounded reads and one transactional write end to end
         Connection::connect($dsn, $readBudget, $readTrace),
         Connection::connect($dsn, $getBudget, $getTrace),
         Connection::connect($dsn, $writeBudget, $writeTrace),
-        Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
+        new SelectAuthorizedDocument(
+            Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
+        ),
         Connection::connect($dsn, new QueryBudget(1), new QueryTrace(1)),
         new DenyAllDocumentAuthentication(),
         new DenyAllDocumentTenantResolution(),

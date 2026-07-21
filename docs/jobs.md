@@ -67,7 +67,7 @@ Each worker process or invocation performs exactly one bounded cycle:
 6. finalize a successful idempotent database effect and completion together, or record one retry or dead-letter transition; and
 7. emit one bounded redacted terminal result and exit.
 
-A supervisor creates repetition by starting another process. The recipe deliberately has no long-running loop, reused container or connection, mutable state carried between deliveries, signal subsystem, automatic heartbeat, implicit retry, or graceful-stop protocol. Stopping cleanly means the supervisor does not launch the next invocation. ADR 025 keeps this composition application-owned: the accepted example routes the one-job operation through its sole console as `jobs:run-one`, and `schedule:run` may call that exact in-process operation once under its explicit UTC and same-host-overlap policy. Neither decision adds a framework command map, scheduler, process manager, or second job path.
+A supervisor creates repetition by starting another process. The recipe deliberately has no long-running loop, reused container or connection, mutable state carried between deliveries, signal subsystem, automatic heartbeat, implicit retry, or graceful-stop protocol. Stopping cleanly means the supervisor does not launch the next invocation. ADR 025 keeps this composition application-owned: the accepted example routes the one-job operation through its sole console as `jobs:run-one`, and ADR 028's current `schedule:run` may call that exact in-process operation once under its explicit UTC cadence and Redis owner-token lease. Neither decision adds a framework command map, scheduler, process manager, or second job path.
 
 ## Claim, lease, and fencing
 

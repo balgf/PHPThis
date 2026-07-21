@@ -10,7 +10,7 @@ use Example\Documents\AuthenticateDocumentRequest;
 use Example\Documents\ResolveDocumentTenant;
 use Example\Documents\DocumentRoutes;
 use Example\Documents\GetDocument\AuthorizeGetDocument;
-use Example\Documents\GetDocument\SelectAuthorizedDocument;
+use Example\Documents\GetDocument\RetrieveAuthorizedDocument;
 use Example\Documents\ListDocuments\AuthorizeListDocuments;
 use Example\Users\CreateUser\CreateUserHandler;
 use Example\Users\CreateUser\TransactionalCreateUser;
@@ -27,7 +27,7 @@ final class Routes
         Connection $listUsersConnection,
         Connection $getUserConnection,
         Connection $createUserConnection,
-        Connection $getDocumentConnection,
+        RetrieveAuthorizedDocument $retrieveDocument,
         Connection $listDocumentsConnection,
         AuthenticateDocumentRequest $authenticateDocument,
         ResolveDocumentTenant $resolveDocumentTenant,
@@ -36,7 +36,6 @@ final class Routes
         LocalDocumentFiles $documentFiles,
     ): array {
         $healthHandler = new HealthHandler();
-        $retrieveDocument = new SelectAuthorizedDocument($getDocumentConnection);
         $listUsersHandler = new ListUsersHandler($listUsersConnection);
         $getUserHandler = new GetUserHandler($getUserConnection);
         $createUserHandler = new CreateUserHandler(new TransactionalCreateUser($createUserConnection));

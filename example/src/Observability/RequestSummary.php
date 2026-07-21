@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Example\Observability;
 
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
 use InvalidArgumentException;
 use PHPThis\Http\Response;
 use Throwable;
 
 /**
  * @phpstan-import-type QuerySourceSnapshot from QuerySummarySource
+ * @phpstan-import-type DocumentDetailsCacheTraceSnapshot from DocumentDetailsCacheTrace
  * @phpstan-type RequestSummaryPayload array{
- *     schema_version: 1,
+ *     schema_version: 2,
  *     event: 'application.request_summary',
  *     correlation_id: string,
  *     duration_us: int,
@@ -22,18 +24,20 @@ use Throwable;
  *     query_failures: int,
  *     query_execute_duration_us: int,
  *     query_budget_exceeded: bool,
- *     database_sources: list<QuerySourceSnapshot>
+ *     database_sources: list<QuerySourceSnapshot>,
+ *     document_cache: DocumentDetailsCacheTraceSnapshot
  * }
  */
 final readonly class RequestSummary
 {
-    public const int SCHEMA_VERSION = 1;
+    public const int SCHEMA_VERSION = 2;
     public const string EVENT = 'application.request_summary';
 
     /**
      * @param class-string<Throwable>|null $unknownFailureClass
      * @param 'success'|'known_failure'|'unknown_failure' $outcome
      * @param list<QuerySourceSnapshot> $querySources
+     * @param DocumentDetailsCacheTraceSnapshot $documentCache
      */
     private function __construct(
         public CorrelationId $correlationId,
@@ -46,6 +50,7 @@ final readonly class RequestSummary
         public int $queryExecuteDurationUs,
         public bool $queryBudgetExceeded,
         public array $querySources,
+        public array $documentCache,
     ) {
         if ($durationUs < 0) {
             throw new InvalidArgumentException('Request-summary duration cannot be negative.');
@@ -58,6 +63,7 @@ final readonly class RequestSummary
         int $durationUs,
         Response $response,
         ?Throwable $unknownFailure,
+        DocumentDetailsCacheTrace $documentCacheTrace,
         array $querySources,
     ): self {
         $snapshots = [];
@@ -101,6 +107,7 @@ final readonly class RequestSummary
             $executeDurationUs,
             $budgetExceeded,
             $snapshots,
+            $documentCacheTrace->snapshot(),
         );
     }
 
@@ -120,6 +127,7 @@ final readonly class RequestSummary
             'query_execute_duration_us' => $this->queryExecuteDurationUs,
             'query_budget_exceeded' => $this->queryBudgetExceeded,
             'database_sources' => $this->querySources,
+            'document_cache' => $this->documentCache,
         ];
     }
 
