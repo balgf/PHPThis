@@ -31,7 +31,7 @@ Then read only what the task needs:
 | Change request correlation or terminal summaries | installed `vendor/phpthis/framework/docs/observability/README.md`, `.ai/observability.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | `public/index.php`, application-owned coordinator and sink, finite database sources, response propagation, redaction, budget, trace, and throwing-sink tests |
 | Add or change tests | `.ai/testing.md` | `tests/run.php` and `composer check` |
 
-`NOT_APPLICABLE(CRUD_PROFILE)`: the health-only starter has no CRUD-shaped resource behavior or CRUD directory convention. Before adding one, record adoption of the installed optional profile or one coherent alternate organization. Consumer Contract v5 and Strict Profile v2 remain mandatory.
+`NOT_APPLICABLE(CRUD_PROFILE)`: the health-only starter has no CRUD-shaped resource behavior or CRUD directory convention. Before adding one, record adoption of the installed optional profile or one coherent alternate organization. Consumer Contract v7 and Strict Profile v2 remain mandatory.
 
 `NOT_APPLICABLE(INPUT)`: the health-only starter accepts no application-owned body, query, form, or header fields and creates no operation request or command. Its outer `RequestBoundary` still validates and bounds PHP runtime transport input. Before adding product input, record and test one operation-specific typed boundary in the existing `.ai/architecture.md` and `.ai/testing.md`; do not add a generic input guide or validation mechanism.
 

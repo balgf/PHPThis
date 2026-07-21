@@ -1,6 +1,6 @@
 # Application rules
 
-These rules supplement installed PHPThis Consumer Contract v5 and Strict Profile v2. They may not alias or weaken framework rules.
+These rules supplement installed PHPThis Consumer Contract v7 and Strict Profile v2. They may not alias or weaken framework rules.
 
 ## Required
 

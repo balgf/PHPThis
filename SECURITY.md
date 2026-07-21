@@ -2,9 +2,9 @@
 
 ## Project status
 
-PHPThis is experimental prerelease software and is not intended for production use. The accepted Alpha 1 scope remains evaluation software, not a production-support commitment. Pre-alpha and alpha revisions receive no production security support and have no guaranteed response-time or remediation SLA. Private vulnerability reports are still assessed on a best-effort basis.
+PHPThis is experimental prerelease software and is not intended for production use. The accepted Alpha 2 consumer profile remains evaluation software, not a production-support commitment. Pre-alpha and alpha revisions receive no production security support and have no guaranteed response-time or remediation SLA. Private vulnerability reports are still assessed on a best-effort basis.
 
-An Alpha 1 release may be announced only after the public-artifact gate in `RELEASING.md` passes. This tracked policy does not record current publication state; verify that state from tagged releases and Packagist. Release preparation must confirm that GitHub private vulnerability reporting is enabled before an alpha is announced.
+An Alpha 2 release may be announced only after the public-artifact gate in `RELEASING.md` passes. This tracked policy does not record current publication state; verify that state from tagged releases and Packagist. Release preparation must confirm that GitHub private vulnerability reporting is enabled before an alpha is announced.
 
 ## Reporting a vulnerability
 

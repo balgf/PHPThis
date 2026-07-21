@@ -553,6 +553,7 @@ $requiredRepositoryFiles = [
     'docs/redis/testing.md',
     'docs/redis/topology.md',
     'docs/releases/0.1.0-alpha.1.md',
+    'docs/releases/0.1.0-alpha.2.md',
     'docs/security.md',
     'docs/sessions.md',
     'docs/vocabulary.md',
@@ -843,39 +844,33 @@ $alphaReleaseContractMarkers = [
     '.ai/README.md' => 'Prepare, assess, or publish a release',
     '.ai/application-context.md' => 'Keep Alpha scope approval separate from authorization to create tags',
     '.ai/testing.md' => 'The Git export comparison requires a clean worktree',
-    'README.md' => 'Package availability and current release state are external facts',
-    'RELEASING.md' => '## Alpha 1 release gate',
-    'ROADMAP.md' => 'Alpha 1 publication state is external',
-    'SECURITY.md' => 'Private vulnerability reports are still assessed on a best-effort basis.',
-    'docs/getting-started.md' => 'Acceptance of the scope is not publication.',
-    'docs/knowledge-map.md' => 'Assess or prepare a PHPThis release',
-    'docs/decisions/018-bounded-alpha-1-release-scope.md' => 'Complete CRUD is not an Alpha 1 release prerequisite.',
-    'tools/package-files.txt' => 'docs/decisions/018-bounded-alpha-1-release-scope.md',
+    'README.md' => 'The bounded [Alpha 2 consumer profile]',
+    'RELEASING.md' => '## Alpha 2 release gate',
+    'ROADMAP.md' => 'Alpha 2 publication state is external',
+    'SECURITY.md' => 'An Alpha 2 release may be announced only after the public-artifact gate',
+    'docs/getting-started.md' => 'The bounded Alpha 2 consumer profile is accepted',
+    'docs/knowledge-map.md' => '`docs/releases/0.1.0-alpha.2.md`, ADR 029',
+    'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'No capability has an overall `defer` exit.',
+    'tools/package-files.txt' => 'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
 ];
 
 foreach ($alphaReleaseContractMarkers as $relativePath => $marker) {
     $contents = file_get_contents($root . '/' . $relativePath);
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
-        $failures[] = "The accepted bounded Alpha 1 release contract is missing from {$relativePath}.";
+        $failures[] = "The accepted bounded Alpha 2 release contract is missing from {$relativePath}.";
     }
 }
 
-$alphaReleaseIdentityArtifactMarkers = [
-    '.ai/README.md' => [
-        '`docs/releases/0.1.0-alpha.1.md`',
-    ],
+$historicalAlpha1IdentityArtifactMarkers = [
     'RELEASING.md' => [
         '## Approved Alpha 1 identity',
         'Composer version: `0.1.0-alpha.1`',
         'Framework tag: `v0.1.0-alpha.1`',
         'Skeleton tag: `v0.1.0-alpha.1`',
         'The exact candidate commit, release date, and accountable-human publication authorization belong in the external release evidence',
-        'This approval does not create or authorize creation of either tag, either package-host entry, either GitHub release, or the announcement.',
-        'Alpha 1 must not be announced until the complete gate below passes',
-    ],
-    'docs/knowledge-map.md' => [
-        '`docs/releases/0.1.0-alpha.1.md`',
+        'That approval did not itself authorize creation of either tag, either package-host entry, either GitHub release, or the announcement.',
+        'Alpha 1 remained subject to the complete gate recorded by its tagged source',
     ],
     'docs/releases/0.1.0-alpha.1.md' => [
         'Release identity: `0.1.0-alpha.1`. Publication state is external',
@@ -897,18 +892,82 @@ $alphaReleaseIdentityArtifactMarkers = [
     ],
 ];
 
-foreach ($alphaReleaseIdentityArtifactMarkers as $relativePath => $markers) {
+foreach ($historicalAlpha1IdentityArtifactMarkers as $relativePath => $markers) {
     $contents = file_get_contents($root . '/' . $relativePath);
 
     if (!is_string($contents)) {
-        $failures[] = "Cannot read Alpha 1 identity artifact {$relativePath}.";
+        $failures[] = "Cannot read historical Alpha 1 identity artifact {$relativePath}.";
         continue;
     }
 
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
-            $failures[] = "The approved Alpha 1 identity marker is missing from {$relativePath}.";
+            $failures[] = "The historical Alpha 1 identity marker is missing from {$relativePath}.";
         }
+    }
+}
+
+$alpha2ReleaseIdentityArtifactMarkers = [
+    '.ai/README.md' => [
+        '`docs/releases/0.1.0-alpha.2.md`',
+    ],
+    'RELEASING.md' => [
+        '## Approved Alpha 2 identity',
+        'Composer version: `0.1.0-alpha.2`',
+        'Framework tag: `v0.1.0-alpha.2`',
+        'Skeleton tag: `v0.1.0-alpha.2`',
+        'The accountable human approved the following release identity and gated publication sequence on 2026-07-21',
+        'This approves the exact version and tag names and authorizes the following operations only after their preceding gates pass',
+        'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/releases/0.1.0-alpha.2.md`',
+    ],
+    'docs/releases/0.1.0-alpha.2.md' => [
+        'Release identity: `0.1.0-alpha.2`. Publication state is external',
+        'Identity and gated publication authorization do not announce either tag, either package, or the public installation path.',
+        'It is not production-ready and makes no backward-compatibility promise across prereleases.',
+        'external release evidence recorded through `RELEASING.md`',
+        'composer create-project --stability=alpha phpthis/skeleton',
+    ],
+    'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => [
+        'Status: accepted',
+        'Framework core and release inventory must continue rejecting runtime namespaces or files that present an ORM',
+    ],
+    'tools/package-files.txt' => [
+        'docs/releases/0.1.0-alpha.2.md',
+    ],
+];
+
+foreach ($alpha2ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read approved Alpha 2 identity artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "The approved Alpha 2 identity marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$currentConsumerContractVersionMarkers = [
+    'docs/consumer-contract.md' => 'Contract version: 7',
+    'docs/getting-started.md' => 'contract-version-7 Composer scripts',
+    'skeleton/.ai/README.md' => 'Consumer Contract v7 and Strict Profile v2 remain mandatory.',
+    'skeleton/.ai/rules.md' => 'Consumer Contract v7 and Strict Profile v2.',
+    'templates/application/.ai/README.md' => 'Consumer Contract v7 or Strict Profile v2.',
+    'templates/application/.ai/rules.md' => 'Consumer Contract v7 and Strict Profile v2.',
+];
+
+foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents) || !str_contains($contents, $marker)) {
+        $failures[] = "The current Consumer Contract version marker is missing from {$relativePath}.";
     }
 }
 
@@ -921,6 +980,14 @@ $mutableReleaseStateForbiddenMarkers = [
     'The public artifact and skeleton path are still unproved.',
     'no alpha has been published',
     'path is intentionally unavailable until',
+    'Alpha 2 is published',
+    'Alpha 2 has been published',
+    'Alpha 2 is available',
+    '0.1.0-alpha.2 is published',
+    '0.1.0-alpha.2 is available',
+    'Alpha 2 is now available',
+    'the Alpha 2 packages are available',
+    'the public Alpha 2 installation path is available',
 ];
 
 $mutableReleaseStateAuthorityFiles = [
@@ -930,9 +997,32 @@ $mutableReleaseStateAuthorityFiles = [
     'SECURITY.md',
     'docs/getting-started.md',
     'docs/releases/0.1.0-alpha.1.md',
+    'docs/releases/0.1.0-alpha.2.md',
     'docs/decisions/018-bounded-alpha-1-release-scope.md',
+    'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
     'skeleton/README.md',
 ];
+
+$externalReleaseStateMarkers = [
+    'README.md' => 'Package availability and current release state are external facts',
+    'RELEASING.md' => 'Publication state is external',
+    'ROADMAP.md' => 'Alpha 2 publication state is external',
+    'SECURITY.md' => 'This tracked policy does not record current publication state',
+    'docs/getting-started.md' => 'Package availability is an external fact',
+    'docs/releases/0.1.0-alpha.1.md' => 'Publication state is external',
+    'docs/releases/0.1.0-alpha.2.md' => 'Publication state is external',
+    'docs/decisions/018-bounded-alpha-1-release-scope.md' => 'This decision does not record mutable publication state',
+    'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'not mutable tag, package, GitHub release, or installation availability',
+    'skeleton/README.md' => 'Package availability is an external fact',
+];
+
+foreach ($externalReleaseStateMarkers as $relativePath => $marker) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents) || !str_contains($contents, $marker)) {
+        $failures[] = "The external release-state disclaimer is missing from {$relativePath}.";
+    }
+}
 
 foreach ($mutableReleaseStateAuthorityFiles as $relativePath) {
     $contents = file_get_contents($root . '/' . $relativePath);

@@ -98,6 +98,7 @@ docs/observability/sink-failure.md
 docs/observability/testing.md
 docs/performance.md
 docs/releases/0.1.0-alpha.1.md
+docs/releases/0.1.0-alpha.2.md
 docs/request-handling.md
 docs/request-policy.md
 docs/security.md
