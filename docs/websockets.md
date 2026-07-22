@@ -1,6 +1,6 @@
 # Application-owned WebSocket integration
 
-PHPThis has no native WebSocket runtime or API. An application that needs WebSockets owns a separate process and pins a mature third-party runtime. This guide is a proposed evidence profile based on the independent Alpha 3 consumer recorded in [ADR 034](decisions/034-application-owned-websocket-integration.md); it does not change Consumer Contract version 9 or Strict Profile version 2.
+PHPThis has no native WebSocket runtime or API. An application that needs WebSockets owns a separate process and pins a mature third-party runtime. This guide is an accepted evidence profile based on the independent Alpha 3 consumer recorded in [ADR 034](decisions/034-application-owned-websocket-integration.md); it does not change Consumer Contract version 9 or Strict Profile version 2.
 
 ## Keep the transport boundary separate
 

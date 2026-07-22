@@ -1,6 +1,6 @@
 # ADR 034: Application-owned WebSocket integration
 
-Status: proposed
+Status: accepted
 
 ## Context
 
@@ -8,7 +8,7 @@ Some applications need a long-lived bidirectional connection, but PHPThis's core
 
 The narrower question is whether a PHPThis consumer can keep ordinary HTTP behavior unchanged while hosting one explicit WebSocket process through a mature third-party runtime. The integration must remain locally inspectable, typed after parsing, bounded under malformed or slow peers, and honest about best-effort delivery and deployment limits.
 
-## Proposed decision
+## Decision
 
 WebSocket integration remains application-owned. An adopting application selects and pins a mature third-party WebSocket runtime, creates a separate visible composition root, records its process and deployment topology, and passes an accepted message only to one narrowly named typed application operation. PHPThis adds no core WebSocket server, client, frame, connection, event-loop, daemon, supervisor, channel, broadcaster, pub/sub, retry, replay, acknowledgement, or delivery API and no runtime dependency.
 
@@ -39,7 +39,7 @@ That recipe used one exact raw request target checked before URI normalization a
 
 The complete consumer `composer check` passed maximum-level PHPStan and 365 application-owned assertions. Real child processes and sockets proved readiness, canonical raw-target rejection, generic handshake denial, handler-level current-authorization order, ordered streaming, malformed and oversized input handling, command and connection bounds, current credential expiry, heartbeat and application idle behavior, absolute lifetime, reconnect without replay, a saturated-socket slow-consumer deadline, bounded shutdown with non-draining summary output, occupied-port failure, signal shutdown, handler-summary completion, process cleanup, and listener release. Focused boundary evidence separately proved exact raw-cookie syntax and immediate rejection of a simultaneous second summary write. The proof also established that no WebSocket path referenced PHPThis HTTP request or response types and no framework source was changed.
 
-Those numbers and Amp-specific behaviors are one reproducible application recipe. They are evidence that the boundary is viable, not framework defaults, production capacity evidence, a guarantee for another runtime version, or authorization to expose the process publicly. The consumer decision remains proposed pending accountable-human review of its exact limits, so this framework decision remains proposed as well.
+Those numbers and Amp-specific behaviors are one reproducible application recipe. They are evidence that the boundary is viable, not framework defaults, production capacity evidence, a guarantee for another runtime version, or authorization to expose the process publicly. On 2026-07-22, the accountable human accepted the completed consumer evidence and its exact local proof limits, then accepted this framework decision. The limits remain application-specific and create no universal numeric policy.
 
 ## Consequences
 

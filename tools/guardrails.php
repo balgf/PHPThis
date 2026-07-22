@@ -1517,21 +1517,23 @@ foreach ($requestHandlerDecoratorArtifactMarkers as $relativePath => $markers) {
 
 $websocketArtifactMarkers = [
     'docs/decisions/034-application-owned-websocket-integration.md' => [
-        'Status: proposed',
+        'Status: accepted',
         'WebSocket integration remains application-owned.',
         'PHPThis adds no core WebSocket server, client, frame, connection, event-loop, daemon, supervisor, channel, broadcaster, pub/sub, retry, replay, acknowledgement, or delivery API and no runtime dependency.',
         'WebSocket handshakes and frames never become PHPThis HTTP `Request` or `Response` values.',
         'Consumer Contract version 9 and Strict Profile version 2 remain unchanged.',
         '365 application-owned assertions',
         'one reproducible application recipe',
+        'the accountable human accepted the completed consumer evidence and its exact local proof limits',
     ],
     'docs/decisions/README.md' => [
-        'Proposed records awaiting accountable-human review:',
+        'Accepted records:',
         '`034-application-owned-websocket-integration.md`',
     ],
     'docs/websockets.md' => [
         '# Application-owned WebSocket integration',
         'PHPThis has no native WebSocket runtime or API.',
+        'This guide is an accepted evidence profile',
         'A frame is not a PHPThis HTTP `Request`, and an outbound message is not a PHPThis HTTP `Response`.',
         'the exact raw handshake request target, accepted URI form, path-normalization and query behavior',
         'Default to best-effort delivery with no replay across reconnects.',
@@ -1540,18 +1542,18 @@ $websocketArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         'Contract version: 9',
-        '## Proposed application-owned WebSocket profile',
+        '## Application-owned WebSocket profile',
         'PHPThis has no WebSocket runtime or core WebSocket API.',
         'Frames never become PHPThis HTTP `Request` or `Response` values',
         'Do not add a framework WebSocket server, client, event loop, connection manager, daemon, supervisor, generic channel, broadcaster, pub/sub, event bus, middleware, context bag, service locator, discovery mechanism, hidden retry, replay, deduplication, acknowledgement, reconnect, or exactly-once behavior.',
-        'Proposed ADR 034 documents one independent application-owned WebSocket proof without accepting a framework WebSocket runtime, changing application validity, or making its recipe limits universal.',
+        'ADR 034 documents one independent application-owned WebSocket proof without accepting a framework WebSocket runtime, changing application validity, or making its recipe limits universal.',
     ],
     'docs/knowledge-map.md' => [
         '| Propose, add, explain, or review a WebSocket path |',
         'verify that frames never become PHPThis HTTP `Request` or `Response` values and no framework WebSocket runtime exists',
     ],
     'docs/architecture.md' => [
-        'Proposed ADR 034 keeps WebSockets outside that HTTP graph.',
+        'ADR 034 keeps WebSockets outside that HTTP graph.',
         'There is no WebSocket namespace or runtime in core.',
         'one measured local recipe, not architecture defaults',
     ],
@@ -1569,26 +1571,26 @@ $websocketArtifactMarkers = [
         '| best-effort WebSocket delivery |',
     ],
     'docs/evaluation.md' => [
-        'Proposed ADR 034 adds an independent consumer proof for one application-owned WebSocket path without adding a framework implementation.',
+        'ADR 034 adds an independent consumer proof for one application-owned WebSocket path without adding a framework implementation.',
         '365 application-owned assertions',
         'This establishes that the explicit boundary is viable for that pinned local recipe',
     ],
     'docs/guardrails.md' => [
-        'proposed ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
+        'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
         'keeps `.ai/websockets.md` optional for existing applications under Contract version 9',
     ],
     'README.md' => [
-        'Proposed [application-owned WebSocket integration](docs/websockets.md)',
+        'Accepted [application-owned WebSocket integration](docs/websockets.md)',
         'Frames are parsed into a narrow typed command and never adapted to PHPThis HTTP requests or responses',
-        'ADR 034 is evidence-backed guidance awaiting accountable-human review, not an accepted core capability.',
+        'ADR 034 is accepted evidence-backed application guidance, not a core WebSocket capability.',
     ],
     'VISION.md' => [
         'An application that needs WebSockets can keep its pinned mature runtime',
         'without adding a framework real-time runtime or adapting frames into HTTP values',
     ],
     'ROADMAP.md' => [
-        'Evidence obtained, decision proposed: ADR 034',
-        'Human review of the exact recipe remains pending; no framework runtime, dependency, API, contract version, Strict Profile rule, or core-line increase is proposed.',
+        'Complete: ADR 034',
+        'Accountable-human review accepted the exact local recipe as evidence; no framework runtime, dependency, API, contract version, Strict Profile rule, or core-line increase is added.',
     ],
     '.ai/README.md' => [
         '| Propose, adopt, or change application-owned WebSockets |',
