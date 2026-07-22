@@ -1,12 +1,14 @@
 # Application rules
 
-These rules supplement installed PHPThis Consumer Contract v7 and Strict Profile v2. They must not alias or weaken those framework rules.
+These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile v2. They may strengthen those rules but may not weaken them.
 
 ## Required
 
 - Use the canonical domain terms defined in `.ai/project.md`.
 - Preserve the dependency direction and boundaries defined in `.ai/architecture.md`.
 - Apply the data and resource limits defined in `.ai/data.md`.
+- Declare every resource path identifier with the narrowest fixed type: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only when it is genuinely opaque. Use the matching `PathParameters` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and enforce narrower domain rules before database work; never normalize, bind, look up, or fall back between route types.
+- Prove invalid resource-identifier syntax returns `404` with zero handler and database work, and prove a canonical valid path with the wrong method returns `405`.
 - Parse each complete inbound operation representation exactly once through the operation-specific named factory recorded in `.ai/architecture.md`, into a concrete final readonly request or command with a private constructor, before downstream operation behavior. Add a typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership.
 - Enforce every recorded byte, depth, field, list, item, and scalar bound; distinguish absence with `array_key_exists`, reject unknown fields, check runtime types before conversion, and accept only the operation's recorded canonical representations.
 - Keep field normalization opt-in and exactly recorded with transformation order, pre- and post-transform bounds, collision behavior, and retained canonical value. Keep validation separate from output encoding, SQL binding, and current authorization.

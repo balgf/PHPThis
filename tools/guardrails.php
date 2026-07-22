@@ -581,6 +581,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
     'docs/decisions/030-report-only-consumer-duplication-advisory.md',
     'docs/decisions/031-bounded-alpha-3-release-scope.md',
+    'docs/decisions/032-explicit-uuid-and-ulid-route-types.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -1074,12 +1075,12 @@ foreach ($alpha3ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
 }
 
 $currentConsumerContractVersionMarkers = [
-    'docs/consumer-contract.md' => 'Contract version: 7',
-    'docs/getting-started.md' => 'contract-version-7 Composer scripts',
-    'skeleton/.ai/README.md' => 'Consumer Contract v7 and Strict Profile v2 remain mandatory.',
-    'skeleton/.ai/rules.md' => 'Consumer Contract v7 and Strict Profile v2.',
-    'templates/application/.ai/README.md' => 'Consumer Contract v7 or Strict Profile v2.',
-    'templates/application/.ai/rules.md' => 'Consumer Contract v7 and Strict Profile v2.',
+    'docs/consumer-contract.md' => 'Contract version: 8',
+    'docs/getting-started.md' => 'contract-version-8 Composer scripts',
+    'skeleton/.ai/README.md' => 'Consumer Contract v8 and Strict Profile v2 remain mandatory.',
+    'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile v2',
+    'templates/application/.ai/README.md' => 'Consumer Contract v8 and Strict Profile v2 remain mandatory.',
+    'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile v2',
 ];
 
 foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1275,9 +1276,14 @@ $routingArtifactMarkers = [
     '.ai/routing.md' => [
         '{name:positive-int}',
         '{name:token}',
+        '{name:uuid}',
+        '{name:ulid}',
         'at most two',
+        'Always use the narrowest type.',
         'RouteMatch',
         'PathParameters',
+        'uuid(name): string',
+        'ulid(name): string',
         'Route::segments()',
         'must not scan the route list or an index collection',
     ],
@@ -1295,6 +1301,65 @@ $routingArtifactMarkers = [
         'Contract version 4',
         '2,300',
         'supersedes ADR 017 only',
+        'Superseded in part by [ADR 032]',
+    ],
+    'docs/decisions/032-explicit-uuid-and-ulid-route-types.md' => [
+        'Status: accepted',
+        '[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
+        '[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}',
+        'Consumer Contract version 8',
+        'Strict Profile version 2',
+        '2,600 physical lines',
+        '2,592 core lines',
+        'No identifier library, generator, global factory, route builder',
+    ],
+    'docs/decisions/README.md' => [
+        'Accepted records:',
+        '`032-explicit-uuid-and-ulid-route-types.md`',
+    ],
+    'docs/consumer-contract.md' => [
+        'Contract version: 8',
+        'This is the canonical contract for an application built with the installed PHPThis version.',
+        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
+        '`positive-int`, `token`, `uuid`, or `ulid`',
+        'Always use the narrowest route type.',
+        'uuid(name): string',
+        'ulid(name): string',
+        'never normalized',
+    ],
+    'src/Routing/RouteParameterType.php' => [
+        "case Uuid = 'uuid';",
+        "case Ulid = 'ulid';",
+        'self::Uuid => self::isUuid($segment)',
+        'self::Ulid => self::isUlid($segment)',
+        '[1-8][0-9a-f]{3}-[89ab]',
+        '[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}',
+    ],
+    'src/Routing/PathParameters.php' => [
+        'public function uuid(string $name): string',
+        'public function ulid(string $name): string',
+        'Path parameters cannot contain more than two values.',
+    ],
+    'tests/run.php' => [
+        'router matches canonical lowercase UUID path parameters',
+        'router matches canonical lowercase ULID path parameters',
+        'invalid UUID and ULID routes stop before handler and database work',
+        'literal routes win over canonical UUID and ULID values',
+        'Expected all fixed types to remain indexed across 20,000 routes.',
+    ],
+    'tools/benchmark-routing.php' => [
+        "'fixed_parameter_types' => ['positive-int', 'token', 'uuid', 'ulid']",
+        "'timed_dynamic_parameter_type' => 'ulid'",
+        "'timed_uuid_parameter_type' => 'uuid'",
+        "'uuid_hit_nanoseconds' => \$uuidHitNanoseconds",
+        "->uuid('document_id')",
+        "->ulid('document_id')",
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledUuidAndUlidRouting($project, $environment);',
+        'PASS installed UUID and ULID routing',
+        '/accounts/{account_id:uuid}',
+        '/events/{event_id:ulid}',
     ],
     'example/src/Documents/DocumentRoutes.php' => [
         '/accounts/{account_id:positive-int}/documents/{document_key:token}',
@@ -1318,6 +1383,7 @@ $routingArtifactMarkers = [
     'tools/package-files.txt' => [
         'docs/decisions/017-bounded-trailing-positive-integer-routes.md',
         'docs/decisions/019-bounded-multiple-typed-routes.md',
+        'docs/decisions/032-explicit-uuid-and-ulid-route-types.md',
         'src/Routing/PathParameters.php',
         'src/Routing/RouteMatch.php',
         'src/Routing/RouteParameterType.php',
@@ -1432,7 +1498,7 @@ $typedInputBoundaryArtifactMarkers = [
     '.ai/types.md' => [
         'No normalization is implicit.',
         'Native `json_decode` does not expose duplicate object keys and retains the last value',
-        'Consumer Contract v7 and Strict Profile v2 are current.',
+        'ADR 032 and Consumer Contract v8',
     ],
     'docs/type-safety.md' => [
         'external mixed data -> named parser factory -> final readonly value -> native typed code',
@@ -1554,7 +1620,7 @@ $finiteDataPathArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         'ADR 022 records one finite SQLite application data path',
-        'Consumer Contract version 7 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/guardrails.md' => [
         'The finite-data-path guard retains ADR 022',
@@ -1953,7 +2019,7 @@ $durableJobArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned durable jobs',
-        'Contract version 7 does not make that additional file a checker requirement',
+        'Contract version 8 does not make that additional file a checker requirement',
         'Delivery remains at least once.',
     ],
     'docs/decisions/README.md' => [
@@ -2139,13 +2205,13 @@ foreach (['src/Jobs', 'src/Queue'] as $forbiddenCoreDirectory) {
 $applicationChecker = file_get_contents($root . '/verification/ApplicationChecker.php');
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/jobs.md',")) {
-    $failures[] = 'Contract version 7 must not checker-require the optional durable-job context file.';
+    $failures[] = 'Contract version 8 must not checker-require the optional durable-job context file.';
 }
 
 $consumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveJobsContextIsRequired')) {
-    $failures[] = 'Contract version 7 must not reject an existing consumer only because .ai/jobs.md is absent.';
+    $failures[] = 'Contract version 8 must not reject an existing consumer only because .ai/jobs.md is absent.';
 }
 
 $durableJobPackageInventory = file_get_contents($root . '/tools/package-files.txt');
@@ -2221,7 +2287,7 @@ $applicationCliArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional application-owned CLI and scheduler',
         'Contract-version-7-compatible optional application clarification, not a new checker requirement',
-        'Consumer Contract version 7 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
         'Status: accepted',
@@ -2435,11 +2501,11 @@ if (is_string($composerManifest) && str_contains($composerManifest, 'example/bin
 }
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/cli.md',")) {
-    $failures[] = 'Contract version 7 must not checker-require the optional application CLI context file.';
+    $failures[] = 'Contract version 8 must not checker-require the optional application CLI context file.';
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveCliContextIsRequired')) {
-    $failures[] = 'Contract version 7 must not reject an existing consumer only because .ai/cli.md is absent.';
+    $failures[] = 'Contract version 8 must not reject an existing consumer only because .ai/cli.md is absent.';
 }
 
 $applicationCliSourceFiles = [
@@ -2696,7 +2762,7 @@ $migrationArtifactMarkers = [
     ],
     '.ai/application-context.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
-        'Contract version 7 does not checker-require that new file',
+        'Contract version 8 does not make that additional file a checker requirement',
     ],
     '.ai/migrations.md' => [
         '# Migration authoring contract',
@@ -2732,7 +2798,7 @@ $migrationArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned database migrations',
-        'Contract version 7 does not make that additional file a checker requirement',
+        'Contract version 8 does not make that additional file a checker requirement',
         'It never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
     ],
     'docs/decisions/README.md' => [
@@ -2942,11 +3008,11 @@ if (is_string($migrationPackageInventory)) {
 }
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/migrations.md',")) {
-    $failures[] = 'Contract version 7 must not checker-require the optional migration context file.';
+    $failures[] = 'Contract version 8 must not checker-require the optional migration context file.';
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveMigrationsContextIsRequired')) {
-    $failures[] = 'Contract version 7 must not reject an existing consumer only because .ai/migrations.md is absent.';
+    $failures[] = 'Contract version 8 must not reject an existing consumer only because .ai/migrations.md is absent.';
 }
 
 $runtimeSqlRoots = ['src', 'example', 'skeleton', 'templates/application', 'tools'];
@@ -3576,7 +3642,7 @@ $fileTransferArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional bounded file transfers',
         'Raw `$_FILES` never enters a handler.',
-        'Consumer Contract version 7 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/decisions/026-bounded-file-transfers.md' => [
         'Status: accepted',
@@ -3677,8 +3743,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 7$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 7.';
+        if (preg_match('/^Contract version: 8$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 8.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -3808,8 +3874,8 @@ if (is_file($applicationAgentInstructionsPath)) {
             $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
         }
 
-        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v7 and Strict Profile v2')) {
-            $failures[] = 'Application AGENTS.md must identify Consumer Contract v7 and Strict Profile v2.';
+        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v8 and Strict Profile v2 are the minimum accepted rules')) {
+            $failures[] = 'Application AGENTS.md must identify Consumer Contract v8 and Strict Profile v2 as the minimum accepted rules.';
         }
     }
 }
@@ -3825,9 +3891,9 @@ if (is_file($skeletonAgentInstructionsPath)) {
         !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
         || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
         || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
-        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v7 and Strict Profile v2')
+        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v8 and Strict Profile v2 are the minimum accepted rules')
     ) {
-        $failures[] = 'Skeleton AGENTS.md must preserve Contract v7, the installed knowledge route, AI authoring role, and human decision boundary.';
+        $failures[] = 'Skeleton AGENTS.md must preserve accepted Contract v8 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 
@@ -4080,8 +4146,8 @@ foreach ($phpFiles as $relativePath => $path) {
     $coreLines += is_array($lines) ? count($lines) : 0;
 }
 
-if ($coreLines > 2_500) {
-    $failures[] = "Core source has {$coreLines} physical lines; the Alpha 2 limit is 2500.";
+if ($coreLines > 2_600) {
+    $failures[] = "Core source has {$coreLines} physical lines; the accepted UUID/ULID routing limit is 2600.";
 }
 
 if ($failures !== []) {

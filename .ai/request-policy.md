@@ -8,6 +8,7 @@ Rules:
 - Inject narrowly named authenticator, tenant-resolver, and authorizer interfaces plus the protected handler or action.
 - Execute exactly `authenticate -> resolve tenant -> authorize -> protected handler`; do not represent the sequence as an iterable registry.
 - Return concrete immutable application principal and tenant types and pass them explicitly. Do not add them to `Request`, `PathParameters`, session state, globals, or a generic context bag.
+- Treat a validated `positive-int`, `uuid`, `ulid`, or genuinely opaque `token` path value only as routing metadata. Read it through the matching `PathParameters` accessor, immediately wrap it in an application-owned route-specific identifier, and enforce any narrower domain rule before domain or database work; do not normalize, bind, look up, or fall back to another route type.
 - Re-evaluate authorization on every protected request. Stored or cached identity is never authorization.
 - Keep any policy reads and protected data work on separately named connections with distinct budgets and traces.
 - Keep protected SQL explicitly tenant- and resource-scoped after authorization; do not introduce an implicit or global scope.
@@ -21,4 +22,4 @@ The document-list proof reuses the shared application principal, account, authen
 
 The checked-in composition is deny-all and the consumer proof uses I/O-free synthetic policies. PHPThis provides no credential parser or verifier. A concrete authenticator owns and tests its missing, malformed, expired, revoked, and rejected inputs; a policy that performs I/O owns a separate named connection, budget, trace, and failure proof.
 
-Do not add middleware, a policy registry, service location, discovery, a request-context bag, model binding, a generic permission API, or hidden tenant resolution. ADR 023 adds no policy logger or core source; Consumer Contract v7 carries Strict Profile v2 forward.
+Do not add middleware, a policy registry, service location, discovery, a request-context bag, model binding, a generic permission API, or hidden tenant resolution. ADR 023 adds no policy logger or core source; Consumer Contract v8 carries Strict Profile v2 forward unchanged.

@@ -51,7 +51,7 @@ Include only files the operation needs. SQL stays in a narrowly scoped handler u
 
 Before implementing resource behavior, record verified policy and its authority in `.ai/architecture.md`, `.ai/data.md`, and accepted application decisions where needed:
 
-- identifier type, generation owner, public representation, and route binding;
+- identifier type, generation owner, public representation, narrowest fixed route type, matching immutable accessor, immediate concrete wrapping, and any narrower domain validation before database work;
 - explicit route shapes and HTTP methods;
 - pagination model, maximum page size, stable ordering, and cursor or offset semantics;
 - create identity generation, duplicate/conflict behavior, and idempotency ownership;

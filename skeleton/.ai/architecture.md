@@ -59,7 +59,9 @@ Before protecting a route, record its named action, concrete principal and tenan
 
 ## Optional CRUD reference profile
 
-`NOT_APPLICABLE`: this starter has only a public liveness operation. It has no resource identifier, CRUD routes, create/list/update/delete operations, resource authorization, audit events, or CRUD directory convention. Before adding resource behavior, record adoption of or one coherent alternative to `vendor/phpthis/framework/docs/crud.md`, plus identifier, explicit route, authorization, and audit policy. An alternate layout cannot weaken the installed consumer contract or Strict Profile.
+`NOT_APPLICABLE(RESOURCE_ROUTE_IDENTIFIERS)`: this starter has only the exact public `GET /health` liveness operation. It has no path parameter, resource identifier, CRUD route, create/list/update/delete operation, resource lookup, resource authorization, audit event, or CRUD directory convention.
+
+Before adding resource behavior, record adoption of or one coherent alternative to `vendor/phpthis/framework/docs/crud.md`, plus the identifier, explicit route, authorization, and audit policy. Every resource path identifier uses the narrowest fixed declaration: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only for a genuinely opaque identifier. Record the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, the application-owned route-specific identifier that immediately wraps the unchanged value, and any narrower domain rule enforced before database work. Routing performs no normalization, domain binding, record lookup, identifier generation, persistence choice, or type fallback. An alternate layout cannot weaken the installed consumer contract or Strict Profile.
 
 ## Placement rules
 

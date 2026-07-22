@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 032](032-explicit-uuid-and-ulid-route-types.md), which retains this decision's parameter count, state index, opaque-token, conflict, and immutable-delivery constraints while extending the fixed parameter-type set with canonical UUID and ULID values.
+
 ## Context
 
 ADR 017 proved that one trailing canonical positive integer could enter a handler without route discovery, automatic binding, request-time route-table traversal, or a second handler interface. A consumer capability audit exposed the next repeated need: an explicitly nested resource path can require two identifiers, and an externally assigned identifier may be an opaque path token rather than an integer.

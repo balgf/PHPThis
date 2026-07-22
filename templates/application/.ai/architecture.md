@@ -15,6 +15,10 @@
 
 Dependencies may point only in the direction shown above. Document every deliberate exception in `docs/decisions/` before implementation.
 
+## Resource route identifiers
+
+Every resource path identifier recorded here uses the narrowest fixed declaration: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only for a genuinely opaque identifier. Record the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, the application-owned route-specific identifier that immediately wraps the unchanged value, and any narrower domain rule enforced before database work. Routing performs no normalization, domain binding, record lookup, identifier generation, persistence choice, or type fallback.
+
 ## Named boundaries
 
 | Boundary | Path | Responsibility |

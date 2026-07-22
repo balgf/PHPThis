@@ -35,3 +35,4 @@ Accepted records:
 - `029-alpha-2-consumer-profile-rollup.md`
 - `030-report-only-consumer-duplication-advisory.md`
 - `031-bounded-alpha-3-release-scope.md`
+- `032-explicit-uuid-and-ulid-route-types.md`

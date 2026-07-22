@@ -182,6 +182,8 @@ final readonly class Router
             PathParameters::fromValues(
                 $pathMatch['positiveIntegers'],
                 $pathMatch['tokens'],
+                $pathMatch['uuids'],
+                $pathMatch['ulids'],
             ),
         );
     }
@@ -208,7 +210,9 @@ final readonly class Router
      * @return array{
      *     state: int,
      *     positiveIntegers: array<string, int>,
-     *     tokens: array<string, string>
+     *     tokens: array<string, string>,
+     *     uuids: array<string, string>,
+     *     ulids: array<string, string>
      * }|null
      */
     private function typedPathMatch(string $path): ?array
@@ -216,6 +220,8 @@ final readonly class Router
         $state = 0;
         $positiveIntegers = [];
         $tokens = [];
+        $uuids = [];
+        $ulids = [];
         $segments = explode('/', $path);
 
         foreach ($segments as $segment) {
@@ -240,12 +246,16 @@ final readonly class Router
                 }
 
                 $positiveIntegers[$typedTransition['name']] = $value;
-            } else {
-                if (!RouteParameterType::isToken($segment)) {
-                    return null;
-                }
-
+            } elseif (!$typedTransition['type']->accepts($segment)) {
+                return null;
+            } elseif ($typedTransition['type'] === RouteParameterType::Token) {
                 $tokens[$typedTransition['name']] = $segment;
+            } elseif ($typedTransition['type'] === RouteParameterType::Uuid) {
+                $uuids[$typedTransition['name']] = $segment;
+            } elseif ($typedTransition['type'] === RouteParameterType::Ulid) {
+                $ulids[$typedTransition['name']] = $segment;
+            } else {
+                throw new LogicException('Route parameter type is unsupported.');
             }
 
             $state = $typedTransition['next'];
@@ -255,6 +265,8 @@ final readonly class Router
             'state' => $state,
             'positiveIntegers' => $positiveIntegers,
             'tokens' => $tokens,
+            'uuids' => $uuids,
+            'ulids' => $ulids,
         ];
     }
 

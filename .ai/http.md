@@ -13,6 +13,8 @@ Rules:
 - Keep validation, deliberate field normalization, output encoding or escaping, and authorization as separate visible decisions; none is a generic input helper.
 - Set the outer body limit in the composition root, enforce endpoint-specific limits before decoding, and use `JSON_THROW_ON_ERROR` with an explicit depth.
 - Enforce route-specific media types in the handler before parsing or database work.
+- For every resource identifier, declare the narrowest fixed route type: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only for a genuinely opaque identifier. Read it through the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor.
+- Immediately wrap the unchanged route value in an application-owned route-specific identifier and enforce any narrower domain rule before database work. Routing performs no normalization, domain binding, record lookup, or type fallback.
 - Set status, body, and headers explicitly.
 - For `Cache-Control`, validators, or `Vary`, also follow `.ai/cache.md`. PHPThis uses `no-store` on framework-owned 404 and 405 responses, `private, no-store` on the unknown-failure 500, and at least `no-store` on current skeleton/example handlers; protected example outcomes use `private`. It does not automatically inject or replace policy on arbitrary handler responses.
 - Represent response cookies only as validated `ResponseCookie` values in `Response::$cookies`; never encode `Set-Cookie` in the ordinary header map.
@@ -25,4 +27,4 @@ Rules:
 - Handle `ResponseEmissionFailed` only at the visible front controller after terminal response selection. A pre-header failure may receive one generic fallback; a post-header failure cannot receive a replacement response.
 - Treat redirects and non-local or callback streams as future explicit response types, not array conventions.
 
-ADR 021's Create proof uses the application-owned `CreateUserOperation` seam and `TransactionalCreateUser` as the concrete operation directly owning that transaction's complete SQL, without adding a framework input, query object, helper, or service API. ADR 026 adds the narrow file-transfer values; Consumer Contract v7 carries Strict Profile v2 forward unchanged.
+ADR 021's Create proof uses the application-owned `CreateUserOperation` seam and `TransactionalCreateUser` as the concrete operation directly owning that transaction's complete SQL, without adding a framework input, query object, helper, or service API. ADR 026 adds the narrow file-transfer values. ADR 032 and Consumer Contract v8 add fixed canonical UUID and ULID route types without binding behavior or a runtime identifier dependency and leave Strict Profile v2 unchanged.

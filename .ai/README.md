@@ -14,7 +14,7 @@ Then read only what the task needs:
 | Task | Read | Inspect |
 | --- | --- | --- |
 | Explain PHPThis behavior or answer a usage question | `VISION.md`, `docs/knowledge-map.md`, relevant contract or decision | current framework source, tests, and application pattern |
-| Add or change a route | `.ai/routing.md`, ADR 019, and ADR 017 for the retained positive-integer rationale | `example/src/Routes.php`, `src/Routing/`, `src/Http/Request.php`, route and application tests |
+| Add or change a route | `.ai/routing.md`, ADR 032, ADR 019, and ADR 017 for the retained positive-integer rationale | `example/src/Routes.php`, `src/Routing/`, `src/Http/Request.php`, route and application tests |
 | Add or change authentication, tenant resolution, or authorization | `.ai/request-policy.md`, `.ai/http.md`, `.ai/errors.md`, and ADR 020 | application composition root, route-specific policy adapter, concrete principal and tenant values, policy and protected connections, exact error registrations, and denial plus replacement tests |
 | Add or change a CRUD-shaped resource profile or example | `.ai/crud.md`, `.ai/routing.md`, `.ai/database.md` as applicable | `docs/crud.md`, ADR 013, ADR 022 for the finite document-list proof, resource route list, operation directories, and behavior tests |
 | Read or write database data or map a structural SQL choice | `.ai/database.md`, `.ai/strict-profile.md`, ADR 022 when changing the finite document-list proof | `src/Database/`, the direct complete-SQL call site and explicit parameter array, application data authority, selector, cursor, list-cardinality, and scale tests |

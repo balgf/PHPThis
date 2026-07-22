@@ -10,6 +10,8 @@ Canonical factories:
 
 ADR 026 adds one framework runtime boundary value before application parsing: `RequestReader` converts the flat PHP upload entry to `RequestUpload`. The operation still parses the complete `Request::$uploads` map into its own narrow value, requires its exact field, exhaustively maps `RequestUploadError`, applies its file limit, and verifies provenance and actual size. Client filename and media type remain untrusted; client `full_path` is discarded.
 
+Routing likewise exposes only typed metadata. Choose the narrowest declaration among `positive-int`, `uuid`, `ulid`, and `token`, reserving `token` for genuinely opaque identifiers. Read the value only through the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, then immediately wrap the unchanged value in an application-owned route-specific identifier and apply any narrower domain validation before database work. Do not normalize it, bind or look up a domain object, or fall back between route types.
+
 Every factory must:
 
 1. Reject missing required fields and unknown fields; use `array_key_exists` to distinguish absence from an allowed explicit `null`.
@@ -30,4 +32,4 @@ Do not use scalar casts, `intval`, `floatval`, `boolval`, `strval`, `settype`, i
 
 PHPStan `list<T>`, array shapes, and `@template` are static contracts only. They supplement boundary parsing; they never replace it.
 
-ADR 021 adds application-owned command and projection evidence without a generic input API or diagnostic. ADR 026 adds only the concrete typed upload value. Consumer Contract v7 and Strict Profile v2 are current.
+ADR 021 adds application-owned command and projection evidence without a generic input API or diagnostic. ADR 026 adds only the concrete typed upload value. ADR 032 and Consumer Contract v8 add fixed UUID and ULID route syntax without a framework identifier type and leave Strict Profile v2 unchanged.

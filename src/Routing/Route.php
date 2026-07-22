@@ -46,13 +46,13 @@ final readonly class Route
 
             if (
                 preg_match(
-                    '/^\{([a-z][a-z0-9_]*):(positive-int|token)\}$/D',
+                    '/^\{([a-z][a-z0-9_]*):(positive-int|token|uuid|ulid)\}$/D',
                     $segment,
                     $matches,
                 ) !== 1
             ) {
                 throw new InvalidArgumentException(
-                    'Route parameters must occupy a full segment and use positive-int or token.',
+                    'Route parameters must occupy a full segment and use positive-int, token, uuid, or ulid.',
                 );
             }
 

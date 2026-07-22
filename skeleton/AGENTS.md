@@ -29,11 +29,13 @@ Every observable behavior change must add or update application-owned automated 
 
 ## Authority
 
-- The installed PHPThis Consumer Contract v7 and Strict Profile v2 are the minimum accepted rules, including the PHP 8.4 runtime boundary, bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
+- The installed PHPThis Consumer Contract v8 and Strict Profile v2 are the minimum accepted rules, including the PHP 8.4 runtime boundary, bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - Preserve the installed contract when a project instruction conflicts with it, and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
 - Never add a baseline, suppression, hidden fallback, or second framework pattern to make a change pass.
+
+`NOT_APPLICABLE(RESOURCE_ROUTE_IDENTIFIERS)`: the health-only starter has no path parameter or resource lookup. Before adding one, choose the narrowest fixed declaration: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only for a genuinely opaque identifier. Read it through the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and apply narrower domain rules before database work. Routing performs no normalization, domain binding, record lookup, identifier generation, persistence choice, or type fallback. Tests must prove invalid syntax selects `404` with zero handler and database work, while a canonical valid path with the wrong method selects `405`.
 
 `NOT_APPLICABLE(DATABASE)`: before introducing database work, replace `.ai/data.md` with verified SQL-structure and bounded-list choices, least-privileged runtime authority and prohibited capabilities, isolated migration or administrative authority, and verification sources and dates.
 

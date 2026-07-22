@@ -95,6 +95,8 @@ If there is no CRUD-shaped resource behavior, replace this section with an expli
 | Delete and retention | {{CRUD_HARD_OR_SOFT_DELETE_RETENTION_RESTORE_AND_DEPENDENT_RECORD_POLICY}} |
 | Authorization and audit | {{CRUD_AUTHORIZATION_CHECK_AND_AUDIT_EVENT_POLICY}} |
 
+For each resource route, the identifier policy records the narrowest fixed declaration among `positive-int`, `uuid`, `ulid`, and genuinely opaque `token`, its matching `PathParameters` accessor, the application-owned route-specific identifier wrapper, and any narrower validation performed before database work. Route matching returns unchanged routing metadata; it does not normalize, bind or look up a record, generate an identifier, choose persistence, or fall back between types.
+
 The optional profile does not choose these semantics. Cite verified product, schema, or accepted-decision authority rather than copying an example.
 
 ## Transaction and operational constraints

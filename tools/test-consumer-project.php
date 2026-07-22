@@ -91,6 +91,8 @@ try {
         throw new RuntimeException('The installed framework inventory differs from the verified archive.');
     }
 
+    proveInstalledUuidAndUlidRouting($project, $environment);
+
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     $profileResult = runProcess($profileCommand, $project, $environment);
     requireSuccess($profileResult, 'The clean skeleton failed the installed profile check.');
@@ -159,6 +161,66 @@ try {
     );
 } finally {
     removeDirectory($workspace);
+}
+
+/** @param array<string, string> $environment */
+function proveInstalledUuidAndUlidRouting(string $project, array $environment): void
+{
+    $proofPath = $project . '/installed-routing-proof.php';
+    writeFile(
+        $proofPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\Response;
+use PHPThis\Routing\Route;
+use PHPThis\Routing\Router;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$handler = new class implements RequestHandler {
+    public function handle(Request $request): Response
+    {
+        return new Response(204, [], '');
+    }
+};
+$router = new Router([
+    new Route('GET', '/accounts/{account_id:uuid}', $handler),
+    new Route('POST', '/events/{event_id:ulid}', $handler),
+]);
+$uuid = '01890f5a-4c96-7a2b-8c3d-123456789abc';
+$ulid = '01arz3ndektsv4rrffq69g5fav';
+$uuidMatch = $router->match(new Request('GET', '/accounts/' . $uuid));
+$ulidMatch = $router->match(new Request('POST', '/events/' . $ulid));
+
+if (
+    $uuidMatch?->pathParameters->uuid('account_id') !== $uuid
+    || $ulidMatch?->pathParameters->ulid('event_id') !== $ulid
+    || $router->match(new Request('GET', '/accounts/' . strtoupper($uuid))) !== null
+    || $router->match(new Request('POST', '/events/' . strtoupper($ulid))) !== null
+    || $router->allowedMethodsForPath('/accounts/' . $uuid) !== ['GET']
+    || $router->allowedMethodsForPath('/events/' . $ulid) !== ['POST']
+) {
+    throw new RuntimeException('Installed UUID and ULID routing did not preserve the canonical contract.');
+}
+
+fwrite(STDOUT, "PASS installed UUID and ULID routing\n");
+PHP,
+    );
+
+    try {
+        $result = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+        requireSuccess($result, 'The installed framework failed UUID and ULID routing proof.');
+        requireOutputContains($result, 'PASS installed UUID and ULID routing');
+    } finally {
+        if (is_file($proofPath) && !unlink($proofPath)) {
+            throw new RuntimeException('Unable to remove the installed routing proof.');
+        }
+    }
 }
 
 /**

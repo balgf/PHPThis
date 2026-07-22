@@ -37,13 +37,13 @@ src/
       UserActivitySummary.php
 ```
 
-The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Each operation directory contains only the boundary values and behavior needed by that use case:
+The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Under ADR 032 and Consumer Contract version 8, each resource chooses the narrowest fixed route type: `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or `token` only for a genuinely opaque bounded identifier. Routing neither normalizes nor looks up the value and never falls back between types. Each operation directory contains only the boundary values and behavior needed by that use case:
 
 - a Create command parses and validates the complete external input before typed use-case entry;
 - a Create handler owns HTTP media and parsing order, response encoding, and delegation through the concrete command;
 - the example-owned `CreateUserOperation` interface separates HTTP adaptation from the independently meaningful Create transaction and accepts only the authenticated principal, resolved tenant, requested account, and final command;
 - `TransactionalCreateUser` owns the visible transaction, direct `Connection` calls, write SQL, and expected database failure behavior;
-- a Get handler immediately wraps its validated positive-integer path parameter in `UserId`, owns one bounded item query and explicit missing behavior, and parses a concrete `UserDetails` projection;
+- a Get handler immediately wraps its validated path parameter in a route-specific application identifier, applies any narrower domain rule before database work, owns one bounded item query and explicit missing behavior, and parses a concrete projection; the current user proof specifically wraps `positive-int` in `UserId`;
 - a List page request parses its exact query-parameter contract before database work;
 - a List handler owns a bounded, deterministically ordered read, continuation behavior, and response;
 - a List projection parses each selected row into a concrete final readonly value;

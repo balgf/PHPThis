@@ -12,35 +12,44 @@ final readonly class PathParameters
     /**
      * @param array<string, int> $positiveIntegers
      * @param array<string, string> $tokens
+     * @param array<string, string> $uuids
+     * @param array<string, string> $ulids
      */
     private function __construct(
         private array $positiveIntegers,
         private array $tokens,
+        private array $uuids,
+        private array $ulids,
     ) {
     }
 
     public static function none(): self
     {
-        return new self([], []);
+        return new self([], [], [], []);
     }
 
     public static function onePositiveInteger(string $name, int $value): self
     {
-        return self::fromValues([$name => $value], []);
+        return self::fromValues([$name => $value], [], [], []);
     }
 
     /**
      * @param array<array-key, mixed> $positiveIntegers
      * @param array<array-key, mixed> $tokens
+     * @param array<array-key, mixed> $uuids
+     * @param array<array-key, mixed> $ulids
      */
-    public static function fromValues(array $positiveIntegers, array $tokens): self
-    {
-        if (count($positiveIntegers) + count($tokens) > 2) {
+    public static function fromValues(
+        array $positiveIntegers,
+        array $tokens,
+        array $uuids = [],
+        array $ulids = [],
+    ): self {
+        if (count($positiveIntegers) + count($tokens) + count($uuids) + count($ulids) > 2) {
             throw new InvalidArgumentException('Path parameters cannot contain more than two values.');
         }
 
         $validatedPositiveIntegers = [];
-        $validatedTokens = [];
 
         foreach ($positiveIntegers as $name => $value) {
             if (!is_string($name) || !is_int($value)) {
@@ -60,27 +69,28 @@ final readonly class PathParameters
             $validatedPositiveIntegers[$name] = $value;
         }
 
-        foreach ($tokens as $name => $value) {
-            if (!is_string($name) || !is_string($value)) {
-                throw new InvalidArgumentException(
-                    'Token path parameters require string names and string values.',
-                );
-            }
+        $validatedTokens = self::canonicalStrings(
+            $tokens,
+            RouteParameterType::Token,
+            $validatedPositiveIntegers,
+        );
+        $validatedUuids = self::canonicalStrings(
+            $uuids,
+            RouteParameterType::Uuid,
+            $validatedPositiveIntegers + $validatedTokens,
+        );
+        $validatedUlids = self::canonicalStrings(
+            $ulids,
+            RouteParameterType::Ulid,
+            $validatedPositiveIntegers + $validatedTokens + $validatedUuids,
+        );
 
-            self::validateName($name);
-
-            if (isset($validatedPositiveIntegers[$name])) {
-                throw new InvalidArgumentException("Path parameter {$name} has multiple types.");
-            }
-
-            if (!RouteParameterType::isToken($value)) {
-                throw new InvalidArgumentException('Token path parameter is not canonical.');
-            }
-
-            $validatedTokens[$name] = $value;
-        }
-
-        return new self($validatedPositiveIntegers, $validatedTokens);
+        return new self(
+            $validatedPositiveIntegers,
+            $validatedTokens,
+            $validatedUuids,
+            $validatedUlids,
+        );
     }
 
     public function positiveInteger(string $name): int
@@ -94,11 +104,17 @@ final readonly class PathParameters
 
     public function token(string $name): string
     {
-        if (!isset($this->tokens[$name])) {
-            throw new OutOfBoundsException("No token path parameter named {$name}.");
-        }
+        return $this->stringValue($this->tokens, $name, RouteParameterType::Token);
+    }
 
-        return $this->tokens[$name];
+    public function uuid(string $name): string
+    {
+        return $this->stringValue($this->uuids, $name, RouteParameterType::Uuid);
+    }
+
+    public function ulid(string $name): string
+    {
+        return $this->stringValue($this->ulids, $name, RouteParameterType::Ulid);
     }
 
     private static function validateName(string $name): void
@@ -108,5 +124,57 @@ final readonly class PathParameters
                 'Path parameter name must be lowercase snake-like ASCII.',
             );
         }
+    }
+
+    /**
+     * @param array<array-key, mixed> $values
+     * @param array<string, mixed> $occupiedNames
+     * @return array<string, string>
+     */
+    private static function canonicalStrings(
+        array $values,
+        RouteParameterType $type,
+        array $occupiedNames,
+    ): array {
+        $validated = [];
+
+        foreach ($values as $name => $value) {
+            if (!is_string($name) || !is_string($value)) {
+                throw new InvalidArgumentException(
+                    "{$type->value} path parameters require string names and string values.",
+                );
+            }
+
+            self::validateName($name);
+
+            if (isset($occupiedNames[$name])) {
+                throw new InvalidArgumentException("Path parameter {$name} has multiple types.");
+            }
+
+            if (!$type->accepts($value)) {
+                throw new InvalidArgumentException(
+                    "{$type->value} path parameter is not canonical.",
+                );
+            }
+
+            $validated[$name] = $value;
+        }
+
+        return $validated;
+    }
+
+    /** @param array<string, string> $values */
+    private function stringValue(
+        array $values,
+        string $name,
+        RouteParameterType $type,
+    ): string {
+        if (!isset($values[$name])) {
+            throw new OutOfBoundsException(
+                "No {$type->value} path parameter named {$name}.",
+            );
+        }
+
+        return $values[$name];
     }
 }

@@ -4,7 +4,8 @@
 | --- | --- | --- |
 | route | HTTP method, explicit literal or at-most-two-full-segment typed path declaration, and handler | discovered endpoint, action map, regular-expression rule |
 | route match | immutable selected route plus immutable path parameters | controller arguments, binding result |
-| path parameters | empty routing metadata or at most two validated `positive-int` or bounded `token` values carried by the matched request copy and read through type-specific access | request bag, domain context, automatic model binding |
+| path parameters | empty routing metadata or at most two validated `positive-int`, bounded opaque `token`, lowercase canonical `uuid`, or lowercase canonical `ulid` values carried unchanged by the matched request copy and read through type-specific access | request bag, domain context, normalized identifier, automatic model binding |
+| narrowest route type | `positive-int`, `uuid`, or `ulid` when that exact syntax is intended; `token` only for a genuinely opaque bounded identifier | type priority, failed-type fallback, automatic domain binding |
 | handler | object with `handle(Request): Response` | controller, action, responder |
 | connection | instrumented PDO boundary | DB facade, query builder |
 | PDO transport | native-driver connection, binding, fetch, transaction, budget, and trace behavior certified without SQL translation | database abstraction, portable dialect |

@@ -2,6 +2,8 @@
 
 This directory is owned by `{{PROJECT_NAME}}`. It grounds the AI that explains and authors this project; it is not a framework manual. It supplies project facts that the PHPThis consumer contract cannot know. Keep it committed, current, concise, and free of secrets.
 
+Consumer Contract v8 and Strict Profile v2 remain mandatory. Application guidance may strengthen them but may not weaken them.
+
 Always read:
 
 1. `.ai/rules.md`
@@ -14,7 +16,7 @@ Then read only what the task needs:
 | --- | --- | --- |
 | Explain framework or application behavior | installed PHPThis knowledge map, matching application guide | installed framework source, application execution path, and tests |
 | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected source boundary named there |
-| Add or change a route | `.ai/architecture.md` | route manifest, relevant route area, and handler named there |
+| Add or change a route | installed `vendor/phpthis/framework/docs/request-handling.md`, `.ai/architecture.md`, `.ai/testing.md` | route manifest, narrowest identifier declaration, matching `PathParameters` accessor, application-owned identifier wrapper, relevant route area, handler, and behavior tests |
 | Add or change inbound operation data | installed `vendor/phpthis/framework/docs/type-safety.md`, `.ai/architecture.md`, `.ai/testing.md` | raw representation and bounds, operation-specific parser factory, final readonly request or command, downstream typed behavior or justified seam, request-policy order, public error mapping, and adversarial tests |
 | Add or change a file upload or download | installed `vendor/phpthis/framework/docs/file-transfers/README.md`, `.ai/file-transfers.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | front controller, composition root, exact route and handler, concrete file path, response emission, failure mapping, and transfer tests |
 | Protect a route or change identity, tenant, or authorization policy | installed `vendor/phpthis/framework/docs/request-policy.md`, `.ai/request-policy.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/testing.md` | composition root, action-specific policy adapter, concrete principal and tenant values, policy and protected connections, exact denial registrations, and order, denial, redaction, and replacement tests |
@@ -31,6 +33,8 @@ Then read only what the task needs:
 | Change request correlation or terminal summaries | installed `vendor/phpthis/framework/docs/observability/README.md`, `.ai/observability.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | front controller, application-owned coordinator and sink, finite database sources, response propagation, redaction, budget, trace, and throwing-sink tests |
 | Add or change tests | `.ai/testing.md` | nearest behavior tests and complete project check |
 
-The CRUD reference profile is optional application structure. Record its adoption or one coherent alternate placement and naming rule; neither may weaken Consumer Contract v7 or Strict Profile v2.
+For every resource path identifier, choose the narrowest fixed type among `positive-int`, `uuid`, `ulid`, and genuinely opaque `token`; use the matching `PathParameters` accessor, preserve the value unchanged, immediately wrap it in an application-owned route-specific identifier, and apply narrower domain rules before database work. Routing never normalizes, binds, looks up, or falls back between types. Invalid syntax must remain a `404` with zero handler and database work; a canonical valid path with the wrong method remains a `405`.
+
+The CRUD reference profile is optional application structure. Record its adoption or one coherent alternate placement and naming rule; neither may weaken the accepted installed Consumer Contract or Strict Profile v2.
 
 Accepted architectural decisions and durable rationale live in `docs/decisions/`. AI may draft and update a decision record, but acceptance requires explicit approval from an accountable human. Add a narrowly named area guide when a recurring task needs context that does not fit this map; do not turn this index into a complete project description.

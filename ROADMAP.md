@@ -69,6 +69,7 @@
 
 - Complete: ADR 030 adds one bounded report-only duplication advisory to the installed consumer checker without changing application validity, the Consumer Contract version, the Strict Profile, or framework runtime behavior.
 - Alpha 3 publication state is external; ADR 031 and `RELEASING.md` define the inherited scope, coordinated packages, clean public-installation proof, and announcement boundary without embedding mutable availability in the tagged artifact.
+- Complete: ADR 032 and Consumer Contract version 8 add fixed lowercase `uuid` and `ulid` route types while retaining `positive-int` and opaque `token`, the at-most-two-parameter grammar, construction-time conflict rejection, and Strict Profile version 2. The core ceiling is 2,600 lines for the 2,592-line implementation only; no normalization, type fallback, binding, lookup, identifier runtime, or persistence policy is introduced.
 - Freeze core mechanisms except for a demonstrated release blocker, correctness defect, or security defect within the accepted surface.
 - Exercise the Packagist-installed release through at least two independent consumer applications with materially different work, recording task outcomes, incorrect AI assumptions, file and token churn, checker evidence, and human decisions.
 - Run the same bounded consumer tasks across several AI models and classify unsupported claims, contract violations, query-scaling mistakes, unnecessary abstraction, and successful self-repair.

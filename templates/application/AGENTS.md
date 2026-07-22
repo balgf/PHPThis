@@ -27,11 +27,13 @@ Every observable behavior change must add or update application-owned automated 
 
 ## Authority
 
-- The installed PHPThis Consumer Contract v7 and Strict Profile v2 are the minimum accepted rules, including the PHP 8.4 runtime boundary, bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
+- The installed PHPThis Consumer Contract v8 and Strict Profile v2 are the minimum accepted rules, including the PHP 8.4 runtime boundary, bounded multiple-typed routing, explicit cookie/session and file-transfer boundaries, PHT006 finite compile-time-constant SQL, and the application-owned terminal request summary.
 - This application's `.ai/` guides add project-specific facts and may strengthen those rules.
 - If a project instruction conflicts with the consumer contract, preserve the contract and report the conflict.
 - Distinguish installed framework behavior, application policy, and new proposals in explanations and implementation reports.
 - Never add a baseline, broad ignore, hidden fallback, or second framework pattern to make a change pass.
+
+For every resource path identifier, use the narrowest fixed declaration: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only for a genuinely opaque identifier. Read it through the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and apply any narrower domain rule before database work. Routing performs no normalization, domain binding, record lookup, identifier generation, persistence choice, or type fallback. Application tests must prove invalid syntax selects `404` with zero handler and database work, while a canonical valid path with the wrong method selects `405`.
 
 Before database work, `.ai/data.md` must identify the reviewed SQL-structure mappings and bounded-list choices, runtime database authority and prohibited capabilities, isolated migration or administrative authority, and the source and date that those facts were verified. Do not infer them from successful connectivity.
 

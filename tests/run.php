@@ -930,6 +930,157 @@ $tests['router matches two ordered parameters and bounded opaque tokens'] = stat
     }
 };
 
+$tests['router matches canonical lowercase UUID path parameters'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $route = new Route('GET', '/accounts/{account_id:uuid}', $handler);
+    $router = new Router([$route]);
+    $validValues = [
+        '123e4567-e89b-12d3-8456-426614174000',
+        '123e4567-e89b-22d3-9456-426614174000',
+        '123e4567-e89b-32d3-a456-426614174000',
+        '123e4567-e89b-42d3-b456-426614174000',
+        '123e4567-e89b-52d3-8456-426614174000',
+        '123e4567-e89b-62d3-8456-426614174000',
+        '01890f5a-4c96-7a2b-8c3d-123456789abc',
+        '123e4567-e89b-82d3-8456-426614174000',
+    ];
+
+    foreach ($validValues as $value) {
+        $match = $router->match(new Request('GET', '/accounts/' . $value));
+
+        if (
+            $match === null
+            || $match->route !== $route
+            || $match->pathParameters->uuid('account_id') !== $value
+        ) {
+            throw new RuntimeException("Expected canonical lowercase UUID matching: {$value}");
+        }
+    }
+
+    $invalidValues = [
+        '00000000-0000-0000-0000-000000000000',
+        'ffffffff-ffff-ffff-ffff-ffffffffffff',
+        '123e4567-e89b-02d3-8456-426614174000',
+        '123e4567-e89b-92d3-8456-426614174000',
+        '123e4567-e89b-42d3-7456-426614174000',
+        '123e4567-e89b-42d3-c456-426614174000',
+        '123E4567-E89B-42D3-8456-426614174000',
+        '123e4567e89b42d38456426614174000',
+        '{123e4567-e89b-42d3-8456-426614174000}',
+        'urn:uuid:123e4567-e89b-42d3-8456-426614174000',
+        '123e4567-e89b-42d3-8456-42661417400g',
+        '123e4567-e89b-42d3-8456-4266141740000',
+        '123e4567-e89b-42d3-8456-42661417400',
+        '%31' . '23e4567-e89b-42d3-8456-426614174000',
+    ];
+
+    foreach ($invalidValues as $value) {
+        if ($router->match(new Request('GET', '/accounts/' . $value)) !== null) {
+            throw new RuntimeException("Expected UUID route value to be rejected: {$value}");
+        }
+    }
+};
+
+$tests['router matches canonical lowercase ULID path parameters'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $route = new Route('GET', '/events/{event_id:ulid}', $handler);
+    $router = new Router([$route]);
+    $validValues = [
+        '00000000000000000000000000',
+        '01arz3ndektsv4rrffq69g5fav',
+        '7zzzzzzzzzzzzzzzzzzzzzzzzz',
+    ];
+
+    foreach ($validValues as $value) {
+        $match = $router->match(new Request('GET', '/events/' . $value));
+
+        if (
+            $match === null
+            || $match->route !== $route
+            || $match->pathParameters->ulid('event_id') !== $value
+        ) {
+            throw new RuntimeException("Expected canonical lowercase ULID matching: {$value}");
+        }
+    }
+
+    $invalidValues = [
+        '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        '8zzzzzzzzzzzzzzzzzzzzzzzzz',
+        'z1arz3ndektsv4rrffq69g5fav',
+        '01arz3ndektsv4rrffq69g5fai',
+        '01arz3ndektsv4rrffq69g5fal',
+        '01arz3ndektsv4rrffq69g5fao',
+        '01arz3ndektsv4rrffq69g5fau',
+        '01arz3ndektsv4rrffq69g5fa',
+        '01arz3ndektsv4rrffq69g5fav0',
+        '01arz3ndektsv4rrffq69g5fa-',
+        '%30' . '1arz3ndektsv4rrffq69g5fav',
+    ];
+
+    foreach ($invalidValues as $value) {
+        if ($router->match(new Request('GET', '/events/' . $value)) !== null) {
+            throw new RuntimeException("Expected ULID route value to be rejected: {$value}");
+        }
+    }
+};
+
+$tests['invalid UUID and ULID routes stop before handler and database work'] = static function (): void {
+    $budget = new QueryBudget(1);
+    $trace = new QueryTrace(1);
+    $connection = Connection::connect('sqlite::memory:', $budget, $trace);
+    $handler = new class($connection) implements RequestHandler {
+        public int $calls = 0;
+
+        public function __construct(private readonly Connection $connection)
+        {
+        }
+
+        public function handle(Request $request): Response
+        {
+            $this->calls++;
+            $this->connection->selectOneRow('SELECT 1 AS reached');
+
+            return new Response(204, [], '');
+        }
+    };
+    $application = new Application(new Router([
+        new Route('GET', '/accounts/{account_id:uuid}', $handler),
+        new Route('DELETE', '/accounts/{account_id:uuid}', $handler),
+        new Route('POST', '/events/{event_id:ulid}', $handler),
+        new Route('PUT', '/events/{event_id:ulid}', $handler),
+    ]));
+    $validUuid = '01890f5a-4c96-7a2b-8c3d-123456789abc';
+    $validUlid = '01arz3ndektsv4rrffq69g5fav';
+    $uuidNotAllowed = $application->handle(new Request('PATCH', '/accounts/' . $validUuid));
+    $ulidNotAllowed = $application->handle(new Request('PATCH', '/events/' . $validUlid));
+    $invalidUuid = $application->handle(new Request('GET', '/accounts/' . strtoupper($validUuid)));
+    $invalidUlid = $application->handle(new Request('GET', '/events/' . strtoupper($validUlid)));
+
+    if (
+        $uuidNotAllowed->status !== 405
+        || $uuidNotAllowed->headers['Allow'] !== 'GET, DELETE'
+        || $ulidNotAllowed->status !== 405
+        || $ulidNotAllowed->headers['Allow'] !== 'POST, PUT'
+        || $invalidUuid->status !== 404
+        || $invalidUlid->status !== 404
+        || $handler->calls !== 0
+        || $budget->used() !== 0
+        || $trace->snapshot()['statements'] !== 0
+    ) {
+        throw new RuntimeException('Expected UUID and ULID rejection before handler and database work.');
+    }
+};
+
 $tests['path parameters reject invalid construction unknown names and wrong types'] = static function (): void {
     foreach ([['Invalid', 1], ['user_id', 0]] as [$name, $value]) {
         try {
@@ -974,6 +1125,30 @@ $tests['path parameters reject invalid construction unknown names and wrong type
             [],
             ['document_key' => 1],
         ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            ['first_id' => 1],
+            [],
+            ['second_id' => '01890f5a-4c96-7a2b-8c3d-123456789abc'],
+            ['third_id' => '01arz3ndektsv4rrffq69g5fav'],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            [],
+            ['identifier' => 'Identifier'],
+            ['identifier' => '01890f5a-4c96-7a2b-8c3d-123456789abc'],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            [],
+            [],
+            ['account_id' => '01890F5A-4C96-7A2B-8C3D-123456789ABC'],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues(
+            [],
+            [],
+            [],
+            ['event_id' => '01ARZ3NDEKTSV4RRFFQ69G5FAV'],
+        ),
+        static fn(): PathParameters => PathParameters::fromValues([], [], ['account_id' => 1]),
+        static fn(): PathParameters => PathParameters::fromValues([], [], [], ['event_id' => 1]),
     ];
 
     foreach ($invalidCollections as $invalidCollection) {
@@ -1009,6 +1184,8 @@ $tests['path parameters reject invalid construction unknown names and wrong type
         static fn(): int => $match->pathParameters->positiveInteger('document_key'),
         static fn(): string => $match->pathParameters->token('other_key'),
         static fn(): string => $match->pathParameters->token('account_id'),
+        static fn(): string => $match->pathParameters->uuid('account_id'),
+        static fn(): string => $match->pathParameters->ulid('document_key'),
     ];
 
     foreach ($invalidAccessors as $invalidAccessor) {
@@ -1052,6 +1229,35 @@ $tests['literal route wins over a matching mixed typed route'] = static function
     throw new RuntimeException('Expected a literal route match to carry no path parameters.');
 };
 
+$tests['literal routes win over canonical UUID and ULID values'] = static function (): void {
+    $handler = new class implements RequestHandler {
+        public function handle(Request $request): Response
+        {
+            return new Response(204, [], '');
+        }
+    };
+    $cases = [
+        [
+            '/accounts/{account_id:uuid}',
+            '/accounts/01890f5a-4c96-7a2b-8c3d-123456789abc',
+        ],
+        [
+            '/events/{event_id:ulid}',
+            '/events/01arz3ndektsv4rrffq69g5fav',
+        ],
+    ];
+
+    foreach ($cases as [$parameterizedPath, $literalPath]) {
+        $dynamic = new Route('GET', $parameterizedPath, $handler);
+        $literal = new Route('GET', $literalPath, $handler);
+        $match = (new Router([$dynamic, $literal]))->match(new Request('GET', $literalPath));
+
+        if ($match === null || $match->route !== $literal) {
+            throw new RuntimeException('Expected the exact identifier literal route to win.');
+        }
+    }
+};
+
 $tests['route rejects repeated typed parameter names'] = static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
@@ -1060,7 +1266,7 @@ $tests['route rejects repeated typed parameter names'] = static function (): voi
         }
     };
 
-    foreach (['positive-int', 'token'] as $secondType) {
+    foreach (['positive-int', 'token', 'uuid', 'ulid'] as $secondType) {
         try {
             new Route(
                 'GET',
@@ -1102,6 +1308,26 @@ $tests['router rejects overlapping typed declarations and inconsistent metadata'
         [
             new Route('GET', '/items/{item_id:positive-int}', $handler),
             new Route('POST', '/items/{item_id:token}', $handler),
+        ],
+        [
+            new Route('GET', '/items/{item_id:token}', $handler),
+            new Route('GET', '/items/{item_id:uuid}', $handler),
+        ],
+        [
+            new Route('GET', '/items/{item_id:token}', $handler),
+            new Route('POST', '/items/{item_id:ulid}', $handler),
+        ],
+        [
+            new Route('GET', '/items/{item_id:positive-int}', $handler),
+            new Route('GET', '/items/{item_id:uuid}', $handler),
+        ],
+        [
+            new Route('GET', '/items/{item_id:positive-int}', $handler),
+            new Route('GET', '/items/{item_id:ulid}', $handler),
+        ],
+        [
+            new Route('GET', '/items/{item_id:uuid}', $handler),
+            new Route('GET', '/items/{item_id:ulid}', $handler),
         ],
         [
             new Route('GET', '/accounts/{account_key:token}/documents/latest', $handler),
@@ -1332,20 +1558,29 @@ $tests['router indexes mixed paths in a large branching route table'] = static f
     };
     $routes = [];
     $targetRoutes = [];
+    $uuid = '01890f5a-4c96-7a2b-8c3d-123456789abc';
+    $ulid = '01arz3ndektsv4rrffq69g5fav';
 
     for ($index = 0; $index < 10_000; $index++) {
+        $parameter = match (true) {
+            $index < 3_333 => '{document_key:token}',
+            $index < 6_666 => '{document_id:uuid}',
+            default => '{document_id:ulid}',
+        };
         $routes[] = new Route(
             'GET',
             '/accounts/account-'
                 . $index
-                . '/documents/{document_key:token}',
+                . '/documents/'
+                . $parameter,
             $handler,
         );
         $targetRoute = new Route(
             'GET',
             '/accounts/{account_id:positive-int}/document-groups/'
                 . $index
-                . '/documents/{document_key:token}',
+                . '/documents/'
+                . $parameter,
             $handler,
         );
         $routes[] = $targetRoute;
@@ -1357,10 +1592,10 @@ $tests['router indexes mixed paths in a large branching route table'] = static f
         new Request('GET', '/accounts/1/document-groups/0/documents/Doc_0'),
     );
     $middle = $router->match(
-        new Request('GET', '/accounts/5001/document-groups/5000/documents/Doc_5000'),
+        new Request('GET', '/accounts/5001/document-groups/5000/documents/' . $uuid),
     );
     $last = $router->match(
-        new Request('GET', '/accounts/10000/document-groups/9999/documents/Doc_9999'),
+        new Request('GET', '/accounts/10000/document-groups/9999/documents/' . $ulid),
     );
     $missing = $router->match(
         new Request('GET', '/accounts/1/document-groups/missing/documents/Doc_0'),
@@ -1372,16 +1607,16 @@ $tests['router indexes mixed paths in a large branching route table'] = static f
         || $first->pathParameters->token('document_key') !== 'Doc_0'
         || $middle?->route !== $targetRoutes[5_000]
         || $middle->pathParameters->positiveInteger('account_id') !== 5_001
-        || $middle->pathParameters->token('document_key') !== 'Doc_5000'
+        || $middle->pathParameters->uuid('document_id') !== $uuid
         || $last?->route !== $targetRoutes[9_999]
         || $last->pathParameters->positiveInteger('account_id') !== 10_000
-        || $last->pathParameters->token('document_key') !== 'Doc_9999'
+        || $last->pathParameters->ulid('document_id') !== $ulid
         || $missing !== null
         || $router->allowedMethodsForPath(
-            '/accounts/10000/document-groups/9999/documents/Doc_9999',
+            '/accounts/10000/document-groups/9999/documents/' . $ulid,
         ) !== ['GET']
     ) {
-        throw new RuntimeException('Expected indexed mixed matching across 20,000 routes.');
+        throw new RuntimeException('Expected all fixed types to remain indexed across 20,000 routes.');
     }
 };
 

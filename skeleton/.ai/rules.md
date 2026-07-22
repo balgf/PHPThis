@@ -1,11 +1,13 @@
 # Application rules
 
-These rules supplement installed PHPThis Consumer Contract v7 and Strict Profile v2. They may not alias or weaken framework rules.
+These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile v2. They may strengthen those rules but may not weaken them.
 
 ## Required
 
 - Preserve the dependency direction and boundaries in `.ai/architecture.md`.
 - Resolve missing product, scale, authorization, and external-contract facts before implementation.
+- Keep `NOT_APPLICABLE(RESOURCE_ROUTE_IDENTIFIERS)` while the starter has only exact `GET /health`. Before adding a resource identifier, declare the narrowest fixed type: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only when genuinely opaque. Use the matching `PathParameters` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and enforce narrower domain rules before database work; never normalize, bind, look up, or fall back between route types.
+- Before adopting a resource identifier route, add tests proving invalid syntax returns `404` with zero handler and database work and a canonical valid path with the wrong method returns `405`.
 - Keep `NOT_APPLICABLE(INPUT)` while no operation accepts application-owned fields. Before adoption, record one operation-specific named parser factory, its final readonly request or command, downstream behavior or justified typed seam, complete bounds, exact field representations, absent-versus-null and normalization policy, parser position relative to request policy, generic failure contract, and exclusion from operation-owned downstream work.
 - Keep `NOT_APPLICABLE(REQUEST_POLICY)` while every route is public. Before protecting a route, use the installed action-specific request-policy composition with explicit order, concrete principal and tenant values, replaceable policies, isolated policy and protected budgets, and denial tests.
 - Keep every external side effect and failure path visible at a named boundary.
