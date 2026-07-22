@@ -65,6 +65,7 @@ docs/decisions/030-report-only-consumer-duplication-advisory.md
 docs/decisions/031-bounded-alpha-3-release-scope.md
 docs/decisions/032-explicit-uuid-and-ulid-route-types.md
 docs/decisions/033-application-owned-request-handler-decorators.md
+docs/decisions/034-application-owned-websocket-integration.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -112,6 +113,7 @@ docs/static-analysis.md
 docs/strict-profile.md
 docs/type-safety.md
 docs/vocabulary.md
+docs/websockets.md
 src/Application.php
 src/Database/Connection.php
 src/Database/QueryBudget.php
@@ -159,6 +161,7 @@ templates/application/.ai/project.md
 templates/application/.ai/request-policy.md
 templates/application/.ai/rules.md
 templates/application/.ai/testing.md
+templates/application/.ai/websockets.md
 templates/application/AGENTS.md
 templates/application/docs/decisions/README.md
 verification/ApplicationChecker.php

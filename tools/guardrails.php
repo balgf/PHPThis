@@ -504,6 +504,7 @@ $requiredRepositoryFiles = [
     '.ai/request-policy.md',
     '.ai/routing.md',
     '.ai/session.md',
+    '.ai/websockets.md',
     'docs/consumer-contract.md',
     'docs/consumer-profile.md',
     'docs/caching.md',
@@ -564,6 +565,7 @@ $requiredRepositoryFiles = [
     'docs/security.md',
     'docs/sessions.md',
     'docs/vocabulary.md',
+    'docs/websockets.md',
     'docs/decisions/011-ai-first-authoring.md',
     'docs/decisions/012-pdo-transport-application-owned-dialects.md',
     'docs/decisions/013-optional-crud-reference-profile.md',
@@ -586,6 +588,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/030-report-only-consumer-duplication-advisory.md',
     'docs/decisions/031-bounded-alpha-3-release-scope.md',
     'docs/decisions/032-explicit-uuid-and-ulid-route-types.md',
+    'docs/decisions/034-application-owned-websocket-integration.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -699,6 +702,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/request-policy.md',
     'templates/application/.ai/rules.md',
     'templates/application/.ai/testing.md',
+    'templates/application/.ai/websockets.md',
     'templates/application/docs/decisions/README.md',
     'skeleton/AGENTS.md',
     'skeleton/.gitignore',
@@ -720,6 +724,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/request-policy.md',
     'skeleton/.ai/rules.md',
     'skeleton/.ai/testing.md',
+    'skeleton/.ai/websockets.md',
     'skeleton/bootstrap.php',
     'skeleton/composer.json',
     'skeleton/docs/decisions/README.md',
@@ -1508,6 +1513,288 @@ foreach ($requestHandlerDecoratorArtifactMarkers as $relativePath => $markers) {
             $failures[] = "Request-handler decorator artifact marker is missing from {$relativePath}: {$marker}";
         }
     }
+}
+
+$websocketArtifactMarkers = [
+    'docs/decisions/034-application-owned-websocket-integration.md' => [
+        'Status: proposed',
+        'WebSocket integration remains application-owned.',
+        'PHPThis adds no core WebSocket server, client, frame, connection, event-loop, daemon, supervisor, channel, broadcaster, pub/sub, retry, replay, acknowledgement, or delivery API and no runtime dependency.',
+        'WebSocket handshakes and frames never become PHPThis HTTP `Request` or `Response` values.',
+        'Consumer Contract version 9 and Strict Profile version 2 remain unchanged.',
+        '365 application-owned assertions',
+        'one reproducible application recipe',
+    ],
+    'docs/decisions/README.md' => [
+        'Proposed records awaiting accountable-human review:',
+        '`034-application-owned-websocket-integration.md`',
+    ],
+    'docs/websockets.md' => [
+        '# Application-owned WebSocket integration',
+        'PHPThis has no native WebSocket runtime or API.',
+        'A frame is not a PHPThis HTTP `Request`, and an outbound message is not a PHPThis HTTP `Response`.',
+        'the exact raw handshake request target, accepted URI form, path-normalization and query behavior',
+        'Default to best-effort delivery with no replay across reconnects.',
+        '365 application-owned assertions',
+        'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
+    ],
+    'docs/consumer-contract.md' => [
+        'Contract version: 9',
+        '## Proposed application-owned WebSocket profile',
+        'PHPThis has no WebSocket runtime or core WebSocket API.',
+        'Frames never become PHPThis HTTP `Request` or `Response` values',
+        'Do not add a framework WebSocket server, client, event loop, connection manager, daemon, supervisor, generic channel, broadcaster, pub/sub, event bus, middleware, context bag, service locator, discovery mechanism, hidden retry, replay, deduplication, acknowledgement, reconnect, or exactly-once behavior.',
+        'Proposed ADR 034 documents one independent application-owned WebSocket proof without accepting a framework WebSocket runtime, changing application validity, or making its recipe limits universal.',
+    ],
+    'docs/knowledge-map.md' => [
+        '| Propose, add, explain, or review a WebSocket path |',
+        'verify that frames never become PHPThis HTTP `Request` or `Response` values and no framework WebSocket runtime exists',
+    ],
+    'docs/architecture.md' => [
+        'Proposed ADR 034 keeps WebSockets outside that HTTP graph.',
+        'There is no WebSocket namespace or runtime in core.',
+        'one measured local recipe, not architecture defaults',
+    ],
+    'docs/security.md' => [
+        '## WebSocket limits',
+        'A successful protocol upgrade is not permanent authentication or authorization.',
+        'Authenticate explicitly after upgrade even when the handshake also rejects invalid credentials',
+        'do not add an unbounded gateway or application queue',
+        'one local recipe, not security defaults',
+    ],
+    'docs/vocabulary.md' => [
+        '| application-owned WebSocket integration |',
+        '| WebSocket composition root |',
+        '| WebSocket command |',
+        '| best-effort WebSocket delivery |',
+    ],
+    'docs/evaluation.md' => [
+        'Proposed ADR 034 adds an independent consumer proof for one application-owned WebSocket path without adding a framework implementation.',
+        '365 application-owned assertions',
+        'This establishes that the explicit boundary is viable for that pinned local recipe',
+    ],
+    'docs/guardrails.md' => [
+        'proposed ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
+        'keeps `.ai/websockets.md` optional for existing applications under Contract version 9',
+    ],
+    'README.md' => [
+        'Proposed [application-owned WebSocket integration](docs/websockets.md)',
+        'Frames are parsed into a narrow typed command and never adapted to PHPThis HTTP requests or responses',
+        'ADR 034 is evidence-backed guidance awaiting accountable-human review, not an accepted core capability.',
+    ],
+    'VISION.md' => [
+        'An application that needs WebSockets can keep its pinned mature runtime',
+        'without adding a framework real-time runtime or adapting frames into HTTP values',
+    ],
+    'ROADMAP.md' => [
+        'Evidence obtained, decision proposed: ADR 034',
+        'Human review of the exact recipe remains pending; no framework runtime, dependency, API, contract version, Strict Profile rule, or core-line increase is proposed.',
+    ],
+    '.ai/README.md' => [
+        '| Propose, adopt, or change application-owned WebSockets |',
+        '`.ai/websockets.md`',
+    ],
+    '.ai/application-context.md' => [
+        'Include `.ai/websockets.md` in the current skeleton and template with `NOT_APPLICABLE(WEBSOCKETS)`',
+        'this additional file is not a checker requirement',
+    ],
+    '.ai/websockets.md' => [
+        '# Application-owned WebSocket integration contract',
+        'WebSockets are an optional consuming-application capability, not a PHPThis runtime feature.',
+        'A frame becomes one operation-specific final readonly command, not an HTTP request.',
+        'Do not add framework-owned WebSocket, event-loop, connection-manager, daemon, or supervisor primitives.',
+    ],
+    '.ai/rules.md' => [
+        'Keep optional WebSockets application-owned:',
+        'adapting frames into PHPThis HTTP requests or responses',
+    ],
+    '.ai/testing.md' => [
+        'An application that adopts WebSockets must test its parser, current authentication and authorization',
+        'Real child-process and socket evidence must cover readiness without a blind sleep',
+    ],
+    'AGENTS.md' => [
+        'Keep optional WebSockets application-owned and separate from PHPThis HTTP:',
+        'Do not adapt frames into PHPThis `Request` or `Response`.',
+    ],
+    'templates/application/.ai/README.md' => [
+        '| Adopt or change application-owned WebSockets |',
+        'installed `vendor/phpthis/framework/docs/websockets.md`',
+    ],
+    'templates/application/.ai/websockets.md' => [
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+        'Keep every WebSocket type and the selected runtime application-owned and manually composed.',
+        'Frames never become PHPThis HTTP `Request` or `Response` values',
+        'real child-process and socket evidence',
+    ],
+    'templates/application/.ai/architecture.md' => [
+        '## Optional application-owned WebSockets',
+        'Keep frames outside PHPThis `Request`, `Response`, `Router`, `RequestBoundary`, `ResponseEmitter`, and terminal request-summary types.',
+    ],
+    'templates/application/.ai/integrations.md' => [
+        '## Optional WebSocket runtime dependency',
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+    ],
+    'templates/application/.ai/operations.md' => [
+        '## WebSocket runtime',
+        'forced-stop owner, restart, deployment topology, capacity, scaling, incident policy',
+    ],
+    'templates/application/.ai/rules.md' => [
+        'Do not adapt frames into PHPThis HTTP `Request` or `Response`.',
+        'Do not add a generic WebSocket middleware, gateway, channel, room, broadcaster, pub/sub, event bus, service locator, context bag, discovery, application send queue, hidden retry, replay, acknowledgement, resume, or exactly-once claim.',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'WebSocket integration and lifecycle tests: `NOT_APPLICABLE(WEBSOCKETS)`',
+        'Real child-process and socket tests prove readiness without a blind sleep',
+    ],
+    'templates/application/AGENTS.md' => [
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+        'Frames never become PHPThis HTTP `Request` or `Response` values.',
+    ],
+    'skeleton/.ai/README.md' => [
+        '| Introduce or change application-owned WebSockets |',
+        'installed `vendor/phpthis/framework/docs/websockets.md`',
+    ],
+    'skeleton/.ai/websockets.md' => [
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+        'The existing `GET /health` path remains an independent HTTP path.',
+        'Do not add PHPThis WebSocket primitives, HTTP adaptation',
+    ],
+    'skeleton/.ai/architecture.md' => [
+        '## Optional application-owned WebSockets',
+        'The existing `GET /health` execution path is HTTP only.',
+    ],
+    'skeleton/.ai/integrations.md' => [
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+        'Keep retries, replay, acknowledgement, delivery, and backend-failure behavior explicit',
+    ],
+    'skeleton/.ai/operations.md' => [
+        '## WebSocket runtime',
+        'forced-stop owner, restart, deployment topology, capacity, scaling, incident policy',
+    ],
+    'skeleton/.ai/rules.md' => [
+        'Do not adapt frames into PHPThis HTTP `Request` or `Response`.',
+        'Do not add a generic WebSocket middleware, gateway, channel, room, broadcaster, pub/sub, event bus, service locator, context bag, discovery, application send queue, hidden retry, replay, acknowledgement, resume, or exactly-once claim.',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'WebSocket integration and lifecycle tests: `NOT_APPLICABLE(WEBSOCKETS)`',
+        'Real child-process and socket tests prove readiness without a blind sleep',
+    ],
+    'skeleton/AGENTS.md' => [
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+        'Frames never become PHPThis HTTP `Request` or `Response` values.',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/034-application-owned-websocket-integration.md',
+        'docs/websockets.md',
+        'templates/application/.ai/websockets.md',
+    ],
+];
+
+foreach ($websocketArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read WebSocket boundary artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "WebSocket boundary artifact marker is missing from {$relativePath}: {$marker}";
+        }
+    }
+}
+
+$forbiddenWebSocketRuntimePathPattern = '/(?:websockets?|realtime|event[-_]?loop|daemon|supervisor|broadcast(?:ing)?|pub[-_]?sub|channels?)/i';
+$websocketFrameworkSourceFiles = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),
+);
+
+foreach ($websocketFrameworkSourceFiles as $websocketFrameworkSourceFile) {
+    if (!$websocketFrameworkSourceFile instanceof SplFileInfo || !$websocketFrameworkSourceFile->isFile()) {
+        continue;
+    }
+
+    $relativePath = substr($websocketFrameworkSourceFile->getPathname(), strlen($root) + 1);
+
+    if (preg_match($forbiddenWebSocketRuntimePathPattern, $relativePath) === 1) {
+        $failures[] = "WebSocket runtime mechanism must remain outside framework source: {$relativePath}.";
+    }
+}
+
+$websocketPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (is_string($websocketPackageInventory)) {
+    $websocketPackagePaths = preg_split('/\R/', $websocketPackageInventory);
+
+    if (is_array($websocketPackagePaths)) {
+        foreach ($websocketPackagePaths as $websocketPackagePath) {
+            if (
+                str_starts_with($websocketPackagePath, 'src/')
+                && preg_match($forbiddenWebSocketRuntimePathPattern, $websocketPackagePath) === 1
+            ) {
+                $failures[] = "WebSocket runtime mechanism must remain outside the framework package API: {$websocketPackagePath}.";
+            }
+        }
+    }
+}
+
+$websocketProofOnlyDependencies = [
+    'amphp/amp',
+    'amphp/byte-stream',
+    'amphp/http',
+    'amphp/http-server',
+    'amphp/socket',
+    'amphp/websocket',
+    'amphp/websocket-client',
+    'amphp/websocket-server',
+    'ext-pcntl',
+    'revolt/event-loop',
+];
+
+foreach (['composer.json', 'skeleton/composer.json'] as $websocketComposerPath) {
+    $contents = file_get_contents($root . '/' . $websocketComposerPath);
+    $manifest = is_string($contents) ? json_decode($contents, true) : null;
+
+    if (!is_array($manifest)) {
+        $failures[] = "Cannot decode {$websocketComposerPath} for the WebSocket dependency boundary.";
+        continue;
+    }
+
+    foreach (['require', 'require-dev'] as $dependencySection) {
+        $dependencies = $manifest[$dependencySection] ?? [];
+
+        if (!is_array($dependencies)) {
+            continue;
+        }
+
+        foreach (array_keys($dependencies) as $dependency) {
+            if (
+                is_string($dependency)
+                && in_array(strtolower($dependency), $websocketProofOnlyDependencies, true)
+            ) {
+                $failures[] = "Application-owned WebSocket proof dependency {$dependency} must not enter {$websocketComposerPath}:{$dependencySection}.";
+            }
+        }
+    }
+}
+
+$websocketApplicationChecker = file_get_contents($root . '/verification/ApplicationChecker.php');
+
+if (
+    is_string($websocketApplicationChecker)
+    && preg_match('/[\'\"]\\.ai\\/websockets\\.md[\'\"]\s*,/', $websocketApplicationChecker) === 1
+) {
+    $failures[] = 'Contract version 9 must not checker-require the optional application WebSocket context file.';
+}
+
+$websocketConsumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
+
+if (
+    is_string($websocketConsumerProjectProof)
+    && str_contains($websocketConsumerProjectProof, 'proveWebSocketContextIsRequired')
+) {
+    $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/websockets.md is absent.';
 }
 
 $requestPolicyArtifactMarkers = [

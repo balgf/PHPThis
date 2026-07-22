@@ -17,6 +17,10 @@ If this application has no external integrations, state that explicitly and remo
 
 A remote cache backend is an external integration even though cached data is disposable. Its failure path remains visible and bounded; do not silently retry, silently serve stale data, or report a cache failure as an authoritative-data miss unless the recorded application policy explicitly permits that outcome.
 
+## Optional WebSocket runtime dependency
+
+`NOT_APPLICABLE(WEBSOCKETS)`: no WebSocket runtime package or protocol integration is adopted by default. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record the selected mature third-party package and exact supported version, contract source, non-secret configuration, failure ownership, update policy, and any external authentication, broker, proxy, or TLS boundary in `.ai/websockets.md` and `.ai/operations.md`. Keep retries, replay, acknowledgement, delivery, and backend-failure behavior explicit; do not invent a generic gateway, channel, broadcaster, pub/sub, or event-bus abstraction.
+
 ## Side-effect rules
 
 - {{SIDE_EFFECT_RULE_1}}

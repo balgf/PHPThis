@@ -12,6 +12,7 @@
 
 - Supported PHP version: 8.4
 - Web runtime: PHP's built-in server for local verification only.
+- WebSocket runtime: `NOT_APPLICABLE(WEBSOCKETS)`; `.ai/websockets.md` owns any future application-owned process and protocol decision.
 - Worker runtime: `NOT_APPLICABLE(JOBS)`; `.ai/jobs.md` owns any future durable-job lifecycle decision.
 - Operational application console and scheduler: `NOT_APPLICABLE(CLI)`; `.ai/cli.md` owns any future adoption.
 - Database migrations: `NOT_APPLICABLE(MIGRATIONS)`; `.ai/migrations.md` owns any future adoption.
@@ -24,6 +25,10 @@
 ## Request-policy runtime
 
 `NOT_APPLICABLE(REQUEST_POLICY)`: the public health-only starter accepts no credential and has no identity, tenant, authorization, credential verifier, expiry, rotation, revocation, or policy-source dependency. Before protecting a route, record those runtime facts, authorization-header forwarding, fail-closed dependency behavior, status-only known-denial summaries, and class-only unexpected-failure redaction without copying secrets or sensitive identifiers.
+
+## WebSocket runtime
+
+`NOT_APPLICABLE(WEBSOCKETS)`: the starter declares no listener, event-loop process, supervisor, proxy, TLS termination, connection registry, capacity, or scaling policy. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record the exact runtime package and version, separate entrypoint and process identity, listener and trusted-proxy boundary, non-secret configuration source, startup and readiness contract, heartbeat, idle and absolute lifetime, send and close deadlines, connection and rate limits, graceful stop, forced-stop owner, restart, deployment topology, capacity, scaling, incident policy, and dated operational source. Record the redacted connection-summary destination and its backpressure and outage behavior without copying credentials, identifiers, headers, or frames.
 
 ## HTTP cache runtime
 

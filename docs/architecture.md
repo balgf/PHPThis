@@ -45,6 +45,22 @@ The router stores objects, not class names, so dispatch does not need reflection
 
 ADR 033 permits an optional application-owned request-handler decorator at that existing handler seam. Each final named decorator implements `RequestHandler`, owns exactly one downstream `RequestHandler`, and either short-circuits or calls it once with the same immutable request. Any nested outer-to-inner order remains visible beside the affected `Route`; no pipeline, registry, helper, priority, discovery, `$next` callable, or context bag assembles it. A replacement immutable response preserves every unchanged field, and exceptions propagate unchanged. The decorator may own only explicitly named bounded I/O. It cannot wrap `Application`, `RequestBoundary`, the terminal request-summary coordinator, or `ResponseEmitter`, so the flat transport and terminal paths do not become composable chains. The pattern adds no core class or runtime dependency.
 
+Proposed ADR 034 keeps WebSockets outside that HTTP graph. An adopting application pins a mature third-party runtime and constructs a separate foreground process whose listener, handshake, frame parser, connection lifecycle, heartbeat, and protocol close behavior never enter PHPThis HTTP types. After its own bounded parse, current authentication, and current authorization, the process may call one narrowly typed application operation and await bounded outbound sends. Shared typed application behavior does not make a frame a `Request`, a message a `Response`, or the WebSocket process another `RequestBoundary`.
+
+```text
+application-owned WebSocket composition root
+  -> pinned third-party event-loop and WebSocket runtime
+    -> exact handshake policy
+    -> bounded frame and message parser
+      -> final readonly application command
+        -> current authorization
+          -> narrow typed application operation
+            -> bounded sequential sends
+    -> finite redacted connection-summary attempt
+```
+
+There is no WebSocket namespace or runtime in core. Connection limits, frame and byte rates, message fields, idle and absolute lifetimes, heartbeat, send and close deadlines, backpressure, ordering, reconnect, delivery, signal shutdown, restart, proxy, supervisor, broker, scaling, and capacity remain explicit application and deployment decisions. The independent consumer's Amp 4.0.0 values are one measured local recipe, not architecture defaults.
+
 ## Source responsibilities
 
 - `Application`: selects HTTP outcomes, copies matched routing metadata onto the immutable request, and delegates to one handler.
@@ -53,6 +69,8 @@ ADR 033 permits an optional application-owned request-handler decorator at that 
 - `Session`: bounded immutable snapshots and one lazy native-file session lifecycle; authentication, authorization, expiry, and CSRF remain application policy.
 - `Database`: explicit PDO execution and query accounting.
 - `example`: proves the complete manual wiring path, including its application-owned terminal request coordinator and sink; the optional feature-first CRUD profile with bounded application-owned user and document continuations; a typed Create operation with visible transactional data and job publication; one SQLite-specific one-shot durable-job worker; bounded typed-item Get use cases; nested protected document routes with explicitly ordered, replaceable application request-policy adapters; and one application-owned local document-file upload and full-download path.
+
+An application-owned WebSocket process is not a new source responsibility for any core namespace. It is consumer integration code governed by the selected runtime and its application decision.
 
 ADR 026 adds only the concrete transport values `RequestUpload`, `RequestUploadError`, and `LocalFileBody` plus exact framing and emission behavior. The example parser requires one `document` field, applies an operation-specific limit, verifies PHP provenance and actual size, and calls the concrete `LocalDocumentFiles` operation. That operation generates its destination, moves the temporary upload, and owns permissions and cleanup. The download handler resolves a fixed stored file and returns a full `200`; `ResponseEmitter` verifies its regular-file type and expected length before headers and reads fixed chunks. Range, remote storage, client metadata trust, content inspection, authorization, retention, and deployment topology remain explicit application concerns.
 
@@ -66,4 +84,4 @@ ADR 022 adds no core data, pagination, or SQL namespace. `ListDocumentsHandler` 
 
 There is no cache namespace or cache mechanism in the core. HTTP response policy remains an explicit property of the response-producing path. Framework-owned 404, 405, and unknown-failure 500 responses explicitly prohibit storage; the skeleton and example do the same for their current handlers. PHPThis does not rewrite arbitrary handler responses, so every additional application path still owns and tests its policy. If an application later adopts server-side caching, it manually wires a narrowly named typed application service at the handler boundary; that service owns one cache-aside execution path and its backend-specific policy. It is not a generic key-value facility, middleware, or replacement for the authoritative data path.
 
-There are no providers, repositories, models, middleware pipelines, request-context bags, policy registries, generic paginators, SQL/binding/placeholder helpers, or controllers in the core. `RequestBoundary` is one named transport boundary, not a composable middleware chain. ADR 033's route-local application decorator implements the existing handler interface and is not framework middleware or another boundary. Routing metadata enters only through immutable `PathParameters`; session, principal, tenant, and authorization state do not enter `Request`. An application places narrowly named typed services with explicit non-overlapping key ownership in front of one `SessionLifecycle` instead of adding helpers or a generic key-value repository. An operation interface or operation-specific SQL owner is introduced only for a concrete tested responsibility such as ADR 021's typed use-case entry and Create transaction ownership; collection SQL remains in its handler when the complete direct calls are already clear.
+There are no providers, repositories, models, WebSocket servers or connection managers, channels, broadcasters, pub/sub or event buses, middleware pipelines, request-context bags, policy registries, generic paginators, SQL/binding/placeholder helpers, or controllers in the core. `RequestBoundary` is one named HTTP transport boundary, not a composable middleware chain or a WebSocket adapter. ADR 033's route-local application decorator implements the existing handler interface and is not framework middleware or another boundary. Routing metadata enters only through immutable `PathParameters`; session, principal, tenant, authorization, and WebSocket connection state do not enter `Request`. An application places narrowly named typed services with explicit non-overlapping key ownership in front of one `SessionLifecycle` instead of adding helpers or a generic key-value repository. An operation interface or operation-specific SQL owner is introduced only for a concrete tested responsibility such as ADR 021's typed use-case entry and Create transaction ownership; collection SQL remains in its handler when the complete direct calls are already clear.

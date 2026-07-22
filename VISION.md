@@ -48,6 +48,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - One application-owned terminal summary correlates a selected response with bounded per-connection query evidence through exactly one failure-isolated sink invocation attempt, without claiming durable delivery or adding a framework logger.
 - An adopted schema history remains application-owned, finite, checksum-locked, forward-only, and engine-specific, with explicit authority, ordering, transaction, lock, and recovery evidence rather than a framework migration abstraction.
 - An adopted cache remains a backend-specific application optimization after current authorization, and any distributed lease states its owner-token, expiry, topology, outage, and non-fencing limits without becoming a generic framework API.
+- An application that needs WebSockets can keep its pinned mature runtime, message boundary, current authorization, backpressure, delivery, and process lifecycle explicit in a separate composition root without adding a framework real-time runtime or adapting frames into HTTP values.
 - CRUD-shaped work follows the optional feature-first reference profile or one recorded application-owned alternative without runtime discovery or filesystem enforcement.
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
@@ -67,6 +68,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
 - Providing a generic distributed-lock or lease abstraction, automatic renewal, or a fencing or exactly-once claim unsupported by the selected backend and protected operation.
 - Providing generic or framework middleware, a middleware pipeline, or a request-context, identity, tenant, or authorization engine that hides application policy or its I/O. ADR 033's route-local application-owned request-handler decorator is not such an engine.
+- Providing a WebSocket server, client, event loop, connection manager, daemon, supervisor, generic channel, broadcaster, pub/sub, real-time middleware, connection context, automatic retry, replay, acknowledgement, reconnect, or exactly-once delivery API; proposed ADR 034 keeps those concerns application-owned in a pinned third-party runtime.
 - Providing a global logger, facade, middleware logger, event bus, automatically discovered sink, per-query logging, or hidden database instrumentation.
 - Providing a generic upload, storage, filesystem, or stream facade; trusting client filenames or media types; or hiding persistence, cleanup, ranges, content processing, or file ownership.
 - Providing a core migration API, schema builder, migration DSL, automatic discovery, inferred rollback, runtime SQL loading, HTTP-startup migration, or portable DDL guarantee.

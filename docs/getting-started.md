@@ -90,6 +90,7 @@ PHPThis already defines framework mechanics. The application context should add 
 - each runtime connection's required objects and actions, explicitly unavailable schema or administrative authority, privilege-verification source and date, and separation from migration credentials;
 - separately, either `NOT_APPLICABLE(MIGRATIONS)` in `.ai/migrations.md` or one accepted engine-specific migration policy naming the sole application command, separate migration authority, finite ordered unrolled manifest, permanent identifiers and checksums, bounded ledger, per-migration transactions, lock topology, immutable forward recovery, finite redacted output, and real-console plus no-HTTP-startup evidence;
 - external services, timeouts, idempotency requirements, retry ownership, and observable side effects;
+- when WebSockets are proposed, either record non-adoption or own a reviewed application decision naming the pinned mature runtime, separate composition root, exact handshake and message boundary, current authorization, connection/rate/lifetime/backpressure/delivery limits, redaction, shutdown and deployment ownership, and real process/socket evidence; never adapt frames to PHPThis HTTP `Request` or `Response` values or add a framework WebSocket mechanism;
 - authentication and authorization boundaries;
 - session adoption or explicit non-adoption, typed state schema and key ownership, cookie policy, isolated native file-storage ownership and cleanup, deployment topology, concurrent-request evidence, and each applicable regeneration, expiry, logout, revocation, and CSRF policy with absent concerns explicitly not applicable;
 - one explicit HTTP response policy covering success, mapped and unknown failure, redirect, not-found, cookie-emitting, personalized, authenticated, and sensitive paths as applicable, including exact `Cache-Control`, validator, and `Vary` behavior; framework-owned 404, 405, and 500 `no-store` behavior does not decide arbitrary application responses;
@@ -123,6 +124,7 @@ After setup, ask the AI to inspect the current application rather than teach fro
 - `Audit this database path for PHT006, unique bound data, finite SQL structure, runtime least privilege, and migration-credential separation; cite the installed contract and application evidence.`
 - `Explain this PHT diagnostic from the installed profile and repair its cause.`
 - `Explain the installed session lifecycle, then identify the authentication, authorization, expiry, revocation, and CSRF decisions this application still owns.`
+- `Inspect the proposed application-owned WebSocket profile, then list the runtime, authentication, authorization, resource, delivery, and deployment decisions this application must own before implementation.`
 
 The AI should cite concrete paths, distinguish existing behavior from proposals, run `composer check` after changes, and surface consequential choices for human judgment. The accountable human approves accepted application decisions and owns the resulting system.
 

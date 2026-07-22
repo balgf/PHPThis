@@ -8,6 +8,11 @@
 | narrowest route type | `positive-int`, `uuid`, or `ulid` when that exact syntax is intended; `token` only for a genuinely opaque bounded identifier | type priority, failed-type fallback, automatic domain binding |
 | handler | object with `handle(Request): Response` | controller, action, responder |
 | application-owned request-handler decorator | final route-local application handler with one narrowly named concern and exactly one downstream `RequestHandler`, composed in visible outer-to-inner order beside the `Route` | middleware, interceptor, filter, pipeline element, `$next` callable |
+| application-owned WebSocket integration | separate application process using a pinned mature third-party runtime, an explicit handshake and message boundary, and a narrowly typed application operation | PHPThis WebSocket server, HTTP upgrade mode, framework real-time subsystem |
+| WebSocket composition root | visible application entry point that constructs the selected event loop, listener, protocol handler, policy, operation, bounds, and summary sink | provider, discovered daemon, framework worker |
+| WebSocket command | final readonly operation-specific value produced only after bounded frame and message parsing | HTTP request, payload bag, channel event, automatically bound message |
+| WebSocket connection summary attempt | one finite redacted application-owned invocation after a connection outcome | frame log, audit guarantee, delivery receipt, HTTP terminal request summary |
+| best-effort WebSocket delivery | bounded ordered send attempts within the application's stated connection scope, without peer-processing or replay guarantees | acknowledgement, durable delivery, exactly-once execution |
 | connection | instrumented PDO boundary | DB facade, query builder |
 | PDO transport | native-driver connection, binding, fetch, transaction, budget, and trace behavior certified without SQL translation | database abstraction, portable dialect |
 | application-owned SQL dialect | complete engine-specific SQL and database semantics recorded and tested by the consuming application | framework query language, automatic dialect selection |

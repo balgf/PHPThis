@@ -20,6 +20,7 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `public/index.php` | Load request-scoped composition, read PHP runtime globals, invoke the terminal coordinator, and emit its unchanged response. |
+| WebSocket runtime | `NOT_APPLICABLE(WEBSOCKETS)` | The health-only starter has no WebSocket process, listener, protocol, or connection state. |
 | Application-owned request-handler decorators | `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)` | `HealthHandler` is constructed directly for the sole route. |
 | Terminal request summary | `src/Observability/` | Own correlation, finite database-source observation, the closed redacted event, one injected sink, and failure-isolated attempt semantics. |
 | Inbound operation data | `NOT_APPLICABLE(INPUT)` | The public health operation accepts no application-owned fields and constructs no request or command. |
@@ -34,6 +35,12 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 `NOT_APPLICABLE(INPUT)`: `GET /health` accepts no application-owned body, query, form, or header fields. The outer `RequestBoundary` still bounds and validates PHP runtime transport data, but no operation-specific parser or typed command is needed for this health-only state.
 
 Before an operation accepts external data, record one path from its bounded raw representation through an operation-specific named parser factory into a final readonly request or command with a private constructor, then into downstream typed behavior. Add a separate typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership. Record byte, depth, field, list, item, and scalar bounds; required, optional, absent, explicit-null, and unknown-field behavior; exact boolean, integer, string, enum, date, list, and object representations; deterministic validation order; field-specific normalization or explicit none; parser position relative to request policy; generic public failure and redaction; exclusion from operation-owned downstream work; and the native JSON duplicate-key limitation where applicable. Do not add a generic validator, result wrapper, rule-string language, reflection hydration, mass assignment, sanitization magic, or automatic request binding.
+
+## Optional application-owned WebSockets
+
+`NOT_APPLICABLE(WEBSOCKETS)`: the health-only starter has no WebSocket dependency, listener, process, event loop, handshake, connection state, message command, or delivery policy. The existing `GET /health` execution path is HTTP only.
+
+Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and replace `.ai/websockets.md` with one approved application-specific contract. Record one explicitly selected mature third-party runtime, separate process entrypoint and composition root, exact handshake and current authorization path, complete bounded message-to-final-readonly-command boundary, one narrowly named typed operation, finite connection and sequential send path, backpressure, lifecycle, redaction, deployment, supervisor, and scaling decisions. Keep frames outside PHPThis `Request`, `Response`, `Router`, `RequestBoundary`, `ResponseEmitter`, and terminal request-summary types. Do not add a generic WebSocket abstraction or adapt the runtime into the HTTP execution model.
 
 ## Optional application-owned request-handler decorators
 

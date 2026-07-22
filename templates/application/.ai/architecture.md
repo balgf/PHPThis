@@ -24,6 +24,7 @@ Every resource path identifier recorded here uses the narrowest fixed declaratio
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `{{HTTP_BOUNDARY_PATH}}` | {{HTTP_BOUNDARY_RESPONSIBILITY}} |
+| WebSocket runtime | `NOT_APPLICABLE(WEBSOCKETS)` | No WebSocket process, listener, protocol, or connection state is adopted by default; `.ai/websockets.md` owns any later application-specific adoption. |
 | Application-owned request-handler decorators | `{{REQUEST_HANDLER_DECORATOR_PATHS_OR_NOT_APPLICABLE}}` | {{REQUEST_HANDLER_DECORATOR_RESPONSIBILITIES_OR_NOT_APPLICABLE}} |
 | Inbound operation data | `{{INPUT_BOUNDARY_PATHS_OR_NOT_APPLICABLE}}` | {{INPUT_BOUNDARY_RESPONSIBILITIES_OR_NOT_APPLICABLE}} |
 | Typed session services | `{{SESSION_SERVICE_PATHS_OR_NOT_APPLICABLE}}` | {{SESSION_SERVICE_KEY_OWNERSHIP_OR_NOT_APPLICABLE}} |
@@ -45,6 +46,12 @@ Every resource path identifier recorded here uses the narrowest fixed declaratio
 For each operation, record complete byte, depth, field-count, list-count, item, and scalar limits as applicable; required and optional fields; absent-versus-explicit-null behavior; rejection of unknown fields; exact boolean, integer, string, enum, date, list, and object representations; deterministic validation order; and the native JSON duplicate-key limitation or a separately accepted parser. The factory checks runtime types before conversion and owns a private constructor. Downstream behavior uses only the completed value. Add a separate typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership, and record whether parsing occurs before or after authentication, tenant resolution, and authorization.
 
 No normalization is implicit. A deliberate field transformation records its order, pre- and post-transform bounds, collision behavior, and retained canonical value. Validation decides whether input is accepted; sink-specific output encoding, named SQL bindings, and current authorization remain separate responsibilities. Rejection prevents operation-owned downstream I/O and mutation and makes zero calls to a typed seam when present. Earlier transport or request-policy work remains separately bounded under its recorded order. Keep the public failure finite, stable, generic, and free of submitted values or internal messages. Do not introduce a generic validator, result wrapper, rule-string language, reflection hydration, mass assignment, sanitization magic, or automatic request binding.
+
+## Optional application-owned WebSockets
+
+`NOT_APPLICABLE(WEBSOCKETS)`: this application context template has no WebSocket process or execution path. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and replace `.ai/websockets.md` with the accepted application-specific contract.
+
+Record one explicitly selected mature third-party runtime, separate process entrypoint and composition root, exact handshake and current authorization path, complete bounded message-to-final-readonly-command boundary, one narrowly named typed operation, finite connection and send path, backpressure, lifecycle, redaction, deployment, supervisor, and scaling decisions. Keep frames outside PHPThis `Request`, `Response`, `Router`, `RequestBoundary`, `ResponseEmitter`, and terminal request-summary types. Do not add a generic WebSocket abstraction or adapt the runtime into the HTTP execution model.
 
 ## Optional application-owned request-handler decorators
 

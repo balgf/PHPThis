@@ -38,6 +38,16 @@ AI-oriented explicitness does not replace security review.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
 
+## WebSocket limits
+
+Proposed ADR 034 keeps WebSockets in a separate application-owned process using a pinned mature third-party runtime. A successful protocol upgrade is not permanent authentication or authorization. Authenticate explicitly after upgrade even when the handshake also rejects invalid credentials, enforce current expiry and revocation policy, and authorize every command and continuing or emitted resource-specific action at the points recorded by the application. Do not place identity or authorization in a PHPThis request, a generic connection context bag, a cache, or a global.
+
+Require an exact raw request target, explicit URI-normalization policy, strict raw credential grammar before parser normalization, and explicit origin policy; an origin allowlist does not replace authentication or authorization. Bound raw frames, aggregate messages, UTF-8, parser depth, fields, frame and byte rates, accepted commands, total and per-principal connections, concurrent work, outbound frame size, in-flight sends, application idle, absolute lifetime, heartbeat, send, close, and shutdown join. Await sends under a finite deadline and close a slow consumer; do not add an unbounded gateway or application queue. Keep blocking database, filesystem, network-client, sleep, and subprocess work out of event-loop callbacks unless the chosen runtime provides and the application proves an explicit nonblocking boundary.
+
+Treat delivery as best effort unless a separately reviewed durable protocol proves more. Ordered send attempts do not prove peer processing. Reconnect does not imply replay, and an application completion message is not a peer acknowledgement. Do not add hidden retry, replay, deduplication, acknowledgement, resume, reconnect, or exactly-once claims.
+
+Connection summaries use finite code-owned outcomes and counters and omit paths, origins, headers, cookies, credentials, principals, request and resource identifiers, payloads, frame contents, exception messages, source locations, and stacks. Startup, shutdown, TLS, proxy trust, supervisor ownership, forced stop, memory/capacity, load balancing, affinity, multi-process connection state, broker topology, and incident recovery remain deployment security decisions. Prove protocol behavior with real sockets and process behavior with a real child process. The exact Amp 4.0.0 consumer limits are one local recipe, not security defaults.
+
 ## Request-handler decorator limits
 
 ADR 033 permits an optional application-owned request-handler decorator only at an explicit route's handler seam. The complete order is visible beside the route, each final decorator owns exactly one downstream `RequestHandler`, and it either short-circuits or invokes that handler once with the same immutable request. No generic middleware interface, pipeline, registry, priority, discovery, `$next` callable, or request-context bag is accepted.

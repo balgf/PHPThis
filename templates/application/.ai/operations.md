@@ -12,6 +12,7 @@
 
 - Supported PHP version: 8.4
 - Web runtime: {{WEB_RUNTIME}}
+- WebSocket runtime: `NOT_APPLICABLE(WEBSOCKETS)`; `.ai/websockets.md` owns any future application-owned process and protocol decision.
 - Worker runtime: {{WORKER_RUNTIME_OR_NOT_APPLICABLE}}
 - Operational application console and scheduler: `.ai/cli.md`
 - Database migrations: `.ai/migrations.md`
@@ -38,6 +39,10 @@
 - Known-denial status-only summary and unexpected-failure class-only redaction: {{REQUEST_POLICY_LOGGING_POLICY_OR_NOT_APPLICABLE}}
 
 ADR 023 supersedes the earlier no-denial-log wording. A known denial receives only the common terminal summary's generic known-failure outcome and response status; an unexpected failure contributes only its concrete class. Never record credentials, complete sensitive identifiers, or internal policy messages, and do not add a second policy event.
+
+## WebSocket runtime
+
+`NOT_APPLICABLE(WEBSOCKETS)`: this template declares no listener, event-loop process, supervisor, proxy, TLS termination, connection registry, capacity, or scaling policy. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record the exact runtime package and version, separate entrypoint and process identity, listener and trusted-proxy boundary, non-secret configuration source, startup and readiness contract, heartbeat, idle and absolute lifetime, send and close deadlines, connection and rate limits, graceful stop, forced-stop owner, restart, deployment topology, capacity, scaling, incident policy, and dated operational source. Record the redacted connection-summary destination and its backpressure and outage behavior without copying credentials, identifiers, headers, or frames.
 
 ## HTTP cache runtime
 

@@ -37,3 +37,7 @@ Accepted records:
 - `031-bounded-alpha-3-release-scope.md`
 - `032-explicit-uuid-and-ulid-route-types.md`
 - `033-application-owned-request-handler-decorators.md`
+
+Proposed records awaiting accountable-human review:
+
+- `034-application-owned-websocket-integration.md`
