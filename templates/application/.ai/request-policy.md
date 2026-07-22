@@ -39,4 +39,4 @@ Complete this guide before protecting a route. Read installed `vendor/phpthis/fr
 - Denial, order, zero-protected-work, redaction, and replacement evidence: {{REQUEST_POLICY_EVIDENCE}}
 - Credential-parser evidence or explicit proof limit: {{CREDENTIAL_PARSER_EVIDENCE_OR_LIMIT}}
 
-Do not add middleware, a policy registry, a request-context bag, service location, discovery, hidden tenant resolution, an implicit or global authorization scope, or stored authorization decisions.
+Do not replace or obscure the action-specific adapter with an application-owned request-handler decorator, generic or framework middleware, a policy registry, a request-context bag, service location, discovery, hidden tenant resolution, an implicit or global authorization scope, or stored authorization decisions.

@@ -19,4 +19,4 @@ Rules:
 - Treat `SessionUnavailable` as an ordinary stale-mutation result that must not be retried inside the same request. Passive invalid or obsolete input emits no cookie, preventing a delayed response from replacing a freshly rotated cookie. After invalidation, no further session operation is allowed in that request.
 - Native read-and-close does not refresh file modification time. Configure native or external cleanup retention beyond the application's absolute session lifetime; do not rely on read traffic to keep files alive.
 
-The request boundary owns `begin`, `finish`, and `abort`. Application services own only the operation they need. Never add a global helper, middleware layer, request attribute, or generic session repository around this lifecycle.
+The request boundary owns `begin`, `finish`, and `abort`. Application services own only the operation they need. Never move this lifecycle into an application-owned request-handler decorator or add a global helper, generic or framework middleware layer, request attribute, or generic session repository around it.

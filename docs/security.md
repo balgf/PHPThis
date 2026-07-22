@@ -38,6 +38,14 @@ AI-oriented explicitness does not replace security review.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
 
+## Request-handler decorator limits
+
+ADR 033 permits an optional application-owned request-handler decorator only at an explicit route's handler seam. The complete order is visible beside the route, each final decorator owns exactly one downstream `RequestHandler`, and it either short-circuits or invokes that handler once with the same immutable request. No generic middleware interface, pipeline, registry, priority, discovery, `$next` callable, or request-context bag is accepted.
+
+A security-related decorator names its exact policy and dependencies rather than claiming generic security coverage. Its tests prove early-response non-entry, exact request and exception propagation, explicit immutable response-field preservation, and every finite I/O or side-effect bound. A decorator outside ADR 020's request-policy adapter cannot read protected data or perform protected mutation before current authentication and authorization. A response-header decorator preserves all unrelated headers, cookies, body, and local-file framing; replacing an immutable response is not permission to drop an existing cache, correlation, cookie, download, or security field.
+
+Decorators cannot wrap `Application`, `RequestBoundary`, the terminal request-summary coordinator, or `ResponseEmitter`. They do not move session finalization, exact error mapping, correlation, terminal-summary redaction, sink invocation, or emission into a route wrapper and do not add a framework security mechanism.
+
 ## Typed input boundaries
 
 ADR 021 keeps field validation and any deliberate normalization in one operation-owned parser. The parser constructs a final readonly command only after the exact object or list shape, runtime types, ranges, and bounds succeed. Invalid input stops before operation-owned downstream I/O and mutation and makes zero calls to a separate typed operation seam when one exists. On a protected route, ADR 020's separately bounded authentication, tenant, and authorization work may deliberately occur before the protected handler parses its operation input.
@@ -56,7 +64,7 @@ The emitter checks regular-file type and exact size before headers and reads fix
 
 ## Request policy
 
-ADR 020 keeps protected-request policy in one application-owned action-specific adapter. The visible order is authenticate, resolve tenant, authorize the current named action, then invoke the protected handler with concrete immutable principal and tenant values. Applications manually wire independently replaceable policies; PHPThis adds no middleware, request context, identity provider, tenant model, permission engine, discovery, or service location.
+ADR 020 keeps protected-request policy in one application-owned action-specific adapter. The visible order is authenticate, resolve tenant, authorize the current named action, then invoke the protected handler with concrete immutable principal and tenant values. Applications manually wire independently replaceable policies; PHPThis adds no framework middleware, generic pipeline, request context, identity provider, tenant model, permission engine, discovery, or service location.
 
 The reference proof is stateless. Its checked-in authenticator is deny-all and its consumer replacement is synthetic and I/O-free; PHPThis supplies no credential parser or verifier. A concrete Bearer implementation maps missing, malformed, and rejected credentials to one generic `401` response with `WWW-Authenticate: Bearer`. Ordinary forbidden and cross-tenant attempts share one generic `403`, so the response does not reveal whether a different tenant relationship exists. Known denials contribute only the generic known-failure outcome and selected status to the common terminal summary; unexpected failures contribute only their concrete class. Authenticated and denied responses start as `private, no-store`.
 

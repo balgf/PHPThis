@@ -4,7 +4,7 @@ Read ADR 023 and `docs/logging.md` before changing request correlation or operat
 
 Rules:
 
-- Keep the coordinator, event construction, and sink application-owned and explicitly wired at the front-controller composition boundary. Add no core event, sink, coordinator, logger, middleware, facade, helper, discovery mechanism, or hidden instrumentation.
+- Keep the coordinator, event construction, and sink application-owned and explicitly wired at the front-controller composition boundary. Do not move any part into an application-owned request-handler decorator. Add no core event, sink, coordinator, logger, generic or framework middleware, facade, helper, discovery mechanism, or hidden instrumentation.
 - Generate 128 random bits during request-scoped composition before bounded request ingestion and encode exactly 32 lowercase hexadecimal characters. Propagate that value as `correlation_id` and the single `X-Request-ID` response header; never echo an arbitrary incoming identifier.
 - Preserve ADR 023's mandatory closed version-1 `application.request_summary` schema with monotonic duration, selected response status, generic outcome, nullable class-only unknown failure, aggregate query evidence, and at most eight finite code-owned database sources. The executable Redis example alone advances to version `2`, preserving those fields and adding exactly one bounded `document_cache` snapshot from `DocumentDetailsCacheTrace`; the health-only skeleton remains version `1`.
 - Give each source a bounded lower-ASCII label, explicit `QueryBudget`, and distinct bounded `QueryTrace`. Preserve raw engine-specific SQL and explicit named parameter arrays at direct `Connection` call sites; do not add an ORM or binding helper to produce observability.

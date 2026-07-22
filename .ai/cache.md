@@ -10,11 +10,13 @@ PHPThis accepts cache policy before it accepts a cache mechanism. HTTP response 
 - Treat `no-cache` as permission to store with mandatory revalidation, not as a synonym for `no-store`.
 - Keep conditional-request handling explicit. An `ETag` or `Last-Modified` value identifies the selected representation; it is not a decorative performance header.
 - Test every application-controlled success, error, redirect, authenticated, anonymous, and cookie-emitting response that can expose different policy. The current framework does not enforce those headers mechanically.
+- Do not use an application-owned request-handler decorator as an HTTP cache-policy default or response post-processor. Each response-producing path retains its explicit policy and tests.
 
 ## Server-side data caching
 
 - Cache only derived, reproducible application data. The authoritative database or external system remains the source of truth, and every miss or eviction must be correct.
 - Put one narrowly named typed application service around one recorded backend-specific cache path, for example `UserSummaryCache`. Do not expose a generic key/value cache, global helper, facade, `remember` callback, or application-wide PSR interface to handlers.
+- An application-owned request-handler decorator does not become a generic cache service or hide cache-aside work. Any permitted decorator-owned cache I/O still uses the narrowly named typed service and keeps its exact cost, order, key ownership, failure behavior, and tests visible beside the affected route.
 - Keep cache-aside I/O visible: construct a bounded versioned key, read, distinguish hit from miss and backend failure, parse a bounded payload into a typed projection, perform the explicit source read on a miss, and write with a finite TTL.
 - Commit authoritative writes first, then explicitly invalidate the finite affected keys. Also account for a stale refill: an in-flight miss can read old authoritative data, a writer can commit and invalidate, and that miss can then repopulate the old value. Record an accepted staleness bound or a backend-specific fence, revision, or compare-and-set mitigation, plus what the application does when invalidation fails. TTL is a bound on intended freshness, not an invalidation strategy or an availability guarantee.
 - Treat cached values as untrusted external input. Reject malformed, oversized, wrong-version, wrong-tenant, duplicate-field, and other non-canonical payload encodings as the recorded failure policy requires. Do not deserialize arbitrary PHP objects.

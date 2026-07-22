@@ -37,7 +37,7 @@ src/
       UserActivitySummary.php
 ```
 
-The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Under ADR 032 and Consumer Contract version 8, each resource chooses the narrowest fixed route type: `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or `token` only for a genuinely opaque bounded identifier. Routing neither normalizes nor looks up the value and never falls back between types. Each operation directory contains only the boundary values and behavior needed by that use case:
+The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Under Consumer Contract version 9, carrying ADR 032 forward, each resource chooses the narrowest fixed route type: `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or `token` only for a genuinely opaque bounded identifier. Routing neither normalizes nor looks up the value and never falls back between types. Each operation directory contains only the boundary values and behavior needed by that use case:
 
 - a Create command parses and validates the complete external input before typed use-case entry;
 - a Create handler owns HTTP media and parsing order, response encoding, and delegation through the concrete command;

@@ -92,17 +92,24 @@ try {
     }
 
     proveInstalledUuidAndUlidRouting($project, $environment);
+    $requestHandlerDecoratorProofPath = proveInstalledRequestHandlerDecorator($project, $environment);
 
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
-    $profileResult = runProcess($profileCommand, $project, $environment);
-    requireSuccess($profileResult, 'The clean skeleton failed the installed profile check.');
-    requireStdoutContains(
-        $profileResult,
-        'PASS application duplication advisory: no possible groups (minimum 48 normalized tokens)',
-    );
-    requireStdoutNotContains($profileResult, 'ADVISORY');
-    requireOutputContains($profileResult, 'PASS PHPThis application check');
-    requireOutputNotContains($profileResult, $project . '/bootstrap.php');
+    try {
+        $profileResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess($profileResult, 'The clean skeleton and request-handler decorator proof failed the installed profile check.');
+        requireStdoutContains(
+            $profileResult,
+            'PASS application duplication advisory: no possible groups (minimum 48 normalized tokens)',
+        );
+        requireStdoutNotContains($profileResult, 'ADVISORY');
+        requireOutputContains($profileResult, 'PASS PHPThis application check');
+        requireOutputNotContains($profileResult, $project . '/bootstrap.php');
+    } finally {
+        if (is_file($requestHandlerDecoratorProofPath) && !unlink($requestHandlerDecoratorProofPath)) {
+            throw new RuntimeException('Unable to remove the installed request-handler decorator proof.');
+        }
+    }
 
     if (!is_file($project . '/vendor/.phpthis/phpstan/resultCache.php')) {
         throw new RuntimeException('The normal application check did not create its persistent PHPStan cache.');
@@ -221,6 +228,214 @@ PHP,
             throw new RuntimeException('Unable to remove the installed routing proof.');
         }
     }
+}
+
+/** @param array<string, string> $environment */
+function proveInstalledRequestHandlerDecorator(string $project, array $environment): string
+{
+    $proofPath = $project . '/installed-handler-decorator-proof.php';
+    writeFile(
+        $proofPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Application;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\Response;
+use PHPThis\Routing\Route;
+use PHPThis\Routing\Router;
+
+require __DIR__ . '/vendor/autoload.php';
+
+final class InstalledDecoratorTrace
+{
+    /** @var list<string> */
+    private array $steps = [];
+
+    private int $downstreamCalls = 0;
+
+    private ?int $decoratorRequestId = null;
+
+    private ?int $downstreamRequestId = null;
+
+    public function recordBefore(Request $request): void
+    {
+        $this->steps[] = 'before';
+        $this->decoratorRequestId = spl_object_id($request);
+    }
+
+    public function recordAfter(): void
+    {
+        $this->steps[] = 'after';
+    }
+
+    public function recordHandler(Request $request): void
+    {
+        $this->steps[] = 'handler';
+        $this->downstreamCalls++;
+        $this->downstreamRequestId = spl_object_id($request);
+    }
+
+    /** @return list<string> */
+    public function steps(): array
+    {
+        return $this->steps;
+    }
+
+    public function downstreamCalls(): int
+    {
+        return $this->downstreamCalls;
+    }
+
+    public function decoratorRequestId(): ?int
+    {
+        return $this->decoratorRequestId;
+    }
+
+    public function downstreamRequestId(): ?int
+    {
+        return $this->downstreamRequestId;
+    }
+}
+
+final readonly class InstalledHeaderDecorator implements RequestHandler
+{
+    public function __construct(
+        private RequestHandler $downstream,
+        private InstalledDecoratorTrace $trace,
+    ) {
+    }
+
+    public function handle(Request $request): Response
+    {
+        $this->trace->recordBefore($request);
+        $response = $this->downstream->handle($request);
+        $this->trace->recordAfter();
+
+        return new Response(
+            $response->status,
+            [...$response->headers, 'X-Decorator-Proof' => 'present'],
+            $response->body,
+            $response->cookies,
+            $response->fileBody,
+        );
+    }
+}
+
+final readonly class InstalledRejectingDecorator implements RequestHandler
+{
+    public function __construct(
+        private RequestHandler $downstream,
+        private bool $reject,
+    ) {
+    }
+
+    public function handle(Request $request): Response
+    {
+        if ($this->reject) {
+            return new Response(429, ['Cache-Control' => 'no-store'], "Rejected\n");
+        }
+
+        return $this->downstream->handle($request);
+    }
+}
+
+final readonly class InstalledDecoratedHandler implements RequestHandler
+{
+    public function __construct(private InstalledDecoratorTrace $trace)
+    {
+    }
+
+    public function handle(Request $request): Response
+    {
+        $this->trace->recordHandler($request);
+
+        return new Response(200, ['Cache-Control' => 'no-store'], "Decorated\n");
+    }
+}
+
+function assertInstalledDecoratedResponse(
+    Response $response,
+    InstalledDecoratorTrace $trace,
+): void {
+    if (
+        $response->status !== 200
+        || $response->headers !== [
+            'Cache-Control' => 'no-store',
+            'X-Decorator-Proof' => 'present',
+        ]
+        || $response->body !== "Decorated\n"
+        || $trace->steps() !== ['before', 'handler', 'after']
+        || $trace->downstreamCalls() !== 1
+        || $trace->decoratorRequestId() === null
+        || $trace->decoratorRequestId() !== $trace->downstreamRequestId()
+    ) {
+        throw new RuntimeException('Installed route decorator did not preserve explicit composition.');
+    }
+}
+
+function assertInstalledDecoratorRejection(
+    Response $response,
+    InstalledDecoratorTrace $trace,
+): void {
+    if ($response->status !== 429 || $trace->downstreamCalls() !== 1) {
+        throw new RuntimeException('Installed rejecting decorator entered downstream work.');
+    }
+}
+
+function assertInstalledDecoratorIsolation(InstalledDecoratorTrace $trace): void
+{
+    if (
+        $trace->downstreamCalls() !== 1
+        || $trace->steps() !== ['before', 'handler', 'after']
+    ) {
+        throw new RuntimeException('Route miss or method rejection entered decorated work.');
+    }
+}
+
+$trace = new InstalledDecoratorTrace();
+$application = new Application(new Router([
+    new Route(
+        'GET',
+        '/decorated',
+        new InstalledHeaderDecorator(
+            new InstalledDecoratedHandler($trace),
+            $trace,
+        ),
+    ),
+    new Route(
+        'GET',
+        '/rejected',
+        new InstalledRejectingDecorator(
+            new InstalledDecoratedHandler($trace),
+            true,
+        ),
+    ),
+    new Route('GET', '/plain', new InstalledDecoratedHandler($trace)),
+]));
+$request = new Request('GET', '/decorated');
+$response = $application->handle($request);
+assertInstalledDecoratedResponse($response, $trace);
+
+$rejectedResponse = $application->handle(new Request('GET', '/rejected'));
+assertInstalledDecoratorRejection($rejectedResponse, $trace);
+
+$application->handle(new Request('POST', '/decorated'));
+$application->handle(new Request('GET', '/missing'));
+assertInstalledDecoratorIsolation($trace);
+
+fwrite(STDOUT, "PASS installed request-handler decorator composition\n");
+PHP,
+    );
+
+    $result = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+    requireSuccess($result, 'The installed framework failed request-handler decorator proof.');
+    requireOutputContains($result, 'PASS installed request-handler decorator composition');
+
+    return $proofPath;
 }
 
 /**

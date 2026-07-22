@@ -370,11 +370,11 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
             : $segment;
 
         $exactMechanismSegment = preg_match(
-            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing))\z/i',
+            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|middlewares?|pipelines?|decorators?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing))\z/i',
             $name,
         ) === 1;
         $camelCaseMechanismSuffix = preg_match(
-            '/(?:\A|(?<=[A-Za-z0-9]))(?:ORM|Orm|Models?|Repositories|Repository|Facades?|Discovery|Observers?|Scopes?|Containers?)(?:Interface|Provider|Factory)?\z/',
+            '/(?:\A|(?<=[A-Za-z0-9]))(?:ORM|Orm|Models?|Repositories|Repository|Facades?|Discovery|Observers?|Scopes?|Containers?|Middleware|Pipeline|Decorator)(?:Interface|Provider|Factory)?\z/',
             $name,
         ) === 1;
         $explicitHiddenMechanismSuffix = preg_match(
@@ -406,6 +406,10 @@ $forbiddenFrameworkMechanismFixtures = [
     'src/Domain/UserObserver.php',
     'src/Domain/GlobalScope.php',
     'src/Domain/ServiceContainer.php',
+    'src/Http/Middleware.php',
+    'src/Http/RequestMiddlewareInterface.php',
+    'src/Http/RequestPipeline.php',
+    'src/Http/HandlerDecorator.php',
     'src/Domain/UserQueryBuilder.php',
     'src/Domain/UserQueryBuilderInterface.php',
     'src/Database/QueryBuilders/SqlSelect.php',
@@ -773,6 +777,7 @@ $requiredRepositoryFiles = [
     'tests/redis-coordination.php',
     'tests/redis-schedule-lease-holder.php',
     'tests/job-worker-crash.php',
+    'tests/handler-decorator.php',
     'tests/request-policy.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
     'tests/fixtures/routing-lookup-index-loop.php.fixture',
@@ -1075,12 +1080,12 @@ foreach ($alpha3ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
 }
 
 $currentConsumerContractVersionMarkers = [
-    'docs/consumer-contract.md' => 'Contract version: 8',
-    'docs/getting-started.md' => 'contract-version-8 Composer scripts',
-    'skeleton/.ai/README.md' => 'Consumer Contract v8 and Strict Profile v2 remain mandatory.',
-    'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile v2',
-    'templates/application/.ai/README.md' => 'Consumer Contract v8 and Strict Profile v2 remain mandatory.',
-    'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile v2',
+    'docs/consumer-contract.md' => 'Contract version: 9',
+    'docs/getting-started.md' => 'contract-version-9 Composer scripts',
+    'skeleton/.ai/README.md' => 'Consumer Contract v9 and Strict Profile v2 remain mandatory.',
+    'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile v2',
+    'templates/application/.ai/README.md' => 'Consumer Contract v9 and Strict Profile v2 remain mandatory.',
+    'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile v2',
 ];
 
 foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1318,9 +1323,9 @@ $routingArtifactMarkers = [
         '`032-explicit-uuid-and-ulid-route-types.md`',
     ],
     'docs/consumer-contract.md' => [
-        'Contract version: 8',
+        'Contract version: 9',
         'This is the canonical contract for an application built with the installed PHPThis version.',
-        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
         '`positive-int`, `token`, `uuid`, or `ulid`',
         'Always use the narrowest route type.',
         'uuid(name): string',
@@ -1402,6 +1407,105 @@ foreach ($routingArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "Typed routing artifact marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$requestHandlerDecoratorArtifactMarkers = [
+    'docs/decisions/033-application-owned-request-handler-decorators.md' => [
+        'Status: accepted',
+        'Consumer Contract version 9 accepts one optional application pattern named an **application-owned request-handler decorator**.',
+        'receives exactly one downstream `RequestHandler` through its ordinary constructor',
+        'Composition occurs only in the handler argument of an explicit `Route`.',
+        'passes the exact same `Request` instance to downstream',
+        'does not catch, wrap, translate, suppress, retry, or otherwise replace an exception',
+        'constructs one explicit immutable replacement and preserves every unchanged status, header, body, `ResponseCookie`, and `LocalFileBody` field',
+        'PHPThis adds no core class, runtime dependency, diagnostic, middleware interface, or composition facility',
+        'Strict Profile version 2 remains unchanged.',
+    ],
+    'docs/decisions/README.md' => [
+        '`033-application-owned-request-handler-decorators.md`',
+    ],
+    'docs/consumer-contract.md' => [
+        'Contract version: 9',
+        '## Optional application-owned request-handler decorators',
+        'The decorator is composed only as the handler of an explicit `Route`.',
+        'zero downstream calls or call its one downstream handler exactly once',
+        'passes the exact same immutable `Request` instance downstream',
+        'Do not add a generic or framework middleware interface, pipeline, stack, runner, registry, priority list, discovery rule, `$next` callable, request-context bag, request attributes, or framework-owned decorator.',
+        'Version 9 adds no core class, framework middleware, runtime dependency, static diagnostic, request attribute, or automatic composition.',
+    ],
+    'docs/request-handling.md' => [
+        '## Application-owned request-handler decorators',
+        'receives exactly one downstream `RequestHandler`',
+        'The complete outer-to-inner sequence stays visible beside the affected `Route`.',
+        'Do not replace the direct nesting with a middleware array, helper, factory, registry, priority, discovery rule, `$next` callable, or container.',
+        'It adds no core type or dependency.',
+    ],
+    'docs/vocabulary.md' => [
+        '| application-owned request-handler decorator |',
+        'middleware, interceptor, filter, pipeline element, `$next` callable',
+    ],
+    '.ai/routing.md' => [
+        'When one route needs bounded wrapping behavior, its constructed handler may be one application-owned request-handler decorator.',
+        'Construct it visibly beside the route',
+        'Each decorator invokes its downstream zero or one time with the identical immutable `Request`',
+        'Do not add a generic or framework middleware interface, pipeline, iterable registry, priorities, discovery, `$next` abstraction, context bag, hidden binding, or hidden I/O.',
+    ],
+    '.ai/request-policy.md' => [
+        'Do not replace or obscure the action-specific adapter with an application-owned request-handler decorator',
+    ],
+    'templates/application/.ai/architecture.md' => [
+        '{{REQUEST_HANDLER_DECORATOR_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{REQUEST_HANDLER_DECORATOR_ROUTES_AND_ORDER_OR_NOT_APPLICABLE}}',
+        '{{REQUEST_HANDLER_DECORATOR_SIDE_EFFECT_AND_FAILURE_POLICY_OR_NOT_APPLICABLE}}',
+        'Construct the complete nesting as an unrolled expression beside every affected route.',
+    ],
+    'skeleton/.ai/architecture.md' => [
+        '`NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`',
+        '`src/Routes.php` constructs `HealthHandler` directly.',
+        'Never wrap `Application`, `RequestBoundary`, the terminal coordinator, or `ResponseEmitter`',
+    ],
+    'tests/handler-decorator.php' => [
+        'final readonly class HandlerDecoratorProofOrderMarkerHandler implements RequestHandler',
+        'private RequestHandler $downstream',
+        'explicit nested handler decorators preserve request and response identity',
+        'maintenance gate short-circuits or delegates exactly once',
+        'handler decorator propagates the exact downstream exception',
+        'handler decorator propagates its exact own exception before delegation',
+        'response decorator preserves immutable buffered and local-file response fields',
+        'handler decoration is route-local and removable by direct rewiring',
+    ],
+    'tests/run.php' => [
+        "require __DIR__ . '/handler-decorator.php';",
+        'handlerDecoratorTests()',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledRequestHandlerDecorator($project, $environment);',
+        'new InstalledHeaderDecorator(',
+        'new InstalledRejectingDecorator(',
+        'function assertInstalledDecoratorIsolation(InstalledDecoratorTrace $trace): void',
+        'assertInstalledDecoratorIsolation($trace);',
+        'PASS installed request-handler decorator composition',
+        'The clean skeleton and request-handler decorator proof failed the installed profile check.',
+        'is_file($requestHandlerDecoratorProofPath)',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/033-application-owned-request-handler-decorators.md',
+    ],
+];
+
+foreach ($requestHandlerDecoratorArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read request-handler decorator artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Request-handler decorator artifact marker is missing from {$relativePath}: {$marker}";
         }
     }
 }
@@ -1498,7 +1602,7 @@ $typedInputBoundaryArtifactMarkers = [
     '.ai/types.md' => [
         'No normalization is implicit.',
         'Native `json_decode` does not expose duplicate object keys and retains the last value',
-        'ADR 032 and Consumer Contract v8',
+        'ADR 033 and Consumer Contract v9',
     ],
     'docs/type-safety.md' => [
         'external mixed data -> named parser factory -> final readonly value -> native typed code',
@@ -1620,7 +1724,7 @@ $finiteDataPathArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         'ADR 022 records one finite SQLite application data path',
-        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/guardrails.md' => [
         'The finite-data-path guard retains ADR 022',
@@ -2019,7 +2123,7 @@ $durableJobArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned durable jobs',
-        'Contract version 8 does not make that additional file a checker requirement',
+        'Contract version 9 does not make that additional file a checker requirement',
         'Delivery remains at least once.',
     ],
     'docs/decisions/README.md' => [
@@ -2205,13 +2309,13 @@ foreach (['src/Jobs', 'src/Queue'] as $forbiddenCoreDirectory) {
 $applicationChecker = file_get_contents($root . '/verification/ApplicationChecker.php');
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/jobs.md',")) {
-    $failures[] = 'Contract version 8 must not checker-require the optional durable-job context file.';
+    $failures[] = 'Contract version 9 must not checker-require the optional durable-job context file.';
 }
 
 $consumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveJobsContextIsRequired')) {
-    $failures[] = 'Contract version 8 must not reject an existing consumer only because .ai/jobs.md is absent.';
+    $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/jobs.md is absent.';
 }
 
 $durableJobPackageInventory = file_get_contents($root . '/tools/package-files.txt');
@@ -2287,7 +2391,7 @@ $applicationCliArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional application-owned CLI and scheduler',
         'Contract-version-7-compatible optional application clarification, not a new checker requirement',
-        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
         'Status: accepted',
@@ -2501,11 +2605,11 @@ if (is_string($composerManifest) && str_contains($composerManifest, 'example/bin
 }
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/cli.md',")) {
-    $failures[] = 'Contract version 8 must not checker-require the optional application CLI context file.';
+    $failures[] = 'Contract version 9 must not checker-require the optional application CLI context file.';
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveCliContextIsRequired')) {
-    $failures[] = 'Contract version 8 must not reject an existing consumer only because .ai/cli.md is absent.';
+    $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/cli.md is absent.';
 }
 
 $applicationCliSourceFiles = [
@@ -2762,7 +2866,7 @@ $migrationArtifactMarkers = [
     ],
     '.ai/application-context.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
-        'Contract version 8 does not make that additional file a checker requirement',
+        'Contract version 9 does not make that additional file a checker requirement',
     ],
     '.ai/migrations.md' => [
         '# Migration authoring contract',
@@ -2798,7 +2902,7 @@ $migrationArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned database migrations',
-        'Contract version 8 does not make that additional file a checker requirement',
+        'Contract version 9 does not make that additional file a checker requirement',
         'It never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
     ],
     'docs/decisions/README.md' => [
@@ -3008,11 +3112,11 @@ if (is_string($migrationPackageInventory)) {
 }
 
 if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/migrations.md',")) {
-    $failures[] = 'Contract version 8 must not checker-require the optional migration context file.';
+    $failures[] = 'Contract version 9 must not checker-require the optional migration context file.';
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveMigrationsContextIsRequired')) {
-    $failures[] = 'Contract version 8 must not reject an existing consumer only because .ai/migrations.md is absent.';
+    $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/migrations.md is absent.';
 }
 
 $runtimeSqlRoots = ['src', 'example', 'skeleton', 'templates/application', 'tools'];
@@ -3642,7 +3746,7 @@ $fileTransferArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional bounded file transfers',
         'Raw `$_FILES` never enters a handler.',
-        'Consumer Contract version 8 carries Strict Profile version 2 forward unchanged.',
+        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
     ],
     'docs/decisions/026-bounded-file-transfers.md' => [
         'Status: accepted',
@@ -3743,8 +3847,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 8$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 8.';
+        if (preg_match('/^Contract version: 9$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 9.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -3874,8 +3978,8 @@ if (is_file($applicationAgentInstructionsPath)) {
             $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
         }
 
-        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v8 and Strict Profile v2 are the minimum accepted rules')) {
-            $failures[] = 'Application AGENTS.md must identify Consumer Contract v8 and Strict Profile v2 as the minimum accepted rules.';
+        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v9 and Strict Profile v2 are the minimum accepted rules')) {
+            $failures[] = 'Application AGENTS.md must identify Consumer Contract v9 and Strict Profile v2 as the minimum accepted rules.';
         }
     }
 }
@@ -3891,9 +3995,9 @@ if (is_file($skeletonAgentInstructionsPath)) {
         !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
         || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
         || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
-        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v8 and Strict Profile v2 are the minimum accepted rules')
+        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v9 and Strict Profile v2 are the minimum accepted rules')
     ) {
-        $failures[] = 'Skeleton AGENTS.md must preserve accepted Contract v8 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+        $failures[] = 'Skeleton AGENTS.md must preserve accepted Contract v9 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 

@@ -1,6 +1,6 @@
 # Application rules
 
-These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile v2. They may strengthen those rules but may not weaken them.
+These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile v2. They may strengthen those rules but may not weaken them.
 
 ## Required
 
@@ -9,6 +9,7 @@ These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile
 - Apply the data and resource limits defined in `.ai/data.md`.
 - Declare every resource path identifier with the narrowest fixed type: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only when it is genuinely opaque. Use the matching `PathParameters` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and enforce narrower domain rules before database work; never normalize, bind, look up, or fall back between route types.
 - Prove invalid resource-identifier syntax returns `404` with zero handler and database work, and prove a canonical valid path with the wrong method returns `405`.
+- Keep every adopted application-owned request-handler decorator final, route-local, and explicit: exactly one downstream `RequestHandler`, complete unrolled nesting beside each route, zero-or-one delegation with the exact same immutable `Request` instance, unchanged exception propagation, explicit immutable `Response` replacement with complete field preservation, and named bounded side effects with behavior tests.
 - Parse each complete inbound operation representation exactly once through the operation-specific named factory recorded in `.ai/architecture.md`, into a concrete final readonly request or command with a private constructor, before downstream operation behavior. Add a typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership.
 - Enforce every recorded byte, depth, field, list, item, and scalar bound; distinguish absence with `array_key_exists`, reject unknown fields, check runtime types before conversion, and accept only the operation's recorded canonical representations.
 - Keep field normalization opt-in and exactly recorded with transformation order, pre- and post-transform bounds, collision behavior, and retained canonical value. Keep validation separate from output encoding, SQL binding, and current authorization.
@@ -38,11 +39,11 @@ These rules supplement installed PHPThis Consumer Contract v8 and Strict Profile
 - Do not add a generic cache service, global cache helper, hidden cache-aside behavior, automatic query caching, implicit forever TTL, or arbitrary PHP object deserialization.
 - Do not use cached data as a source of truth or cache sessions, authentication state, authorization decisions, permissions, credentials, secrets, or another class prohibited by `.ai/architecture.md`.
 - Do not infer that `Set-Cookie`, a server-side cache miss, or a server-side cache hit makes an HTTP response safely private, uncacheable, or public.
-- Do not add a cache helper, middleware default, or response post-processor to hide which response-producing path owns its HTTP cache policy.
+- Do not add a cache helper, application-owned request-handler decorator, generic or framework middleware default, or response post-processor to hide which response-producing path owns its HTTP cache policy.
 - Do not invent human approval or claim unsupported framework or application behavior.
 - Do not bypass authentication, authorization, validation, audit, or data-retention requirements to simplify a change.
-- Do not add middleware or policy registries, a request-context or attribute bag, service-located policy, hidden tenant resolution, an implicit or global authorization scope, or stored or cached authorization decisions.
-- Do not add framework logging event, sink, or coordinator types; logger facades, global logging helpers, logging middleware, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or durable-delivery claims.
+- Do not add a generic or framework middleware interface, pipeline, iterable registry, priority ordering, discovery, `$next` abstraction, request-context or attribute bag, hidden binding or I/O, service-located policy, hidden tenant resolution, an implicit or global authorization scope, or stored or cached authorization decisions. Do not wrap `Application`, `RequestBoundary`, the terminal coordinator, or `ResponseEmitter` in a decorator.
+- Do not add framework logging event, sink, or coordinator types; logger facades, global logging helpers, generic or framework logging middleware, terminal observability inside an application-owned request-handler decorator, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or durable-delivery claims.
 - Do not read `$_SESSION`, call native `session_*` functions, manually emit the framework session cookie, add a generic session helper, or treat stored identity as authorization.
 - Do not accept SQL text from external input, invent an SQL sanitizer, interpolate data, or grant the runtime database identity migration or administrative authority to simplify a change.
 - Do not claim that PHT006, tenant predicates, adversarial bindings, or base PDO transport tests universally prove authorization, tenant isolation, injection safety, or application-SQL portability.

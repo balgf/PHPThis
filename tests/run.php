@@ -58,6 +58,7 @@ require __DIR__ . '/document-files.php';
 require __DIR__ . '/cache.php';
 require __DIR__ . '/redis-coordination.php';
 require __DIR__ . '/consumer-profile.php';
+require __DIR__ . '/handler-decorator.php';
 
 final readonly class RunTestAllowCreateUserPolicy implements
     AuthenticateAccountRequest,
@@ -114,6 +115,10 @@ foreach (redisCoordinationTests() as $name => $test) {
 }
 
 foreach (consumerProfileTests() as $name => $test) {
+    $tests[$name] = $test;
+}
+
+foreach (handlerDecoratorTests() as $name => $test) {
     $tests[$name] = $test;
 }
 

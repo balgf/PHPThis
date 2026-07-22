@@ -32,4 +32,4 @@ Do not use scalar casts, `intval`, `floatval`, `boolval`, `strval`, `settype`, i
 
 PHPStan `list<T>`, array shapes, and `@template` are static contracts only. They supplement boundary parsing; they never replace it.
 
-ADR 021 adds application-owned command and projection evidence without a generic input API or diagnostic. ADR 026 adds only the concrete typed upload value. ADR 032 and Consumer Contract v8 add fixed UUID and ULID route syntax without a framework identifier type and leave Strict Profile v2 unchanged.
+ADR 021 adds application-owned command and projection evidence without a generic input API or diagnostic. ADR 026 adds only the concrete typed upload value. ADR 032 adds fixed UUID and ULID route syntax without a framework identifier type. ADR 033 and Consumer Contract v9 add no request or response type and leave Strict Profile v2 unchanged.

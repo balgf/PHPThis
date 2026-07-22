@@ -17,7 +17,7 @@ Strict Profile v2 carries `PHT001` through `PHT005` forward and adds:
 
 - `PHT006`: the SQL argument of a direct `Connection::selectAllRows`, `selectOneRow`, or `executeStatement` call must resolve natively in PHPStan to a finite set of non-blank compile-time constant strings. Arbitrary strings, runtime interpolation or concatenation, sanitizer results, argument unpacking, PHPDoc-only narrowing, first-class method callables, and callable-array indirection are rejected. Bind data values and map structural choices to finite reviewed code-owned statements or fragments, preferably complete statements.
 
-Consumer Contract version 8 carries Strict Profile version 2 forward unchanged. Selecting the narrowest fixed route type and using its matching immutable accessor is runtime and contract behavior, not a new `PHT007` diagnostic.
+Consumer Contract version 9 carries Strict Profile version 2 forward unchanged. Selecting the narrowest fixed route type, using its matching immutable accessor, and keeping an application-owned request-handler decorator within ADR 033's explicit bounded shape are runtime and contract behavior, not a new `PHT007` diagnostic.
 
 Rule IDs are permanent and must not be reused. A rule needs failing and passing fixtures, exact diagnostic assertions, one enforcement owner, a catalogue update, and installed-consumer proof when it is PHPStan-owned. Do not add baselines, inline suppressions, wildcard exclusions, or comment-based exemptions for a profile rule. Consumer checks use the installed checker configuration; framework-maintainer analysis continues to use the repository's reviewed `phpstan.neon`.
 

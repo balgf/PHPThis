@@ -27,7 +27,7 @@ PHP has already normalized the raw query string into `$_GET` before this boundar
 
 ## Routing metadata
 
-`Router` first attempts direct exact-literal lookup. It then follows the deterministic state index for a path containing at most two full-segment placeholders. Consumer Contract version 8 fixes four types and requires the narrowest one: `positive-int` is canonical ASCII decimal in the range 1 through `PHP_INT_MAX`; `uuid` is lowercase `[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`; `ulid` is lowercase `[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}`; and `token` is the case-sensitive 1-to-64-byte opaque fallback `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`. The reader's no-decoding rule means `%31` does not become `1`, `%2F` does not create another segment, and an encoded spelling does not become a UUID or ULID. Routing returns bytes unchanged and never trims, case-folds, decodes, or otherwise normalizes them.
+`Router` first attempts direct exact-literal lookup. It then follows the deterministic state index for a path containing at most two full-segment placeholders. Consumer Contract version 9 carries forward four fixed types and requires the narrowest one: `positive-int` is canonical ASCII decimal in the range 1 through `PHP_INT_MAX`; `uuid` is lowercase `[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`; `ulid` is lowercase `[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}`; and `token` is the case-sensitive 1-to-64-byte opaque fallback `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`. The reader's no-decoding rule means `%31` does not become `1`, `%2F` does not create another segment, and an encoded spelling does not become a UUID or ULID. Routing returns bytes unchanged and never trims, case-folds, decodes, or otherwise normalizes them.
 
 The state index is compiled once from explicit `Route` objects. Parameterized declarations whose accepted paths overlap fail at construction rather than relying on registration order, type preference, or backtracking. One compiled state cannot contain differing parameter types or a typed transition beside a parameterized literal transition accepted by that type, even when their later segments differ. A failed `uuid` or `ulid` match never falls back to `token`. Every route sharing a typed transition also shares that transition's parameter name and type regardless of method or later branch. Request-time matching and allowed-method lookup traverse the bounded request path and compiled transitions, not the declared route list or an index collection. Invalid or oversized parameter spellings miss routing before handler or database work; a valid path registered only under another method produces the indexed 405 result.
 
@@ -42,6 +42,30 @@ $accountId = AccountId::fromCanonicalVersionSeven(
 ```
 
 That illustrative application-owned factory validates the narrower version-7 rule before authorization or SQL; routing itself accepts the fixed version-1-through-8 UUID syntax. It performs no lookup, model binding, automatic conversion, or persistence cast.
+
+## Application-owned request-handler decorators
+
+Consumer Contract version 9 permits one optional route-local composition pattern: an **application-owned request-handler decorator**. The final application class implements the existing `RequestHandler`, receives exactly one downstream `RequestHandler`, and names one narrow concern. It may return an explicit early response without entering downstream or call that downstream exactly once with the exact same immutable `Request` instance.
+
+The complete outer-to-inner sequence stays visible beside the affected `Route`. This illustrative shape uses ordinary constructors only:
+
+```php
+new Route(
+    'GET',
+    '/documents/{document_key:token}',
+    new AddDocumentDownloadSecurityHeaders(
+        new RequireDocumentDownloadWindow(
+            new DownloadDocumentHandler(/* explicit dependencies */),
+        ),
+    ),
+);
+```
+
+Those names are application-specific examples, not PHPThis classes. Do not replace the direct nesting with a middleware array, helper, factory, registry, priority, discovery rule, `$next` callable, or container. Shared leaf dependencies can be constructed elsewhere, but the route declaration retains the complete decorator order and terminal handler.
+
+A decorator never changes the request or catches, translates, suppresses, retries, or replaces an exception. It may return the downstream response unchanged. If it deliberately replaces that immutable response, it passes through every unchanged status, header, body, cookie, and local-file-body field explicitly. Decorator-owned I/O has a visible named dependency and finite resource and failure contract; short-circuit tests prove zero downstream queries, mutation, and external effects.
+
+The pattern wraps only a route handler. It cannot wrap `Application`, `RequestBoundary`, the application terminal request-summary coordinator, or `ResponseEmitter`, and it cannot relocate session finalization, error mapping, correlation, terminal summaries, sink invocation, or emission. It adds no core type or dependency. See [ADR 033](decisions/033-application-owned-request-handler-decorators.md).
 
 ## Protected request policy
 

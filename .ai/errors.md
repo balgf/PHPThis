@@ -9,6 +9,7 @@ Failures must cross named boundaries as exceptions or explicit response values.
 - Let unknown failures reach the top-level handler, select the generic 500 response, and contribute only their concrete class to the one application-owned terminal summary attempt.
 - Never include SQL credentials, parameter values, stack traces, or internal messages in public responses.
 - Keep input failures deterministic and generic. Submitted field names and values, including secret-looking unknown fields, must not enter response bodies, headers, logs, or traces.
+- An application-owned request-handler decorator does not catch, wrap, translate, suppress, retry, or replace an exception from its own visible work or its one downstream handler. The exact exception continues to the existing error boundary; do not add decorator-owned fallback behavior or a second error-mapping path.
 
 The sample maps `InvalidRequest` to 400, `RequestBodyTooLarge` to 413, and `UnsupportedMediaType` to 415. Unknown failures receive a generic 500 response and put only their class name in the one common terminal event. Add a new mapping only with a named failure, exact public response, status-only terminal summary, and tests proving that internal messages do not escape.
 

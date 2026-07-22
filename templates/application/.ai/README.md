@@ -2,7 +2,7 @@
 
 This directory is owned by `{{PROJECT_NAME}}`. It grounds the AI that explains and authors this project; it is not a framework manual. It supplies project facts that the PHPThis consumer contract cannot know. Keep it committed, current, concise, and free of secrets.
 
-Consumer Contract v8 and Strict Profile v2 remain mandatory. Application guidance may strengthen them but may not weaken them.
+Consumer Contract v9 and Strict Profile v2 remain mandatory. Application guidance may strengthen them but may not weaken them.
 
 Always read:
 
@@ -17,6 +17,7 @@ Then read only what the task needs:
 | Explain framework or application behavior | installed PHPThis knowledge map, matching application guide | installed framework source, application execution path, and tests |
 | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected source boundary named there |
 | Add or change a route | installed `vendor/phpthis/framework/docs/request-handling.md`, `.ai/architecture.md`, `.ai/testing.md` | route manifest, narrowest identifier declaration, matching `PathParameters` accessor, application-owned identifier wrapper, relevant route area, handler, and behavior tests |
+| Add or change an application-owned request-handler decorator | installed `vendor/phpthis/framework/docs/request-handling.md`, `.ai/architecture.md`, `.ai/testing.md` | explicit route construction, final decorator and one downstream handler, complete unrolled order, named bounded side effects, response replacement, and order, short-circuit, identity, and failure tests |
 | Add or change inbound operation data | installed `vendor/phpthis/framework/docs/type-safety.md`, `.ai/architecture.md`, `.ai/testing.md` | raw representation and bounds, operation-specific parser factory, final readonly request or command, downstream typed behavior or justified seam, request-policy order, public error mapping, and adversarial tests |
 | Add or change a file upload or download | installed `vendor/phpthis/framework/docs/file-transfers/README.md`, `.ai/file-transfers.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | front controller, composition root, exact route and handler, concrete file path, response emission, failure mapping, and transfer tests |
 | Protect a route or change identity, tenant, or authorization policy | installed `vendor/phpthis/framework/docs/request-policy.md`, `.ai/request-policy.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/testing.md` | composition root, action-specific policy adapter, concrete principal and tenant values, policy and protected connections, exact denial registrations, and order, denial, redaction, and replacement tests |

@@ -2,6 +2,8 @@
 
 ADR 023 requires one application-owned terminal request summary for every request that reaches the application coordinator and selects a `Response`. PHPThis supplies no logging framework, sink, coordinator, facade, global helper, middleware, discovery hook, or hidden database instrumentation. The application writes the small coordinator and sink contract, wires them through ordinary constructors in its composition root, and keeps the path visible in its front controller.
 
+ADR 033 does not move this terminal responsibility into an application-owned request-handler decorator. A route-local decorator cannot wrap the terminal coordinator, build the terminal request summary, invoke its sink, claim emission, or replace its failure isolation. A separately justified route-level business side effect still needs its own narrowly named bounded policy and evidence and is not the terminal summary.
+
 ## Correlation and response propagation
 
 Generate 128 random bits during request-scoped composition before bounded request ingestion and encode them as exactly 32 lowercase hexadecimal characters matching `[0-9a-f]{32}`. Do not derive the identifier from request data. Replace any case-insensitive application response spelling with that same `correlation_id` value as the single `X-Request-ID` header on success, mapped failure, and generic unknown-failure `500` paths.

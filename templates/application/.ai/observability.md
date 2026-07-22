@@ -9,4 +9,4 @@ Read installed `vendor/phpthis/framework/docs/observability/README.md`, `vendor/
 - Destination buffering, retention, backpressure, and outage policy: {{TERMINAL_SUMMARY_DESTINATION_POLICY}}
 - Focused response, redaction, source-bound, and throwing-sink tests: `{{TERMINAL_SUMMARY_TEST_COMMAND}}`
 
-Record at most eight unique non-sensitive source names with distinct budgets and traces. One invocation attempt never means durable delivery. Do not add framework observability types, middleware, facades, global helpers, per-query events, hidden instrumentation, an ORM, or an SQL/binding helper.
+Record at most eight unique non-sensitive source names with distinct budgets and traces. One invocation attempt never means durable delivery. Do not move terminal observability into an application-owned request-handler decorator or add framework observability types, generic or framework logging middleware, facades, global helpers, per-query events, hidden instrumentation, an ORM, or an SQL/binding helper.

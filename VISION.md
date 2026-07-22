@@ -40,6 +40,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - A completed change reports its behavior, evidence, resource cost, and any consequential decision that still belongs to a human.
 - The request path remains directly traceable through route, handler, at most one operation-specific typed seam when required, database, and response.
 - A protected request exposes its fixed authentication, tenant-resolution, authorization, and handler order with independently replaceable application policies and separately bounded policy and protected data work.
+- An adopted application-owned request-handler decorator exposes its complete route-local order, one downstream handler, zero-or-one same-request invocation, response replacement, and bounded named I/O without creating a second execution model.
 - Database tests compare small and large fixtures and assert a constant query count.
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
 - Direct database calls resolve to finite reviewed statements, SQL-looking values remain bound data, and unknown structural choices fail before database work.
@@ -52,7 +53,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
 - Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; the reviewed implementation occupies 2,592 lines, and its eight-line maintenance margin pre-authorizes no adjacent mechanism.
+- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; the reviewed implementation occupies 2,592 lines, and its eight-line maintenance margin pre-authorizes no adjacent mechanism. ADR 033 adds no core runtime or further increase.
 
 ## Non-goals
 
@@ -65,7 +66,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Forcing an application directory layout or turning CRUD into a generic persistence API.
 - Providing a generic cache facade, automatic query cache, or backend abstraction that hides topology, invalidation, failure, and consistency choices.
 - Providing a generic distributed-lock or lease abstraction, automatic renewal, or a fencing or exactly-once claim unsupported by the selected backend and protected operation.
-- Providing a generic middleware, request-context, identity, tenant, or authorization engine that hides application policy or its I/O.
+- Providing generic or framework middleware, a middleware pipeline, or a request-context, identity, tenant, or authorization engine that hides application policy or its I/O. ADR 033's route-local application-owned request-handler decorator is not such an engine.
 - Providing a global logger, facade, middleware logger, event bus, automatically discovered sink, per-query logging, or hidden database instrumentation.
 - Providing a generic upload, storage, filesystem, or stream facade; trusting client filenames or media types; or hiding persistence, cleanup, ranges, content processing, or file ownership.
 - Providing a core migration API, schema builder, migration DSL, automatic discovery, inferred rollback, runtime SQL loading, HTTP-startup migration, or portable DDL guarantee.

@@ -64,6 +64,7 @@ docs/decisions/029-alpha-2-consumer-profile-rollup.md
 docs/decisions/030-report-only-consumer-duplication-advisory.md
 docs/decisions/031-bounded-alpha-3-release-scope.md
 docs/decisions/032-explicit-uuid-and-ulid-route-types.md
+docs/decisions/033-application-owned-request-handler-decorators.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

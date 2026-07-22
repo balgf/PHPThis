@@ -15,4 +15,4 @@ Before protecting a route, read installed `vendor/phpthis/framework/docs/request
 - protected connection, budget, trace, tenant/resource SQL scope, and authorization race policy;
 - denial, order, zero-protected-work, redaction, replacement, and credential-parser tests.
 
-Do not add middleware, a policy registry, a request-context bag, service location, discovery, hidden tenant resolution, an implicit or global authorization scope, or stored authorization decisions.
+Do not replace or obscure the action-specific adapter with an application-owned request-handler decorator, generic or framework middleware, a policy registry, a request-context bag, service location, discovery, hidden tenant resolution, an implicit or global authorization scope, or stored authorization decisions.

@@ -12,21 +12,23 @@ public/index.php
       -> Router
         <- RouteMatch (Route + immutable PathParameters)
       -> immutable Request copy
-        -> RequestHandler
-          -> application request-policy adapter (for a protected route)
-            -> authenticate
-            -> resolve tenant
-            -> authorize named action
-            -> protected operation with explicit principal and tenant context
-          -> operation-specific parser -> final readonly command or request
-          -> exact upload-field parser -> verified application upload (when adopted)
-            -> narrow application-owned storage operation
-          -> typed application operation (when business or transaction ownership requires a seam)
-            -> operation-specific transaction owner -> Connection
-          -> typed application session service (when needed)
-          -> typed application cache service (when deliberately adopted)
-          -> application-owned job insert in the same transaction (when adopted)
-          -> Connection (when the handler directly owns its data work)
+        -> RequestHandler (outer decorator or terminal route handler)
+          -> optional decorator(s): same Request to zero or one downstream handler each
+          -> terminal route handler responsibilities
+            -> application request-policy adapter (for a protected route)
+              -> authenticate
+              -> resolve tenant
+              -> authorize named action
+              -> protected operation with explicit principal and tenant context
+            -> operation-specific parser -> final readonly command or request
+            -> exact upload-field parser -> verified application upload (when adopted)
+              -> narrow application-owned storage operation
+            -> typed application operation (when business or transaction ownership requires a seam)
+              -> operation-specific transaction owner -> Connection
+            -> typed application session service (when needed)
+            -> typed application cache service (when deliberately adopted)
+            -> application-owned job insert in the same transaction (when adopted)
+            -> Connection (when the handler directly owns its data work)
         <- Response (string body or optional LocalFileBody)
     -> ErrorResponseRegistry (only after a named failure)
     -> SessionLifecycle finish or abort (when configured)
@@ -39,7 +41,9 @@ Only `public/index.php` reads PHP superglobals and passes `$_SERVER`, `$_GET`, `
 
 ADR 023 places one application-owned terminal coordinator around that path without changing `RequestBoundary`, `UnknownFailureBoundary`, or `Connection`. It generates the correlation ID, adds `X-Request-ID` to the final immutable response, derives one closed bounded event from a finite list of distinct connection budgets and traces, and makes exactly one sink invocation attempt before `ResponseEmitter`. Sink failure is isolated and cannot replace the response. This is explicit front-controller composition, not middleware, a global logger, a facade, a service locator, an event pipeline, or hidden instrumentation.
 
-The router stores objects, not class names, so dispatch does not need reflection or a container. It validates the complete list once. Fully literal routes use immutable method/path and path/method indexes. Under ADR 032 and Consumer Contract version 8, a parameterized route still has at most two full-segment placeholders and uses one of four fixed types: canonical `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or bounded opaque `token`. Applications choose the narrowest type and never use token as a UUID/ULID shortcut. Each route is compiled into the same deterministic state index. Exact literal routes take precedence, differing sibling parameter types and overlapping parameterized declarations fail at construction, failed UUID/ULID matches do not fall back to token, and dispatch plus 405 lookup may traverse only the bounded request path and compiled state transitions rather than scanning the route list or an index collection. A successful lookup returns immutable `RouteMatch` metadata. `Application` copies the normalized request with the match's immutable `PathParameters` and passes it to the existing `RequestHandler::handle(Request)` interface; static routes receive empty parameters. Handlers immediately wrap each unchanged validated path value in a route-specific application identifier and enforce any narrower domain rule before authorization or database work. Routing adds no normalization, binding, lookup, identifier generation, or persistence policy.
+The router stores objects, not class names, so dispatch does not need reflection or a container. It validates the complete list once. Fully literal routes use immutable method/path and path/method indexes. Under Consumer Contract version 9, carrying ADR 032 forward, a parameterized route still has at most two full-segment placeholders and uses one of four fixed types: canonical `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or bounded opaque `token`. Applications choose the narrowest type and never use token as a UUID/ULID shortcut. Each route is compiled into the same deterministic state index. Exact literal routes take precedence, differing sibling parameter types and overlapping parameterized declarations fail at construction, failed UUID/ULID matches do not fall back to token, and dispatch plus 405 lookup may traverse only the bounded request path and compiled state transitions rather than scanning the route list or an index collection. A successful lookup returns immutable `RouteMatch` metadata. `Application` copies the normalized request with the match's immutable `PathParameters` and passes it to the existing `RequestHandler::handle(Request)` interface; static routes receive empty parameters. Handlers immediately wrap each unchanged validated path value in a route-specific application identifier and enforce any narrower domain rule before authorization or database work. Routing adds no normalization, binding, lookup, identifier generation, or persistence policy.
+
+ADR 033 permits an optional application-owned request-handler decorator at that existing handler seam. Each final named decorator implements `RequestHandler`, owns exactly one downstream `RequestHandler`, and either short-circuits or calls it once with the same immutable request. Any nested outer-to-inner order remains visible beside the affected `Route`; no pipeline, registry, helper, priority, discovery, `$next` callable, or context bag assembles it. A replacement immutable response preserves every unchanged field, and exceptions propagate unchanged. The decorator may own only explicitly named bounded I/O. It cannot wrap `Application`, `RequestBoundary`, the terminal request-summary coordinator, or `ResponseEmitter`, so the flat transport and terminal paths do not become composable chains. The pattern adds no core class or runtime dependency.
 
 ## Source responsibilities
 
@@ -62,4 +66,4 @@ ADR 022 adds no core data, pagination, or SQL namespace. `ListDocumentsHandler` 
 
 There is no cache namespace or cache mechanism in the core. HTTP response policy remains an explicit property of the response-producing path. Framework-owned 404, 405, and unknown-failure 500 responses explicitly prohibit storage; the skeleton and example do the same for their current handlers. PHPThis does not rewrite arbitrary handler responses, so every additional application path still owns and tests its policy. If an application later adopts server-side caching, it manually wires a narrowly named typed application service at the handler boundary; that service owns one cache-aside execution path and its backend-specific policy. It is not a generic key-value facility, middleware, or replacement for the authoritative data path.
 
-There are no providers, repositories, models, middleware pipelines, request-context bags, policy registries, generic paginators, SQL/binding/placeholder helpers, or controllers in the core. `RequestBoundary` is one named transport boundary, not a composable middleware chain. Routing metadata enters only through immutable `PathParameters`; session, principal, tenant, and authorization state do not enter `Request`. An application places narrowly named typed services with explicit non-overlapping key ownership in front of one `SessionLifecycle` instead of adding helpers or a generic key-value repository. An operation interface or operation-specific SQL owner is introduced only for a concrete tested responsibility such as ADR 021's typed use-case entry and Create transaction ownership; collection SQL remains in its handler when the complete direct calls are already clear.
+There are no providers, repositories, models, middleware pipelines, request-context bags, policy registries, generic paginators, SQL/binding/placeholder helpers, or controllers in the core. `RequestBoundary` is one named transport boundary, not a composable middleware chain. ADR 033's route-local application decorator implements the existing handler interface and is not framework middleware or another boundary. Routing metadata enters only through immutable `PathParameters`; session, principal, tenant, and authorization state do not enter `Request`. An application places narrowly named typed services with explicit non-overlapping key ownership in front of one `SessionLifecycle` instead of adding helpers or a generic key-value repository. An operation interface or operation-specific SQL owner is introduced only for a concrete tested responsibility such as ADR 021's typed use-case entry and Create transaction ownership; collection SQL remains in its handler when the complete direct calls are already clear.
