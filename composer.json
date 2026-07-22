@@ -34,7 +34,7 @@
         "bin/phpthis"
     ],
     "scripts": {
-        "analyse": "php -d disable_functions=proc_open vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress --memory-limit=256M",
+        "analyse": "php -d disable_functions=proc_open vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress --memory-limit=512M",
         "benchmark:routing": "php tools/benchmark-routing.php",
         "example:setup": "php tools/setup-example.php",
         "guard": "php tools/guardrails.php",
