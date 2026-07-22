@@ -1,6 +1,6 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/websockets.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 031. It also applies to ADR 032 through ADR 034.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/websockets.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 035.
 
 Rules:
 

@@ -38,3 +38,4 @@ Accepted records:
 - `032-explicit-uuid-and-ulid-route-types.md`
 - `033-application-owned-request-handler-decorators.md`
 - `034-application-owned-websocket-integration.md`
+- `035-bounded-alpha-4-release-scope.md`

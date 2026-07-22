@@ -66,6 +66,7 @@ docs/decisions/031-bounded-alpha-3-release-scope.md
 docs/decisions/032-explicit-uuid-and-ulid-route-types.md
 docs/decisions/033-application-owned-request-handler-decorators.md
 docs/decisions/034-application-owned-websocket-integration.md
+docs/decisions/035-bounded-alpha-4-release-scope.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -105,6 +106,7 @@ docs/performance.md
 docs/releases/0.1.0-alpha.1.md
 docs/releases/0.1.0-alpha.2.md
 docs/releases/0.1.0-alpha.3.md
+docs/releases/0.1.0-alpha.4.md
 docs/request-handling.md
 docs/request-policy.md
 docs/security.md

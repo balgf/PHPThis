@@ -562,6 +562,7 @@ $requiredRepositoryFiles = [
     'docs/releases/0.1.0-alpha.1.md',
     'docs/releases/0.1.0-alpha.2.md',
     'docs/releases/0.1.0-alpha.3.md',
+    'docs/releases/0.1.0-alpha.4.md',
     'docs/security.md',
     'docs/sessions.md',
     'docs/vocabulary.md',
@@ -588,7 +589,9 @@ $requiredRepositoryFiles = [
     'docs/decisions/030-report-only-consumer-duplication-advisory.md',
     'docs/decisions/031-bounded-alpha-3-release-scope.md',
     'docs/decisions/032-explicit-uuid-and-ulid-route-types.md',
+    'docs/decisions/033-application-owned-request-handler-decorators.md',
     'docs/decisions/034-application-owned-websocket-integration.md',
+    'docs/decisions/035-bounded-alpha-4-release-scope.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -906,27 +909,32 @@ if ($duplicationStage === false) {
     $failures[] = 'The canonical framework check must execute the direct duplication-advisory suite.';
 }
 
-$alphaReleaseContractMarkers = [
+$alpha4ReleaseContractMarkers = [
     '.ai/README.md' => 'Prepare, assess, or publish a release',
     '.ai/application-context.md' => 'Keep Alpha scope approval separate from authorization to create tags',
     '.ai/testing.md' => 'The Git export comparison requires a clean worktree',
-    'README.md' => 'The bounded [Alpha 3 scope]',
-    'RELEASING.md' => '## Alpha 3 release gate',
-    'ROADMAP.md' => 'Alpha 3 publication state is external',
-    'SECURITY.md' => 'An Alpha 3 release may be announced only after the public-artifact gate',
-    'docs/getting-started.md' => 'The bounded Alpha 3 scope is accepted',
-    'docs/knowledge-map.md' => '`docs/releases/0.1.0-alpha.3.md`, ADR 031, ADR 030',
+    'README.md' => 'The bounded [Alpha 4 scope]',
+    'RELEASING.md' => '## Alpha 4 release gate',
+    'ROADMAP.md' => 'Alpha 4 publication state is external',
+    'SECURITY.md' => 'An Alpha 4 release may be announced only after the public-artifact gate',
+    'docs/getting-started.md' => 'The bounded Alpha 4 scope is accepted',
+    'docs/knowledge-map.md' => '`docs/releases/0.1.0-alpha.4.md`, ADR 035, ADR 032 through ADR 034',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'No capability has an overall `defer` exit.',
     'docs/decisions/030-report-only-consumer-duplication-advisory.md' => 'This advisory has no `PHT` identifier',
     'docs/decisions/031-bounded-alpha-3-release-scope.md' => 'Alpha 3 is accepted as a tooling-only release',
-    'tools/package-files.txt' => 'docs/decisions/031-bounded-alpha-3-release-scope.md',
+    'docs/decisions/032-explicit-uuid-and-ulid-route-types.md' => 'Consumer Contract version 8',
+    'docs/decisions/033-application-owned-request-handler-decorators.md' => 'Consumer Contract version 9',
+    'docs/decisions/034-application-owned-websocket-integration.md' => 'Status: accepted',
+    'docs/decisions/035-bounded-alpha-4-release-scope.md' => 'Alpha 4 is accepted as the bounded rollup of the changes after Alpha 3',
+    'docs/releases/0.1.0-alpha.4.md' => 'Release identity: `0.1.0-alpha.4`. Publication state is external',
+    'tools/package-files.txt' => 'docs/decisions/035-bounded-alpha-4-release-scope.md',
 ];
 
-foreach ($alphaReleaseContractMarkers as $relativePath => $marker) {
+foreach ($alpha4ReleaseContractMarkers as $relativePath => $marker) {
     $contents = file_get_contents($root . '/' . $relativePath);
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
-        $failures[] = "The accepted bounded Alpha 3 release contract is missing from {$relativePath}.";
+        $failures[] = "The accepted bounded Alpha 4 release contract is missing from {$relativePath}.";
     }
 }
 
@@ -1017,13 +1025,6 @@ foreach ($alpha2ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
 }
 
 $alpha3ReleaseIdentityArtifactMarkers = [
-    '.ai/README.md' => [
-        '`docs/releases/0.1.0-alpha.3.md`',
-        'ADR 031, ADR 030, ADR 029 for the inherited Alpha 2 surface',
-    ],
-    '.ai/application-context.md' => [
-        'ADR 015 through ADR 031.',
-    ],
     '.gitattributes' => [
         '/.DS_Store export-ignore',
     ],
@@ -1039,10 +1040,6 @@ $alpha3ReleaseIdentityArtifactMarkers = [
         'prove the clean public installation path; create both GitHub prereleases; and announce Alpha 3.',
         'The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence',
         'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
-    ],
-    'docs/knowledge-map.md' => [
-        '`docs/releases/0.1.0-alpha.3.md`',
-        'ADR 031, ADR 030, ADR 029 for the inherited Alpha 2 surface',
     ],
     'docs/releases/0.1.0-alpha.3.md' => [
         'Release identity: `0.1.0-alpha.3`. Publication state is external',
@@ -1080,6 +1077,91 @@ foreach ($alpha3ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "The approved Alpha 3 identity marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$alpha4ReleaseIdentityArtifactMarkers = [
+    '.ai/README.md' => [
+        '`docs/releases/0.1.0-alpha.4.md`',
+        'ADR 035, ADR 032 through ADR 034',
+    ],
+    '.ai/application-context.md' => [
+        'ADR 015 through ADR 035.',
+    ],
+    'README.md' => [
+        'The bounded [Alpha 4 scope]',
+        'Consumer Contract version 9',
+        'never generic or framework middleware',
+        'not a core WebSocket capability',
+    ],
+    'RELEASING.md' => [
+        '## Approved Alpha 4 identity',
+        'Composer version: `0.1.0-alpha.4`',
+        'Framework tag: `v0.1.0-alpha.4`',
+        'Skeleton tag: `v0.1.0-alpha.4`',
+        'The accountable human approved the following release identity and gated publication sequence on 2026-07-23',
+        'prove the clean public installation path; create both GitHub prereleases; and announce Alpha 4.',
+        'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
+    ],
+    'ROADMAP.md' => [
+        'Alpha 4 publication state is external',
+        'without generic middleware',
+        'without a framework WebSocket runtime or API',
+    ],
+    'SECURITY.md' => [
+        'The accepted Alpha 4 scope',
+        'An Alpha 4 release may be announced only after the public-artifact gate',
+    ],
+    'docs/getting-started.md' => [
+        'The bounded Alpha 4 scope is accepted',
+        'Consumer Contract version 9',
+        'Package availability is an external fact',
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/releases/0.1.0-alpha.4.md`',
+        'ADR 035, ADR 032 through ADR 034 for the Alpha 4 rollup',
+    ],
+    'docs/releases/0.1.0-alpha.4.md' => [
+        'Release identity: `0.1.0-alpha.4`. Publication state is external',
+        'Identity and gated publication authorization do not announce either tag, either package, or the public installation path.',
+        'It is not production-ready and makes no backward-compatibility promise across prereleases.',
+        'Consumer Contract version 7 to version 9',
+        'composer create-project --stability=alpha phpthis/skeleton',
+    ],
+    'docs/decisions/035-bounded-alpha-4-release-scope.md' => [
+        'Status: accepted',
+        'Alpha 4 is accepted as the bounded rollup of the changes after Alpha 3',
+        'Composer version: `0.1.0-alpha.4`',
+        'framework tag: `v0.1.0-alpha.4`',
+        'skeleton tag: `v0.1.0-alpha.4`',
+        'Strict Profile version 2 and permanent diagnostics `PHT001` through `PHT006`',
+        'Alpha 4 does not add or permit an ORM',
+    ],
+    'docs/decisions/README.md' => [
+        '`035-bounded-alpha-4-release-scope.md`',
+    ],
+    'composer.json' => [
+        '--memory-limit=512M',
+    ],
+    'tools/package-files.txt' => [
+        'docs/releases/0.1.0-alpha.4.md',
+        'docs/decisions/033-application-owned-request-handler-decorators.md',
+        'docs/decisions/035-bounded-alpha-4-release-scope.md',
+    ],
+];
+
+foreach ($alpha4ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read approved Alpha 4 identity artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "The approved Alpha 4 identity marker is missing from {$relativePath}.";
         }
     }
 }
@@ -1126,6 +1208,14 @@ $mutableReleaseStateForbiddenMarkers = [
     'Alpha 3 is now available',
     'the Alpha 3 packages are available',
     'the public Alpha 3 installation path is available',
+    'Alpha 4 is published',
+    'Alpha 4 has been published',
+    'Alpha 4 is available',
+    '0.1.0-alpha.4 is published',
+    '0.1.0-alpha.4 is available',
+    'Alpha 4 is now available',
+    'the Alpha 4 packages are available',
+    'the public Alpha 4 installation path is available',
 ];
 
 $mutableReleaseStateAuthorityFiles = [
@@ -1137,24 +1227,28 @@ $mutableReleaseStateAuthorityFiles = [
     'docs/releases/0.1.0-alpha.1.md',
     'docs/releases/0.1.0-alpha.2.md',
     'docs/releases/0.1.0-alpha.3.md',
+    'docs/releases/0.1.0-alpha.4.md',
     'docs/decisions/018-bounded-alpha-1-release-scope.md',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
     'docs/decisions/031-bounded-alpha-3-release-scope.md',
+    'docs/decisions/035-bounded-alpha-4-release-scope.md',
     'skeleton/README.md',
 ];
 
 $externalReleaseStateMarkers = [
     'README.md' => 'Package availability and current release state are external facts',
     'RELEASING.md' => 'Publication state is external',
-    'ROADMAP.md' => 'Alpha 3 publication state is external',
+    'ROADMAP.md' => 'Alpha 4 publication state is external',
     'SECURITY.md' => 'This tracked policy does not record current publication state',
     'docs/getting-started.md' => 'Package availability is an external fact',
     'docs/releases/0.1.0-alpha.1.md' => 'Publication state is external',
     'docs/releases/0.1.0-alpha.2.md' => 'Publication state is external',
     'docs/releases/0.1.0-alpha.3.md' => 'Publication state is external',
+    'docs/releases/0.1.0-alpha.4.md' => 'Publication state is external',
     'docs/decisions/018-bounded-alpha-1-release-scope.md' => 'This decision does not record mutable publication state',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'not mutable tag, package, GitHub release, or installation availability',
     'docs/decisions/031-bounded-alpha-3-release-scope.md' => 'Publication state is external',
+    'docs/decisions/035-bounded-alpha-4-release-scope.md' => 'Publication state is external',
     'skeleton/README.md' => 'Package availability is an external fact',
 ];
 
@@ -1582,7 +1676,7 @@ $websocketArtifactMarkers = [
     'README.md' => [
         'Accepted [application-owned WebSocket integration](docs/websockets.md)',
         'Frames are parsed into a narrow typed command and never adapted to PHPThis HTTP requests or responses',
-        'ADR 034 is accepted evidence-backed application guidance, not a core WebSocket capability.',
+        'ADR 034 remains evidence-backed application-owned guidance for a separate pinned third-party runtime, not a core WebSocket capability.',
     ],
     'VISION.md' => [
         'An application that needs WebSockets can keep its pinned mature runtime',
