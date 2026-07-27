@@ -9,11 +9,10 @@ use Example\Coordination\RedisScheduleRunLeaseRenewOutcome;
 use Example\Coordination\RedisScheduleRunLeaseTrace;
 use Example\Coordination\RedisScheduleRunLeaseUnavailable;
 
-/** @return array<string, Closure(): void> */
-function redisCoordinationTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function redisCoordinationTests(): Generator
 {
-    return [
-        'Redis schedule lease uses one expiring NX acquisition and a 128-bit owner token' => static function (): void {
+    yield 'Redis schedule lease uses one expiring NX acquisition and a 128-bit owner token' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setResults = [true];
             $trace = new RedisScheduleRunLeaseTrace();
@@ -41,9 +40,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('Redis lease acquisition must use one bounded SET NX PX owner token.');
             }
-        },
+        };
 
-        'Redis schedule lease reports contention without renewal or release ownership' => static function (): void {
+    yield 'Redis schedule lease reports contention without renewal or release ownership' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setResults = [false];
             $trace = new RedisScheduleRunLeaseTrace();
@@ -78,9 +77,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('A contended Redis lease must never create local ownership.');
             }
-        },
+        };
 
-        'Redis schedule lease distinguishes server rejection from ordinary contention' => static function (): void {
+    yield 'Redis schedule lease distinguishes server rejection from ordinary contention' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setResults = [false];
             $client->setLastErrors = ['OOM command not allowed'];
@@ -105,9 +104,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('Redis server errors must fail closed instead of becoming contention.');
             }
-        },
+        };
 
-        'Redis schedule lease failure retains a primary command failure without exposing it' => static function (): void {
+    yield 'Redis schedule lease failure retains a primary command failure without exposing it' => static function (): void {
             $primary = new RuntimeException('Private primary command failure.');
             $failure = new RedisScheduleRunLeaseUnavailable(['release_failed'], $primary);
 
@@ -122,9 +121,9 @@ function redisCoordinationTests(): array
                     'Lease failure output must retain but never expose the primary failure.',
                 );
             }
-        },
+        };
 
-        'Redis schedule lease renews and releases only through fixed token-checked scripts' => static function (): void {
+    yield 'Redis schedule lease renews and releases only through fixed token-checked scripts' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setResults = [true];
             $client->evalResults = [1, 1];
@@ -180,9 +179,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('Redis renewal and release must atomically compare the acquired token.');
             }
-        },
+        };
 
-        'Redis schedule lease cannot renew or delete a successor lease' => static function (): void {
+    yield 'Redis schedule lease cannot renew or delete a successor lease' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setResults = [true];
             $client->evalResults = [0, 0];
@@ -205,9 +204,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('A stale owner token must leave a successor lease unchanged.');
             }
-        },
+        };
 
-        'Redis schedule lease performs no hidden retry after a backend failure' => static function (): void {
+    yield 'Redis schedule lease performs no hidden retry after a backend failure' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setFailures = [new RedisException('private acquisition failure')];
             $trace = new RedisScheduleRunLeaseTrace();
@@ -232,9 +231,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('Redis lease acquisition failure must fail closed after one attempt.');
             }
-        },
+        };
 
-        'Redis schedule lease preserves safe cleanup after an uncertain renewal' => static function (): void {
+    yield 'Redis schedule lease preserves safe cleanup after an uncertain renewal' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setResults = [true];
             $client->evalFailures = [new RedisException('private renewal failure'), null];
@@ -265,9 +264,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('An uncertain renewal must stop renewal but retain token-checked cleanup.');
             }
-        },
+        };
 
-        'Redis schedule lease bounds renewals and its structured outcome trace' => static function (): void {
+    yield 'Redis schedule lease bounds renewals and its structured outcome trace' => static function (): void {
             $client = new RedisScheduleRunLeaseTestRedis();
             $client->setResults = [true];
             $client->evalResults = [1, 1, 1, 1, 1];
@@ -309,9 +308,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('Redis lease renewal and trace cardinality must remain finite.');
             }
-        },
+        };
 
-        'Redis schedule lease renews TTL against the recorded server endpoint' => static function (): void {
+    yield 'Redis schedule lease renews TTL against the recorded server endpoint' => static function (): void {
             $target = coordinationRedisTarget();
             $redis = coordinationRedisConnection();
             $key = coordinationRedisKey('renewal');
@@ -347,9 +346,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('A real Redis renewal must atomically restore the finite lease TTL.');
             }
-        },
+        };
 
-        'Redis schedule lease stale owner cannot change a real successor lease' => static function (): void {
+    yield 'Redis schedule lease stale owner cannot change a real successor lease' => static function (): void {
             $target = coordinationRedisTarget();
             $redis = coordinationRedisConnection();
             $key = coordinationRedisKey('stale-owner');
@@ -401,9 +400,9 @@ function redisCoordinationTests(): array
             ) {
                 throw new RuntimeException('A real stale owner must leave its successor lease unchanged.');
             }
-        },
+        };
 
-        'Redis schedule lease real server rejection fails closed' => static function (): void {
+    yield 'Redis schedule lease real server rejection fails closed' => static function (): void {
             $target = coordinationRedisTarget();
             $redis = coordinationRedisConnection();
             $key = coordinationRedisKey('server-rejection');
@@ -444,9 +443,9 @@ function redisCoordinationTests(): array
             if (!$failed || $trace->snapshot() !== ['connected', 'acquire_failed']) {
                 throw new RuntimeException('A real Redis server rejection must not be reported as contention.');
             }
-        },
+        };
 
-        'Redis schedule lease rejects invalid targets and keys before backend I/O' => static function (): void {
+    yield 'Redis schedule lease rejects invalid targets and keys before backend I/O' => static function (): void {
             $trace = new RedisScheduleRunLeaseTrace();
             $invalid = [
                 ['', 6379, 1, 'phpthis_example:test:schedule_run:v1'],
@@ -484,8 +483,7 @@ function redisCoordinationTests(): array
             if ($trace->snapshot() !== []) {
                 throw new RuntimeException('Pre-I/O Redis lease validation must not record a backend outcome.');
             }
-        },
-    ];
+        };
 }
 
 final class RedisScheduleRunLeaseTestRedis extends Redis

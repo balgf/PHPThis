@@ -10,7 +10,7 @@
 - Strict database-projection and JSON-command boundary examples with coercion tests.
 - Strict Profile v0 with stable rules for mixed scalar coercion, final named classes, and database calls in loops.
 - Maximum-level PHPStan analysis with strict rules and no baseline.
-- Zero-dependency checks and example application.
+- Zero-runtime-dependency framework, established development checks, and example application.
 
 ## Phase 1: prove the development pattern
 
@@ -67,6 +67,7 @@
 
 ## Phase 4: Alpha 3 publication and Alpha 4 consumer hardening
 
+- Complete: adopt PHPUnit 13 only for the framework-maintainer suite while preserving all 176 named behaviors, exact-name and coherent-group selection, native parity and query-trace comparison diagnostics, machine-readable reports, report-only coverage, zero third-party runtime dependencies, and application-owned consumer test choices.
 - Complete: ADR 030 adds one bounded report-only duplication advisory to the installed consumer checker without changing application validity, the Consumer Contract version, the Strict Profile, or framework runtime behavior.
 - Alpha 3 publication state is external; ADR 031 and `RELEASING.md` define the inherited scope, coordinated packages, clean public-installation proof, and announcement boundary without embedding mutable availability in the tagged artifact.
 - Complete: ADR 032 and Consumer Contract version 8 add fixed lowercase `uuid` and `ulid` route types while retaining `positive-int` and opaque `token`, the at-most-two-parameter grammar, construction-time conflict rejection, and Strict Profile version 2. The core ceiling is 2,600 lines for the 2,592-line implementation only; no normalization, type fallback, binding, lookup, identifier runtime, or persistence policy is introduced.

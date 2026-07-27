@@ -79,11 +79,10 @@ final class RequestPolicyTestTrace
     }
 }
 
-/** @return array<string, Closure(): void> */
-function requestPolicyTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function requestPolicyTests(): Generator
 {
-    return [
-        'document list page request accepts only finite orders categories and canonical composite cursors' => static function (): void {
+    yield 'document list page request accepts only finite orders categories and canonical composite cursors' => static function (): void {
             $sqlShapedCategory = "x') OR 1=1 --";
             $cases = [
                 'default' => [[], 'rank_asc', null, null, null],
@@ -137,8 +136,8 @@ function requestPolicyTests(): array
                     ));
                 }
             }
-        },
-        'document list page request rejects adversarial shapes and malformed cursors before SQL' => static function (): void {
+        };
+    yield 'document list page request rejects adversarial shapes and malformed cursors before SQL' => static function (): void {
             foreach (invalidDocumentListQueries() as $case => $query) {
                 try {
                     ListDocumentsPageRequest::fromQuery($query);
@@ -151,8 +150,8 @@ function requestPolicyTests(): array
                     $case,
                 ));
             }
-        },
-        'protected document list preserves policy order and rejects denials before SQL' => static function (): void {
+        };
+    yield 'protected document list preserves policy order and rejects denials before SQL' => static function (): void {
             $databasePath = createDocumentListDatabaseFixture('list-policy-denials', 3);
             $cases = [
                 'authenticate' => [
@@ -209,8 +208,8 @@ function requestPolicyTests(): array
                     ));
                 }
             }
-        },
-        'protected document list passes typed authority and rejects invalid query before protected SQL' => static function (): void {
+        };
+    yield 'protected document list passes typed authority and rejects invalid query before protected SQL' => static function (): void {
             $databasePath = createDocumentListDatabaseFixture('list-policy-input', 3);
             $permitted = runDocumentListPageScenario($databasePath, ['order' => 'rank_asc']);
 
@@ -259,8 +258,8 @@ function requestPolicyTests(): array
                     ));
                 }
             }
-        },
-        'document list executes eight finite raw SQL branches and empty filters use zero SQL' => static function (): void {
+        };
+    yield 'document list executes eight finite raw SQL branches and empty filters use zero SQL' => static function (): void {
             $databasePath = createDocumentListDatabaseFixture(
                 'list-finite-shapes',
                 12,
@@ -376,8 +375,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Four categories must be rejected after policy but before SQL.');
             }
-        },
-        'protected document list SQL fails closed across tenant and membership mismatches' => static function (): void {
+        };
+    yield 'protected document list SQL fails closed across tenant and membership mismatches' => static function (): void {
             $databasePath = createDocumentListDatabaseFixture('list-sql-authority-mismatches', 3);
             $cases = [
                 'requested_resolved_tenant_mismatch' => [43, 42, 7],
@@ -412,8 +411,8 @@ function requestPolicyTests(): array
                     ));
                 }
             }
-        },
-        'document list binds SQL-shaped category data and preserves tenant isolation' => static function (): void {
+        };
+    yield 'document list binds SQL-shaped category data and preserves tenant isolation' => static function (): void {
             $payload = "x') OR 1=1 --";
             $databasePath = createDocumentListDatabaseFixture(
                 'list-bound-data-isolation',
@@ -459,8 +458,8 @@ function requestPolicyTests(): array
                     'Expected SQL-looking category text to remain bound data inside tenant 42.',
                 );
             }
-        },
-        'document list composite cursor covers exact lookahead and stable 125-document traversal' => static function (): void {
+        };
+    yield 'document list composite cursor covers exact lookahead and stable 125-document traversal' => static function (): void {
             $exactPath = createDocumentListDatabaseFixture('list-exact-page', 50);
             $lookaheadPath = createDocumentListDatabaseFixture('list-lookahead-page', 51);
             $exact = runDocumentListPageScenario($exactPath, []);
@@ -516,8 +515,8 @@ function requestPolicyTests(): array
                     throw new RuntimeException('A repeated cursor on a static fixture must return the same page.');
                 }
             }
-        },
-        'document list page keeps one statement and fingerprint across fixture sizes for all eight shapes' => static function (): void {
+        };
+    yield 'document list page keeps one statement and fingerprint across fixture sizes for all eight shapes' => static function (): void {
             $smallPath = createDocumentListDatabaseFixture('list-scale-small', 3);
             $largePath = createDocumentListDatabaseFixture('list-scale-large', 500);
             $shapeCategories = [
@@ -594,8 +593,8 @@ function requestPolicyTests(): array
             if (count(array_unique($fingerprints)) !== 8) {
                 throw new RuntimeException('Expected eight distinct scale-invariant raw SQL fingerprints.');
             }
-        },
-        'document list first pages surface out-of-domain stored ranks to strict projection' => static function (): void {
+        };
+    yield 'document list first pages surface out-of-domain stored ranks to strict projection' => static function (): void {
             $ascendingPath = createDocumentListDatabaseFixture(
                 'list-invalid-stored-rank-rank_asc',
                 0,
@@ -709,8 +708,8 @@ function requestPolicyTests(): array
                     ));
                 }
             }
-        },
-        'document list source uses direct raw SQL without ORM binding or pagination helpers' => static function (): void {
+        };
+    yield 'document list source uses direct raw SQL without ORM binding or pagination helpers' => static function (): void {
             $path = __DIR__ . '/../example/src/Documents/ListDocuments/ListDocumentsHandler.php';
             $source = file_get_contents($path);
 
@@ -755,8 +754,8 @@ function requestPolicyTests(): array
                     'Expected eight complete visible raw SQL branches with direct Connection calls.',
                 );
             }
-        },
-        'document policy rejects unauthenticated requests before later work' => static function (): void {
+        };
+    yield 'document policy rejects unauthenticated requests before later work' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-unauthenticated', 0);
             $trace = new RequestPolicyTestTrace();
             $response = handleDocumentPolicyRequest(
@@ -780,8 +779,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected unauthenticated requests to stop after authentication.');
             }
-        },
-        'document policy rejects cross-tenant requests before authorization' => static function (): void {
+        };
+    yield 'document policy rejects cross-tenant requests before authorization' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-cross-tenant', 0);
             $trace = new RequestPolicyTestTrace();
             $registry = requestPolicyErrorRegistry();
@@ -805,8 +804,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected cross-tenant requests to stop at tenant resolution.');
             }
-        },
-        'document policy rejects forbidden requests before protected retrieval' => static function (): void {
+        };
+    yield 'document policy rejects forbidden requests before protected retrieval' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-forbidden', 0);
             $trace = new RequestPolicyTestTrace();
             $response = handleDocumentPolicyRequest(
@@ -826,8 +825,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected forbidden requests to stop before protected retrieval.');
             }
-        },
-        'consumer replaces every document policy and passes explicit authority values' => static function (): void {
+        };
+    yield 'consumer replaces every document policy and passes explicit authority values' => static function (): void {
             $small = runPermittedDocumentPolicyScenario('policy-permitted-small', 0);
             $large = runPermittedDocumentPolicyScenario('policy-permitted-large', 500);
             $expectedBody = "{\"document\":{\"account_id\":42,\"key\":\"Doc_9-z\",\"title\":\"Example document\"}}\n";
@@ -854,8 +853,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected replaceable ordered policies and one bounded protected query.');
             }
-        },
-        'permitted document policy keeps protected missing responses private and generic' => static function (): void {
+        };
+    yield 'permitted document policy keeps protected missing responses private and generic' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-protected-missing', 0);
             $trace = new RequestPolicyTestTrace();
             $response = handleDocumentPolicyRequest(
@@ -877,8 +876,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected a private generic bounded protected not-found response.');
             }
-        },
-        'protected document query fails closed when requested and resolved tenants differ' => static function (): void {
+        };
+    yield 'protected document query fails closed when requested and resolved tenants differ' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-query-tenant-mismatch', 0);
             $document = $fixture['retrieve']->retrieve(
                 AuthenticatedPrincipal::fromPositiveInteger(7),
@@ -894,8 +893,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected protected SQL to retain the resolved tenant boundary.');
             }
-        },
-        'document policy is not entered for route or method rejection' => static function (): void {
+        };
+    yield 'document policy is not entered for route or method rejection' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-routing-rejection', 0);
             $trace = new RequestPolicyTestTrace();
             $application = requestPolicyApplication($trace, null, $fixture['retrieve']);
@@ -915,8 +914,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected routing failures before every request policy.');
             }
-        },
-        'mapped document denials emit no sensitive log data' => static function (): void {
+        };
+    yield 'mapped document denials emit no sensitive log data' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-denial-redaction', 0);
             $logPath = __DIR__ . '/../tmp/request-policy-denials.log';
 
@@ -962,8 +961,8 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected mapped policy denials to remain unlogged and redacted.');
             }
-        },
-        'unexpected document policy failures use the generic redacted boundary' => static function (): void {
+        };
+    yield 'unexpected document policy failures use the generic redacted boundary' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-unexpected-failure', 0);
             $trace = new RequestPolicyTestTrace();
 
@@ -991,8 +990,7 @@ function requestPolicyTests(): array
             ) {
                 throw new RuntimeException('Expected an unexpected policy failure to receive the generic response.');
             }
-        },
-    ];
+        };
 }
 
 /**

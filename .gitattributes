@@ -3,11 +3,13 @@
 /.github export-ignore
 /.gitattributes export-ignore
 /.gitignore export-ignore
+/.phpunit.cache export-ignore
 /AGENTS.md export-ignore
 /autoload.php export-ignore
 /composer.lock export-ignore
 /example export-ignore
 /phpstan.neon export-ignore
+/phpunit.xml.dist export-ignore
 /skeleton export-ignore
 /tests export-ignore
 /tmp export-ignore

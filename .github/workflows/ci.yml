@@ -51,7 +51,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo, pdo_sqlite, redis
-          coverage: none
+          coverage: pcov
           tools: composer:v2
 
       - name: Validate Composer metadata
@@ -62,6 +62,19 @@ jobs:
 
       - name: Run validity gate
         run: composer check
+
+      - name: Generate report-only coverage
+        run: composer test:coverage
+
+      - name: Upload maintainer test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-${{ matrix.php }}-maintainer-test-reports
+          path: |
+            .phpunit.cache/junit.xml
+            .phpunit.cache/coverage.xml
+          if-no-files-found: warn
 
   database-transport:
     name: PDO transport (SQLite, MySQL 8.4, PostgreSQL 17)

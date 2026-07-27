@@ -90,11 +90,10 @@ final class ThrowingRequestSummarySink implements RequestSummarySink
     }
 }
 
-/** @return array<string, Closure(): void> */
-function observabilityTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function observabilityTests(): Generator
 {
-    return [
-        'correlation IDs are generated with 128 random bits in canonical form' => static function (): void {
+    yield 'correlation IDs are generated with 128 random bits in canonical form' => static function (): void {
             $seen = [];
 
             for ($index = 0; $index < 32; $index++) {
@@ -109,8 +108,8 @@ function observabilityTests(): array
 
                 $seen[$generated->value] = true;
             }
-        },
-        'terminal coordinator emits one success summary and owns the response request ID' => static function (): void {
+        };
+    yield 'terminal coordinator emits one success summary and owns the response request ID' => static function (): void {
             $correlationId = CorrelationId::generate();
             $sink = new CapturingRequestSummarySink();
             $handler = new ObservabilityTestHandler(
@@ -172,8 +171,8 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected one closed redacted success summary and one owned response ID.');
             }
-        },
-        'default error-log sink serializes exactly one closed request summary' => static function (): void {
+        };
+    yield 'default error-log sink serializes exactly one closed request summary' => static function (): void {
             $logPath = tempnam(sys_get_temp_dir(), 'phpthis-request-summary-');
             $previousErrorLog = ini_get('error_log');
 
@@ -257,8 +256,8 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected one serialized closed request-summary event.');
             }
-        },
-        'terminal summary exposes one bounded document-cache outcome without cache data' => static function (): void {
+        };
+    yield 'terminal summary exposes one bounded document-cache outcome without cache data' => static function (): void {
             $cacheTrace = new DocumentDetailsCacheTrace();
             $cacheTrace->complete(
                 DocumentDetailsCacheReadOutcome::Hit,
@@ -284,8 +283,8 @@ function observabilityTests(): array
             ]) {
                 throw new RuntimeException('Expected one redacted cache outcome in the terminal summary.');
             }
-        },
-        'terminal coordinator emits one status-only summary for every mapped or routed failure' => static function (): void {
+        };
+    yield 'terminal coordinator emits one status-only summary for every mapped or routed failure' => static function (): void {
             $ok = new ObservabilityTestHandler(
                 static fn (Request $request): Response => new Response(
                     200,
@@ -365,8 +364,8 @@ function observabilityTests(): array
                     ));
                 }
             }
-        },
-        'terminal coordinator emits one class-only summary for an unknown failure' => static function (): void {
+        };
+    yield 'terminal coordinator emits one class-only summary for an unknown failure' => static function (): void {
             $sink = new CapturingRequestSummarySink();
             $correlationId = CorrelationId::generate();
             $coordinator = observabilityCoordinator(
@@ -403,8 +402,8 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected one redacted class-only unknown-failure summary.');
             }
-        },
-        'terminal coordinator reports repeated exact SQL without retaining SQL or bindings' => static function (): void {
+        };
+    yield 'terminal coordinator reports repeated exact SQL without retaining SQL or bindings' => static function (): void {
             $budget = new QueryBudget(2);
             $trace = new QueryTrace(1);
             $connection = Connection::connect('sqlite::memory:', $budget, $trace);
@@ -451,8 +450,8 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected deterministic redacted repeated-query evidence.');
             }
-        },
-        'terminal coordinator aggregates ordered sources failures and bounded trace truncation' => static function (): void {
+        };
+    yield 'terminal coordinator aggregates ordered sources failures and bounded trace truncation' => static function (): void {
             $firstBudget = new QueryBudget(2);
             $firstTrace = new QueryTrace(1);
             $firstConnection = Connection::connect('sqlite::memory:', $firstBudget, $firstTrace);
@@ -532,8 +531,8 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected ordered bounded multi-source failure evidence.');
             }
-        },
-        'terminal coordinator distinguishes exact budget use from one rejected attempt' => static function (): void {
+        };
+    yield 'terminal coordinator distinguishes exact budget use from one rejected attempt' => static function (): void {
             $budget = new QueryBudget(1);
             $trace = new QueryTrace(1);
             $connection = Connection::connect('sqlite::memory:', $budget, $trace);
@@ -575,8 +574,8 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected an over-budget attempt to remain visible and untraced.');
             }
-        },
-        'terminal coordinator keeps success and unknown responses unchanged when the sink throws' => static function (): void {
+        };
+    yield 'terminal coordinator keeps success and unknown responses unchanged when the sink throws' => static function (): void {
             $cookie = new ResponseCookie(
                 'result',
                 'CookiePrivateMarker',
@@ -634,8 +633,8 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected one failed sink attempt to leave each final response intact.');
             }
-        },
-        'terminal request summary excludes request response database and exception secrets' => static function (): void {
+        };
+    yield 'terminal request summary excludes request response database and exception secrets' => static function (): void {
             $bodyPath = __DIR__ . '/../tmp/observability-private-body.txt';
             $body = 'BodyPrivateMarker';
 
@@ -717,8 +716,8 @@ function observabilityTests(): array
             if ($response->status !== 200 || $sink->attempts !== 1) {
                 throw new RuntimeException('Expected the redaction request to complete with one summary attempt.');
             }
-        },
-        'query summary sources are finite uniquely named and connection local' => static function (): void {
+        };
+    yield 'query summary sources are finite uniquely named and connection local' => static function (): void {
             $handler = new ObservabilityTestHandler(
                 static fn (Request $request): Response => new Response(200, [], ''),
             );
@@ -773,8 +772,8 @@ function observabilityTests(): array
 
                 throw new RuntimeException('Expected an invalid query-summary source name to be rejected.');
             }
-        },
-        'sequential terminal requests use fresh IDs budgets and traces' => static function (): void {
+        };
+    yield 'sequential terminal requests use fresh IDs budgets and traces' => static function (): void {
             $first = executeObservedSingleQueryRequest();
             $second = executeObservedSingleQueryRequest();
 
@@ -789,8 +788,7 @@ function observabilityTests(): array
             ) {
                 throw new RuntimeException('Expected fresh request-scoped correlation and database evidence.');
             }
-        },
-    ];
+        };
 }
 
 /**

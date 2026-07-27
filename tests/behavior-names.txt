@@ -1,0 +1,176 @@
+document list page request accepts only finite orders categories and canonical composite cursors
+document list page request rejects adversarial shapes and malformed cursors before SQL
+protected document list preserves policy order and rejects denials before SQL
+protected document list passes typed authority and rejects invalid query before protected SQL
+document list executes eight finite raw SQL branches and empty filters use zero SQL
+protected document list SQL fails closed across tenant and membership mismatches
+document list binds SQL-shaped category data and preserves tenant isolation
+document list composite cursor covers exact lookahead and stable 125-document traversal
+document list page keeps one statement and fingerprint across fixture sizes for all eight shapes
+document list first pages surface out-of-domain stored ranks to strict projection
+document list source uses direct raw SQL without ORM binding or pagination helpers
+document policy rejects unauthenticated requests before later work
+document policy rejects cross-tenant requests before authorization
+document policy rejects forbidden requests before protected retrieval
+consumer replaces every document policy and passes explicit authority values
+permitted document policy keeps protected missing responses private and generic
+protected document query fails closed when requested and resolved tenants differ
+document policy is not entered for route or method rejection
+mapped document denials emit no sensitive log data
+unexpected document policy failures use the generic redacted boundary
+correlation IDs are generated with 128 random bits in canonical form
+terminal coordinator emits one success summary and owns the response request ID
+default error-log sink serializes exactly one closed request summary
+terminal summary exposes one bounded document-cache outcome without cache data
+terminal coordinator emits one status-only summary for every mapped or routed failure
+terminal coordinator emits one class-only summary for an unknown failure
+terminal coordinator reports repeated exact SQL without retaining SQL or bindings
+terminal coordinator aggregates ordered sources failures and bounded trace truncation
+terminal coordinator distinguishes exact budget use from one rejected attempt
+terminal coordinator keeps success and unknown responses unchanged when the sink throws
+terminal request summary excludes request response database and exception secrets
+query summary sources are finite uniquely named and connection local
+sequential terminal requests use fresh IDs budgets and traces
+durable job publication rolls back business event and job together
+durable job worker is idle and keeps three statements across queue sizes
+durable job duplicate deliveries produce one idempotent effect
+durable job retry uses exact bounded backoff and later succeeds
+durable job attempts stop at three and become a redacted dead letter
+durable job expired final lease becomes dead without a fourth attempt
+durable job poison envelopes never dispatch and retain only redacted diagnostics
+durable job samples fresh time before dispatch and skips an expired lease
+durable job completion samples fresh time and rejects an expired lease
+durable job retry backoff starts from freshly observed failure time
+durable job subprocess crash is fenced and safely redelivered after lease expiry
+application console rejects unknown commands before database work
+application console rejects every invalid argument shape before database work
+application command parser accepts exactly 4096 absolute path bytes
+application console reports missing databases as one redacted operational failure
+jobs run-one command handles at most one delivery in each fresh process
+schedule run uses explicit UTC five-minute slots and handles at most one delivery
+schedule run skips a subprocess-held Redis lease without blocking or delivering
+schedule run recovers after a lease-holder process dies and Redis expires ownership
+application composition keeps CLI execution outside fresh HTTP request state
+database migrate applies an ordered inspectable ledger and reruns as a no-op
+database migrate adds account users without conflating principal identities
+database migrate rejects checksum drift before pending migration work
+database migrate rejects non-prefix ledger history
+database migrate rejects an incompatible preexisting ledger schema
+database migrate reports exact redacted ledger and lock failures
+migration history rejects malformed and oversized database snapshots
+database migrate preserves earlier commits across a later migration failure
+database migrate refuses to infer a baseline for an unledgered existing schema
+database migrate fails fast under a subprocess-held migration lock
+HTTP composition never creates or applies a missing database schema
+document upload rejects every non-success outcome before storage
+document upload keeps media and provenance failures explicit
+document storage rejects symlinked and overly permissive roots
+document download exposes one fixed local-file response contract
+real multipart upload and download remain bounded and metadata-blind
+large local file emission stays below a fixed memory delta
+Redis proof uses distinct recorded cache and noeviction lease endpoints
+Redis document cache proves miss hit eviction expiry and bounded authoritative reads
+Redis document cache uses the exact versioned key value and configured TTL
+Redis document cache rejects corrupt and wrong-tenant payloads
+Redis document cache outage falls back without retry or payload leakage
+Redis document cache retains read evidence when authoritative retrieval fails
+Redis document cache records a failed refill without changing authoritative truth
+Redis document cache isolates the same document across tenants and environments
+document authorization denial performs no cache or protected source work
+Redis document cache deliberately permits duplicate reads on interleaved cold misses
+Redis document cache preserves constant authoritative SQL on cold small and large fixtures
+Redis document cache bounds the accepted stale-refill race with finite TTL
+Redis document cache skips an oversized authoritative payload
+authoritative document update commits before explicit Redis invalidation
+failed authoritative document update never invalidates the existing cache key
+authoritative document update survives explicit invalidation outage
+Redis schedule lease uses one expiring NX acquisition and a 128-bit owner token
+Redis schedule lease reports contention without renewal or release ownership
+Redis schedule lease distinguishes server rejection from ordinary contention
+Redis schedule lease failure retains a primary command failure without exposing it
+Redis schedule lease renews and releases only through fixed token-checked scripts
+Redis schedule lease cannot renew or delete a successor lease
+Redis schedule lease performs no hidden retry after a backend failure
+Redis schedule lease preserves safe cleanup after an uncertain renewal
+Redis schedule lease bounds renewals and its structured outcome trace
+Redis schedule lease renews TTL against the recorded server endpoint
+Redis schedule lease stale owner cannot change a real successor lease
+Redis schedule lease real server rejection fails closed
+Redis schedule lease rejects invalid targets and keys before backend I/O
+consumer profile composes policy typed input transaction job and correlation
+consumer profile denials and invalid input stop before protected SQL
+consumer profile job and budget failures roll back every scoped write
+consumer profile SQL rejects mismatched tenant and missing actor membership
+explicit nested handler decorators preserve request and response identity
+maintenance gate short-circuits or delegates exactly once
+handler decorator propagates the exact downstream exception
+handler decorator propagates its exact own exception before delegation
+response decorator preserves immutable buffered and local-file response fields
+handler decoration is route-local and removable by direct rewiring
+example composes explicit route modules
+example setup creates and reseeds a fresh database idempotently
+application dispatches an exact route
+application distinguishes 404 and 405
+request reader normalizes one bounded PHP runtime request
+request reader rejects malformed runtime metadata
+request reader enforces declared and actual body bounds
+request boundary maps exact known failures and rethrows unknown failures
+response cookies are explicit validated values
+response emitter preserves repeated Set-Cookie fields
+request boundary normalizes one bounded multipart upload
+session lifecycle is lazy strict scoped and fixation resistant
+unknown failure boundary returns one generic response without logging
+router rejects duplicate method and path pairs
+route accepts at most two full-segment typed parameter declarations
+router matches bounded canonical positive integer path parameters
+router matches two ordered parameters and bounded opaque tokens
+router matches canonical lowercase UUID path parameters
+router matches canonical lowercase ULID path parameters
+invalid UUID and ULID routes stop before handler and database work
+path parameters reject invalid construction unknown names and wrong types
+literal route wins over a matching mixed typed route
+literal routes win over canonical UUID and ULID values
+route rejects repeated typed parameter names
+router rejects overlapping typed declarations and inconsistent metadata
+application passes immutable mixed path parameters to the handler
+application preserves mixed route 405 order and rejects invalid values before handling
+allowed methods merge literal and parameterized registrations in order
+router dispatches from a large explicit route table
+router indexes mixed paths in a large branching route table
+router preserves allowed method registration order
+item projection converts exact database rows into concrete identifiers
+item projection rejects coercive and structurally invalid rows
+database projection parses documented integer representations
+database projection rejects coercive identifiers
+database projection rejects missing unknown and invalid fields
+user activity projection parses exact aggregate rows
+user activity projection rejects malformed aggregate rows
+list users page request parses only one canonical continuation
+list users rejects invalid continuation before database work
+list users accepts one canonical runtime continuation
+HTTP command parses one exact JSON object
+HTTP command exposes native duplicate-key last-value behavior
+HTTP command rejects malformed coercive and unknown input
+HTTP handler invokes only its typed create-user operation
+HTTP request boundary accepts the exact endpoint byte limit
+HTTP handler rejects invalid commands before use-case invocation
+example request boundary maps client failures before database work
+mapped input failures emit no submitted data or log entry
+user routes execute bounded reads and one transactional write end to end
+user list page keeps one query across dataset sizes
+user list continuation handles exact and lookahead page boundaries
+user list continuation traverses large data without gaps or duplicates
+user item endpoint keeps one query across dataset sizes
+user item route separates missing records from malformed identifiers
+account-scoped user creation publishes one job with four writes across dataset sizes
+account-scoped user creation keeps principal and user identities separate
+account-scoped user creation rolls back when its budget rejects account relation
+account-scoped user creation rolls back when the event statement fails
+account-scoped user creation rejects invalid input before database work
+connection binds named values and enforces its budget
+connection keeps SQL-looking bound text outside statement structure
+connection accepts portable parameter names and rejects invalid or duplicate names before database work
+query trace detects repetition without exposing SQL or parameters
+query trace records database failures before rethrowing them
+query trace requires a positive fingerprint bound
+query trace bounds retained fingerprint details

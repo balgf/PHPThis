@@ -48,11 +48,10 @@ final class SequenceUserWelcomeJobClock implements UserWelcomeJobClock
     }
 }
 
-/** @return array<string, Closure(): void> */
-function jobTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function jobTests(): Generator
 {
-    return [
-        'durable job publication rolls back business event and job together' => static function (): void {
+    yield 'durable job publication rolls back business event and job together' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-publication-rollback', 0, false);
             $schema = Connection::connect(
                 'sqlite:' . $databasePath,
@@ -105,9 +104,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('Job publication failure must roll back the complete business transaction.');
             }
-        },
+        };
 
-        'durable job worker is idle and keeps three statements across queue sizes' => static function (): void {
+    yield 'durable job worker is idle and keeps three statements across queue sizes' => static function (): void {
             $idlePath = createUserDatabaseFixture('job-worker-idle', 0, false);
             $idle = runUserWelcomeWorker(
                 $idlePath,
@@ -157,9 +156,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('One-shot job work must stay constant across queue cardinalities.');
             }
-        },
+        };
 
-        'durable job duplicate deliveries produce one idempotent effect' => static function (): void {
+    yield 'durable job duplicate deliveries produce one idempotent effect' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-duplicate', 0, false);
             $first = UserWelcomeJobEnvelope::forEmail('duplicate@example.com');
             $second = UserWelcomeJobEnvelope::forEmail('duplicate@example.com');
@@ -190,9 +189,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('Duplicate semantic delivery must create one durable effect.');
             }
-        },
+        };
 
-        'durable job retry uses exact bounded backoff and later succeeds' => static function (): void {
+    yield 'durable job retry uses exact bounded backoff and later succeeds' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-retry', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('retry@example.com');
             insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 900);
@@ -238,9 +237,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('Job retry must honor the exact five-second first backoff.');
             }
-        },
+        };
 
-        'durable job attempts stop at three and become a redacted dead letter' => static function (): void {
+    yield 'durable job attempts stop at three and become a redacted dead letter' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-exhaustion', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('exhaustion@example.com');
             insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 900);
@@ -283,9 +282,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('Three failed starts must produce one redacted terminal dead letter.');
             }
-        },
+        };
 
-        'durable job expired final lease becomes dead without a fourth attempt' => static function (): void {
+    yield 'durable job expired final lease becomes dead without a fourth attempt' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-final-crash', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('final-crash@example.com');
             insertExpiredFinalLease(
@@ -326,9 +325,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('An expired final lease must become terminal without dispatch.');
             }
-        },
+        };
 
-        'durable job poison envelopes never dispatch and retain only redacted diagnostics' => static function (): void {
+    yield 'durable job poison envelopes never dispatch and retain only redacted diagnostics' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-poison', 0, false);
             $valid = UserWelcomeJobEnvelope::forEmail('poison@example.com');
             $invalidSecret = 'poison-secret-value';
@@ -391,9 +390,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('Poison jobs must dead-letter without dynamic dispatch or disclosure.');
             }
-        },
+        };
 
-        'durable job samples fresh time before dispatch and skips an expired lease' => static function (): void {
+    yield 'durable job samples fresh time before dispatch and skips an expired lease' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-fresh-dispatch-time', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('fresh-dispatch@example.com');
             insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 900);
@@ -443,9 +442,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('A fresh pre-dispatch clock read must prevent work under an expired lease.');
             }
-        },
+        };
 
-        'durable job completion samples fresh time and rejects an expired lease' => static function (): void {
+    yield 'durable job completion samples fresh time and rejects an expired lease' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-fresh-completion-time', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('fresh-completion@example.com');
             insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 900);
@@ -502,9 +501,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('Completion must recheck fresh time and roll back an effect after lease expiry.');
             }
-        },
+        };
 
-        'durable job retry backoff starts from freshly observed failure time' => static function (): void {
+    yield 'durable job retry backoff starts from freshly observed failure time' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-fresh-failure-time', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('fresh-failure@example.com');
             insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 900);
@@ -559,9 +558,9 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('Retry delay must start from fresh failure time without retaining failure details.');
             }
-        },
+        };
 
-        'durable job subprocess crash is fenced and safely redelivered after lease expiry' => static function (): void {
+    yield 'durable job subprocess crash is fenced and safely redelivered after lease expiry' => static function (): void {
             $databasePath = createUserDatabaseFixture('job-process-crash', 0, false);
             $job = UserWelcomeJobEnvelope::forEmail('crash@example.com');
             insertAvailableJob($databasePath, $job->jobId, $job->toJson(), 900);
@@ -609,9 +608,7 @@ function jobTests(): array
             ) {
                 throw new RuntimeException('A terminated claimant must be fenced and safely redelivered after expiry.');
             }
-        },
-
-    ];
+        };
 }
 
 /**

@@ -490,6 +490,7 @@ $requiredRepositoryFiles = [
     '.gitattributes',
     '.github/assets/phpthis-readme-banner.png',
     '.github/workflows/ci.yml',
+    'phpunit.xml.dist',
     'RELEASING.md',
     '.ai/cache.md',
     '.ai/cli.md',
@@ -771,6 +772,8 @@ $requiredRepositoryFiles = [
     'src/Session/SessionLifecycle.php',
     'src/Session/SessionSnapshot.php',
     'src/Session/SessionUnavailable.php',
+    'tests/FrameworkBehaviorTest.php',
+    'tests/behavior-names.txt',
     'tests/document-files.php',
     'tests/large-file-emitter.php',
     'tests/observability.php',
@@ -787,6 +790,7 @@ $requiredRepositoryFiles = [
     'tests/job-worker-crash.php',
     'tests/handler-decorator.php',
     'tests/request-policy.php',
+    'tests/run.php',
     'tests/fixtures/routing-construction-traversal.php.fixture',
     'tests/fixtures/routing-lookup-index-loop.php.fixture',
     'tests/fixtures/routing-lookup-helper-loop.php.fixture',
@@ -2401,7 +2405,7 @@ $observabilityArtifactMarkers = [
     ],
     'tests/run.php' => [
         "require __DIR__ . '/observability.php';",
-        'foreach (observabilityTests() as $name => $test)',
+        "frameworkBehaviorGroupDefinitions('observability', observabilityTests())",
     ],
     'tests/observability.php' => [
         'correlation IDs are generated with 128 random bits in canonical form',
@@ -2604,7 +2608,7 @@ $durableJobArtifactMarkers = [
     ],
     'tests/run.php' => [
         "require __DIR__ . '/jobs.php';",
-        'foreach (jobTests() as $name => $test)',
+        "frameworkBehaviorGroupDefinitions('jobs', jobTests())",
         'account-scoped user creation publishes one job with four writes across dataset sizes',
     ],
     'tests/jobs.php' => [
@@ -3129,8 +3133,8 @@ $redisCoordinationArtifactMarkers = [
     'tests/run.php' => [
         "require __DIR__ . '/cache.php';",
         "require __DIR__ . '/redis-coordination.php';",
-        'foreach (cacheTests() as $name => $test)',
-        'foreach (redisCoordinationTests() as $name => $test)',
+        "frameworkBehaviorGroupDefinitions('cache', cacheTests())",
+        "frameworkBehaviorGroupDefinitions('redis-coordination', redisCoordinationTests())",
     ],
     '.github/workflows/ci.yml' => [
         'redis-cache:',
@@ -3404,7 +3408,7 @@ $migrationArtifactMarkers = [
     ],
     'tests/run.php' => [
         "require __DIR__ . '/migrations.php';",
-        'foreach (migrationTests() as $name => $test)',
+        "frameworkBehaviorGroupDefinitions('migrations', migrationTests())",
     ],
     'tests/migrations.php' => [
         'database migrate applies an ordered inspectable ledger and reruns as a no-op',
@@ -3963,8 +3967,75 @@ if (!is_string($composerContents)) {
     $failures[] = 'Cannot read composer.json.';
 } else {
     $composer = json_decode($composerContents, true);
+    $runtimeRequirements = is_array($composer) ? ($composer['require'] ?? null) : null;
+    $developmentRequirements = is_array($composer) ? ($composer['require-dev'] ?? null) : null;
     $scripts = is_array($composer) ? ($composer['scripts'] ?? null) : null;
     $check = is_array($scripts) ? ($scripts['check'] ?? null) : null;
+    $archive = is_array($composer) ? ($composer['archive'] ?? null) : null;
+    $archiveExclusions = is_array($archive) ? ($archive['exclude'] ?? null) : null;
+
+    if (
+        !is_array($developmentRequirements)
+        || ($developmentRequirements['phpunit/phpunit'] ?? null) !== '^13.0'
+    ) {
+        $failures[] = 'PHPUnit 13 must remain an exact framework-maintainer require-dev dependency.';
+    }
+
+    foreach (is_array($runtimeRequirements) ? array_keys($runtimeRequirements) : [] as $runtimePackage) {
+        if (
+            is_string($runtimePackage)
+            && (
+                str_starts_with($runtimePackage, 'phpunit/')
+                || str_starts_with($runtimePackage, 'pestphp/')
+            )
+        ) {
+            $failures[] = "Test runner must not become a framework runtime dependency: {$runtimePackage}.";
+        }
+    }
+
+    foreach (is_array($developmentRequirements) ? array_keys($developmentRequirements) : [] as $developmentPackage) {
+        if (is_string($developmentPackage) && str_starts_with($developmentPackage, 'pestphp/')) {
+            $failures[] = "Pest is outside the framework-maintainer runner decision: {$developmentPackage}.";
+        }
+    }
+
+    if (
+        !is_array($scripts)
+        || ($scripts['test'] ?? null) !== 'php vendor/bin/phpunit --configuration=phpunit.xml.dist'
+    ) {
+        $failures[] = 'composer test must run the canonical PHPUnit framework-maintainer suite.';
+    }
+
+    if (
+        !is_array($scripts)
+        || ($scripts['test:coverage'] ?? null)
+            !== 'php vendor/bin/phpunit --configuration=phpunit.xml.dist --coverage-text --coverage-clover=.phpunit.cache/coverage.xml'
+    ) {
+        $failures[] = 'composer test:coverage must produce report-only text and Clover coverage.';
+    }
+
+    $expectedCheckStages = [
+        '@guard',
+        '@analyse',
+        '@test:profile',
+        '@test:duplication',
+        '@test:consumer',
+        '@test:database-drivers',
+        '@test:query-scaling',
+        '@test',
+    ];
+
+    if ($check !== $expectedCheckStages) {
+        $failures[] = 'composer check must preserve every canonical stage in its reviewed order.';
+    }
+
+    if (
+        !is_array($archiveExclusions)
+        || !in_array('/phpunit.xml.dist', $archiveExclusions, true)
+        || !in_array('/.phpunit.cache', $archiveExclusions, true)
+    ) {
+        $failures[] = 'Maintainer-only PHPUnit configuration and reports must remain outside Composer package archives.';
+    }
 
     if (!is_array($scripts) || ($scripts['test:database-drivers'] ?? null) !== 'php tools/test-database-drivers.php') {
         $failures[] = 'composer.json must define the canonical database-driver certification script.';
@@ -3973,6 +4044,332 @@ if (!is_string($composerContents)) {
     if (!is_array($check) || !in_array('@test:database-drivers', $check, true)) {
         $failures[] = 'composer check must include database-driver certification.';
     }
+}
+
+$skeletonComposerContents = file_get_contents($root . '/skeleton/composer.json');
+$skeletonComposer = is_string($skeletonComposerContents)
+    ? json_decode($skeletonComposerContents, true)
+    : null;
+$skeletonRuntimeRequirements = is_array($skeletonComposer) ? ($skeletonComposer['require'] ?? null) : null;
+$skeletonDevelopmentRequirements = is_array($skeletonComposer) ? ($skeletonComposer['require-dev'] ?? null) : null;
+$skeletonScripts = is_array($skeletonComposer) ? ($skeletonComposer['scripts'] ?? null) : null;
+
+foreach (
+    [
+        is_array($skeletonRuntimeRequirements) ? $skeletonRuntimeRequirements : [],
+        is_array($skeletonDevelopmentRequirements) ? $skeletonDevelopmentRequirements : [],
+    ] as $skeletonRequirements
+) {
+    foreach (array_keys($skeletonRequirements) as $skeletonPackage) {
+        if (
+            is_string($skeletonPackage)
+            && (
+                str_starts_with($skeletonPackage, 'phpunit/')
+                || str_starts_with($skeletonPackage, 'pestphp/')
+            )
+        ) {
+            $failures[] = "The skeleton must keep its application-owned test-runner choice: {$skeletonPackage}.";
+        }
+    }
+}
+
+if (!is_array($skeletonScripts) || ($skeletonScripts['test'] ?? null) !== 'php tests/run.php') {
+    $failures[] = 'The skeleton must retain its application-owned example test command.';
+}
+
+$gitAttributes = file_get_contents($root . '/.gitattributes');
+
+if (
+    !is_string($gitAttributes)
+    || preg_match('/^\/phpunit\.xml\.dist export-ignore$/m', $gitAttributes) !== 1
+    || preg_match('/^\/\.phpunit\.cache export-ignore$/m', $gitAttributes) !== 1
+) {
+    $failures[] = 'Maintainer-only PHPUnit configuration and reports must remain outside Git exports.';
+}
+
+$phpunitConfig = file_get_contents($root . '/phpunit.xml.dist');
+
+if (!is_string($phpunitConfig)) {
+    $failures[] = 'Cannot read phpunit.xml.dist.';
+} else {
+    foreach (
+        [
+            'https://schema.phpunit.de/13.2/phpunit.xsd',
+            'cacheDirectory=".phpunit.cache"',
+            'failOnRisky="true"',
+            'failOnWarning="true"',
+            '<file>tests/FrameworkBehaviorTest.php</file>',
+            '<directory>src</directory>',
+            '<directory includeInCodeCoverage="false">example/src</directory>',
+            '<coverage includeUncoveredFiles="true"/>',
+            '<junit outputFile=".phpunit.cache/junit.xml"/>',
+        ] as $phpunitConfigMarker
+    ) {
+        if (!str_contains($phpunitConfig, $phpunitConfigMarker)) {
+            $failures[] = "The framework-maintainer PHPUnit configuration is missing: {$phpunitConfigMarker}.";
+        }
+    }
+
+    if (
+        str_contains($phpunitConfig, '<directory>tests</directory>')
+        || substr_count($phpunitConfig, '<file>tests/FrameworkBehaviorTest.php</file>') !== 1
+    ) {
+        $failures[] = 'PHPUnit must discover only the explicit framework behavior bridge.';
+    }
+}
+
+$maintainerTestPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (
+    is_string($maintainerTestPackageInventory)
+    && preg_match(
+        '/^(?:phpunit\.xml\.dist|tests\/FrameworkBehaviorTest\.php|tests\/behavior-names\.txt)$/m',
+        $maintainerTestPackageInventory,
+    ) === 1
+) {
+    $failures[] = 'Framework-maintainer test artifacts must remain outside the runtime package inventory.';
+}
+
+$behaviorInventory = file_get_contents($root . '/tests/behavior-names.txt');
+
+if (!is_string($behaviorInventory)) {
+    $failures[] = 'Cannot read the framework behavior-name inventory.';
+} elseif (
+    $behaviorInventory === ''
+    || !str_ends_with($behaviorInventory, "\n")
+    || str_contains($behaviorInventory, "\r")
+) {
+    $failures[] = 'The framework behavior-name inventory must use non-empty LF-terminated lines.';
+} else {
+    $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
+
+    if (count($behaviorNames) !== 176 || count(array_unique($behaviorNames)) !== 176) {
+        $failures[] = 'The PHPUnit migration must preserve exactly 176 unique named framework behaviors.';
+    }
+
+    if (
+        hash('sha256', $behaviorInventory)
+        !== 'd721bcca62faf2b516b9a9e46c47dfc2f59737925cba2560051e40f843c58e51'
+    ) {
+        $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
+    }
+}
+
+$maintainerTestArtifactMarkers = [
+    '.ai/README.md' => [
+        'Add or focus framework-maintainer tests',
+        '`tests/FrameworkBehaviorTest.php`',
+        '`phpunit.xml.dist`',
+    ],
+    '.ai/testing.md' => [
+        'PHPUnit 13 as a maintainer-only development runner',
+        '`tests/behavior-names.txt` locks their complete order',
+        "composer test -- --group routing",
+        'migrated query-trace comparison slice',
+        'Applications continue to own their test library, runner, organization',
+    ],
+    'README.md' => [
+        'PHPUnit 13 maintainer suite requires PHP 8.4.1 or newer',
+        'do not affect the framework runtime or require consumers to select the same test runner',
+    ],
+    'tests/run.php' => [
+        'function frameworkBehaviorDefinitions(): Generator',
+        "frameworkBehaviorGroupDefinitions('request-policy', requestPolicyTests())",
+        "frameworkBehaviorGroupDefinitions('composition', compositionBehaviorTests())",
+        "frameworkBehaviorGroupDefinitions('database-boundary', databaseBoundaryBehaviorTests())",
+        'function frameworkBehaviorGroupDefinitions(string $group, iterable $tests): Generator',
+        'function compositionBehaviorTests(): Generator',
+        'function databaseBoundaryBehaviorTests(): Generator',
+        'function frameworkBehaviorRegistry(): array',
+        'function frameworkBehaviorTests(): array',
+        'function frameworkBehaviorGroups(): array',
+        'function frameworkBehaviorNamesForGroup(string $group): array',
+        'array_key_exists($name, $registered)',
+        'Assert::assertSame(',
+        'd721bcca62faf2b516b9a9e46c47dfc2f59737925cba2560051e40f843c58e51',
+    ],
+    'tests/FrameworkBehaviorTest.php' => [
+        "#[Group('request-policy')]",
+        "#[Group('routing')]",
+        "#[Group('database-boundary')]",
+        "#[Group('parity')]",
+        "#[TestDox('\$_dataName')]",
+        'frameworkBehaviorTests()[$name]',
+        '$this->addToAssertionCount(1);',
+        'yield $name => [$name];',
+        'testReviewedInventoryAndGroupOrderMatchTheRegistry',
+        'Expected focused groups to flatten to the exact reviewed behavior inventory.',
+    ],
+    'tests/request-policy.php' => [
+        'function requestPolicyTests(): Generator',
+    ],
+    'tests/observability.php' => [
+        'function observabilityTests(): Generator',
+    ],
+    'tests/jobs.php' => [
+        'function jobTests(): Generator',
+    ],
+    'tests/cli.php' => [
+        'function cliTests(): Generator',
+    ],
+    'tests/migrations.php' => [
+        'function migrationTests(): Generator',
+    ],
+    'tests/document-files.php' => [
+        'function documentFileTests(): Generator',
+    ],
+    'tests/cache.php' => [
+        'function cacheTests(): Generator',
+    ],
+    'tests/redis-coordination.php' => [
+        'function redisCoordinationTests(): Generator',
+    ],
+    'tests/consumer-profile.php' => [
+        'function consumerProfileTests(): Generator',
+    ],
+    'tests/handler-decorator.php' => [
+        'function handlerDecoratorTests(): Generator',
+    ],
+    'ROADMAP.md' => [
+        'adopt PHPUnit 13 only for the framework-maintainer suite',
+        'exact-name and coherent-group selection',
+        'application-owned consumer test choices',
+    ],
+];
+
+foreach ($maintainerTestArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read framework-maintainer test artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Framework-maintainer test artifact marker is missing from {$relativePath}: {$marker}.";
+        }
+    }
+}
+
+$phpunitBehaviorBridge = file_get_contents($root . '/tests/FrameworkBehaviorTest.php');
+/** @var array<non-empty-string, array{test_method: non-empty-string, provider: non-empty-string}> $expectedPhpunitGroupBridges */
+$expectedPhpunitGroupBridges = [
+    'request-policy' => [
+        'test_method' => 'testRequestPolicyBehavior',
+        'provider' => 'requestPolicyProvider',
+    ],
+    'observability' => [
+        'test_method' => 'testObservabilityBehavior',
+        'provider' => 'observabilityProvider',
+    ],
+    'jobs' => [
+        'test_method' => 'testJobBehavior',
+        'provider' => 'jobProvider',
+    ],
+    'cli' => [
+        'test_method' => 'testCliBehavior',
+        'provider' => 'cliProvider',
+    ],
+    'migrations' => [
+        'test_method' => 'testMigrationBehavior',
+        'provider' => 'migrationProvider',
+    ],
+    'document-files' => [
+        'test_method' => 'testDocumentFileBehavior',
+        'provider' => 'documentFileProvider',
+    ],
+    'cache' => [
+        'test_method' => 'testCacheBehavior',
+        'provider' => 'cacheProvider',
+    ],
+    'redis-coordination' => [
+        'test_method' => 'testRedisCoordinationBehavior',
+        'provider' => 'redisCoordinationProvider',
+    ],
+    'consumer-profile' => [
+        'test_method' => 'testConsumerProfileBehavior',
+        'provider' => 'consumerProfileProvider',
+    ],
+    'handler-decorator' => [
+        'test_method' => 'testHandlerDecoratorBehavior',
+        'provider' => 'handlerDecoratorProvider',
+    ],
+    'composition' => [
+        'test_method' => 'testCompositionBehavior',
+        'provider' => 'compositionProvider',
+    ],
+    'http-boundary' => [
+        'test_method' => 'testHttpBoundaryBehavior',
+        'provider' => 'httpBoundaryProvider',
+    ],
+    'routing' => [
+        'test_method' => 'testRoutingBehavior',
+        'provider' => 'routingProvider',
+    ],
+    'input-projection' => [
+        'test_method' => 'testInputProjectionBehavior',
+        'provider' => 'inputProjectionProvider',
+    ],
+    'crud' => [
+        'test_method' => 'testCrudBehavior',
+        'provider' => 'crudProvider',
+    ],
+    'database-boundary' => [
+        'test_method' => 'testDatabaseBoundaryBehavior',
+        'provider' => 'databaseBoundaryProvider',
+    ],
+];
+
+if (!is_string($phpunitBehaviorBridge)) {
+    $failures[] = 'Cannot read the PHPUnit framework behavior bridge.';
+} else {
+    foreach ($expectedPhpunitGroupBridges as $group => $bridge) {
+        $testMarker = sprintf(
+            "#[Group('%s')]\n"
+            . "    #[DataProvider('%s')]\n"
+            . "    #[TestDox('\$_dataName')]\n"
+            . "    public function %s(string \$name): void\n"
+            . "    {\n"
+            . "        \$this->runBehavior(\$name);\n"
+            . '    }',
+            $group,
+            $bridge['provider'],
+            $bridge['test_method'],
+        );
+        $providerMarker = sprintf(
+            "public static function %s(): Generator\n"
+            . "    {\n"
+            . "        yield from self::groupedBehaviorProvider('%s');\n"
+            . '    }',
+            $bridge['provider'],
+            $group,
+        );
+
+        if (
+            !str_contains($phpunitBehaviorBridge, $testMarker)
+            || !str_contains($phpunitBehaviorBridge, $providerMarker)
+        ) {
+            $failures[] = "PHPUnit must retain the complete test/provider bridge for group {$group}.";
+        }
+    }
+
+    if (
+        substr_count($phpunitBehaviorBridge, "#[Group('") !== 17
+        || substr_count($phpunitBehaviorBridge, "#[DataProvider('") !== 16
+        || substr_count($phpunitBehaviorBridge, 'yield from self::groupedBehaviorProvider(') !== 16
+    ) {
+        $failures[] = 'PHPUnit must expose exactly 16 behavior groups and one parity group.';
+    }
+}
+
+$frameworkBehaviorRegistry = file_get_contents($root . '/tests/run.php');
+
+if (
+    is_string($frameworkBehaviorRegistry)
+    && str_contains($frameworkBehaviorRegistry, 'fwrite(STDOUT, "PASS {$name}')
+) {
+    $failures[] = 'The removed custom framework test execution loop must not return.';
 }
 
 $ciPath = $root . '/.github/workflows/ci.yml';
@@ -3989,6 +4386,20 @@ if (!is_string($ciContents)) {
     || !str_contains($ciContents, "PHPTHIS_PGSQL_DSN: 'pgsql:")
 ) {
     $failures[] = 'CI must preserve SQLite, MySQL, and PostgreSQL PDO transport certification.';
+}
+
+if (
+    is_string($ciContents)
+    && (
+        substr_count($ciContents, 'coverage: pcov') !== 1
+        || !str_contains($ciContents, 'run: composer test:coverage')
+        || !str_contains($ciContents, 'uses: actions/upload-artifact@v4')
+        || !str_contains($ciContents, '.phpunit.cache/junit.xml')
+        || !str_contains($ciContents, '.phpunit.cache/coverage.xml')
+        || !str_contains($ciContents, 'if-no-files-found: warn')
+    )
+) {
+    $failures[] = 'CI must retain report-only PHPUnit coverage and machine-readable test artifacts.';
 }
 
 $consumerProfileArtifactMarkers = [
@@ -4058,7 +4469,7 @@ $consumerProfileArtifactMarkers = [
     ],
     'tests/run.php' => [
         "require __DIR__ . '/consumer-profile.php';",
-        'foreach (consumerProfileTests() as $name => $test)',
+        "frameworkBehaviorGroupDefinitions('consumer-profile', consumerProfileTests())",
     ],
     'composer.json' => [
         '"php": "~8.4.0"',

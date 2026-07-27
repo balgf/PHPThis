@@ -96,11 +96,10 @@ final class StaleRefillAuthoritativeDocumentDetails implements RetrieveAuthorize
     }
 }
 
-/** @return array<string, Closure(): void> */
-function cacheTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function cacheTests(): Generator
 {
-    return [
-        'Redis proof uses distinct recorded cache and noeviction lease endpoints' => static function (): void {
+    yield 'Redis proof uses distinct recorded cache and noeviction lease endpoints' => static function (): void {
             $cacheTarget = cacheRedisTarget();
             $leaseTarget = cacheLeaseRedisTarget();
             $cache = cacheRedisConnection();
@@ -144,9 +143,9 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('Redis cache and lease evidence requires two recorded backend roles.');
             }
-        },
+        };
 
-        'Redis document cache proves miss hit eviction expiry and bounded authoritative reads' => static function (): void {
+    yield 'Redis document cache proves miss hit eviction expiry and bounded authoritative reads' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('hit-expiry');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -202,9 +201,9 @@ function cacheTests(): array
             }
 
             cacheDeleteKey($redis, cacheTestKey($environment, $accountId, $documentKey));
-        },
+        };
 
-        'Redis document cache uses the exact versioned key value and configured TTL' => static function (): void {
+    yield 'Redis document cache uses the exact versioned key value and configured TTL' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('exact-encoding');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -247,9 +246,9 @@ function cacheTests(): array
             }
 
             cacheDeleteKey($redis, $key);
-        },
+        };
 
-        'Redis document cache rejects corrupt and wrong-tenant payloads' => static function (): void {
+    yield 'Redis document cache rejects corrupt and wrong-tenant payloads' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('corruption');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -377,9 +376,9 @@ function cacheTests(): array
             }
 
             cacheDeleteKey($redis, $key);
-        },
+        };
 
-        'Redis document cache outage falls back without retry or payload leakage' => static function (): void {
+    yield 'Redis document cache outage falls back without retry or payload leakage' => static function (): void {
             $source = new TestAuthoritativeDocumentDetails(
                 DocumentDetails::fromDatabaseRow(['title' => 'Database survives cache outage']),
             );
@@ -407,9 +406,9 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('Redis outage must preserve one explicit authoritative fallback.');
             }
-        },
+        };
 
-        'Redis document cache retains read evidence when authoritative retrieval fails' => static function (): void {
+    yield 'Redis document cache retains read evidence when authoritative retrieval fails' => static function (): void {
             $environment = cacheTestEnvironment('source-failure');
             $accountId = AccountId::fromPositiveInteger(42);
             $documentKey = DocumentKey::fromToken('source-failure');
@@ -440,9 +439,9 @@ function cacheTests(): array
             if (!$failed || $trace->snapshot() !== cacheTrace('miss', 'not_attempted')) {
                 throw new RuntimeException('Cache read evidence must survive an authoritative source failure.');
             }
-        },
+        };
 
-        'Redis document cache records a failed refill without changing authoritative truth' => static function (): void {
+    yield 'Redis document cache records a failed refill without changing authoritative truth' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('write-failure');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -506,9 +505,9 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('Cache refill failure must preserve the authoritative result.');
             }
-        },
+        };
 
-        'Redis document cache isolates the same document across tenants and environments' => static function (): void {
+    yield 'Redis document cache isolates the same document across tenants and environments' => static function (): void {
             $redis = cacheRedisConnection();
             $firstEnvironment = cacheTestEnvironment('isolation-first');
             $secondEnvironment = cacheTestEnvironment('isolation-second');
@@ -600,9 +599,9 @@ function cacheTests(): array
             cacheDeleteKey($redis, cacheTestKey($firstEnvironment, $firstAccount, $documentKey));
             cacheDeleteKey($redis, cacheTestKey($secondEnvironment, $firstAccount, $documentKey));
             cacheDeleteKey($redis, cacheTestKey($firstEnvironment, $secondAccount, $documentKey));
-        },
+        };
 
-        'document authorization denial performs no cache or protected source work' => static function (): void {
+    yield 'document authorization denial performs no cache or protected source work' => static function (): void {
             $source = new TestAuthoritativeDocumentDetails(
                 DocumentDetails::fromDatabaseRow(['title' => 'Never returned']),
             );
@@ -667,9 +666,9 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('Authorization denial must precede every cache and protected-data call.');
             }
-        },
+        };
 
-        'Redis document cache deliberately permits duplicate reads on interleaved cold misses' => static function (): void {
+    yield 'Redis document cache deliberately permits duplicate reads on interleaved cold misses' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('interleaved-misses');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -707,9 +706,9 @@ function cacheTests(): array
             }
 
             cacheDeleteKey($redis, cacheTestKey($environment, $accountId, $documentKey));
-        },
+        };
 
-        'Redis document cache preserves constant authoritative SQL on cold small and large fixtures' => static function (): void {
+    yield 'Redis document cache preserves constant authoritative SQL on cold small and large fixtures' => static function (): void {
             $small = runColdCacheDocumentScenario('cache-cold-small', 0);
             $large = runColdCacheDocumentScenario('cache-cold-large', 500);
 
@@ -725,9 +724,9 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('Cold cache evidence must preserve one authoritative SQL statement at scale.');
             }
-        },
+        };
 
-        'Redis document cache bounds the accepted stale-refill race with finite TTL' => static function (): void {
+    yield 'Redis document cache bounds the accepted stale-refill race with finite TTL' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('stale-refill');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -809,9 +808,9 @@ function cacheTests(): array
             }
 
             cacheDeleteKey($redis, $key);
-        },
+        };
 
-        'Redis document cache skips an oversized authoritative payload' => static function (): void {
+    yield 'Redis document cache skips an oversized authoritative payload' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('payload-bound');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -836,9 +835,9 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('An oversized source value must remain usable without entering Redis.');
             }
-        },
+        };
 
-        'authoritative document update commits before explicit Redis invalidation' => static function (): void {
+    yield 'authoritative document update commits before explicit Redis invalidation' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('update-invalidate');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -882,9 +881,9 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('Authoritative update must precede an explicit affected-key invalidation.');
             }
-        },
+        };
 
-        'failed authoritative document update never invalidates the existing cache key' => static function (): void {
+    yield 'failed authoritative document update never invalidates the existing cache key' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('update-rejected');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -943,9 +942,9 @@ function cacheTests(): array
             }
 
             cacheDeleteKey($redis, $key);
-        },
+        };
 
-        'authoritative document update survives explicit invalidation outage' => static function (): void {
+    yield 'authoritative document update survives explicit invalidation outage' => static function (): void {
             $connection = cacheUpdateDatabase();
             $cacheTrace = new DocumentDetailsCacheTrace();
             $cache = cacheDocumentDetailsService(
@@ -979,8 +978,7 @@ function cacheTests(): array
             ) {
                 throw new RuntimeException('Invalidation outage must be visible without undoing committed truth.');
             }
-        },
-    ];
+        };
 }
 
 function cacheRedisConnection(): Redis

@@ -9,11 +9,10 @@ use Example\Cli\ApplicationCommandName;
 use Example\Cli\InvalidApplicationCommandArguments;
 use Example\Jobs\UserWelcomeJobEnvelope;
 
-/** @return array<string, Closure(): void> */
-function cliTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function cliTests(): Generator
 {
-    return [
-        'application console rejects unknown commands before database work' => static function (): void {
+    yield 'application console rejects unknown commands before database work' => static function (): void {
             $missingDatabasePath = dirname(__DIR__)
                 . '/tmp/application-tests/unknown-command-private.sqlite';
             resetCliMissingPath($missingDatabasePath);
@@ -37,9 +36,9 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('Unknown commands must fail before I/O with one redacted stderr line.');
             }
-        },
+        };
 
-        'application console rejects every invalid argument shape before database work' => static function (): void {
+    yield 'application console rejects every invalid argument shape before database work' => static function (): void {
             $missingDatabasePath = dirname(__DIR__)
                 . '/tmp/application-tests/invalid-arguments-private.sqlite';
             resetCliMissingPath($missingDatabasePath);
@@ -85,9 +84,9 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('Invalid CLI arguments must perform no database or lock I/O.');
             }
-        },
+        };
 
-        'application command parser accepts exactly 4096 absolute path bytes' => static function (): void {
+    yield 'application command parser accepts exactly 4096 absolute path bytes' => static function (): void {
             $maximumPath = '/' . str_repeat('a', 4_095);
             $oversizedPath = $maximumPath . 'a';
             $parsed = ApplicationCommandLine::fromArguments(
@@ -113,9 +112,9 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('The typed database path boundary must accept 4096 bytes and reject 4097.');
             }
-        },
+        };
 
-        'application console reports missing databases as one redacted operational failure' => static function (): void {
+    yield 'application console reports missing databases as one redacted operational failure' => static function (): void {
             $missingDatabasePath = dirname(__DIR__)
                 . '/tmp/application-tests/missing-command-private.sqlite';
             resetCliMissingPath($missingDatabasePath);
@@ -139,9 +138,9 @@ function cliTests(): array
                     throw new RuntimeException('Operational failures must use one redacted stderr line.');
                 }
             }
-        },
+        };
 
-        'jobs run-one command handles at most one delivery in each fresh process' => static function (): void {
+    yield 'jobs run-one command handles at most one delivery in each fresh process' => static function (): void {
             $databasePath = createUserDatabaseFixture('cli-jobs-run-one', 0, false);
             $firstJob = UserWelcomeJobEnvelope::forEmail('cli-process-one@example.com');
             $secondJob = UserWelcomeJobEnvelope::forEmail('cli-process-two@example.com');
@@ -176,9 +175,9 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('Each fresh jobs:run-one process must handle at most one delivery.');
             }
-        },
+        };
 
-        'schedule run uses explicit UTC five-minute slots and handles at most one delivery' => static function (): void {
+    yield 'schedule run uses explicit UTC five-minute slots and handles at most one delivery' => static function (): void {
             $redisEnvironment = cliRedisEnvironment('schedule-slots');
             resetScheduleRedisLease($redisEnvironment);
             $databasePath = createUserDatabaseFixture('cli-schedule-slots', 0, false);
@@ -232,9 +231,9 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('The explicit clock must select complete UTC five-minute slots without catch-up work.');
             }
-        },
+        };
 
-        'schedule run skips a subprocess-held Redis lease without blocking or delivering' => static function (): void {
+    yield 'schedule run skips a subprocess-held Redis lease without blocking or delivering' => static function (): void {
             $redisEnvironment = cliRedisEnvironment('schedule-overlap');
             resetScheduleRedisLease($redisEnvironment);
             $databasePath = createUserDatabaseFixture('cli-schedule-overlap', 0, false);
@@ -273,9 +272,9 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('A subprocess-contended Redis schedule lease must skip immediately and perform no delivery.');
             }
-        },
+        };
 
-        'schedule run recovers after a lease-holder process dies and Redis expires ownership' => static function (): void {
+    yield 'schedule run recovers after a lease-holder process dies and Redis expires ownership' => static function (): void {
             $redisEnvironment = cliRedisEnvironment('schedule-crash-recovery');
             resetScheduleRedisLease($redisEnvironment);
             $databasePath = createUserDatabaseFixture('cli-schedule-crash-recovery', 0, false);
@@ -297,9 +296,9 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('Redis TTL recovery must permit one later duplicate-safe scheduled pass.');
             }
-        },
+        };
 
-        'application composition keeps CLI execution outside fresh HTTP request state' => static function (): void {
+    yield 'application composition keeps CLI execution outside fresh HTTP request state' => static function (): void {
             $databasePath = createUserDatabaseFixture('cli-http-composition', 0, false);
             $composition = new ApplicationComposition(
                 ApplicationDatabasePath::fromString($databasePath),
@@ -351,8 +350,7 @@ function cliTests(): array
             ) {
                 throw new RuntimeException('HTTP and CLI composition must create separate finite state for each execution.');
             }
-        },
-    ];
+        };
 }
 
 /**

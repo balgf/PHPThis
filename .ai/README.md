@@ -33,7 +33,7 @@ Then read only what the task needs:
 | Change the consumer contract, checker, skeleton, or application context | `.ai/application-context.md`, `.ai/crud.md`, `.ai/static-analysis.md`, `.ai/testing.md` | `docs/consumer-contract.md`, `verification/`, `bin/phpthis`, `skeleton/`, `templates/application/` |
 | Prepare, assess, or publish a release | `RELEASING.md`, `docs/releases/0.1.0-alpha.4.md`, ADR 035, ADR 032 through ADR 034, ADR 031 for Alpha 3 history, ADR 029 for the inherited Alpha 2 surface, ADR 018 for Alpha 1 history, `.ai/application-context.md`, `.ai/testing.md` | candidate metadata, clean-tree complete gate, exact CI run, package inventory, skeleton repository and lockfile, Packagist-preferred artifacts, and public installation proof |
 | Review the Alpha 2 consumer profile or a capability exit | `.ai/consumer-profile.md`, `docs/consumer-profile.md`, ADR 029, and the affected ADR 019 through ADR 028 | checked-in account Create path, `tests/consumer-profile.php`, supporting capability tests, Composer runtime range, CI matrix, package inventory, and complete gate |
-| Add tests | `.ai/testing.md` | `tests/run.php` |
+| Add or focus framework-maintainer tests | `.ai/testing.md` | `tests/run.php`, `tests/behavior-names.txt`, `tests/FrameworkBehaviorTest.php`, `phpunit.xml.dist` |
 | Change the development-pattern proof | `.ai/testing.md`, `.ai/database.md` | `tools/test-query-scaling.php`, `tests/fixtures/` |
 | Map failures | `.ai/errors.md`, `.ai/request-boundary.md` | named failure, registry wiring, front controller |
 | Change types or analysis rules | `.ai/static-analysis.md` | `phpstan.neon`, affected PHP files |

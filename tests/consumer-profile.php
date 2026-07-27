@@ -165,11 +165,10 @@ final readonly class ConsumerProfileResult
     }
 }
 
-/** @return array<string, Closure(): void> */
-function consumerProfileTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function consumerProfileTests(): Generator
 {
-    return [
-        'consumer profile composes policy typed input transaction job and correlation' => static function (): void {
+    yield 'consumer profile composes policy typed input transaction job and correlation' => static function (): void {
             $small = runConsumerProfileScenario('success-small', 0);
             $large = runConsumerProfileScenario('success-large', 500);
 
@@ -224,8 +223,8 @@ function consumerProfileTests(): array
                     );
                 }
             }
-        },
-        'consumer profile denials and invalid input stop before protected SQL' => static function (): void {
+        };
+    yield 'consumer profile denials and invalid input stop before protected SQL' => static function (): void {
             $cases = [
                 'authenticate' => ['authenticate', 401, ['authenticate']],
                 'resolve_tenant' => [
@@ -296,8 +295,8 @@ function consumerProfileTests(): array
                     );
                 }
             }
-        },
-        'consumer profile job and budget failures roll back every scoped write' => static function (): void {
+        };
+    yield 'consumer profile job and budget failures roll back every scoped write' => static function (): void {
             $jobFailure = runConsumerProfileScenario(
                 'job-failure',
                 0,
@@ -356,12 +355,11 @@ function consumerProfileTests(): array
             ) {
                 throw new RuntimeException('Consumer profile must distinguish execution and budget failure.');
             }
-        },
-        'consumer profile SQL rejects mismatched tenant and missing actor membership' => static function (): void {
+        };
+    yield 'consumer profile SQL rejects mismatched tenant and missing actor membership' => static function (): void {
             assertConsumerProfileSqlPolicy('mismatched_tenant', 7, 43, 43);
             assertConsumerProfileSqlPolicy('missing_actor_membership', 8, 42, 43);
-        },
-    ];
+        };
 }
 
 function assertConsumerProfileSqlPolicy(

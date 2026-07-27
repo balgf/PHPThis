@@ -74,7 +74,7 @@ PHP runtime -> application terminal coordinator -> RequestBoundary -> optional l
 
 ## Try it
 
-PHP 8.4.x with PDO, PDO SQLite, ext-session, and Composer are required for the framework checks. Composer deliberately excludes PHP 8.5 until that runtime has its own reviewed CI evidence. The repository's application-owned Redis integration proof additionally declares `ext-redis ^6.3`, tests Redis server `>=7.4` and `<9.0`, and requires two processes by default: cache at `127.0.0.1:6379` database `0`, and lease at `127.0.0.1:6380` database `0`. PHPStan and the PHPThis Strict Profile are mandatory development components and do not affect the framework runtime.
+The framework runtime supports PHP 8.4.x and requires PDO and ext-session. Running this repository's complete maintainer checks additionally requires Composer and PDO SQLite; its development-only PHPUnit 13 maintainer suite requires PHP 8.4.1 or newer within that supported line. Local report-only coverage requires PCOV or Xdebug, and framework CI supplies PCOV. Composer deliberately excludes PHP 8.5 until that runtime has its own reviewed CI evidence. The repository's application-owned Redis integration proof additionally declares `ext-redis ^6.3`, tests Redis server `>=7.4` and `<9.0`, and requires two processes by default: cache at `127.0.0.1:6379` database `0`, and lease at `127.0.0.1:6380` database `0`. PHPStan, PHPUnit, and the PHPThis Strict Profile are mandatory framework-repository development components; they do not affect the framework runtime or require consumers to select the same test runner.
 
 ```bash
 git clone https://github.com/balgf/PHPThis.git

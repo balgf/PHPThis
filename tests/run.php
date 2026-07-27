@@ -46,6 +46,7 @@ use PHPThis\Routing\PathParameters;
 use PHPThis\Routing\Route;
 use PHPThis\Routing\RouteParameterType;
 use PHPThis\Routing\Router;
+use PHPUnit\Framework\Assert;
 
 require dirname(__DIR__) . '/autoload.php';
 
@@ -84,45 +85,50 @@ final readonly class RunTestAllowCreateUserPolicy implements
     }
 }
 
-$tests = requestPolicyTests();
-
-foreach (observabilityTests() as $name => $test) {
-    $tests[$name] = $test;
+/**
+ * @return Generator<string, array{group: non-empty-string, test: Closure(): void}, mixed, void>
+ */
+function frameworkBehaviorDefinitions(): Generator
+{
+    yield from frameworkBehaviorGroupDefinitions('request-policy', requestPolicyTests());
+    yield from frameworkBehaviorGroupDefinitions('observability', observabilityTests());
+    yield from frameworkBehaviorGroupDefinitions('jobs', jobTests());
+    yield from frameworkBehaviorGroupDefinitions('cli', cliTests());
+    yield from frameworkBehaviorGroupDefinitions('migrations', migrationTests());
+    yield from frameworkBehaviorGroupDefinitions('document-files', documentFileTests());
+    yield from frameworkBehaviorGroupDefinitions('cache', cacheTests());
+    yield from frameworkBehaviorGroupDefinitions('redis-coordination', redisCoordinationTests());
+    yield from frameworkBehaviorGroupDefinitions('consumer-profile', consumerProfileTests());
+    yield from frameworkBehaviorGroupDefinitions('handler-decorator', handlerDecoratorTests());
+    yield from frameworkBehaviorGroupDefinitions('composition', compositionBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('http-boundary', httpBoundaryBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('routing', routingBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('input-projection', inputProjectionBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('crud', crudBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('database-boundary', databaseBoundaryBehaviorTests());
 }
 
-foreach (jobTests() as $name => $test) {
-    $tests[$name] = $test;
+/**
+ * @param non-empty-string $group
+ * @param iterable<string, Closure(): void> $tests
+ * @return Generator<string, array{group: non-empty-string, test: Closure(): void}, mixed, void>
+ */
+function frameworkBehaviorGroupDefinitions(string $group, iterable $tests): Generator
+{
+    foreach ($tests as $name => $test) {
+        yield $name => [
+            'group' => $group,
+            'test' => $test,
+        ];
+    }
 }
 
-foreach (cliTests() as $name => $test) {
-    $tests[$name] = $test;
-}
-
-foreach (migrationTests() as $name => $test) {
-    $tests[$name] = $test;
-}
-
-foreach (documentFileTests() as $name => $test) {
-    $tests[$name] = $test;
-}
-
-foreach (cacheTests() as $name => $test) {
-    $tests[$name] = $test;
-}
-
-foreach (redisCoordinationTests() as $name => $test) {
-    $tests[$name] = $test;
-}
-
-foreach (consumerProfileTests() as $name => $test) {
-    $tests[$name] = $test;
-}
-
-foreach (handlerDecoratorTests() as $name => $test) {
-    $tests[$name] = $test;
-}
-
-$tests['example composes explicit route modules'] = static function (): void {
+/**
+ * @return Generator<string, Closure(): void, mixed, void>
+ */
+function compositionBehaviorTests(): Generator
+{
+    yield 'example composes explicit route modules' => static function (): void {
     $application = new Application(new Router(Routes::create(
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
         Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1)),
@@ -152,7 +158,7 @@ $tests['example composes explicit route modules'] = static function (): void {
     }
 };
 
-$tests['example setup creates and reseeds a fresh database idempotently'] = static function (): void {
+    yield 'example setup creates and reseeds a fresh database idempotently' => static function (): void {
     $directory = __DIR__ . '/../tmp/application-tests';
 
     if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
@@ -373,7 +379,14 @@ $tests['example setup creates and reseeds a fresh database idempotently'] = stat
     }
 };
 
-$tests['application dispatches an exact route'] = static function (): void {
+}
+
+/**
+ * @return Generator<string, Closure(): void, mixed, void>
+ */
+function httpBoundaryBehaviorTests(): Generator
+{
+    yield 'application dispatches an exact route' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -389,7 +402,7 @@ $tests['application dispatches an exact route'] = static function (): void {
     }
 };
 
-$tests['application distinguishes 404 and 405'] = static function (): void {
+    yield 'application distinguishes 404 and 405' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -414,7 +427,7 @@ $tests['application distinguishes 404 and 405'] = static function (): void {
     }
 };
 
-$tests['request reader normalizes one bounded PHP runtime request'] = static function (): void {
+    yield 'request reader normalizes one bounded PHP runtime request' => static function (): void {
     $body = '{"name":"Ada"}';
     $reader = requestReaderForBody($body, strlen($body));
     $request = $reader->read(
@@ -448,7 +461,7 @@ $tests['request reader normalizes one bounded PHP runtime request'] = static fun
     }
 };
 
-$tests['request reader rejects malformed runtime metadata'] = static function (): void {
+    yield 'request reader rejects malformed runtime metadata' => static function (): void {
     $tooManyQueryParameters = [];
 
     for ($index = 0; $index < 65; $index++) {
@@ -505,7 +518,7 @@ $tests['request reader rejects malformed runtime metadata'] = static function ()
     }
 };
 
-$tests['request reader enforces declared and actual body bounds'] = static function (): void {
+    yield 'request reader enforces declared and actual body bounds' => static function (): void {
     foreach ([0, -1, PHP_INT_MAX] as $invalidLimit) {
         try {
             new RequestReader($invalidLimit, 'php://input');
@@ -579,7 +592,7 @@ $tests['request reader enforces declared and actual body bounds'] = static funct
     throw new RuntimeException('Expected a mismatched declared body length to be rejected.');
 };
 
-$tests['request boundary maps exact known failures and rethrows unknown failures'] = static function (): void {
+    yield 'request boundary maps exact known failures and rethrows unknown failures' => static function (): void {
     $knownResponse = new Response(
         400,
         ['Content-Type' => 'application/json; charset=utf-8'],
@@ -631,7 +644,7 @@ $tests['request boundary maps exact known failures and rethrows unknown failures
     throw new RuntimeException('Expected an unregistered failure to escape unchanged.');
 };
 
-$tests['response cookies are explicit validated values'] = static function (): void {
+    yield 'response cookies are explicit validated values' => static function (): void {
     $live = new ResponseCookie(
         '__Host-PHPThisSession',
         str_repeat('a', 32),
@@ -691,7 +704,7 @@ $tests['response cookies are explicit validated values'] = static function (): v
     throw new RuntimeException('Expected duplicate or manually encoded response cookies to be rejected.');
 };
 
-$tests['response emitter preserves repeated Set-Cookie fields'] = static function (): void {
+    yield 'response emitter preserves repeated Set-Cookie fields' => static function (): void {
     $result = runIsolatedPhpTest(__DIR__ . '/response-emitter.php');
 
     if ($result['exit_code'] !== 0) {
@@ -714,7 +727,7 @@ $tests['response emitter preserves repeated Set-Cookie fields'] = static functio
     }
 };
 
-$tests['request boundary normalizes one bounded multipart upload'] = static function (): void {
+    yield 'request boundary normalizes one bounded multipart upload' => static function (): void {
     $result = runIsolatedPhpTest(__DIR__ . '/upload-request-boundary.php');
 
     if (
@@ -726,7 +739,7 @@ $tests['request boundary normalizes one bounded multipart upload'] = static func
     }
 };
 
-$tests['session lifecycle is lazy strict scoped and fixation resistant'] = static function (): void {
+    yield 'session lifecycle is lazy strict scoped and fixation resistant' => static function (): void {
     $result = runIsolatedPhpTest(__DIR__ . '/session-lifecycle.php');
 
     if (
@@ -737,7 +750,7 @@ $tests['session lifecycle is lazy strict scoped and fixation resistant'] = stati
     }
 };
 
-$tests['unknown failure boundary returns one generic response without logging'] = static function (): void {
+    yield 'unknown failure boundary returns one generic response without logging' => static function (): void {
     $response = (new UnknownFailureBoundary())->respond();
 
     if (
@@ -752,7 +765,14 @@ $tests['unknown failure boundary returns one generic response without logging'] 
     }
 };
 
-$tests['router rejects duplicate method and path pairs'] = static function (): void {
+}
+
+/**
+ * @return Generator<string, Closure(): void, mixed, void>
+ */
+function routingBehaviorTests(): Generator
+{
+    yield 'router rejects duplicate method and path pairs' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -772,7 +792,7 @@ $tests['router rejects duplicate method and path pairs'] = static function (): v
     throw new RuntimeException('Expected duplicate routes to fail at startup.');
 };
 
-$tests['route accepts at most two full-segment typed parameter declarations'] = static function (): void {
+    yield 'route accepts at most two full-segment typed parameter declarations' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -828,7 +848,7 @@ $tests['route accepts at most two full-segment typed parameter declarations'] = 
     }
 };
 
-$tests['router matches bounded canonical positive integer path parameters'] = static function (): void {
+    yield 'router matches bounded canonical positive integer path parameters' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -879,7 +899,7 @@ $tests['router matches bounded canonical positive integer path parameters'] = st
     }
 };
 
-$tests['router matches two ordered parameters and bounded opaque tokens'] = static function (): void {
+    yield 'router matches two ordered parameters and bounded opaque tokens' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -935,7 +955,7 @@ $tests['router matches two ordered parameters and bounded opaque tokens'] = stat
     }
 };
 
-$tests['router matches canonical lowercase UUID path parameters'] = static function (): void {
+    yield 'router matches canonical lowercase UUID path parameters' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -991,7 +1011,7 @@ $tests['router matches canonical lowercase UUID path parameters'] = static funct
     }
 };
 
-$tests['router matches canonical lowercase ULID path parameters'] = static function (): void {
+    yield 'router matches canonical lowercase ULID path parameters' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1039,7 +1059,7 @@ $tests['router matches canonical lowercase ULID path parameters'] = static funct
     }
 };
 
-$tests['invalid UUID and ULID routes stop before handler and database work'] = static function (): void {
+    yield 'invalid UUID and ULID routes stop before handler and database work' => static function (): void {
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);
     $connection = Connection::connect('sqlite::memory:', $budget, $trace);
@@ -1086,7 +1106,7 @@ $tests['invalid UUID and ULID routes stop before handler and database work'] = s
     }
 };
 
-$tests['path parameters reject invalid construction unknown names and wrong types'] = static function (): void {
+    yield 'path parameters reject invalid construction unknown names and wrong types' => static function (): void {
     foreach ([['Invalid', 1], ['user_id', 0]] as [$name, $value]) {
         try {
             PathParameters::onePositiveInteger($name, $value);
@@ -1204,7 +1224,7 @@ $tests['path parameters reject invalid construction unknown names and wrong type
     }
 };
 
-$tests['literal route wins over a matching mixed typed route'] = static function (): void {
+    yield 'literal route wins over a matching mixed typed route' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1234,7 +1254,7 @@ $tests['literal route wins over a matching mixed typed route'] = static function
     throw new RuntimeException('Expected a literal route match to carry no path parameters.');
 };
 
-$tests['literal routes win over canonical UUID and ULID values'] = static function (): void {
+    yield 'literal routes win over canonical UUID and ULID values' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1263,7 +1283,7 @@ $tests['literal routes win over canonical UUID and ULID values'] = static functi
     }
 };
 
-$tests['route rejects repeated typed parameter names'] = static function (): void {
+    yield 'route rejects repeated typed parameter names' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1286,7 +1306,7 @@ $tests['route rejects repeated typed parameter names'] = static function (): voi
     }
 };
 
-$tests['router rejects overlapping typed declarations and inconsistent metadata'] = static function (): void {
+    yield 'router rejects overlapping typed declarations and inconsistent metadata' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1376,7 +1396,7 @@ $tests['router rejects overlapping typed declarations and inconsistent metadata'
     ]);
 };
 
-$tests['application passes immutable mixed path parameters to the handler'] = static function (): void {
+    yield 'application passes immutable mixed path parameters to the handler' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1431,7 +1451,7 @@ $tests['application passes immutable mixed path parameters to the handler'] = st
     throw new RuntimeException('Expected Application to preserve the original immutable request.');
 };
 
-$tests['application preserves mixed route 405 order and rejects invalid values before handling'] = static function (): void {
+    yield 'application preserves mixed route 405 order and rejects invalid values before handling' => static function (): void {
     $handler = new class implements RequestHandler {
         public int $calls = 0;
 
@@ -1493,7 +1513,7 @@ $tests['application preserves mixed route 405 order and rejects invalid values b
     }
 };
 
-$tests['allowed methods merge literal and parameterized registrations in order'] = static function (): void {
+    yield 'allowed methods merge literal and parameterized registrations in order' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1523,7 +1543,7 @@ $tests['allowed methods merge literal and parameterized registrations in order']
     }
 };
 
-$tests['router dispatches from a large explicit route table'] = static function (): void {
+    yield 'router dispatches from a large explicit route table' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1554,7 +1574,7 @@ $tests['router dispatches from a large explicit route table'] = static function 
     }
 };
 
-$tests['router indexes mixed paths in a large branching route table'] = static function (): void {
+    yield 'router indexes mixed paths in a large branching route table' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1625,7 +1645,7 @@ $tests['router indexes mixed paths in a large branching route table'] = static f
     }
 };
 
-$tests['router preserves allowed method registration order'] = static function (): void {
+    yield 'router preserves allowed method registration order' => static function (): void {
     $handler = new class implements RequestHandler {
         public function handle(Request $request): Response
         {
@@ -1643,7 +1663,14 @@ $tests['router preserves allowed method registration order'] = static function (
     }
 };
 
-$tests['item projection converts exact database rows into concrete identifiers'] = static function (): void {
+}
+
+/**
+ * @return Generator<string, Closure(): void, mixed, void>
+ */
+function inputProjectionBehaviorTests(): Generator
+{
+    yield 'item projection converts exact database rows into concrete identifiers' => static function (): void {
     $nativeInteger = UserDetails::fromDatabaseRow(['name' => 'Ada', 'id' => 7]);
     $canonicalString = UserDetails::fromDatabaseRow(['id' => '8', 'name' => 'Grace']);
 
@@ -1665,7 +1692,7 @@ $tests['item projection converts exact database rows into concrete identifiers']
     throw new RuntimeException('Expected the concrete user identifier to reject zero.');
 };
 
-$tests['item projection rejects coercive and structurally invalid rows'] = static function (): void {
+    yield 'item projection rejects coercive and structurally invalid rows' => static function (): void {
     $invalidRows = [
         ['id' => 0, 'name' => 'Ada'],
         ['id' => '01', 'name' => 'Ada'],
@@ -1686,7 +1713,7 @@ $tests['item projection rejects coercive and structurally invalid rows'] = stati
     }
 };
 
-$tests['database projection parses documented integer representations'] = static function (): void {
+    yield 'database projection parses documented integer representations' => static function (): void {
     $nativeInteger = UserSummary::fromDatabaseRow(['name' => 'Ada', 'id' => 7]);
     $canonicalString = UserSummary::fromDatabaseRow(['id' => '8', 'name' => 'Grace']);
 
@@ -1700,7 +1727,7 @@ $tests['database projection parses documented integer representations'] = static
     }
 };
 
-$tests['database projection rejects coercive identifiers'] = static function (): void {
+    yield 'database projection rejects coercive identifiers' => static function (): void {
     $invalidIdentifiers = [
         '',
         ' ',
@@ -1737,7 +1764,7 @@ $tests['database projection rejects coercive identifiers'] = static function ():
     }
 };
 
-$tests['database projection rejects missing unknown and invalid fields'] = static function (): void {
+    yield 'database projection rejects missing unknown and invalid fields' => static function (): void {
     $invalidRows = [
         ['id' => 7],
         ['id' => 7, 'name' => 'Ada', 'is_admin' => true],
@@ -1759,7 +1786,7 @@ $tests['database projection rejects missing unknown and invalid fields'] = stati
     }
 };
 
-$tests['user activity projection parses exact aggregate rows'] = static function (): void {
+    yield 'user activity projection parses exact aggregate rows' => static function (): void {
     $nativeValues = UserActivitySummary::fromDatabaseRow([
         'id' => 7,
         'name' => 'Ada',
@@ -1781,7 +1808,7 @@ $tests['user activity projection parses exact aggregate rows'] = static function
     }
 };
 
-$tests['user activity projection rejects malformed aggregate rows'] = static function (): void {
+    yield 'user activity projection rejects malformed aggregate rows' => static function (): void {
     $invalidRows = [
         ['id' => 7, 'name' => 'Ada'],
         ['id' => 7, 'name' => 'Ada', 'event_count' => 1, 'unknown' => true],
@@ -1806,7 +1833,7 @@ $tests['user activity projection rejects malformed aggregate rows'] = static fun
     }
 };
 
-$tests['list users page request parses only one canonical continuation'] = static function (): void {
+    yield 'list users page request parses only one canonical continuation' => static function (): void {
     $firstPage = ListUsersPageRequest::fromQuery([]);
     $continuedPage = ListUsersPageRequest::fromQuery(['after_user_id' => '1']);
     $maximumPage = ListUsersPageRequest::fromQuery([
@@ -1853,7 +1880,7 @@ $tests['list users page request parses only one canonical continuation'] = stati
     }
 };
 
-$tests['list users rejects invalid continuation before database work'] = static function (): void {
+    yield 'list users rejects invalid continuation before database work' => static function (): void {
     $databasePath = createUserDatabaseFixture('list-invalid-continuation', 2, true);
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);
@@ -1910,7 +1937,7 @@ $tests['list users rejects invalid continuation before database work'] = static 
     }
 };
 
-$tests['list users accepts one canonical runtime continuation'] = static function (): void {
+    yield 'list users accepts one canonical runtime continuation' => static function (): void {
     $databasePath = createUserDatabaseFixture('list-valid-continuation', 2, true);
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);
@@ -1943,7 +1970,7 @@ $tests['list users accepts one canonical runtime continuation'] = static functio
     }
 };
 
-$tests['HTTP command parses one exact JSON object'] = static function (): void {
+    yield 'HTTP command parses one exact JSON object' => static function (): void {
     $command = CreateUserCommand::fromJson(
         '{"email":"ada@example.com","name":"Ada Lovelace"}',
     );
@@ -1973,7 +2000,7 @@ $tests['HTTP command parses one exact JSON object'] = static function (): void {
     }
 };
 
-$tests['HTTP command exposes native duplicate-key last-value behavior'] = static function (): void {
+    yield 'HTTP command exposes native duplicate-key last-value behavior' => static function (): void {
     $command = CreateUserCommand::fromJson(
         '{"name":"First","email":"first@example.com","name":"Final","email":"final@example.com"}',
     );
@@ -1983,7 +2010,7 @@ $tests['HTTP command exposes native duplicate-key last-value behavior'] = static
     }
 };
 
-$tests['HTTP command rejects malformed coercive and unknown input'] = static function (): void {
+    yield 'HTTP command rejects malformed coercive and unknown input' => static function (): void {
     foreach (invalidCreateUserBodies() as $case => $body) {
         try {
             CreateUserCommand::fromJson($body);
@@ -1995,7 +2022,7 @@ $tests['HTTP command rejects malformed coercive and unknown input'] = static fun
     }
 };
 
-$tests['HTTP handler invokes only its typed create-user operation'] = static function (): void {
+    yield 'HTTP handler invokes only its typed create-user operation' => static function (): void {
     $operation = new class implements CreateUserOperation {
         public int $calls = 0;
 
@@ -2036,7 +2063,7 @@ $tests['HTTP handler invokes only its typed create-user operation'] = static fun
     }
 };
 
-$tests['HTTP request boundary accepts the exact endpoint byte limit'] = static function (): void {
+    yield 'HTTP request boundary accepts the exact endpoint byte limit' => static function (): void {
     $operation = new class implements CreateUserOperation {
         public int $calls = 0;
 
@@ -2086,7 +2113,7 @@ $tests['HTTP request boundary accepts the exact endpoint byte limit'] = static f
     }
 };
 
-$tests['HTTP handler rejects invalid commands before use-case invocation'] = static function (): void {
+    yield 'HTTP handler rejects invalid commands before use-case invocation' => static function (): void {
     $operation = new class implements CreateUserOperation {
         public int $calls = 0;
 
@@ -2125,7 +2152,7 @@ $tests['HTTP handler rejects invalid commands before use-case invocation'] = sta
     }
 };
 
-$tests['example request boundary maps client failures before database work'] = static function (): void {
+    yield 'example request boundary maps client failures before database work' => static function (): void {
     $databasePath = createUserDatabaseFixture('request-client-failures', 0, false);
     $readBudget = new QueryBudget(1);
     $getBudget = new QueryBudget(1);
@@ -2237,7 +2264,7 @@ $tests['example request boundary maps client failures before database work'] = s
     }
 };
 
-$tests['mapped input failures emit no submitted data or log entry'] = static function (): void {
+    yield 'mapped input failures emit no submitted data or log entry' => static function (): void {
     $logPath = __DIR__ . '/../tmp/mapped-input-failure.log';
 
     if (file_put_contents($logPath, '') !== 0) {
@@ -2310,7 +2337,14 @@ $tests['mapped input failures emit no submitted data or log entry'] = static fun
     }
 };
 
-$tests['user routes execute bounded reads and one transactional write end to end'] = static function (): void {
+}
+
+/**
+ * @return Generator<string, Closure(): void, mixed, void>
+ */
+function crudBehaviorTests(): Generator
+{
+    yield 'user routes execute bounded reads and one transactional write end to end' => static function (): void {
     $databasePath = createUserDatabaseFixture('user-routes', 0, false);
     $readBudget = new QueryBudget(1);
     $readTrace = new QueryTrace(1);
@@ -2372,7 +2406,7 @@ $tests['user routes execute bounded reads and one transactional write end to end
     }
 };
 
-$tests['user list page keeps one query across dataset sizes'] = static function (): void {
+    yield 'user list page keeps one query across dataset sizes' => static function (): void {
     $smallPath = createUserDatabaseFixture('read-small', 2, true);
     $largePath = createUserDatabaseFixture('read-large', 500, true);
     $small = runListUsersPageScenario($smallPath, null);
@@ -2399,7 +2433,7 @@ $tests['user list page keeps one query across dataset sizes'] = static function 
     }
 };
 
-$tests['user list continuation handles exact and lookahead page boundaries'] = static function (): void {
+    yield 'user list continuation handles exact and lookahead page boundaries' => static function (): void {
     $fullPath = createUserDatabaseFixture('list-exact-page', 50, true);
     $lookaheadPath = createUserDatabaseFixture('list-lookahead-page', 51, false);
     $full = runListUsersPageScenario($fullPath, null);
@@ -2427,7 +2461,7 @@ $tests['user list continuation handles exact and lookahead page boundaries'] = s
     }
 };
 
-$tests['user list continuation traverses large data without gaps or duplicates'] = static function (): void {
+    yield 'user list continuation traverses large data without gaps or duplicates' => static function (): void {
     $databasePath = createUserDatabaseFixture('list-continuation', 125, true);
     $first = runListUsersPageScenario($databasePath, null);
     $second = runListUsersPageScenario($databasePath, '50');
@@ -2472,7 +2506,7 @@ $tests['user list continuation traverses large data without gaps or duplicates']
     }
 };
 
-$tests['user item endpoint keeps one query across dataset sizes'] = static function (): void {
+    yield 'user item endpoint keeps one query across dataset sizes' => static function (): void {
     $smallPath = createUserDatabaseFixture('item-read-small', 2, false);
     $largePath = createUserDatabaseFixture('item-read-large', 500, false);
     $smallBudget = new QueryBudget(1);
@@ -2528,7 +2562,7 @@ $tests['user item endpoint keeps one query across dataset sizes'] = static funct
     }
 };
 
-$tests['user item route separates missing records from malformed identifiers'] = static function (): void {
+    yield 'user item route separates missing records from malformed identifiers' => static function (): void {
     $databasePath = createUserDatabaseFixture('item-read-failures', 2, false);
     $missingBudget = new QueryBudget(1);
     $missingTrace = new QueryTrace(1);
@@ -2603,7 +2637,7 @@ $tests['user item route separates missing records from malformed identifiers'] =
     }
 };
 
-$tests['account-scoped user creation publishes one job with four writes across dataset sizes'] = static function (): void {
+    yield 'account-scoped user creation publishes one job with four writes across dataset sizes' => static function (): void {
     $empty = runCreateUserScenario('write-empty', 0);
     $large = runCreateUserScenario('write-large', 500);
 
@@ -2624,7 +2658,7 @@ $tests['account-scoped user creation publishes one job with four writes across d
     }
 };
 
-$tests['account-scoped user creation keeps principal and user identities separate'] = static function (): void {
+    yield 'account-scoped user creation keeps principal and user identities separate' => static function (): void {
     $databasePath = createUserDatabaseFixture('write-principal-user-separation', 0, false);
     $budget = new QueryBudget(32);
     $trace = new QueryTrace(4);
@@ -2683,7 +2717,7 @@ $tests['account-scoped user creation keeps principal and user identities separat
     }
 };
 
-$tests['account-scoped user creation rolls back when its budget rejects account relation'] = static function (): void {
+    yield 'account-scoped user creation rolls back when its budget rejects account relation' => static function (): void {
     $databasePath = createUserDatabaseFixture('write-rollback', 0, false);
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);
@@ -2727,7 +2761,7 @@ $tests['account-scoped user creation rolls back when its budget rejects account 
     }
 };
 
-$tests['account-scoped user creation rolls back when the event statement fails'] = static function (): void {
+    yield 'account-scoped user creation rolls back when the event statement fails' => static function (): void {
     $databasePath = createUserDatabaseFixture('write-statement-failure', 0, false);
     $schemaConnection = Connection::connect(
         'sqlite:' . $databasePath,
@@ -2789,7 +2823,7 @@ $tests['account-scoped user creation rolls back when the event statement fails']
     }
 };
 
-$tests['account-scoped user creation rejects invalid input before database work'] = static function (): void {
+    yield 'account-scoped user creation rejects invalid input before database work' => static function (): void {
     $databasePath = createUserDatabaseFixture('write-invalid', 0, false);
     $budget = new QueryBudget(2);
     $trace = new QueryTrace(2);
@@ -2824,7 +2858,14 @@ $tests['account-scoped user creation rejects invalid input before database work'
     }
 };
 
-$tests['connection binds named values and enforces its budget'] = static function (): void {
+}
+
+/**
+ * @return Generator<string, Closure(): void, mixed, void>
+ */
+function databaseBoundaryBehaviorTests(): Generator
+{
+    yield 'connection binds named values and enforces its budget' => static function (): void {
     $budget = new QueryBudget(3);
     $trace = new QueryTrace(3);
     $connection = Connection::connect('sqlite::memory:', $budget, $trace);
@@ -2879,7 +2920,7 @@ $tests['connection binds named values and enforces its budget'] = static functio
     }
 };
 
-$tests['connection keeps SQL-looking bound text outside statement structure'] = static function (): void {
+    yield 'connection keeps SQL-looking bound text outside statement structure' => static function (): void {
     $budget = new QueryBudget(5);
     $trace = new QueryTrace(5);
     $connection = Connection::connect('sqlite::memory:', $budget, $trace);
@@ -2916,7 +2957,7 @@ $tests['connection keeps SQL-looking bound text outside statement structure'] = 
     }
 };
 
-$tests['connection accepts portable parameter names and rejects invalid or duplicate names before database work'] = static function (): void {
+    yield 'connection accepts portable parameter names and rejects invalid or duplicate names before database work' => static function (): void {
     $budget = new QueryBudget(1);
     $trace = new QueryTrace(1);
     $connection = Connection::connect('sqlite::memory:', $budget, $trace);
@@ -2957,7 +2998,7 @@ $tests['connection accepts portable parameter names and rejects invalid or dupli
     }
 };
 
-$tests['query trace detects repetition without exposing SQL or parameters'] = static function (): void {
+    yield 'query trace detects repetition without exposing SQL or parameters' => static function (): void {
     $budget = new QueryBudget(4);
     $trace = new QueryTrace(4);
     $connection = Connection::connect('sqlite::memory:', $budget, $trace);
@@ -2971,29 +3012,52 @@ $tests['query trace detects repetition without exposing SQL or parameters'] = st
     $connection->selectOneRow('SELECT id, name FROM users WHERE id = :id', ['id' => 8]);
     $summary = $trace->snapshot();
     $json = json_encode($summary, JSON_THROW_ON_ERROR);
+    $repeatedFingerprint = $summary['queries'][2]['fingerprint'] ?? null;
 
-    if (
-        $summary['schema_version'] !== 1
-        || $summary['event'] !== 'database.query_summary'
-        || $summary['statements'] !== 4
-        || $summary['repeated_fingerprints'] !== 1
-        || $summary['maximum_executions_per_fingerprint'] !== 2
-        || count($summary['queries']) !== 3
-        || $summary['queries'][2]['executions'] !== 2
-        || !str_starts_with($summary['queries'][2]['fingerprint'], 'sha256:')
-        || strlen($summary['queries'][2]['fingerprint']) !== 71
-        || $summary['slowest_execute_duration_us'] < 0
-        || $summary['total_execute_duration_us'] < $summary['slowest_execute_duration_us']
-        || str_contains($json, 'SELECT')
-        || str_contains($json, 'first_name')
-        || str_contains($json, 'Ada')
-        || str_contains($json, 'Grace')
-    ) {
-        throw new RuntimeException('Expected a redacted structured repetition summary.');
-    }
+    Assert::assertSame(
+        [
+            'schema_version' => 1,
+            'event' => 'database.query_summary',
+            'statements' => 4,
+            'repeated_fingerprints' => 1,
+            'maximum_executions_per_fingerprint' => 2,
+            'retained_queries' => 3,
+            'repeated_query_executions' => 2,
+            'repeated_fingerprint_is_sha256' => true,
+            'repeated_fingerprint_bytes' => 71,
+            'slowest_duration_is_non_negative' => true,
+            'total_duration_covers_slowest' => true,
+            'contains_sql' => false,
+            'contains_parameter_name' => false,
+            'contains_first_value' => false,
+            'contains_second_value' => false,
+        ],
+        [
+            'schema_version' => $summary['schema_version'],
+            'event' => $summary['event'],
+            'statements' => $summary['statements'],
+            'repeated_fingerprints' => $summary['repeated_fingerprints'],
+            'maximum_executions_per_fingerprint' => $summary['maximum_executions_per_fingerprint'],
+            'retained_queries' => count($summary['queries']),
+            'repeated_query_executions' => $summary['queries'][2]['executions'] ?? null,
+            'repeated_fingerprint_is_sha256' => is_string($repeatedFingerprint)
+                && str_starts_with($repeatedFingerprint, 'sha256:'),
+            'repeated_fingerprint_bytes' => is_string($repeatedFingerprint)
+                ? strlen($repeatedFingerprint)
+                : null,
+            'slowest_duration_is_non_negative' => $summary['slowest_execute_duration_us'] >= 0,
+            'total_duration_covers_slowest' => $summary['total_execute_duration_us']
+                >= $summary['slowest_execute_duration_us'],
+            'contains_sql' => str_contains($json, 'SELECT'),
+            'contains_parameter_name' => str_contains($json, 'first_name'),
+            'contains_first_value' => str_contains($json, 'Ada'),
+            'contains_second_value' => str_contains($json, 'Grace'),
+        ],
+        'Expected a redacted structured repetition summary.',
+    );
 };
 
-$tests['query trace records database failures before rethrowing them'] = static function (): void {
+    yield 'query trace records database failures before rethrowing them' => static function (): void {
     $trace = new QueryTrace(1);
     $connection = Connection::connect('sqlite::memory:', new QueryBudget(1), $trace);
     $databaseFailed = false;
@@ -3007,29 +3071,44 @@ $tests['query trace records database failures before rethrowing them'] = static 
     $summary = $trace->snapshot();
     $json = json_encode($summary, JSON_THROW_ON_ERROR);
 
-    if (
-        !$databaseFailed
-        || $summary['statements'] !== 1
-        || $summary['failures'] !== 1
-        || $summary['queries'][0]['failures'] !== 1
-        || str_contains($json, 'missing_users')
-        || str_contains($json, 'no such table')
-    ) {
-        throw new RuntimeException('Expected the failed statement to be traced and rethrown.');
-    }
+    Assert::assertSame(
+        [
+            'database_exception_rethrown' => true,
+            'statements' => 1,
+            'failures' => 1,
+            'retained_query_failures' => 1,
+            'contains_table_name' => false,
+            'contains_database_message' => false,
+        ],
+        [
+            'database_exception_rethrown' => $databaseFailed,
+            'statements' => $summary['statements'],
+            'failures' => $summary['failures'],
+            'retained_query_failures' => $summary['queries'][0]['failures'] ?? null,
+            'contains_table_name' => str_contains($json, 'missing_users'),
+            'contains_database_message' => str_contains($json, 'no such table'),
+        ],
+        'Expected the failed statement to be traced and rethrown.',
+    );
 };
 
-$tests['query trace requires a positive fingerprint bound'] = static function (): void {
+    yield 'query trace requires a positive fingerprint bound' => static function (): void {
+    $caught = null;
+
     try {
         new QueryTrace(0);
-    } catch (InvalidArgumentException) {
-        return;
+    } catch (Throwable $failure) {
+        $caught = $failure;
     }
 
-    throw new RuntimeException('Expected a non-positive query trace bound to fail.');
+    Assert::assertInstanceOf(
+        InvalidArgumentException::class,
+        $caught,
+        'Expected a non-positive query trace bound to fail.',
+    );
 };
 
-$tests['query trace bounds retained fingerprint details'] = static function (): void {
+    yield 'query trace bounds retained fingerprint details' => static function (): void {
     $trace = new QueryTrace(1);
     $connection = Connection::connect('sqlite::memory:', new QueryBudget(3), $trace);
 
@@ -3041,14 +3120,21 @@ $tests['query trace bounds retained fingerprint details'] = static function (): 
     $connection->selectOneRow('SELECT id, name FROM users WHERE id = :id', ['id' => 7]);
     $summary = $trace->snapshot();
 
-    if (
-        $summary['tracked_fingerprints'] !== 1
-        || !$summary['truncated']
-        || $summary['untracked_statements'] !== 2
-    ) {
-        throw new RuntimeException('Expected fingerprint detail retention to remain bounded.');
-    }
+    Assert::assertSame(
+        [
+            'tracked_fingerprints' => 1,
+            'truncated' => true,
+            'untracked_statements' => 2,
+        ],
+        [
+            'tracked_fingerprints' => $summary['tracked_fingerprints'],
+            'truncated' => $summary['truncated'],
+            'untracked_statements' => $summary['untracked_statements'],
+        ],
+        'Expected fingerprint detail retention to remain bounded.',
+    );
 };
+}
 
 function requestReaderForBody(string $body, int $maximumBodyBytes): RequestReader
 {
@@ -3612,18 +3698,108 @@ function runIsolatedPhpTest(string $path, array $arguments = []): array
     ];
 }
 
-$failures = 0;
+/**
+ * @return array{
+ *     tests: array<string, Closure(): void>,
+ *     groups: array<non-empty-string, list<string>>
+ * }
+ */
+function frameworkBehaviorRegistry(): array
+{
+    /**
+     * @var array{
+     *     tests: array<string, Closure(): void>,
+     *     groups: array<non-empty-string, list<string>>
+     * }|null $cached
+     */
+    static $cached = null;
 
-foreach ($tests as $name => $test) {
-    try {
-        $test();
-        fwrite(STDOUT, "PASS {$name}\n");
-    } catch (Throwable $exception) {
-        $failures++;
-        fwrite(STDERR, "FAIL {$name}: {$exception->getMessage()}\n");
+    if ($cached !== null) {
+        return $cached;
     }
 
+    $registered = [];
+    $groups = [];
+
+    foreach (frameworkBehaviorDefinitions() as $name => $definition) {
+        if ($name === '') {
+            throw new LogicException('Framework behavior names must not be empty.');
+        }
+
+        if (array_key_exists($name, $registered)) {
+            throw new LogicException('Duplicate framework behavior name: ' . $name);
+        }
+
+        $group = $definition['group'];
+
+        $registered[$name] = $definition['test'];
+        $groups[$group] ??= [];
+        $groups[$group][] = $name;
+    }
+
+    $cached = [
+        'tests' => $registered,
+        'groups' => $groups,
+    ];
+
+    return $cached;
 }
 
-fwrite(STDOUT, sprintf("%d tests, %d failures\n", count($tests), $failures));
-exit($failures === 0 ? 0 : 1);
+/**
+ * @return array<string, Closure(): void>
+ */
+function frameworkBehaviorTests(): array
+{
+    return frameworkBehaviorRegistry()['tests'];
+}
+
+/**
+ * @return array<non-empty-string, list<string>>
+ */
+function frameworkBehaviorGroups(): array
+{
+    return frameworkBehaviorRegistry()['groups'];
+}
+
+/**
+ * @param non-empty-string $group
+ * @return list<string>
+ */
+function frameworkBehaviorNamesForGroup(string $group): array
+{
+    return frameworkBehaviorGroups()[$group]
+        ?? throw new LogicException('Unknown framework behavior group: ' . $group);
+}
+
+/**
+ * @return list<string>
+ */
+function frameworkBehaviorInventory(): array
+{
+    $contents = file_get_contents(__DIR__ . '/behavior-names.txt');
+
+    if (!is_string($contents)) {
+        throw new LogicException('Unable to read the framework behavior inventory.');
+    }
+
+    if (
+        $contents === ''
+        || !str_ends_with($contents, "\n")
+        || str_contains($contents, "\r")
+        || hash('sha256', $contents) !== 'd721bcca62faf2b516b9a9e46c47dfc2f59737925cba2560051e40f843c58e51'
+    ) {
+        throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
+    }
+
+    $names = explode("\n", substr($contents, 0, -1));
+
+    if (
+        count($names) !== 176
+        || count(array_unique($names)) !== 176
+        || in_array('', $names, true)
+    ) {
+        throw new LogicException('Framework behavior inventory must contain 176 unique non-empty names.');
+    }
+
+    return $names;
+}

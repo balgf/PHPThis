@@ -16,11 +16,10 @@ use PHPThis\Http\RequestUploadError;
 use PHPThis\Http\UnsupportedMediaType;
 use PHPThis\Routing\PathParameters;
 
-/** @return array<string, Closure(): void> */
-function documentFileTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function documentFileTests(): Generator
 {
-    return [
-        'document upload rejects every non-success outcome before storage' => static function (): void {
+    yield 'document upload rejects every non-success outcome before storage' => static function (): void {
             $directory = dirname(__DIR__) . '/tmp/document-file-tests/rejected.files';
             removeDocumentFileTestDirectory($directory);
 
@@ -93,8 +92,8 @@ function documentFileTests(): array
             }
 
             throw new RuntimeException('Expected the application byte limit before provenance or storage work.');
-        },
-        'document upload keeps media and provenance failures explicit' => static function (): void {
+        };
+    yield 'document upload keeps media and provenance failures explicit' => static function (): void {
             $directory = dirname(__DIR__) . '/tmp/document-file-tests/explicit-failures.files';
             removeDocumentFileTestDirectory($directory);
             $files = new LocalDocumentFiles($directory);
@@ -138,8 +137,8 @@ function documentFileTests(): array
             }
 
             throw new RuntimeException('Expected a constructed non-upload path to fail provenance checks.');
-        },
-        'document storage rejects symlinked and overly permissive roots' => static function (): void {
+        };
+    yield 'document storage rejects symlinked and overly permissive roots' => static function (): void {
             $base = dirname(__DIR__) . '/tmp/document-file-tests/unsafe-roots';
             $realRoot = $base . '/real';
             $linkedRoot = $base . '/linked';
@@ -176,8 +175,8 @@ function documentFileTests(): array
                 }
                 removeDocumentFileTestDirectory($base);
             }
-        },
-        'document download exposes one fixed local-file response contract' => static function (): void {
+        };
+    yield 'document download exposes one fixed local-file response contract' => static function (): void {
             $root = dirname(__DIR__) . '/tmp/document-file-tests/download.files';
             removeDocumentFileTestDirectory($root);
             $idValue = str_repeat('a', 32);
@@ -247,14 +246,13 @@ function documentFileTests(): array
             } finally {
                 removeDocumentFileTestDirectory($root);
             }
-        },
-        'real multipart upload and download remain bounded and metadata-blind' => static function (): void {
+        };
+    yield 'real multipart upload and download remain bounded and metadata-blind' => static function (): void {
             proveRealDocumentFileTransfer();
-        },
-        'large local file emission stays below a fixed memory delta' => static function (): void {
+        };
+    yield 'large local file emission stays below a fixed memory delta' => static function (): void {
             proveBoundedDocumentFileEmission();
-        },
-    ];
+        };
 }
 
 function proveBoundedDocumentFileEmission(): void

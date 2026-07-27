@@ -12,11 +12,10 @@ use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;
 
-/** @return array<string, Closure(): void> */
-function migrationTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function migrationTests(): Generator
 {
-    return [
-        'database migrate applies an ordered inspectable ledger and reruns as a no-op' => static function (): void {
+    yield 'database migrate applies an ordered inspectable ledger and reruns as a no-op' => static function (): void {
             $databasePath = freshMigrationDatabasePath('ordered-ledger');
 
             if (is_file($databasePath)) {
@@ -113,9 +112,9 @@ function migrationTests(): array
             if (!is_int($permissions) || ($permissions & 0777) !== 0600) {
                 throw new RuntimeException('The application-private migration lock must use mode 0600.');
             }
-        },
+        };
 
-        'database migrate adds account users without conflating principal identities' => static function (): void {
+    yield 'database migrate adds account users without conflating principal identities' => static function (): void {
             $databasePath = freshMigrationDatabasePath('account-users-forward-step');
             $initial = runApplicationConsole([
                 'database:migrate',
@@ -172,9 +171,9 @@ function migrationTests(): array
                     'The forward migration must not infer user ownership from principal ids.',
                 );
             }
-        },
+        };
 
-        'database migrate rejects checksum drift before pending migration work' => static function (): void {
+    yield 'database migrate rejects checksum drift before pending migration work' => static function (): void {
             $databasePath = freshMigrationDatabasePath('checksum-drift');
             $initial = runApplicationConsole([
                 'database:migrate',
@@ -235,9 +234,9 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('Checksum drift must stop before every pending manifest step.');
             }
-        },
+        };
 
-        'database migrate rejects non-prefix ledger history' => static function (): void {
+    yield 'database migrate rejects non-prefix ledger history' => static function (): void {
             $databasePath = freshMigrationDatabasePath('history-invalid');
             $initial = runApplicationConsole([
                 'database:migrate',
@@ -268,9 +267,9 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('A gapped migration history must fail without repair or inference.');
             }
-        },
+        };
 
-        'database migrate rejects an incompatible preexisting ledger schema' => static function (): void {
+    yield 'database migrate rejects an incompatible preexisting ledger schema' => static function (): void {
             $databasePath = freshMigrationDatabasePath('ledger-schema-invalid');
             $connection = Connection::connect(
                 'sqlite:' . $databasePath,
@@ -329,9 +328,9 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('An incompatible ledger schema must fail before migration work.');
             }
-        },
+        };
 
-        'database migrate reports exact redacted ledger and lock failures' => static function (): void {
+    yield 'database migrate reports exact redacted ledger and lock failures' => static function (): void {
             $missingParentPath = freshMigrationDatabasePath('ledger-unavailable')
                 . '.missing-' . bin2hex(random_bytes(8))
                 . '/application.sqlite';
@@ -366,9 +365,9 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('Migration infrastructure failures must be finite and redacted.');
             }
-        },
+        };
 
-        'migration history rejects malformed and oversized database snapshots' => static function (): void {
+    yield 'migration history rejects malformed and oversized database snapshots' => static function (): void {
             $manifest = SqliteApplicationMigrations::manifest();
             $malformedRejected = false;
             $unknownRejected = false;
@@ -423,9 +422,9 @@ function migrationTests(): array
             if (!$malformedRejected || !$unknownRejected || !$oversizedRejected) {
                 throw new RuntimeException('Migration history must remain typed and bounded to 512 rows.');
             }
-        },
+        };
 
-        'database migrate preserves earlier commits across a later migration failure' => static function (): void {
+    yield 'database migrate preserves earlier commits across a later migration failure' => static function (): void {
             $databasePath = freshMigrationDatabasePath('partial-failure');
             $blocker = Connection::connect(
                 'sqlite:' . $databasePath,
@@ -521,9 +520,9 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('A failed migration must roll back its earlier DDL and permit repair.');
             }
-        },
+        };
 
-        'database migrate refuses to infer a baseline for an unledgered existing schema' => static function (): void {
+    yield 'database migrate refuses to infer a baseline for an unledgered existing schema' => static function (): void {
             $databasePath = freshMigrationDatabasePath('unledgered-schema');
             $existing = Connection::connect(
                 'sqlite:' . $databasePath,
@@ -564,9 +563,9 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('An unledgered schema must not be inferred as applied history.');
             }
-        },
+        };
 
-        'database migrate fails fast under a subprocess-held migration lock' => static function (): void {
+    yield 'database migrate fails fast under a subprocess-held migration lock' => static function (): void {
             $databasePath = freshMigrationDatabasePath('lock-contention');
             $contended = runMigrationWithSubprocessLock($databasePath);
             $afterRelease = runApplicationConsole([
@@ -582,9 +581,9 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('A concurrent local runner must fail quickly before database work.');
             }
-        },
+        };
 
-        'HTTP composition never creates or applies a missing database schema' => static function (): void {
+    yield 'HTTP composition never creates or applies a missing database schema' => static function (): void {
             $databasePath = freshMigrationDatabasePath('http-does-not-migrate');
             $composition = new ApplicationComposition(
                 ApplicationDatabasePath::fromString($databasePath),
@@ -604,8 +603,7 @@ function migrationTests(): array
             ) {
                 throw new RuntimeException('HTTP startup must not create the database or migration ledger.');
             }
-        },
-    ];
+        };
 }
 
 function freshMigrationDatabasePath(string $name): string

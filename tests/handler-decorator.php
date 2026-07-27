@@ -163,11 +163,10 @@ final readonly class HandlerDecoratorProofResponseMarkerHandler implements Reque
     }
 }
 
-/** @return array<string, Closure(): void> */
-function handlerDecoratorTests(): array
+/** @return Generator<string, Closure(): void, mixed, void> */
+function handlerDecoratorTests(): Generator
 {
-    return [
-        'explicit nested handler decorators preserve request and response identity' => static function (): void {
+    yield 'explicit nested handler decorators preserve request and response identity' => static function (): void {
             $trace = new HandlerDecoratorProofTrace();
             $expectedResponse = new Response(
                 200,
@@ -229,8 +228,8 @@ function handlerDecoratorTests(): array
                     'Expected explicit nesting to preserve one delivered request and the original response.',
                 );
             }
-        },
-        'maintenance gate short-circuits or delegates exactly once' => static function (): void {
+        };
+    yield 'maintenance gate short-circuits or delegates exactly once' => static function (): void {
             $activeTrace = new HandlerDecoratorProofTrace();
             $unusedResponse = new Response(204, [], '');
             $activeApplication = new Application(new Router([
@@ -293,8 +292,8 @@ function handlerDecoratorTests(): array
             ) {
                 throw new RuntimeException('Expected inactive maintenance to delegate exactly once.');
             }
-        },
-        'handler decorator propagates the exact downstream exception' => static function (): void {
+        };
+    yield 'handler decorator propagates the exact downstream exception' => static function (): void {
             $trace = new HandlerDecoratorProofTrace();
             $failure = new RuntimeException('handler decorator proof failure');
             $application = new Application(new Router([
@@ -329,8 +328,8 @@ function handlerDecoratorTests(): array
             ) {
                 throw new RuntimeException('Expected the original failure without an after-side effect.');
             }
-        },
-        'handler decorator propagates its exact own exception before delegation' => static function (): void {
+        };
+    yield 'handler decorator propagates its exact own exception before delegation' => static function (): void {
             $trace = new HandlerDecoratorProofTrace();
             $failure = new RuntimeException('handler decorator own proof failure');
             $application = new Application(new Router([
@@ -365,8 +364,8 @@ function handlerDecoratorTests(): array
             ) {
                 throw new RuntimeException('Expected the decorator-owned failure before downstream work.');
             }
-        },
-        'response decorator preserves immutable buffered and local-file response fields' => static function (): void {
+        };
+    yield 'response decorator preserves immutable buffered and local-file response fields' => static function (): void {
             $bufferedTrace = new HandlerDecoratorProofTrace();
             $bufferedCookie = new ResponseCookie(
                 'buffered',
@@ -473,8 +472,8 @@ function handlerDecoratorTests(): array
             ) {
                 throw new RuntimeException('Expected response replacement to preserve every immutable field.');
             }
-        },
-        'handler decoration is route-local and removable by direct rewiring' => static function (): void {
+        };
+    yield 'handler decoration is route-local and removable by direct rewiring' => static function (): void {
             $decoratedTrace = new HandlerDecoratorProofTrace();
             $plainTrace = new HandlerDecoratorProofTrace();
             $decoratedResponse = new Response(200, [], "decorated\n");
@@ -582,6 +581,5 @@ function handlerDecoratorTests(): array
             ) {
                 throw new RuntimeException('Expected decoration to be replaceable at the route constructor.');
             }
-        },
-    ];
+        };
 }
