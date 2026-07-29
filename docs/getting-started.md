@@ -10,7 +10,7 @@ The intended first request is:
 
 > Bootstrap this PHPThis application. Read `AGENTS.md`, inspect the installed PHPThis version, replace generic application context only with facts supported by this project, run the complete check, and report any product or operational decisions that require my approval.
 
-## Start from the checked skeleton
+## Start from the published skeleton
 
 When Packagist lists the approved `phpthis/skeleton` Alpha, the canonical installation path is:
 
@@ -20,7 +20,11 @@ cd my-app
 composer check
 ```
 
-For source-checkout evaluation, including when the package is not available, use the public repository's `skeleton/` directory:
+This creates the application root from `phpthis/skeleton` and installs `phpthis/framework` under `vendor/phpthis/framework`. Consumers do not clone or copy the PHPThis framework repository.
+
+## Framework source evaluation only
+
+Use this fallback only to evaluate unpublished framework source when the Composer package is unavailable. It is not the normal consumer installation path. Use the public repository's `skeleton/` directory:
 
 ```bash
 git clone https://github.com/balgf/PHPThis.git phpthis-source

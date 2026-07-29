@@ -1264,6 +1264,70 @@ foreach ($externalReleaseStateMarkers as $relativePath => $marker) {
     }
 }
 
+$consumerInstallationOrder = [
+    'README.md' => [
+        '## Start a PHPThis application',
+        'Consumers install PHPThis through Composer.',
+        'Do not clone or copy the PHPThis framework repository to start an application.',
+        'composer create-project --stability=alpha phpthis/skeleton my-app',
+        '`phpthis/skeleton` becomes the application root and Composer installs `phpthis/framework`',
+        '## Develop or evaluate PHPThis itself',
+        'It is not the consumer application installation path.',
+        'git clone https://github.com/balgf/PHPThis.git',
+    ],
+    'skeleton/README.md' => [
+        '## Create a new application',
+        'Consumers do not clone or copy the PHPThis framework repository.',
+        'composer create-project --stability=alpha phpthis/skeleton my-app',
+        'installs `phpthis/framework` under `vendor/phpthis/framework`',
+        '## Install and check an existing application checkout',
+        '## Framework-maintainer source evaluation',
+        'This section is not a consumer installation path.',
+        'phpthis/framework: dev-main',
+    ],
+    'docs/getting-started.md' => [
+        '## Start from the published skeleton',
+        'composer create-project --stability=alpha phpthis/skeleton my-app',
+        'Consumers do not clone or copy the PHPThis framework repository.',
+        '## Framework source evaluation only',
+        'It is not the normal consumer installation path.',
+        'git clone https://github.com/balgf/PHPThis.git phpthis-source',
+    ],
+    'RELEASING.md' => [
+        'Export the contents of `skeleton/` as the root of its dedicated repository',
+        'Remove the framework-maintainer source-evaluation section from the exported skeleton README',
+        'Remove the pre-alpha VCS `repositories` override from the exported `composer.json`',
+    ],
+    'composer.json' => [
+        'start applications with phpthis/skeleton',
+    ],
+    'skeleton/composer.json' => [
+        'starting a checked PHPThis application with phpthis/framework',
+    ],
+];
+
+foreach ($consumerInstallationOrder as $relativePath => $orderedMarkers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read consumer installation artifact {$relativePath}.";
+        continue;
+    }
+
+    $previousPosition = -1;
+
+    foreach ($orderedMarkers as $marker) {
+        $position = strpos($contents, $marker);
+
+        if ($position === false || $position <= $previousPosition) {
+            $failures[] = "The Composer-first consumer installation contract is missing or out of order in {$relativePath}.";
+            break;
+        }
+
+        $previousPosition = $position;
+    }
+}
+
 foreach ($mutableReleaseStateAuthorityFiles as $relativePath) {
     $contents = file_get_contents($root . '/' . $relativePath);
 

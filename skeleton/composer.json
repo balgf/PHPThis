@@ -1,6 +1,6 @@
 {
     "name": "phpthis/skeleton",
-    "description": "A checked, minimal PHPThis application starting point.",
+    "description": "A Composer project for starting a checked PHPThis application with phpthis/framework.",
     "type": "project",
     "license": "MIT",
     "repositories": [

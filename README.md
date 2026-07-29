@@ -72,9 +72,31 @@ The executable query-scaling proof holds every accepted page at one statement wh
 PHP runtime -> application terminal coordinator -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> optional explicit route-local decorator(s) -> route policy adapter -> protected Handler -> Response + X-Request-ID -> one sink attempt -> ResponseEmitter
 ```
 
-## Try it
+## Start a PHPThis application
 
-The framework runtime supports PHP 8.4.x and requires PDO and ext-session. Running this repository's complete maintainer checks additionally requires Composer and PDO SQLite; its development-only PHPUnit 13 maintainer suite requires PHP 8.4.1 or newer within that supported line. Local report-only coverage requires PCOV or Xdebug, and framework CI supplies PCOV. Composer deliberately excludes PHP 8.5 until that runtime has its own reviewed CI evidence. The repository's application-owned Redis integration proof additionally declares `ext-redis ^6.3`, tests Redis server `>=7.4` and `<9.0`, and requires two processes by default: cache at `127.0.0.1:6379` database `0`, and lease at `127.0.0.1:6380` database `0`. PHPStan, PHPUnit, and the PHPThis Strict Profile are mandatory framework-repository development components; they do not affect the framework runtime or require consumers to select the same test runner.
+Consumers install PHPThis through Composer. Do not clone or copy the PHPThis framework repository to start an application.
+
+```bash
+composer create-project --stability=alpha phpthis/skeleton my-app
+cd my-app
+composer check
+php -S 127.0.0.1:8080 -t public
+curl -i http://127.0.0.1:8080/health
+```
+
+`phpthis/skeleton` becomes the application root and Composer installs `phpthis/framework` under `vendor/phpthis/framework`. The framework runtime supports PHP 8.4.x and requires PDO and ext-session.
+
+The independently checked skeleton contains a runnable health application, project-owned AI context, the installed profile gate, behavior tests, and CI. The [getting-started guide](docs/getting-started.md) defines the canonical Packagist path, existing-application adoption, and the separate source-evaluation fallback while requiring current package availability to be verified externally.
+
+Every application must own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
+
+Ask the project AI to follow the [application bootstrap contract](docs/getting-started.md), the installed [consumer contract](docs/consumer-contract.md), and the [knowledge map](docs/knowledge-map.md). Existing applications can still adopt the documentation-only context under `templates/application/` deliberately.
+
+## Develop or evaluate PHPThis itself
+
+Cloning this repository is only for contributing to PHPThis or evaluating its framework source and checked example. It is not the consumer application installation path.
+
+Running this repository's complete maintainer checks additionally requires Composer and PDO SQLite; its development-only PHPUnit 13 maintainer suite requires PHP 8.4.1 or newer within that supported line. Local report-only coverage requires PCOV or Xdebug, and framework CI supplies PCOV. Composer deliberately excludes PHP 8.5 until that runtime has its own reviewed CI evidence. The repository's application-owned Redis integration proof additionally declares `ext-redis ^6.3`, tests Redis server `>=7.4` and `<9.0`, and requires two processes by default: cache at `127.0.0.1:6379` database `0`, and lease at `127.0.0.1:6380` database `0`. PHPStan, PHPUnit, and the PHPThis Strict Profile are mandatory framework-repository development components; they do not affect the framework runtime or require consumers to select the same test runner.
 
 ```bash
 git clone https://github.com/balgf/PHPThis.git
@@ -95,14 +117,6 @@ curl -i -X POST http://127.0.0.1:8080/accounts/42/users \
 php example/bin/console.php jobs:run-one
 php example/bin/console.php schedule:run
 ```
-
-## Start an application
-
-The independently checked `phpthis/skeleton` package source lives under `skeleton/`. It contains a runnable health application, project-owned AI context, the installed profile gate, behavior tests, and CI. The [getting-started guide](docs/getting-started.md) defines both the Packagist installation path and source-checkout evaluation while requiring current package availability to be verified externally.
-
-Every application must own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
-
-Ask the project AI to follow the [application bootstrap contract](docs/getting-started.md), the installed [consumer contract](docs/consumer-contract.md), and the [knowledge map](docs/knowledge-map.md). Existing applications can still adopt the documentation-only context under `templates/application/` deliberately.
 
 ## Authority and project status
 

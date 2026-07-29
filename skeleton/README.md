@@ -8,11 +8,21 @@ A useful first request is:
 
 > Read `AGENTS.md`, inspect the installed PHPThis version, explain the current request path with file references, and identify the project facts I must decide before we add the first feature.
 
-Package availability is an external fact: verify tagged repositories and Packagist rather than inferring publication from this tracked README. If this checkout's `composer.json` contains a VCS repository override and requires `phpthis/framework: dev-main`, it is the source-evaluation variant.
+## Create a new application
 
-The separately published skeleton must remove that override, require the approved Alpha constraint from Packagist, and commit the resulting `composer.lock` before its tag. A published artifact must be proved through `RELEASING.md`.
+Use the published Composer project. Consumers do not clone or copy the PHPThis framework repository.
 
-## Install and check
+```bash
+composer create-project --stability=alpha phpthis/skeleton my-app
+cd my-app
+composer check
+```
+
+This creates the application root from `phpthis/skeleton` and installs `phpthis/framework` under `vendor/phpthis/framework`.
+
+Package availability is an external fact: verify tagged repositories and Packagist rather than inferring publication from this tracked README.
+
+## Install and check an existing application checkout
 
 ```bash
 composer install
@@ -34,3 +44,9 @@ Before adding product behavior, replace this skeleton's generic project facts in
 Every selected response carries an application-generated 128-bit lowercase-hex `X-Request-ID`. The visible front-controller path makes exactly one attempt to send a closed redacted terminal summary to its application-owned sink; sink failure cannot alter the response, and an invocation attempt is not a durable-delivery guarantee. Database adoption uses a finite list of distinct budget and trace sources without changing the framework into a logger or SQL abstraction.
 
 The AI may implement routine, in-scope work under human direction. It must surface consequential product, architecture, security, data, migration, deployment, and external-side-effect choices for human judgment. The human accepts those decisions and remains accountable for the result.
+
+## Framework-maintainer source evaluation
+
+This section is not a consumer installation path. If this checkout's `composer.json` contains a VCS repository override and requires `phpthis/framework: dev-main`, it is the framework source-evaluation variant.
+
+The separately published skeleton must remove that override, require the approved Alpha constraint from Packagist, and commit the resulting `composer.lock` before its tag. A published artifact must be proved through `RELEASING.md`.

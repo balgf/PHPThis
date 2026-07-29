@@ -90,6 +90,7 @@ At the end of this step, treat the public artifact and skeleton path as unproved
 
 - [ ] Export the contents of `skeleton/` as the root of its dedicated repository; do not publish it as a nested directory of the framework package.
 - [ ] Record the approved skeleton repository URL and confirm its package name remains `phpthis/skeleton`.
+- [ ] Remove the framework-maintainer source-evaluation section from the exported skeleton README so the published package remains consumer-only and does not link to framework-repository files it does not contain.
 - [ ] Remove the pre-alpha VCS `repositories` override from the exported `composer.json`.
 - [ ] Replace `phpthis/framework: dev-main` with the approved framework prerelease constraint resolved from Packagist.
 - [ ] Run `composer update --prefer-dist` in the skeleton repository and commit the generated `composer.lock`.

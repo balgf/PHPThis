@@ -1,6 +1,6 @@
 {
     "name": "phpthis/framework",
-    "description": "A checked PHP profile and minimal web framework for AI-authored code.",
+    "description": "A checked PHP profile and minimal web framework for AI-authored code; start applications with phpthis/skeleton.",
     "keywords": [
         "ai-assisted-development",
         "php",
