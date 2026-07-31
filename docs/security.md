@@ -12,7 +12,10 @@ AI-oriented explicitness does not replace security review.
 - Enforce `PHT001` so scalar conversion cannot silently turn unresolved `mixed` input into a trusted value.
 - Keep normalization operation-specific and explicit; never strip or rewrite malformed input into an apparently valid default.
 - Encode or escape output only for its actual sink; sink encoding is not input validation or authorization.
-- Keep credentials outside committed configuration.
+- Keep credentials outside source and committed context. Read exact process-environment keys only in the one application configuration boundary, validate into process-specific final readonly values before application-controlled I/O, keep runtime and elevated authority separate without fallback, and inject only concrete typed values through visible composition.
+- Keep usernames, passwords, tokens, and private keys out of database DSNs. Pass separately named credentials through the visible connection boundary so password parameters can carry `#[\SensitiveParameter]`; still treat that attribute as disclosure reduction, not encryption.
+- Treat environment variables as delivery rather than encryption. Ignore `.env` and `.env.*` except an optional non-secret `.env.example`; PHPThis performs no automatic dotenv load.
+- Mark password, token, and private-key parameters with `#[\SensitiveParameter]` where applicable, but never treat that attribute as encryption or protection from explicit logging, dumping, copying, or serialization.
 - Map only named client failures to generic public responses; broad built-in exceptions remain unknown failures.
 - Select the generic unknown-failure 500, then include only its concrete class in the one application-owned terminal summary attempt; never include its message, code, previous exception, source location, stack, SQL, or parameters.
 - Generate the 128-bit lowercase-hex correlation ID in the application and replace any case-insensitive response spelling with it; do not echo an arbitrary caller-controlled `X-Request-ID`.

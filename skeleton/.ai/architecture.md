@@ -20,6 +20,7 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `public/index.php` | Load request-scoped composition, read PHP runtime globals, invoke the terminal coordinator, and emit its unchanged response. |
+| Application configuration | `.ai/configuration.md` | Owns the health-only `NOT_APPLICABLE(CONFIGURATION)` marker and any later external-input-to-typed-value contract. |
 | WebSocket runtime | `NOT_APPLICABLE(WEBSOCKETS)` | The health-only starter has no WebSocket process, listener, protocol, or connection state. |
 | Application-owned request-handler decorators | `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)` | `HealthHandler` is constructed directly for the sole route. |
 | Terminal request summary | `src/Observability/` | Own correlation, finite database-source observation, the closed redacted event, one injected sink, and failure-isolated attempt semantics. |
@@ -29,6 +30,10 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | Durable jobs | `NOT_APPLICABLE(JOBS)` | The starter has no deferred work or worker runtime. |
 | Database | `NOT_APPLICABLE` | The starter application has no database. |
 | External services | `NOT_APPLICABLE` | The starter application has no external integrations. |
+
+## Configuration boundary
+
+`.ai/configuration.md` is the single writable authority and currently records `NOT_APPLICABLE(CONFIGURATION)`: the starter has no environment read, configuration reader, secret, database credential, or typed configuration value. Before adoption, record the complete source, factories, validation, authority, injection, failure, rotation/restart, redaction, and tests there. This architecture retains only the dependency rule: keep every direct `\getenv('EXACT_LITERAL_KEY')` call in the one recorded PHP file, validate into process-specific final readonly types before application-controlled I/O, and inject only concrete values through `bootstrap.php`.
 
 ## Inbound data boundaries
 

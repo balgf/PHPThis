@@ -18,6 +18,10 @@
 - Database migrations: `.ai/migrations.md`
 - Required extensions: `ext-session` plus {{ADDITIONAL_REQUIRED_PHP_EXTENSIONS_OR_NONE}}
 
+## Configuration runtime
+
+`.ai/configuration.md` is the single writable authority for the boundary source, external names, deployment injection owner, process-specific factories and final readonly types, validation, authority separation, startup failure, rotation/restart, secret redaction, and configuration evidence. Do not duplicate those facts or placeholders here. This operations guide records only the surrounding process, supervisor, topology, capacity, and incident facts. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
+
 ## Session runtime
 
 - Adoption: {{SESSION_ADOPTION_OR_NOT_APPLICABLE}}
@@ -32,7 +36,7 @@
 ## Request-policy runtime
 
 - Adoption or `NOT_APPLICABLE(REQUEST_POLICY)`: {{REQUEST_POLICY_RUNTIME_ADOPTION_OR_NOT_APPLICABLE}}
-- Credential verifier, supported scheme, and non-secret configuration source: {{CREDENTIAL_VERIFIER_AND_CONFIGURATION_OR_NOT_APPLICABLE}}
+- Credential verifier and supported scheme: {{CREDENTIAL_VERIFIER_AND_SCHEME_OR_NOT_APPLICABLE}}; external configuration source and typed factory: `.ai/configuration.md`
 - Authorization-header forwarding and trusted-proxy policy: {{AUTHORIZATION_HEADER_FORWARDING_POLICY_OR_NOT_APPLICABLE}}
 - Credential expiry, rotation, revocation, and verifier-failure behavior: {{CREDENTIAL_LIFECYCLE_AND_FAILURE_POLICY_OR_NOT_APPLICABLE}}
 - Tenant and permission source availability and failure behavior: {{TENANT_AND_AUTHORIZATION_SOURCE_FAILURE_POLICY_OR_NOT_APPLICABLE}}
@@ -42,7 +46,7 @@ ADR 023 supersedes the earlier no-denial-log wording. A known denial receives on
 
 ## WebSocket runtime
 
-`NOT_APPLICABLE(WEBSOCKETS)`: this template declares no listener, event-loop process, supervisor, proxy, TLS termination, connection registry, capacity, or scaling policy. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record the exact runtime package and version, separate entrypoint and process identity, listener and trusted-proxy boundary, non-secret configuration source, startup and readiness contract, heartbeat, idle and absolute lifetime, send and close deadlines, connection and rate limits, graceful stop, forced-stop owner, restart, deployment topology, capacity, scaling, incident policy, and dated operational source. Record the redacted connection-summary destination and its backpressure and outage behavior without copying credentials, identifiers, headers, or frames.
+`NOT_APPLICABLE(WEBSOCKETS)`: this template declares no listener, event-loop process, supervisor, proxy, TLS termination, connection registry, capacity, or scaling policy. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record here the exact runtime package and version, separate entrypoint and process identity, listener and trusted-proxy boundary, startup and readiness contract, heartbeat, idle and absolute lifetime, send and close deadlines, connection and rate limits, graceful stop, forced-stop owner, deployment topology, capacity, scaling, incident policy, and dated operational source. Record the process configuration source, factory, final readonly type, failure, rotation/restart, and secret-redaction contract only in `.ai/configuration.md`. Record the connection-summary destination and its backpressure and outage behavior in the appropriate observability context without copying credentials, identifiers, headers, or frames.
 
 ## HTTP cache runtime
 
@@ -58,7 +62,7 @@ Do not infer intermediary behavior from local responses. Verify every production
 - Adoption or `NOT_APPLICABLE(CACHE)`: {{CACHE_RUNTIME_ADOPTION_OR_NOT_APPLICABLE}}
 - Backend product, supported version, and client boundary: {{CACHE_BACKEND_AND_VERSION_OR_NOT_APPLICABLE}}
 - Deployment topology and application/environment isolation: {{CACHE_TOPOLOGY_AND_ISOLATION_OR_NOT_APPLICABLE}}
-- Non-secret configuration source and required extension or package: {{CACHE_CONFIGURATION_AND_DEPENDENCY_OR_NOT_APPLICABLE}}
+- Process configuration source and typed factory: `.ai/configuration.md`; required extension or package: {{CACHE_DEPENDENCY_OR_NOT_APPLICABLE}}
 - Capacity, eviction, and finite TTL policy: {{CACHE_CAPACITY_EVICTION_AND_TTL_POLICY_OR_NOT_APPLICABLE}}
 - Backend failure, degradation, and recovery behavior: {{CACHE_FAILURE_AND_RECOVERY_POLICY_OR_NOT_APPLICABLE}}
 - Stampede owner, lock or lease bound, and loser behavior: {{CACHE_STAMPEDE_POLICY_OR_NOT_APPLICABLE}}
@@ -79,7 +83,7 @@ The application supervisor creates repetition by starting fresh one-delivery pro
 ## Application CLI and scheduler
 
 - Adoption or `NOT_APPLICABLE(CLI)`: `.ai/cli.md`
-- Console process identity and non-secret configuration source: {{CLI_PROCESS_IDENTITY_AND_CONFIGURATION_OR_NOT_APPLICABLE}}
+- Console process identity: {{CLI_PROCESS_IDENTITY_OR_NOT_APPLICABLE}}; process configuration source and typed factory: `.ai/configuration.md`
 - Lock-file ownership, permissions, cleanup, and filesystem topology: {{CLI_LOCK_OPERATIONS_OR_NOT_APPLICABLE}}
 - Cron or supervisor frequency, timeout, forced termination, restart, and incident policy: {{CLI_SUPERVISOR_POLICY_OR_NOT_APPLICABLE}}
 - Operational assumptions source and verified date: {{CLI_OPERATIONS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
@@ -89,7 +93,7 @@ Keep command, argument, exit, stream, clock, cadence, one-pass, repeated-slot, c
 ## Database migrations
 
 - Adoption or `NOT_APPLICABLE(MIGRATIONS)`: `.ai/migrations.md`
-- Migration process identity and non-secret configuration source: {{MIGRATION_PROCESS_IDENTITY_AND_CONFIGURATION_OR_NOT_APPLICABLE}}
+- Migration process identity: {{MIGRATION_PROCESS_IDENTITY_OR_NOT_APPLICABLE}}; process configuration source and typed factory: `.ai/configuration.md`
 - Lock-file ownership, permissions, cleanup, and filesystem topology: {{MIGRATION_LOCK_OPERATIONS_OR_NOT_APPLICABLE}}
 - DDL timeout, maintenance window, availability, capacity, and termination policy: {{MIGRATION_EXECUTION_OPERATIONS_OR_NOT_APPLICABLE}}
 - Backup, restore, failed-deployment, and incident procedure: {{MIGRATION_RECOVERY_OPERATIONS_OR_NOT_APPLICABLE}}

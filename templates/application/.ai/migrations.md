@@ -4,6 +4,7 @@
 - Exact engine and supported version: {{MIGRATION_ENGINE_AND_VERSION_OR_NOT_APPLICABLE}}
 - Sole application console command: `{{MIGRATION_COMMAND_OR_NOT_APPLICABLE}}`
 - Separately authorized migration identity and isolation from web runtime: {{MIGRATION_AUTHORITY_AND_ISOLATION_OR_NOT_APPLICABLE}}
+- Migration configuration source, factory, final readonly type, injection, failure, rotation/restart, and secret redaction: `.ai/configuration.md`
 - Permanent identifier grammar and finite manifest maximum: {{MIGRATION_IDENTIFIER_AND_MANIFEST_BOUND_OR_NOT_APPLICABLE}}
 - Concrete ordered unrolled manifest source: `{{MIGRATION_MANIFEST_SOURCE_OR_NOT_APPLICABLE}}`
 - Canonical SHA-256 checksum byte sequence and source: {{MIGRATION_CHECKSUM_POLICY_OR_NOT_APPLICABLE}}

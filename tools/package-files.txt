@@ -28,6 +28,7 @@ docs/cli/arguments-output.md
 docs/cli/composition.md
 docs/cli/scheduling-locking.md
 docs/cli/testing.md
+docs/configuration.md
 docs/consumer-contract.md
 docs/consumer-profile.md
 docs/crud.md
@@ -67,6 +68,7 @@ docs/decisions/032-explicit-uuid-and-ulid-route-types.md
 docs/decisions/033-application-owned-request-handler-decorators.md
 docs/decisions/034-application-owned-websocket-integration.md
 docs/decisions/035-bounded-alpha-4-release-scope.md
+docs/decisions/036-one-typed-application-configuration-boundary.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -152,6 +154,7 @@ templates/application/.ai/README.md
 templates/application/.ai/architecture.md
 templates/application/.ai/change-workflow.md
 templates/application/.ai/cli.md
+templates/application/.ai/configuration.md
 templates/application/.ai/data.md
 templates/application/.ai/file-transfers.md
 templates/application/.ai/integrations.md
@@ -168,6 +171,7 @@ templates/application/AGENTS.md
 templates/application/docs/decisions/README.md
 verification/ApplicationChecker.php
 verification/ApplicationDuplicationScanner.php
+verification/EnvironmentAccessProfile.php
 verification/SyntaxProfile.php
 verification/phpstan/ConnectionCallableArrayRule.php
 verification/phpstan/ConnectionMethodCallableRule.php

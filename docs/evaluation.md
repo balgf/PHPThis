@@ -62,7 +62,7 @@ The bound-string probe includes quotes, a semicolon, and an SQL comment marker a
 
 ## SQL-safety evidence
 
-Strict Profile version 2's PHT006 fixtures prove that the three direct canonical `Connection` calls accept literals, native constants, non-interpolated statement text, named arguments, and finite constant-string choices while rejecting arbitrary or blank strings, dynamic interpolation, argument unpacking, PHPDoc-only narrowing, and callable indirection. Runtime behavior separately proves that SQL-looking bound text remains one unchanged data value and is absent from query traces.
+`PHT006`, introduced by Strict Profile version 2 and carried forward by the current Strict Profile version 3, has fixtures proving that the three direct canonical `Connection` calls accept literals, native constants, non-interpolated statement text, named arguments, and finite constant-string choices while rejecting arbitrary or blank strings, dynamic interpolation, argument unpacking, PHPDoc-only narrowing, and callable indirection. Runtime behavior separately proves that SQL-looking bound text remains one unchanged data value and is absent from query traces.
 
 Applications complete that evidence with tests for every real structural choice and safe engine-specific verification of runtime database authority. Unknown structural input must fail before database work. A test account's ability to execute the intended statements and inability to exercise selected prohibited authority is deployment evidence, not a portable framework feature.
 

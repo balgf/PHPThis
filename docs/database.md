@@ -4,6 +4,8 @@ The database layer deliberately exposes SQL. Its job is limited to connection po
 
 Applications create this boundary with `Connection::connect` in their composition root. `PHT005` resolves names and types and rejects application-owned construction of `PDO` or its subclasses so query budgets and traces cannot be bypassed with an alias, typed class-string, or anonymous subclass.
 
+Credentials reach that composition root through the application-owned pattern in `docs/configuration.md`. One PHP file reads exact external names and validates them before application-controlled I/O into separately named final readonly runtime or migration values. HTTP invokes only the runtime factory and visibly passes its fields with an explicit `QueryBudget` and `QueryTrace`; migration and administrative values never fall back to runtime values. `Connection::connect` marks its password parameter with `#[\SensitiveParameter]`, which reduces stack-trace disclosure only.
+
 ## Driver and dialect policy
 
 PHPThis provides PDO transport, not portable SQL. `Connection::connect` accepts a native PDO DSN, optional credentials, and additional driver options. The framework keeps `ext-pdo` as its only runtime database requirement. An application declares the actual runtime extension for every engine it uses, such as `ext-pdo_sqlite`, `ext-pdo_mysql`, or `ext-pdo_pgsql`.

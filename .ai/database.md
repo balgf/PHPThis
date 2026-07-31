@@ -8,6 +8,7 @@ Read ADR 022 before changing the protected document-list proof. That application
 
 Rules:
 
+- Keep deployment-input access application-owned: one PHP file contains every exact direct `\getenv('LITERAL_KEY')` read and returns process-specific final readonly types before application-controlled I/O. Runtime, migration, and administrative factories use distinct names and never fall back. Inject only the runtime type into visible HTTP `Connection::connect` construction; do not pass a configuration reader into behavior.
 - Execute SQL only through direct calls to `Connection`; do not add a second database execution boundary.
 - Pass SQL that PHPStan resolves natively to a finite set of non-blank compile-time constant strings.
 - Map an external structural choice such as ordering, selected columns, operators, or a bounded list shape to finite reviewed code-owned statements or fragments. Prefer complete statements, keep the final SQL finite and constant, and reject an unknown choice before database work.
@@ -37,6 +38,8 @@ For each connection, the application context must record the code authority for 
 Raw `array<string, mixed>` rows must not reach a response or business operation. A query budget is a backstop, not proof of good query shape. The trace hashes exact SQL and never retains SQL or parameters. Budget-rejected calls are not traced because PDO was not attempted. Trace duration covers prepare, bind, and execute, not fetching. Review joins, indexes, result bounds, and execution plans for production queries.
 
 The base transport harness defaults to SQLite. A requested driver must be installed and configured or the harness fails; dedicated CI runs SQLite, MySQL, and PostgreSQL. Changes to `Connection` must pass `composer test:database-drivers` locally and the complete three-engine CI job. Engine-specific application behavior still needs tests against the exact deployed version.
+
+`#[\SensitiveParameter]` on the `Connection::connect` password reduces accidental wrapper stack-trace disclosure only. It does not encrypt, redact explicit output, detect secrets, or replace the application's configuration and logging tests.
 
 The sample user read uses one bounded aggregate statement for user event counts. Its small and large fixtures must keep the same query count and output contract. The account-scoped sample write performs exactly four named statements inside one explicit transaction: user, `account_users` relation, event, and commit-visible job. Actor authorization reads `account_memberships`; never infer that a principal ID and user ID identify the same entity. A one-statement budget rejects the account-user write, a three-statement budget rejects job publication, and each failure leaves every affected table unchanged. Do not replace either path with per-row queries or a transaction callback.
 

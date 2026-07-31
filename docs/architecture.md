@@ -1,5 +1,17 @@
 # Architecture
 
+Application configuration stays outside framework core:
+
+```text
+deployment environment
+  -> one application-owned configuration reader
+    -> process-specific final readonly configuration
+      -> visible composition root
+        -> concrete runtime graph
+```
+
+Every direct process-environment read is confined to that one application file under PHT007. The HTTP root calls only its runtime factory; migration and administrative factories remain separate without fallback. Behavior receives concrete typed dependencies, never a configuration service, bag, helper, facade, container, or reader.
+
 PHPThis uses a flat request pipeline:
 
 ```text
@@ -41,7 +53,7 @@ Only `public/index.php` reads PHP superglobals and passes `$_SERVER`, `$_GET`, `
 
 ADR 023 places one application-owned terminal coordinator around that path without changing `RequestBoundary`, `UnknownFailureBoundary`, or `Connection`. It generates the correlation ID, adds `X-Request-ID` to the final immutable response, derives one closed bounded event from a finite list of distinct connection budgets and traces, and makes exactly one sink invocation attempt before `ResponseEmitter`. Sink failure is isolated and cannot replace the response. This is explicit front-controller composition, not middleware, a global logger, a facade, a service locator, an event pipeline, or hidden instrumentation.
 
-The router stores objects, not class names, so dispatch does not need reflection or a container. It validates the complete list once. Fully literal routes use immutable method/path and path/method indexes. Under Consumer Contract version 9, carrying ADR 032 forward, a parameterized route still has at most two full-segment placeholders and uses one of four fixed types: canonical `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or bounded opaque `token`. Applications choose the narrowest type and never use token as a UUID/ULID shortcut. Each route is compiled into the same deterministic state index. Exact literal routes take precedence, differing sibling parameter types and overlapping parameterized declarations fail at construction, failed UUID/ULID matches do not fall back to token, and dispatch plus 405 lookup may traverse only the bounded request path and compiled state transitions rather than scanning the route list or an index collection. A successful lookup returns immutable `RouteMatch` metadata. `Application` copies the normalized request with the match's immutable `PathParameters` and passes it to the existing `RequestHandler::handle(Request)` interface; static routes receive empty parameters. Handlers immediately wrap each unchanged validated path value in a route-specific application identifier and enforce any narrower domain rule before authorization or database work. Routing adds no normalization, binding, lookup, identifier generation, or persistence policy.
+The router stores objects, not class names, so dispatch does not need reflection or a container. It validates the complete list once. Fully literal routes use immutable method/path and path/method indexes. Under Consumer Contract version 10, carrying ADR 032 forward, a parameterized route still has at most two full-segment placeholders and uses one of four fixed types: canonical `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or bounded opaque `token`. Applications choose the narrowest type and never use token as a UUID/ULID shortcut. Each route is compiled into the same deterministic state index. Exact literal routes take precedence, differing sibling parameter types and overlapping parameterized declarations fail at construction, failed UUID/ULID matches do not fall back to token, and dispatch plus 405 lookup may traverse only the bounded request path and compiled state transitions rather than scanning the route list or an index collection. A successful lookup returns immutable `RouteMatch` metadata. `Application` copies the normalized request with the match's immutable `PathParameters` and passes it to the existing `RequestHandler::handle(Request)` interface; static routes receive empty parameters. Handlers immediately wrap each unchanged validated path value in a route-specific application identifier and enforce any narrower domain rule before authorization or database work. Routing adds no normalization, binding, lookup, identifier generation, or persistence policy.
 
 ADR 033 permits an optional application-owned request-handler decorator at that existing handler seam. Each final named decorator implements `RequestHandler`, owns exactly one downstream `RequestHandler`, and either short-circuits or calls it once with the same immutable request. Any nested outer-to-inner order remains visible beside the affected `Route`; no pipeline, registry, helper, priority, discovery, `$next` callable, or context bag assembles it. A replacement immutable response preserves every unchanged field, and exceptions propagate unchanged. The decorator may own only explicitly named bounded I/O. It cannot wrap `Application`, `RequestBoundary`, the terminal request-summary coordinator, or `ResponseEmitter`, so the flat transport and terminal paths do not become composable chains. The pattern adds no core class or runtime dependency.
 

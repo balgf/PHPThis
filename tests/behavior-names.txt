@@ -167,6 +167,7 @@ account-scoped user creation keeps principal and user identities separate
 account-scoped user creation rolls back when its budget rejects account relation
 account-scoped user creation rolls back when the event statement fails
 account-scoped user creation rejects invalid input before database work
+connection marks only its password argument as sensitive
 connection binds named values and enforces its budget
 connection keeps SQL-looking bound text outside statement structure
 connection accepts portable parameter names and rejects invalid or duplicate names before database work

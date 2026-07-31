@@ -1,12 +1,13 @@
 # Application rules
 
-These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile v2. They may strengthen those rules but may not weaken them.
+These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3. They may strengthen those rules but may not weaken them.
 
 ## Required
 
 - Use the canonical domain terms defined in `.ai/project.md`.
 - Preserve the dependency direction and boundaries defined in `.ai/architecture.md`.
 - Apply the data and resource limits defined in `.ai/data.md`.
+- Keep every process-environment read in the one PHP file recorded by `.ai/configuration.md`, use only direct `\getenv('EXACT_LITERAL_KEY')`, immediately validate into process-specific final readonly types before application-controlled I/O, and inject only concrete typed values through visible composition.
 - Declare every resource path identifier with the narrowest fixed type: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only when it is genuinely opaque. Use the matching `PathParameters` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and enforce narrower domain rules before database work; never normalize, bind, look up, or fall back between route types.
 - Prove invalid resource-identifier syntax returns `404` with zero handler and database work, and prove a canonical valid path with the wrong method returns `405`.
 - Keep every adopted application-owned request-handler decorator final, route-local, and explicit: exactly one downstream `RequestHandler`, complete unrolled nesting beside each route, zero-or-one delegation with the exact same immutable `Request` instance, unchanged exception propagation, explicit immutable `Response` replacement with complete field preservation, and named bounded side effects with behavior tests.
@@ -34,6 +35,7 @@ These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile
 
 - Do not invent missing product behavior, schema meaning, production limits, or external-service semantics.
 - Do not add a generic validator, result wrapper, string-rule language, automatic request binding, reflection hydration, mass assignment, sanitization magic, or unvalidated array beyond its named boundary.
+- Do not read configuration in handlers, routes, operations, policies, or SQL owners; add a string-keyed configuration bag, arbitrary getter, global helper, facade, provider, container binding, discovery, automatic dotenv loading, hidden reload, or migration-to-runtime credential fallback.
 - Do not parse the same inbound representation again downstream, silently transform or coerce an application field, or treat validation as output encoding or authorization.
 - Do not introduce an undocumented side effect, retry, fallback, cache, queue, or scheduled operation.
 - Do not add application commands to framework `phpthis`, command discovery, class-name dispatch, a service-container command resolver, generic console or scheduler facade, daemon, hidden loop, unrecorded persistent slot or catch-up behavior, or distributed coordination without an accepted application decision and evidence.

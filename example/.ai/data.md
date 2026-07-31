@@ -12,11 +12,13 @@ This file records only the checked-in example's current data-path decisions and 
 - Driver claim: MySQL and PostgreSQL are certified only for the base PDO transport harness. No document-list or durable-job application SQL is certified on those engines.
 - Runtime authority: the local SQLite file/process boundary is evaluation evidence only; it is not production least-privilege proof.
 
+`.ai/configuration.md` owns the example's exact database-path and Redis composition sources, typed values, process-specific entrypoint delivery, lifecycle, failure, and disclosure facts. This data guide owns only SQL, engine, runtime-versus-schema authority, and evidence limits.
+
 ## Schema migration authority
 
 `Example\Migrations\SqliteApplicationMigrations` is the sole schema path for the executable example. The application console invokes it as `database:migrate`; `tools/setup-example.php` delegates to the same coordinator and then seeds evaluation data. HTTP composition performs no migration work. The coordinator owns a seven-entry finite unrolled manifest, a 512-entry maximum, `LIMIT 513` bounded ledger inspection, immutable SHA-256 checksums, per-migration transactions, and the `application_migrations` ledger. Migration 0007 adds `account_users` without copying `account_memberships`: principal and user identities are distinct unless an application proves an explicit mapping. See `.ai/migrations.md` for exact identifiers, lock, output, failure, recovery, and evidence policy.
 
-The migration command has schema authority over the example SQLite file. Web runtime authority remains separate in policy even though this source-checkout proof cannot demonstrate database-role grants. Production adoption records and dates its exact file ownership, process identities, configuration isolation, and backup or restore policy.
+The migration command has schema authority over the example SQLite file. Web runtime authority remains separate in code and policy: HTTP calls only `ApplicationComposition::http()`, while the console can reach migration composition only through `database:migrate`. This source-checkout proof has no database credentials and cannot demonstrate database-role grants. Production adoption records and dates its exact file ownership, process identities, configuration isolation, and backup or restore policy.
 
 ## Redis cache and lease data
 

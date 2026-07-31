@@ -4,7 +4,7 @@ If this application has no database access, CRUD-shaped data behavior, or server
 
 ## Systems and schema authority
 
-| Connection name | Engine and supported version | PDO driver | Required Composer extension | Non-secret configuration source | Schema authority |
+| Connection name | Engine and supported version | PDO driver | Required Composer extension | Non-secret configuration reference | Schema authority |
 | --- | --- | --- | --- | --- | --- |
 | `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_ENGINE_AND_VERSION}} | `{{CONNECTION_1_PDO_DRIVER}}` | `{{CONNECTION_1_PDO_EXTENSION}}` | `{{CONNECTION_1_CONFIG_REFERENCE}}` | `{{CONNECTION_1_SCHEMA_SOURCE}}` |
 | `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_ENGINE_AND_VERSION_OR_NOT_APPLICABLE}} | `{{CONNECTION_2_PDO_DRIVER_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_PDO_EXTENSION_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_CONFIG_REFERENCE_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_SCHEMA_SOURCE_OR_NOT_APPLICABLE}}` |
@@ -35,6 +35,8 @@ Unknown selectors and unsupported or oversized list shapes fail before database 
 | `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_RUNTIME_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_2_REQUIRED_RUNTIME_CAPABILITIES_OR_NOT_APPLICABLE}} | {{CONNECTION_2_PROHIBITED_RUNTIME_CAPABILITIES_OR_NOT_APPLICABLE}} | {{CONNECTION_2_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_2_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}} | {{CONNECTION_2_AUTHORITY_VERIFICATION_SOURCE_AND_DATE_OR_NOT_APPLICABLE}} |
 
 Runtime identities receive only the operations required by named application paths. Keep schema changes, migrations, role or user management, and other administrative capabilities isolated from runtime credentials. Least privilege limits impact; it does not replace PHT006 or bound parameters.
+
+`.ai/configuration.md` is authoritative for exact external input names, final readonly database-configuration types, process-specific factories, and injection sites. This file records database authority and non-secret references only. Migration or administrative credentials never fall back to runtime credentials.
 
 `.ai/migrations.md` is authoritative for adopted migration identifiers, manifest and ledger bounds, checksums, transactions, locks, immutable forward recovery, output, and evidence. This file records only the connection engine and authority boundary shared with other data work.
 
@@ -107,4 +109,4 @@ The optional profile does not choose these semantics. Cite verified product, sch
 - Retention, deletion, or residency rules: {{DATA_LIFECYCLE_RULES}}
 - Sensitive fields and required handling: {{SENSITIVE_FIELD_RULES}}
 
-Do not place credentials, DSNs, connection strings, production rows, or customer data in this file. Record configuration key names, identity names, evidence references, or secret references, never their values.
+Do not place credentials, DSNs, connection strings, production rows, or customer data in this file. Record identity names and evidence references here; record configuration key names without values in `.ai/configuration.md`.

@@ -18,6 +18,7 @@ Every observable behavior change must add or update application-owned automated 
 
 - Framework-owned profile and static analysis: `vendor/bin/phpthis check`
 - Application behavior tests: `composer test`
+- Configuration boundary and real-entrypoint tests: `NOT_APPLICABLE(CONFIGURATION)`
 - Inbound-data boundary tests: `NOT_APPLICABLE(INPUT)`
 - WebSocket integration and lifecycle tests: `NOT_APPLICABLE(WEBSOCKETS)`
 - Database integration tests: `NOT_APPLICABLE(no database)`
@@ -34,6 +35,7 @@ Focused commands shorten feedback but never replace the complete gate.
 ## Starter evidence
 
 - Automated tests for every observable behavior change cover expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits.
+- `NOT_APPLICABLE(CONFIGURATION_EVIDENCE)`: before configuration adoption, prove valid final readonly construction; missing, empty, malformed, and oversized rejection before application-controlled I/O; fixed output containing none of the supplied bytes; HTTP exclusion of migration and administrative inputs; no elevated-to-runtime fallback; and real entrypoint behavior through explicit child-process environment injection without application `putenv`.
 - Test the exact health response, unknown route, unsupported method, malformed runtime input, oversized declared body, and real front controller.
 - Test the terminal summary on health success, mapped failure, and unknown failure: exactly 32 lowercase-hex correlation characters, the identical `X-Request-ID`, generic outcome and status, class-only unknown failure, zero database aggregates and sources, complete request-value redaction, exactly one sink invocation attempt, and an unchanged response when the sink throws. This proves an attempt, not durable delivery or network emission.
 - `NOT_APPLICABLE(INPUT_EVIDENCE)`: the health-only operation accepts no application-owned fields and constructs no typed request or command. Before adding product input, prove the exact final readonly value used by downstream behavior; absent and explicit-null behavior; unknown, wrongly typed, coercive, malformed, nested, and oversized representations; exact boolean, integer, enum, date, string, list, and object policy as applicable; every recorded preservation, rejection, or explicit normalization; stable generic secret-free failures; no operation-owned downstream I/O or mutation; and zero typed-seam calls when one exists. Record and separately bound any request-policy work ordered before parsing, and record the native JSON duplicate-key limitation unless a separately accepted parser proves rejection.

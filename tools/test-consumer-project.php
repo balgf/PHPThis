@@ -91,10 +91,11 @@ try {
         throw new RuntimeException('The installed framework inventory differs from the verified archive.');
     }
 
+    $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledUuidAndUlidRouting($project, $environment);
+    proveInstalledTypedConfiguration($project, $profileCommand, $environment);
     $requestHandlerDecoratorProofPath = proveInstalledRequestHandlerDecorator($project, $environment);
 
-    $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     try {
         $profileResult = runProcess($profileCommand, $project, $environment);
         requireSuccess($profileResult, 'The clean skeleton and request-handler decorator proof failed the installed profile check.');
@@ -143,6 +144,7 @@ try {
         $environment,
     );
     proveObservabilityContextIsRequired($project, $profileCommand, $environment);
+    proveConfigurationContextIsRequired($project, $profileCommand, $environment);
     proveEveryApplicationDirectoryIsChecked($project, $profileCommand, $environment);
     proveValidExtensionlessExecutableIsChecked($project, $profileCommand, $environment);
     proveMagicMethodsAreRejected($project, $profileCommand, $environment);
@@ -150,6 +152,7 @@ try {
     proveMixedCoercionIsRejected($project, $profileCommand, $environment);
     proveDirectPdoConstructionIsRejected($project, $profileCommand, $environment);
     proveNativeSessionAccessIsRejected($project, $profileCommand, $environment);
+    proveEnvironmentAccessIsRejected($project, $profileCommand, $environment);
     proveDynamicSqlIsRejected($project, $profileCommand, $environment);
     proveConfigurationCannotReplaceProfile($project, $profileCommand, $environment);
     proveBaselinesAndInlineIgnoresAreRejected($project, $profileCommand, $environment);
@@ -226,6 +229,687 @@ PHP,
     } finally {
         if (is_file($proofPath) && !unlink($proofPath)) {
             throw new RuntimeException('Unable to remove the installed routing proof.');
+        }
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveInstalledTypedConfiguration(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $boundaryPath = $project . '/installed-configuration-boundary.php';
+    $runtimePath = $project . '/installed-runtime-entrypoint.php';
+    $migrationPath = $project . '/installed-migration-entrypoint.php';
+    $contextPath = $project . '/.ai/configuration.md';
+    $originalContext = file_get_contents($contextPath);
+
+    if (!is_string($originalContext)) {
+        throw new RuntimeException('Unable to read the installed configuration context proof.');
+    }
+
+    writeFile(
+        $boundaryPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryTrace;
+
+final readonly class InstalledRuntimeDatabaseConfiguration
+{
+    public function __construct(
+        public string $dsn,
+        public string $username,
+        #[\SensitiveParameter]
+        public string $password,
+    ) {
+    }
+}
+
+final readonly class InstalledMigrationDatabaseConfiguration
+{
+    public function __construct(
+        public string $dsn,
+        public string $username,
+        #[\SensitiveParameter]
+        public string $password,
+    ) {
+    }
+}
+
+final class InstalledApplicationEnvironment
+{
+    public static function forHttp(): InstalledRuntimeDatabaseConfiguration
+    {
+        return new InstalledRuntimeDatabaseConfiguration(
+            self::dsn(\getenv('PHPTHIS_PROOF_RUNTIME_DATABASE_DSN')),
+            self::username(\getenv('PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME')),
+            self::password(\getenv('PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD')),
+        );
+    }
+
+    public static function forMigrations(): InstalledMigrationDatabaseConfiguration
+    {
+        return new InstalledMigrationDatabaseConfiguration(
+            self::dsn(\getenv('PHPTHIS_PROOF_MIGRATION_DATABASE_DSN')),
+            self::username(\getenv('PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME')),
+            self::password(\getenv('PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD')),
+        );
+    }
+
+    private static function dsn(string|false $value): string
+    {
+        if (
+            $value === false
+            || $value === ''
+            || strlen($value) > 128
+            || !str_starts_with($value, 'sqlite:')
+        ) {
+            throw new InvalidArgumentException('Required application configuration is invalid.');
+        }
+
+        return $value;
+    }
+
+    private static function username(string|false $value): string
+    {
+        if (
+            $value === false
+            || preg_match('/\A[a-z][a-z0-9-]{0,63}\z/D', $value) !== 1
+        ) {
+            throw new InvalidArgumentException('Required application configuration is invalid.');
+        }
+
+        return $value;
+    }
+
+    private static function password(#[\SensitiveParameter] string|false $value): string
+    {
+        if ($value === false || $value === '' || strlen($value) > 64) {
+            throw new InvalidArgumentException('Required application configuration is invalid.');
+        }
+
+        return $value;
+    }
+}
+
+final class InstalledConnectionRecordingSeam
+{
+    private static int $calls = 0;
+
+    public static function recordAndDelegateToInstalledConnection(
+        string $dsn,
+        QueryBudget $queryBudget,
+        QueryTrace $queryTrace,
+        string $username,
+        #[\SensitiveParameter]
+        string $password,
+        string $expectedDsn,
+        string $expectedUsername,
+        #[\SensitiveParameter]
+        string $expectedPassword,
+    ): Connection {
+        self::$calls++;
+
+        if (
+            $dsn !== $expectedDsn
+            || $username !== $expectedUsername
+            || $password !== $expectedPassword
+        ) {
+            throw new RuntimeException('Installed configuration delivery changed.');
+        }
+
+        return Connection::connect(
+            $dsn,
+            $queryBudget,
+            $queryTrace,
+            $username,
+            $password,
+        );
+    }
+
+    public static function calls(): int
+    {
+        return self::$calls;
+    }
+}
+
+final class InstalledConfigurationContractProof
+{
+    public static function assertSensitiveParametersAndReadonlyTypes(): void
+    {
+        if (
+            !(new ReflectionClass(InstalledRuntimeDatabaseConfiguration::class))->isReadOnly()
+            || !(new ReflectionClass(InstalledMigrationDatabaseConfiguration::class))->isReadOnly()
+        ) {
+            throw new RuntimeException('Installed application configuration must be readonly.');
+        }
+
+        $expected = [
+            InstalledRuntimeDatabaseConfiguration::class . '::__construct' => ['password'],
+            InstalledMigrationDatabaseConfiguration::class . '::__construct' => ['password'],
+            InstalledApplicationEnvironment::class . '::password' => ['value'],
+            InstalledConnectionRecordingSeam::class . '::recordAndDelegateToInstalledConnection' => [
+                'password',
+                'expectedPassword',
+            ],
+            Connection::class . '::connect' => ['password'],
+        ];
+
+        foreach ($expected as $method => $expectedNames) {
+            [$class, $methodName] = explode('::', $method, 2);
+            $actualNames = [];
+
+            foreach ((new ReflectionMethod($class, $methodName))->getParameters() as $parameter) {
+                if ($parameter->getAttributes(SensitiveParameter::class) !== []) {
+                    $actualNames[] = $parameter->getName();
+                }
+            }
+
+            if ($actualNames !== $expectedNames) {
+                throw new RuntimeException('Installed sensitive-parameter contract changed.');
+            }
+        }
+    }
+}
+PHP,
+    );
+    writeFile(
+        $runtimePath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryTrace;
+
+require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/installed-configuration-boundary.php';
+
+$recordDelivery = ($argv[1] ?? '') === 'record';
+
+try {
+    $configuration = InstalledApplicationEnvironment::forHttp();
+    InstalledConfigurationContractProof::assertSensitiveParametersAndReadonlyTypes();
+
+    if ($recordDelivery) {
+        if (!isset($argv[2], $argv[3], $argv[4])) {
+            throw new RuntimeException('Installed configuration recording evidence is incomplete.');
+        }
+
+        $connection = InstalledConnectionRecordingSeam::recordAndDelegateToInstalledConnection(
+            $configuration->dsn,
+            new QueryBudget(1),
+            new QueryTrace(1),
+            $configuration->username,
+            $configuration->password,
+            $argv[2],
+            $argv[3],
+            $argv[4],
+        );
+
+        if (InstalledConnectionRecordingSeam::calls() !== 1) {
+            throw new RuntimeException('Installed runtime configuration recording count changed.');
+        }
+    } else {
+        $connection = Connection::connect(
+            $configuration->dsn,
+            new QueryBudget(1),
+            new QueryTrace(1),
+            $configuration->username,
+            $configuration->password,
+        );
+    }
+
+    if ($connection->selectOneRow('SELECT 1 AS configured') !== ['configured' => 1]) {
+        throw new RuntimeException('Installed runtime configuration did not reach the visible connection boundary.');
+    }
+
+    fwrite(
+        STDOUT,
+        $recordDelivery
+            ? "PASS installed runtime typed configuration delivery\n"
+            : "PASS installed runtime typed configuration\n",
+    );
+} catch (InvalidArgumentException) {
+    if (InstalledConnectionRecordingSeam::calls() !== 0) {
+        fwrite(STDERR, "INFRASTRUCTURE_BOUNDARY_REACHED\n");
+        exit(3);
+    }
+
+    fwrite(STDERR, "CONFIGURATION_INVALID\n");
+    exit(2);
+}
+PHP,
+    );
+    writeFile(
+        $migrationPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryTrace;
+
+require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/installed-configuration-boundary.php';
+
+$recordDelivery = ($argv[1] ?? '') === 'record';
+
+try {
+    $configuration = InstalledApplicationEnvironment::forMigrations();
+    InstalledConfigurationContractProof::assertSensitiveParametersAndReadonlyTypes();
+
+    if ($recordDelivery) {
+        if (!isset($argv[2], $argv[3], $argv[4])) {
+            throw new RuntimeException('Installed configuration recording evidence is incomplete.');
+        }
+
+        $connection = InstalledConnectionRecordingSeam::recordAndDelegateToInstalledConnection(
+            $configuration->dsn,
+            new QueryBudget(1),
+            new QueryTrace(1),
+            $configuration->username,
+            $configuration->password,
+            $argv[2],
+            $argv[3],
+            $argv[4],
+        );
+
+        if (InstalledConnectionRecordingSeam::calls() !== 1) {
+            throw new RuntimeException('Installed migration configuration recording count changed.');
+        }
+    } else {
+        $connection = Connection::connect(
+            $configuration->dsn,
+            new QueryBudget(1),
+            new QueryTrace(1),
+            $configuration->username,
+            $configuration->password,
+        );
+    }
+
+    if ($connection->selectOneRow('SELECT 1 AS configured') !== ['configured' => 1]) {
+        throw new RuntimeException('Installed migration configuration did not reach the visible connection boundary.');
+    }
+
+    fwrite(
+        STDOUT,
+        $recordDelivery
+            ? "PASS installed migration typed configuration delivery\n"
+            : "PASS installed migration typed configuration\n",
+    );
+} catch (InvalidArgumentException) {
+    if (InstalledConnectionRecordingSeam::calls() !== 0) {
+        fwrite(STDERR, "INFRASTRUCTURE_BOUNDARY_REACHED\n");
+        exit(3);
+    }
+
+    fwrite(STDERR, "CONFIGURATION_INVALID\n");
+    exit(2);
+}
+PHP,
+    );
+    writeFile(
+        $contextPath,
+        <<<'MD'
+# Application configuration context
+
+- Boundary: `installed-configuration-boundary.php` is the only process-environment reader; `installed-runtime-entrypoint.php` and `installed-migration-entrypoint.php` are separate executable composition roots.
+- Runtime input `PHPTHIS_PROOF_RUNTIME_DATABASE_DSN`: required with no default or fallback; non-empty, at most 128 bytes, and begins exactly with `sqlite:`.
+- Runtime input `PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME`: required with no default or fallback; 1 to 64 lowercase ASCII bytes matching `[a-z][a-z0-9-]{0,63}`.
+- Runtime input `PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD`: required with no default or fallback; opaque and 1 to 64 bytes.
+- Migration input `PHPTHIS_PROOF_MIGRATION_DATABASE_DSN`: required with no default or fallback; non-empty, at most 128 bytes, and begins exactly with `sqlite:`.
+- Migration input `PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME`: required with no default or fallback; 1 to 64 lowercase ASCII bytes matching `[a-z][a-z0-9-]{0,63}`.
+- Migration input `PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD`: required with no default or fallback; opaque and 1 to 64 bytes.
+- Factories and types: `InstalledApplicationEnvironment::forHttp()` returns `InstalledRuntimeDatabaseConfiguration`; `InstalledApplicationEnvironment::forMigrations()` returns `InstalledMigrationDatabaseConfiguration`; both values are final readonly objects.
+- Injection: each entrypoint visibly passes its concrete process-specific DSN, username, and password to the installed `Connection::connect`; proof-only recording mode records the same exact arguments before delegating to that installed connection.
+- Authority: the HTTP/runtime entrypoint reads only runtime inputs and never falls back to migration authority; the migration entrypoint reads only migration inputs and never falls back to runtime authority.
+- Failure: after source and autoload loading, every missing, empty, malformed, or oversized input fails before the proof-only recording seam, installed connection, or query with exact exit `2`, empty stdout, and `CONFIGURATION_INVALID` on stderr.
+- Rotation and reload: deployment supplies fresh values to each newly started process; this proof records no in-process reload or hidden refresh behavior.
+- Redaction: passwords and raw password validation are sensitive parameters; exact process output contains no input names or values, DSNs, usernames, passwords, exception text, or traces.
+- Evidence: child-process tests execute both real entrypoint files, exact delivery through the installed connection, accepted bounds, every validation branch, poisoned opposite-authority inputs, per-field no-fallback controls, zero infrastructure calls on rejection, sensitivity reflection, exact redacted bytes, a real query, and the installed public checker.
+MD,
+    );
+
+    $configurationNames = [
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN',
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME',
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD',
+    ];
+    $cleanEnvironment = environmentWithout($environment, $configurationNames);
+    $runtimeDatabaseValues = [
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'sqlite::memory:',
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => 'runtime-user',
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => 'runtime-synthetic-password',
+    ];
+    $migrationDatabaseValues = [
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'sqlite::memory:',
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => 'migration-user',
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => 'migration-synthetic-password',
+    ];
+    $runtimeDeliveryValues = [
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'sqlite:file:runtime-recording?mode=memory&cache=private',
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => 'runtime-recorder',
+        'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => 'runtime-recording-password',
+    ];
+    $migrationDeliveryValues = [
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'sqlite:file:migration-recording?mode=memory&cache=private',
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => 'migration-recorder',
+        'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => 'migration-recording-password',
+    ];
+    $runtimeRecordingCommand = [
+        PHP_BINARY,
+        $runtimePath,
+        'record',
+        $runtimeDeliveryValues['PHPTHIS_PROOF_RUNTIME_DATABASE_DSN'],
+        $runtimeDeliveryValues['PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME'],
+        $runtimeDeliveryValues['PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD'],
+    ];
+    $migrationRecordingCommand = [
+        PHP_BINARY,
+        $migrationPath,
+        'record',
+        $migrationDeliveryValues['PHPTHIS_PROOF_MIGRATION_DATABASE_DSN'],
+        $migrationDeliveryValues['PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME'],
+        $migrationDeliveryValues['PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD'],
+    ];
+    $maximumDsn = 'sqlite:file:' . str_repeat('d', 90) . '?mode=memory&cache=private';
+
+    try {
+        $runtimeResult = runProcess(
+            [PHP_BINARY, $runtimePath],
+            $project,
+            [...$cleanEnvironment, ...$runtimeDatabaseValues],
+        );
+        requireExactProcessResult(
+            $runtimeResult,
+            0,
+            "PASS installed runtime typed configuration\n",
+            '',
+            'Runtime typed configuration failed without migration credentials.',
+        );
+
+        $migrationResult = runProcess(
+            [PHP_BINARY, $migrationPath],
+            $project,
+            [...$cleanEnvironment, ...$migrationDatabaseValues],
+        );
+        requireExactProcessResult(
+            $migrationResult,
+            0,
+            "PASS installed migration typed configuration\n",
+            '',
+            'Migration typed configuration failed without runtime credentials.',
+        );
+
+        foreach (
+            [
+                'runtime minimum credential bounds' => [
+                    $runtimePath,
+                    [
+                        'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'sqlite::memory:',
+                        'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => 'a',
+                        'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => 'p',
+                    ],
+                    "PASS installed runtime typed configuration\n",
+                ],
+                'runtime maximum credential bounds' => [
+                    $runtimePath,
+                    [
+                        'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => $maximumDsn,
+                        'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => str_repeat('u', 64),
+                        'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => str_repeat('p', 64),
+                    ],
+                    "PASS installed runtime typed configuration\n",
+                ],
+                'migration minimum credential bounds' => [
+                    $migrationPath,
+                    [
+                        'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'sqlite::memory:',
+                        'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => 'a',
+                        'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => 'p',
+                    ],
+                    "PASS installed migration typed configuration\n",
+                ],
+                'migration maximum credential bounds' => [
+                    $migrationPath,
+                    [
+                        'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => $maximumDsn,
+                        'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => str_repeat('u', 64),
+                        'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => str_repeat('p', 64),
+                    ],
+                    "PASS installed migration typed configuration\n",
+                ],
+            ] as $label => [$entrypoint, $values, $expectedStdout]
+        ) {
+            $boundaryResult = runProcess(
+                [PHP_BINARY, $entrypoint],
+                $project,
+                [...$cleanEnvironment, ...$values],
+            );
+            requireExactProcessResult(
+                $boundaryResult,
+                0,
+                $expectedStdout,
+                '',
+                "Installed configuration rejected {$label}.",
+            );
+        }
+
+        $runtimeDeliveryResult = runProcess(
+            $runtimeRecordingCommand,
+            $project,
+            [...$cleanEnvironment, ...$runtimeDeliveryValues],
+        );
+        requireExactProcessResult(
+            $runtimeDeliveryResult,
+            0,
+            "PASS installed runtime typed configuration delivery\n",
+            '',
+            'Runtime configuration did not deliver the exact DSN, username, and password.',
+        );
+
+        $migrationDeliveryResult = runProcess(
+            $migrationRecordingCommand,
+            $project,
+            [...$cleanEnvironment, ...$migrationDeliveryValues],
+        );
+        requireExactProcessResult(
+            $migrationDeliveryResult,
+            0,
+            "PASS installed migration typed configuration delivery\n",
+            '',
+            'Migration configuration did not deliver the exact DSN, username, and password.',
+        );
+
+        $runtimeWithPoisonedMigrationResult = runProcess(
+            [PHP_BINARY, $runtimePath],
+            $project,
+            [
+                ...$cleanEnvironment,
+                ...$runtimeDatabaseValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'not-a-migration-dsn',
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => 'INVALID MIGRATION USER',
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => str_repeat('migration-secret-', 8),
+            ],
+        );
+        requireExactProcessResult(
+            $runtimeWithPoisonedMigrationResult,
+            0,
+            "PASS installed runtime typed configuration\n",
+            '',
+            'Runtime entrypoint read or validated migration credentials.',
+        );
+
+        $migrationWithPoisonedRuntimeResult = runProcess(
+            [PHP_BINARY, $migrationPath],
+            $project,
+            [
+                ...$cleanEnvironment,
+                ...$migrationDatabaseValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'not-a-runtime-dsn',
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => 'INVALID RUNTIME USER',
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => str_repeat('runtime-secret-', 8),
+            ],
+        );
+        requireExactProcessResult(
+            $migrationWithPoisonedRuntimeResult,
+            0,
+            "PASS installed migration typed configuration\n",
+            '',
+            'Migration entrypoint read or validated runtime credentials.',
+        );
+
+        foreach (array_keys($runtimeDeliveryValues) as $omittedName) {
+            $runtimeWithoutOneCredential = [
+                ...$cleanEnvironment,
+                ...$runtimeDeliveryValues,
+                ...$migrationDeliveryValues,
+            ];
+            unset($runtimeWithoutOneCredential[$omittedName]);
+            $runtimeNoFallbackResult = runProcess(
+                $runtimeRecordingCommand,
+                $project,
+                $runtimeWithoutOneCredential,
+            );
+            requireExactProcessResult(
+                $runtimeNoFallbackResult,
+                2,
+                '',
+                "CONFIGURATION_INVALID\n",
+                "Runtime configuration unexpectedly fell back for {$omittedName}.",
+            );
+        }
+
+        foreach (array_keys($migrationDeliveryValues) as $omittedName) {
+            $migrationWithoutOneCredential = [
+                ...$cleanEnvironment,
+                ...$runtimeDeliveryValues,
+                ...$migrationDeliveryValues,
+            ];
+            unset($migrationWithoutOneCredential[$omittedName]);
+            $migrationNoFallbackResult = runProcess(
+                $migrationRecordingCommand,
+                $project,
+                $migrationWithoutOneCredential,
+            );
+            requireExactProcessResult(
+                $migrationNoFallbackResult,
+                2,
+                '',
+                "CONFIGURATION_INVALID\n",
+                "Migration configuration unexpectedly fell back for {$omittedName}.",
+            );
+        }
+
+        $runtimeInvalidCases = [
+            'empty runtime DSN' => [
+                ...$runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => '',
+            ],
+            'malformed runtime DSN' => [
+                ...$runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'mysql:synthetic',
+            ],
+            'oversized runtime DSN' => [
+                ...$runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'sqlite:' . str_repeat('d', 122),
+            ],
+            'malformed runtime username' => [
+                ...$runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => 'INVALID RUNTIME USER',
+            ],
+            'oversized runtime username' => [
+                ...$runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => str_repeat('u', 65),
+            ],
+            'empty runtime password' => [
+                ...$runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => '',
+            ],
+            'oversized runtime password' => [
+                ...$runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => str_repeat('p', 65),
+            ],
+        ];
+        $migrationInvalidCases = [
+            'empty migration DSN' => [
+                ...$migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => '',
+            ],
+            'malformed migration DSN' => [
+                ...$migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'mysql:synthetic',
+            ],
+            'oversized migration DSN' => [
+                ...$migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'sqlite:' . str_repeat('d', 122),
+            ],
+            'malformed migration username' => [
+                ...$migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => 'INVALID MIGRATION USER',
+            ],
+            'oversized migration username' => [
+                ...$migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => str_repeat('u', 65),
+            ],
+            'empty migration password' => [
+                ...$migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => '',
+            ],
+            'oversized migration password' => [
+                ...$migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => str_repeat('p', 65),
+            ],
+        ];
+
+        foreach (
+            [
+                'runtime' => [$runtimeRecordingCommand, $runtimeInvalidCases],
+                'migration' => [$migrationRecordingCommand, $migrationInvalidCases],
+            ] as $process => [$recordingCommand, $invalidCases]
+        ) {
+            foreach ($invalidCases as $label => $invalidValues) {
+                $invalidResult = runProcess(
+                    $recordingCommand,
+                    $project,
+                    [...$cleanEnvironment, ...$invalidValues],
+                );
+                requireExactProcessResult(
+                    $invalidResult,
+                    2,
+                    '',
+                    "CONFIGURATION_INVALID\n",
+                    "{$process} {$label} did not fail before infrastructure with exact redacted output.",
+                );
+            }
+        }
+
+        $profileResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess($profileResult, 'Canonical one-file configuration failed the installed profile.');
+    } finally {
+        writeFile($contextPath, $originalContext);
+
+        foreach ([$boundaryPath, $runtimePath, $migrationPath] as $proofPath) {
+            if (is_file($proofPath) && !unlink($proofPath)) {
+                throw new RuntimeException("Unable to remove installed configuration proof {$proofPath}.");
+            }
         }
     }
 }
@@ -453,6 +1137,20 @@ function processEnvironment(array $overrides): array
     return $environment;
 }
 
+/**
+ * @param array<string, string> $environment
+ * @param list<string> $names
+ * @return array<string, string>
+ */
+function environmentWithout(array $environment, array $names): array
+{
+    foreach ($names as $name) {
+        unset($environment[$name]);
+    }
+
+    return $environment;
+}
+
 function composerBinary(string $root): string
 {
     $configured = getenv('COMPOSER_BINARY');
@@ -523,6 +1221,41 @@ function runProcess(array $command, string $workingDirectory, array $environment
         'stdout' => $stdout,
         'stderr' => $stderr,
     ];
+}
+
+/** @param array{exit_code: int, stdout: string, stderr: string} $result */
+function requireExactProcessResult(
+    array $result,
+    int $exitCode,
+    string $stdout,
+    string $stderr,
+    string $message,
+): void {
+    if (
+        $result['exit_code'] !== $exitCode
+        || $result['stdout'] !== $stdout
+        || $result['stderr'] !== $stderr
+    ) {
+        throw new RuntimeException($message);
+    }
+}
+
+/**
+ * @param array{exit_code: int, stdout: string, stderr: string} $result
+ * @param list<string> $expected
+ */
+function requireExactFailureLines(
+    array $result,
+    array $expected,
+    string $message,
+): void {
+    requireExactProcessResult(
+        $result,
+        1,
+        '',
+        implode("\n", $expected) . "\n",
+        $message,
+    );
 }
 
 /** @param array{exit_code: int, stdout: string, stderr: string} $result */
@@ -1220,6 +1953,148 @@ function proveObservabilityContextIsRequired(
  * @param list<string> $profileCommand
  * @param array<string, string> $environment
  */
+function proveConfigurationContextIsRequired(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $path = $project . '/.ai/configuration.md';
+    $sourcePath = $project . '/ConfigurationContextControl.php';
+    $contents = file_get_contents($path);
+
+    if (!is_string($contents)) {
+        throw new RuntimeException('Unable to read the consumer configuration context control.');
+    }
+
+    if (!unlink($path)) {
+        throw new RuntimeException('Unable to remove the consumer configuration context control.');
+    }
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'A consumer without configuration context unexpectedly passed.');
+        requireOutputContains(
+            $result,
+            'Required application context file is missing: .ai/configuration.md.',
+        );
+    } finally {
+        writeFile($path, $contents);
+    }
+
+    writeFile(
+        $sourcePath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+final readonly class ConfigurationContextValue
+{
+    public function __construct(public string $value)
+    {
+    }
+}
+
+final class ConfigurationContextControl
+{
+    public static function fromEnvironment(): ConfigurationContextValue
+    {
+        $value = \getenv('PHPTHIS_CONFIGURATION_CONTEXT_CONTROL');
+
+        if (
+            $value === false
+            || preg_match('/\A[a-z][a-z0-9-]{0,15}\z/D', $value) !== 1
+        ) {
+            throw new InvalidArgumentException('Required application configuration is invalid.');
+        }
+
+        return new ConfigurationContextValue($value);
+    }
+}
+
+final readonly class ConfigurationContextConsumer
+{
+    public function __construct(private ConfigurationContextValue $configuration)
+    {
+    }
+
+    public function configuredValue(): string
+    {
+        return $this->configuration->value;
+    }
+}
+
+final class ConfigurationContextComposition
+{
+    public static function create(): ConfigurationContextConsumer
+    {
+        return new ConfigurationContextConsumer(
+            ConfigurationContextControl::fromEnvironment(),
+        );
+    }
+}
+PHP,
+    );
+
+    try {
+        $notApplicableResult = runProcess($profileCommand, $project, $environment);
+        requireFailure(
+            $notApplicableResult,
+            'Configuration environment access passed while the application context remained not applicable.',
+        );
+        requireOutputContains(
+            $notApplicableResult,
+            'Application configuration context records NOT_APPLICABLE(CONFIGURATION) while application-owned PHP reads process environment; replace the marker with the explicit configuration boundary contract.',
+        );
+
+        writeFile(
+            $path,
+            "# Application configuration context\r\n\r\n`NOT_APPLICABLE(CONFIGURATION)`\r\n",
+        );
+        $crlfNotApplicableResult = runProcess($profileCommand, $project, $environment);
+        requireFailure(
+            $crlfNotApplicableResult,
+            'CRLF configuration context bypassed the not-applicable environment-read check.',
+        );
+        requireOutputContains(
+            $crlfNotApplicableResult,
+            'Application configuration context records NOT_APPLICABLE(CONFIGURATION) while application-owned PHP reads process environment; replace the marker with the explicit configuration boundary contract.',
+        );
+
+        writeFile(
+            $path,
+            <<<'MD'
+# Application configuration context
+
+- Boundary: `ConfigurationContextControl.php` is the sole process-environment reader.
+- Input `PHPTHIS_CONFIGURATION_CONTEXT_CONTROL`: required with no default or fallback; 1 to 16 lowercase ASCII bytes matching `[a-z][a-z0-9-]{0,15}`.
+- Factory and type: `ConfigurationContextControl::fromEnvironment()` validates once and returns the final readonly `ConfigurationContextValue`.
+- Injection: `ConfigurationContextComposition::create()` visibly calls the environment factory and supplies its concrete value to `ConfigurationContextConsumer::__construct`; the consumer does not receive an environment name or unvalidated scalar.
+- Authority: this ordinary application-process input has no migration, administration, or cross-process credential fallback.
+- Failure: missing or invalid input raises `InvalidArgumentException` before application-controlled I/O; this correlation fixture performs no I/O.
+- Rotation and reload: a fresh process samples the deployment value once; no in-process reload or hidden refresh is claimed.
+- Redaction: submitted values are absent from checker diagnostics and this fixture emits no configuration output.
+- Evidence: the fixture contains the exact `ConfigurationContextComposition::create()` constructor-injection path, and the installed public checker correlates this complete context with the one canonical environment read while rejecting absent or `NOT_APPLICABLE(CONFIGURATION)` context, including CRLF form.
+MD,
+        );
+        $completedContextResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $completedContextResult,
+            'A completed configuration context failed the installed public checker.',
+        );
+    } finally {
+        writeFile($path, $contents);
+
+        if (is_file($sourcePath) && !unlink($sourcePath)) {
+            throw new RuntimeException('Unable to remove the configuration context control.');
+        }
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
 function proveEveryApplicationDirectoryIsChecked(string $project, array $profileCommand, array $environment): void
 {
     $paths = [
@@ -1519,6 +2394,177 @@ PHP;
         if (file_put_contents($frontControllerPath, $originalFrontController, LOCK_EX) !== strlen($originalFrontController)) {
             throw new RuntimeException('Unable to restore the consumer front controller session control.');
         }
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveEnvironmentAccessIsRejected(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $firstPath = $project . '/src/EnvironmentOne.php';
+    $secondPath = $project . '/src/EnvironmentTwo.php';
+    $boundarySource = static fn (string $class, string $key): string => sprintf(
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class %s
+{
+    public static function read(): string|false
+    {
+        return \getenv('%s');
+    }
+}
+PHP,
+        $class,
+        $key,
+    );
+    writeFile($firstPath, $boundarySource('EnvironmentOne', 'APP_FIRST_VALUE') . "\n");
+    writeFile($secondPath, $boundarySource('EnvironmentTwo', 'APP_SECOND_VALUE') . "\n");
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'PHT007 process-environment reads in two files unexpectedly passed.');
+        requireExactFailureLines(
+            $result,
+            [
+                'FAIL PHT007 src/EnvironmentOne.php:11 reads process environment in more than one application-owned PHP file; centralize every \getenv call in one configuration boundary.',
+                'FAIL PHT007 src/EnvironmentTwo.php:11 reads process environment in more than one application-owned PHP file; centralize every \getenv call in one configuration boundary.',
+                'FAIL Application configuration context records NOT_APPLICABLE(CONFIGURATION) while application-owned PHP reads process environment; replace the marker with the explicit configuration boundary contract.',
+            ],
+            'Installed PHT007 scattered-boundary diagnostics changed.',
+        );
+    } finally {
+        unlink($firstPath);
+        unlink($secondPath);
+    }
+
+    $invalidPath = $project . '/src/InvalidEnvironmentAccess.php';
+    $invalidSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use function getenv as importedGetenv;
+use function putenv;
+
+$key = 'APP_KEY';
+getenv('APP_KEY');
+\GeTeNv('APP_KEY');
+App\getenv('APP_KEY');
+\getenv();
+\getenv($key);
+\getenv('APP_KEY', true);
+\getenv(name: 'APP_KEY');
+\getenv(...['APP_KEY']);
+$fromEnvironment = $_ENV['APP_KEY'];
+$fromServer = $_SERVER['APP_KEY'];
+$filtered = filter_input(INPUT_ENV, 'APP_KEY');
+\putenv('APP_KEY=value');
+\apache_getenv('APP_KEY');
+\apache_setenv('APP_KEY', 'value');
+$reader = "get\x65nv";
+$reader('APP_KEY');
+$filteredIndirect = filter_input(constant("INPUT_\x45NV"), 'APP_KEY');
+$directLiteral = ('getenv')('APP_KEY');
+$mapped = array_map('getenv', ['APP_KEY']);
+$namedMapped = array_map(callback: 'getenv', arrays: ['APP_KEY']);
+$reduced = array_reduce([], 'getenv');
+register_shutdown_function('putenv', 'APP_KEY=value');
+$called = call_user_func(('apache_getenv'), 'APP_KEY');
+$closure = \Closure::fromCallable('getenv');
+$namedInput = filter_input(constant(name: 'INPUT_ENV'), 'APP_KEY');
+$parenthesizedInput = filter_input(constant(('INPUT_ENV')), 'APP_KEY');
+$harmless = 'getenv';
+PHP;
+    writeFile($invalidPath, $invalidSource . "\n");
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'PHT007 alternate environment access unexpectedly passed.');
+        requireExactFailureLines(
+            $result,
+            [
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:7 imports environment function getenv; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:8 imports environment function putenv; use direct \getenv calls only.',
+                "FAIL PHT007 src/InvalidEnvironmentAccess.php:11 calls getenv without the canonical fully qualified spelling; use \\getenv('EXACT_LITERAL_KEY').",
+                "FAIL PHT007 src/InvalidEnvironmentAccess.php:12 calls getenv without the canonical fully qualified spelling; use \\getenv('EXACT_LITERAL_KEY').",
+                "FAIL PHT007 src/InvalidEnvironmentAccess.php:13 calls getenv without the canonical fully qualified spelling; use \\getenv('EXACT_LITERAL_KEY').",
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:14 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:15 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:16 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:17 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:18 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:19 reads $_ENV; read exact keys with \getenv in the single application configuration boundary.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:20 indexes $_SERVER; pass the HTTP transport array unchanged or read configuration with \getenv in the single configuration boundary.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:21 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:22 calls environment function putenv; process environment is read-only through direct \getenv calls.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:23 calls environment function apache_getenv; process environment is read-only through direct \getenv calls.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:24 calls environment function apache_setenv; process environment is read-only through direct \getenv calls.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:25 references environment function getenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:27 resolves INPUT_ENV indirectly; process environment is read-only through direct \getenv calls.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:28 references environment function getenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:29 references environment function getenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:30 references environment function getenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:31 references environment function getenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:32 references environment function putenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:33 references environment function apache_getenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:34 references environment function getenv indirectly; use direct \getenv calls only.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:35 resolves INPUT_ENV indirectly; process environment is read-only through direct \getenv calls.',
+                'FAIL PHT007 src/InvalidEnvironmentAccess.php:36 resolves INPUT_ENV indirectly; process environment is read-only through direct \getenv calls.',
+                'FAIL src/InvalidEnvironmentAccess.php:20 reads a PHP superglobal outside public/index.php.',
+                'FAIL Application configuration context records NOT_APPLICABLE(CONFIGURATION) while application-owned PHP reads process environment; replace the marker with the explicit configuration boundary contract.',
+            ],
+            'Installed PHT007 alternate-access diagnostics changed.',
+        );
+    } finally {
+        unlink($invalidPath);
+    }
+
+    $frontControllerPath = $project . '/public/index.php';
+    $frontController = file_get_contents($frontControllerPath);
+
+    if (!is_string($frontController)) {
+        throw new RuntimeException('Unable to read the installed front-controller environment control.');
+    }
+
+    writeFile(
+        $frontControllerPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+$server = $_SERVER;
+Configuration::fromServer($_SERVER);
+$configurationReader->handle($_SERVER, $_GET, $_POST, $_FILES);
+PHP,
+    );
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'Bare front-controller $_SERVER aliases unexpectedly passed PHT007.');
+        requireExactFailureLines(
+            $result,
+            [
+                'FAIL PHT007 public/index.php:5 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
+                'FAIL PHT007 public/index.php:6 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
+                'FAIL PHT007 public/index.php:7 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
+            ],
+            'Installed PHT007 bare-server diagnostics changed.',
+        );
+    } finally {
+        writeFile($frontControllerPath, $frontController);
     }
 }
 

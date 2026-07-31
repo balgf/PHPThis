@@ -6,7 +6,7 @@ The executable example follows ADR 027 through the application-owned `Example\Mi
 php example/bin/console.php database:migrate [--database=/absolute/path]
 ```
 
-No PHPThis core migration type or dependency is added. The front controller, `ApplicationComposition::http()`, and ordinary request startup never construct or invoke the coordinator. `tools/setup-example.php` delegates schema work to this exact coordinator and then only seeds local example data; it is not a second migration implementation.
+No PHPThis core migration type or dependency is added. `.ai/configuration.md` owns the example's typed database-path sources and records that this local SQLite proof has no credentials or elevated-value fallback. The front controller, `ApplicationComposition::http()`, and ordinary request startup never construct or invoke the coordinator. `tools/setup-example.php` delegates schema work to this exact coordinator and then only seeds local example data; it is not a second migration implementation.
 
 ## Finite immutable manifest
 

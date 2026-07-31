@@ -2865,6 +2865,21 @@ function crudBehaviorTests(): Generator
  */
 function databaseBoundaryBehaviorTests(): Generator
 {
+    yield 'connection marks only its password argument as sensitive' => static function (): void {
+    $parameters = (new ReflectionMethod(Connection::class, 'connect'))->getParameters();
+    $sensitiveParameters = [];
+
+    foreach ($parameters as $parameter) {
+        if ($parameter->getAttributes(SensitiveParameter::class) !== []) {
+            $sensitiveParameters[] = $parameter->getName();
+        }
+    }
+
+    if ($sensitiveParameters !== ['password']) {
+        throw new RuntimeException('Expected only the connection password argument to be sensitive.');
+    }
+};
+
     yield 'connection binds named values and enforces its budget' => static function (): void {
     $budget = new QueryBudget(3);
     $trace = new QueryTrace(3);
@@ -3786,7 +3801,7 @@ function frameworkBehaviorInventory(): array
         $contents === ''
         || !str_ends_with($contents, "\n")
         || str_contains($contents, "\r")
-        || hash('sha256', $contents) !== 'd721bcca62faf2b516b9a9e46c47dfc2f59737925cba2560051e40f843c58e51'
+        || hash('sha256', $contents) !== '0b214db64bffdc1f544e4010c8faa71cc62a08feffb2aae27fde5e8cfe8b19eb'
     ) {
         throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
     }
@@ -3794,11 +3809,11 @@ function frameworkBehaviorInventory(): array
     $names = explode("\n", substr($contents, 0, -1));
 
     if (
-        count($names) !== 176
-        || count(array_unique($names)) !== 176
+        count($names) !== 177
+        || count(array_unique($names)) !== 177
         || in_array('', $names, true)
     ) {
-        throw new LogicException('Framework behavior inventory must contain 176 unique non-empty names.');
+        throw new LogicException('Framework behavior inventory must contain 177 unique non-empty names.');
     }
 
     return $names;

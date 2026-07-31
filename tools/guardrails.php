@@ -370,7 +370,7 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
             : $segment;
 
         $exactMechanismSegment = preg_match(
-            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|middlewares?|pipelines?|decorators?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing))\z/i',
+            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|middlewares?|pipelines?|decorators?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing)|configs?|configurations?|(?:application|deployment|runtime)[-_]?config(?:uration)?s?|config(?:uration)?[-_]?(?:bags?|repositories|services|helpers|facades|providers|readers)|secret[-_]?managers?|dotenv[-_]?(?:loaders?)?)\z/i',
             $name,
         ) === 1;
         $camelCaseMechanismSuffix = preg_match(
@@ -378,7 +378,7 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
             $name,
         ) === 1;
         $explicitHiddenMechanismSuffix = preg_match(
-            '/(?:\A|(?<=[A-Za-z0-9]))(?:QueryBuilder|BindingHelper|PlaceholderHelper|AutoWire|Autowire)(?:Interface|Provider|Factory)?\z/',
+            '/(?:\A|(?<=[A-Za-z0-9]))(?:QueryBuilder|BindingHelper|PlaceholderHelper|AutoWire|Autowire|ConfigurationBag|ConfigBag|ConfigurationRepository|ConfigRepository|ConfigurationService|ConfigService|ConfigurationHelper|ConfigHelper|ConfigurationFacade|ConfigFacade|ConfigurationReader|ConfigReader|ApplicationEnvironment|EnvironmentReader|EnvironmentConfiguration|ApplicationConfig|ApplicationConfiguration|DeploymentConfig|DeploymentConfiguration|RuntimeConfig|RuntimeConfiguration|SecretManager|DotenvLoader)(?:Interface|Provider|Factory)?\z/',
             $name,
         ) === 1;
 
@@ -394,6 +394,33 @@ $root = dirname(__DIR__);
 $phpFiles = [];
 $markdownFiles = [];
 $failures = [];
+$environmentIgnoreArtifacts = [
+    '.gitignore',
+    'skeleton/.gitignore',
+];
+
+foreach ($environmentIgnoreArtifacts as $relativePath) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read environment-ignore artifact {$relativePath}.";
+        continue;
+    }
+
+    $lines = preg_split('/\R/', $contents);
+
+    if (!is_array($lines)) {
+        $failures[] = "Cannot parse environment-ignore artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach (['.env', '.env.*', '!.env.example'] as $requiredLine) {
+        if (!in_array($requiredLine, $lines, true)) {
+            $failures[] = "{$relativePath} must contain the exact environment-ignore rule {$requiredLine}.";
+        }
+    }
+}
+
 $forbiddenFrameworkMechanismFixtures = [
     'src/Orm/IdentityMap.php',
     'src/Domain/UserModel.php',
@@ -417,11 +444,26 @@ $forbiddenFrameworkMechanismFixtures = [
     'src/Database/SqlBindingHelperFactory.php',
     'src/Composition/AutoWire.php',
     'src/Composition/AutoWireProvider.php',
+    'src/Configuration/ApplicationEnvironment.php',
+    'src/Support/ConfigurationBag.php',
+    'src/Support/ConfigRepository.php',
+    'src/Support/ConfigurationHelper.php',
+    'src/Support/ApplicationEnvironment.php',
+    'src/Support/SecretManager.php',
+    'src/Support/DotenvLoader.php',
+    'src/ApplicationConfiguration.php',
+    'src/Support/DeploymentConfiguration.php',
+    'src/Composition/RuntimeConfigurationFactory.php',
+    'src/application-configuration/Values.php',
+    'src/Support/deployment_config.php',
+    'src/RuntimeConfigs/Value.php',
+    'src/Http/HttpRuntimeConfiguration.php',
 ];
 $allowedFrameworkMechanismFixtures = [
     'src/Application.php',
     'src/Database/Connection.php',
     'src/Http/Request.php',
+    'src/Session/SessionConfiguration.php',
     'src/Support/Transform.php',
     'src/Observability/Telescope.php',
     'example/src/Domain/UserRepository.php',
@@ -508,6 +550,7 @@ $requiredRepositoryFiles = [
     '.ai/websockets.md',
     'docs/consumer-contract.md',
     'docs/consumer-profile.md',
+    'docs/configuration.md',
     'docs/caching.md',
     'docs/cli.md',
     'docs/cli/README.md',
@@ -593,10 +636,12 @@ $requiredRepositoryFiles = [
     'docs/decisions/033-application-owned-request-handler-decorators.md',
     'docs/decisions/034-application-owned-websocket-integration.md',
     'docs/decisions/035-bounded-alpha-4-release-scope.md',
+    'docs/decisions/036-one-typed-application-configuration-boundary.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
     'example/.ai/cli.md',
+    'example/.ai/configuration.md',
     'example/.ai/data.md',
     'example/.ai/file-transfers.md',
     'example/.ai/jobs.md',
@@ -695,6 +740,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/architecture.md',
     'templates/application/.ai/change-workflow.md',
     'templates/application/.ai/cli.md',
+    'templates/application/.ai/configuration.md',
     'templates/application/.ai/data.md',
     'templates/application/.ai/file-transfers.md',
     'templates/application/.ai/integrations.md',
@@ -717,6 +763,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/architecture.md',
     'skeleton/.ai/change-workflow.md',
     'skeleton/.ai/cli.md',
+    'skeleton/.ai/configuration.md',
     'skeleton/.ai/data.md',
     'skeleton/.ai/file-transfers.md',
     'skeleton/.ai/integrations.md',
@@ -747,6 +794,7 @@ $requiredRepositoryFiles = [
     'bin/phpthis',
     'verification/ApplicationChecker.php',
     'verification/ApplicationDuplicationScanner.php',
+    'verification/EnvironmentAccessProfile.php',
     'verification/SyntaxProfile.php',
     'verification/phpstan/ConnectionCallableArrayRule.php',
     'verification/phpstan/ConnectionMethodCallableRule.php',
@@ -1125,12 +1173,14 @@ $alpha4ReleaseIdentityArtifactMarkers = [
     'docs/knowledge-map.md' => [
         '`docs/releases/0.1.0-alpha.4.md`',
         'ADR 035, ADR 032 through ADR 034 for the Alpha 4 rollup',
+        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, and PHT007 changes',
     ],
     'docs/releases/0.1.0-alpha.4.md' => [
         'Release identity: `0.1.0-alpha.4`. Publication state is external',
         'Identity and gated publication authorization do not announce either tag, either package, or the public installation path.',
         'It is not production-ready and makes no backward-compatibility promise across prereleases.',
         'Consumer Contract version 7 to version 9',
+        'At the Alpha 4 tag, `docs/consumer-contract.md` defined Consumer Contract version 9',
         'composer create-project --stability=alpha phpthis/skeleton',
     ],
     'docs/decisions/035-bounded-alpha-4-release-scope.md' => [
@@ -1171,12 +1221,12 @@ foreach ($alpha4ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
 }
 
 $currentConsumerContractVersionMarkers = [
-    'docs/consumer-contract.md' => 'Contract version: 9',
-    'docs/getting-started.md' => 'contract-version-9 Composer scripts',
-    'skeleton/.ai/README.md' => 'Consumer Contract v9 and Strict Profile v2 remain mandatory.',
-    'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile v2',
-    'templates/application/.ai/README.md' => 'Consumer Contract v9 and Strict Profile v2 remain mandatory.',
-    'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile v2',
+    'docs/consumer-contract.md' => 'Contract version: 10',
+    'docs/getting-started.md' => 'contract-version-10 Composer scripts',
+    'skeleton/.ai/README.md' => 'Consumer Contract v10 and Strict Profile v3 remain mandatory.',
+    'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3',
+    'templates/application/.ai/README.md' => 'Consumer Contract v10 and Strict Profile v3 remain mandatory.',
+    'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3',
 ];
 
 foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1184,6 +1234,115 @@ foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
         $failures[] = "The current Consumer Contract version marker is missing from {$relativePath}.";
+    }
+}
+
+$configurationArtifactMarkers = [
+    'docs/decisions/036-one-typed-application-configuration-boundary.md' => [
+        'Status: accepted',
+        'Consumer Contract version 10 and Strict Profile version 3 add permanent structural rule `PHT007`.',
+        'No application or deployment configuration runtime or class enters framework `src/`, and no runtime dependency is added.',
+        'Migration or administrative configuration never falls back to runtime configuration.',
+    ],
+    'docs/configuration.md' => [
+        '# Application-owned configuration',
+        'every read in the Composer project must occur in one PHP file',
+        "\\getenv('APP_RUNTIME_DATABASE_DSN')",
+        'private static function required(#[\\SensitiveParameter] string|false $value, int $maximumBytes): string',
+        '->handle($_SERVER, $_GET, $_POST, $_FILES)',
+        'HTTP calls only `forHttp()`.',
+        'A migration command calls only `forMigrations()`.',
+        'PHPThis does not load it',
+        '#[\\SensitiveParameter]',
+    ],
+    'docs/consumer-contract.md' => [
+        '## Application configuration',
+        'PHT007',
+        'Keep runtime, worker, migration, and administrative input names, factories, and output types separate.',
+        'non-secret configuration reference',
+        'A configuration-free application records `NOT_APPLICABLE(CONFIGURATION)`',
+    ],
+    'docs/decisions/README.md' => [
+        "`035-bounded-alpha-4-release-scope.md`\n- `036-one-typed-application-configuration-boundary.md`",
+    ],
+    'docs/strict-profile.md' => [
+        'Profile version: 3',
+        '`PHT007`',
+        'one application-owned PHP file',
+    ],
+    'templates/application/.ai/configuration.md' => [
+        '{{CONFIGURATION_BOUNDARY_PATH_OR_NOT_APPLICABLE}}',
+        '{{CONFIGURATION_AUTHORITY_SEPARATION_OR_NOT_APPLICABLE}}',
+        '{{CONFIGURATION_REDACTION_EVIDENCE_OR_NOT_APPLICABLE}}',
+    ],
+    'skeleton/.ai/configuration.md' => [
+        '`NOT_APPLICABLE(CONFIGURATION)`',
+        'The health-only skeleton reads no process environment',
+    ],
+    'example/.ai/configuration.md' => [
+        '# Example application configuration context',
+        'not the standalone skeleton consumer checked by `ApplicationChecker`',
+        '`NOT_APPLICABLE(PROCESS_ENVIRONMENT)`',
+        'HTTP reaches only `http()`',
+        'does not prove production operating-system identities or database grants',
+    ],
+    'verification/EnvironmentAccessProfile.php' => [
+        'final class EnvironmentAccessProfile',
+        'public static function inspect(string $contents, string $relativePath): array',
+        'public static function boundaryFailures(array $readsByFile): array',
+        'private static function isLiteralCallableReference(',
+        'private static function isConstantLookupArgument(array $tokens, int $index): bool',
+        'private static function isCanonicalServerTransportHandoff(',
+        'PHT007',
+    ],
+    'verification/ApplicationChecker.php' => [
+        "'.ai/configuration.md'",
+        'EnvironmentAccessProfile::inspect(',
+        'EnvironmentAccessProfile::boundaryFailures($environmentReads)',
+    ],
+    'bin/phpthis' => [
+        "require_once dirname(__DIR__) . '/verification/EnvironmentAccessProfile.php';",
+    ],
+    'src/Database/Connection.php' => [
+        '#[\\SensitiveParameter]',
+    ],
+    'tests/run.php' => [
+        'connection marks only its password argument as sensitive',
+    ],
+    'tools/test-strict-profile.php' => [
+        "'PHT007'",
+        'PHT007 invalid-access fixture diagnostics changed.',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledTypedConfiguration($project, $profileCommand, $environment);',
+        'proveConfigurationContextIsRequired($project, $profileCommand, $environment);',
+        'proveEnvironmentAccessIsRejected($project, $profileCommand, $environment);',
+        "selectOneRow('SELECT 1 AS configured')",
+        'requireExactProcessResult(',
+        'requireExactFailureLines(',
+        'PASS installed runtime typed configuration delivery',
+        'PASS installed migration typed configuration delivery',
+    ],
+    'tools/package-files.txt' => [
+        'docs/configuration.md',
+        'docs/decisions/036-one-typed-application-configuration-boundary.md',
+        'templates/application/.ai/configuration.md',
+        'verification/EnvironmentAccessProfile.php',
+    ],
+];
+
+foreach ($configurationArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read configuration-boundary artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Configuration-boundary artifact marker is missing from {$relativePath}: {$marker}";
+        }
     }
 }
 
@@ -1490,9 +1649,9 @@ $routingArtifactMarkers = [
         '`032-explicit-uuid-and-ulid-route-types.md`',
     ],
     'docs/consumer-contract.md' => [
-        'Contract version: 9',
+        'Contract version: 10',
         'This is the canonical contract for an application built with the installed PHPThis version.',
-        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
+        'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
         '`positive-int`, `token`, `uuid`, or `ulid`',
         'Always use the narrowest route type.',
         'uuid(name): string',
@@ -1594,7 +1753,7 @@ $requestHandlerDecoratorArtifactMarkers = [
         '`033-application-owned-request-handler-decorators.md`',
     ],
     'docs/consumer-contract.md' => [
-        'Contract version: 9',
+        'Contract version: 10',
         '## Optional application-owned request-handler decorators',
         'The decorator is composed only as the handler of an explicit `Route`.',
         'zero downstream calls or call its one downstream handler exactly once',
@@ -1703,7 +1862,7 @@ $websocketArtifactMarkers = [
         'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
     ],
     'docs/consumer-contract.md' => [
-        'Contract version: 9',
+        'Contract version: 10',
         '## Application-owned WebSocket profile',
         'PHPThis has no WebSocket runtime or core WebSocket API.',
         'Frames never become PHPThis HTTP `Request` or `Response` values',
@@ -1739,7 +1898,7 @@ $websocketArtifactMarkers = [
     ],
     'docs/guardrails.md' => [
         'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
-        'keeps `.ai/websockets.md` optional for existing applications under Contract version 9',
+        'keeps `.ai/websockets.md` optional under current Contract version 10 as well as its originating Contract version 9',
     ],
     'README.md' => [
         'Accepted [application-owned WebSocket integration](docs/websockets.md)',
@@ -1800,7 +1959,7 @@ $websocketArtifactMarkers = [
     ],
     'templates/application/.ai/operations.md' => [
         '## WebSocket runtime',
-        'forced-stop owner, restart, deployment topology, capacity, scaling, incident policy',
+        'forced-stop owner, deployment topology, capacity, scaling, incident policy',
     ],
     'templates/application/.ai/rules.md' => [
         'Do not adapt frames into PHPThis HTTP `Request` or `Response`.',
@@ -1833,7 +1992,7 @@ $websocketArtifactMarkers = [
     ],
     'skeleton/.ai/operations.md' => [
         '## WebSocket runtime',
-        'forced-stop owner, restart, deployment topology, capacity, scaling, incident policy',
+        'forced-stop owner, deployment topology, capacity, scaling, incident policy',
     ],
     'skeleton/.ai/rules.md' => [
         'Do not adapt frames into PHPThis HTTP `Request` or `Response`.',
@@ -2175,7 +2334,7 @@ $finiteDataPathArtifactMarkers = [
     ],
     'docs/consumer-contract.md' => [
         'ADR 022 records one finite SQLite application data path',
-        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
+        'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
     ],
     'docs/guardrails.md' => [
         'The finite-data-path guard retains ADR 022',
@@ -2842,7 +3001,7 @@ $applicationCliArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional application-owned CLI and scheduler',
         'Contract-version-7-compatible optional application clarification, not a new checker requirement',
-        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
+        'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
     ],
     'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
         'Status: accepted',
@@ -4207,13 +4366,13 @@ if (!is_string($behaviorInventory)) {
 } else {
     $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-    if (count($behaviorNames) !== 176 || count(array_unique($behaviorNames)) !== 176) {
-        $failures[] = 'The PHPUnit migration must preserve exactly 176 unique named framework behaviors.';
+    if (count($behaviorNames) !== 177 || count(array_unique($behaviorNames)) !== 177) {
+        $failures[] = 'The framework suite must preserve exactly 177 unique named framework behaviors.';
     }
 
     if (
         hash('sha256', $behaviorInventory)
-        !== 'd721bcca62faf2b516b9a9e46c47dfc2f59737925cba2560051e40f843c58e51'
+        !== '0b214db64bffdc1f544e4010c8faa71cc62a08feffb2aae27fde5e8cfe8b19eb'
     ) {
         $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
     }
@@ -4250,7 +4409,7 @@ $maintainerTestArtifactMarkers = [
         'function frameworkBehaviorNamesForGroup(string $group): array',
         'array_key_exists($name, $registered)',
         'Assert::assertSame(',
-        'd721bcca62faf2b516b9a9e46c47dfc2f59737925cba2560051e40f843c58e51',
+        '0b214db64bffdc1f544e4010c8faa71cc62a08feffb2aae27fde5e8cfe8b19eb',
     ],
     'tests/FrameworkBehaviorTest.php' => [
         "#[Group('request-policy')]",
@@ -4577,6 +4736,16 @@ foreach (['composer.json', 'skeleton/composer.json'] as $phpManifestPath) {
     if (!is_array($requirements) || ($requirements['php'] ?? null) !== '~8.4.0') {
         $failures[] = "{$phpManifestPath} must support exactly PHP 8.4.x through ~8.4.0.";
     }
+
+    foreach (['require', 'require-dev'] as $dependencySection) {
+        $dependencies = is_array($manifest) ? ($manifest[$dependencySection] ?? null) : null;
+
+        foreach (is_array($dependencies) ? array_keys($dependencies) : [] as $dependencyName) {
+            if (is_string($dependencyName) && str_contains(strtolower($dependencyName), 'dotenv')) {
+                $failures[] = "{$phpManifestPath} must not add a framework or skeleton dotenv dependency.";
+            }
+        }
+    }
 }
 
 if (is_string($packageInventory)) {
@@ -4604,7 +4773,7 @@ $fileTransferArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional bounded file transfers',
         'Raw `$_FILES` never enters a handler.',
-        'Consumer Contract version 9 carries Strict Profile version 2 forward unchanged.',
+        'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
     ],
     'docs/decisions/026-bounded-file-transfers.md' => [
         'Status: accepted',
@@ -4705,8 +4874,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 9$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 9.';
+        if (preg_match('/^Contract version: 10$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 10.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -4801,8 +4970,8 @@ if (is_file($strictProfilePath)) {
 
     if (!is_string($strictProfile)) {
         $failures[] = 'Cannot read docs/strict-profile.md.';
-    } elseif (preg_match('/^Profile version: 2$/m', $strictProfile) !== 1) {
-        $failures[] = 'docs/strict-profile.md must declare profile version 2.';
+    } elseif (preg_match('/^Profile version: 3$/m', $strictProfile) !== 1) {
+        $failures[] = 'docs/strict-profile.md must declare profile version 3.';
     }
 }
 
@@ -4836,8 +5005,8 @@ if (is_file($applicationAgentInstructionsPath)) {
             $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
         }
 
-        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v9 and Strict Profile v2 are the minimum accepted rules')) {
-            $failures[] = 'Application AGENTS.md must identify Consumer Contract v9 and Strict Profile v2 as the minimum accepted rules.';
+        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v10 and Strict Profile v3 are the minimum accepted rules')) {
+            $failures[] = 'Application AGENTS.md must identify Consumer Contract v10 and Strict Profile v3 as the minimum accepted rules.';
         }
     }
 }
@@ -4853,9 +5022,9 @@ if (is_file($skeletonAgentInstructionsPath)) {
         !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
         || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
         || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
-        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v9 and Strict Profile v2 are the minimum accepted rules')
+        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v10 and Strict Profile v3 are the minimum accepted rules')
     ) {
-        $failures[] = 'Skeleton AGENTS.md must preserve accepted Contract v9 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+        $failures[] = 'Skeleton AGENTS.md must preserve accepted but unreleased post-Alpha-4 Contract v10 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 

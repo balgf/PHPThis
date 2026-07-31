@@ -172,7 +172,7 @@ final class FrameworkBehaviorTest extends TestCase
                 'routing' => 18,
                 'input-projection' => 18,
                 'crud' => 11,
-                'database-boundary' => 7,
+                'database-boundary' => 8,
             ],
             $groupCounts,
             'Expected every reviewed behavior to belong to one coherent focused group.',

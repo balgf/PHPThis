@@ -1,10 +1,11 @@
 # Application rules
 
-These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile v2. They may strengthen those rules but may not weaken them.
+These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3. They may strengthen those rules but may not weaken them.
 
 ## Required
 
 - Preserve the dependency direction and boundaries in `.ai/architecture.md`.
+- Keep `NOT_APPLICABLE(CONFIGURATION)` while the starter reads no deployment input. Before adoption, keep every direct `\getenv('EXACT_LITERAL_KEY')` call in one recorded PHP file, immediately validate into process-specific final readonly types before application-controlled I/O, and inject only concrete typed values through visible composition.
 - Resolve missing product, scale, authorization, and external-contract facts before implementation.
 - Keep `NOT_APPLICABLE(RESOURCE_ROUTE_IDENTIFIERS)` while the starter has only exact `GET /health`. Before adding a resource identifier, declare the narrowest fixed type: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only when genuinely opaque. Use the matching `PathParameters` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and enforce narrower domain rules before database work; never normalize, bind, look up, or fall back between route types.
 - Before adopting a resource identifier route, add tests proving invalid syntax returns `404` with zero handler and database work and a canonical valid path with the wrong method returns `405`.
@@ -24,6 +25,7 @@ These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile
 
 - Do not invent schema meaning, production limits, authorization, or external-service behavior.
 - Do not add a generic validator, result wrapper, string-rule language, automatic request binding, reflection hydration, mass assignment, sanitization magic, or unvalidated array beyond its named boundary.
+- Do not scatter configuration reads; add a string-keyed configuration bag, arbitrary getter, global helper, facade, provider, container binding, discovery, automatic dotenv loading, hidden reload, or migration-to-runtime credential fallback.
 - Do not parse the same inbound representation again downstream, silently transform or coerce an application field, or treat validation as output encoding or authorization.
 - Do not add an undocumented side effect, retry, fallback, cache, queue, or scheduled operation.
 - Do not add application commands to framework `phpthis`, command discovery, class-name dispatch, a service-container command resolver, generic console or scheduler facade, daemon, hidden loop, persistent slot behavior, catch-up, or distributed coordination without an accepted application decision and evidence.
@@ -44,6 +46,7 @@ These rules supplement installed PHPThis Consumer Contract v9 and Strict Profile
 ## Starter constraints
 
 - Keep `GET /health` exact until the project deliberately changes its liveness contract.
+- Keep `NOT_APPLICABLE(CONFIGURATION)` until one external input is introduced and its complete typed boundary replaces that marker in `.ai/configuration.md`; the starter includes no configuration PHP or environment read.
 - Keep `NOT_APPLICABLE(INPUT)` until an operation accepts application-owned external fields and its boundary policy and adversarial tests replace that marker in `.ai/architecture.md` and `.ai/testing.md`.
 - Keep `NOT_APPLICABLE(WEBSOCKETS)` until the selected runtime, process, handshake, current policy, message and connection bounds, backpressure, lifecycle, redaction, deployment, and real process/socket evidence replace that marker across `.ai/websockets.md`, `.ai/architecture.md`, `.ai/integrations.md`, `.ai/operations.md`, and `.ai/testing.md`; the starter includes no WebSocket code or dependency.
 - Keep session state not applicable until its typed key ownership, cookie, isolated file-storage, and concurrency policy are recorded, together with each applicable identity, expiry, revocation, and CSRF concern or explicit non-applicability.

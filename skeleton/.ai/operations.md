@@ -18,6 +18,10 @@
 - Database migrations: `NOT_APPLICABLE(MIGRATIONS)`; `.ai/migrations.md` owns any future adoption.
 - Required extensions: `ext-pdo` and `ext-session` through the installed framework; the starter application opens no database connection and configures no session lifecycle.
 
+## Configuration runtime
+
+`.ai/configuration.md` is the single writable configuration authority and currently records `NOT_APPLICABLE(CONFIGURATION)`: the starter has no deployment input, secret-delivery path, rotation, reload, or configuration-startup failure. Record any later source, factory, validation, injection, authority, failure, rotation/restart, redaction, and configuration-test facts there rather than duplicating them in this operations guide. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
+
 ## Session runtime
 
 `NOT_APPLICABLE`: the starter does not construct `SessionLifecycle` or create session storage. PHP 8.4 `ext-session` remains an installed framework platform requirement. Before adoption, record the native file handler and save-path ownership, exact PHP settings and dated source, cookie policy, deployment topology and concurrency evidence, and garbage collection in this section.
@@ -28,7 +32,7 @@
 
 ## WebSocket runtime
 
-`NOT_APPLICABLE(WEBSOCKETS)`: the starter declares no listener, event-loop process, supervisor, proxy, TLS termination, connection registry, capacity, or scaling policy. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record the exact runtime package and version, separate entrypoint and process identity, listener and trusted-proxy boundary, non-secret configuration source, startup and readiness contract, heartbeat, idle and absolute lifetime, send and close deadlines, connection and rate limits, graceful stop, forced-stop owner, restart, deployment topology, capacity, scaling, incident policy, and dated operational source. Record the redacted connection-summary destination and its backpressure and outage behavior without copying credentials, identifiers, headers, or frames.
+`NOT_APPLICABLE(WEBSOCKETS)`: the starter declares no listener, event-loop process, supervisor, proxy, TLS termination, connection registry, capacity, or scaling policy. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record here the exact runtime package and version, separate entrypoint and process identity, listener and trusted-proxy boundary, startup and readiness contract, heartbeat, idle and absolute lifetime, send and close deadlines, connection and rate limits, graceful stop, forced-stop owner, deployment topology, capacity, scaling, incident policy, and dated operational source. Record WebSocket process configuration only in `.ai/configuration.md`, and record the connection-summary destination and its backpressure and outage behavior in the appropriate observability context without copying credentials, identifiers, headers, or frames.
 
 ## HTTP cache runtime
 
@@ -36,7 +40,7 @@
 
 ## Server-side cache runtime
 
-`NOT_APPLICABLE(CACHE)`: the starter configures no cache backend, client, extension, package, storage, or server-side caching. Before adoption, record the backend product and supported version, deployment topology and environment isolation, non-secret configuration source, capacity and eviction behavior, finite TTL policy, invalidation and stale-refill behavior, failure and recovery behavior, stampede owner and bounded lock or lease behavior, and dated operational source. Cache availability must not establish application correctness.
+`NOT_APPLICABLE(CACHE)`: the starter configures no cache backend, client, extension, package, storage, or server-side caching. Before adoption, record here the backend product and supported version, dependency, deployment topology and environment isolation, capacity and eviction behavior, finite TTL policy, invalidation and stale-refill behavior, backend failure and recovery behavior, stampede owner and bounded lock or lease behavior, and dated operational source. Record cache process configuration only in `.ai/configuration.md`. Cache availability must not establish application correctness.
 
 ## Durable-job runtime
 
@@ -46,13 +50,13 @@
 
 `NOT_APPLICABLE(CLI)`: the starter exposes no operational application console or scheduled pass. `composer check`, `composer test`, and `vendor/bin/phpthis check` are development and validity commands; they are not an application command map.
 
-Before adoption, read installed `vendor/phpthis/framework/docs/cli.md` and replace `.ai/cli.md` with the sole console path, every finite command and operation, exact typed argument grammar and bounds, exit and stdout/stderr JSON contract, fresh composition, explicit clock and timezone, cadence, one-pass maximum, missed-run and catch-up policy, external invocation frequency, application-private same-host lock path and permissions, filesystem topology, contention and lock-failure behavior, timeout, restart, redaction, and incident owner. Keep distributed coordination explicitly not applicable unless a separate backend-specific decision and evidence establish it.
+Before adoption, read installed `vendor/phpthis/framework/docs/cli.md` and replace `.ai/cli.md` with the sole console path, every finite command and operation, exact typed argument grammar and bounds, exit and stdout/stderr JSON contract, fresh composition, explicit clock and timezone, cadence, one-pass maximum, missed-run and catch-up policy, external invocation frequency, application-private same-host lock path and permissions, filesystem topology, contention and lock-failure behavior, timeout, restart, output redaction, and incident owner. Record CLI process configuration, startup failure, rotation/restart, and secret redaction only in `.ai/configuration.md`. Keep distributed coordination explicitly not applicable unless a separate backend-specific decision and evidence establish it.
 
 ## Database migrations
 
 `NOT_APPLICABLE(MIGRATIONS)`: the starter has no migration process, identity, database or lock path, DDL timeout, maintenance window, backup, restore, or recovery procedure. HTTP startup performs no schema work.
 
-Before adoption, read installed `vendor/phpthis/framework/docs/migrations.md` and complete `.ai/migrations.md` with the exact engine, sole console command, separate migration authority, manifest and ledger bounds, transaction and lock topology, immutable forward-recovery policy, DDL availability and timeout behavior, backup and restore requirements, exact finite output and redaction, operational source and verification date, and real-console evidence. Shared-data execution still requires separate explicit human authorization.
+Before adoption, read installed `vendor/phpthis/framework/docs/migrations.md` and complete `.ai/migrations.md` with the exact engine, sole console command, separate migration authority, manifest and ledger bounds, transaction and lock topology, immutable forward-recovery policy, DDL availability and timeout behavior, backup and restore requirements, exact finite output redaction, operational source and verification date, and real-console evidence. Record migration process configuration, startup failure, rotation/restart, and secret redaction only in `.ai/configuration.md`. Shared-data execution still requires separate explicit human authorization.
 
 ## Deployment
 

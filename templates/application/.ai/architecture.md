@@ -24,6 +24,7 @@ Every resource path identifier recorded here uses the narrowest fixed declaratio
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
 | HTTP runtime | `{{HTTP_BOUNDARY_PATH}}` | {{HTTP_BOUNDARY_RESPONSIBILITY}} |
+| Application configuration | `.ai/configuration.md` | Own the application configuration boundary path or not-applicable marker and every external-input-to-typed-value contract. |
 | WebSocket runtime | `NOT_APPLICABLE(WEBSOCKETS)` | No WebSocket process, listener, protocol, or connection state is adopted by default; `.ai/websockets.md` owns any later application-specific adoption. |
 | Application-owned request-handler decorators | `{{REQUEST_HANDLER_DECORATOR_PATHS_OR_NOT_APPLICABLE}}` | {{REQUEST_HANDLER_DECORATOR_RESPONSIBILITIES_OR_NOT_APPLICABLE}} |
 | Inbound operation data | `{{INPUT_BOUNDARY_PATHS_OR_NOT_APPLICABLE}}` | {{INPUT_BOUNDARY_RESPONSIBILITIES_OR_NOT_APPLICABLE}} |
@@ -32,6 +33,10 @@ Every resource path identifier recorded here uses the narrowest fixed declaratio
 | Durable jobs | `{{JOB_BOUNDARY_PATHS_OR_NOT_APPLICABLE}}` | {{JOB_PUBLICATION_ENVELOPE_WORKER_RESPONSIBILITY_OR_NOT_APPLICABLE}} |
 | Database | `{{DATABASE_BOUNDARY_PATH_OR_NOT_APPLICABLE}}` | {{DATABASE_BOUNDARY_RESPONSIBILITY}} |
 | External services | `{{INTEGRATION_BOUNDARY_PATH_OR_NOT_APPLICABLE}}` | {{INTEGRATION_BOUNDARY_RESPONSIBILITY}} |
+
+## Configuration boundary
+
+`.ai/configuration.md` is the single writable authority for the boundary path or not-applicable marker, external input names without values, the one process-environment-reading file, process-specific factories and final readonly types, validation bounds, authority separation, injection sites, failure, rotation/restart, redaction, and tests. Do not duplicate those fields here or in another application guide. This architecture retains only the dependency rule: entrypoints invoke their matching factory, and routes, handlers, operations, policies, and SQL owners receive concrete typed dependencies rather than a configuration reader or string-keyed bag.
 
 ## Inbound data boundaries
 
@@ -51,7 +56,7 @@ No normalization is implicit. A deliberate field transformation records its orde
 
 `NOT_APPLICABLE(WEBSOCKETS)`: this application context template has no WebSocket process or execution path. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and replace `.ai/websockets.md` with the accepted application-specific contract.
 
-Record one explicitly selected mature third-party runtime, separate process entrypoint and composition root, exact handshake and current authorization path, complete bounded message-to-final-readonly-command boundary, one narrowly named typed operation, finite connection and send path, backpressure, lifecycle, redaction, deployment, supervisor, and scaling decisions. Keep frames outside PHPThis `Request`, `Response`, `Router`, `RequestBoundary`, `ResponseEmitter`, and terminal request-summary types. Do not add a generic WebSocket abstraction or adapt the runtime into the HTTP execution model.
+Record one explicitly selected mature third-party runtime, separate process entrypoint and composition root, exact handshake and current authorization path, complete bounded message-to-final-readonly-command boundary, one narrowly named typed operation, finite connection and send path, backpressure, lifecycle, connection-summary redaction, deployment, supervisor, and scaling decisions. Record any WebSocket process configuration source, factory, final readonly type, failure, rotation, and secret-redaction contract only in `.ai/configuration.md`. Keep frames outside PHPThis `Request`, `Response`, `Router`, `RequestBoundary`, `ResponseEmitter`, and terminal request-summary types. Do not add a generic WebSocket abstraction or adapt the runtime into the HTTP execution model.
 
 ## Optional application-owned request-handler decorators
 

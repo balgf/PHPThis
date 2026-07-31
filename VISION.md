@@ -44,6 +44,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Database tests compare small and large fixtures and assert a constant query count.
 - The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
 - Direct database calls resolve to finite reviewed statements, SQL-looking values remain bound data, and unknown structural choices fail before database work.
+- Every process reads exact external configuration names through one application-owned source file, validates into process-specific final readonly values before application-controlled I/O, and injects them visibly without exposing elevated credentials to HTTP.
 - Complete raw engine-specific SQL and explicit named parameter arrays remain visible at direct call sites; bounded list cardinalities and cursor choices do not create generated SQL, binding helpers, or a generic paginator.
 - One application-owned terminal summary correlates a selected response with bounded per-connection query evidence through exactly one failure-isolated sink invocation attempt, without claiming durable delivery or adding a framework logger.
 - An adopted schema history remains application-owned, finite, checksum-locked, forward-only, and engine-specific, with explicit authority, ordering, transaction, lock, and recovery evidence rather than a framework migration abstraction.
@@ -54,7 +55,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
 - Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; the reviewed implementation occupies 2,592 lines, and its eight-line maintenance margin pre-authorizes no adjacent mechanism. ADR 033 adds no core runtime or further increase.
+- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; the reviewed implementation occupies 2,593 lines after one sensitive-password annotation, and its seven-line maintenance margin pre-authorizes no adjacent mechanism. ADR 033 adds no core runtime or further increase.
 
 ## Non-goals
 
@@ -70,6 +71,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Providing generic or framework middleware, a middleware pipeline, or a request-context, identity, tenant, or authorization engine that hides application policy or its I/O. ADR 033's route-local application-owned request-handler decorator is not such an engine.
 - Providing a WebSocket server, client, event loop, connection manager, daemon, supervisor, generic channel, broadcaster, pub/sub, real-time middleware, connection context, automatic retry, replay, acknowledgement, reconnect, or exactly-once delivery API; ADR 034 keeps those concerns application-owned in a pinned third-party runtime.
 - Providing a global logger, facade, middleware logger, event bus, automatically discovered sink, per-query logging, or hidden database instrumentation.
+- Providing a framework configuration service, string-keyed bag, global `config()` helper, facade, provider, container binding, discovery, automatic dotenv loader, secret-manager abstraction, or hidden reload.
 - Providing a generic upload, storage, filesystem, or stream facade; trusting client filenames or media types; or hiding persistence, cleanup, ranges, content processing, or file ownership.
 - Providing a core migration API, schema builder, migration DSL, automatic discovery, inferred rollback, runtime SQL loading, HTTP-startup migration, or portable DDL guarantee.
 - Supporting multiple equivalent styles for the same task.

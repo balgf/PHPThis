@@ -5,6 +5,7 @@
 Before adoption, read installed `vendor/phpthis/framework/docs/migrations.md` and record:
 
 - the exact engine and supported version, sole application migration command, and separately authorized process identity;
+- the migration configuration source, factory, final readonly type, injection, failure, rotation/restart, and secret redaction in `.ai/configuration.md`;
 - one final application-owned coordinator, permanent identifier grammar, finite manifest maximum, explicit migration-step order, unrolled private step methods, and canonical SHA-256 checksum byte sequence;
 - complete engine-specific compile-time-constant SQL at direct `Connection` calls with no database call in a loop;
 - the bounded ledger schema, row maximum, parser bounds, and explicit timestamp source and representation;

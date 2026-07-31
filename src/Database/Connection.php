@@ -24,6 +24,7 @@ final readonly class Connection
         QueryBudget $queryBudget,
         QueryTrace $queryTrace,
         ?string $username = null,
+        #[\SensitiveParameter]
         ?string $password = null,
         array $options = [],
     ): self {

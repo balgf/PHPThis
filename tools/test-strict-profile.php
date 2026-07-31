@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+require_once dirname(__DIR__) . '/verification/EnvironmentAccessProfile.php';
 
+use PHPThis\Verification\EnvironmentAccessProfile;
 use PHPThis\Verification\SyntaxProfile;
 
 $root = dirname(__DIR__);
@@ -13,9 +15,1026 @@ if (!is_string($catalogue)) {
     throw new RuntimeException('Unable to read the Strict Profile catalogue.');
 }
 
-foreach (['PHT001', 'PHT002', 'PHT003', 'PHT004', 'PHT005', 'PHT006'] as $profileId) {
+foreach (['PHT001', 'PHT002', 'PHT003', 'PHT004', 'PHT005', 'PHT006', 'PHT007'] as $profileId) {
     requireProfile(str_contains($catalogue, "`{$profileId}`"), "Strict Profile catalogue omitted {$profileId}.");
 }
+
+$validEnvironmentFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Fixture;
+
+$dsn = \getenv('APP_RUNTIME_DATABASE_DSN');
+$username = \getenv("APP_RUNTIME_DATABASE_USERNAME");
+$expectedFunctionName = 'getenv';
+$instance = new getenv();
+$inputInstance = new INPUT_ENV();
+$namespacedFunctionName = "get\env";
+$namespacedFunctionName();
+
+#[getenv()]
+final class EnvironmentNamedAttribute
+{
+}
+
+#[INPUT_ENV()]
+final class EnvironmentInputAttribute
+{
+}
+
+$callbackNamedConstructor = new array_map('getenv');
+$dynamicClassInstance = new ('getenv')();
+
+#[array_map('getenv')]
+final class CallbackNamedAttribute
+{
+}
+
+\array_filter(...[['getenv']]);
+\array_reduce(...[[], static fn (mixed $carry, mixed $item): mixed => $carry, 'getenv']);
+\array_reduce(
+    array: [],
+    initial: 'getenv',
+    callback: static fn (mixed $carry, mixed $item): mixed => $carry,
+);
+\App\array_map('getenv', []);
+\App\constant('INPUT_ENV');
+Labels::fromCallable('getenv');
+
+function namesOnly(object $object): void
+{
+    $reader = 'getenv';
+    $object->$reader();
+    Labels::$reader();
+    new $reader();
+}
+
+function reassignBeforeInvocation(bool $replace): void
+{
+    $reader = 'getenv';
+
+    if ($replace) {
+        $reader = 'strlen';
+    }
+
+    $reader('APP_KEY');
+}
+PHP;
+
+requireParseable($validEnvironmentFixture);
+$validEnvironmentResult = EnvironmentAccessProfile::inspect(
+    $validEnvironmentFixture,
+    'src/ApplicationEnvironment.php',
+);
+requireProfile(
+    $validEnvironmentResult === ['reads' => [7, 8], 'failures' => []],
+    'PHT007 rejected canonical literal reads in one application configuration boundary.',
+);
+
+$groupedAttributeFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+#[Marker, INPUT_ENV]
+#[Marker, getenv()]
+#[Marker, array_map('getenv')]
+final class GroupedEnvironmentNames
+{
+}
+PHP;
+
+requireParseable($groupedAttributeFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $groupedAttributeFixture,
+        'src/GroupedEnvironmentNames.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 treated names, calls, or literal arguments inside a grouped PHP attribute declaration as executable environment access.',
+);
+
+$attributeValueBypassFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+#[\Attribute(\Attribute::TARGET_CLASS)]
+final class SourceAttribute
+{
+    public function __construct(public int $source) {}
+}
+
+#[SourceAttribute(INPUT_ENV)]
+final class AttributedInput
+{
+}
+
+function inputSourceFromAttribute(): int
+{
+    $attribute = (new \ReflectionClass(AttributedInput::class))
+        ->getAttributes(SourceAttribute::class)[0];
+
+    return $attribute->newInstance()->source;
+}
+
+filter_input(inputSourceFromAttribute(), 'APP_KEY');
+PHP;
+
+requireParseable($attributeValueBypassFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $attributeValueBypassFixture,
+        'src/AttributeValueBypass.php',
+    )['failures'] === [
+        'PHT007 src/AttributeValueBypass.php:11 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 allowed an INPUT_ENV attribute argument to carry the global source through reflection into filter_input.',
+);
+
+$acceptedKeyBoundaryFixture = sprintf(
+    <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+\getenv('A');
+\getenv('%s');
+PHP,
+    str_repeat('A', 128),
+);
+
+requireParseable($acceptedKeyBoundaryFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $acceptedKeyBoundaryFixture,
+        'src/AcceptedEnvironmentKeyBoundaries.php',
+    ) === ['reads' => [5, 6], 'failures' => []],
+    'PHT007 rejected an accepted one-byte or 128-byte uppercase literal environment key.',
+);
+
+$invalidKeyBoundaryFixture = sprintf(
+    <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+\getenv('');
+\getenv('app_key');
+\getenv('APP-KEY');
+\getenv('%s');
+PHP,
+    str_repeat('A', 129),
+);
+
+requireParseable($invalidKeyBoundaryFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $invalidKeyBoundaryFixture,
+        'src/InvalidEnvironmentKeyBoundaries.php',
+    )['failures'] === [
+        'PHT007 src/InvalidEnvironmentKeyBoundaries.php:5 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+        'PHT007 src/InvalidEnvironmentKeyBoundaries.php:6 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+        'PHT007 src/InvalidEnvironmentKeyBoundaries.php:7 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+        'PHT007 src/InvalidEnvironmentKeyBoundaries.php:8 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+    ],
+    'PHT007 accepted an empty, lowercase, invalid, or 129-byte literal environment key.',
+);
+
+$unpackedCallableLimitationFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+array_map(...['getenv', []]);
+PHP;
+
+requireParseable($unpackedCallableLimitationFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $unpackedCallableLimitationFixture,
+        'src/UnpackedCallableLimitation.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 argument-unpack limitation changed without a profile decision.',
+);
+
+$aliasedCallbackLimitationFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Fixture;
+
+use Closure as NativeClosure;
+use function array_map as map;
+
+map('getenv', []);
+NativeClosure::fromCallable('getenv');
+PHP;
+
+requireParseable($aliasedCallbackLimitationFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $aliasedCallbackLimitationFixture,
+        'src/AliasedCallbackLimitation.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 native-callback alias limitation changed without a profile decision.',
+);
+
+$implicitReassignmentLimitationFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+function reassignThroughForeach(): void
+{
+    $reader = 'getenv';
+
+    foreach (['strlen'] as $reader) {
+    }
+
+    $reader('APP_KEY');
+}
+
+function reassignThroughDestructuring(): void
+{
+    $reader = 'getenv';
+    [$reader] = ['strlen'];
+    $reader('APP_KEY');
+}
+PHP;
+
+requireParseable($implicitReassignmentLimitationFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $implicitReassignmentLimitationFixture,
+        'src/ImplicitReassignmentLimitation.php',
+    )['failures'] === [
+        'PHT007 src/ImplicitReassignmentLimitation.php:7 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/ImplicitReassignmentLimitation.php:17 references environment function getenv indirectly; use direct \getenv calls only.',
+    ],
+    'PHT007 implicit-reassignment limitation changed without a profile decision.',
+);
+
+$separateCallableScopeFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+function describeEnvironmentReader(): void
+{
+    $reader = 'getenv';
+}
+
+function invokeProvidedReader(callable $reader): void
+{
+    $reader();
+}
+PHP;
+
+requireParseable($separateCallableScopeFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $separateCallableScopeFixture,
+        'src/SeparateCallableScopes.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 confused identical variable names in separate PHP function scopes.',
+);
+
+$largeHarmlessLiteralFixture = "<?php\n\ndeclare(strict_types=1);\n\nfunction describeEnvironmentReaders(): void\n{\n";
+
+for ($fixtureIndex = 0; $fixtureIndex < 4_000; $fixtureIndex++) {
+    $largeHarmlessLiteralFixture .= sprintf(
+        "    \$reader%d = 'getenv';\n",
+        $fixtureIndex,
+    );
+}
+
+$largeHarmlessLiteralFixture .= "}\n";
+
+requireParseable($largeHarmlessLiteralFixture);
+$largeInspectionStarted = hrtime(true);
+$largeHarmlessLiteralResult = EnvironmentAccessProfile::inspect(
+    $largeHarmlessLiteralFixture,
+    'src/LargeHarmlessLiteralFixture.php',
+);
+$largeInspectionNanoseconds = hrtime(true) - $largeInspectionStarted;
+requireProfile(
+    $largeHarmlessLiteralResult === ['reads' => [], 'failures' => []],
+    'PHT007 confused repeated harmless literal assignments with indirect environment calls.',
+);
+requireProfile(
+    $largeInspectionNanoseconds < 2_000_000_000,
+    sprintf(
+        'PHT007 same-function harmless literal assignment scan took %.3f seconds; variable-use indexing regressed.',
+        $largeInspectionNanoseconds / 1_000_000_000,
+    ),
+);
+
+$validInputEnvDeclarationFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Fixture;
+
+use Vendor\FilterSource as INPUT_ENV;
+use const Vendor\SAFE_SOURCE as INPUT_ENV;
+
+$safeImportedSource = INPUT_ENV;
+
+function INPUT_ENV(): int
+{
+    return 1;
+}
+
+$safeFunctionCall = INPUT_ENV();
+
+enum FilterSource
+{
+    case INPUT_ENV;
+}
+
+function acceptInputSource(INPUT_ENV $value): void
+{
+}
+
+function acceptUnionSource(INPUT_ENV|FilterSource $value): void
+{
+}
+
+function acceptIntersectionSource(INPUT_ENV&FilterSource $value): void
+{
+}
+
+function returnInputSource(): FilterSource|INPUT_ENV
+{
+    throw new \LogicException();
+}
+
+try {
+} catch (INPUT_ENV|FilterSource $error) {
+}
+
+const input_env = 1;
+$lowercaseApplicationConstant = input_env;
+PHP;
+
+requireParseable($validInputEnvDeclarationFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $validInputEnvDeclarationFixture,
+        'src/InputEnvDeclarations.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 rejected a declaration, type, class alias, safe constant alias, or lowercase application constant named INPUT_ENV.',
+);
+
+$validLocalInputEnvConstantFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureLocal;
+
+const INPUT_ENV = 17;
+$source = INPUT_ENV;
+PHP;
+
+requireParseable($validLocalInputEnvConstantFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $validLocalInputEnvConstantFixture,
+        'src/LocalInputEnvConstant.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 treated a declared namespaced INPUT_ENV constant as PHP\'s global input source.',
+);
+
+$lateLocalInputEnvConstantFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureLateLocal;
+
+$source = INPUT_ENV;
+const INPUT_ENV = 17;
+PHP;
+
+requireParseable($lateLocalInputEnvConstantFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $lateLocalInputEnvConstantFixture,
+        'src/LateLocalInputEnvConstant.php',
+    )['failures'] === [
+        'PHT007 src/LateLocalInputEnvConstant.php:7 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 allowed a later namespaced declaration to hide an earlier global INPUT_ENV fallback.',
+);
+
+$multiConstantInputEnvDeclaratorFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureMultiConstant;
+
+const SOURCE = INPUT_ENV, INPUT_ENV = 17;
+$localSource = INPUT_ENV;
+PHP;
+
+requireParseable($multiConstantInputEnvDeclaratorFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $multiConstantInputEnvDeclaratorFixture,
+        'src/MultiConstantInputEnvDeclarator.php',
+    )['failures'] === [
+        'PHT007 src/MultiConstantInputEnvDeclarator.php:7 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 confused an initializer before a later INPUT_ENV declarator with safe local-constant use.',
+);
+
+$selfInitializingInputEnvConstantFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureSelfInitializing;
+
+const INPUT_ENV = INPUT_ENV;
+PHP;
+
+requireParseable($selfInitializingInputEnvConstantFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $selfInitializingInputEnvConstantFixture,
+        'src/SelfInitializingInputEnvConstant.php',
+    )['failures'] === [
+        'PHT007 src/SelfInitializingInputEnvConstant.php:7 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 treated INPUT_ENV as locally bound inside its own constant initializer.',
+);
+
+$subsequentConstantInputEnvUseFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureSubsequentConstant;
+
+const INPUT_ENV = 17, SOURCE = INPUT_ENV;
+PHP;
+
+requireParseable($subsequentConstantInputEnvUseFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $subsequentConstantInputEnvUseFixture,
+        'src/SubsequentConstantInputEnvUse.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 failed to activate a local INPUT_ENV binding after its declarator ended.',
+);
+
+$validUnaliasedInputEnvImportFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureImported;
+
+use const Vendor\INPUT_ENV;
+
+$source = INPUT_ENV;
+PHP;
+
+requireParseable($validUnaliasedInputEnvImportFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $validUnaliasedInputEnvImportFixture,
+        'src/ImportedInputEnvConstant.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 treated an imported namespaced INPUT_ENV constant as PHP\'s global input source.',
+);
+
+$lateInputEnvImportFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureLateImport;
+
+$source = INPUT_ENV;
+use const Vendor\SAFE_SOURCE as INPUT_ENV;
+PHP;
+
+requireParseable($lateInputEnvImportFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $lateInputEnvImportFixture,
+        'src/LateInputEnvImport.php',
+    )['failures'] === [
+        'PHT007 src/LateInputEnvImport.php:7 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 allowed a later safe import to hide an earlier global INPUT_ENV fallback.',
+);
+
+$validInputEnvFunctionFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureFunction;
+
+function INPUT_ENV(): int
+{
+    return 1;
+}
+
+$source = INPUT_ENV();
+PHP;
+
+requireParseable($validInputEnvFunctionFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $validInputEnvFunctionFixture,
+        'src/InputEnvFunction.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 treated a function invocation named INPUT_ENV as a global constant reference.',
+);
+
+$qualifiedInputEnvWithSafeAliasFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace FixtureQualified;
+
+use const Vendor\SAFE_SOURCE as INPUT_ENV;
+
+$safe = INPUT_ENV;
+$global = \INPUT_ENV;
+PHP;
+
+requireParseable($qualifiedInputEnvWithSafeAliasFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $qualifiedInputEnvWithSafeAliasFixture,
+        'src/QualifiedInputEnvWithSafeAlias.php',
+    )['failures'] === [
+        'PHT007 src/QualifiedInputEnvWithSafeAlias.php:10 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 allowed a safe bare alias to hide an explicitly global INPUT_ENV reference.',
+);
+
+$validInputEnvNamespaceFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace INPUT_ENV;
+
+final class Marker
+{
+}
+PHP;
+
+requireParseable($validInputEnvNamespaceFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $validInputEnvNamespaceFixture,
+        'src/InputEnvNamespace.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 rejected INPUT_ENV when it was a namespace declaration.',
+);
+
+$validGroupedConstImportFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Fixture;
+
+use const Vendor\{INPUT_ENV as SOURCE};
+PHP;
+
+requireParseable($validGroupedConstImportFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $validGroupedConstImportFixture,
+        'src/GroupedConstImport.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 treated a namespaced grouped constant import as a global INPUT_ENV import.',
+);
+
+$invalidEnvironmentFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+$key = 'APP_KEY';
+getenv('APP_KEY');
+\GeTeNv('APP_KEY');
+Fixture\getenv('APP_KEY');
+\getenv();
+\getenv($key);
+\getenv('APP_KEY', true);
+\getenv(name: 'APP_KEY');
+\getenv(...['APP_KEY']);
+$fromEnvironment = $_ENV['APP_KEY'];
+$fromServer = $_SERVER['APP_KEY'];
+$filtered = filter_input(INPUT_ENV, 'APP_KEY');
+\putenv('APP_KEY=value');
+\apache_getenv('APP_KEY');
+\apache_setenv('APP_KEY', 'value');
+$reader = "get\x65nv";
+$reader('APP_KEY');
+$unicodeReader = "get\u{65}nv";
+$unicodeReader('APP_KEY');
+$filteredIndirect = filter_input(constant("INPUT_\x45NV"), 'APP_KEY');
+$harmless = 'getenv';
+PHP;
+
+requireParseable($invalidEnvironmentFixture);
+$invalidEnvironmentResult = EnvironmentAccessProfile::inspect(
+    $invalidEnvironmentFixture,
+    'src/InvalidEnvironment.php',
+);
+$expectedInvalidEnvironmentFailures = [
+    "PHT007 src/InvalidEnvironment.php:6 calls getenv without the canonical fully qualified spelling; use \\getenv('EXACT_LITERAL_KEY').",
+    "PHT007 src/InvalidEnvironment.php:7 calls getenv without the canonical fully qualified spelling; use \\getenv('EXACT_LITERAL_KEY').",
+    "PHT007 src/InvalidEnvironment.php:8 calls getenv without the canonical fully qualified spelling; use \\getenv('EXACT_LITERAL_KEY').",
+    'PHT007 src/InvalidEnvironment.php:9 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+    'PHT007 src/InvalidEnvironment.php:10 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+    'PHT007 src/InvalidEnvironment.php:11 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+    'PHT007 src/InvalidEnvironment.php:12 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+    'PHT007 src/InvalidEnvironment.php:13 must call \getenv with exactly one non-empty uppercase literal key of at most 128 bytes.',
+    'PHT007 src/InvalidEnvironment.php:14 reads $_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    'PHT007 src/InvalidEnvironment.php:15 indexes $_SERVER; pass the HTTP transport array unchanged or read configuration with \getenv in the single configuration boundary.',
+    'PHT007 src/InvalidEnvironment.php:16 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    'PHT007 src/InvalidEnvironment.php:17 calls environment function putenv; process environment is read-only through direct \getenv calls.',
+    'PHT007 src/InvalidEnvironment.php:18 calls environment function apache_getenv; process environment is read-only through direct \getenv calls.',
+    'PHT007 src/InvalidEnvironment.php:19 calls environment function apache_setenv; process environment is read-only through direct \getenv calls.',
+    'PHT007 src/InvalidEnvironment.php:20 references environment function getenv indirectly; use direct \getenv calls only.',
+    'PHT007 src/InvalidEnvironment.php:22 references environment function getenv indirectly; use direct \getenv calls only.',
+    'PHT007 src/InvalidEnvironment.php:24 resolves INPUT_ENV indirectly; process environment is read-only through direct \getenv calls.',
+];
+requireProfile(
+    $invalidEnvironmentResult['reads'] === [6, 7, 8, 9, 10, 11, 12, 13],
+    'PHT007 did not record every direct getenv spelling.',
+);
+requireProfile(
+    $invalidEnvironmentResult['failures'] === $expectedInvalidEnvironmentFailures,
+    'PHT007 invalid-access fixture diagnostics changed.',
+);
+
+$invalidLiteralCallableFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+('getenv')('APP_KEY');
+array_map('getenv', ['APP_KEY']);
+\array_map('getenv', ['APP_KEY']);
+array_map(callback: 'getenv', arrays: ['APP_KEY']);
+array_reduce([], 'getenv');
+register_shutdown_function('putenv', 'APP_KEY=value');
+call_user_func(('apache_getenv'), 'APP_KEY');
+\Closure::fromCallable('getenv');
+Closure::fromCallable('getenv');
+
+function invokeEnvironmentReader(): void
+{
+    if (true) {
+        $reader = ('getenv');
+    }
+
+    $reader('APP_KEY');
+}
+
+function invokeParenthesizedEnvironmentReader(): void
+{
+    $reader = 'getenv';
+    ($reader)('APP_KEY');
+}
+PHP;
+
+requireParseable($invalidLiteralCallableFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $invalidLiteralCallableFixture,
+        'src/InvalidLiteralCallables.php',
+    )['failures'] === [
+        'PHT007 src/InvalidLiteralCallables.php:5 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:6 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:7 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:8 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:9 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:10 references environment function putenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:11 references environment function apache_getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:12 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:13 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:18 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/InvalidLiteralCallables.php:26 references environment function getenv indirectly; use direct \getenv calls only.',
+    ],
+    'PHT007 accepted a directly recognizable literal environment callable.',
+);
+
+$invalidImportedClosureFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Fixture;
+
+use Closure;
+
+Closure::fromCallable('getenv');
+PHP;
+
+requireParseable($invalidImportedClosureFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $invalidImportedClosureFixture,
+        'src/InvalidImportedClosure.php',
+    )['failures'] === [
+        'PHT007 src/InvalidImportedClosure.php:9 references environment function getenv indirectly; use direct \getenv calls only.',
+    ],
+    'PHT007 accepted a literal environment callable through an imported native Closure name.',
+);
+
+$capturedLiteralCallableFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+function readAfterInterpolation(string $name): string|false
+{
+    $reader = 'getenv';
+    $message = "reader={$name}";
+    return $reader('APP_KEY');
+}
+
+function readThroughClosure(): void
+{
+    $reader = 'getenv';
+    $closure = function () use ($reader): void {
+        $reader('APP_KEY');
+    };
+}
+
+function readThroughArrow(): void
+{
+    $reader = 'getenv';
+    $closure = fn (): string|false => $reader('APP_KEY');
+}
+
+function readThroughInterpolatedArrow(): void
+{
+    $reader = 'getenv';
+    $closure = fn (string $name): string|false => ["reader={$name}", $reader('APP_KEY')][1];
+}
+PHP;
+
+requireParseable($capturedLiteralCallableFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $capturedLiteralCallableFixture,
+        'src/CapturedLiteralCallables.php',
+    )['failures'] === [
+        'PHT007 src/CapturedLiteralCallables.php:7 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/CapturedLiteralCallables.php:14 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/CapturedLiteralCallables.php:22 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/CapturedLiteralCallables.php:28 references environment function getenv indirectly; use direct \getenv calls only.',
+    ],
+    'PHT007 lost a literal callable across interpolation or explicit closure capture.',
+);
+
+$shadowedArrowParameterFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+function keyedDefaultShadowsReader(): void
+{
+    $reader = 'getenv';
+    $callback = fn (
+        array $defaults = ['reader' => 'strlen'],
+        mixed $reader = null,
+    ): mixed => $reader();
+}
+
+function byReferenceArrowShadowsReader(): void
+{
+    $reader = 'getenv';
+    $callback = fn & (mixed $reader = null): mixed => $reader();
+}
+PHP;
+
+requireParseable($shadowedArrowParameterFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $shadowedArrowParameterFixture,
+        'src/ShadowedArrowParameters.php',
+    ) === ['reads' => [], 'failures' => []],
+    'PHT007 mistook a keyed-array parameter default or by-reference arrow declaration for captured environment-reader use.',
+);
+
+$capturedComplexArrowFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+function keyedDefaultCapturesReader(): void
+{
+    $reader = 'getenv';
+    $callback = fn (array $defaults = ['reader' => 'strlen']): mixed => $reader();
+}
+
+function byReferenceArrowCapturesReader(): void
+{
+    $reader = 'getenv';
+    $callback = fn & (): mixed => $reader();
+}
+PHP;
+
+requireParseable($capturedComplexArrowFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $capturedComplexArrowFixture,
+        'src/CapturedComplexArrows.php',
+    )['failures'] === [
+        'PHT007 src/CapturedComplexArrows.php:7 references environment function getenv indirectly; use direct \getenv calls only.',
+        'PHT007 src/CapturedComplexArrows.php:13 references environment function getenv indirectly; use direct \getenv calls only.',
+    ],
+    'PHT007 lost an environment-reader capture while parsing a keyed default or by-reference arrow.',
+);
+
+$invalidConstantLookupFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+$named = filter_input(constant(name: 'INPUT_ENV'), 'APP_KEY');
+$parenthesized = filter_input(constant(('INPUT_ENV')), 'APP_KEY');
+PHP;
+
+requireParseable($invalidConstantLookupFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $invalidConstantLookupFixture,
+        'src/InvalidConstantLookup.php',
+    )['failures'] === [
+        'PHT007 src/InvalidConstantLookup.php:5 resolves INPUT_ENV indirectly; process environment is read-only through direct \getenv calls.',
+        'PHT007 src/InvalidConstantLookup.php:6 resolves INPUT_ENV indirectly; process environment is read-only through direct \getenv calls.',
+    ],
+    'PHT007 accepted a named or parenthesized literal INPUT_ENV lookup.',
+);
+
+$invalidInputEnvAliasFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Fixture;
+
+use const INPUT_ENV as SOURCE;
+
+$aliased = filter_input(SOURCE, 'APP_KEY');
+$fullyQualified = filter_input(constant('\\INPUT_ENV'), 'APP_KEY');
+PHP;
+
+requireParseable($invalidInputEnvAliasFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $invalidInputEnvAliasFixture,
+        'src/InvalidInputEnvAliases.php',
+    )['failures'] === [
+        'PHT007 src/InvalidInputEnvAliases.php:7 imports INPUT_ENV; process environment access must use direct \getenv calls in the single application configuration boundary.',
+        'PHT007 src/InvalidInputEnvAliases.php:10 resolves INPUT_ENV indirectly; process environment is read-only through direct \getenv calls.',
+    ],
+    'PHT007 accepted an imported INPUT_ENV alias or a fully qualified literal INPUT_ENV lookup.',
+);
+
+$invalidInputEnvExpressionFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+$source = 0;
+switch ($source) {
+    case INPUT_ENV:
+        break;
+}
+$conditional = true ? INPUT_ENV : 0;
+consume(source: INPUT_ENV);
+PHP;
+
+requireParseable($invalidInputEnvExpressionFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $invalidInputEnvExpressionFixture,
+        'src/InvalidInputEnvExpressions.php',
+    )['failures'] === [
+        'PHT007 src/InvalidInputEnvExpressions.php:7 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+        'PHT007 src/InvalidInputEnvExpressions.php:10 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+        'PHT007 src/InvalidInputEnvExpressions.php:11 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 confused an INPUT_ENV value expression with a declaration or type.',
+);
+
+$switchCaseSeparatorFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+$source = 0;
+switch ($source) {
+    case INPUT_ENV:
+        break;
+    case INPUT_ENV;
+        break;
+}
+PHP;
+
+requireParseable($switchCaseSeparatorFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect(
+        $switchCaseSeparatorFixture,
+        'src/SwitchCaseSeparators.php',
+    )['failures'] === [
+        'PHT007 src/SwitchCaseSeparators.php:7 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+        'PHT007 src/SwitchCaseSeparators.php:9 uses INPUT_ENV; read exact keys with \getenv in the single application configuration boundary.',
+    ],
+    'PHT007 treated a switch case using a colon or semicolon as an enum case declaration.',
+);
+
+$environmentImportFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Fixture;
+
+use function getenv as readEnvironment;
+use function putenv;
+PHP;
+
+requireParseable($environmentImportFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect($environmentImportFixture, 'src/EnvironmentImports.php')['failures'] === [
+        'PHT007 src/EnvironmentImports.php:7 imports environment function getenv; use direct \getenv calls only.',
+        'PHT007 src/EnvironmentImports.php:8 imports environment function putenv; use direct \getenv calls only.',
+    ],
+    'PHT007 did not reject imported environment functions.',
+);
+
+$canonicalServerHandoffFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+$response = $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);
+PHP;
+
+requireParseable($canonicalServerHandoffFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect($canonicalServerHandoffFixture, 'public/index.php') === [
+        'reads' => [],
+        'failures' => [],
+    ],
+    'PHT007 rejected the canonical front-controller transport handoff.',
+);
+
+$invalidServerHandoffFixture = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+$server = $_SERVER;
+Config::fromServer($_SERVER);
+$configurationReader->handle($_SERVER, $_GET, $_POST, $_FILES);
+PHP;
+
+requireParseable($invalidServerHandoffFixture);
+requireProfile(
+    EnvironmentAccessProfile::inspect($invalidServerHandoffFixture, 'public/index.php')['failures'] === [
+        'PHT007 public/index.php:5 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
+        'PHT007 public/index.php:6 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
+        'PHT007 public/index.php:7 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
+    ],
+    'PHT007 accepted a non-canonical bare $_SERVER handoff.',
+);
+
+requireProfile(
+    EnvironmentAccessProfile::boundaryFailures([
+        'src/ZEnvironment.php' => [12, 18],
+        'src/AEnvironment.php' => [7],
+        'src/NoEnvironment.php' => [],
+    ]) === [
+        'PHT007 src/AEnvironment.php:7 reads process environment in more than one application-owned PHP file; centralize every \getenv call in one configuration boundary.',
+        'PHT007 src/ZEnvironment.php:12 reads process environment in more than one application-owned PHP file; centralize every \getenv call in one configuration boundary.',
+    ],
+    'PHT007 cross-file diagnostics changed.',
+);
 
 $syntaxFixture = <<<'PHP'
 <?php
@@ -632,7 +1651,7 @@ requireProfile(
         . $validSqlResult['stdout'],
 );
 
-fwrite(STDOUT, "PASS strict profile: PHT001 through PHT006\n");
+fwrite(STDOUT, "PASS strict profile: PHT001 through PHT007\n");
 
 function requireProfile(bool $condition, string $message): void
 {

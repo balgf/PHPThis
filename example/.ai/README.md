@@ -6,6 +6,7 @@ Always read `../AGENTS.md`, then load only what the task needs:
 
 | Task | Read | Inspect |
 | --- | --- | --- |
+| Change an example composition input, database path source, Redis endpoint source, process-specific construction, startup failure, or configuration redaction | `.ai/configuration.md` and the affected concern guide | `bootstrap.php`, `bin/console.php`, `ApplicationDatabasePath`, `ApplicationCommandLine`, `ApplicationComposition`, and composition, CLI, migration, or cache tests |
 | Change document SQL, ordering, cursor, categories, query cost, or engine claims | `.ai/data.md`, `../../docs/decisions/022-application-owned-finite-data-paths.md` | `src/Documents/ListDocuments/`, `src/Documents/DocumentRoutes.php`, composition in `bootstrap.php`, and document-list tests |
 | Change document-file upload, storage, download, or emission | `.ai/file-transfers.md`, `../../docs/file-transfers/README.md` | `public/index.php`, `ApplicationComposition`, `src/DocumentFiles/`, and document-file, upload-boundary, and response-emitter tests |
 | Change account authentication, tenant resolution, or Create/document authorization | `.ai/data.md`, `../../docs/request-policy.md`, ADR 020, ADR 029 | shared types under `src/Accounts/`, action-specific authorization interfaces, handler order, error registration, and policy tests |
@@ -18,3 +19,5 @@ Always read `../AGENTS.md`, then load only what the task needs:
 | Change framework behavior | leave the example boundary and follow `../../.ai/README.md` | framework `src/`, contract, decisions, and repository tests |
 
 The document-list proof keeps complete raw SQLite SQL and explicit named parameter arrays at direct `Connection` call sites. It has no ORM, query builder, repository, generic paginator, SQL/binding/placeholder helper, generated or dynamic SQL, transaction callback, or dialect abstraction.
+
+`.ai/configuration.md` is the example's authority for composition input sources, typed values, process separation, startup failure, lifecycle, and redaction. Other example guides retain only their concern-specific behavior and evidence.

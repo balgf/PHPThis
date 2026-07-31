@@ -17,6 +17,7 @@ final class ApplicationChecker
         '.ai/README.md',
         '.ai/architecture.md',
         '.ai/change-workflow.md',
+        '.ai/configuration.md',
         '.ai/data.md',
         '.ai/integrations.md',
         '.ai/observability.md',
@@ -36,7 +37,6 @@ final class ApplicationChecker
         '$_COOKIE',
         '$_SESSION',
         '$_REQUEST',
-        '$_ENV',
     ];
 
     private const NATIVE_SESSION_FUNCTIONS = [
@@ -97,6 +97,8 @@ final class ApplicationChecker
         $discovery = $this->discoverPhpFiles($root, $vendorDirectory);
         $phpFiles = $discovery['files'];
         $duplicationScanner = new ApplicationDuplicationScanner();
+        /** @var array<string, list<int>> $environmentReads */
+        $environmentReads = [];
         $failures = [
             ...$discovery['failures'],
             ...$this->applicationContextFailures($root),
@@ -111,10 +113,24 @@ final class ApplicationChecker
             }
 
             $duplicationScanner->collect($relativePath, $contents);
+            $environmentAccess = EnvironmentAccessProfile::inspect($contents, $relativePath);
+            $environmentReads[$relativePath] = $environmentAccess['reads'];
+
+            foreach ($environmentAccess['failures'] as $failure) {
+                $failures[] = $failure;
+            }
 
             foreach ($this->phpFileFailures($contents, $relativePath) as $failure) {
                 $failures[] = $failure;
             }
+        }
+
+        foreach (EnvironmentAccessProfile::boundaryFailures($environmentReads) as $failure) {
+            $failures[] = $failure;
+        }
+
+        foreach ($this->configurationContextEnvironmentFailures($root, $environmentReads) as $failure) {
+            $failures[] = $failure;
         }
 
         if ($phpFiles === []) {
@@ -402,6 +418,50 @@ final class ApplicationChecker
         }
 
         return $failures;
+    }
+
+    /**
+     * @param array<string, list<int>> $environmentReads
+     * @return list<string>
+     */
+    private function configurationContextEnvironmentFailures(
+        string $projectRoot,
+        array $environmentReads,
+    ): array {
+        $hasEnvironmentRead = false;
+
+        foreach ($environmentReads as $lines) {
+            if ($lines !== []) {
+                $hasEnvironmentRead = true;
+                break;
+            }
+        }
+
+        if (!$hasEnvironmentRead) {
+            return [];
+        }
+
+        $path = $projectRoot . '/.ai/configuration.md';
+
+        if (!is_file($path) || is_link($path) || !is_readable($path)) {
+            return [];
+        }
+
+        $contents = file_get_contents($path);
+
+        if (
+            !is_string($contents)
+            || preg_match(
+                '/(?:\A|\R)[ \t]*`?NOT_APPLICABLE\(CONFIGURATION\)`?[ \t]*(?=\R|\z)/',
+                $contents,
+            ) !== 1
+        ) {
+            return [];
+        }
+
+        return [
+            'Application configuration context records NOT_APPLICABLE(CONFIGURATION) while application-owned PHP reads process environment; replace the marker with the explicit configuration boundary contract.',
+        ];
     }
 
     /** @return list<string> */

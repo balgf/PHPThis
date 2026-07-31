@@ -2,6 +2,10 @@
 
 Decision records capture constraints that an AI must not reinterpret from scratch. A record contains context, decision, consequences, and reconsideration triggers. AI may investigate and draft a proposed record; `Status: accepted` represents accountable human maintainer approval.
 
+Proposed records:
+
+None.
+
 Accepted records:
 
 - `001-manual-composition-root.md`
@@ -39,3 +43,4 @@ Accepted records:
 - `033-application-owned-request-handler-decorators.md`
 - `034-application-owned-websocket-integration.md`
 - `035-bounded-alpha-4-release-scope.md`
+- `036-one-typed-application-configuration-boundary.md`
