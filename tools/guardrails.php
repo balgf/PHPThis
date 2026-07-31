@@ -1173,7 +1173,7 @@ $alpha4ReleaseIdentityArtifactMarkers = [
     'docs/knowledge-map.md' => [
         '`docs/releases/0.1.0-alpha.4.md`',
         'ADR 035, ADR 032 through ADR 034 for the Alpha 4 rollup',
-        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, and PHT007 changes',
+        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, PHT007, and the database setup scope gate',
     ],
     'docs/releases/0.1.0-alpha.4.md' => [
         'Release identity: `0.1.0-alpha.4`. Publication state is external',
@@ -1242,7 +1242,7 @@ $configurationArtifactMarkers = [
         'Status: accepted',
         'Consumer Contract version 10 and Strict Profile version 3 add permanent structural rule `PHT007`.',
         'No application or deployment configuration runtime or class enters framework `src/`, and no runtime dependency is added.',
-        'Migration or administrative configuration never falls back to runtime configuration.',
+        'Adopted migration or administrative configuration never falls back to runtime configuration.',
     ],
     'docs/configuration.md' => [
         '# Application-owned configuration',
@@ -1251,14 +1251,14 @@ $configurationArtifactMarkers = [
         'private static function required(#[\\SensitiveParameter] string|false $value, int $maximumBytes): string',
         '->handle($_SERVER, $_GET, $_POST, $_FILES)',
         'HTTP calls only `forHttp()`.',
-        'A migration command calls only `forMigrations()`.',
+        'When migrations are adopted, their command calls only `forMigrations()`',
         'PHPThis does not load it',
         '#[\\SensitiveParameter]',
     ],
     'docs/consumer-contract.md' => [
         '## Application configuration',
         'PHT007',
-        'Keep runtime, worker, migration, and administrative input names, factories, and output types separate.',
+        'For each adopted process profile, keep its runtime, worker, migration, or administrative input names, factories, and output types separate.',
         'non-secret configuration reference',
         'A configuration-free application records `NOT_APPLICABLE(CONFIGURATION)`',
     ],
@@ -1342,6 +1342,178 @@ foreach ($configurationArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "Configuration-boundary artifact marker is missing from {$relativePath}: {$marker}";
+        }
+    }
+}
+
+$databaseSetupScopeArtifactMarkers = [
+    'AGENTS.md' => [
+        'do not invent elevated authority for a deferred path.',
+        'configuration-only scope instead records connection composition as deferred and proves its parser in a child process.',
+    ],
+    'docs/decisions/037-database-setup-scope-gate.md' => [
+        'Status: accepted',
+        '> Please setup PostgreSQL as our main DB.',
+        'database scope: add configuration structure only, connect to an existing server, or provision a project-local server',
+        'schema scope: defer migrations or add an application-owned migration foundation',
+        'This is an AI-authoring workflow clarification.',
+    ],
+    'docs/decisions/README.md' => [
+        '`037-database-setup-scope-gate.md`',
+    ],
+    'docs/consumer-contract.md' => [
+        'For an ambiguous database setup request, inspect the prompt and existing project state first.',
+        'Ask all unresolved choices in one concise message',
+        'Do not perform external database I/O, provision or mutate a server',
+        'ADR 037 adds the early database setup scope gate as an AI-authoring workflow clarification',
+    ],
+    'docs/configuration.md' => [
+        '## Scope database setup before implementation',
+        '> Please setup PostgreSQL as our main DB.',
+        'should I only add PostgreSQL configuration, connect this project to an existing PostgreSQL server, or provision a project-local PostgreSQL server?',
+        'Record the non-secret input contract and add its typed parser or factory with parsing, failure, redaction, and child-process evidence.',
+        'Configuration-only scope records infrastructure injection and connection evidence as deferred and does not create dead wiring.',
+        'For PostgreSQL or another engine, first record an engine-specific application decision',
+        'when migrations are deferred, omit the migration inputs, type, factory, entrypoint, and tests',
+        'Provisioning and production evidence is required only for an explicitly selected scope.',
+    ],
+    'docs/evaluation.md' => [
+        '## Database setup scope-gate evaluation',
+        'A starter not-applicable marker does not answer that adoption question.',
+        'no connection attempt or other external database I/O',
+        'they do not prove that a particular model follows them or meets a duration target',
+    ],
+    'docs/knowledge-map.md' => [
+        '| Select or set up a database engine |',
+        'load and prove only the selected slice',
+        'ADR 036 and ADR 037 for accepted post-Alpha-4 working-tree changes',
+    ],
+    'docs/guardrails.md' => [
+        "accepted ADR 037, its early application scope gate, configuration-only typed-boundary meaning, external-I/O prohibition before approval, conditional process profiles, package inventory, and installed-consumer guidance-distribution evidence remain present",
+        'the guard also rejects the reviewed unconditional composition, elevated-profile, and template-placeholder wording',
+        "It also verifies that the local skeleton and installed framework distribute ADR 037's database setup guidance.",
+        'This distribution proof does not establish that an AI asks the scope question, avoids external database I/O, or meets a duration target',
+    ],
+    '.ai/application-context.md' => [
+        'Keep the ADR 037 database setup scope gate in both application `AGENTS.md` entrypoints and change workflows.',
+        'It records injection sites when process or infrastructure composition is selected, or explicitly deferred connection composition for configuration-only scope.',
+    ],
+    '.ai/database.md' => [
+        'Each adopted runtime, migration, or administrative factory uses a distinct name and never falls back.',
+        'configuration-only scope records connection composition as deferred.',
+    ],
+    'templates/application/AGENTS.md' => [
+        '## Early database setup gate',
+        'Apply this gate before the full task read order',
+        'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
+        'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
+        'Record isolated migration or administrative authority only when that elevated path is adopted.',
+        'for configuration-only scope, record connection composition as deferred and prove the parser in a child process.',
+    ],
+    'skeleton/AGENTS.md' => [
+        '## Early database setup gate',
+        'Apply this gate before the full task read order',
+        'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
+        'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
+        'Record isolated migration or administrative authority only when that elevated path is adopted.',
+        'Record visible injection sites for adopted infrastructure, or explicitly defer connection composition when configuration-only scope stops before it.',
+    ],
+    'templates/application/.ai/README.md' => [
+        '| Select or set up a database engine |',
+        'no external database I/O or mutation before unresolved scope is clarified',
+        'visible adopted composition or explicit connection-composition deferral',
+    ],
+    'skeleton/.ai/README.md' => [
+        '| Select or set up a database engine |',
+        'no external database I/O or mutation before unresolved scope is clarified',
+        'visible adopted composition or explicit connection-composition deferral',
+    ],
+    'templates/application/.ai/change-workflow.md' => [
+        '## Ambiguous database setup scope',
+        '> Please setup PostgreSQL as our main DB.',
+        'Treat a current `NOT_APPLICABLE` marker as present-state evidence',
+    ],
+    'skeleton/.ai/change-workflow.md' => [
+        '## Ambiguous database setup scope',
+        '> Please setup PostgreSQL as our main DB.',
+        'Treat a current `NOT_APPLICABLE` marker as present-state evidence',
+    ],
+    'templates/application/.ai/configuration.md' => [
+        'Record only adopted external input contracts.',
+        'do not store task scope or task history here',
+        'Composition injection sites, or deferred connection composition for configuration-only scope',
+    ],
+    'skeleton/.ai/configuration.md' => [
+        'Database-engine selection does not authorize a connection attempt, server provisioning, or migration adoption.',
+        'one separately named factory and final readonly output type for each adopted process profile',
+        'child-process parser or adopted-entrypoint evidence',
+    ],
+    'templates/application/.ai/data.md' => [
+        'Record a separate migration or administrative identity only when that path is adopted',
+        '{{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}',
+        '{{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}}',
+    ],
+    'skeleton/.ai/data.md' => [
+        'Record a separate migration or administrative identity, isolation mechanism, and no-runtime-fallback evidence only when that elevated path is adopted',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'Provisioning and production evidence is required only for explicitly selected scopes.',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'Provisioning and production evidence is required only for explicitly selected scopes.',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);',
+        'PASS installed database setup guidance distribution',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/037-database-setup-scope-gate.md',
+    ],
+];
+
+foreach ($databaseSetupScopeArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read database setup scope artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Database setup scope artifact marker is missing from {$relativePath}: {$marker}";
+        }
+    }
+}
+
+$databaseSetupScopeForbiddenArtifactMarkers = [
+    '.ai/database.md' => [
+        'Runtime, migration, and administrative factories use distinct names and never fall back.',
+        'Inject only the runtime type into visible HTTP `Connection::connect` construction;',
+    ],
+    'templates/application/.ai/README.md' => [
+        'authority separation, explicit composition, rotation/restart',
+    ],
+    'skeleton/.ai/README.md' => [
+        'authority separation, explicit composition, rotation/restart',
+    ],
+    'templates/application/.ai/data.md' => [
+        '{{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE}}',
+        '{{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM}}',
+    ],
+];
+
+foreach ($databaseSetupScopeForbiddenArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read database setup scope artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "Forbidden database setup scope artifact marker remains in {$relativePath}: {$marker}";
         }
     }
 }

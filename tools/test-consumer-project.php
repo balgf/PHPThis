@@ -92,6 +92,7 @@ try {
     }
 
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
+    proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledUuidAndUlidRouting($project, $environment);
     proveInstalledTypedConfiguration($project, $profileCommand, $environment);
     $requestHandlerDecoratorProofPath = proveInstalledRequestHandlerDecorator($project, $environment);
@@ -171,6 +172,105 @@ try {
     );
 } finally {
     removeDirectory($workspace);
+}
+
+function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string $installedFramework): void
+{
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/AGENTS.md' => [
+            '## Early database setup gate',
+            'Apply this gate before the full task read order',
+            'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
+            'After the human resolves the scope, resume the normal read order and load only the selected path.',
+        ],
+        $project . '/.ai/change-workflow.md' => [
+            '## Ambiguous database setup scope',
+            'configuration only, connection to an existing server, or project-local server provisioning',
+            'deferred migrations or an application-owned migration foundation',
+            '> Please setup PostgreSQL as our main DB.',
+            'Treat a current `NOT_APPLICABLE` marker as present-state evidence',
+        ],
+        $project . '/.ai/README.md' => [
+            'visible adopted composition or explicit connection-composition deferral',
+            'child-process parser or adopted-entrypoint tests',
+        ],
+        $project . '/.ai/configuration.md' => [
+            'Database-engine selection does not authorize a connection attempt, server provisioning, or migration adoption.',
+            'one separately named factory and final readonly output type for each adopted process profile',
+        ],
+        $project . '/.ai/testing.md' => [
+            'Provisioning and production evidence is required only for explicitly selected scopes.',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'Ask all unresolved choices in one concise message',
+            'Do not perform external database I/O, provision or mutate a server',
+        ],
+        $installedFramework . '/docs/configuration.md' => [
+            '## Scope database setup before implementation',
+            '> Please setup PostgreSQL as our main DB.',
+            'should I only add PostgreSQL configuration, connect this project to an existing PostgreSQL server, or provision a project-local PostgreSQL server?',
+            'Configuration-only scope records infrastructure injection and connection evidence as deferred and does not create dead wiring.',
+            'For PostgreSQL or another engine, first record an engine-specific application decision',
+            'when migrations are deferred, omit the migration inputs, type, factory, entrypoint, and tests',
+            'Provisioning and production evidence is required only for an explicitly selected scope.',
+        ],
+        $installedFramework . '/docs/evaluation.md' => [
+            '## Database setup scope-gate evaluation',
+            'A starter not-applicable marker does not answer that adoption question.',
+            'no connection attempt or other external database I/O',
+            'they do not prove that a particular model follows them or meets a duration target',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Select or set up a database engine |',
+            'load and prove only the selected slice',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            "It also verifies that the local skeleton and installed framework distribute ADR 037's database setup guidance.",
+            'This distribution proof does not establish that an AI asks the scope question, avoids external database I/O, or meets a duration target',
+        ],
+        $installedFramework . '/templates/application/.ai/change-workflow.md' => [
+            '## Ambiguous database setup scope',
+            '> Please setup PostgreSQL as our main DB.',
+            'An explicit request such as “Provision a project-local PostgreSQL server, configure it, and do not add migrations” proceeds without this scope question.',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            'visible adopted composition or explicit connection-composition deferral',
+            'child-process parser or adopted-entrypoint tests',
+        ],
+        $installedFramework . '/templates/application/AGENTS.md' => [
+            '## Early database setup gate',
+            'Apply this gate before the full task read order',
+            'An explicit request proceeds without a redundant scope question.',
+        ],
+        $installedFramework . '/templates/application/.ai/configuration.md' => [
+            'Record only adopted external input contracts.',
+            'do not store task scope or task history here',
+        ],
+        $installedFramework . '/templates/application/.ai/data.md' => [
+            '{{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}',
+            '{{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}}',
+        ],
+        $installedFramework . '/templates/application/.ai/testing.md' => [
+            'Provisioning and production evidence is required only for explicitly selected scopes.',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed database setup guidance artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed database setup guidance artifact {$path} is missing marker: {$marker}");
+            }
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed database setup guidance distribution\n");
 }
 
 /** @param array<string, string> $environment */

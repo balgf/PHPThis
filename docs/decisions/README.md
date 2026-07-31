@@ -44,3 +44,4 @@ Accepted records:
 - `034-application-owned-websocket-integration.md`
 - `035-bounded-alpha-4-release-scope.md`
 - `036-one-typed-application-configuration-boundary.md`
+- `037-database-setup-scope-gate.md`

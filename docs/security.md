@@ -12,7 +12,7 @@ AI-oriented explicitness does not replace security review.
 - Enforce `PHT001` so scalar conversion cannot silently turn unresolved `mixed` input into a trusted value.
 - Keep normalization operation-specific and explicit; never strip or rewrite malformed input into an apparently valid default.
 - Encode or escape output only for its actual sink; sink encoding is not input validation or authorization.
-- Keep credentials outside source and committed context. Read exact process-environment keys only in the one application configuration boundary, validate into process-specific final readonly values before application-controlled I/O, keep runtime and elevated authority separate without fallback, and inject only concrete typed values through visible composition.
+- Keep credentials outside source and committed context. Read exact process-environment keys only in the one application configuration boundary, validate into adopted process-specific final readonly values before application-controlled I/O, and keep adopted runtime and elevated authority separate without fallback. When process or infrastructure composition is selected, inject only concrete typed values through its visible composition root; configuration-only scope records connection composition as deferred.
 - Keep usernames, passwords, tokens, and private keys out of database DSNs. Pass separately named credentials through the visible connection boundary so password parameters can carry `#[\SensitiveParameter]`; still treat that attribute as disclosure reduction, not encryption.
 - Treat environment variables as delivery rather than encryption. Ignore `.env` and `.env.*` except an optional non-secret `.env.example`; PHPThis performs no automatic dotenv load.
 - Mark password, token, and private-key parameters with `#[\SensitiveParameter]` where applicable, but never treat that attribute as encryption or protection from explicit logging, dumping, copying, or serialization.
@@ -113,7 +113,7 @@ ADR 022's protected document-list statements additionally bind requested account
 
 ## Database authority
 
-Each runtime connection uses only the database objects and actions its process needs. The web runtime does not receive schema-owner, migration, role-management, grant-management, or administrative credentials. Migrations and administration run through a separately authorized path whose credentials are unavailable to request handling. The application records and verifies these engine-specific grants in `.ai/data.md`; SQLite applications record the equivalent file ownership and process boundary.
+Each runtime connection uses only the database objects and actions its process needs. The web runtime does not receive schema-owner, migration, role-management, grant-management, or administrative credentials. When migrations or administration are adopted, they run through a separately authorized path whose credentials are unavailable to request handling. The application records and verifies the applicable engine-specific grants in `.ai/data.md`; SQLite applications record the equivalent file ownership and process boundary.
 
 Least privilege limits impact but does not replace application authorization. A permitted statement can still expose another tenant's data or perform the wrong domain action.
 

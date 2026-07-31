@@ -2,6 +2,35 @@
 
 PHPThis applications use one application-owned boundary to turn external deployment inputs into final readonly typed values. PHPThis supplies no configuration service, generic bag, `config()` helper, facade, container binding, provider, discovery rule, dotenv loader, secret-manager adapter, or framework configuration directory.
 
+## Scope database setup before implementation
+
+Selecting a database engine does not by itself authorize a connection attempt or probe, server provisioning, database or role creation, schema changes, migrations, or production operations. Inspect the prompt and current application context first. When no environment is named, use local development only as the working context; it does not grant permission to perform external database I/O, install packages, start services or containers, or mutate a database. A current not-applicable marker describes present behavior and does not resolve intent for a new adoption request.
+
+Resolve these two choices independently before external database I/O or mutation:
+
+1. **Database scope:** add configuration structure only, connect to an existing server, or provision a project-local server.
+2. **Schema scope:** defer migrations or add an application-owned migration foundation.
+
+Ask every unresolved scope choice in one concise message. Do not repeat a choice already resolved by the prompt or an explicit accepted project decision. Once scope is selected, ask only for concrete facts genuinely missing from that path, such as existing-server connection input names.
+
+For the frozen prompt:
+
+> Please setup PostgreSQL as our main DB.
+
+the expected clarification is:
+
+> Before I change anything: should I only add PostgreSQL configuration, connect this project to an existing PostgreSQL server, or provision a project-local PostgreSQL server? Should migrations remain deferred, or should I add an application-owned migration foundation too?
+
+An explicit request such as “Provision a project-local PostgreSQL server, configure it, and do not add migrations” proceeds without that scope question. Production hardening, backups, high availability, deployment credentials, recovery, and unrelated operations remain excluded unless requested.
+
+| Selected scope | Work and evidence allowed by that selection |
+| --- | --- |
+| Configuration structure only | Record the non-secret input contract and add its typed parser or factory with parsing, failure, redaction, and child-process evidence. Do not create dead infrastructure wiring, construct a connection, or require server integration. Record composition injection as deferred until connection scope is selected. |
+| Connect to an existing server | Add the typed boundary and visible connection composition, then exercise only the approved connectivity, authority, and integration evidence. Do not provision the server. |
+| Provision a project-local server | Add the explicitly approved local lifecycle and authority work plus its configuration and integration evidence. Do not infer production suitability. |
+| Add a migration foundation | For SQLite, follow the recorded application-owned proof. For PostgreSQL or another engine, first record an engine-specific application decision covering DDL, transactions, locking, authority, recovery, and integration evidence; do not port the SQLite recipe or invent a portable framework migration API. If migrations are deferred, do not create elevated factories, credentials, commands, schema files, or migration tests. |
+| Production operations | Add only the specifically requested deployment, backup, availability, credential, or recovery evidence. Local success is not production proof. |
+
 ## Canonical process-environment access
 
 When an application uses process environment, every read in the Composer project must occur in one PHP file and use exactly:
@@ -20,7 +49,7 @@ Read once means once during each entrypoint/bootstrap composition, not once for 
 
 ## Typed source pattern
 
-Keep process-specific factories in the one environment-reading file. Each factory reads only the authority its process needs:
+Keep process-specific factories in the one environment-reading file. Each factory reads only the authority its process needs. The complete example below illustrates both runtime and migration profiles; when migrations are deferred, omit the migration inputs, type, factory, entrypoint, and tests rather than creating an unused elevated path.
 
 ```php
 <?php
@@ -86,11 +115,11 @@ final class ApplicationEnvironment
 
 These names and bounds illustrate the structure; each application owns its real names, grammar, limits, and types. Validate ports, hosts, DSNs, enums, durations, paths, URLs, identifiers, and finite modes according to their actual contract. A database DSN excludes embedded username, password, token, or private-key material; pass separately named credentials through the explicitly sensitive parameters. Do not postpone narrowing by returning `array<string, mixed>` or a string-keyed getter.
 
-HTTP calls only `forHttp()`. A migration command calls only `forMigrations()`. Neither profile falls back to the other. If a deployment needs administrative authority, give it another exact input set, final readonly type, factory, entrypoint, and test; never expose it to HTTP composition.
+HTTP calls only `forHttp()`. When migrations are adopted, their command calls only `forMigrations()` and neither profile falls back to the other. If a deployment explicitly needs administrative authority, give it another exact input set, final readonly type, factory, entrypoint, and test; never expose it to HTTP composition.
 
-## Explicit composition
+## Explicit composition when connection scope is selected
 
-The composition root receives the final typed value and constructs infrastructure visibly:
+When connection scope is selected, the composition root receives the final typed value and constructs infrastructure visibly. Configuration-only scope stops after the tested typed boundary and records this connection composition as deferred:
 
 ```php
 $configuration = ApplicationEnvironment::forHttp();
@@ -117,14 +146,13 @@ Mark constructor or function parameters that carry passwords, tokens, or private
 
 ## Required evidence
 
-Application tests prove:
+For every implemented configuration parser or factory, application tests prove:
 
 - valid external values create the exact final readonly types;
 - after ordinary source/autoload loading, missing, empty, malformed, and oversized values fail before application-controlled database, network, writable-filesystem, migration, or business I/O;
 - failure output is fixed and contains none of the supplied bytes;
-- HTTP startup does not read migration or administrative inputs;
-- migration startup has no runtime-credential fallback;
-- composition passes the intended typed values to the visible infrastructure boundary; and
-- child-process environment injection exercises the real entrypoint without application `putenv` calls.
+- child-process environment injection exercises the selected parser or factory, or the real process entrypoint when that process is in scope, without application `putenv` calls.
+
+When connection or another infrastructure composition is selected, tests additionally prove that composition passes the intended typed values to the visible infrastructure boundary. Configuration-only scope records infrastructure injection and connection evidence as deferred and does not create dead wiring. When migration or administrative configuration is selected, tests prove that HTTP startup does not read those inputs and that elevated startup has no runtime-credential fallback. When those profiles are not selected, record them as not applicable and do not invent elevated factories, credentials, entrypoints, or tests. Provisioning and production evidence is required only for an explicitly selected scope.
 
 `PHT007` proves only canonical direct access, direct positional or named arguments to supported native callback consumers under their built-in names, directly invoked local literal assignments before another assignment-operator occurrence, and one-file confinement. It does not detect hard-coded secrets, dynamically constructed function or constant names, aliased native callback API names, application-defined, anonymous, or variable-dispatched callable consumers, reassigned callable variables, argument-unpacked callable values, local callable variables passed onward as callback arguments, secret-manager APIs, leaks, correct validation, safe deployment permissions, or least database privilege.

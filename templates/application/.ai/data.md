@@ -29,12 +29,14 @@ Unknown selectors and unsupported or oversized list shapes fail before database 
 
 ## Runtime and migration authority
 
+Record a separate migration or administrative identity only when that path is adopted; otherwise record it as not applicable. Runtime authority must still explicitly exclude schema-change and administrative capabilities.
+
 | Connection | Runtime identity or non-secret reference | Required runtime capabilities | Explicitly prohibited runtime capabilities | Migration or administrative identity/reference | Isolation mechanism | Verification source and date |
 | --- | --- | --- | --- | --- | --- | --- |
-| `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_RUNTIME_IDENTITY_REFERENCE}} | {{CONNECTION_1_REQUIRED_RUNTIME_CAPABILITIES}} | {{CONNECTION_1_PROHIBITED_RUNTIME_CAPABILITIES}} | {{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE}} | {{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM}} | {{CONNECTION_1_AUTHORITY_VERIFICATION_SOURCE_AND_DATE}} |
+| `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_RUNTIME_IDENTITY_REFERENCE}} | {{CONNECTION_1_REQUIRED_RUNTIME_CAPABILITIES}} | {{CONNECTION_1_PROHIBITED_RUNTIME_CAPABILITIES}} | {{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}} | {{CONNECTION_1_AUTHORITY_VERIFICATION_SOURCE_AND_DATE}} |
 | `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_RUNTIME_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_2_REQUIRED_RUNTIME_CAPABILITIES_OR_NOT_APPLICABLE}} | {{CONNECTION_2_PROHIBITED_RUNTIME_CAPABILITIES_OR_NOT_APPLICABLE}} | {{CONNECTION_2_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_2_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}} | {{CONNECTION_2_AUTHORITY_VERIFICATION_SOURCE_AND_DATE_OR_NOT_APPLICABLE}} |
 
-Runtime identities receive only the operations required by named application paths. Keep schema changes, migrations, role or user management, and other administrative capabilities isolated from runtime credentials. Least privilege limits impact; it does not replace PHT006 or bound parameters.
+Runtime identities receive only the operations required by named application paths. Keep schema changes, migrations, role or user management, and other administrative capabilities unavailable to runtime credentials. When an elevated path is adopted, isolate its identity from runtime. Least privilege limits impact; it does not replace PHT006 or bound parameters.
 
 `.ai/configuration.md` is authoritative for exact external input names, final readonly database-configuration types, process-specific factories, and injection sites. This file records database authority and non-secret references only. Migration or administrative credentials never fall back to runtime credentials.
 
