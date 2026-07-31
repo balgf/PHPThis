@@ -6,16 +6,19 @@ PHPThis accepts one application-owned SQLite migration-ledger pattern and provid
 
 An application with no database or no application-owned migration path records `NOT_APPLICABLE(MIGRATIONS)`. Before adoption, the accountable human approves and the application records:
 
-- the exact engine and supported version, schema authority, and integration-test command;
-- the sole operational migration command and separately authorized process identity;
+- the exact engine and supported version, accepted engine-specific database/catalog/schema/attachment namespace model, namespace and object control-or-ownership or non-applicability, DDL, authority, locking and recovery decision, and integration-test command;
+- the sole operational migration command, separately authorized process identity, and its exact required and prohibited capabilities;
 - the permanent identifier grammar, finite manifest maximum, canonical order, and checksum byte format;
 - the ledger name, complete schema, maximum rows, parser bounds, and explicit timestamp source and representation;
 - the SQL and transaction ownership for ledger bootstrap and every migration;
+- the owner and path for authority activation and deactivation, including whether engine-specific `GRANT` or `REVOKE` SQL is supported, selected, and checksum-covered by a migration or the transition runs as a separately authorized versioned stage;
+- the runtime-authority activation handoff for new objects, engine-specific effective-authority resolution evidence, and any future-object or default-authority policy;
 - lock path, ownership, permissions, filesystem and host topology, contention and failure behavior;
 - DDL locks, timeouts, busy behavior, expected duration, maintenance-window and availability policy;
-- immutable-history, forward-correction, failed-deployment, backup, restore, and recovery policy;
+- immutable-history, forward-correction, authority deactivation, failed-deployment, backup, restore, and recovery policy;
+- the application-owned order and compatibility among migration, authority activation, verification, application rollout, traffic enablement, later deactivation, and namespace removal;
 - exact exits, stdout and stderr objects, finite diagnostic vocabulary, and redaction; and
-- automated empty-database, rerun, drift, concurrency, partial-failure, recovery, bounded-ledger, and real-console evidence.
+- automated empty-database, rerun, drift, concurrency, partial-failure, recovery, bounded-ledger, real-console, and exact-engine runtime-authority evidence.
 
 Do not copy the SQLite proof into another engine by changing its DSN. Record a separate engine-specific decision first.
 
@@ -62,6 +65,16 @@ The migration statements and ledger insert commit together. A failed migration l
 
 Use a fresh migration-scoped `Connection`, `QueryBudget`, and `QueryTrace`. The accepted seven-step example uses a 23-statement budget and trace plus PDO SQLite timeout 5; applying only 0007 to a valid six-step history uses four statements, and an unchanged run uses two. The migration identity is separate from the web runtime and receives only the schema and ledger authority required by this command. Do not expose it through HTTP configuration or compose the coordinator during request startup.
 
+## Authority transition and release handoff
+
+Migration success proves the migration path only. It does not prove that a separately configured runtime identity can use newly created objects. Configuration and source presence likewise do not activate authority.
+
+If a migration owns engine-specific `GRANT` or `REVOKE` SQL that the selected engine supports and uses, keep each complete statement visible at its direct `Connection` call and include it in the migration's canonical checksum sequence. If another authorized application or external provisioning stage owns the transition, name that stage, its version or source, its authority, its ordering relative to the migration, and its exact-engine verification. Never leave the transition implicit or run it through HTTP startup.
+
+Before dependent code receives traffic, positive evidence executes its exact runtime statements under the runtime identity and negative evidence safely checks selected prohibited namespace, DDL, identity or role, authority-management, administrative, migration-ledger, and unrelated-object actions. Record how effective authority resolves using only applicable engine sources, such as direct, role or inherited, public or default, database or global, ownership-chain, IAM, or filesystem and process authority. On shared or production data, prefer safe engine-supported authority inspection to destructive denial probes.
+
+The application records old-code and new-code compatibility, each abort gate, and whether a failure uses binary rollback, a new forward migration, a separately authorized restore, or another reviewed recovery action. PHPThis does not prescribe migration-first or code-first rollout. A failed migration, authority transition, or authority verification stops its dependent stage; remove or drain dependent code before deactivating its authority or removing a namespace. See [ADR 038](decisions/038-application-owned-database-authority-lifecycle.md).
+
 ## Command and output
 
 Add the migration operation to the application's sole console. Do not add it to framework `vendor/bin/phpthis`, Composer dependency hooks, the front controller, or an automatically discovered command map. A deployment may call the explicit application command only after its own human-approved release policy has authorized that external mutation.
@@ -90,8 +103,9 @@ Execute the real application console in fresh subprocesses and prove:
 - a held same-host lock produces the exact nonblocking failure and changes no database state;
 - a failure inside one migration rolls back that migration and its row while preserving earlier committed entries;
 - correcting the still-unapplied failing condition without editing committed history allows a fresh invocation to continue from the last valid row;
+- every adopted authority activation or deactivation is visible and ordered, every intended runtime statement succeeds under the runtime identity before traffic, selected prohibited actions remain unavailable, and HTTP composition cannot obtain elevated credentials;
 - HTTP startup and ordinary requests never create the ledger or execute migration SQL;
 - every success and failure has exact exit, stream exclusivity, bytes, finite vocabulary, and complete redaction; and
 - the complete project gate passes with PHT006 and maximum-level PHPStan.
 
-The proof does not establish production lock duration, availability, free-space behavior, crash recovery, backup restore, or another engine. Rehearse those properties against the exact deployment before migration authority is used on shared data.
+The proof does not establish production lock duration, availability, free-space behavior, crash recovery, backup restore, live effective authority, release ordering, or another engine unless those properties were exercised explicitly. Rehearse them against the exact deployment before migration or authority-transition capability is used on shared data.

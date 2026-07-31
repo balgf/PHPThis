@@ -9,6 +9,7 @@ use Throwable;
 
 final class ApplicationChecker
 {
+    private const CONNECTION_CLASS = 'phpthis\\database\\connection';
     private const PHPSTAN_CONSTRAINT = '^2.1';
     private const STRICT_RULES_CONSTRAINT = '^2.0';
 
@@ -99,6 +100,7 @@ final class ApplicationChecker
         $duplicationScanner = new ApplicationDuplicationScanner();
         /** @var array<string, list<int>> $environmentReads */
         $environmentReads = [];
+        $hasConnectionCall = false;
         $failures = [
             ...$discovery['failures'],
             ...$this->applicationContextFailures($root),
@@ -113,6 +115,7 @@ final class ApplicationChecker
             }
 
             $duplicationScanner->collect($relativePath, $contents);
+            $hasConnectionCall = $hasConnectionCall || $this->hasCanonicalConnectionCall($contents);
             $environmentAccess = EnvironmentAccessProfile::inspect($contents, $relativePath);
             $environmentReads[$relativePath] = $environmentAccess['reads'];
 
@@ -130,6 +133,10 @@ final class ApplicationChecker
         }
 
         foreach ($this->configurationContextEnvironmentFailures($root, $environmentReads) as $failure) {
+            $failures[] = $failure;
+        }
+
+        foreach ($this->databaseContextConnectionFailures($root, $hasConnectionCall) as $failure) {
             $failures[] = $failure;
         }
 
@@ -462,6 +469,343 @@ final class ApplicationChecker
         return [
             'Application configuration context records NOT_APPLICABLE(CONFIGURATION) while application-owned PHP reads process environment; replace the marker with the explicit configuration boundary contract.',
         ];
+    }
+
+    /** @return list<string> */
+    private function databaseContextConnectionFailures(string $projectRoot, bool $hasConnectionCall): array
+    {
+        if (!$hasConnectionCall) {
+            return [];
+        }
+
+        $path = $projectRoot . '/.ai/data.md';
+
+        if (!is_file($path) || is_link($path) || !is_readable($path)) {
+            return [];
+        }
+
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            return [];
+        }
+
+        $hasStandaloneMarker = preg_match(
+            '/(?:\A|\R)[ \t]*(?:NOT_APPLICABLE\(DATABASE\)|`NOT_APPLICABLE\(DATABASE\)`)[ \t]*(?=\R|\z)/',
+            $contents,
+        ) === 1;
+        $legacyMarker = '`NOT_APPLICABLE`: the starter has no database, persisted resource, or CRUD-shaped behavior. It therefore has no SQL, structural selectors, bounded data lists, database identities or privileges, migrations, CRUD resource identifiers or item/collection routes, pagination, create identity or conflicts, `PUT`/`PATCH` or concurrency policy, missing-resource semantics, deletion or retention policy, resource authorization, or audit events.';
+        $hasLegacyMarker = preg_match(
+            '/(?:\A|\R)[ \t]*' . preg_quote($legacyMarker, '/') . '[ \t]*(?=\R|\z)/',
+            $contents,
+        ) === 1;
+
+        if (!$hasStandaloneMarker && !$hasLegacyMarker) {
+            return [];
+        }
+
+        return [
+            'Application data context declares no database while application-owned PHP calls PHPThis\\Database\\Connection::connect; replace the not-applicable declaration with the explicit database contract.',
+        ];
+    }
+
+    private function hasCanonicalConnectionCall(string $contents): bool
+    {
+        $tokens = token_get_all($contents);
+        /** @var array<string, string> $importAliases */
+        $importAliases = [];
+        $namespace = '';
+
+        foreach ($tokens as $index => $token) {
+            $tokenId = is_array($token) ? $token[0] : null;
+            $tokenText = is_array($token) ? $token[1] : $token;
+
+            if ($tokenId === T_NAMESPACE) {
+                $namespace = $this->namespaceName($tokens, $index);
+                $importAliases = [];
+                continue;
+            }
+
+            if ($tokenId === T_USE) {
+                foreach ($this->importAliases($tokens, $index) as $alias => $name) {
+                    $importAliases[$alias] = $name;
+                }
+
+                continue;
+            }
+
+            $resolvedName = $this->resolvedClassName($tokenId, $tokenText, $namespace, $importAliases);
+
+            if ($resolvedName === self::CONNECTION_CLASS && $this->isStaticConnectCall($tokens, $index)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<array{int, string, int}|string> $tokens
+     * @return array<string, string>
+     */
+    private function importAliases(array $tokens, int $useIndex): array
+    {
+        $firstIndex = $this->nextSignificantTokenIndex($tokens, $useIndex + 1);
+
+        if ($firstIndex === null) {
+            return [];
+        }
+
+        $first = $tokens[$firstIndex];
+
+        if (
+            $first === '('
+            || (is_array($first) && in_array($first[0], [T_FUNCTION, T_CONST], true))
+        ) {
+            return [];
+        }
+
+        $aliases = [];
+        $groupPrefix = null;
+        $skipGroupMember = false;
+
+        for ($index = $firstIndex, $count = count($tokens); $index < $count; $index++) {
+            $token = $tokens[$index];
+            $tokenId = is_array($token) ? $token[0] : null;
+            $tokenText = is_array($token) ? $token[1] : $token;
+
+            if ($tokenText === ';') {
+                break;
+            }
+
+            if ($tokenText === '}') {
+                $groupPrefix = null;
+                $skipGroupMember = false;
+                continue;
+            }
+
+            if ($tokenText === ',') {
+                $skipGroupMember = false;
+                continue;
+            }
+
+            if ($groupPrefix !== null && in_array($tokenId, [T_FUNCTION, T_CONST], true)) {
+                $skipGroupMember = true;
+                continue;
+            }
+
+            if ($tokenId === T_AS) {
+                $aliasIndex = $this->nextSignificantTokenIndex($tokens, $index + 1);
+
+                if ($aliasIndex !== null) {
+                    $index = $aliasIndex;
+                }
+
+                continue;
+            }
+
+            if (!in_array(
+                $tokenId,
+                [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED, T_NAME_RELATIVE],
+                true,
+            )) {
+                continue;
+            }
+
+            $name = ltrim($tokenText, '\\');
+
+            if ($groupPrefix === null) {
+                $separatorIndex = $this->nextSignificantTokenIndex($tokens, $index + 1);
+                $openIndex = $separatorIndex === null
+                    ? null
+                    : $this->nextSignificantTokenIndex($tokens, $separatorIndex + 1);
+
+                if (
+                    $separatorIndex !== null
+                    && $this->tokenText($tokens[$separatorIndex]) === '\\'
+                    && $openIndex !== null
+                    && $this->tokenText($tokens[$openIndex]) === '{'
+                ) {
+                    $groupPrefix = strtolower($name);
+                    $index = $openIndex;
+                    continue;
+                }
+
+                $aliases[strtolower($this->importAlias($tokens, $index, $name))] = strtolower($name);
+
+                continue;
+            }
+
+            if ($skipGroupMember) {
+                continue;
+            }
+
+            $aliases[strtolower($this->importAlias($tokens, $index, $name))] = strtolower(
+                $groupPrefix . '\\' . $name,
+            );
+        }
+
+        return $aliases;
+    }
+
+    /**
+     * @param array<string, string> $importAliases
+     */
+    private function resolvedClassName(
+        ?int $tokenId,
+        string $tokenText,
+        string $namespace,
+        array $importAliases,
+    ): ?string {
+        if (!in_array(
+            $tokenId,
+            [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED, T_NAME_RELATIVE],
+            true,
+        )) {
+            return null;
+        }
+
+        $name = strtolower(ltrim($tokenText, '\\'));
+
+        if ($tokenId === T_NAME_FULLY_QUALIFIED) {
+            return $name;
+        }
+
+        if ($tokenId === T_NAME_RELATIVE) {
+            $relativeName = substr($name, strlen('namespace\\'));
+
+            return $namespace === '' ? $relativeName : $namespace . '\\' . $relativeName;
+        }
+
+        $separator = strpos($name, '\\');
+        $firstPart = $separator === false ? $name : substr($name, 0, $separator);
+        $importedName = $importAliases[$firstPart] ?? null;
+
+        if ($importedName !== null) {
+            return $separator === false
+                ? $importedName
+                : $importedName . substr($name, $separator);
+        }
+
+        return $namespace === '' ? $name : $namespace . '\\' . $name;
+    }
+
+    /** @param list<array{int, string, int}|string> $tokens */
+    private function importAlias(array $tokens, int $nameIndex, string $name): string
+    {
+        $asIndex = $this->nextSignificantTokenIndex($tokens, $nameIndex + 1);
+
+        if ($asIndex !== null) {
+            $as = $tokens[$asIndex];
+
+            if (is_array($as) && $as[0] === T_AS) {
+                $aliasIndex = $this->nextSignificantTokenIndex($tokens, $asIndex + 1);
+                $alias = $aliasIndex === null ? null : $tokens[$aliasIndex];
+
+                if (is_array($alias) && $alias[0] === T_STRING) {
+                    return $alias[1];
+                }
+            }
+        }
+
+        $separator = strrpos($name, '\\');
+
+        return $separator === false ? $name : substr($name, $separator + 1);
+    }
+
+    /** @param list<array{int, string, int}|string> $tokens */
+    private function namespaceName(array $tokens, int $namespaceIndex): string
+    {
+        $nameIndex = $this->nextSignificantTokenIndex($tokens, $namespaceIndex + 1);
+
+        if ($nameIndex === null) {
+            return '';
+        }
+
+        $name = $tokens[$nameIndex];
+
+        if (
+            !is_array($name)
+            || !in_array(
+                $name[0],
+                [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED, T_NAME_RELATIVE],
+                true,
+            )
+        ) {
+            return '';
+        }
+
+        return strtolower(ltrim($name[1], '\\'));
+    }
+
+    /** @param list<array{int, string, int}|string> $tokens */
+    private function isStaticConnectCall(array $tokens, int $nameIndex): bool
+    {
+        $doubleColonIndex = $this->nextSignificantTokenIndex($tokens, $nameIndex + 1);
+
+        if ($doubleColonIndex === null) {
+            return false;
+        }
+
+        $doubleColon = $tokens[$doubleColonIndex];
+
+        if (!is_array($doubleColon) || $doubleColon[0] !== T_DOUBLE_COLON) {
+            return false;
+        }
+
+        $methodIndex = $this->nextSignificantTokenIndex($tokens, $doubleColonIndex + 1);
+        $method = $methodIndex === null ? null : $tokens[$methodIndex];
+
+        if (
+            !is_array($method)
+            || $method[0] !== T_STRING
+            || strtolower($method[1]) !== 'connect'
+        ) {
+            return false;
+        }
+
+        $openIndex = $this->nextSignificantTokenIndex($tokens, $methodIndex + 1);
+
+        if ($openIndex === null || $tokens[$openIndex] !== '(') {
+            return false;
+        }
+
+        $argumentIndex = $this->nextSignificantTokenIndex($tokens, $openIndex + 1);
+        $argument = $argumentIndex === null ? null : $tokens[$argumentIndex];
+
+        if (is_array($argument) && $argument[0] === T_ELLIPSIS) {
+            $closeIndex = $this->nextSignificantTokenIndex($tokens, $argumentIndex + 1);
+
+            if ($closeIndex !== null && $tokens[$closeIndex] === ')') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param list<array{int, string, int}|string> $tokens
+     */
+    private function nextSignificantTokenIndex(array $tokens, int $start): ?int
+    {
+        for ($index = $start, $count = count($tokens); $index < $count; $index++) {
+            $token = $tokens[$index];
+
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            return $index;
+        }
+
+        return null;
+    }
+
+    /** @param array{int, string, int}|string $token */
+    private function tokenText(array|string $token): string
+    {
+        return is_array($token) ? $token[1] : $token;
     }
 
     /** @return list<string> */

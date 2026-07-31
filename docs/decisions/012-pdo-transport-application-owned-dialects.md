@@ -25,6 +25,8 @@ The certification harness runs SQLite by default and all three engines in dedica
 
 Applications own complete SQL strings and all engine-specific behavior. Every application records each connection's engine and version, required `ext-pdo_*` Composer extension, non-secret configuration source, schema authority, dialect assumptions, and integration-test command in `.ai/data.md`. The framework continues to require only `ext-pdo`; applications require their actual runtime drivers.
 
+ADR 038 later separates this historical "schema authority" wording into database and object definition source, engine-supported namespace selection and qualification, namespace and object control-or-ownership or explicit non-applicability, effective runtime authority, authority-transition ownership, and release evidence. It adds no dialect or permission abstraction.
+
 Every placeholder occurrence uses a distinct name because native prepared-statement behavior for repeated names differs by driver. Selected expressions use unique column names or aliases because associative fetching cannot preserve duplicate keys. `rowCount()` is not used for reads, and application tests establish any update semantics they rely on.
 
 Multiple databases are wired as separately named `Connection` objects in the composition root. Each receives an explicit `QueryBudget` and a distinct `QueryTrace`; traces have no connection identity and must not be shared across engines. This decision originally allowed a deliberately documented shared request-wide budget. ADR 023 supersedes that option for terminal-summary sources: no two registered sources may share a budget or trace. Transactions are local to one connection. PHPThis provides no distributed transaction or cross-database atomicity guarantee.

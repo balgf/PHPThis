@@ -23,6 +23,8 @@ When either choice remains unresolved, the AI asks all unresolved scope choices 
 
 Configuration structure only is a complete scope: it adds the non-secret input contract and typed parser or factory with child-process parsing, failure, and redaction evidence, while deferring connection construction and composition injection. It does not leave another hidden implementation choice for the AI to ask later.
 
+Selecting connection or migration scope does not select a schema name, ownership topology, runtime grants, privilege-transition path, or deployment order. ADR 038 requires those facts only when the corresponding database authority is adopted.
+
 The frozen ambiguous evaluation prompt is:
 
 > Please setup PostgreSQL as our main DB.

@@ -14,6 +14,8 @@ The first migration proof is entirely application-owned and SQLite-specific. It 
 
 The command is operational and explicit. It is never called from the front controller, HTTP composition, request handling, application bootstrap, or an automatic deployment hook. An accountable operator or deployment workflow invokes it with the separately authorized migration identity after the application's backup, maintenance-window, timeout, and recovery policy has been satisfied. The web runtime does not receive that authority.
 
+ADR 038 later clarifies that successful migration execution does not activate or prove a separate runtime identity's authority. Any adopted authority activation or deactivation path, including engine-specific `GRANT` or `REVOKE` SQL when supported and selected, exact-engine verification, and release ordering remain explicit application-owned decisions.
+
 ### Finite manifest and immutable history
 
 One final application-owned migration coordinator names every concrete migration step in one reviewed order and invokes each pending private step method in straight-line, unrolled code. Adding a migration requires an ordinary source edit to that coordinator and the matching tests. No filename, directory entry, class name, attribute, annotation, service registration, reflection result, or database value selects executable PHP or SQL.

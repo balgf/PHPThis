@@ -117,6 +117,8 @@ These names and bounds illustrate the structure; each application owns its real 
 
 HTTP calls only `forHttp()`. When migrations are adopted, their command calls only `forMigrations()` and neither profile falls back to the other. If a deployment explicitly needs administrative authority, give it another exact input set, final readonly type, factory, entrypoint, and test; never expose it to HTTP composition.
 
+Typed separation proves only which values each entrypoint can receive. It does not create database identities, activate authority, establish a namespace or object control-or-ownership model, or prove that the runtime can execute application statements. When connection scope is selected, record those engine-specific facts and their verification in `.ai/data.md`; record migration and authority-transition ownership in `.ai/migrations.md` when adopted, and the pre-traffic release sequence in `.ai/operations.md`. See [ADR 038](decisions/038-application-owned-database-authority-lifecycle.md).
+
 ## Explicit composition when connection scope is selected
 
 When connection scope is selected, the composition root receives the final typed value and constructs infrastructure visibly. Configuration-only scope stops after the tested typed boundary and records this connection composition as deferred:

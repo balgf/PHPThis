@@ -1,13 +1,14 @@
 # Migration authoring contract
 
-Read [ADR 027](../docs/decisions/027-application-owned-explicit-sqlite-migrations.md), [Explicit application migrations](../docs/migrations.md), `.ai/database.md`, `.ai/cli.md`, and `.ai/testing.md` before adding or changing a migration.
+Read [ADR 027](../docs/decisions/027-application-owned-explicit-sqlite-migrations.md), ADR 038, [Explicit application migrations](../docs/migrations.md), `.ai/database.md`, `.ai/cli.md`, and `.ai/testing.md` before adding or changing a migration.
 
 PHPThis provides no core migration API. The accepted proof is application-owned and SQLite-specific.
 
 Rules:
 
 - Keep `database:migrate` on the application's sole explicit console. Never run it during HTTP startup or through framework `bin/phpthis`.
-- Give the migration process separately authorized schema credentials or the equivalent SQLite file/process authority; keep that authority unavailable to the web runtime.
+- Record the accepted engine-specific database/catalog/schema/attachment namespace model, namespace and object control-or-ownership or non-applicability, DDL, authority, locking, recovery, and integration decision. Give the migration process only its exact required capabilities, record explicitly prohibited capabilities, or record the applicable SQLite file/process authority; keep elevated authority unavailable to the web runtime.
+- Name who owns each authority activation and deactivation. Record whether complete engine-specific `GRANT` or `REVOKE` SQL, when supported and selected, is visible and checksum-covered in a migration, a separately authorized application stage owns the transition, or a named external provisioning source owns it; never leave activation implicit or run it through HTTP.
 - Keep one final concrete coordinator with one finite ordered source manifest and unrolled private migration-step methods. Do not scan files, discover classes, resolve strings, or load runtime `.sql` files.
 - Give every migration one permanent bounded identifier, complete raw SQLite compile-time-constant statements, direct `Connection` calls, explicit unique named bindings where data exists, and a SHA-256 checksum covering the identifier and exact statement sequence.
 - Validate the entire bounded ledger and every applied checksum before pending work. Reject overflow, unknown, duplicate, missing, reordered, malformed, or edited history; never repair it silently.
@@ -17,6 +18,7 @@ Rules:
 - Use a fresh migration connection with an explicit finite budget and bounded trace. Store only position, identifier, checksum, and one explicitly selected and documented timestamp in the bounded ledger; the example uses SQLite `unixepoch()` in the ledger insert and no hidden default.
 - Return only finite `applied` or `up_to_date` success and finite redacted nonzero failures. Never emit paths, DSNs, credentials, SQL, bindings, exception details, ledger contents, schema contents, or application data.
 - Add a new forward migration to correct history. Backup restoration or another recovery mutation requires separate explicit human authorization.
+- Record the application-owned order and compatibility among migration, runtime-authority activation, exact-engine positive and negative verification, application rollout, traffic enablement, later authority deactivation, and namespace removal. A failed dependent stage stops rollout; remove or drain dependent code before deactivating its authority or removing a namespace it needs.
 - Keep MySQL, PostgreSQL, and other engines outside this proof; they require separate engine-specific transaction, DDL-lock, privilege, recovery, and integration decisions.
 
-Evidence must cover empty application, deterministic order, exact bounded ledger, no-op rerun, drift rejection before further work, malformed and overflowing ledger, nonblocking overlap, partial failure and continuation, exact CLI bytes and redaction, no HTTP migration path, and the complete project gate.
+Evidence must cover empty application, deterministic order, exact bounded ledger, no-op rerun, drift rejection before further work, malformed and overflowing ledger, nonblocking overlap, partial failure and continuation, exact CLI bytes and redaction, no HTTP migration or authority-transition path, and the complete project gate. For every adopted transition, execute each intended statement under the runtime identity before traffic, safely verify selected prohibited namespace, DDL, identity or role, authority-management, administrative, migration-ledger, and unrelated-object actions against the exact engine and version, record the engine's actual effective-authority resolution, and prove HTTP cannot obtain elevated configuration.

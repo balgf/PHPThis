@@ -93,7 +93,9 @@ try {
 
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
+    proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);
     proveInstalledUuidAndUlidRouting($project, $environment);
+    proveDatabaseContextConnectionConsistency($project, $profileCommand, $environment);
     proveInstalledTypedConfiguration($project, $profileCommand, $environment);
     $requestHandlerDecoratorProofPath = proveInstalledRequestHandlerDecorator($project, $environment);
 
@@ -248,8 +250,8 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
             'do not store task scope or task history here',
         ],
         $installedFramework . '/templates/application/.ai/data.md' => [
-            '{{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}',
-            '{{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}}',
+            '{{ELEVATED_DATABASE_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}',
+            '{{ELEVATED_DATABASE_AUTHORITY_ISOLATION_OR_NOT_APPLICABLE}}',
         ],
         $installedFramework . '/templates/application/.ai/testing.md' => [
             'Provisioning and production evidence is required only for explicitly selected scopes.',
@@ -271,6 +273,135 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
     }
 
     fwrite(STDOUT, "PASS installed database setup guidance distribution\n");
+}
+
+function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/data.md' => [
+            "\n`NOT_APPLICABLE(DATABASE)`\n",
+            'database/catalog/schema/attachment namespace selection and qualification as supported',
+            'namespace and object control or ownership model or explicit N/A',
+            'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+            'one non-HTTP owner and path for every adopted authority activation and deactivation, `GRANT` and `REVOKE` only where supported',
+            'Configuration, connectivity, target existence, and migration completion do not activate runtime authority.',
+        ],
+        $project . '/.ai/migrations.md' => [
+            'accepted engine-specific database definition or provisioning, supported namespace/control model, data-definition, authority, locking, recovery, and integration decision',
+            'one owner and complete non-HTTP path for each authority activation and deactivation, with `GRANT` and `REVOKE` only where supported',
+            'runtime-authority activation handoff, exact-engine positive and negative verification',
+            'application rollout and traffic-enablement order',
+        ],
+        $project . '/.ai/operations.md' => [
+            'authority-transition owner or activation stage',
+            'application-owned order and compatibility among migration, authority activation, exact-engine verification, application rollout, traffic enablement, later authority deactivation',
+            'No universal deployment order is inferred',
+        ],
+        $project . '/.ai/testing.md' => [
+            'Execute every intended statement under the runtime identity before traffic',
+            'selected prohibited namespace, data-definition, identity or role, authority-administration, migration-ledger, database or global, and unrelated-target capabilities',
+            'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+            'each adopted authority activation and deactivation has one visible non-HTTP owner and path, record `GRANT` and `REVOKE` only where supported',
+            'elevated configuration remains unavailable to HTTP',
+            'Configuration, connectivity, target existence, migration success, PHT006, tenant predicates, and adversarial bindings are not universal authority',
+        ],
+        $installedFramework . '/docs/decisions/038-application-owned-database-authority-lifecycle.md' => [
+            'Status: accepted',
+            'Database and object definition source; database/catalog/schema/attachment namespace selection and qualification as supported; namespace and object control-or-ownership; and active authority are separate application facts.',
+            'Withholding all runtime object access is valid before a named application operation exists.',
+            'Each adopted authority activation or deactivation has one explicit application-owned path.',
+            'The installed application checker adds one deliberately narrow context-consistency check',
+            'No framework runtime type or dependency is added.',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'treat zero runtime object access as valid before a named application operation exists',
+            'record how effective authority resolves under the selected engine, using only applicable direct, role or inherited, public or default, database or global, ownership-chain, IAM, filesystem or process, or other engine-specific sources',
+            '`GRANT` or `REVOKE` migration SQL when supported and selected',
+            'record the application-owned ordering among migration, authority activation, exact-engine authority verification, application rollout, and traffic enablement',
+            'Configuration parsing, successful connectivity, `SELECT 1`, object existence, and migration success do not prove usable runtime authority.',
+        ],
+        $installedFramework . '/docs/database.md' => [
+            '### Authority activation lifecycle',
+            'Configuration and source presence do not activate database authority.',
+            'Database and object definition source; database/catalog/schema/attachment namespace selection and qualification as supported; namespace and object control-or-ownership; and active authority are separate facts.',
+            'Record only applicable sources, such as direct, role or inherited, public or default, database or global, ownership-chain, IAM, or filesystem and process authority.',
+            'Each adopted authority activation or deactivation has one explicit application-owned owner and path.',
+            '`GRANT` or `REVOKE` SQL may be visible and checksum-covered inside a migration when the selected engine supports and uses it',
+        ],
+        $installedFramework . '/docs/security.md' => [
+            'Withholding runtime object access is valid until a named operation exists.',
+            'Account for effective authority using only the engine\'s applicable direct, role or inherited, public or default, database or global, ownership-chain, IAM, filesystem or process, or other sources.',
+            'Every authority activation and deactivation has one recorded application-owned owner and non-HTTP path.',
+            '`GRANT` or `REVOKE` SQL is supported, selected, and part of a migration',
+            'PHPThis neither requires nor discourages an engine-default or application-specific database, catalog, schema, attachment namespace, or equivalent.',
+        ],
+        $installedFramework . '/docs/migrations.md' => [
+            '## Authority transition and release handoff',
+            'Migration success proves the migration path only.',
+            'Before dependent code receives traffic, positive evidence executes its exact runtime statements under the runtime identity',
+            'PHPThis does not prescribe migration-first or code-first rollout.',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            "A separate installed distribution proof checks that ADR 038's application-owned authority lifecycle remains present",
+            'This marker proof is a source-distribution check only: it performs no live authority probe, validates no engine privilege or control model',
+        ],
+        $installedFramework . '/templates/application/AGENTS.md' => [
+            'database, catalog, schema, or attachment namespace selection and qualification as supported by the chosen engine',
+            'namespace and object control or ownership model, with explicit not-applicable facts where the engine has no such model',
+            'each named operation\'s exact statements, targets, required capabilities, and prohibited capabilities',
+            'effective authority resolution source, using only applicable mechanisms such as direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+            'Give each adopted authority activation or deactivation one non-HTTP owner and path; record `GRANT` or `REVOKE` only where supported.',
+            'activate and verify it before dependent code receives traffic',
+        ],
+        $installedFramework . '/templates/application/.ai/data.md' => [
+            '{{CONNECTION_1_DATABASE_DEFINITION_OR_PROVISIONING_SOURCE}}',
+            '{{CONNECTION_1_NAMESPACE_SELECTION_AND_QUALIFICATION_POLICY}}',
+            '{{CONNECTION_1_NAMESPACE_AND_OBJECT_CONTROL_OR_OWNERSHIP_MODEL_OR_NOT_APPLICABLE}}',
+            '{{DATABASE_AUTHORITY_1_CONNECTION_AND_OPERATION}}',
+            '{{DATABASE_AUTHORITY_1_EFFECTIVE_AUTHORITY_RESOLUTION_SOURCE}}',
+            '{{DATABASE_AUTHORITY_ACTIVATION_AND_DEACTIVATION_PATH_OR_NOT_APPLICABLE}}',
+            'Authority activation and deactivation owner, complete non-HTTP path, and transition source; `GRANT` and `REVOKE` only where supported',
+        ],
+        $installedFramework . '/templates/application/.ai/migrations.md' => [
+            '{{MIGRATION_ENGINE_DECISION_SOURCE_OR_NOT_APPLICABLE}}',
+            '{{MIGRATION_REQUIRED_AND_PROHIBITED_CAPABILITIES_OR_NOT_APPLICABLE}}',
+            '{{MIGRATION_AUTHORITY_TRANSITION_PATH_OR_NOT_APPLICABLE}}',
+            '{{MIGRATION_RUNTIME_AUTHORITY_HANDOFF_AND_EVIDENCE_OR_NOT_APPLICABLE}}',
+            '{{MIGRATION_RELEASE_SEQUENCE_OR_NOT_APPLICABLE}}',
+        ],
+        $installedFramework . '/templates/application/.ai/operations.md' => [
+            '{{DATABASE_AUTHORITY_AND_RELEASE_DECISION_SOURCE_OR_NOT_APPLICABLE}}',
+            '{{DATABASE_AUTHORITY_TRANSITION_OPERATIONS_OR_NOT_APPLICABLE}}',
+            '{{DATABASE_RELEASE_SEQUENCE_OR_NOT_APPLICABLE}}',
+            '{{DATABASE_COMPATIBILITY_DEACTIVATION_AND_REMOVAL_POLICY_OR_NOT_APPLICABLE}}',
+            '{{DATABASE_PRE_TRAFFIC_AUTHORITY_GATE_EVIDENCE_AND_OWNER_OR_NOT_APPLICABLE}}',
+        ],
+        $installedFramework . '/templates/application/.ai/testing.md' => [
+            'executes every intended statement for each named operation under the runtime identity before traffic',
+            'selected prohibited namespace, data-definition, identity or role, authority-administration, migration-ledger, database or global, and unrelated-target capabilities',
+            'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+            'Configuration, connectivity, target existence, and migration success are not authority evidence.',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed database authority lifecycle artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed database authority lifecycle artifact {$path} is missing marker: {$marker}");
+            }
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed database authority lifecycle guidance distribution\n");
 }
 
 /** @param array<string, string> $environment */
@@ -337,6 +468,316 @@ PHP,
  * @param list<string> $profileCommand
  * @param array<string, string> $environment
  */
+function proveDatabaseContextConnectionConsistency(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $contextPath = $project . '/.ai/data.md';
+    $originalContext = file_get_contents($contextPath);
+
+    if (!is_string($originalContext)) {
+        throw new RuntimeException('Unable to read the consumer database context control.');
+    }
+
+    /** @var array<string, string> $connectionSources */
+    $connectionSources = [
+        $project . '/DatabaseContextOrdinaryControl.php' => <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryTrace;
+
+final class DatabaseContextOrdinaryControl
+{
+    public static function connect(): Connection
+    {
+        return Connection::connect('sqlite::memory:', new QueryBudget(1), new QueryTrace(1));
+    }
+}
+PHP,
+        $project . '/DatabaseContextAliasControl.php' => <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\Connection as DatabaseConnectionAlias;
+use PHPThis\Database\QueryBudget as DatabaseQueryBudgetAlias;
+use PHPThis\Database\QueryTrace as DatabaseQueryTraceAlias;
+
+final class DatabaseContextAliasControl
+{
+    public static function connect(): DatabaseConnectionAlias
+    {
+        return DatabaseConnectionAlias::connect(
+            'sqlite::memory:',
+            new DatabaseQueryBudgetAlias(1),
+            new DatabaseQueryTraceAlias(1),
+        );
+    }
+}
+PHP,
+        $project . '/DatabaseContextGroupedControl.php' => <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\{
+    Connection as GroupedDatabaseConnection,
+    QueryBudget as GroupedDatabaseQueryBudget,
+    QueryTrace as GroupedDatabaseQueryTrace,
+};
+
+final class DatabaseContextGroupedControl
+{
+    public static function connect(): GroupedDatabaseConnection
+    {
+        return GroupedDatabaseConnection::connect(
+            'sqlite::memory:',
+            new GroupedDatabaseQueryBudget(1),
+            new GroupedDatabaseQueryTrace(1),
+        );
+    }
+}
+PHP,
+        $project . '/DatabaseContextNamespaceAliasControl.php' => <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database as DB;
+
+final class DatabaseContextNamespaceAliasControl
+{
+    public static function connect(): DB\Connection
+    {
+        return DB\Connection::connect(
+            'sqlite::memory:',
+            new DB\QueryBudget(1),
+            new DB\QueryTrace(1),
+        );
+    }
+}
+PHP,
+        $project . '/DatabaseContextNamespaceImportControl.php' => <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database;
+
+final class DatabaseContextNamespaceImportControl
+{
+    public static function connect(): Database\Connection
+    {
+        return Database\Connection::connect(
+            'sqlite::memory:',
+            new Database\QueryBudget(1),
+            new Database\QueryTrace(1),
+        );
+    }
+}
+PHP,
+        $project . '/DatabaseContextCurrentNamespaceControl.php' => <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace PHPThis;
+
+final class DatabaseContextCurrentNamespaceControl
+{
+    public static function connect(): Database\Connection
+    {
+        return Database\Connection::connect(
+            'sqlite::memory:',
+            new Database\QueryBudget(1),
+            new Database\QueryTrace(1),
+        );
+    }
+}
+PHP,
+        $project . '/DatabaseContextFullyQualifiedControl.php' => <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+final class DatabaseContextFullyQualifiedControl
+{
+    public static function connect(): \PHPThis\Database\Connection
+    {
+        return \PHPThis\Database\Connection::connect(
+            'sqlite::memory:',
+            new \PHPThis\Database\QueryBudget(1),
+            new \PHPThis\Database\QueryTrace(1),
+        );
+    }
+}
+PHP,
+    ];
+    $documentationPath = $project . '/DatabaseContextDocumentationControl.php';
+    $diagnostic = 'Application data context declares no database while application-owned PHP calls PHPThis\\Database\\Connection::connect; replace the not-applicable declaration with the explicit database contract.';
+    $notApplicableContext = <<<'MD'
+# Application data contract
+
+`NOT_APPLICABLE(DATABASE)`
+
+The installed structural control currently declares no database.
+MD;
+    $legacyNotApplicableLine = '`NOT_APPLICABLE`: the starter has no database, persisted resource, or CRUD-shaped behavior. It therefore has no SQL, structural selectors, bounded data lists, database identities or privileges, migrations, CRUD resource identifiers or item/collection routes, pagination, create identity or conflicts, `PUT`/`PATCH` or concurrency policy, missing-resource semantics, deletion or retention policy, resource authorization, or audit events.';
+    $ordinaryPath = array_key_first($connectionSources);
+
+    if (!is_string($ordinaryPath)) {
+        throw new RuntimeException('The database context controls are empty.');
+    }
+
+    try {
+        writeFile($contextPath, $notApplicableContext);
+
+        foreach ($connectionSources as $sourcePath => $source) {
+            writeFile($sourcePath, $source);
+            $result = runProcess($profileCommand, $project, $environment);
+
+            if ($sourcePath === $ordinaryPath) {
+                requireExactFailureLines(
+                    $result,
+                    ['FAIL ' . $diagnostic],
+                    'The isolated database-context diagnostic changed.',
+                );
+            } else {
+                requireFailure(
+                    $result,
+                    basename($sourcePath) . ' passed while the application data context declared no database.',
+                );
+                requireOutputContains($result, $diagnostic);
+            }
+
+            if (!unlink($sourcePath)) {
+                throw new RuntimeException("Unable to remove database context control {$sourcePath}.");
+            }
+        }
+
+        writeFile($ordinaryPath, $connectionSources[$ordinaryPath]);
+        writeFile(
+            $contextPath,
+            "# Application data contract\r\n\r\n`NOT_APPLICABLE(DATABASE)`\r\n\r\nThe installed structural control currently declares no database.\r\n",
+        );
+        $crlfResult = runProcess($profileCommand, $project, $environment);
+        requireFailure(
+            $crlfResult,
+            'CRLF database context bypassed the not-applicable Connection::connect check.',
+        );
+        requireOutputContains($crlfResult, $diagnostic);
+
+        writeFile(
+            $contextPath,
+            "# Application data contract\n\n{$legacyNotApplicableLine}\n",
+        );
+        $legacyMarkerResult = runProcess($profileCommand, $project, $environment);
+        requireFailure(
+            $legacyMarkerResult,
+            'The legacy starter no-database declaration bypassed the Connection::connect check.',
+        );
+        requireOutputContains($legacyMarkerResult, $diagnostic);
+
+        /** @var array<string, string> $nonDeclarationContexts */
+        $nonDeclarationContexts = [
+            'an unmatched leading backtick' => "# Application data contract\n\n`NOT_APPLICABLE(DATABASE)\n",
+            'an unmatched trailing backtick' => "# Application data contract\n\nNOT_APPLICABLE(DATABASE)`\n",
+            'legacy text quoted inside adopted prose' => installedSyntheticDatabaseContext()
+                . "\nThe replaced starter declaration was quoted as: {$legacyNotApplicableLine}\n",
+        ];
+
+        foreach ($nonDeclarationContexts as $label => $nonDeclarationContext) {
+            writeFile($contextPath, $nonDeclarationContext);
+            $nonDeclarationResult = runProcess($profileCommand, $project, $environment);
+            requireSuccess(
+                $nonDeclarationResult,
+                "Database context with {$label} was mistaken for a no-database declaration.",
+            );
+        }
+
+        if (!unlink($ordinaryPath)) {
+            throw new RuntimeException('Unable to remove the CRLF database context control.');
+        }
+
+        writeFile(
+            $documentationPath,
+            <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\Connection;
+
+// Documentation only: \PHPThis\Database\Connection::connect(...)
+final class DatabaseContextDocumentationControl
+{
+    private const CONNECTION_TYPE = Connection::class;
+
+    private const EXAMPLE = 'PHPThis\\Database\\Connection::connect';
+
+    public static function example(): string
+    {
+        return self::CONNECTION_TYPE . ':' . self::EXAMPLE;
+    }
+}
+PHP,
+        );
+        $documentationResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $documentationResult,
+            'A comment or string mentioning Connection::connect was mistaken for executable database use.',
+        );
+
+        if (!unlink($documentationPath)) {
+            throw new RuntimeException('Unable to remove the database context documentation control.');
+        }
+
+        foreach ($connectionSources as $sourcePath => $source) {
+            writeFile($sourcePath, $source);
+        }
+
+        writeFile($contextPath, installedSyntheticDatabaseContext());
+        $adoptedContextResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $adoptedContextResult,
+            'Canonical Connection::connect forms failed with an adopted synthetic SQLite data context.',
+        );
+
+        fwrite(STDOUT, "PASS installed database-context connection consistency\n");
+    } finally {
+        writeFile($contextPath, $originalContext);
+
+        foreach ([...array_keys($connectionSources), $documentationPath] as $sourcePath) {
+            if (is_file($sourcePath) && !unlink($sourcePath)) {
+                throw new RuntimeException("Unable to remove database context control {$sourcePath}.");
+            }
+        }
+    }
+}
+
+function installedSyntheticDatabaseContext(): string
+{
+    return <<<'MD'
+# Installed synthetic SQLite data contract
+
+- Connection and engine: proof-only in-memory SQLite through `pdo_sqlite`; no persistent or shared database is contacted.
+- Schema definition source: no persistent schema or migration is adopted; the executable proof statement is the code-owned constant `SELECT 1 AS configured`.
+- Structural namespace/control model: SQLite's default `main` attachment namespace exists only inside each in-memory proof connection; this is structural context, not live namespace ownership or authority evidence.
+- Runtime operation and capability: the synthetic configuration proof may connect and execute only its named constant `SELECT 1 AS configured` statement.
+- Elevated path: the separately composed synthetic migration-profile connection proves typed configuration delivery only; it performs no DDL, identity-management, authority-management, or administrative action and never falls back to runtime configuration.
+- Authority evidence: installed static checking and isolated synthetic execution prove only the recorded code and process separation. They do not inspect or prove any engine's effective-authority resolution, activation or deactivation, production identity isolation, or deployment order; no live authority probe runs.
+MD;
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
 function proveInstalledTypedConfiguration(
     string $project,
     array $profileCommand,
@@ -346,10 +787,12 @@ function proveInstalledTypedConfiguration(
     $runtimePath = $project . '/installed-runtime-entrypoint.php';
     $migrationPath = $project . '/installed-migration-entrypoint.php';
     $contextPath = $project . '/.ai/configuration.md';
+    $dataContextPath = $project . '/.ai/data.md';
     $originalContext = file_get_contents($contextPath);
+    $originalDataContext = file_get_contents($dataContextPath);
 
-    if (!is_string($originalContext)) {
-        throw new RuntimeException('Unable to read the installed configuration context proof.');
+    if (!is_string($originalContext) || !is_string($originalDataContext)) {
+        throw new RuntimeException('Unable to read the installed configuration and data context proof.');
     }
 
     writeFile(
@@ -683,6 +1126,7 @@ PHP,
 - Evidence: child-process tests execute both real entrypoint files, exact delivery through the installed connection, accepted bounds, every validation branch, poisoned opposite-authority inputs, per-field no-fallback controls, zero infrastructure calls on rejection, sensitivity reflection, exact redacted bytes, a real query, and the installed public checker.
 MD,
     );
+    writeFile($dataContextPath, installedSyntheticDatabaseContext());
 
     $configurationNames = [
         'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
@@ -1005,6 +1449,7 @@ MD,
         requireSuccess($profileResult, 'Canonical one-file configuration failed the installed profile.');
     } finally {
         writeFile($contextPath, $originalContext);
+        writeFile($dataContextPath, $originalDataContext);
 
         foreach ([$boundaryPath, $runtimePath, $migrationPath] as $proofPath) {
             if (is_file($proofPath) && !unlink($proofPath)) {

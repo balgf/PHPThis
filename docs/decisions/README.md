@@ -45,3 +45,4 @@ Accepted records:
 - `035-bounded-alpha-4-release-scope.md`
 - `036-one-typed-application-configuration-boundary.md`
 - `037-database-setup-scope-gate.md`
+- `038-application-owned-database-authority-lifecycle.md`

@@ -70,6 +70,7 @@ docs/decisions/034-application-owned-websocket-integration.md
 docs/decisions/035-bounded-alpha-4-release-scope.md
 docs/decisions/036-one-typed-application-configuration-boundary.md
 docs/decisions/037-database-setup-scope-gate.md
+docs/decisions/038-application-owned-database-authority-lifecycle.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

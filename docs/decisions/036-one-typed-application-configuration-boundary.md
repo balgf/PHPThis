@@ -24,6 +24,8 @@ Each adopted runtime, migration, or administrative profile uses distinct exact n
 
 Actual values remain outside source, committed AI context, logs, traces, exceptions, and test output. Deployment-injected environment is a delivery mechanism, not encrypted storage. `.env` and `.env.*` remain ignored except for an optional `.env.example` containing names and obviously non-secret placeholders. PHPThis never loads that file automatically. Tests that need process values supply an explicit child-process environment instead of mutating application process state through `putenv`.
 
+ADR 038 later clarifies that typed configuration and successful connection composition do not activate or prove database authority. Schema ownership, runtime capabilities, privilege transitions, exact-engine verification, and release sequencing remain separate application facts.
+
 `Connection::connect` marks its password parameter with `#[\SensitiveParameter]`. That narrows accidental stack-trace disclosure at this wrapper boundary only; it does not encrypt the value or prevent explicit logging, dumping, copying, or serialization.
 
 No application or deployment configuration runtime or class enters framework `src/`, and no runtime dependency is added. Existing narrowly scoped framework value types such as `SessionConfiguration` remain unrelated to this application deployment-input boundary. The one `SensitiveParameter` declaration increases reviewed framework core from 2,592 to 2,593 physical lines within the existing 2,600-line ceiling.

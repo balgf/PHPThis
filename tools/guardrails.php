@@ -1173,7 +1173,7 @@ $alpha4ReleaseIdentityArtifactMarkers = [
     'docs/knowledge-map.md' => [
         '`docs/releases/0.1.0-alpha.4.md`',
         'ADR 035, ADR 032 through ADR 034 for the Alpha 4 rollup',
-        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, PHT007, and the database setup scope gate',
+        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, PHT007, the database setup scope gate, and the application-owned database authority lifecycle',
     ],
     'docs/releases/0.1.0-alpha.4.md' => [
         'Release identity: `0.1.0-alpha.4`. Publication state is external',
@@ -1348,7 +1348,7 @@ foreach ($configurationArtifactMarkers as $relativePath => $markers) {
 
 $databaseSetupScopeArtifactMarkers = [
     'AGENTS.md' => [
-        'do not invent elevated authority for a deferred path.',
+        'invent elevated authority for a deferred path.',
         'configuration-only scope instead records connection composition as deferred and proves its parser in a child process.',
     ],
     'docs/decisions/037-database-setup-scope-gate.md' => [
@@ -1386,7 +1386,7 @@ $databaseSetupScopeArtifactMarkers = [
     'docs/knowledge-map.md' => [
         '| Select or set up a database engine |',
         'load and prove only the selected slice',
-        'ADR 036 and ADR 037 for accepted post-Alpha-4 working-tree changes',
+        'ADR 036 through ADR 038 for accepted post-Alpha-4 working-tree changes',
     ],
     'docs/guardrails.md' => [
         "accepted ADR 037, its early application scope gate, configuration-only typed-boundary meaning, external-I/O prohibition before approval, conditional process profiles, package inventory, and installed-consumer guidance-distribution evidence remain present",
@@ -1450,11 +1450,11 @@ $databaseSetupScopeArtifactMarkers = [
     ],
     'templates/application/.ai/data.md' => [
         'Record a separate migration or administrative identity only when that path is adopted',
-        '{{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}',
-        '{{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}}',
+        '{{ELEVATED_DATABASE_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}',
+        '{{ELEVATED_DATABASE_AUTHORITY_ISOLATION_OR_NOT_APPLICABLE}}',
     ],
     'skeleton/.ai/data.md' => [
-        'Record a separate migration or administrative identity, isolation mechanism, and no-runtime-fallback evidence only when that elevated path is adopted',
+        'a separate migration or administrative identity only when that elevated path is adopted',
     ],
     'templates/application/.ai/testing.md' => [
         'Provisioning and production evidence is required only for explicitly selected scopes.',
@@ -1514,6 +1514,209 @@ foreach ($databaseSetupScopeForbiddenArtifactMarkers as $relativePath => $marker
     foreach ($markers as $marker) {
         if (str_contains($contents, $marker)) {
             $failures[] = "Forbidden database setup scope artifact marker remains in {$relativePath}: {$marker}";
+        }
+    }
+}
+
+$databaseAuthorityLifecycleArtifactMarkers = [
+    'AGENTS.md' => [
+        'Keep the database and object definition source, database/catalog/schema/attachment namespace selection and qualification as supported, namespace and object control-or-ownership model (`NOT_APPLICABLE` when the engine has no ownership concept), and active database authority as separate application facts.',
+        'record how migration, authority activation, verification, rollout, traffic, later deactivation, and failure recovery are ordered.',
+        'before dependent code receives traffic, execute its exact statements under the runtime identity and safely verify selected prohibited actions against the recorded engine and version.',
+    ],
+    'docs/decisions/038-application-owned-database-authority-lifecycle.md' => [
+        'Status: accepted',
+        'Configuration and source presence do not activate database authority.',
+        'Withholding all runtime object access is valid before a named application operation exists.',
+        'The installed application checker adds one deliberately narrow context-consistency check',
+        'No framework runtime type or dependency is added.',
+    ],
+    'docs/decisions/README.md' => [
+        '`038-application-owned-database-authority-lifecycle.md`',
+    ],
+    'docs/consumer-contract.md' => [
+        'treat zero runtime object access as valid before a named application operation exists',
+        'record how effective authority resolves under the selected engine, using only applicable direct, role or inherited, public or default, database or global, ownership-chain, IAM, filesystem or process, or other engine-specific sources',
+        'record the application-owned ordering among migration, authority activation, exact-engine authority verification, application rollout, and traffic enablement',
+        'Configuration parsing, successful connectivity, `SELECT 1`, object existence, and migration success do not prove usable runtime authority.',
+        'adds one ordinary context-consistency failure without a `PHT` diagnostic',
+    ],
+    'docs/database.md' => [
+        '### Authority activation lifecycle',
+        'Configuration and source presence do not activate database authority.',
+        'Database and object definition source; database/catalog/schema/attachment namespace selection and qualification as supported; namespace and object control-or-ownership; and active authority are separate facts.',
+        'Record only applicable sources, such as direct, role or inherited, public or default, database or global, ownership-chain, IAM, or filesystem and process authority.',
+        'Each adopted authority activation or deactivation has one explicit application-owned owner and path.',
+        '`GRANT` or `REVOKE` SQL may be visible and checksum-covered inside a migration when the selected engine supports and uses it',
+        'PHPThis chooses no universal migration-first, code-first, rolling, or maintenance-window sequence.',
+    ],
+    'docs/security.md' => [
+        'Withholding runtime object access is valid until a named operation exists.',
+        'Account for effective authority using only the engine\'s applicable direct, role or inherited, public or default, database or global, ownership-chain, IAM, filesystem or process, or other sources.',
+        'Every authority activation and deactivation has one recorded application-owned owner and non-HTTP path.',
+        '`GRANT` or `REVOKE` SQL is supported, selected, and part of a migration',
+        'PHPThis neither requires nor discourages an engine-default or application-specific database, catalog, schema, attachment namespace, or equivalent.',
+    ],
+    'docs/migrations.md' => [
+        '## Authority transition and release handoff',
+        'Migration success proves the migration path only.',
+        'Before dependent code receives traffic, positive evidence executes its exact runtime statements under the runtime identity',
+        'PHPThis does not prescribe migration-first or code-first rollout.',
+        'does not establish production lock duration, availability, free-space behavior, crash recovery, backup restore, live effective authority, release ordering',
+    ],
+    'docs/knowledge-map.md' => [
+        'ADR 036 through ADR 038 for accepted post-Alpha-4 working-tree changes',
+        'supported database/catalog/schema/attachment namespace selection and qualification, namespace and object control-or-ownership model, per-operation runtime authority, activation and deactivation ownership, exact-engine positive and negative evidence',
+    ],
+    'docs/guardrails.md' => [
+        'application-owned canonical `PHPThis\Database\Connection::connect` calls cannot coexist with a standalone `NOT_APPLICABLE(DATABASE)` declaration',
+        "A separate installed distribution proof checks that ADR 038's application-owned authority lifecycle remains present",
+        'This marker proof is a source-distribution check only: it performs no live authority probe, validates no engine privilege or control model',
+    ],
+    '.ai/application-context.md' => [
+        "Keep ADR 038's application-owned database authority lifecycle in the consumer contract, both application contexts, and compact task routing.",
+        'Configuration, connectivity, object existence, and migration completion do not activate authority.',
+        'Do not prescribe a namespace, identity topology, default privilege, universal deployment order, permission helper, runtime introspection, or automatic hook.',
+    ],
+    'templates/application/AGENTS.md' => [
+        'database, catalog, schema, or attachment namespace selection and qualification as supported by the chosen engine',
+        'namespace and object control or ownership model, with explicit not-applicable facts where the engine has no such model',
+        'effective authority resolution source, using only applicable mechanisms such as direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+        'Give each adopted authority activation or deactivation one non-HTTP owner and path; record `GRANT` or `REVOKE` only where supported.',
+        'activate and verify it before dependent code receives traffic',
+    ],
+    'templates/application/.ai/data.md' => [
+        'Its first non-heading declaration is the canonical standalone marker:',
+        "\n`NOT_APPLICABLE(DATABASE)`\n",
+        '{{CONNECTION_1_DATABASE_DEFINITION_OR_PROVISIONING_SOURCE}}',
+        '{{CONNECTION_1_NAMESPACE_SELECTION_AND_QUALIFICATION_POLICY}}',
+        '{{CONNECTION_1_NAMESPACE_AND_OBJECT_CONTROL_OR_OWNERSHIP_MODEL_OR_NOT_APPLICABLE}}',
+        '{{DATABASE_AUTHORITY_1_CONNECTION_AND_OPERATION}}',
+        '{{DATABASE_AUTHORITY_1_EFFECTIVE_AUTHORITY_RESOLUTION_SOURCE}}',
+        '{{DATABASE_AUTHORITY_ACTIVATION_AND_DEACTIVATION_PATH_OR_NOT_APPLICABLE}}',
+        'Authority activation and deactivation owner, complete non-HTTP path, and transition source; `GRANT` and `REVOKE` only where supported',
+        'Activate and verify authority against the exact engine and version before dependent code receives traffic.',
+    ],
+    'templates/application/.ai/migrations.md' => [
+        '{{MIGRATION_ENGINE_DECISION_SOURCE_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_REQUIRED_AND_PROHIBITED_CAPABILITIES_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_AUTHORITY_TRANSITION_PATH_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_RUNTIME_AUTHORITY_HANDOFF_AND_EVIDENCE_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_RELEASE_SEQUENCE_OR_NOT_APPLICABLE}}',
+        'Migration success alone does not prove runtime authority is active.',
+    ],
+    'templates/application/.ai/operations.md' => [
+        '{{DATABASE_AUTHORITY_AND_RELEASE_DECISION_SOURCE_OR_NOT_APPLICABLE}}',
+        '{{DATABASE_AUTHORITY_TRANSITION_OPERATIONS_OR_NOT_APPLICABLE}}',
+        '{{DATABASE_RELEASE_SEQUENCE_OR_NOT_APPLICABLE}}',
+        '{{DATABASE_COMPATIBILITY_DEACTIVATION_AND_REMOVAL_POLICY_OR_NOT_APPLICABLE}}',
+        '{{DATABASE_PRE_TRAFFIC_AUTHORITY_GATE_EVIDENCE_AND_OWNER_OR_NOT_APPLICABLE}}',
+        'there is no universal order beyond activating and verifying required authority before dependent traffic',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'executes every intended statement for each named operation under the runtime identity before traffic',
+        'selected prohibited namespace, data-definition, identity or role, authority-administration, migration-ledger, database or global, and unrelated-target capabilities',
+        'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+        'Configuration, connectivity, target existence, and migration success are not authority evidence.',
+    ],
+    'skeleton/.ai/data.md' => [
+        "\n`NOT_APPLICABLE(DATABASE)`\n",
+        'database/catalog/schema/attachment namespace selection and qualification as supported',
+        'namespace and object control or ownership model or explicit N/A',
+        'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+        'one non-HTTP owner and path for every adopted authority activation and deactivation, `GRANT` and `REVOKE` only where supported',
+        'Configuration, connectivity, target existence, and migration completion do not activate runtime authority.',
+    ],
+    'skeleton/.ai/migrations.md' => [
+        'one owner and complete non-HTTP path for each authority activation and deactivation, with `GRANT` and `REVOKE` only where supported',
+        'runtime-authority activation handoff, exact-engine positive and negative verification',
+        'application rollout and traffic-enablement order',
+        'Migration success alone does not prove runtime authority is active.',
+    ],
+    'skeleton/.ai/operations.md' => [
+        'authority-transition owner or activation stage',
+        'application-owned order and compatibility among migration, authority activation, exact-engine verification, application rollout, traffic enablement, later authority deactivation',
+        'No universal deployment order is inferred',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'Execute every intended statement under the runtime identity before traffic',
+        'elevated configuration remains unavailable to HTTP',
+        'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
+        'each adopted authority activation and deactivation has one visible non-HTTP owner and path, record `GRANT` and `REVOKE` only where supported',
+        'Configuration, connectivity, target existence, migration success, PHT006, tenant predicates, and adversarial bindings are not universal authority',
+    ],
+    'verification/ApplicationChecker.php' => [
+        'private function databaseContextConnectionFailures(',
+        'private function hasCanonicalConnectionCall(',
+        'private function importAliases(',
+        'private function resolvedClassName(',
+        'Application data context declares no database while application-owned PHP calls PHPThis\\\\Database\\\\Connection::connect;',
+        'T_NAME_FULLY_QUALIFIED',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);',
+        'proveDatabaseContextConnectionConsistency($project, $profileCommand, $environment);',
+        'DatabaseContextOrdinaryControl',
+        'DatabaseContextAliasControl',
+        'DatabaseContextGroupedControl',
+        'DatabaseContextNamespaceAliasControl',
+        'DatabaseContextNamespaceImportControl',
+        'DatabaseContextCurrentNamespaceControl',
+        'DatabaseContextFullyQualifiedControl',
+        'The isolated database-context diagnostic changed.',
+        'CRLF database context bypassed the not-applicable Connection::connect check.',
+        'The legacy starter no-database declaration bypassed the Connection::connect check.',
+        'It therefore has no SQL, structural selectors, bounded data lists',
+        'an unmatched leading backtick',
+        'an unmatched trailing backtick',
+        'legacy text quoted inside adopted prose',
+        'A comment or string mentioning Connection::connect was mistaken for executable database use.',
+        'private const CONNECTION_TYPE = Connection::class;',
+        'installedSyntheticDatabaseContext()',
+        'Structural namespace/control model: SQLite\'s default `main` attachment namespace exists only inside each in-memory proof connection;',
+        'no live authority probe runs.',
+        'PASS installed database-context connection consistency',
+        'PASS installed database authority lifecycle guidance distribution',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/038-application-owned-database-authority-lifecycle.md',
+    ],
+];
+
+foreach ($databaseAuthorityLifecycleArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read database authority lifecycle artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Database authority lifecycle artifact marker is missing from {$relativePath}: {$marker}";
+        }
+    }
+}
+
+$databaseAuthorityLifecycleForbiddenTemplateMarkers = [
+    'templates/application/.ai/data.md' => [
+        '| Connection name | Engine and supported version | PDO driver | Required Composer extension | Non-secret configuration reference | Schema authority |',
+        '{{CONNECTION_1_SCHEMA_SOURCE}}',
+        '{{CONNECTION_2_SCHEMA_SOURCE_OR_NOT_APPLICABLE}}',
+    ],
+];
+
+foreach ($databaseAuthorityLifecycleForbiddenTemplateMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read database authority lifecycle template {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "Forbidden ambiguous database authority template marker remains in {$relativePath}: {$marker}";
         }
     }
 }
@@ -3727,7 +3930,7 @@ $migrationArtifactMarkers = [
     ],
     'skeleton/.ai/migrations.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
-        'No migration code or dependency is included, and HTTP startup performs no schema work.',
+        'No migration code or dependency is included, and HTTP startup performs no data-definition or authority-transition work.',
         'runtime `.sql` loading',
     ],
     'example/src/Migrations/ApplicationMigrationFailureReason.php' => [

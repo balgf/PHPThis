@@ -1,13 +1,19 @@
 # Application data contract
 
-If this application has no database access, CRUD-shaped data behavior, or server-side cache, replace this file with one explicit statement saying that it is not applicable and remove its task-router entries. If only some concerns apply, retain their sections and mark the others explicitly not applicable.
+If this application has no database access, replace this file so no template placeholder remains and include the exact standalone line `NOT_APPLICABLE(DATABASE)`. Its first non-heading declaration is the canonical standalone marker:
 
-## Systems and schema authority
+`NOT_APPLICABLE(DATABASE)`
 
-| Connection name | Engine and supported version | PDO driver | Required Composer extension | Non-secret configuration reference | Schema authority |
-| --- | --- | --- | --- | --- | --- |
-| `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_ENGINE_AND_VERSION}} | `{{CONNECTION_1_PDO_DRIVER}}` | `{{CONNECTION_1_PDO_EXTENSION}}` | `{{CONNECTION_1_CONFIG_REFERENCE}}` | `{{CONNECTION_1_SCHEMA_SOURCE}}` |
-| `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_ENGINE_AND_VERSION_OR_NOT_APPLICABLE}} | `{{CONNECTION_2_PDO_DRIVER_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_PDO_EXTENSION_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_CONFIG_REFERENCE_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_SCHEMA_SOURCE_OR_NOT_APPLICABLE}}` |
+Follow it with one brief verified explanation of the current database-free state. The installed checker treats that declaration as inconsistent with a direct canonical `PHPThis\Database\Connection::connect` call. If only some data concerns apply, retain their sections and mark the others explicitly not applicable.
+
+## Database systems and namespace model
+
+| Connection name | Engine and supported version | PDO driver and extension | Non-secret configuration reference | Database definition or provisioning source | Database, catalog, schema, or attachment namespace selection and qualification as supported | Namespace and object control or ownership model, or explicit N/A |
+| --- | --- | --- | --- | --- | --- | --- |
+| `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_ENGINE_AND_VERSION}} | `{{CONNECTION_1_PDO_DRIVER}}`; `{{CONNECTION_1_PDO_EXTENSION}}` | `{{CONNECTION_1_CONFIG_REFERENCE}}` | `{{CONNECTION_1_DATABASE_DEFINITION_OR_PROVISIONING_SOURCE}}` | {{CONNECTION_1_NAMESPACE_SELECTION_AND_QUALIFICATION_POLICY}} | {{CONNECTION_1_NAMESPACE_AND_OBJECT_CONTROL_OR_OWNERSHIP_MODEL_OR_NOT_APPLICABLE}} |
+| `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_ENGINE_AND_VERSION_OR_NOT_APPLICABLE}} | `{{CONNECTION_2_PDO_DRIVER_OR_NOT_APPLICABLE}}`; `{{CONNECTION_2_PDO_EXTENSION_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_CONFIG_REFERENCE_OR_NOT_APPLICABLE}}` | `{{CONNECTION_2_DATABASE_DEFINITION_OR_PROVISIONING_SOURCE_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_NAMESPACE_SELECTION_AND_QUALIFICATION_POLICY_OR_NOT_APPLICABLE}} | {{CONNECTION_2_NAMESPACE_AND_OBJECT_CONTROL_OR_OWNERSHIP_MODEL_OR_NOT_APPLICABLE}} |
+
+Database definition or provisioning, namespace selection and qualification, the namespace and object control or ownership model, and active authority are separate application facts. Configuration and source presence do not activate database authority. An engine-default namespace, an application-specific namespace, or explicit not applicability where the engine has no namespace or ownership model are all valid recorded decisions; this template prescribes none.
 
 ## Per-connection engine policy
 
@@ -27,20 +33,28 @@ Every data value is bound with a distinct named placeholder for each occurrence.
 
 Unknown selectors and unsupported or oversized list shapes fail before database work. Prefer a finite mapping to complete statements; if finite code-owned fragments are necessary, identify the final assembly whose inferred type remains a constant-string union. For every bounded list or cursor, record omitted and empty-input behavior, each accepted cardinality, stable tie-break ordering, cursor version and compatibility, and whether traversal is a snapshot.
 
-## Runtime and migration authority
+## Runtime and migration authority by operation
 
-Record a separate migration or administrative identity only when that path is adopted; otherwise record it as not applicable. Runtime authority must still explicitly exclude schema-change and administrative capabilities.
+Record runtime authority per named application operation, not as one broad connection-level capability set. Include every intended statement source, exact target and capability required, selected prohibited capabilities, and the effective authority resolution source observed on the exact engine and version. Record only mechanisms that apply: examples may include direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority.
 
-| Connection | Runtime identity or non-secret reference | Required runtime capabilities | Explicitly prohibited runtime capabilities | Migration or administrative identity/reference | Isolation mechanism | Verification source and date |
+| Connection and named operation | Complete statement source | Runtime identity or non-secret reference | Exact required targets and capabilities | Selected prohibited capabilities | Effective authority resolution source | Exact-engine verification source and date |
 | --- | --- | --- | --- | --- | --- | --- |
-| `{{CONNECTION_1_NAME}}` | {{CONNECTION_1_RUNTIME_IDENTITY_REFERENCE}} | {{CONNECTION_1_REQUIRED_RUNTIME_CAPABILITIES}} | {{CONNECTION_1_PROHIBITED_RUNTIME_CAPABILITIES}} | {{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_1_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}} | {{CONNECTION_1_AUTHORITY_VERIFICATION_SOURCE_AND_DATE}} |
-| `{{CONNECTION_2_NAME_OR_NOT_APPLICABLE}}` | {{CONNECTION_2_RUNTIME_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_2_REQUIRED_RUNTIME_CAPABILITIES_OR_NOT_APPLICABLE}} | {{CONNECTION_2_PROHIBITED_RUNTIME_CAPABILITIES_OR_NOT_APPLICABLE}} | {{CONNECTION_2_MIGRATION_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{CONNECTION_2_AUTHORITY_ISOLATION_MECHANISM_OR_NOT_APPLICABLE}} | {{CONNECTION_2_AUTHORITY_VERIFICATION_SOURCE_AND_DATE_OR_NOT_APPLICABLE}} |
+| `{{DATABASE_AUTHORITY_1_CONNECTION_AND_OPERATION}}` | `{{DATABASE_AUTHORITY_1_STATEMENT_SOURCE}}` | {{DATABASE_AUTHORITY_1_RUNTIME_IDENTITY_REFERENCE}} | {{DATABASE_AUTHORITY_1_REQUIRED_TARGETS_AND_CAPABILITIES}} | {{DATABASE_AUTHORITY_1_PROHIBITED_CAPABILITIES}} | {{DATABASE_AUTHORITY_1_EFFECTIVE_AUTHORITY_RESOLUTION_SOURCE}} | {{DATABASE_AUTHORITY_1_VERIFICATION_SOURCE_AND_DATE}} |
+| `{{DATABASE_AUTHORITY_2_CONNECTION_AND_OPERATION_OR_NOT_APPLICABLE}}` | `{{DATABASE_AUTHORITY_2_STATEMENT_SOURCE_OR_NOT_APPLICABLE}}` | {{DATABASE_AUTHORITY_2_RUNTIME_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}} | {{DATABASE_AUTHORITY_2_REQUIRED_TARGETS_AND_CAPABILITIES_OR_NOT_APPLICABLE}} | {{DATABASE_AUTHORITY_2_PROHIBITED_CAPABILITIES_OR_NOT_APPLICABLE}} | {{DATABASE_AUTHORITY_2_EFFECTIVE_AUTHORITY_RESOLUTION_SOURCE_OR_NOT_APPLICABLE}} | {{DATABASE_AUTHORITY_2_VERIFICATION_SOURCE_AND_DATE_OR_NOT_APPLICABLE}} |
 
-Runtime identities receive only the operations required by named application paths. Keep schema changes, migrations, role or user management, and other administrative capabilities unavailable to runtime credentials. When an elevated path is adopted, isolate its identity from runtime. Least privilege limits impact; it does not replace PHT006 or bound parameters.
+Record a separate migration or administrative identity only when that path is adopted; otherwise mark every field below not applicable.
 
-`.ai/configuration.md` is authoritative for exact external input names, final readonly database-configuration types, process-specific factories, and injection sites. This file records database authority and non-secret references only. Migration or administrative credentials never fall back to runtime credentials.
+- Elevated identity or non-secret reference: {{ELEVATED_DATABASE_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}
+- Exact required and prohibited elevated capabilities: {{ELEVATED_DATABASE_REQUIRED_AND_PROHIBITED_CAPABILITIES_OR_NOT_APPLICABLE}}
+- Isolation from HTTP runtime: {{ELEVATED_DATABASE_AUTHORITY_ISOLATION_OR_NOT_APPLICABLE}}
+- Authority activation and deactivation owner, complete non-HTTP path, and transition source; `GRANT` and `REVOKE` only where supported: {{DATABASE_AUTHORITY_ACTIVATION_AND_DEACTIVATION_PATH_OR_NOT_APPLICABLE}}
+- Exact-engine positive and negative evidence source and date: {{ELEVATED_DATABASE_AUTHORITY_VERIFICATION_SOURCE_AND_DATE_OR_NOT_APPLICABLE}}
 
-`.ai/migrations.md` is authoritative for adopted migration identifiers, manifest and ledger bounds, checksums, transactions, locks, immutable forward recovery, output, and evidence. This file records only the connection engine and authority boundary shared with other data work.
+Runtime identities receive only the targets and capabilities required by named application paths. Keep data-definition changes, namespace or ownership control, migrations, identity or policy administration, authority administration, and other elevated capabilities unavailable to runtime credentials. Least privilege limits impact; it does not replace PHT006 or bound parameters. Activate and verify authority against the exact engine and version before dependent code receives traffic. A failed activation or verification stops that rollout stage; drain or remove dependent code before authority deactivation or removal of a namespace or object it needs.
+
+`.ai/configuration.md` is authoritative for exact external input names, final readonly database-configuration types, process-specific factories, and injection sites. This file records non-secret identity references and database authority only. A parsed configuration value, successful connection, existing object, or completed migration is not proof that runtime authority is active. Migration or administrative credentials never fall back to runtime credentials.
+
+`.ai/migrations.md` is authoritative for adopted migration identifiers, manifest and ledger bounds, checksums, transactions, locks, immutable forward recovery, and authority-transition implementation. `.ai/operations.md` owns release sequencing, traffic enablement, later authority deactivation, and namespace or object removal. This file records the authority facts shared with application data work.
 
 ## Scale-sensitive data
 

@@ -93,13 +93,18 @@ Keep command, argument, exit, stream, clock, cadence, one-pass, repeated-slot, c
 ## Database migrations
 
 - Adoption or `NOT_APPLICABLE(MIGRATIONS)`: `.ai/migrations.md`
+- Accepted database-authority and release decision reference: {{DATABASE_AUTHORITY_AND_RELEASE_DECISION_SOURCE_OR_NOT_APPLICABLE}}
 - Migration process identity: {{MIGRATION_PROCESS_IDENTITY_OR_NOT_APPLICABLE}}; process configuration source and typed factory: `.ai/configuration.md`
 - Lock-file ownership, permissions, cleanup, and filesystem topology: {{MIGRATION_LOCK_OPERATIONS_OR_NOT_APPLICABLE}}
 - DDL timeout, maintenance window, availability, capacity, and termination policy: {{MIGRATION_EXECUTION_OPERATIONS_OR_NOT_APPLICABLE}}
 - Backup, restore, failed-deployment, and incident procedure: {{MIGRATION_RECOVERY_OPERATIONS_OR_NOT_APPLICABLE}}
+- Authority-transition owner, stage, and non-HTTP execution path; `GRANT`/`REVOKE` only where supported: {{DATABASE_AUTHORITY_TRANSITION_OPERATIONS_OR_NOT_APPLICABLE}}
+- Migration, authority activation, exact-engine verification, application rollout, and traffic-enablement order: {{DATABASE_RELEASE_SEQUENCE_OR_NOT_APPLICABLE}}
+- Pre-traffic authority gate, exact evidence, and accountable owner: {{DATABASE_PRE_TRAFFIC_AUTHORITY_GATE_EVIDENCE_AND_OWNER_OR_NOT_APPLICABLE}}
+- Old/new-code compatibility, abort or forward-correction path, dependent-code drain, later authority deactivation, and namespace/object-removal order: {{DATABASE_COMPATIBILITY_DEACTIVATION_AND_REMOVAL_POLICY_OR_NOT_APPLICABLE}}
 - Operational assumptions source and verified date: {{MIGRATION_OPERATIONS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
 
-Keep identifier, manifest, checksum, ledger, transaction, immutable-history, output, redaction, and evidence facts in `.ai/migrations.md`. The application console is the only execution path; never migrate from HTTP startup, framework `vendor/bin/phpthis`, or dependency hooks. Shared-data migration requires separate explicit human authorization even when the command exists.
+Keep identifier, manifest, checksum, ledger, transaction, immutable-history, authority-transition implementation, output, redaction, and evidence facts in `.ai/migrations.md`. This guide owns the application-specific release sequence; there is no universal order beyond activating and verifying required authority before dependent traffic and draining dependent code before later authority deactivation or namespace/object removal. The application console is the only migration execution path; never migrate or transition authority from HTTP startup, framework `vendor/bin/phpthis`, or dependency hooks. Shared-data migration requires separate explicit human authorization even when the command exists.
 
 ## Environments and deployment
 
