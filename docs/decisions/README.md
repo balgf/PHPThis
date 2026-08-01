@@ -47,3 +47,4 @@ Accepted records:
 - `037-database-setup-scope-gate.md`
 - `038-application-owned-database-authority-lifecycle.md`
 - `039-recommended-database-migration-structure.md`
+- `040-bounded-alpha-5-release-scope.md`

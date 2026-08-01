@@ -1,8 +1,8 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/configuration.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/websockets.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 039.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/configuration.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/websockets.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 040.
 
-The accepted Alpha 4 authority remains ADR 015 through ADR 035. ADR 036 through ADR 039 are separate accepted post-Alpha-4 decisions and do not change the published Alpha 4 identity.
+The accepted Alpha 5 authority is ADR 040. It carries ADR 015 through ADR 035 forward and rolls accepted ADR 036 through ADR 039 into Consumer Contract version 10 and Strict Profile version 3 without changing the historical Alpha 4 identity.
 
 Rules:
 

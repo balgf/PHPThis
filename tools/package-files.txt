@@ -72,6 +72,7 @@ docs/decisions/036-one-typed-application-configuration-boundary.md
 docs/decisions/037-database-setup-scope-gate.md
 docs/decisions/038-application-owned-database-authority-lifecycle.md
 docs/decisions/039-recommended-database-migration-structure.md
+docs/decisions/040-bounded-alpha-5-release-scope.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -112,6 +113,7 @@ docs/releases/0.1.0-alpha.1.md
 docs/releases/0.1.0-alpha.2.md
 docs/releases/0.1.0-alpha.3.md
 docs/releases/0.1.0-alpha.4.md
+docs/releases/0.1.0-alpha.5.md
 docs/request-handling.md
 docs/request-policy.md
 docs/security.md

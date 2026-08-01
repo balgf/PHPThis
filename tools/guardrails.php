@@ -390,6 +390,40 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
     return false;
 }
 
+/** @param list<string> $markers */
+function mutableReleaseStateClaim(string $contents, array $markers): ?string
+{
+    $plainContents = preg_replace('/\[([^\]\r\n]+)\]\([^\)\r\n]+\)/', '$1', strtolower($contents));
+
+    if (!is_string($plainContents)) {
+        return null;
+    }
+
+    $plainContents = str_replace(['*', '_', '`', '~'], '', $plainContents);
+    $normalizedContents = preg_replace('/\s+/', ' ', $plainContents);
+
+    if (!is_string($normalizedContents)) {
+        return null;
+    }
+
+    $alpha5Subject = '(?:the\s+)?(?:public\s+)?(?:alpha[ -]?5|v?0\.1\.0-alpha\.5)(?:\s+packages?|\s+installation\s+path)?';
+    $publicationPredicate = '(?:(?:is|are)\s+(?:now\s+)?(?:publicly\s+)?(?:available|published|released)|(?:has|have)\s+(?:now\s+)?been\s+(?:publicly\s+)?(?:published|released))';
+
+    if (preg_match('/\b' . $alpha5Subject . '\s+' . $publicationPredicate . '\b/', $normalizedContents) === 1) {
+        return 'normalized Alpha 5 publication claim';
+    }
+
+    foreach ($markers as $marker) {
+        $normalizedMarker = preg_replace('/\s+/', ' ', strtolower($marker));
+
+        if (is_string($normalizedMarker) && str_contains($normalizedContents, $normalizedMarker)) {
+            return $marker;
+        }
+    }
+
+    return null;
+}
+
 $root = dirname(__DIR__);
 $phpFiles = [];
 $markdownFiles = [];
@@ -607,6 +641,7 @@ $requiredRepositoryFiles = [
     'docs/releases/0.1.0-alpha.2.md',
     'docs/releases/0.1.0-alpha.3.md',
     'docs/releases/0.1.0-alpha.4.md',
+    'docs/releases/0.1.0-alpha.5.md',
     'docs/security.md',
     'docs/sessions.md',
     'docs/vocabulary.md',
@@ -637,6 +672,10 @@ $requiredRepositoryFiles = [
     'docs/decisions/034-application-owned-websocket-integration.md',
     'docs/decisions/035-bounded-alpha-4-release-scope.md',
     'docs/decisions/036-one-typed-application-configuration-boundary.md',
+    'docs/decisions/037-database-setup-scope-gate.md',
+    'docs/decisions/038-application-owned-database-authority-lifecycle.md',
+    'docs/decisions/039-recommended-database-migration-structure.md',
+    'docs/decisions/040-bounded-alpha-5-release-scope.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -961,16 +1000,16 @@ if ($duplicationStage === false) {
     $failures[] = 'The canonical framework check must execute the direct duplication-advisory suite.';
 }
 
-$alpha4ReleaseContractMarkers = [
+$alpha5ReleaseContractMarkers = [
     '.ai/README.md' => 'Prepare, assess, or publish a release',
     '.ai/application-context.md' => 'Keep Alpha scope approval separate from authorization to create tags',
     '.ai/testing.md' => 'The Git export comparison requires a clean worktree',
-    'README.md' => 'The bounded [Alpha 4 scope]',
-    'RELEASING.md' => '## Alpha 4 release gate',
-    'ROADMAP.md' => 'Alpha 4 publication state is external',
-    'SECURITY.md' => 'An Alpha 4 release may be announced only after the public-artifact gate',
-    'docs/getting-started.md' => 'The bounded Alpha 4 scope is accepted',
-    'docs/knowledge-map.md' => '`docs/releases/0.1.0-alpha.4.md`, ADR 035, ADR 032 through ADR 034',
+    'README.md' => 'The bounded [Alpha 5 scope]',
+    'RELEASING.md' => '## Alpha 5 release gate',
+    'ROADMAP.md' => 'Alpha 5 publication state is external',
+    'SECURITY.md' => 'An Alpha 5 release may be announced only after the public-artifact gate',
+    'docs/getting-started.md' => 'The bounded Alpha 5 scope is accepted',
+    'docs/knowledge-map.md' => '`docs/releases/0.1.0-alpha.5.md`, ADR 040, ADR 036 through ADR 039',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'No capability has an overall `defer` exit.',
     'docs/decisions/030-report-only-consumer-duplication-advisory.md' => 'This advisory has no `PHT` identifier',
     'docs/decisions/031-bounded-alpha-3-release-scope.md' => 'Alpha 3 is accepted as a tooling-only release',
@@ -978,15 +1017,20 @@ $alpha4ReleaseContractMarkers = [
     'docs/decisions/033-application-owned-request-handler-decorators.md' => 'Consumer Contract version 9',
     'docs/decisions/034-application-owned-websocket-integration.md' => 'Status: accepted',
     'docs/decisions/035-bounded-alpha-4-release-scope.md' => 'Alpha 4 is accepted as the bounded rollup of the changes after Alpha 3',
-    'docs/releases/0.1.0-alpha.4.md' => 'Release identity: `0.1.0-alpha.4`. Publication state is external',
-    'tools/package-files.txt' => 'docs/decisions/035-bounded-alpha-4-release-scope.md',
+    'docs/decisions/036-one-typed-application-configuration-boundary.md' => 'Consumer Contract version 10 and Strict Profile version 3 add permanent structural rule `PHT007`.',
+    'docs/decisions/037-database-setup-scope-gate.md' => 'Status: accepted',
+    'docs/decisions/038-application-owned-database-authority-lifecycle.md' => 'Status: accepted',
+    'docs/decisions/039-recommended-database-migration-structure.md' => 'Status: accepted',
+    'docs/decisions/040-bounded-alpha-5-release-scope.md' => 'Alpha 5 is accepted as the bounded rollup of exactly these changes after Alpha 4',
+    'docs/releases/0.1.0-alpha.5.md' => 'Release identity: `0.1.0-alpha.5`. Publication state is external',
+    'tools/package-files.txt' => 'docs/decisions/040-bounded-alpha-5-release-scope.md',
 ];
 
-foreach ($alpha4ReleaseContractMarkers as $relativePath => $marker) {
+foreach ($alpha5ReleaseContractMarkers as $relativePath => $marker) {
     $contents = file_get_contents($root . '/' . $relativePath);
 
     if (!is_string($contents) || !str_contains($contents, $marker)) {
-        $failures[] = "The accepted bounded Alpha 4 release contract is missing from {$relativePath}.";
+        $failures[] = "The accepted bounded Alpha 5 release contract is missing from {$relativePath}.";
     }
 }
 
@@ -1134,19 +1178,6 @@ foreach ($alpha3ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
 }
 
 $alpha4ReleaseIdentityArtifactMarkers = [
-    '.ai/README.md' => [
-        '`docs/releases/0.1.0-alpha.4.md`',
-        'ADR 035, ADR 032 through ADR 034',
-    ],
-    '.ai/application-context.md' => [
-        'ADR 015 through ADR 035.',
-    ],
-    'README.md' => [
-        'The bounded [Alpha 4 scope]',
-        'Consumer Contract version 9',
-        'never generic or framework middleware',
-        'not a core WebSocket capability',
-    ],
     'RELEASING.md' => [
         '## Approved Alpha 4 identity',
         'Composer version: `0.1.0-alpha.4`',
@@ -1155,25 +1186,6 @@ $alpha4ReleaseIdentityArtifactMarkers = [
         'The accountable human approved the following release identity and gated publication sequence on 2026-07-23',
         'prove the clean public installation path; create both GitHub prereleases; and announce Alpha 4.',
         'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
-    ],
-    'ROADMAP.md' => [
-        'Alpha 4 publication state is external',
-        'without generic middleware',
-        'without a framework WebSocket runtime or API',
-    ],
-    'SECURITY.md' => [
-        'The accepted Alpha 4 scope',
-        'An Alpha 4 release may be announced only after the public-artifact gate',
-    ],
-    'docs/getting-started.md' => [
-        'The bounded Alpha 4 scope is accepted',
-        'Consumer Contract version 9',
-        'Package availability is an external fact',
-    ],
-    'docs/knowledge-map.md' => [
-        '`docs/releases/0.1.0-alpha.4.md`',
-        'ADR 035, ADR 032 through ADR 034 for the Alpha 4 rollup',
-        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, PHT007, the database setup scope gate, the application-owned database authority lifecycle, and recommended migration placement',
     ],
     'docs/releases/0.1.0-alpha.4.md' => [
         'Release identity: `0.1.0-alpha.4`. Publication state is external',
@@ -1216,6 +1228,102 @@ foreach ($alpha4ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
     foreach ($markers as $marker) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "The approved Alpha 4 identity marker is missing from {$relativePath}.";
+        }
+    }
+}
+
+$alpha5ReleaseIdentityArtifactMarkers = [
+    '.ai/README.md' => [
+        '`docs/releases/0.1.0-alpha.5.md`',
+        'ADR 040, ADR 036 through ADR 039 for the Alpha 5 rollup',
+    ],
+    '.ai/application-context.md' => [
+        'The accepted Alpha 5 authority is ADR 040.',
+        'ADR 015 through ADR 035 forward and rolls accepted ADR 036 through ADR 039',
+    ],
+    '.ai/testing.md' => [
+        'exactly 177 named behaviors',
+        'PHPUnit belongs only to this repository\'s root `require-dev`',
+    ],
+    'README.md' => [
+        'The bounded [Alpha 5 scope]',
+        'Consumer Contract version 10, Strict Profile version 3, and permanent diagnostic `PHT007`',
+        'adds no configuration runtime, ORM, repository, binding helper, permission helper, migration framework, generic middleware, or native WebSocket runtime',
+    ],
+    'RELEASING.md' => [
+        '## Approved Alpha 5 identity',
+        'Composer version: `0.1.0-alpha.5`',
+        'Framework tag: `v0.1.0-alpha.5`',
+        'Skeleton tag: `v0.1.0-alpha.5`',
+        'The accountable human approved preparation of the following bounded release scope and exact identity on 2026-08-01',
+        'This approval authorizes source preparation and local verification only.',
+        'Those external operations require later explicit accountable-human authorization after the candidate evidence is reviewed.',
+        'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
+    ],
+    'ROADMAP.md' => [
+        '## Phase 5: Alpha 5 maintainer tooling, onboarding, and database hardening',
+        'ADR 040 accepts the bounded Alpha 5 source scope and exact identity',
+        'Alpha 5 publication state is external',
+    ],
+    'SECURITY.md' => [
+        'The accepted Alpha 5 scope',
+        'An Alpha 5 release may be announced only after the public-artifact gate',
+    ],
+    'docs/getting-started.md' => [
+        'The bounded Alpha 5 scope is accepted',
+        'Consumer Contract version 10 and Strict Profile version 3',
+        'Package availability is an external fact',
+    ],
+    'docs/guardrails.md' => [
+        "Alpha 5's Consumer Contract version 10 and Strict Profile version 3 authority",
+    ],
+    'docs/knowledge-map.md' => [
+        '`docs/releases/0.1.0-alpha.5.md`',
+        'ADR 040, ADR 036 through ADR 039 for the Alpha 5 rollup',
+        "Alpha 5's Consumer Contract version 10, Strict Profile version 3, PHT007, database setup scope gate, application-owned database authority lifecycle, and recommended migration placement",
+    ],
+    'docs/releases/0.1.0-alpha.5.md' => [
+        'Release identity: `0.1.0-alpha.5`. Publication state is external',
+        'Identity and candidate-preparation approval do not announce or authorize either tag, either package, the dedicated-skeleton update, a GitHub release, or the public installation path.',
+        'It is not production-ready and makes no backward-compatibility promise across prereleases.',
+        'Alpha 4 consumers move from Consumer Contract version 9 to version 10 and Strict Profile version 2 to version 3',
+        'At the Alpha 4 tag, `docs/consumer-contract.md` defined Consumer Contract version 9 and Strict Profile version 2.',
+        'composer create-project --stability=alpha phpthis/skeleton',
+    ],
+    'docs/decisions/040-bounded-alpha-5-release-scope.md' => [
+        'Status: accepted',
+        'Alpha 5 is accepted as the bounded rollup of exactly these changes after Alpha 4',
+        'Composer version: `0.1.0-alpha.5`',
+        'framework tag: `v0.1.0-alpha.5`',
+        'skeleton tag: `v0.1.0-alpha.5`',
+        'Strict Profile version 2 to version 3 with permanent diagnostic `PHT007`',
+        'Alpha 5 does not add or permit an ORM',
+        'Publication state is external.',
+    ],
+    'docs/decisions/README.md' => [
+        '`040-bounded-alpha-5-release-scope.md`',
+    ],
+    'composer.json' => [
+        '"phpunit/phpunit": "^13.0"',
+    ],
+    'tools/package-files.txt' => [
+        'docs/releases/0.1.0-alpha.5.md',
+        'docs/decisions/036-one-typed-application-configuration-boundary.md',
+        'docs/decisions/040-bounded-alpha-5-release-scope.md',
+    ],
+];
+
+foreach ($alpha5ReleaseIdentityArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read approved Alpha 5 identity artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "The approved Alpha 5 identity marker is missing from {$relativePath}.";
         }
     }
 }
@@ -1386,7 +1494,7 @@ $databaseSetupScopeArtifactMarkers = [
     'docs/knowledge-map.md' => [
         '| Select or set up a database engine |',
         'load and prove only the selected slice',
-        'ADR 036 through ADR 039 for accepted post-Alpha-4 working-tree changes',
+        'ADR 040, ADR 036 through ADR 039 for the Alpha 5 rollup',
     ],
     'docs/guardrails.md' => [
         "accepted ADR 037, its early application scope gate, configuration-only typed-boundary meaning, external-I/O prohibition before approval, conditional process profiles, package inventory, and installed-consumer guidance-distribution evidence remain present",
@@ -1565,7 +1673,7 @@ $databaseAuthorityLifecycleArtifactMarkers = [
         'does not establish production lock duration, availability, free-space behavior, crash recovery, backup restore, live effective authority, release ordering',
     ],
     'docs/knowledge-map.md' => [
-        'ADR 036 through ADR 039 for accepted post-Alpha-4 working-tree changes',
+        'ADR 040, ADR 036 through ADR 039 for the Alpha 5 rollup',
         'supported database/catalog/schema/attachment namespace selection and qualification, namespace and object control-or-ownership model, per-operation runtime authority, activation and deactivation ownership, exact-engine positive and negative evidence',
     ],
     'docs/guardrails.md' => [
@@ -1756,37 +1864,75 @@ $mutableReleaseStateForbiddenMarkers = [
     'the public Alpha 4 installation path is available',
 ];
 
+$requiredReleaseRoutingAuthorityFiles = [
+    '.ai/README.md',
+    '.ai/application-context.md',
+    'docs/guardrails.md',
+    'docs/knowledge-map.md',
+];
+
 $mutableReleaseStateAuthorityFiles = [
+    ...$requiredReleaseRoutingAuthorityFiles,
+    '.ai/testing.md',
+    'AGENTS.md',
+    'CONTRIBUTING.md',
     'README.md',
     'RELEASING.md',
     'ROADMAP.md',
     'SECURITY.md',
+    'VISION.md',
+    'docs/consumer-contract.md',
     'docs/getting-started.md',
+    'docs/strict-profile.md',
+    'docs/decisions/README.md',
     'docs/releases/0.1.0-alpha.1.md',
     'docs/releases/0.1.0-alpha.2.md',
     'docs/releases/0.1.0-alpha.3.md',
     'docs/releases/0.1.0-alpha.4.md',
+    'docs/releases/0.1.0-alpha.5.md',
     'docs/decisions/018-bounded-alpha-1-release-scope.md',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
     'docs/decisions/031-bounded-alpha-3-release-scope.md',
     'docs/decisions/035-bounded-alpha-4-release-scope.md',
+    'docs/decisions/040-bounded-alpha-5-release-scope.md',
     'skeleton/README.md',
 ];
+
+$mutableReleaseStateDetectionControls = [
+    'ALPHA 5 IS PUBLISHED.' => true,
+    "Alpha 5 is\npublicly available." => true,
+    'Alpha 5 has been released.' => true,
+    '**Alpha 5** is now publicly available.' => true,
+    'v0.1.0-alpha.5 is available.' => true,
+    '[Alpha 5](https://example.invalid/release) has now been published.' => true,
+    'Alpha 5 publication state is external.' => false,
+    'Publication state is external.' => false,
+];
+
+foreach ($mutableReleaseStateDetectionControls as $contents => $expectedClaim) {
+    $hasClaim = mutableReleaseStateClaim($contents, $mutableReleaseStateForbiddenMarkers) !== null;
+
+    if ($hasClaim !== $expectedClaim) {
+        $failures[] = 'The normalized mutable release-state detector changed behavior.';
+    }
+}
 
 $externalReleaseStateMarkers = [
     'README.md' => 'Package availability and current release state are external facts',
     'RELEASING.md' => 'Publication state is external',
-    'ROADMAP.md' => 'Alpha 4 publication state is external',
+    'ROADMAP.md' => 'Alpha 5 publication state is external',
     'SECURITY.md' => 'This tracked policy does not record current publication state',
     'docs/getting-started.md' => 'Package availability is an external fact',
     'docs/releases/0.1.0-alpha.1.md' => 'Publication state is external',
     'docs/releases/0.1.0-alpha.2.md' => 'Publication state is external',
     'docs/releases/0.1.0-alpha.3.md' => 'Publication state is external',
     'docs/releases/0.1.0-alpha.4.md' => 'Publication state is external',
+    'docs/releases/0.1.0-alpha.5.md' => 'Publication state is external',
     'docs/decisions/018-bounded-alpha-1-release-scope.md' => 'This decision does not record mutable publication state',
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'not mutable tag, package, GitHub release, or installation availability',
     'docs/decisions/031-bounded-alpha-3-release-scope.md' => 'Publication state is external',
     'docs/decisions/035-bounded-alpha-4-release-scope.md' => 'Publication state is external',
+    'docs/decisions/040-bounded-alpha-5-release-scope.md' => 'Publication state is external',
     'skeleton/README.md' => 'Package availability is an external fact',
 ];
 
@@ -1870,10 +2016,10 @@ foreach ($mutableReleaseStateAuthorityFiles as $relativePath) {
         continue;
     }
 
-    foreach ($mutableReleaseStateForbiddenMarkers as $marker) {
-        if (str_contains($contents, $marker)) {
-            $failures[] = "Mutable release-state claim remains in {$relativePath}: {$marker}";
-        }
+    $releaseStateClaim = mutableReleaseStateClaim($contents, $mutableReleaseStateForbiddenMarkers);
+
+    if ($releaseStateClaim !== null) {
+        $failures[] = "Mutable release-state claim remains in {$relativePath}: {$releaseStateClaim}";
     }
 }
 
@@ -5552,7 +5698,7 @@ if (is_file($skeletonAgentInstructionsPath)) {
         || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
         || !str_contains($skeletonAgentInstructions, 'Consumer Contract v10 and Strict Profile v3 are the minimum accepted rules')
     ) {
-        $failures[] = 'Skeleton AGENTS.md must preserve accepted but unreleased post-Alpha-4 Contract v10 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+        $failures[] = 'Skeleton AGENTS.md must preserve Alpha 5 Contract v10 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 

@@ -1,6 +1,6 @@
 # PHPThis release process
 
-Alpha 1 scope is preserved in `docs/decisions/018-bounded-alpha-1-release-scope.md`, Alpha 2 in `docs/decisions/029-alpha-2-consumer-profile-rollup.md`, and Alpha 3 in `docs/decisions/031-bounded-alpha-3-release-scope.md`. The current Alpha 4 claim is accepted in `docs/decisions/035-bounded-alpha-4-release-scope.md`; it rolls ADR 032 through ADR 034 into Consumer Contract version 9 while carrying Strict Profile version 2, permanent diagnostics `PHT001` through `PHT006`, PHP 8.4.x, and zero third-party runtime dependencies forward. Publication state is external: this reusable checklist intentionally does not claim whether any release has been published.
+Alpha 1 scope is preserved in `docs/decisions/018-bounded-alpha-1-release-scope.md`, Alpha 2 in `docs/decisions/029-alpha-2-consumer-profile-rollup.md`, Alpha 3 in `docs/decisions/031-bounded-alpha-3-release-scope.md`, and Alpha 4 in `docs/decisions/035-bounded-alpha-4-release-scope.md`. The current Alpha 5 claim is accepted in `docs/decisions/040-bounded-alpha-5-release-scope.md`; it carries Alpha 4 forward and rolls ADR 036 through ADR 039 into Consumer Contract version 10 and Strict Profile version 3 with permanent diagnostics `PHT001` through `PHT007`, PHP 8.4.x, and zero third-party runtime dependencies. Publication state is external: this reusable checklist intentionally does not claim whether any release has been published.
 
 This is the maintainer release gate, not an application programming manual. Copy the checklist into the release work item and attach evidence there. Keep this canonical checklist unchecked and reusable.
 
@@ -50,14 +50,25 @@ The accountable human approved the following release identity and gated publicat
 
 This approves the exact version and tag names and authorizes the following ordered operations only after their preceding gates pass: commit and push the framework candidate; create and push the framework tag; submit or refresh the framework Packagist package and verify its distribution; update, prove, commit, push, and tag the dedicated skeleton; submit or refresh the skeleton Packagist package and verify its distribution; prove the clean public installation path; create both GitHub prereleases; and announce Alpha 4. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
 
-## Alpha 4 release gate
+## Approved Alpha 5 identity
+
+The accountable human approved preparation of the following bounded release scope and exact identity on 2026-08-01 (Asia/Manila):
+
+- Composer version: `0.1.0-alpha.5`
+- Framework tag: `v0.1.0-alpha.5`
+- Skeleton tag: `v0.1.0-alpha.5`
+- Release notes: `docs/releases/0.1.0-alpha.5.md`
+
+This approval authorizes source preparation and local verification only. It does not authorize committing or pushing the candidate, creating or pushing either tag, changing the dedicated skeleton repository, submitting or refreshing either Packagist package, creating either GitHub prerelease, or announcing Alpha 5. Those external operations require later explicit accountable-human authorization after the candidate evidence is reviewed. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
+
+## Alpha 5 release gate
 
 ### 1. Freeze the release candidate
 
 - [ ] Record the exact framework prerelease version, tag, candidate commit, release date, and accountable-human publication authorization.
 - [ ] Confirm maintainer access to the intended GitHub repositories and Packagist package names `phpthis/framework` and `phpthis/skeleton`; do not infer availability from local package metadata.
 - [ ] Confirm GitHub private vulnerability reporting is enabled for the public framework repository.
-- [ ] Confirm the candidate scope matches ADR 035, carries ADR 031 and ADR 029 forward, keeps ADR 030 report-only, and rolls ADR 032 through ADR 034 forward only within their accepted boundaries. Release notes must not imply production readiness, backward compatibility, complete CRUD, framework-owned authentication, authorization, tenancy, cache, queue, migration, WebSockets, generic middleware, SQL dialect portability, DRY validity, or automatic refactoring.
+- [ ] Confirm the candidate scope matches ADR 040, carries ADR 035, ADR 031, and ADR 029 forward, keeps ADR 030 report-only, and rolls ADR 036 through ADR 039 forward only within their accepted boundaries. Release notes must not imply production readiness, backward compatibility, complete CRUD, framework-owned authentication, authorization, tenancy, cache, queue, migration, configuration, permission management, WebSockets, generic middleware, SQL or DDL dialect portability, DRY validity, universal AI compliance, secret detection, grant validation, or automatic refactoring.
 - [ ] Confirm the worktree is clean and the candidate commit is pushed.
 - [ ] Review every public API, Consumer Contract version, Strict Profile version, permanent diagnostic identifier, checker output change, and upgrade note changed since the previous release.
 - [ ] Confirm `README.md`, `ROADMAP.md`, `SECURITY.md`, `docs/getting-started.md`, and the package metadata describe the same release state.
@@ -84,7 +95,7 @@ composer check
 - [ ] Submit or refresh `phpthis/framework` on Packagist and wait until the exact prerelease is indexed with a preferred distribution artifact.
 - [ ] Record the framework tag, commit, Packagist version, and distribution reference in the release evidence.
 
-At the end of this step, treat the public artifact and skeleton path as unproved until Steps 4 and 5 pass. Do not announce Alpha 4 yet.
+At the end of this step, treat the public artifact and skeleton path as unproved until Steps 4 and 5 pass. Do not announce Alpha 5 yet.
 
 ### 4. Publish the skeleton prerelease
 
@@ -122,7 +133,7 @@ composer check
 
 - [ ] Update mutable repository availability or announcement wording only after both packages and the clean public path are proven; keep tagged package authority independent of mutable publication state.
 - [ ] Publish the approved GitHub prereleases for both proven tags without moving either tag.
-- [ ] Publish the approved Alpha 4 announcement with direct links to both tagged packages, release notes, ADR 035, ADR 032 through ADR 034, ADR 030, the security policy, and the installation command.
+- [ ] Publish the approved Alpha 5 announcement with direct links to both tagged packages, release notes, ADR 040, ADR 036 through ADR 039, the carried-forward Alpha 4 scope, ADR 030, the security policy, and the installation command.
 - [ ] Preserve the release evidence with the release work item.
 
 If any mandatory check fails, stop the announcement and fix the cause on a new candidate commit. Never move a published tag or replace a published artifact. When a public prerelease is defective, document it, mark it appropriately in the package host, and publish a new prerelease version after the complete gate passes.
