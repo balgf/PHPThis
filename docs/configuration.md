@@ -170,6 +170,187 @@ For every implemented configuration parser or factory, application tests prove:
 - failure output is fixed and contains none of the supplied bytes;
 - child-process environment injection exercises the selected parser or factory, or the real process entrypoint when that process is in scope, without application `putenv` calls.
 
+### Copyable child-process configuration evidence
+
+The following is application-owned test code, not a PHPThis helper or required filename. This example assumes the file is placed under `tests/` and that `tests/fixtures/runtime-configuration-entrypoint.php` loads ordinary source or Composer autoloading, invokes one adopted runtime parser or factory, writes exactly `CONFIGURATION_OK` on success, and maps only its known validation failure to the fixed rejection below. Configuration-only scope keeps that fixture parser-only and performs no application-controlled infrastructure or business I/O. If a real process entrypoint is already in scope, point the fixed command at that entrypoint instead.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+/** @param resource $stream */
+function readConfigurationProcessStream($stream): string
+{
+    $output = stream_get_contents($stream);
+
+    if (!is_string($output)) {
+        throw new RuntimeException('Unable to read configuration evidence process output.');
+    }
+
+    return $output;
+}
+
+/**
+ * @param array<string, string> $environment
+ * @return array{exit_code: int, stdout: string, stderr: string}
+ */
+function runConfigurationProcess(
+    string $entrypoint,
+    string $workingDirectory,
+    array $environment,
+): array {
+    $process = proc_open(
+        [PHP_BINARY, $entrypoint],
+        [0 => ['pipe', 'rb'], 1 => ['pipe', 'wb'], 2 => ['pipe', 'wb']],
+        $pipes,
+        $workingDirectory,
+        $environment,
+        ['bypass_shell' => true],
+    );
+
+    if (!is_resource($process)) {
+        throw new RuntimeException('Unable to start configuration evidence process.');
+    }
+
+    fclose($pipes[0]);
+
+    try {
+        $stdout = readConfigurationProcessStream($pipes[1]);
+        $stderr = readConfigurationProcessStream($pipes[2]);
+    } finally {
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $exitCode = proc_close($process);
+    }
+
+    return ['exit_code' => $exitCode, 'stdout' => $stdout, 'stderr' => $stderr];
+}
+
+/** @param array{exit_code: int, stdout: string, stderr: string} $result */
+function requireExactConfigurationProcessResult(
+    array $result,
+    int $exitCode,
+    string $stdout,
+    string $stderr,
+): void {
+    if (
+        $result['exit_code'] !== $exitCode
+        || $result['stdout'] !== $stdout
+        || $result['stderr'] !== $stderr
+    ) {
+        throw new RuntimeException('Configuration process result changed.');
+    }
+}
+
+/** @param array{exit_code: int, stdout: string, stderr: string} $result */
+function requireConfigurationOutputExcludes(array $result, string $sentinel): void
+{
+    if ($sentinel === '' || str_contains($result['stdout'] . $result['stderr'], $sentinel)) {
+        throw new RuntimeException('Configuration rejection disclosed supplied bytes.');
+    }
+}
+
+/**
+ * @param array<string, string> $environment
+ * @return array{exit_code: int, stdout: string, stderr: string}
+ */
+function requireRejectedConfiguration(
+    string $entrypoint,
+    string $workingDirectory,
+    array $environment,
+): array {
+    $result = runConfigurationProcess(
+        $entrypoint,
+        $workingDirectory,
+        $environment,
+    );
+    requireExactConfigurationProcessResult(
+        $result,
+        2,
+        '',
+        "CONFIGURATION_INVALID\n",
+    );
+
+    return $result;
+}
+
+$projectRoot = dirname(__DIR__);
+$entrypoint = __DIR__ . '/fixtures/runtime-configuration-entrypoint.php';
+$validEnvironment = [
+    'APP_RUNTIME_MODE' => 'synthetic',
+    'APP_RUNTIME_ENDPOINT' => 'https://example.invalid',
+    'APP_RUNTIME_CREDENTIAL' => 'synthetic-non-secret-credential',
+];
+
+$validResult = runConfigurationProcess(
+    $entrypoint,
+    $projectRoot,
+    $validEnvironment,
+);
+requireExactConfigurationProcessResult($validResult, 0, "CONFIGURATION_OK\n", '');
+
+$rejectedEnvironments = [
+    [
+        'APP_RUNTIME_ENDPOINT' => 'https://example.invalid',
+        'APP_RUNTIME_CREDENTIAL' => 'synthetic-non-secret-credential',
+    ],
+    [
+        'APP_RUNTIME_ENDPOINT' => 'https://example.invalid',
+        'APP_RUNTIME_CREDENTIAL' => 'synthetic-non-secret-credential',
+        '' => 'APP_RUNTIME_MODE=',
+    ],
+    [
+        'APP_RUNTIME_MODE' => 'synthetic',
+        'APP_RUNTIME_CREDENTIAL' => 'synthetic-non-secret-credential',
+    ],
+    [
+        'APP_RUNTIME_MODE' => 'synthetic',
+        'APP_RUNTIME_CREDENTIAL' => 'synthetic-non-secret-credential',
+        '' => 'APP_RUNTIME_ENDPOINT=',
+    ],
+    [...$validEnvironment, 'APP_RUNTIME_ENDPOINT' => 'not-an-endpoint'],
+    [
+        ...$validEnvironment,
+        'APP_RUNTIME_ENDPOINT' => 'https://' . str_repeat('e', 121),
+    ],
+    [
+        'APP_RUNTIME_MODE' => 'synthetic',
+        'APP_RUNTIME_ENDPOINT' => 'https://example.invalid',
+    ],
+    [
+        'APP_RUNTIME_MODE' => 'synthetic',
+        'APP_RUNTIME_ENDPOINT' => 'https://example.invalid',
+        '' => 'APP_RUNTIME_CREDENTIAL=',
+    ],
+    [...$validEnvironment, 'APP_RUNTIME_CREDENTIAL' => str_repeat('x', 65)],
+];
+
+foreach ($rejectedEnvironments as $rejectedEnvironment) {
+    requireRejectedConfiguration($entrypoint, $projectRoot, $rejectedEnvironment);
+}
+
+$sentinel = 'synthetic-rejected-value-must-not-appear';
+$malformedResult = requireRejectedConfiguration(
+    $entrypoint,
+    $projectRoot,
+    [...$validEnvironment, 'APP_RUNTIME_MODE' => $sentinel],
+);
+requireConfigurationOutputExcludes($malformedResult, $sentinel);
+
+fwrite(STDOUT, "PASS child-process configuration evidence\n");
+```
+
+The command is an array containing only code-owned executable and entrypoint paths. Its binary pipe descriptors, working directory, fifth `proc_open` environment argument, and `bypass_shell` option are explicit. That fifth argument supplies the application's explicit child environment instead of requesting null inheritance: put only the synthetic non-secret configuration values the selected fixture needs in this application-supplied map, use an absolute `PHP_BINARY`, and do not copy parent deployment credentials through `getenv`, `$_ENV`, `$_SERVER`, or configuration values in command arguments. The host, executable, or PHP runtime may still add its own required environment entries, so this proves absence of deliberate parent-configuration inheritance rather than exclusive ownership of the final operating-system environment block.
+
+This deliberately small helper uses blocking pipes sequentially. It is suitable only for a short-lived fixture whose contract permits tiny fixed output before exit, as shown here. The application test runner or CI job owns the hard outer timeout. If an adopted real entrypoint can stream, remain resident, or emit enough data to fill either pipe, the application needs its own reviewed capture and termination strategy. Do not grow this configuration example into a general process runner, worker, or supervisor.
+
+PHP 8.4 omits a named `proc_open` environment entry when its value is the empty string. It treats an empty-string array key as a raw environment entry, so the explicit `'' => 'APP_RUNTIME_MODE='` form above delivers a code-owned named input with an empty value instead of omitting it while retaining the `array<string, string>` shape. This is pinned PHP 8.4 implementation behavior rather than a general environment-array convention; retain an executable exact-empty-delivery probe when adapting the pattern or changing the supported PHP runtime. Keep each raw name literal and application-owned; never construct a raw environment entry from request, command, or other submitted input.
+
+Adapt the exact names, valid grammar, byte bounds, output bytes, fixture path, and test integration to the application. Run a fresh child for the valid case and each required key's missing and empty cases. Also run representative malformed and maximum-plus-one cases wherever that key's recorded grammar or byte bound defines them; assert the exact exit, stdout, and stderr each time. The sentinel assertion proves only that those supplied bytes are absent from the two captured streams. It does not prove redaction from operating-system metadata, deployment logs, files, network destinations, exception sinks, or unrelated values.
+
+Test each actually adopted runtime, worker, migration, or administrative entrypoint independently. Poison the other adopted profiles' values and omit each required value to prove that no profile reads or falls back to another. Do not create an elevated or otherwise unused profile merely to copy this example. When an invalid real entrypoint would otherwise reach application-controlled I/O, use the application's existing concrete recording seam or observable boundary to prove zero calls; do not add a framework interceptor or generic I/O abstraction for the test.
+
 When connection or another infrastructure composition is selected, tests additionally prove that composition passes the intended typed values to the visible infrastructure boundary. Configuration-only scope records infrastructure injection and connection evidence as deferred and does not create dead wiring. When migration or administrative configuration is selected, tests prove that HTTP startup does not read those inputs and that elevated startup has no runtime-credential fallback. When those profiles are not selected, record them as not applicable and do not invent elevated factories, credentials, entrypoints, or tests. Provisioning and production evidence is required only for an explicitly selected scope.
 
 `PHT007` proves only canonical direct access, direct positional or named arguments to supported native callback consumers under their built-in names, directly invoked local literal assignments before another assignment-operator occurrence, and one-file confinement. It does not detect hard-coded secrets, dynamically constructed function or constant names, aliased native callback API names, application-defined, anonymous, or variable-dispatched callable consumers, reassigned callable variables, argument-unpacked callable values, local callable variables passed onward as callback arguments, secret-manager APIs, leaks, correct validation, safe deployment permissions, or least database privilege.

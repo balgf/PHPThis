@@ -104,6 +104,12 @@ try {
     proveInstalledUuidAndUlidRouting($project, $environment);
     proveDatabaseContextConnectionConsistency($project, $profileCommand, $environment);
     proveInstalledTypedConfiguration($project, $profileCommand, $environment);
+    proveInstalledConfigurationEvidenceReference(
+        $project,
+        $installedFramework,
+        $profileCommand,
+        $environment,
+    );
     $requestHandlerDecoratorProofPath = proveInstalledRequestHandlerDecorator($project, $environment);
 
     try {
@@ -1645,10 +1651,10 @@ MD,
         }
 
         $runtimeInvalidCases = [
-            'empty runtime DSN' => [
-                ...$runtimeDeliveryValues,
-                'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => '',
-            ],
+            'empty runtime DSN' => environmentWithEmptyValue(
+                $runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+            ),
             'malformed runtime DSN' => [
                 ...$runtimeDeliveryValues,
                 'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'mysql:synthetic',
@@ -1657,6 +1663,10 @@ MD,
                 ...$runtimeDeliveryValues,
                 'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN' => 'sqlite:' . str_repeat('d', 122),
             ],
+            'empty runtime username' => environmentWithEmptyValue(
+                $runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+            ),
             'malformed runtime username' => [
                 ...$runtimeDeliveryValues,
                 'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => 'INVALID RUNTIME USER',
@@ -1665,20 +1675,20 @@ MD,
                 ...$runtimeDeliveryValues,
                 'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME' => str_repeat('u', 65),
             ],
-            'empty runtime password' => [
-                ...$runtimeDeliveryValues,
-                'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => '',
-            ],
+            'empty runtime password' => environmentWithEmptyValue(
+                $runtimeDeliveryValues,
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+            ),
             'oversized runtime password' => [
                 ...$runtimeDeliveryValues,
                 'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD' => str_repeat('p', 65),
             ],
         ];
         $migrationInvalidCases = [
-            'empty migration DSN' => [
-                ...$migrationDeliveryValues,
-                'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => '',
-            ],
+            'empty migration DSN' => environmentWithEmptyValue(
+                $migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN',
+            ),
             'malformed migration DSN' => [
                 ...$migrationDeliveryValues,
                 'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'mysql:synthetic',
@@ -1687,6 +1697,10 @@ MD,
                 ...$migrationDeliveryValues,
                 'PHPTHIS_PROOF_MIGRATION_DATABASE_DSN' => 'sqlite:' . str_repeat('d', 122),
             ],
+            'empty migration username' => environmentWithEmptyValue(
+                $migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME',
+            ),
             'malformed migration username' => [
                 ...$migrationDeliveryValues,
                 'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => 'INVALID MIGRATION USER',
@@ -1695,10 +1709,10 @@ MD,
                 ...$migrationDeliveryValues,
                 'PHPTHIS_PROOF_MIGRATION_DATABASE_USERNAME' => str_repeat('u', 65),
             ],
-            'empty migration password' => [
-                ...$migrationDeliveryValues,
-                'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => '',
-            ],
+            'empty migration password' => environmentWithEmptyValue(
+                $migrationDeliveryValues,
+                'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD',
+            ),
             'oversized migration password' => [
                 ...$migrationDeliveryValues,
                 'PHPTHIS_PROOF_MIGRATION_DATABASE_PASSWORD' => str_repeat('p', 65),
@@ -1737,6 +1751,279 @@ MD,
             if (is_file($proofPath) && !unlink($proofPath)) {
                 throw new RuntimeException("Unable to remove installed configuration proof {$proofPath}.");
             }
+        }
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveInstalledConfigurationEvidenceReference(
+    string $project,
+    string $installedFramework,
+    array $profileCommand,
+    array $environment,
+): void {
+    $guidePath = $installedFramework . '/docs/configuration.md';
+    $guide = file_get_contents($guidePath);
+
+    if (!is_string($guide)) {
+        throw new RuntimeException('Unable to read the installed configuration evidence guide.');
+    }
+
+    $headingMarker = '### Copyable child-process configuration evidence';
+    $markerOffset = strpos($guide, $headingMarker);
+
+    if ($markerOffset === false) {
+        throw new RuntimeException('The installed configuration evidence reference is missing.');
+    }
+
+    $blockMarker = "\n```php\n";
+    $blockOffset = strpos($guide, $blockMarker, $markerOffset + strlen($headingMarker));
+
+    if ($blockOffset === false) {
+        throw new RuntimeException('The installed configuration evidence PHP block is missing.');
+    }
+
+    $sourceOffset = $blockOffset + strlen($blockMarker);
+    $sourceEnd = strpos($guide, "\n```", $sourceOffset);
+
+    if ($sourceEnd === false) {
+        throw new RuntimeException('The installed configuration evidence reference is incomplete.');
+    }
+
+    $referenceSource = substr($guide, $sourceOffset, $sourceEnd - $sourceOffset);
+
+    if ($referenceSource === '') {
+        throw new RuntimeException('The installed configuration evidence reference is empty.');
+    }
+
+    $referencePath = $project . '/tests/configuration-child-process-reference.php';
+    $fixtureDirectory = $project . '/tests/fixtures';
+    $entrypointPath = $fixtureDirectory . '/runtime-configuration-entrypoint.php';
+    $emptyEntrypointPath = $fixtureDirectory . '/empty-configuration-entrypoint.php';
+    $boundaryPath = $project . '/configuration-reference-boundary.php';
+    $contextPath = $project . '/.ai/configuration.md';
+    $originalContext = file_get_contents($contextPath);
+
+    if (!is_string($originalContext)) {
+        throw new RuntimeException('Unable to read the installed configuration context.');
+    }
+
+    $createdFixtureDirectory = false;
+
+    try {
+        if (!is_dir($fixtureDirectory)) {
+            if (!mkdir($fixtureDirectory, 0700)) {
+                throw new RuntimeException('Unable to create the installed configuration evidence fixture directory.');
+            }
+
+            $createdFixtureDirectory = true;
+        }
+
+        writeFile(
+            $boundaryPath,
+            <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+final class ReferenceEmptyRuntimeMode extends InvalidArgumentException
+{
+}
+
+final readonly class ReferenceRuntimeConfiguration
+{
+    public function __construct(
+        public string $mode,
+        public string $endpoint,
+        #[\SensitiveParameter]
+        public string $credential,
+    ) {
+    }
+}
+
+final class ReferenceApplicationEnvironment
+{
+    public static function forHttp(): ReferenceRuntimeConfiguration
+    {
+        return new ReferenceRuntimeConfiguration(
+            self::mode(\getenv('APP_RUNTIME_MODE')),
+            self::endpoint(\getenv('APP_RUNTIME_ENDPOINT')),
+            self::credential(\getenv('APP_RUNTIME_CREDENTIAL')),
+        );
+    }
+
+    private static function mode(string|false $value): string
+    {
+        if ($value === '') {
+            throw new ReferenceEmptyRuntimeMode('Required application configuration is invalid.');
+        }
+
+        if ($value !== 'synthetic') {
+            throw new InvalidArgumentException('Required application configuration is invalid.');
+        }
+
+        return $value;
+    }
+
+    private static function endpoint(string|false $value): string
+    {
+        if (
+            $value === false
+            || $value === ''
+            || strlen($value) > 128
+            || !str_starts_with($value, 'https://')
+        ) {
+            throw new InvalidArgumentException('Required application configuration is invalid.');
+        }
+
+        return $value;
+    }
+
+    private static function credential(#[\SensitiveParameter] string|false $value): string
+    {
+        if ($value === false || $value === '' || strlen($value) > 64) {
+            throw new InvalidArgumentException('Required application configuration is invalid.');
+        }
+
+        return $value;
+    }
+}
+PHP,
+        );
+        writeFile(
+            $entrypointPath,
+            <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require dirname(__DIR__, 2) . '/configuration-reference-boundary.php';
+
+try {
+    ReferenceApplicationEnvironment::forHttp();
+    fwrite(STDOUT, "CONFIGURATION_OK\n");
+} catch (InvalidArgumentException) {
+    fwrite(STDERR, "CONFIGURATION_INVALID\n");
+    exit(2);
+}
+PHP,
+        );
+        writeFile(
+            $emptyEntrypointPath,
+            <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require dirname(__DIR__, 2) . '/configuration-reference-boundary.php';
+
+try {
+    ReferenceApplicationEnvironment::forHttp();
+} catch (ReferenceEmptyRuntimeMode) {
+    fwrite(STDOUT, "PASS installed empty configuration delivery\n");
+    exit(0);
+} catch (InvalidArgumentException) {
+    fwrite(STDERR, "EMPTY_CONFIGURATION_NOT_DELIVERED\n");
+    exit(2);
+}
+
+fwrite(STDERR, "EMPTY_CONFIGURATION_NOT_DELIVERED\n");
+exit(2);
+PHP,
+        );
+        writeFile($referencePath, $referenceSource . "\n");
+        writeFile(
+            $contextPath,
+            <<<'MD'
+# Installed configuration evidence reference context
+
+- Boundary: `configuration-reference-boundary.php` is the only process-environment reader.
+- Inputs: `APP_RUNTIME_MODE`, `APP_RUNTIME_ENDPOINT`, and `APP_RUNTIME_CREDENTIAL` are required without defaults or fallback; values are never recorded here.
+- Factory and type: `ReferenceApplicationEnvironment::forHttp()` returns the final readonly `ReferenceRuntimeConfiguration` before application-controlled I/O.
+- Authority: this proof adopts one runtime parser only; worker, migration, and administrative profiles are not applicable.
+- Injection: configuration-only scope is selected, so infrastructure composition is deferred.
+- Failure: missing, empty, malformed, and oversized inputs produce exact exit `2`, empty stdout, and `CONFIGURATION_INVALID` on stderr before infrastructure or business I/O.
+- Rotation: every evidence invocation is a fresh process; no hidden reload behavior is adopted.
+- Redaction: the public reference asserts exact stream bytes and explicit absence of one supplied synthetic sentinel.
+- Evidence: the exact PHP block extracted from installed `docs/configuration.md` passes the installed maximum-level profile and executes the intentionally short-lived, tiny-fixed-output parser fixture in fresh child processes with an explicit synthetic application environment and no null inheritance; a focused probe separately invokes the matching factory and proves that the raw `NAME=` form reaches its exact empty-value validation branch, while a paired run with the mode omitted proves that missing remains distinct; a hard timeout remains caller- or CI-owned and is not established by this harness.
+MD,
+        );
+
+        $cleanEnvironment = environmentWithout(
+            $environment,
+            ['APP_RUNTIME_MODE', 'APP_RUNTIME_ENDPOINT', 'APP_RUNTIME_CREDENTIAL'],
+        );
+        $profileResult = runProcess($profileCommand, $project, $cleanEnvironment);
+        requireSuccess(
+            $profileResult,
+            'The installed public configuration evidence reference failed the maximum-level profile.',
+        );
+
+        $emptyDeliveryResult = runProcess(
+            [PHP_BINARY, $emptyEntrypointPath],
+            $project,
+            [
+                '' => 'APP_RUNTIME_MODE=',
+                'APP_RUNTIME_ENDPOINT' => 'https://example.invalid',
+                'APP_RUNTIME_CREDENTIAL' => 'synthetic-non-secret-credential',
+            ],
+        );
+        requireExactProcessResult(
+            $emptyDeliveryResult,
+            0,
+            "PASS installed empty configuration delivery\n",
+            '',
+            'The installed empty configuration environment entry was not delivered as empty.',
+        );
+
+        $missingDeliveryResult = runProcess(
+            [PHP_BINARY, $emptyEntrypointPath],
+            $project,
+            [
+                'APP_RUNTIME_ENDPOINT' => 'https://example.invalid',
+                'APP_RUNTIME_CREDENTIAL' => 'synthetic-non-secret-credential',
+            ],
+        );
+        requireExactProcessResult(
+            $missingDeliveryResult,
+            2,
+            '',
+            "EMPTY_CONFIGURATION_NOT_DELIVERED\n",
+            'The installed missing runtime mode was misclassified as empty.',
+        );
+
+        $referenceResult = runProcess(
+            [PHP_BINARY, $referencePath],
+            $project,
+            $cleanEnvironment,
+        );
+        requireExactProcessResult(
+            $referenceResult,
+            0,
+            "PASS child-process configuration evidence\n",
+            '',
+            'The installed public configuration evidence reference changed behavior.',
+        );
+        requireOutputNotContains(
+            $referenceResult,
+            'synthetic-rejected-value-must-not-appear',
+        );
+    } finally {
+        writeFile($contextPath, $originalContext);
+
+        foreach ([$referencePath, $entrypointPath, $emptyEntrypointPath, $boundaryPath] as $proofPath) {
+            if (is_file($proofPath) && !unlink($proofPath)) {
+                throw new RuntimeException("Unable to remove installed configuration evidence proof {$proofPath}.");
+            }
+        }
+
+        if ($createdFixtureDirectory && is_dir($fixtureDirectory) && !rmdir($fixtureDirectory)) {
+            throw new RuntimeException('Unable to remove the installed configuration evidence fixture directory.');
         }
     }
 }
@@ -1974,6 +2261,18 @@ function environmentWithout(array $environment, array $names): array
     foreach ($names as $name) {
         unset($environment[$name]);
     }
+
+    return $environment;
+}
+
+/**
+ * @param array<string, string> $environment
+ * @return array<string, string>
+ */
+function environmentWithEmptyValue(array $environment, string $name): array
+{
+    unset($environment[$name]);
+    $environment[''] = $name . '=';
 
     return $environment;
 }
