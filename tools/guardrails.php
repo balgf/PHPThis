@@ -1454,6 +1454,96 @@ foreach ($configurationArtifactMarkers as $relativePath => $markers) {
     }
 }
 
+$startupProbeSemanticsArtifactMarkers = [
+    '.ai/README.md' => [
+        'Define, change, or review startup, liveness, dependency health, or readiness semantics',
+        '`.ai/database.md` only when a database dependency is involved',
+    ],
+    '.ai/application-context.md' => [
+        'That sink\'s destination may itself involve network or remote-filesystem I/O.',
+        'Until its destination and latency are verified, describe the starter only as the current liveness route and HTTP composition proof, not as external-service-independent liveness.',
+        'Do not add a framework probe API, lazy connection, hidden bypass, second HTTP execution path, universal readiness definition, or checker diagnostic for operational semantics.',
+    ],
+    'src/Database/Connection.php' => [
+        'new PDO($dsn, $username, $password, $defaults + $options),',
+    ],
+    'docs/configuration.md' => [
+        '### Eager composition and probe semantics',
+        '`Connection::connect()` constructs native `PDO` immediately rather than returning a deferred handle.',
+        'Depending on the selected driver and DSN, construction may perform database, filesystem, or network I/O and may fail during composition.',
+        'Successful connection construction is also not evidence of schema compatibility, migration completion, capacity, per-operation database authority, or complete application readiness.',
+        'Failure isolation that preserves a selected response does not by itself bound a synchronous sink\'s latency or make that probe external-service-independent.',
+        'Do not disguise a dependency bypass as the ordinary application bootstrap or add a second hidden HTTP execution path.',
+    ],
+    'docs/knowledge-map.md' => [
+        'Define, change, or review startup, liveness, dependency health, or readiness semantics',
+        'verify that no framework probe API, lazy connection, hidden bypass, or second HTTP execution path was introduced',
+    ],
+    'docs/vocabulary.md' => [
+        '| external-service-independent liveness |',
+        '| readiness | application-owned operational claim that its recorded conditions for receiving traffic are satisfied |',
+    ],
+    'docs/guardrails.md' => [
+        'A separate installed distribution proof checks the eager-composition and probe-semantics clarification',
+        'the current starter does not claim external-service independence while its deployment-configured `error_log` destination and latency remain unverified',
+        'does not connect to a service, prove that a deployment classified a probe correctly, establish dependency availability or traffic readiness',
+    ],
+    'templates/application/.ai/README.md' => [
+        'Change runtime, logging, deployment, liveness, or readiness behavior',
+        'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, evidence',
+    ],
+    'templates/application/.ai/operations.md' => [
+        '{{HEALTH_AND_READINESS_PATHS}}',
+        '`Connection::connect()` constructs PDO eagerly and, depending on the selected driver and DSN, may perform I/O or fail during composition.',
+        'must not be described as external-service-independent liveness.',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'Every adopted health, readiness, or non-HTTP probe proves the exact claim recorded in `.ai/operations.md`',
+        'A caught sink failure proves response isolation, not a latency bound or independence from that sink\'s destination.',
+        'Connection construction alone is not exact-statement database-authority or complete-readiness evidence.',
+    ],
+    'skeleton/.ai/README.md' => [
+        'Change runtime, logging, liveness, or readiness behavior',
+        'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, and evidence',
+    ],
+    'skeleton/.ai/operations.md' => [
+        '`GET /health` is the starter liveness route; no readiness route exists.',
+        'It does not establish external-service-independent liveness because the deployment-configured `error_log` destination and its latency are unverified.',
+        'covering success, mapped failure, unknown failure, captured summaries, throwing-sink isolation, and the real front controller.',
+        '`Connection::connect()` constructs PDO eagerly and may fail during composition',
+        'Do not preserve a liveness claim through a hidden bypass or second HTTP execution path.',
+    ],
+    'skeleton/.ai/observability.md' => [
+        'calls deployment-configured `error_log` synchronously before the coordinator returns',
+        'throwing-sink response isolation',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'This proves the current HTTP composition and response path, not external-service-independent liveness',
+        'the coordinator invokes deployment-configured `error_log` synchronously and no destination or latency bound is recorded.',
+        'do not treat connection construction as database-authority or complete-readiness evidence.',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);',
+        'function proveInstalledStartupProbeGuidanceDistribution(string $project, string $installedFramework): void',
+        'PASS installed startup and probe guidance distribution',
+    ],
+];
+
+foreach ($startupProbeSemanticsArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read startup and probe semantics artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Startup and probe semantics artifact marker is missing from {$relativePath}: {$marker}";
+        }
+    }
+}
+
 $databaseSetupScopeArtifactMarkers = [
     'AGENTS.md' => [
         'invent elevated authority for a deferred path.',

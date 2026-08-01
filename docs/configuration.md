@@ -136,6 +136,21 @@ $connection = Connection::connect(
 );
 ```
 
+### Eager composition and probe semantics
+
+`Connection::connect()` constructs native `PDO` immediately rather than returning a deferred handle. Depending on the selected driver and DSN, construction may perform database, filesystem, or network I/O and may fail during composition. When a shared HTTP composition root opens a connection that requires an external service, every route behind that root inherits that requirement. In the current starter front-controller shape, composition completes before the terminal request-summary coordinator handles a request. A composition failure therefore occurs outside that coordinator and receives none of its application `Response`, `X-Request-ID`, or terminal-summary guarantees. An application that selects another outer failure policy records and tests that exact behavior; PHPThis supplies no hidden fallback.
+
+Use precise operational claims:
+
+- **External-service-independent liveness** says the selected process or application execution boundary is alive without requiring any separately operated service to succeed. Record every shared-bootstrap requirement and synchronous request-path destination, including logging or summary sinks, even when it is local or in-process.
+- **Shared-bootstrap startup viability** says the selected composition root and probe handler could be constructed and executed, including every eager dependency they share.
+- **Readiness** says the application satisfies its explicitly recorded conditions for receiving traffic. Those conditions may include dependencies and exact operation requirements, but PHPThis does not choose them.
+- **Dependency health** reports only the named dependency behavior it actually exercises.
+
+A route behind a shared bootstrap that eagerly opens a required external-service connection is not external-service-independent liveness. For example, this applies when the selected DSN connects to a network database; it does not classify an in-memory or local-file driver as an external service. Successful connection construction is also not evidence of schema compatibility, migration completion, capacity, per-operation database authority, or complete application readiness. The database contract requires exact-statement authority evidence separately.
+
+Record each adopted HTTP or non-HTTP probe in `.ai/operations.md`: its exact claim, inherited bootstrap and synchronous dependencies, destinations, bounded work, failure response or process behavior, local or deployment operations owner or explicit non-applicability, and application-test or deployment evidence. Failure isolation that preserves a selected response does not by itself bound a synchronous sink's latency or make that probe external-service-independent. A deployment-owned process probe and an HTTP probe may prove different facts. Do not disguise a dependency bypass as the ordinary application bootstrap or add a second hidden HTTP execution path.
+
 Do not pass `ApplicationEnvironment`, a configuration reader, or a generic configuration aggregate into routes, handlers, operations, policies, or SQL owners. Pass only the concrete typed dependency that behavior needs.
 
 ## Secrets and local development

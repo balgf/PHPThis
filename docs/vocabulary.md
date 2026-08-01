@@ -16,6 +16,10 @@
 | connection | instrumented PDO boundary | DB facade, query builder |
 | PDO transport | native-driver connection, binding, fetch, transaction, budget, and trace behavior certified without SQL translation | database abstraction, portable dialect |
 | application-owned SQL dialect | complete engine-specific SQL and database semantics recorded and tested by the consuming application | framework query language, automatic dialect selection |
+| external-service-independent liveness | application-owned claim that one selected probe can compose and respond without availability from a separately operated service, with every local, in-process, shared-bootstrap, and synchronous sink requirement still recorded | universal health, readiness, dependency health |
+| shared-bootstrap startup viability | application-owned claim that one selected composition root and probe handler can be constructed and run, including every eager dependency on that path | external-service-independent liveness, complete readiness |
+| readiness | application-owned operational claim that its recorded conditions for receiving traffic are satisfied | successful connection construction, universal framework state |
+| dependency health | claim limited to the named dependency behavior the selected probe actually exercises | application readiness, database authority evidence |
 | SQL data | a complete value passed through one unique named parameter | interpolated value, escaped SQL text |
 | finite SQL structure | one or more non-blank compile-time constant statements selected from code-owned reviewed choices | arbitrary SQL string, sanitized identifier |
 | finite application data path | operation-owned parser, complete engine-specific statements, explicit named parameter arrays, projections, resource bounds, and tests for one data behavior | ORM, repository, generic paginator, generated SQL, dialect abstraction |

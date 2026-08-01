@@ -33,7 +33,7 @@ Then read only what the task needs:
 | Introduce CRUD-shaped resource operations | installed `vendor/phpthis/framework/docs/crud.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/testing.md` | explicit resource routes, operation area, data path, and behavior tests |
 | Add data access or a structural SQL selector | `.ai/data.md`, `.ai/testing.md` | database definition or provisioning source, supported namespace selection and qualification, namespace/object control or ownership model or explicit N/A, direct `Connection` call, finite code-owned SQL mapping, per-operation exact authority and effective-resolution source, activation path, exact-engine positive and negative evidence, and adversarial and scale tests |
 | Add an external side effect | `.ai/integrations.md` | the named client boundary and failure tests |
-| Change runtime or logging | `.ai/operations.md` | `public/index.php`, `bootstrap.php`, and operational tests |
+| Change runtime, logging, liveness, or readiness behavior | installed `vendor/phpthis/framework/docs/configuration.md` when eager infrastructure or probe semantics change, `.ai/operations.md`, `.ai/testing.md` | `public/index.php`, `bootstrap.php`, exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, and evidence |
 | Change request correlation or terminal summaries | installed `vendor/phpthis/framework/docs/observability/README.md`, `.ai/observability.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | `public/index.php`, application-owned coordinator and sink, finite database sources, response propagation, redaction, budget, trace, and throwing-sink tests |
 | Add or change tests | `.ai/testing.md` | `tests/run.php` and `composer check` |
 

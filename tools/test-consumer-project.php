@@ -93,6 +93,7 @@ try {
 
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
+    proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);
     proveInstalledMigrationStructureGuidanceDistribution(
         $project,
@@ -279,6 +280,84 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
     }
 
     fwrite(STDOUT, "PASS installed database setup guidance distribution\n");
+}
+
+function proveInstalledStartupProbeGuidanceDistribution(string $project, string $installedFramework): void
+{
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/README.md' => [
+            'Change runtime, logging, liveness, or readiness behavior',
+            'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, and evidence',
+        ],
+        $project . '/.ai/operations.md' => [
+            '`GET /health` is the starter liveness route; no readiness route exists.',
+            'It does not establish external-service-independent liveness because the deployment-configured `error_log` destination and its latency are unverified.',
+            'covering success, mapped failure, unknown failure, captured summaries, throwing-sink isolation, and the real front controller.',
+            '`Connection::connect()` constructs PDO eagerly and may fail during composition',
+            'Do not preserve a liveness claim through a hidden bypass or second HTTP execution path.',
+        ],
+        $project . '/.ai/observability.md' => [
+            'calls deployment-configured `error_log` synchronously before the coordinator returns',
+            'throwing-sink response isolation',
+        ],
+        $project . '/.ai/testing.md' => [
+            'This proves the current HTTP composition and response path, not external-service-independent liveness',
+            'the coordinator invokes deployment-configured `error_log` synchronously and no destination or latency bound is recorded.',
+            'do not treat connection construction as database-authority or complete-readiness evidence.',
+        ],
+        $installedFramework . '/docs/configuration.md' => [
+            '### Eager composition and probe semantics',
+            '`Connection::connect()` constructs native `PDO` immediately rather than returning a deferred handle.',
+            'Depending on the selected driver and DSN, construction may perform database, filesystem, or network I/O and may fail during composition.',
+            'Successful connection construction is also not evidence of schema compatibility, migration completion, capacity, per-operation database authority, or complete application readiness.',
+            'Failure isolation that preserves a selected response does not by itself bound a synchronous sink\'s latency or make that probe external-service-independent.',
+            'Do not disguise a dependency bypass as the ordinary application bootstrap or add a second hidden HTTP execution path.',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            'Define, change, or review startup, liveness, dependency health, or readiness semantics',
+            'verify that no framework probe API, lazy connection, hidden bypass, or second HTTP execution path was introduced',
+        ],
+        $installedFramework . '/docs/vocabulary.md' => [
+            '| external-service-independent liveness |',
+            '| readiness | application-owned operational claim that its recorded conditions for receiving traffic are satisfied |',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'A separate installed distribution proof checks the eager-composition and probe-semantics clarification',
+            'the current starter does not claim external-service independence while its deployment-configured `error_log` destination and latency remain unverified',
+            'does not connect to a service, prove that a deployment classified a probe correctly, establish dependency availability or traffic readiness',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            'Change runtime, logging, deployment, liveness, or readiness behavior',
+            'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, evidence',
+        ],
+        $installedFramework . '/templates/application/.ai/operations.md' => [
+            '{{HEALTH_AND_READINESS_PATHS}}',
+            '`Connection::connect()` constructs PDO eagerly and, depending on the selected driver and DSN, may perform I/O or fail during composition.',
+            'must not be described as external-service-independent liveness.',
+        ],
+        $installedFramework . '/templates/application/.ai/testing.md' => [
+            'Every adopted health, readiness, or non-HTTP probe proves the exact claim recorded in `.ai/operations.md`',
+            'A caught sink failure proves response isolation, not a latency bound or independence from that sink\'s destination.',
+            'Connection construction alone is not exact-statement database-authority or complete-readiness evidence.',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed startup and probe guidance artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed startup and probe guidance artifact {$path} is missing marker: {$marker}");
+            }
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed startup and probe guidance distribution\n");
 }
 
 function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(

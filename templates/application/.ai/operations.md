@@ -119,8 +119,10 @@ Keep identifier, manifest, checksum, ledger, transaction, immutable-history, aut
 - Terminal request-summary runtime authority: `.ai/observability.md`
 - HTTP cache status, revalidation, and intermediary observability: {{HTTP_CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
 - Cache-operation summary and hit, miss, failure, invalidation, and stampede metrics: {{CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
-- Health and readiness paths: {{HEALTH_AND_READINESS_PATHS}}
+- Adopted health, readiness, or non-HTTP probes; exact claim, entrypoint or composition root, inherited dependencies and synchronous destinations including the terminal summary sink, bounded work, failure response or process behavior, local or deployment operations owner or explicit N/A, and application-test or deployment evidence with verified environment/date: {{HEALTH_AND_READINESS_PATHS}}
 - Alert or incident reference: `{{INCIDENT_REFERENCE}}`
+
+`Connection::connect()` constructs PDO eagerly and, depending on the selected driver and DSN, may perform I/O or fail during composition. A route sharing a composition root that opens a required external-service connection must not be described as external-service-independent liveness. A synchronous terminal sink also remains part of the probe path even when its failure cannot alter the selected response; record its destination and latency bound before making an independence claim. Record what the selected execution path actually proves and whether a composition failure occurs before routing, response selection, or the terminal request-summary attempt. Connection construction alone does not prove exact-statement database authority or complete readiness. PHPThis does not select a probe route, dependency set, restart policy, or deployment topology, and it does not authorize a hidden bypass or second HTTP execution path.
 
 Keep destination buffering, retention, backpressure, outage, and incident facts in `.ai/observability.md`; do not restate the installed event schema here. A sink invocation attempt is not durable delivery.
 
