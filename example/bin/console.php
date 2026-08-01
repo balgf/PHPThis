@@ -8,7 +8,7 @@ use Example\Cli\InvalidApplicationCommandArguments;
 use Example\Cli\UnknownApplicationCommand;
 use Example\Coordination\RedisScheduleRunLeaseUnavailable;
 use Example\Jobs\SystemUserWelcomeJobClock;
-use Example\Migrations\ApplicationMigrationFailed;
+use Example\Database\Migrations\ApplicationMigrationFailed;
 
 require dirname(__DIR__, 2) . '/autoload.php';
 

@@ -1,11 +1,15 @@
 # Migration authoring contract
 
-Read [ADR 027](../docs/decisions/027-application-owned-explicit-sqlite-migrations.md), ADR 038, [Explicit application migrations](../docs/migrations.md), `.ai/database.md`, `.ai/cli.md`, and `.ai/testing.md` before adding or changing a migration.
+Read [ADR 027](../docs/decisions/027-application-owned-explicit-sqlite-migrations.md), ADR 038, ADR 039, [Explicit application migrations](../docs/migrations.md), `.ai/database.md`, `.ai/cli.md`, and `.ai/testing.md` before adding or changing a migration.
 
 PHPThis provides no core migration API. The accepted proof is application-owned and SQLite-specific.
 
 Rules:
 
+- Treat migrations as specialized application-owned database evolution. For a new adopting application, recommend `src/Database/Migrations/` with a matching namespace such as `App\Database\Migrations`; record the actual source path and namespace in the application's `.ai/migrations.md`.
+- Accept any coherent application-owned alternative. Do not reject an alternative location, enforce paths through the checker, derive executable work from placement, create an empty migration directory for a database-free skeleton, or silently relocate established source. A relocation is an application architecture change requiring explicit human approval.
+- When multiple named database connections actually own independent migration histories, require the application to record each connection's explicit migration source, namespace, command, manifest, ledger, authority, and evidence boundary. Permit an application-selected connection-owned subdivision only for those adopted histories; do not prescribe or scaffold speculative subdivisions for a single-database application.
+- Do not infer a generic `Database/Queries` directory, repository layer, or alternate SQL execution boundary from the recommended migration directory. Runtime SQL stays in its handler or the one justified narrowly named concrete operation.
 - Keep `database:migrate` on the application's sole explicit console. Never run it during HTTP startup or through framework `bin/phpthis`.
 - Record the accepted engine-specific database/catalog/schema/attachment namespace model, namespace and object control-or-ownership or non-applicability, DDL, authority, locking, recovery, and integration decision. Give the migration process only its exact required capabilities, record explicitly prohibited capabilities, or record the applicable SQLite file/process authority; keep elevated authority unavailable to the web runtime.
 - Name who owns each authority activation and deactivation. Record whether complete engine-specific `GRANT` or `REVOKE` SQL, when supported and selected, is visible and checksum-covered in a migration, a separately authorized application stage owns the transition, or a named external provisioning source owns it; never leave activation implicit or run it through HTTP.

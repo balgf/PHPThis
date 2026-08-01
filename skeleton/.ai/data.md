@@ -4,7 +4,7 @@
 
 The exact standalone declaration above is present-state application context: the starter opens no database connection. A direct canonical `PHPThis\Database\Connection::connect` call cannot coexist with it. Replace the declaration and complete the database contract before adopting a connection. The starter also has no persisted resource, CRUD-shaped behavior, SQL, structural selector, bounded data list, database identity or privilege, CRUD resource route, pagination, mutation policy, deletion policy, resource authorization, or audit event.
 
-`NOT_APPLICABLE(MIGRATIONS)`: `.ai/migrations.md` owns any future migration engine, command, manifest, checksum, ledger, elevated authority, transition, transaction, lock, release, recovery, and evidence decision. Do not infer namespace selection, a namespace or object control or ownership model, or active authority from a database definition or provisioning source.
+`NOT_APPLICABLE(MIGRATIONS)`: `.ai/migrations.md` owns any future actual migration source directory and application namespace, engine, command, manifest, checksum, ledger, elevated authority, transition, transaction, lock, release, recovery, and evidence decision. Do not infer migration adoption or placement, namespace selection, a namespace or object control or ownership model, or active authority from a database definition or provisioning source.
 
 `NOT_APPLICABLE(CACHE)`: the starter has no typed cache projection, authoritative rebuild source, versioned key schema, environment or tenant cache namespace, payload parser or bound, TTL or staleness bound, invalidation policy, or corruption and eviction behavior.
 

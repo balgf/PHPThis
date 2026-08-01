@@ -2,11 +2,32 @@
 
 PHPThis accepts one application-owned SQLite migration-ledger pattern and provides no core migration runtime. [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) records the first executable proof. Its concrete migration names and schema belong to the example; consumers adopt the constraints deliberately and own their own history.
 
+Migrations are specialized application-owned database evolution, not an independent framework subsystem. Their dedicated `.ai/migrations.md` context keeps engine, history, authority, locking, release, and recovery policy focused while `docs/database.md` remains the entry point for the broader database boundary.
+
+## Recommended application structure
+
+For a new application that adopts migrations, PHPThis recommends:
+
+```text
+src/
+  Database/
+    Migrations/
+```
+
+Use the matching namespace under the application's Composer root, such as `App\Database\Migrations`, and record the actual path and namespace in `.ai/migrations.md`. A consumer may choose any coherent alternative. Its recorded project context is authoritative; PHPThis does not enforce a path through the checker or Strict Profile, discover executable work from a directory, or silently relocate established migration source. An AI needs explicit human approval before changing an established placement and must account for namespace, autoloading, console composition, tests, and deployment references.
+
+A database-free skeleton creates no empty migration directory. The directory is created only when the application adopts migrations and only at its selected location.
+
+If multiple named database connections genuinely own independent migration histories, the application may choose and record an explicit connection-owned subdivision for each adopted history. Record each connection's source path, namespace, command ownership, manifest, ledger, authority, and exact-engine evidence separately. PHPThis recommends no subdivision spelling: do not create speculative connection directories for a single-database application or for a connection without its own migration history.
+
+This recommendation is deliberately limited to migration source. It does not recommend a generic `Database/Queries` directory, repository, query-object layer, or alternate SQL execution boundary. Request-time SQL remains in the handler or the one justified narrowly named concrete operation that owns its transaction. See [ADR 039](decisions/039-recommended-database-migration-structure.md).
+
 ## Adoption boundary
 
 An application with no database or no application-owned migration path records `NOT_APPLICABLE(MIGRATIONS)`. Before adoption, the accountable human approves and the application records:
 
 - the exact engine and supported version, accepted engine-specific database/catalog/schema/attachment namespace model, namespace and object control-or-ownership or non-applicability, DDL, authority, locking and recovery decision, and integration-test command;
+- the selected migration source path and application namespace;
 - the sole operational migration command, separately authorized process identity, and its exact required and prohibited capabilities;
 - the permanent identifier grammar, finite manifest maximum, canonical order, and checksum byte format;
 - the ledger name, complete schema, maximum rows, parser bounds, and explicit timestamp source and representation;
@@ -32,7 +53,7 @@ Never load executable SQL from a runtime file, ledger row, environment value, co
 
 Do not perform a database call in a loop. The manifest is deliberately unrolled so execution order and the maximum number of calls remain visible. A finite loop may validate already fetched bounded ledger values when it performs no I/O.
 
-The accepted example uses final `Example\Migrations\SqliteApplicationMigrations`. Its seven permanent steps are `0001_create_user_schema`, `0002_create_job_schema`, `0003_prepare_document_schema`, `0004_add_document_category`, `0005_add_document_sort_rank`, `0006_create_document_access_schema`, and `0007_create_account_users`. The final step creates `account_users(user_id, account_id)` without deriving rows from principal-owned `account_memberships`. The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`. Those names and limits document the proof; they are not reserved consumer migrations.
+The current example follows the recommendation with final `Example\Database\Migrations\SqliteApplicationMigrations`. Its seven permanent steps are `0001_create_user_schema`, `0002_create_job_schema`, `0003_prepare_document_schema`, `0004_add_document_category`, `0005_add_document_sort_rank`, `0006_create_document_access_schema`, and `0007_create_account_users`. The final step creates `account_users(user_id, account_id)` without deriving rows from principal-owned `account_memberships`. The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`. Those names and limits document the proof; they are not reserved consumer migrations or a required consumer path.
 
 ## Bounded inspectable ledger
 

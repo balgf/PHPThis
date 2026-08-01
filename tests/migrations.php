@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use Example\ApplicationComposition;
 use Example\ApplicationDatabasePath;
-use Example\Migrations\ApplicationMigrationFailed;
-use Example\Migrations\ApplicationMigrationFailureReason;
-use Example\Migrations\MigrationHistory;
-use Example\Migrations\SqliteApplicationMigrations;
+use Example\Database\Migrations\ApplicationMigrationFailed;
+use Example\Database\Migrations\ApplicationMigrationFailureReason;
+use Example\Database\Migrations\MigrationHistory;
+use Example\Database\Migrations\SqliteApplicationMigrations;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;

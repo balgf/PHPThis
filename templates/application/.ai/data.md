@@ -54,7 +54,7 @@ Runtime identities receive only the targets and capabilities required by named a
 
 `.ai/configuration.md` is authoritative for exact external input names, final readonly database-configuration types, process-specific factories, and injection sites. This file records non-secret identity references and database authority only. A parsed configuration value, successful connection, existing object, or completed migration is not proof that runtime authority is active. Migration or administrative credentials never fall back to runtime credentials.
 
-`.ai/migrations.md` is authoritative for adopted migration identifiers, manifest and ledger bounds, checksums, transactions, locks, immutable forward recovery, and authority-transition implementation. `.ai/operations.md` owns release sequencing, traffic enablement, later authority deactivation, and namespace or object removal. This file records the authority facts shared with application data work.
+`.ai/migrations.md` is authoritative for the actual adopted migration source directory and application namespace, identifiers, manifest and ledger bounds, checksums, transactions, locks, immutable forward recovery, and authority-transition implementation. `.ai/operations.md` owns release sequencing, traffic enablement, later authority deactivation, and namespace or object removal. This file records the authority facts shared with application data work.
 
 ## Scale-sensitive data
 

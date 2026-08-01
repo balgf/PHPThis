@@ -60,7 +60,11 @@ Transactions are manual: begin, execute, and commit inside `try`; in `finally`, 
 
 A transaction belongs to one PDO connection. Work across two connections or engines is not atomic, even when both local transactions commit successfully.
 
-## Schema migration policy
+## Database migration policy
+
+Migrations are specialized application-owned database evolution. For a new application that adopts them, ADR 039 recommends `src/Database/Migrations/` with a matching namespace such as `App\Database\Migrations`. The application records its actual source path and namespace in `.ai/migrations.md`; any coherent alternative remains valid. PHPThis does not enforce placement, discover work from a directory, silently relocate established source, or create an empty migration directory in the database-free skeleton. This recommendation does not establish `Database/Queries`, a repository layer, or another request-time SQL boundary: runtime SQL remains in its handler or one justified concrete operation.
+
+When multiple named database connections independently adopt migration histories, `.ai/migrations.md` records each connection's source, namespace, command ownership, manifest, ledger, authority, exact-engine evidence, and any application-selected connection-owned subdivision. PHPThis prescribes no subdivision spelling and creates no speculative connection directories for a single-database application.
 
 ADR 027 accepts one application-owned SQLite migration-ledger proof without extending `Connection`. Its sole `database:migrate` command runs outside HTTP with separately authorized SQLite file/process authority. One final concrete coordinator contains a finite manifest, names migration steps in permanent order, and invokes private step methods explicitly; no loop performs database I/O, and no directory, class name, ledger value, or runtime `.sql` file selects executable work. ADR 038 adds no migration mechanism: it requires an adopting application to state whether any runtime authority transition is checksum-covered migration work or a separately authorized ordered stage.
 

@@ -651,13 +651,13 @@ $requiredRepositoryFiles = [
     'example/src/ApplicationComposition.php',
     'example/src/ApplicationDatabasePath.php',
     'example/src/InvalidApplicationDatabasePath.php',
-    'example/src/Migrations/ApplicationMigrationFailed.php',
-    'example/src/Migrations/ApplicationMigrationFailureReason.php',
-    'example/src/Migrations/ApplicationMigrationOutcome.php',
-    'example/src/Migrations/LocalMigrationLock.php',
-    'example/src/Migrations/MigrationHistory.php',
-    'example/src/Migrations/SqliteApplicationMigrations.php',
-    'example/src/Migrations/SqliteMigrationLedger.php',
+    'example/src/Database/Migrations/ApplicationMigrationFailed.php',
+    'example/src/Database/Migrations/ApplicationMigrationFailureReason.php',
+    'example/src/Database/Migrations/ApplicationMigrationOutcome.php',
+    'example/src/Database/Migrations/LocalMigrationLock.php',
+    'example/src/Database/Migrations/MigrationHistory.php',
+    'example/src/Database/Migrations/SqliteApplicationMigrations.php',
+    'example/src/Database/Migrations/SqliteMigrationLedger.php',
     'example/src/Cli/ApplicationCommandExecution.php',
     'example/src/Cli/ApplicationCommandLine.php',
     'example/src/Cli/ApplicationCommandName.php',
@@ -1173,7 +1173,7 @@ $alpha4ReleaseIdentityArtifactMarkers = [
     'docs/knowledge-map.md' => [
         '`docs/releases/0.1.0-alpha.4.md`',
         'ADR 035, ADR 032 through ADR 034 for the Alpha 4 rollup',
-        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, PHT007, the database setup scope gate, and the application-owned database authority lifecycle',
+        'accepted but unreleased Consumer Contract version 10, Strict Profile version 3, PHT007, the database setup scope gate, the application-owned database authority lifecycle, and recommended migration placement',
     ],
     'docs/releases/0.1.0-alpha.4.md' => [
         'Release identity: `0.1.0-alpha.4`. Publication state is external',
@@ -1386,7 +1386,7 @@ $databaseSetupScopeArtifactMarkers = [
     'docs/knowledge-map.md' => [
         '| Select or set up a database engine |',
         'load and prove only the selected slice',
-        'ADR 036 through ADR 038 for accepted post-Alpha-4 working-tree changes',
+        'ADR 036 through ADR 039 for accepted post-Alpha-4 working-tree changes',
     ],
     'docs/guardrails.md' => [
         "accepted ADR 037, its early application scope gate, configuration-only typed-boundary meaning, external-I/O prohibition before approval, conditional process profiles, package inventory, and installed-consumer guidance-distribution evidence remain present",
@@ -1565,7 +1565,7 @@ $databaseAuthorityLifecycleArtifactMarkers = [
         'does not establish production lock duration, availability, free-space behavior, crash recovery, backup restore, live effective authority, release ordering',
     ],
     'docs/knowledge-map.md' => [
-        'ADR 036 through ADR 038 for accepted post-Alpha-4 working-tree changes',
+        'ADR 036 through ADR 039 for accepted post-Alpha-4 working-tree changes',
         'supported database/catalog/schema/attachment namespace selection and qualification, namespace and object control-or-ownership model, per-operation runtime authority, activation and deactivation ownership, exact-engine positive and negative evidence',
     ],
     'docs/guardrails.md' => [
@@ -3846,16 +3846,24 @@ if (is_string($composerManifest)) {
 
 $migrationArtifactMarkers = [
     '.ai/README.md' => [
-        'Add, change, or review database migrations',
+        'Add, change, place, or review database migrations',
         '`.ai/migrations.md`, `.ai/database.md`, `.ai/cli.md`, `.ai/testing.md`, ADR 027',
     ],
     '.ai/application-context.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
         'Contract version 9 does not make that additional file a checker requirement',
+        'Recommend `src/Database/Migrations/` with the matching application namespace',
+        'preserve any coherent application-owned alternative',
+        'multiple named database connections adopt independent migration histories',
     ],
     '.ai/migrations.md' => [
         '# Migration authoring contract',
         'PHPThis provides no core migration API.',
+        'recommend `src/Database/Migrations/` with a matching namespace',
+        'Accept any coherent application-owned alternative.',
+        'A relocation is an application architecture change requiring explicit human approval.',
+        'multiple named database connections actually own independent migration histories',
+        'do not prescribe or scaffold speculative subdivisions for a single-database application',
         'Never run it during HTTP startup or through framework `bin/phpthis`.',
         'Do not scan files, discover classes, resolve strings, or load runtime `.sql` files.',
         'Never call a database method in a loop',
@@ -3867,11 +3875,27 @@ $migrationArtifactMarkers = [
     'docs/migrations.md' => [
         '# Explicit application migrations',
         'PHPThis accepts one application-owned SQLite migration-ledger pattern and provides no core migration runtime.',
+        '## Recommended application structure',
+        'src/',
+        'Database/',
+        'Migrations/',
+        'record the actual path and namespace in `.ai/migrations.md`',
+        'A consumer may choose any coherent alternative.',
+        'does not enforce a path through the checker or Strict Profile',
+        'A database-free skeleton creates no empty migration directory.',
+        'PHPThis recommends no subdivision spelling',
+        'connection without its own migration history',
+        'does not recommend a generic `Database/Queries` directory, repository, query-object layer, or alternate SQL execution boundary',
         'PHPStan must resolve every direct SQL argument to finite non-blank compile-time constants.',
         'The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`.',
         '`0007_create_account_users`',
         '23-statement budget and trace',
         'Do not expose it through HTTP configuration or compose the coordinator during request startup.',
+    ],
+    'docs/database.md' => [
+        'Migrations are specialized application-owned database evolution.',
+        'multiple named database connections independently adopt migration histories',
+        'creates no speculative connection directories for a single-database application',
     ],
     'docs/decisions/027-application-owned-explicit-sqlite-migrations.md' => [
         'Status: accepted',
@@ -3884,18 +3908,56 @@ $migrationArtifactMarkers = [
         '21-statement budget and trace',
         'mode `0600`',
         'No framework migration API, schema abstraction, reusable runner, discovery rule, core change, Consumer Contract version, Strict Profile version, or cross-engine claim is introduced.',
+        'This record preserves the original `Example\\Migrations` name as historical evidence',
+        'the current example was subsequently moved to `Example\\Database\\Migrations`',
+    ],
+    'docs/decisions/039-recommended-database-migration-structure.md' => [
+        'Status: accepted',
+        'Migrations are specialized application-owned database evolution.',
+        'src/',
+        'Database/',
+        'Migrations/',
+        'A consumer may instead record any coherent application-owned path and namespace.',
+        'does not reject an alternative, enforce this directory through the checker or Strict Profile',
+        'must preserve the current structure unless an accountable human explicitly approves',
+        'The database-free skeleton does not create an empty migration directory.',
+        'multiple named database connections genuinely own independent migration histories',
+        'does not create speculative connection directories for a single-database application',
+        'does not establish a generic database layer',
+        'Consumer Contract version 10 and Strict Profile version 3 remain unchanged',
     ],
     'docs/consumer-contract.md' => [
         '## Optional application-owned database migrations',
         'Contract version 9 does not make that additional file a checker requirement',
+        'ADR 039 recommends `src/Database/Migrations/`',
+        'A coherent consumer-selected alternative remains valid',
+        'does not enforce migration placement through the checker or Strict Profile',
+        'no empty migration directory',
+        'explicit connection-owned subdivision for each adopted history',
+        'Do not invent connection subdivisions for a single-database application',
         'It never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
+    ],
+    'docs/vocabulary.md' => [
+        'recommended migration placement',
+        'connection-owned migration subdivision',
+        'speculative single-database directory',
     ],
     'docs/decisions/README.md' => [
         '027-application-owned-explicit-sqlite-migrations.md',
+        '039-recommended-database-migration-structure.md',
     ],
     'docs/knowledge-map.md' => [
-        'Add, apply, explain, or recover a database migration',
+        'Add, place, apply, explain, or recover a database migration',
         '`docs/migrations.md`, `docs/database.md`, `docs/security.md`',
+        'connection-owned subdivision only for a named connection with an independently adopted migration history',
+    ],
+    'docs/guardrails.md' => [
+        "ADR 039's migration-structure recommendation",
+        'exact seven-file `example/src/Database/Migrations/` source set and namespace',
+        'Multiple named connections may receive application-selected connection-owned subdivisions only when they independently adopt migration histories',
+        'Composer-autoload and installed-checker proof using the alternative `src/Infrastructure/ChangeHistory/` source and `App\\Infrastructure\\ChangeHistory` namespace',
+        'installed-consumer proof separately runs the canonical checker with a coherent nonrecommended source directory and matching namespace',
+        'places one valid final class there, proves Composer can autoload it, and requires the installed canonical checker to pass',
     ],
     'README.md' => [
         'Schema evolution begins with one application-owned SQLite migration ledger',
@@ -3906,12 +3968,14 @@ $migrationArtifactMarkers = [
         'not a core schema API, migration discovery, down-migration engine, HTTP bootstrap behavior, or portable DDL contract',
     ],
     'example/.ai/README.md' => [
-        'Change schema migrations, migration history, or migration recovery',
-        '`bin/console.php`, `ApplicationComposition`, `src/Migrations/`',
+        'Change database schema migrations, migration history, migration placement, or migration recovery',
+        '`bin/console.php`, `ApplicationComposition`, `src/Database/Migrations/`',
     ],
     'example/.ai/migrations.md' => [
         '# Example SQLite migration context',
-        '`Example\\Migrations\\SqliteApplicationMigrations` coordinator',
+        '`Example\\Database\\Migrations\\SqliteApplicationMigrations` coordinator',
+        'application-relative source directory `src/Database/Migrations/` (repository path `example/src/Database/Migrations/`)',
+        'not framework discovery or checker-enforced placement',
         'The manifest cap is 512 migrations and the ordered position/identifier/checksum history read uses `LIMIT 513`',
         '`0007_create_account_users`',
         'QueryBudget(23)',
@@ -3924,16 +3988,28 @@ $migrationArtifactMarkers = [
     ],
     'templates/application/.ai/migrations.md' => [
         '{{MIGRATION_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_SOURCE_DIRECTORY_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_APPLICATION_NAMESPACE_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_CONNECTION_OWNERSHIP_OR_NOT_APPLICABLE}}',
+        'PHPThis recommends `src/Database/Migrations/`',
+        'A coherent consumer-selected alternative is authoritative',
+        'connection without an independently adopted migration history',
         '{{MIGRATION_MANIFEST_SOURCE_OR_NOT_APPLICABLE}}',
         'no database call occurs in a loop',
         'A non-SQLite adoption requires a separate engine-specific DDL, transaction, locking, privilege, recovery, and integration decision.',
     ],
     'skeleton/.ai/migrations.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
-        'No migration code or dependency is included, and HTTP startup performs no data-definition or authority-transition work.',
+        'No migration directory, code, or dependency is included',
+        'PHPThis recommends `src/Database/Migrations/`',
+        '`App\\Database\\Migrations` namespace',
+        'A coherent consumer-selected alternative is authoritative',
+        'multiple named database connections later adopt independent migration histories',
+        'do not pre-create or prescribe connection subdivisions',
+        'HTTP startup performs no data-definition or authority-transition work.',
         'runtime `.sql` loading',
     ],
-    'example/src/Migrations/ApplicationMigrationFailureReason.php' => [
+    'example/src/Database/Migrations/ApplicationMigrationFailureReason.php' => [
         "case Busy = 'busy';",
         "case ChecksumDrift = 'checksum_drift';",
         "case HistoryInvalid = 'history_invalid';",
@@ -3941,16 +4017,16 @@ $migrationArtifactMarkers = [
         "case ApplyFailed = 'apply_failed';",
         "case LockFailed = 'lock_failed';",
     ],
-    'example/src/Migrations/ApplicationMigrationOutcome.php' => [
+    'example/src/Database/Migrations/ApplicationMigrationOutcome.php' => [
         "case Applied = 'applied';",
         "case UpToDate = 'up_to_date';",
     ],
-    'example/src/Migrations/ApplicationMigrationFailed.php' => [
+    'example/src/Database/Migrations/ApplicationMigrationFailed.php' => [
         "'error' => 'migration_failed'",
         "'reason' => \$this->reason->value",
         "'migration' => \$this->migrationIdentifier",
     ],
-    'example/src/Migrations/LocalMigrationLock.php' => [
+    'example/src/Database/Migrations/LocalMigrationLock.php' => [
         "fopen(\$this->path, 'c+b')",
         '@chmod($this->path, 0600)',
         '@fstat($handle)',
@@ -3960,12 +4036,12 @@ $migrationArtifactMarkers = [
         'flock($handle, LOCK_EX | LOCK_NB, $wouldBlock)',
         'flock($handle, LOCK_UN)',
     ],
-    'example/src/Migrations/MigrationHistory.php' => [
+    'example/src/Database/Migrations/MigrationHistory.php' => [
         'count($rows) > 512',
         "array_keys(\$row) !== ['position', 'migration_id', 'checksum_sha256']",
         "ApplicationMigrationFailureReason::ChecksumDrift",
     ],
-    'example/src/Migrations/SqliteMigrationLedger.php' => [
+    'example/src/Database/Migrations/SqliteMigrationLedger.php' => [
         'CREATE TABLE application_migrations',
         'position INTEGER PRIMARY KEY',
         'migration_id TEXT NOT NULL UNIQUE',
@@ -3976,7 +4052,7 @@ $migrationArtifactMarkers = [
         'LIMIT 513',
         'unixepoch()',
     ],
-    'example/src/Migrations/SqliteApplicationMigrations.php' => [
+    'example/src/Database/Migrations/SqliteApplicationMigrations.php' => [
         'final readonly class SqliteApplicationMigrations',
         'private const int QUERY_LIMIT = 23;',
         "private const string USER_SCHEMA_IDENTIFIER = '0001_create_user_schema';",
@@ -4029,9 +4105,20 @@ $migrationArtifactMarkers = [
     'tools/setup-example.php' => [
         '->run(ApplicationCommandName::DatabaseMigrate);',
     ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledMigrationStructureGuidanceDistribution(',
+        "\$project . '/src/Infrastructure/ChangeHistory'",
+        "\$alternativeDirectory . '/ApplicationMigrations.php'",
+        'The consumer-selected migration path and namespace are not Composer-autoload coherent.',
+        'The installed checker rejected a coherent consumer-selected migration structure.',
+        'PASS installed migration alternative structure',
+        'PASS installed migration structure guidance distribution',
+        'The database-free installed skeleton unexpectedly contains a migration directory.',
+    ],
     'tools/package-files.txt' => [
         'docs/migrations.md',
         'docs/decisions/027-application-owned-explicit-sqlite-migrations.md',
+        'docs/decisions/039-recommended-database-migration-structure.md',
         'templates/application/.ai/migrations.md',
     ],
 ];
@@ -4048,6 +4135,56 @@ foreach ($migrationArtifactMarkers as $relativePath => $markers) {
         if (!str_contains($contents, $marker)) {
             $failures[] = "Migration artifact marker is missing from {$relativePath}: {$marker}.";
         }
+    }
+}
+
+$recommendedExampleMigrationDirectory = $root . '/example/src/Database/Migrations';
+$legacyExampleMigrationDirectory = $root . '/example/src/Migrations';
+$expectedExampleMigrationFiles = [
+    'ApplicationMigrationFailed.php',
+    'ApplicationMigrationFailureReason.php',
+    'ApplicationMigrationOutcome.php',
+    'LocalMigrationLock.php',
+    'MigrationHistory.php',
+    'SqliteApplicationMigrations.php',
+    'SqliteMigrationLedger.php',
+];
+
+if (is_dir($legacyExampleMigrationDirectory)) {
+    $failures[] = 'The maintained example must use the recommended src/Database/Migrations structure.';
+}
+
+if (!is_dir($recommendedExampleMigrationDirectory)) {
+    $failures[] = 'The maintained example migration directory is missing: example/src/Database/Migrations.';
+} else {
+    $actualExampleMigrationFiles = [];
+
+    foreach (new DirectoryIterator($recommendedExampleMigrationDirectory) as $migrationEntry) {
+        if ($migrationEntry->isDot()) {
+            continue;
+        }
+
+        if (!$migrationEntry->isFile()) {
+            $failures[] = 'The maintained example migration directory must contain only the reviewed PHP files.';
+            continue;
+        }
+
+        $actualExampleMigrationFiles[] = $migrationEntry->getFilename();
+        $migrationContents = file_get_contents($migrationEntry->getPathname());
+
+        if (
+            !is_string($migrationContents)
+            || !str_contains($migrationContents, 'namespace Example\\Database\\Migrations;')
+        ) {
+            $failures[] = "Maintained example migration {$migrationEntry->getFilename()} must use the Example\\Database\\Migrations namespace.";
+        }
+    }
+
+    sort($actualExampleMigrationFiles);
+    sort($expectedExampleMigrationFiles);
+
+    if ($actualExampleMigrationFiles !== $expectedExampleMigrationFiles) {
+        $failures[] = 'The maintained example migration file set changed without review.';
     }
 }
 
@@ -4085,7 +4222,7 @@ if (is_string($migrationPackageInventory)) {
             '/^src\/(?:Migration|Migrations|Schema|SchemaBuilder)(?:\/|\.php$)/m',
             '/^src\/Database\/(?:Migration|Schema)/m',
             '/^\.ai\/migrations\.md$/m',
-            '/^example\/src\/Migrations\//m',
+            '/^example\/src\/(?:Database\/)?Migrations\//m',
             '/^skeleton\/\.ai\/migrations\.md$/m',
             '/^tests\/(?:migrations|cli-migration-lock-holder)\.php$/m',
         ] as $forbiddenMigrationPackagePattern
@@ -4100,8 +4237,24 @@ if (is_string($applicationChecker) && str_contains($applicationChecker, "'.ai/mi
     $failures[] = 'Contract version 9 must not checker-require the optional migration context file.';
 }
 
+if (
+    is_string($applicationChecker)
+    && (
+        str_contains($applicationChecker, 'src/Database/Migrations')
+        || str_contains($applicationChecker, 'src/Migrations')
+    )
+) {
+    $failures[] = 'The consumer checker must not enforce a migration source directory.';
+}
+
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveMigrationsContextIsRequired')) {
     $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/migrations.md is absent.';
+}
+
+foreach (['skeleton/src/Database/Migrations', 'skeleton/src/Migrations'] as $emptySkeletonMigrationPath) {
+    if (is_dir($root . '/' . $emptySkeletonMigrationPath)) {
+        $failures[] = "The database-free skeleton must not create an empty migration directory: {$emptySkeletonMigrationPath}.";
+    }
 }
 
 $runtimeSqlRoots = ['src', 'example', 'skeleton', 'templates/application', 'tools'];
@@ -4130,7 +4283,7 @@ foreach ($runtimeSqlRoots as $runtimeSqlRoot) {
 }
 
 $migrationRuntimeSourceFiles = ['example/src/Cli/ApplicationCommands.php'];
-$migrationRuntimeDirectory = $root . '/example/src/Migrations';
+$migrationRuntimeDirectory = $root . '/example/src/Database/Migrations';
 $migrationRuntimeFiles = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($migrationRuntimeDirectory, FilesystemIterator::SKIP_DOTS),
 );
@@ -4221,7 +4374,7 @@ foreach ($migrationRuntimeSourceFiles as $relativePath) {
 
         if (
             in_array($functionName, $forbiddenMigrationFileFunctions, true)
-            || ($functionName === 'fopen' && $relativePath !== 'example/src/Migrations/LocalMigrationLock.php')
+            || ($functionName === 'fopen' && $relativePath !== 'example/src/Database/Migrations/LocalMigrationLock.php')
         ) {
             $failures[] = "Migration runtime source {$relativePath} must not load migration SQL or source from runtime files.";
         }
@@ -4229,7 +4382,7 @@ foreach ($migrationRuntimeSourceFiles as $relativePath) {
 }
 
 $migrationCoordinator = file_get_contents(
-    $root . '/example/src/Migrations/SqliteApplicationMigrations.php',
+    $root . '/example/src/Database/Migrations/SqliteApplicationMigrations.php',
 );
 
 if (is_string($migrationCoordinator)) {

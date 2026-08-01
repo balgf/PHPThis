@@ -46,3 +46,4 @@ Accepted records:
 - `036-one-typed-application-configuration-boundary.md`
 - `037-database-setup-scope-gate.md`
 - `038-application-owned-database-authority-lifecycle.md`
+- `039-recommended-database-migration-structure.md`

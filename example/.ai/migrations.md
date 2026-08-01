@@ -1,12 +1,14 @@
 # Example SQLite migration context
 
-The executable example follows ADR 027 through the application-owned `Example\Migrations\SqliteApplicationMigrations` coordinator and the sole console command:
+The executable example follows ADR 027 through the application-owned `Example\Database\Migrations\SqliteApplicationMigrations` coordinator and the sole console command:
 
 ```text
 php example/bin/console.php database:migrate [--database=/absolute/path]
 ```
 
 No PHPThis core migration type or dependency is added. `.ai/configuration.md` owns the example's typed database-path sources and records that this local SQLite proof has no credentials or elevated-value fallback. The front controller, `ApplicationComposition::http()`, and ordinary request startup never construct or invoke the coordinator. `tools/setup-example.php` delegates schema work to this exact coordinator and then only seeds local example data; it is not a second migration implementation.
+
+Database migrations are application-owned database evolution. This example adopts the PHPThis-recommended application-relative source directory `src/Database/Migrations/` (repository path `example/src/Database/Migrations/`) and matching application namespace `Example\Database\Migrations`. Those are explicit example facts, not framework discovery or checker-enforced placement. A consuming application may record another coherent directory and namespace in its own `.ai/migrations.md`; once adopted, that application choice is authoritative and an AI must not relocate it without explicit human approval.
 
 ## Finite immutable manifest
 
@@ -20,7 +22,7 @@ The final coordinator names and invokes these seven concrete migration steps thr
 6. `0006_create_document_access_schema`
 7. `0007_create_account_users`
 
-Every step lives in `example/src/Migrations/SqliteApplicationMigrations.php`, owns complete raw SQLite compile-time-constant SQL, and calls `Connection` directly with explicit bindings where data exists. The manifest and private method calls are unrolled: no database call occurs in a loop, no directory is scanned, and no filename, class string, attribute, ledger value, or runtime `.sql` file selects work.
+Every step lives in `example/src/Database/Migrations/SqliteApplicationMigrations.php`, owns complete raw SQLite compile-time-constant SQL, and calls `Connection` directly with explicit bindings where data exists. The manifest and private method calls are unrolled: no database call occurs in a loop, no directory is scanned, and no filename, class string, attribute, ledger value, or runtime `.sql` file selects work.
 
 Each permanent identifier and its exact ordered statement bytes determine one lowercase-hex SHA-256 checksum. The same SQL constants are executed and checksummed, and all seven pending schema steps are unconditional. An applied identifier, position, or checksum-covered statement sequence is immutable. A correction is a new forward migration; there is no inferred or automatic down migration. Migration 0007 creates `account_users(user_id, account_id)` without backfilling from `account_memberships(principal_id, account_id)` because principal and user identities are separate application namespaces.
 

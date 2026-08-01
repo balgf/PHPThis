@@ -94,6 +94,12 @@ try {
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);
+    proveInstalledMigrationStructureGuidanceDistribution(
+        $project,
+        $installedFramework,
+        $profileCommand,
+        $environment,
+    );
     proveInstalledUuidAndUlidRouting($project, $environment);
     proveDatabaseContextConnectionConsistency($project, $profileCommand, $environment);
     proveInstalledTypedConfiguration($project, $profileCommand, $environment);
@@ -402,6 +408,203 @@ function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(
     }
 
     fwrite(STDOUT, "PASS installed database authority lifecycle guidance distribution\n");
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveInstalledMigrationStructureGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+    array $profileCommand,
+    array $environment,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/AGENTS.md' => [
+            'the health-only starter has no database, migration path, or migration directory',
+            'PHPThis recommends `src/Database/Migrations/` and `App\\Database\\Migrations`',
+            'A coherent consumer-selected alternative is authoritative',
+            'must not be relocated by AI without explicit human approval',
+        ],
+        $project . '/.ai/migrations.md' => [
+            'No migration directory, code, or dependency is included',
+            'PHPThis recommends `src/Database/Migrations/`',
+            '`App\\Database\\Migrations` namespace',
+            'Record the actual adopted directory and namespace in this file.',
+            'neither PHPThis nor the consumer checker enforces the recommendation or discovers migration files',
+            'multiple named database connections later adopt independent migration histories',
+            'do not pre-create or prescribe connection subdivisions',
+        ],
+        $installedFramework . '/docs/decisions/039-recommended-database-migration-structure.md' => [
+            'Status: accepted',
+            'Migrations are specialized application-owned database evolution.',
+            'A consumer may instead record any coherent application-owned path and namespace.',
+            'does not reject an alternative, enforce this directory through the checker or Strict Profile',
+            'The database-free skeleton does not create an empty migration directory.',
+            'multiple named database connections genuinely own independent migration histories',
+            'does not create speculative connection directories for a single-database application',
+            'does not establish a generic database layer',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'ADR 039 recommends `src/Database/Migrations/`',
+            'A coherent consumer-selected alternative remains valid',
+            'does not enforce migration placement through the checker or Strict Profile',
+            'no empty migration directory',
+            'explicit connection-owned subdivision for each adopted history',
+            'Do not invent connection subdivisions for a single-database application',
+        ],
+        $installedFramework . '/docs/database.md' => [
+            'Migrations are specialized application-owned database evolution.',
+            'ADR 039 recommends `src/Database/Migrations/`',
+            'records its actual source path and namespace in `.ai/migrations.md`',
+            'any coherent alternative remains valid',
+            'does not enforce placement, discover work from a directory, silently relocate established source',
+            'multiple named database connections independently adopt migration histories',
+            'creates no speculative connection directories for a single-database application',
+        ],
+        $installedFramework . '/docs/migrations.md' => [
+            '## Recommended application structure',
+            'record the actual path and namespace in `.ai/migrations.md`',
+            'A consumer may choose any coherent alternative.',
+            'does not enforce a path through the checker or Strict Profile',
+            'A database-free skeleton creates no empty migration directory.',
+            'PHPThis recommends no subdivision spelling',
+            'connection without its own migration history',
+            'does not recommend a generic `Database/Queries` directory, repository, query-object layer, or alternate SQL execution boundary',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            "ADR 039's migration-structure recommendation",
+            'The proof then records `src/Infrastructure/ChangeHistory/` and `App\\Infrastructure\\ChangeHistory` in the isolated consumer',
+            'proves Composer can autoload it, and requires the installed canonical checker to pass',
+            'The fixture performs no database I/O or migration execution',
+        ],
+        $installedFramework . '/templates/application/AGENTS.md' => [
+            'PHPThis recommends `src/Database/Migrations/`',
+            '`.ai/migrations.md` must record the actual adopted source directory and namespace.',
+            'A coherent consumer-selected alternative is authoritative',
+            'must not be relocated by AI without explicit human approval',
+        ],
+        $installedFramework . '/templates/application/.ai/migrations.md' => [
+            '{{MIGRATION_SOURCE_DIRECTORY_OR_NOT_APPLICABLE}}',
+            '{{MIGRATION_APPLICATION_NAMESPACE_OR_NOT_APPLICABLE}}',
+            '{{MIGRATION_CONNECTION_OWNERSHIP_OR_NOT_APPLICABLE}}',
+            'PHPThis recommends `src/Database/Migrations/`',
+            'A coherent consumer-selected alternative is authoritative',
+            'neither PHPThis nor the consumer checker enforces the recommendation or discovers migration files',
+            'connection without an independently adopted migration history',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed migration-structure guidance artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed migration-structure guidance artifact {$path} is missing marker: {$marker}");
+            }
+        }
+    }
+
+    if (is_dir($project . '/src/Database/Migrations') || is_dir($project . '/src/Migrations')) {
+        throw new RuntimeException('The database-free installed skeleton unexpectedly contains a migration directory.');
+    }
+
+    $migrationContextPath = $project . '/.ai/migrations.md';
+    $originalMigrationContext = file_get_contents($migrationContextPath);
+
+    if (!is_string($originalMigrationContext)) {
+        throw new RuntimeException('Unable to read the installed skeleton migration context.');
+    }
+
+    $alternativeDirectory = $project . '/src/Infrastructure/ChangeHistory';
+    $alternativeSourcePath = $alternativeDirectory . '/ApplicationMigrations.php';
+
+    writeFile(
+        $migrationContextPath,
+        <<<'MD'
+# Application migration contract
+
+- Adoption: synthetic alternative-layout checker proof
+- Actual adopted migration source directory: `src/Infrastructure/ChangeHistory/`
+- Matching application namespace: `App\Infrastructure\ChangeHistory`
+- Final concrete coordinator: `App\Infrastructure\ChangeHistory\ApplicationMigrations`
+- Placement authority: this application-selected path and namespace are explicit and no filesystem discovery is used.
+- Proof boundary: this fixture performs no database I/O, schema mutation, or migration execution.
+MD,
+    );
+    writeFile(
+        $alternativeSourcePath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\Infrastructure\ChangeHistory;
+
+final class ApplicationMigrations
+{
+    public static function sourceDirectory(): string
+    {
+        return 'src/Infrastructure/ChangeHistory';
+    }
+}
+PHP,
+    );
+
+    try {
+        $autoloadResult = runProcess(
+            [
+                PHP_BINARY,
+                '-r',
+                sprintf(
+                    'require %s; exit(class_exists(%s) ? 0 : 1);',
+                    var_export($project . '/vendor/autoload.php', true),
+                    var_export('App\\Infrastructure\\ChangeHistory\\ApplicationMigrations', true),
+                ),
+            ],
+            $project,
+            $environment,
+        );
+        requireSuccess(
+            $autoloadResult,
+            'The consumer-selected migration path and namespace are not Composer-autoload coherent.',
+        );
+
+        $alternativeResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $alternativeResult,
+            'The installed checker rejected a coherent consumer-selected migration structure.',
+        );
+        requireOutputContains($alternativeResult, 'PASS PHPThis application check');
+    } finally {
+        writeFile($migrationContextPath, $originalMigrationContext);
+
+        if (is_file($alternativeSourcePath) && !unlink($alternativeSourcePath)) {
+            throw new RuntimeException('Unable to remove the alternative migration-structure proof.');
+        }
+
+        if (is_dir($alternativeDirectory) && !rmdir($alternativeDirectory)) {
+            throw new RuntimeException('Unable to remove the alternative migration-structure directory.');
+        }
+
+        $alternativeInfrastructureDirectory = dirname($alternativeDirectory);
+
+        if (
+            is_dir($alternativeInfrastructureDirectory)
+            && !rmdir($alternativeInfrastructureDirectory)
+        ) {
+            throw new RuntimeException('Unable to remove the alternative migration parent directory.');
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed migration alternative structure\n");
+    fwrite(STDOUT, "PASS installed migration structure guidance distribution\n");
 }
 
 /** @param array<string, string> $environment */

@@ -27,6 +27,8 @@ Before implementing a request that selects or sets up a database engine:
 7. Keep production hardening, backups, high availability, deployment credentials, recovery, and unrelated operations outside the task unless requested.
 8. Implement the smallest complete selected slice. Use focused checks while editing and run the complete application gate once at the end.
 
+After migration scope is adopted, inspect `.ai/migrations.md` for an existing source-directory and namespace decision. When none exists, PHPThis recommends `src/Database/Migrations/` with the skeleton's matching `App\Database\Migrations` namespace. A consumer may select another coherent structure; record it in `.ai/migrations.md` and treat it as authoritative. Do not relocate an established migration structure without explicit human approval, and do not add path enforcement or filesystem discovery. The health-only skeleton remains database-free and does not create an empty migration directory.
+
 For the ambiguous prompt:
 
 > Please setup PostgreSQL as our main DB.

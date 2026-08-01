@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Example\Migrations;
+namespace Example\Database\Migrations;
 
 final readonly class MigrationHistory
 {

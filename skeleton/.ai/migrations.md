@@ -1,9 +1,14 @@
 # Application migration contract
 
-`NOT_APPLICABLE(MIGRATIONS)`: the health-only starter has no database, migration command, namespace or object transition, elevated identity, authority activation path, manifest, checksum policy, ledger, migration lock, release sequence, forward-recovery policy, or migration evidence. No migration code or dependency is included, and HTTP startup performs no data-definition or authority-transition work.
+`NOT_APPLICABLE(MIGRATIONS)`: the health-only starter has no database, migration source directory or namespace, migration command, namespace or object transition, elevated identity, authority activation path, manifest, checksum policy, ledger, migration lock, release sequence, forward-recovery policy, or migration evidence. No migration directory, code, or dependency is included, and HTTP startup performs no data-definition or authority-transition work.
+
+Database migrations are specialized application-owned database evolution. On first adoption with no established structure, PHPThis recommends `src/Database/Migrations/` and the skeleton's matching `App\Database\Migrations` namespace. Record the actual adopted directory and namespace in this file. A coherent consumer-selected alternative is authoritative; neither PHPThis nor the consumer checker enforces the recommendation or discovers migration files, and AI must not relocate an established structure without explicit human approval.
+
+If multiple named database connections later adopt independent migration histories, record each connection's explicit source path, namespace, command ownership, manifest, ledger, authority, and exact-engine evidence. Create an application-selected connection-owned subdivision only for an adopted independent history; do not pre-create or prescribe connection subdivisions for this database-free skeleton or a single-database application.
 
 Before adoption, read installed `vendor/phpthis/framework/docs/migrations.md` and record:
 
+- the actual adopted migration source directory and matching application namespace;
 - the exact engine and supported version; accepted engine-specific database definition or provisioning, supported namespace/control model, data-definition, authority, locking, recovery, and integration decision; sole application migration command; and separately authorized process identity;
 - the migration configuration source, factory, final readonly type, injection, failure, rotation/restart, and secret redaction in `.ai/configuration.md`;
 - exact required and explicitly prohibited migration capabilities, their isolation from HTTP runtime, and one owner and complete non-HTTP path for each authority activation and deactivation, with `GRANT` and `REVOKE` only where supported;

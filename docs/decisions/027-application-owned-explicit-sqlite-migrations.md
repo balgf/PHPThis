@@ -16,6 +16,8 @@ The command is operational and explicit. It is never called from the front contr
 
 ADR 038 later clarifies that successful migration execution does not activate or prove a separate runtime identity's authority. Any adopted authority activation or deactivation path, including engine-specific `GRANT` or `REVOKE` SQL when supported and selected, exact-engine verification, and release ordering remain explicit application-owned decisions.
 
+ADR 039 later clarifies that migrations are specialized database evolution and recommends `src/Database/Migrations/` for new adoption without making placement mandatory. This record preserves the original `Example\Migrations` name as historical evidence; the current example was subsequently moved to `Example\Database\Migrations` with no change to its coordinator behavior, manifest, or non-discovery rule.
+
 ### Finite manifest and immutable history
 
 One final application-owned migration coordinator names every concrete migration step in one reviewed order and invokes each pending private step method in straight-line, unrolled code. Adding a migration requires an ordinary source edit to that coordinator and the matching tests. No filename, directory entry, class name, attribute, annotation, service registration, reflection result, or database value selects executable PHP or SQL.
