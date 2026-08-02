@@ -35,6 +35,8 @@
 | commit-visible job publication | business change and job insert made durable by the same `Connection`, explicit transaction, and database commit | enqueue callback, after-commit hook, cross-connection atomicity |
 | job lease | finite claim ownership identified by job, leased state, attempt number, opaque token, and unexpired deadline | permanent lock, exactly-once ownership, heartbeat service |
 | one-shot worker | fresh application process or invocation that claims and finalizes at most one delivery before exit | daemon loop, framework worker, queue consumer abstraction |
+| development Workbench | optional local interactive expression process supplied by the separate `phpthis/workbench` `require-dev` package | operational console, production shell, framework CLI, sandbox, test runner |
+| Workbench workspace | one concrete application-owned object returned by a checked bootstrap and exposed as `$workspace` to each fresh strict expression child | service container, string-keyed registry, facade, global application object |
 | at-least-once delivery | a durable job may be delivered again after failure or lease expiry, so its effect must tolerate duplicates | exactly-once execution, unique attempt, single handler call |
 | dead letter | terminal job state with one finite redacted diagnostic code after poison input or exhausted delivery | exception archive, automatic replay queue, failure log payload |
 | application migration | one permanent engine-specific forward database change owned and explicitly invoked by the application | framework migration, discovered script, reversible schema object |

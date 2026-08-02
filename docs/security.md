@@ -41,6 +41,16 @@ AI-oriented explicitness does not replace security review.
 
 Security mechanisms must remain visible in the route-to-handler path or in the one explicitly registered request boundary. Hidden defaults are not considered protection.
 
+## Workbench limits
+
+ADR 041's optional PHPThis Workbench executes unchecked arbitrary PHP. Its authority combines the launching operating-system identity, inherited environment, independently loaded child PHP CLI configuration, ambient filesystem, network, process, and service access, native PHP functions and Composer-autoloaded code, and explicitly composed dependencies. An expression can therefore read environment variables and files, connect to network and database services, mutate data, start subprocesses, signal or terminate the parent or another process, and print secrets whenever that combined authority permits. A narrow workspace limits only the intended application surface; it is not containment. Ordinary parse, compile, or uncaught runtime failure ends only the fresh child; this does not contain deliberate process control or reverse external side effects. Workbench is not a sandbox, dry run, redactor, authorization layer, output bound, environment verifier, or production-safety control.
+
+Workbench also provides no execution timeout, CPU limit, memory limit, resource limit, or operating-system termination isolation. A hanging or blocked expression prevents the next prompt until externally interrupted, while resource exhaustion or operating-system termination can affect the parent or other processes.
+
+Use a dedicated least-authority development identity and environment containing no production, migration, administrative, or unrelated credentials. Each expression child's fresh `PHP_BINARY` invocation loads its own PHP CLI configuration and explicitly clears `auto_prepend_file` and `auto_append_file`. Parent-process `ini_set()` changes and parent-launch `-d` restrictions do not carry into the child and must not be treated as containment. Keep the application-owned bootstrap small, checked, and explicit; expose one concrete final workspace object rather than a container, string-keyed registry, credential bag, generic dispatcher, class resolver, or raw administrative connection. A `development` label does not make excessive authority safe.
+
+Workbench output and exception messages are unredacted. Do not inspect credentials, tokens, private data, production payloads, or complete sensitive objects, and never retain a runtime dump in source, tests, `.ai/`, issue trackers, or chat transcripts. Any real side effect is governed only by the explicit application operation and process authority. Production one-offs stay in the application's finite tested operational console.
+
 ## WebSocket limits
 
 ADR 034 keeps WebSockets in a separate application-owned process using a pinned mature third-party runtime. A successful protocol upgrade is not permanent authentication or authorization. Authenticate explicitly after upgrade even when the handshake also rejects invalid credentials, enforce current expiry and revocation policy, and authorize every command and continuing or emitted resource-specific action at the points recorded by the application. Do not place identity or authorization in a PHPThis request, a generic connection context bag, a cache, or a global.

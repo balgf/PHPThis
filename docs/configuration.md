@@ -153,6 +153,12 @@ Record each adopted HTTP or non-HTTP probe in `.ai/operations.md`: its exact cla
 
 Do not pass `ApplicationEnvironment`, a configuration reader, or a generic configuration aggregate into routes, handlers, operations, policies, or SQL owners. Pass only the concrete typed dependency that behavior needs.
 
+## Workbench process authority
+
+ADR 041's optional PHPThis Workbench performs no automatic configuration or infrastructure loading. Its application-owned bootstrap receives only the concrete typed configuration and dependencies that visible bootstrap source deliberately composes. Configuration-only database setup must not create dead Workbench wiring, and an adopted runtime connection does not authorize adding migration, administrative, or broader infrastructure credentials to the workspace.
+
+Treat the combined operating-system identity, inherited environment, independently loaded child PHP CLI configuration, ambient filesystem, network, process, and service access, native PHP functions and Composer-autoloaded code, and explicitly composed dependencies as the authority boundary. The narrow workspace limits the intended application surface; it is not containment against arbitrary PHP. Use a dedicated development profile without fallback and exclude production, migration, administrative, and unrelated secrets. Each expression child independently loads the PHP CLI configuration for its fresh `PHP_BINARY` invocation; parent runtime `ini_set()` changes and parent-launch `-d` options do not carry into the child and are not authority controls. An environment label, debug flag, local hostname, or `.env` filename is not an authority check. If an experiment needs a real development side effect, record and inject only that operation's narrowly typed dependency and least authority; never expose a configuration bag, credential object, raw elevated connection, or secret lookup through `$workspace`.
+
 ## Secrets and local development
 
 Real values come from the deployment environment or an application-owned, explicitly selected secret-delivery path. Environment variables are delivery, not encryption. Never commit actual secret or deployment values to PHP, JSON, YAML, Markdown, `.ai/`, `.env.example`, fixtures, snapshots, logs, traces, exception messages, or command output.

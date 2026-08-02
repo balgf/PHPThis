@@ -73,6 +73,7 @@ docs/decisions/037-database-setup-scope-gate.md
 docs/decisions/038-application-owned-database-authority-lifecycle.md
 docs/decisions/039-recommended-database-migration-structure.md
 docs/decisions/040-bounded-alpha-5-release-scope.md
+docs/decisions/041-optional-development-workbench.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -123,6 +124,7 @@ docs/strict-profile.md
 docs/type-safety.md
 docs/vocabulary.md
 docs/websockets.md
+docs/workbench.md
 src/Application.php
 src/Database/Connection.php
 src/Database/QueryBudget.php
@@ -172,6 +174,7 @@ templates/application/.ai/request-policy.md
 templates/application/.ai/rules.md
 templates/application/.ai/testing.md
 templates/application/.ai/websockets.md
+templates/application/.ai/workbench.md
 templates/application/AGENTS.md
 templates/application/docs/decisions/README.md
 verification/ApplicationChecker.php

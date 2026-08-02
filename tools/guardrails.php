@@ -390,6 +390,71 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
     return false;
 }
 
+function workbenchRuntimePathIsForbidden(string $relativePath): bool
+{
+    if (!str_starts_with($relativePath, 'src/')) {
+        return false;
+    }
+
+    foreach (explode('/', substr($relativePath, 4)) as $segment) {
+        $name = preg_replace('/\.php\z/i', '', $segment);
+
+        if (!is_string($name)) {
+            continue;
+        }
+
+        $compactName = preg_replace('/[^A-Za-z0-9]+/', '', strtolower($name));
+
+        if (
+            is_string($compactName)
+            && in_array(
+                $compactName,
+                ['workbench', 'workbenches', 'repl', 'repls', 'interactiveshell', 'interactiveshells'],
+                true,
+            )
+        ) {
+            return true;
+        }
+
+        $tokenizableName = str_replace('REPLs', 'Repls', $name);
+        $wordSeparatedName = preg_replace(
+            [
+                '/(?<=[a-z0-9])(?=[A-Z])/',
+                '/(?<=[A-Z])(?=[A-Z][a-z])/',
+                '/(?<=[A-Za-z])(?=[0-9])/',
+                '/(?<=[0-9])(?=[A-Za-z])/',
+            ],
+            '-',
+            $tokenizableName,
+        );
+
+        if (!is_string($wordSeparatedName)) {
+            continue;
+        }
+
+        $words = preg_split('/[^A-Za-z0-9]+/', strtolower($wordSeparatedName), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (!is_array($words)) {
+            continue;
+        }
+
+        foreach ($words as $index => $word) {
+            if (in_array($word, ['workbench', 'workbenches', 'repl', 'repls'], true)) {
+                return true;
+            }
+
+            if (
+                $word === 'interactive'
+                && in_array($words[$index + 1] ?? null, ['shell', 'shells'], true)
+            ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 /** @param list<string> $markers */
 function mutableReleaseStateClaim(string $contents, array $markers): ?string
 {
@@ -582,6 +647,7 @@ $requiredRepositoryFiles = [
     '.ai/routing.md',
     '.ai/session.md',
     '.ai/websockets.md',
+    '.ai/workbench.md',
     'docs/consumer-contract.md',
     'docs/consumer-profile.md',
     'docs/configuration.md',
@@ -646,6 +712,7 @@ $requiredRepositoryFiles = [
     'docs/sessions.md',
     'docs/vocabulary.md',
     'docs/websockets.md',
+    'docs/workbench.md',
     'docs/decisions/011-ai-first-authoring.md',
     'docs/decisions/012-pdo-transport-application-owned-dialects.md',
     'docs/decisions/013-optional-crud-reference-profile.md',
@@ -676,6 +743,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/038-application-owned-database-authority-lifecycle.md',
     'docs/decisions/039-recommended-database-migration-structure.md',
     'docs/decisions/040-bounded-alpha-5-release-scope.md',
+    'docs/decisions/041-optional-development-workbench.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -792,6 +860,7 @@ $requiredRepositoryFiles = [
     'templates/application/.ai/rules.md',
     'templates/application/.ai/testing.md',
     'templates/application/.ai/websockets.md',
+    'templates/application/.ai/workbench.md',
     'templates/application/docs/decisions/README.md',
     'skeleton/AGENTS.md',
     'skeleton/.gitignore',
@@ -815,6 +884,7 @@ $requiredRepositoryFiles = [
     'skeleton/.ai/rules.md',
     'skeleton/.ai/testing.md',
     'skeleton/.ai/websockets.md',
+    'skeleton/.ai/workbench.md',
     'skeleton/bootstrap.php',
     'skeleton/composer.json',
     'skeleton/docs/decisions/README.md',
@@ -3905,6 +3975,268 @@ foreach ($applicationCliSourceFiles as $relativePath) {
             break;
         }
     }
+}
+
+$workbenchArtifactMarkers = [
+    'docs/decisions/041-optional-development-workbench.md' => [
+        'Status: accepted',
+        'optional separate `phpthis/workbench` development package',
+        'For each entered expression it starts a fresh `PHP_BINARY` child',
+        'parent-process `ini_set()` changes and parent-launch `-d` options do not carry into it',
+        'The generated child program is not a security boundary.',
+        'an expression can target the parent or other processes and can leave external state changed',
+        'Workbench provides no execution timeout, CPU limit, memory limit, resource limit, or operating-system termination isolation',
+        'Direct deferred-work handler execution does not prove publication or queued delivery.',
+        'existing adopted business operation',
+        'This decision adds no framework-core PHP, runtime dependency, command, checker rule, `PHT` diagnostic',
+    ],
+    'docs/decisions/README.md' => [
+        '`041-optional-development-workbench.md`',
+    ],
+    'docs/workbench.md' => [
+        '# PHPThis Workbench',
+        'separate `phpthis/workbench` Composer package',
+        'returns exactly one concrete application-owned object',
+        'Every expression is sent over standard input to a fresh `PHP_BINARY` child',
+        'Composer\\\\Config::disableProcessTimeout',
+        '`-d` options used to launch that parent are not inherited by the child',
+        'Arbitrary PHP can still signal or terminate other processes and can leave filesystem, database, network, queue, or other external state changed.',
+        'Workbench supplies no execution timeout, CPU limit, memory limit, resource limit, or operating-system termination isolation.',
+        'A non-returning or blocked expression prevents the next prompt until the child is externally interrupted or terminated.',
+        'existing adopted business operation',
+        'recorded finite tested one-delivery operational command',
+        'Workbench supplies no `dispatch()`',
+        'An entered expression is unchecked arbitrary PHP.',
+        'Workbench output is exploratory evidence, not application validity evidence.',
+    ],
+    'docs/consumer-contract.md' => [
+        '## Optional development Workbench',
+        'Existing applications need not add `.ai/workbench.md` when they do not adopt the package',
+        'This changes neither Consumer Contract version 10 nor Strict Profile version 3',
+    ],
+    'docs/knowledge-map.md' => [
+        '| Adopt, use, or review PHPThis Workbench |',
+        'verify that no container, discovery, generic dispatch, second publisher, core runtime, batch, HTTP, remote, or production shell was introduced',
+    ],
+    'docs/cli.md' => [
+        'The optional separate `phpthis/workbench` development package is an unchecked expression workspace',
+        'ADR 041\'s separately installed Workbench does not change that boundary',
+    ],
+    'docs/jobs.md' => [
+        '## Development exploration is not delivery',
+        'A direct deferred-work handler call bypasses publication, stored-envelope parsing, claim order, lease and fencing',
+        'existing adopted business operation',
+        'recorded finite tested one-delivery console command',
+    ],
+    'docs/configuration.md' => [
+        '## Workbench process authority',
+        'parent runtime `ini_set()` changes and parent-launch `-d` options do not carry into the child',
+        'An environment label, debug flag, local hostname, or `.env` filename is not an authority check.',
+    ],
+    'docs/security.md' => [
+        '## Workbench limits',
+        'signal or terminate the parent or another process',
+        'Workbench also provides no execution timeout, CPU limit, memory limit, resource limit, or operating-system termination isolation.',
+        'Parent-process `ini_set()` changes and parent-launch `-d` restrictions do not carry into the child',
+        'Workbench is not a sandbox, dry run, redactor, authorization layer, output bound, environment verifier, or production-safety control.',
+    ],
+    'docs/vocabulary.md' => [
+        '| development Workbench |',
+        '| Workbench workspace |',
+    ],
+    'docs/guardrails.md' => [
+        'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
+        'It keeps `.ai/workbench.md` optional under Consumer Contract version 10.',
+    ],
+    'README.md' => [
+        'Optional [PHPThis Workbench](docs/workbench.md)',
+        '[ADR 041](docs/decisions/041-optional-development-workbench.md)',
+    ],
+    'VISION.md' => [
+        'A human can inspect one explicitly composed development object or operation through a fresh strict process',
+        'Providing a framework-owned production shell, container-backed console, administrative execution path, generic dispatcher, or remotely accessible Workbench.',
+    ],
+    'ROADMAP.md' => [
+        'Complete: ADR 041 accepts PHPThis Workbench as a separate optional development-only package',
+        'ADR 041 accepts only a separate development Workbench package',
+    ],
+    '.ai/README.md' => [
+        '| Propose, adopt, or change the optional development Workbench |',
+        '`.ai/workbench.md`',
+    ],
+    '.ai/application-context.md' => [
+        'Include `.ai/workbench.md` in the current skeleton and template with `NOT_APPLICABLE(WORKBENCH)`',
+        'this optional file is not a checker requirement',
+        'existing adopted business operation and transaction',
+        'recorded finite tested console commands',
+    ],
+    '.ai/workbench.md' => [
+        '# Optional development Workbench contract',
+        'When the workspace exposes a real side effect, also read `docs/security.md` and `.ai/database.md`',
+        '`skeleton/.ai/data.md`, `skeleton/.ai/integrations.md`, `skeleton/.ai/operations.md`',
+        'one checked project-relative application bootstrap returns exactly one concrete final named object exposed as `$workspace`',
+        'no execution timeout or CPU, memory, resource, or operating-system termination isolation',
+        'operating-system identity, inherited environment, independently loaded child CLI configuration, ambient filesystem, network, process, and service access',
+        'existing adopted business producer transaction',
+        'no sandbox, redaction, dry-run, output-bound, production-safety, authorization, or validity claim',
+    ],
+    '.ai/rules.md' => [
+        'Keep optional Workbench use development-only and explicit:',
+        'Core or production Workbench types;',
+    ],
+    '.ai/testing.md' => [
+        'An application that adopts ADR 041 Workbench keeps its bootstrap and concrete workspace type inside the ordinary application manifest and complete check.',
+        'Entered expressions and displayed values remain unchecked exploratory evidence.',
+    ],
+    'templates/application/.ai/README.md' => [
+        '| Adopt or change PHPThis Workbench |',
+        'installed `vendor/phpthis/framework/docs/workbench.md`',
+        'complete arbitrary-PHP development authority',
+        'existing business producer transaction',
+    ],
+    'templates/application/.ai/workbench.md' => [
+        '{{WORKBENCH_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{WORKBENCH_EXCLUDED_AUTHORITY_OR_NOT_APPLICABLE}}',
+        '{{WORKBENCH_RESOURCE_LIMITS_OR_NOT_APPLICABLE}}',
+        '{{WORKBENCH_SIDE_EFFECT_POLICY_OR_NOT_APPLICABLE}}',
+        '{{WORKBENCH_JOB_PATH_OR_NOT_APPLICABLE}}',
+        'Workbench is arbitrary development code, not a sandbox',
+    ],
+    'templates/application/AGENTS.md' => [
+        'record adoption or `NOT_APPLICABLE(WORKBENCH)` in `.ai/workbench.md`',
+        'Install only through `require-dev`',
+        'existing adopted business producer transaction',
+    ],
+    'skeleton/.ai/README.md' => [
+        '| Adopt or change PHPThis Workbench |',
+        '`NOT_APPLICABLE(WORKBENCH)`',
+        'complete arbitrary-PHP development authority',
+        'existing business producer transaction',
+    ],
+    'skeleton/.ai/workbench.md' => [
+        '`NOT_APPLICABLE(WORKBENCH)`',
+        'dedicated development operating-system identity, inherited environment, independently loaded child CLI configuration',
+        'absence of a Workbench execution timeout or CPU, memory, resource, and operating-system termination isolation',
+        'existing adopted business producer transaction and the application-recorded finite one-delivery console command',
+        'Install Workbench only through `require-dev`',
+        'Production artifacts install with `--no-dev`',
+    ],
+    'skeleton/AGENTS.md' => [
+        '`NOT_APPLICABLE(WORKBENCH)`',
+        'do not add a container, registry, generic dispatcher',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/041-optional-development-workbench.md',
+        'docs/workbench.md',
+        'templates/application/.ai/workbench.md',
+    ],
+    'tools/test-consumer-project.php' => [
+        '$installedWorkbenchGuidanceProof = proveInstalledWorkbenchGuidanceDistribution(',
+        "if (\$installedWorkbenchGuidanceProof !== 'installed-workbench-guidance-proved')",
+        "return 'installed-workbench-guidance-proved';",
+        'The installed checker rejected a consumer only because .ai/workbench.md was absent.',
+        'PASS installed Workbench guidance distribution',
+        'without explicit application approval and verified Composer-source availability.',
+    ],
+    'tools/guardrails.php' => [
+        'function workbenchRuntimePathIsForbidden(string $relativePath): bool',
+        "'src/Development/Workbench.php' => true,",
+        "'src/Development/Workbenches/Runner.php' => true,",
+        "'src/Console/InteractiveShell.php' => true,",
+        "'src/Console/InteractiveShells.php' => true,",
+        "'src/Development/ReplConsole.php' => true,",
+        "'src/Console/Repls/Runner.php' => true,",
+        "'src/Console/REPLs/Runner.php' => true,",
+        "'src/Console/DevelopmentREPLs.php' => true,",
+        "'src/Language/Replacement.php' => false,",
+        "'src/Language/Replay.php' => false,",
+    ],
+];
+
+foreach ($workbenchArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read Workbench boundary artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Workbench boundary artifact marker is missing from {$relativePath}: {$marker}";
+        }
+    }
+}
+
+$workbenchRuntimePathFixtures = [
+    'src/Development/Workbench.php' => true,
+    'src/Development/Workbenches/Runner.php' => true,
+    'src/Console/InteractiveShell.php' => true,
+    'src/Console/InteractiveShells.php' => true,
+    'src/Development/ReplConsole.php' => true,
+    'src/Console/Repls/Runner.php' => true,
+    'src/Console/REPLs/Runner.php' => true,
+    'src/Console/DevelopmentREPLs.php' => true,
+    'src/Tools/REPL/Runner.php' => true,
+    'src/Language/Replacement.php' => false,
+    'src/Language/Replay.php' => false,
+    'src/Http/Reply.php' => false,
+    'docs/workbench.md' => false,
+];
+
+foreach ($workbenchRuntimePathFixtures as $fixturePath => $expectedForbidden) {
+    if (workbenchRuntimePathIsForbidden($fixturePath) !== $expectedForbidden) {
+        $failures[] = "Workbench runtime path guard fixture has drifted: {$fixturePath}.";
+    }
+}
+
+$workbenchFrameworkSourceFiles = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),
+);
+
+foreach ($workbenchFrameworkSourceFiles as $workbenchFrameworkSourceFile) {
+    if (!$workbenchFrameworkSourceFile instanceof SplFileInfo || !$workbenchFrameworkSourceFile->isFile()) {
+        continue;
+    }
+
+    $relativePath = substr($workbenchFrameworkSourceFile->getPathname(), strlen($root) + 1);
+
+    if (workbenchRuntimePathIsForbidden($relativePath)) {
+        $failures[] = "Workbench runtime must remain outside framework core: {$relativePath}.";
+    }
+}
+
+$workbenchPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+if (is_string($workbenchPackageInventory)) {
+    $workbenchPackagePaths = preg_split('/\R/', $workbenchPackageInventory);
+
+    if (is_array($workbenchPackagePaths)) {
+        foreach ($workbenchPackagePaths as $workbenchPackagePath) {
+            if (workbenchRuntimePathIsForbidden($workbenchPackagePath)) {
+                $failures[] = "Workbench runtime must remain outside the framework package API: {$workbenchPackagePath}.";
+            }
+        }
+    }
+}
+
+foreach (['composer.json', 'skeleton/composer.json'] as $workbenchDependencyManifest) {
+    $contents = file_get_contents($root . '/' . $workbenchDependencyManifest);
+
+    if (is_string($contents) && str_contains($contents, '"phpthis/workbench"')) {
+        $failures[] = "Workbench must not enter {$workbenchDependencyManifest} without explicit application approval and verified Composer-source availability.";
+    }
+}
+
+if (
+    is_string($frameworkEntrypoint)
+    && (str_contains($frameworkEntrypoint, 'workbench') || str_contains($frameworkEntrypoint, 'phpthis-workbench'))
+) {
+    $failures[] = 'The check-only framework entrypoint must not host Workbench.';
+}
+
+if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveWorkbenchContextIsRequired')) {
+    $failures[] = 'Consumer Contract version 10 must not reject an existing consumer only because .ai/workbench.md is absent.';
 }
 
 $redisCoordinationArtifactMarkers = [

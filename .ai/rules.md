@@ -18,9 +18,10 @@
 - Keep ADR 026 file transfer explicit: one typed bounded multipart upload, application-owned provenance and storage, one concrete local-file body, exact framing, fixed-chunk emission, and no range implementation.
 - Keep ADR 027 schema migration explicit and application-owned: one SQLite-only console path, finite ordered unrolled manifest, checksum-locked immutable history, bounded inspectable ledger, one transaction per migration, separate migration authority, and one application-private same-host lock.
 - Keep optional WebSockets application-owned: one explicitly selected third-party runtime, separate visible process and composition root, exact handshake and current authorization, one bounded operation-specific command, one narrowly named typed operation, awaited bounded sends, finite connection and lifecycle policy, redacted connection summary, and real process/socket evidence.
+- Keep optional Workbench use development-only and explicit: one checked application bootstrap, one concrete workspace object, one expression per fresh strict child, the complete arbitrary-PHP authority surface, no persisted state, no timeout or resource-isolation claim, the existing adopted business producer transaction for real publication, the application-recorded finite one-delivery command for delivery, and ordinary tests for every retained behavior.
 - Pass the complete Strict Profile; PHP execution without `composer check` is not sufficient verification.
 - Add a test for success, expected failure, and resource bounds when relevant.
-- Use one stable term for each concept: route, handler, application-owned request-handler decorator, connection, request, request upload, response, local file body, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, terminal request summary, correlation ID, sink invocation attempt, HTTP cache policy, application cache service, stale-refill race, application migration, migration manifest, migration ledger, migration drift.
+- Use one stable term for each concept: route, handler, application-owned request-handler decorator, connection, request, request upload, response, local file body, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, terminal request summary, correlation ID, sink invocation attempt, HTTP cache policy, application cache service, stale-refill race, application migration, migration manifest, migration ledger, migration drift, development Workbench, Workbench workspace.
 
 ## Forbidden
 
@@ -40,6 +41,7 @@
 - Raw `$_FILES` outside the front controller, trusted client file metadata, generic storage or stream facades, automatic file persistence or cleanup, image processing, and partial range support.
 - Core migration types, schema builders or DSLs, automatic migration discovery, runtime `.sql` loading, stored executable SQL or class names, migration database calls in loops, inferred down migrations, HTTP-startup migrations, and a SQLite proof presented as portable DDL.
 - Core WebSocket, event-loop, connection-manager, daemon, or supervisor types; adapting frames into PHPThis HTTP requests or responses; generic WebSocket middleware, gateways, channels, rooms, broadcasters, pub/sub, event buses, service location, context bags, discovery, application send queues, hidden retry, replay, acknowledgement, resume, or exactly-once claims.
+- Core or production Workbench types; a container-backed shell, string-keyed workspace registry, generic dispatcher, automatic booting, HTTP or remote expression endpoint, noninteractive batch expressions, persisted history or mutable session state, elevated-credential fallback, or sandbox, redaction, dry-run, and validity claims.
 - Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
 - Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.
 

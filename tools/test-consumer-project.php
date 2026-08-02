@@ -101,6 +101,16 @@ try {
         $profileCommand,
         $environment,
     );
+    $installedWorkbenchGuidanceProof = proveInstalledWorkbenchGuidanceDistribution(
+        $project,
+        $installedFramework,
+        $profileCommand,
+        $environment,
+    );
+
+    if ($installedWorkbenchGuidanceProof !== 'installed-workbench-guidance-proved') {
+        throw new RuntimeException('The installed Workbench guidance proof did not return its success sentinel.');
+    }
     proveInstalledUuidAndUlidRouting($project, $environment);
     proveDatabaseContextConnectionConsistency($project, $profileCommand, $environment);
     proveInstalledTypedConfiguration($project, $profileCommand, $environment);
@@ -286,6 +296,136 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
     }
 
     fwrite(STDOUT, "PASS installed database setup guidance distribution\n");
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveInstalledWorkbenchGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+    array $profileCommand,
+    array $environment,
+): string
+{
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/AGENTS.md' => [
+            '`NOT_APPLICABLE(WORKBENCH)`',
+            'Install only through `require-dev`',
+            'do not add a container, registry, generic dispatcher',
+        ],
+        $project . '/.ai/README.md' => [
+            '| Adopt or change PHPThis Workbench |',
+            '`.ai/workbench.md`',
+            'complete arbitrary-PHP development authority',
+            'existing business producer transaction',
+        ],
+        $project . '/.ai/workbench.md' => [
+            '`NOT_APPLICABLE(WORKBENCH)`',
+            'the dedicated development operating-system identity, inherited environment, independently loaded child CLI configuration',
+            'the absence of a Workbench execution timeout or CPU, memory, resource, and operating-system termination isolation',
+            'the existing adopted business producer transaction and the application-recorded finite one-delivery console command',
+            'Production artifacts install with `--no-dev`',
+        ],
+        $installedFramework . '/docs/workbench.md' => [
+            '# PHPThis Workbench',
+            'returns exactly one concrete application-owned object',
+            'Composer\\\\Config::disableProcessTimeout',
+            'fresh `PHP_BINARY` child',
+            'Workbench supplies no execution timeout, CPU limit, memory limit, resource limit, or operating-system termination isolation.',
+            'existing adopted business operation',
+            'recorded finite tested one-delivery operational command',
+            'Workbench supplies no `dispatch()`',
+            'Workbench output is exploratory evidence, not application validity evidence.',
+        ],
+        $installedFramework . '/docs/decisions/041-optional-development-workbench.md' => [
+            'Status: accepted',
+            'optional separate `phpthis/workbench` development package',
+            'The generated child program is not a security boundary.',
+            'Workbench provides no execution timeout, CPU limit, memory limit, resource limit, or operating-system termination isolation',
+            'This decision adds no framework-core PHP, runtime dependency, command, checker rule, `PHT` diagnostic',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            '## Optional development Workbench',
+            'Existing applications need not add `.ai/workbench.md`',
+            'This changes neither Consumer Contract version 10 nor Strict Profile version 3',
+        ],
+        $installedFramework . '/docs/security.md' => [
+            '## Workbench limits',
+            'Workbench is not a sandbox, dry run, redactor, authorization layer, output bound, environment verifier, or production-safety control.',
+            'Workbench also provides no execution timeout, CPU limit, memory limit, resource limit, or operating-system termination isolation.',
+        ],
+        $installedFramework . '/docs/jobs.md' => [
+            'existing adopted business operation',
+            'recorded finite tested one-delivery console command',
+        ],
+        $installedFramework . '/templates/application/.ai/workbench.md' => [
+            '{{WORKBENCH_ADOPTION_OR_NOT_APPLICABLE}}',
+            '{{WORKBENCH_EXCLUDED_AUTHORITY_OR_NOT_APPLICABLE}}',
+            '{{WORKBENCH_RESOURCE_LIMITS_OR_NOT_APPLICABLE}}',
+            '{{WORKBENCH_SIDE_EFFECT_POLICY_OR_NOT_APPLICABLE}}',
+            '{{WORKBENCH_JOB_PATH_OR_NOT_APPLICABLE}}',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed Workbench guidance artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed Workbench guidance artifact {$path} is missing marker: {$marker}");
+            }
+        }
+    }
+
+    $consumerComposer = file_get_contents($project . '/composer.json');
+
+    if (!is_string($consumerComposer)) {
+        throw new RuntimeException('Unable to read the installed skeleton Composer manifest for Workbench proof.');
+    }
+
+    if (
+        str_contains($consumerComposer, '"phpthis/workbench"')
+        || is_file($project . '/vendor/bin/phpthis-workbench')
+    ) {
+        throw new RuntimeException(
+            'The skeleton adopted phpthis/workbench without explicit application approval and verified Composer-source availability.',
+        );
+    }
+
+    $workbenchContext = $project . '/.ai/workbench.md';
+    $optionalContextProof = $project . '/.ai/workbench.md.optional-context-proof';
+
+    if (!is_file($workbenchContext) || file_exists($optionalContextProof)) {
+        throw new RuntimeException('Unable to prepare the optional Workbench context compatibility proof.');
+    }
+
+    if (!rename($workbenchContext, $optionalContextProof)) {
+        throw new RuntimeException('Unable to remove the optional Workbench context for compatibility proof.');
+    }
+
+    try {
+        $withoutWorkbenchContext = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $withoutWorkbenchContext,
+            'The installed checker rejected a consumer only because .ai/workbench.md was absent.',
+        );
+        requireOutputContains($withoutWorkbenchContext, 'PASS PHPThis application check');
+    } finally {
+        if (!rename($optionalContextProof, $workbenchContext)) {
+            throw new RuntimeException('Unable to restore the optional Workbench context after compatibility proof.');
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed Workbench guidance distribution\n");
+
+    return 'installed-workbench-guidance-proved';
 }
 
 function proveInstalledStartupProbeGuidanceDistribution(string $project, string $installedFramework): void

@@ -48,3 +48,4 @@ Accepted records:
 - `038-application-owned-database-authority-lifecycle.md`
 - `039-recommended-database-migration-structure.md`
 - `040-bounded-alpha-5-release-scope.md`
+- `041-optional-development-workbench.md`

@@ -1,12 +1,12 @@
 # Application CLI and scheduler
 
-PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API. The application keeps its finite command map, typed arguments, dependencies, exit codes, output, clock, overlap policy, and process lifecycle explicit. The installed `vendor/bin/phpthis` executable remains the framework-owned `check` boundary; it is not an application command host.
+PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API. The application keeps its finite command map, typed arguments, dependencies, exit codes, output, clock, overlap policy, and process lifecycle explicit. The installed `vendor/bin/phpthis` executable remains the framework-owned `check` boundary; it is not an application command host. The optional separate `phpthis/workbench` development package is an unchecked expression workspace, not this operational console and not a production one-off path.
 
 ADR 025 records the initial job and scheduler proof through the executable example. ADR 027 extends that same application-owned console with one explicit SQLite migration command. ADR 028 replaces only the example's same-host schedule file lock with one Redis-specific owner-token lease. None adds a framework command, migration, cache, lock, or lease API. The concrete names and cadence below are evidence for that application, not reserved PHPThis APIs that every consumer must copy.
 
 ## Adoption boundary
 
-An application with no operational command or scheduler records `NOT_APPLICABLE(CLI)`. Composer development scripts and `vendor/bin/phpthis check` do not by themselves mean that an application CLI has been adopted.
+An application with no operational command or scheduler records `NOT_APPLICABLE(CLI)`. Composer development scripts, `vendor/bin/phpthis check`, and an optional `composer workbench` script do not by themselves mean that an application CLI has been adopted.
 
 Before adoption, the accountable human records:
 
@@ -121,8 +121,8 @@ The current example's proof keeps exact unknown and invalid failures, redacted m
 
 ## Unsupported boundary
 
-PHPThis ships no application console, command interface, command registry, argument parser, input or output helper, scheduler, cadence type, clock, lock, lease, daemon, worker manager, migration API, schema builder, process manager, signal handler, cron installer, deployment unit, or distributed coordinator. It adds no operational command to `bin/phpthis`.
+PHPThis ships no application console, command interface, command registry, argument parser, input or output helper, scheduler, cadence type, clock, lock, lease, daemon, worker manager, migration API, schema builder, process manager, signal handler, cron installer, deployment unit, or distributed coordinator. It adds no operational command to `bin/phpthis`. ADR 041's separately installed Workbench does not change that boundary: it has no production or noninteractive mode, stable operational output contract, redaction guarantee, queue claim, or deployment authority.
 
 The example proves one application-owned Redis-specific overlap pattern. It does not promise command compatibility across applications, absolute distributed exclusion, persistent schedule deduplication, catch-up, production cron delivery, a fencing token, exactly-once job execution, or exactly-once external effects.
 
-See [ADR 025](decisions/025-application-owned-explicit-cli-and-scheduler.md) for the console boundary, [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the migration boundary, and [ADR 028](decisions/028-application-owned-redis-cache-and-schedule-lease.md) for the Redis lease boundary.
+See [ADR 025](decisions/025-application-owned-explicit-cli-and-scheduler.md) for the console boundary, [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the migration boundary, [ADR 028](decisions/028-application-owned-redis-cache-and-schedule-lease.md) for the Redis lease boundary, and [PHPThis Workbench](workbench.md) for the distinct development-only inspection boundary.

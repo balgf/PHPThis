@@ -36,6 +36,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 ## Success measures
 
 - An AI can answer a framework question from the installed version and name the contract, source, test, or decision that supports its answer.
+- A human can inspect one explicitly composed development object or operation through a fresh strict process without introducing a temporary HTTP route, production command, service container, discovery, or persistent hidden state.
 - After the universal contract, knowledge map, and application entrypoints are loaded, an AI can add a simple endpoint after reading at most four task-specific guide or code files.
 - A completed change reports its behavior, evidence, resource cost, and any consequential decision that still belongs to a human.
 - The request path remains directly traceable through route, handler, at most one operation-specific typed seam when required, database, and response.
@@ -74,6 +75,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Providing a framework configuration service, string-keyed bag, global `config()` helper, facade, provider, container binding, discovery, automatic dotenv loader, secret-manager abstraction, or hidden reload.
 - Providing a generic upload, storage, filesystem, or stream facade; trusting client filenames or media types; or hiding persistence, cleanup, ranges, content processing, or file ownership.
 - Providing a core migration API, schema builder, migration DSL, automatic discovery, inferred rollback, runtime SQL loading, HTTP-startup migration, or portable DDL guarantee.
+- Providing a framework-owned production shell, container-backed console, administrative execution path, generic dispatcher, or remotely accessible Workbench.
 - Supporting multiple equivalent styles for the same task.
 - Eliminating the need for PHP, database, security, and operational expertise when reviewing or operating a real system.
 - Claiming that raw SQL by itself prevents inefficient access patterns.
