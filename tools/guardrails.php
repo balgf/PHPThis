@@ -841,6 +841,7 @@ $requiredRepositoryFiles = [
     'example/src/Users/GetUser/UserId.php',
     'example/src/Users/CreateUser/CreateUserOperation.php',
     'example/src/Users/CreateUser/TransactionalCreateUser.php',
+    'example/src/Users/CreateUser/UnacceptableCreateUserValues.php',
     'example/src/Users/UserRoutes.php',
     'templates/application/AGENTS.md',
     'templates/application/.ai/README.md',
@@ -2914,26 +2915,61 @@ foreach ($requestPolicyArtifactMarkers as $relativePath => $markers) {
 }
 
 $typedInputBoundaryArtifactMarkers = [
+    '.ai/README.md' => [
+        'ADR 042 for structured request-body content',
+        'default generic `400`/application-owned generic `422` body classification',
+    ],
     '.ai/application-context.md' => [
         'every adopted inbound operation',
         '`NOT_APPLICABLE(INPUT)`',
+        'default generic `400` structural versus exact application-owned generic `422` unacceptable-value split',
+        'Query, header, route, and transport representations do not inherit that body-content default.',
     ],
     '.ai/types.md' => [
         'No normalization is implicit.',
         'Native `json_decode` does not expose duplicate object keys and retains the last value',
         'ADR 033 and Consumer Contract v9',
+        'For application-owned structured request-body content',
+        'do not inherit this request-body default',
+    ],
+    '.ai/errors.md' => [
+        'For application-owned structured request-body content',
+        'defaults through its exact application-owned failure to `422`',
+        'Query, header, route, and transport representations retain their separately recorded contracts.',
+    ],
+    '.ai/testing.md' => [
+        'For application-owned structured request-body content',
+        'property-order variants that both remain `400`',
+        'Query, header, route, and transport representations retain their separately recorded contracts.',
     ],
     'docs/type-safety.md' => [
         'external mixed data -> named parser factory -> final readonly value -> native typed code',
         'Invalid input makes zero seam calls when one exists and cannot trigger operation-owned downstream I/O or mutation.',
         'A duplicate-key-aware parser requires a separate decision',
+        'canonical authoring default for application-owned structured request-body content',
+        'do not inherit this body-content default',
+    ],
+    'docs/errors.md' => [
+        "blanket-`400` default for application-owned structured request-body content",
+        'application-owned `UnacceptableCreateUserValues`',
+        'Query-string, header, route, and transport representations retain their separately recorded contracts.',
+    ],
+    'docs/consumer-contract.md' => [
+        'For application-owned structured request-body content',
+        'Query-string, header, route, and transport representations retain their separately recorded contracts.',
+        'ADR 042 changes the application-owned structured request-body authoring default',
     ],
     'docs/getting-started.md' => [
         "each inbound operation's raw representation",
         '`NOT_APPLICABLE(INPUT)`',
+        'default generic `400` structural versus exact application-owned generic `422` unacceptable-value split',
+        'query, header, route, and transport representations retain separately recorded contracts',
     ],
     'docs/guardrails.md' => [
         'The typed-input guard retains ADR 021',
+        "ADR 042's application-owned request-body input-failure classification",
+        'mixed-failure property-order evidence',
+        'query/header/route/transport non-inheritance',
     ],
     'VISION.md' => [
         'at most one operation-specific typed seam',
@@ -2943,6 +2979,16 @@ $typedInputBoundaryArtifactMarkers = [
         'Each accepting operation owns one named parser factory',
         'This decision adds application-owned example evidence and authoring guidance only.',
         'Consumer Contract version 4 and Strict Profile version 2 remain unchanged.',
+    ],
+    'docs/decisions/042-application-owned-input-failure-classification.md' => [
+        'Status: accepted',
+        'For application-owned structured request-body content',
+        'The operation-specific parser completes its whole shape and native-type pass before beginning value validation.',
+        '`400 invalid_request` means the representation is malformed or its complete payload structure is invalid.',
+        '`422 unprocessable_content` means the complete field set, nullability, native types, and nested shapes are correct',
+        'Query-string, header, route, PHP runtime transport, and multipart transport failures retain their separately recorded contracts',
+        'PHPThis adds no core exception, validator, result object, field-error schema, string-rule language, renderer, hydrator, automatic request binding, or status inference.',
+        'Consumer Contract version 10 and Strict Profile version 3 remain unchanged because this decision adds authoring guidance',
     ],
     'docs/decisions/013-optional-crud-reference-profile.md' => [
         'ADR 021 supersedes this record only where the earlier Create tree',
@@ -2954,6 +3000,11 @@ $typedInputBoundaryArtifactMarkers = [
         'array_key_exists(\'name\', $values)',
         'JSON_THROW_ON_ERROR',
         'FILTER_VALIDATE_EMAIL, 0',
+        '!is_string($name) || !is_string($email)',
+        'throw new UnacceptableCreateUserValues(',
+    ],
+    'example/src/Users/CreateUser/UnacceptableCreateUserValues.php' => [
+        'final class UnacceptableCreateUserValues extends RuntimeException',
     ],
     'example/src/Users/CreateUser/CreateUserHandler.php' => [
         '$command = CreateUserCommand::fromJson($request->body);',
@@ -2975,11 +3026,14 @@ $typedInputBoundaryArtifactMarkers = [
     'tests/run.php' => [
         'HTTP command parses one exact JSON object',
         'HTTP command exposes native duplicate-key last-value behavior',
-        'HTTP command rejects malformed coercive and unknown input',
+        'HTTP command classifies structural and unacceptable input',
         'HTTP handler invokes only its typed create-user operation',
         'HTTP handler rejects invalid commands before use-case invocation',
         'mapped input failures emit no submitted data or log entry',
-        '$expectedStatus = $case === \'exact_endpoint_overflow\' ? 413 : 400;',
+        'function unacceptableCreateUserValueBodies(): array',
+        "'integer_name_with_unacceptable_email'",
+        "'unacceptable_name_with_unknown_field'",
+        'UnacceptableCreateUserValues::class => new Response(',
         'example request boundary maps client failures before database work',
         'account-scoped user creation rejects invalid input before database work',
     ],
@@ -2987,12 +3041,32 @@ $typedInputBoundaryArtifactMarkers = [
         '{{INPUT_BOUNDARY_ADOPTION_OR_NOT_APPLICABLE}}',
         '{{INPUT_OPERATION_1_FACTORY_AND_TYPE}}',
         'No normalization is implicit.',
+        'complete field set, nullability, native types, and nested shape before applying value rules',
+        'maps through an exact application-owned failure to generic `422`',
+        'Query, header, route, and transport representations retain their separately recorded contracts.',
     ],
     'templates/application/.ai/testing.md' => [
         '{{INPUT_BOUNDARY_TEST_COMMAND_OR_NOT_APPLICABLE}}',
         'no operation-owned downstream database work',
         'When a separate typed operation seam exists, assert zero calls.',
         'duplicate-key-aware contract requires a separately accepted parser decision',
+        'mixed unacceptable-value plus wrong-native-type case in property-order variants that both remain `400`',
+        'Query, header, route, and transport representations retain their separately recorded contracts',
+    ],
+    'templates/application/AGENTS.md' => [
+        'finish the complete field-set, nullability, native-type, and nested-shape pass before value rules',
+        'correctly shaped and typed body content with unacceptable values returns generic `422` through an exact application-owned failure',
+        'Query, header, route, and transport representations retain their separately recorded contracts.',
+    ],
+    'templates/application/.ai/rules.md' => [
+        'For structured request-body content, complete the whole field-set, nullability, native-type, and nested-shape phase before value rules.',
+        'mixed failures to `400` regardless of property order',
+        'Query, header, route, and transport representations retain separately recorded contracts.',
+    ],
+    'templates/application/.ai/change-workflow.md' => [
+        'For structured request-body content, record the complete structural phase before value rules',
+        'do not apply that body-content default implicitly to query, header, route, or transport representations.',
+        'Structured request-body tests must prove mixed structural and value failures remain `400` in property-order variants',
     ],
     'skeleton/.ai/README.md' => [
         'NOT_APPLICABLE(INPUT)',
@@ -3001,14 +3075,35 @@ $typedInputBoundaryArtifactMarkers = [
     'skeleton/.ai/architecture.md' => [
         'NOT_APPLICABLE(INPUT)',
         'operation-specific named parser factory',
+        'completes the whole exact-field, nullability, native-type, and nested-shape phase before applying any value',
+        'exact application-owned exception registered as generic `422 unprocessable_content`',
+        'Query, header, route, and transport representations retain their separately recorded contracts.',
     ],
     'skeleton/.ai/testing.md' => [
         'NOT_APPLICABLE(INPUT_EVIDENCE)',
         'no operation-owned downstream I/O or mutation',
         'zero typed-seam calls when one exists',
+        'property-order variants that remain `400`',
+        'Query, header, route, and transport representations retain their separately recorded contracts.',
+    ],
+    'skeleton/.ai/rules.md' => [
+        'complete the entire field-set, nullability, native-type, and nested-shape pass before value rules',
+        'correctly shaped and typed body content with unacceptable values returns generic `422` through an exact application-owned failure',
+        'Query, header, route, and transport representations retain separately recorded contracts.',
+    ],
+    'skeleton/.ai/change-workflow.md' => [
+        'complete structural phase before value rules',
+        'mixed structural and value failures remain `400` in property-order variants',
+        'Do not apply that body-content default implicitly to query, header, route, or transport representations.',
+    ],
+    'example/.ai/README.md' => [
+        'ADR 042 for Create request-body classification',
+        'only a correctly shaped and typed body with an unacceptable name or email throws application-owned `UnacceptableCreateUserValues`',
+        'Query, header, route, and transport representations do not inherit this body-content default.',
     ],
     'tools/package-files.txt' => [
         'docs/decisions/021-application-owned-typed-input-boundaries.md',
+        'docs/decisions/042-application-owned-input-failure-classification.md',
     ],
 ];
 
@@ -5496,7 +5591,7 @@ if (!is_string($behaviorInventory)) {
 
     if (
         hash('sha256', $behaviorInventory)
-        !== '0b214db64bffdc1f544e4010c8faa71cc62a08feffb2aae27fde5e8cfe8b19eb'
+        !== '2e775ff43a5ba3d7f530dbecad3ab2aff2b0e8df7869150abf58e528a560db65'
     ) {
         $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
     }
@@ -5533,7 +5628,7 @@ $maintainerTestArtifactMarkers = [
         'function frameworkBehaviorNamesForGroup(string $group): array',
         'array_key_exists($name, $registered)',
         'Assert::assertSame(',
-        '0b214db64bffdc1f544e4010c8faa71cc62a08feffb2aae27fde5e8cfe8b19eb',
+        '2e775ff43a5ba3d7f530dbecad3ab2aff2b0e8df7869150abf58e528a560db65',
     ],
     'tests/FrameworkBehaviorTest.php' => [
         "#[Group('request-policy')]",

@@ -74,6 +74,7 @@ docs/decisions/038-application-owned-database-authority-lifecycle.md
 docs/decisions/039-recommended-database-migration-structure.md
 docs/decisions/040-bounded-alpha-5-release-scope.md
 docs/decisions/041-optional-development-workbench.md
+docs/decisions/042-application-owned-input-failure-classification.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md

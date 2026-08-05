@@ -150,7 +150,7 @@ list users rejects invalid continuation before database work
 list users accepts one canonical runtime continuation
 HTTP command parses one exact JSON object
 HTTP command exposes native duplicate-key last-value behavior
-HTTP command rejects malformed coercive and unknown input
+HTTP command classifies structural and unacceptable input
 HTTP handler invokes only its typed create-user operation
 HTTP request boundary accepts the exact endpoint byte limit
 HTTP handler rejects invalid commands before use-case invocation

@@ -21,6 +21,7 @@ use Example\Observability\CorrelationId;
 use Example\Observability\ErrorLogRequestSummarySink;
 use Example\Observability\QuerySummarySource;
 use Example\Observability\TerminalRequestCoordinator;
+use Example\Users\CreateUser\UnacceptableCreateUserValues;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -139,6 +140,11 @@ final readonly class ApplicationComposition
                 400,
                 $privateJsonHeaders,
                 "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+            ),
+            UnacceptableCreateUserValues::class => new Response(
+                422,
+                $privateJsonHeaders,
+                "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
             ),
             RequestBodyTooLarge::class => new Response(
                 413,

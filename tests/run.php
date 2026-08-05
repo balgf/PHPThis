@@ -18,6 +18,7 @@ use Example\Users\CreateUser\CreateUserHandler;
 use Example\Users\CreateUser\CreateUserOperation;
 use Example\Users\CreateUser\AuthorizeCreateUser;
 use Example\Users\CreateUser\TransactionalCreateUser;
+use Example\Users\CreateUser\UnacceptableCreateUserValues;
 use Example\Users\GetUser\GetUserHandler;
 use Example\Users\GetUser\UserDetails;
 use Example\Users\GetUser\UserId;
@@ -2010,11 +2011,20 @@ function inputProjectionBehaviorTests(): Generator
     }
 };
 
-    yield 'HTTP command rejects malformed coercive and unknown input' => static function (): void {
-    foreach (invalidCreateUserBodies() as $case => $body) {
+    yield 'HTTP command classifies structural and unacceptable input' => static function (): void {
+    foreach (invalidCreateUserCases() as $case => $input) {
         try {
-            CreateUserCommand::fromJson($body);
-        } catch (InvalidRequest | RequestBodyTooLarge) {
+            CreateUserCommand::fromJson($input['body']);
+        } catch (InvalidRequest | RequestBodyTooLarge | UnacceptableCreateUserValues $failure) {
+            if ($failure::class !== $input['failure']) {
+                throw new RuntimeException(sprintf(
+                    'Expected create-user input case "%s" to fail as %s, received %s.',
+                    $case,
+                    $input['failure'],
+                    $failure::class,
+                ));
+            }
+
             continue;
         }
 
@@ -2128,16 +2138,25 @@ function inputProjectionBehaviorTests(): Generator
     };
     $handler = createUserTestHandler($operation);
 
-    foreach (invalidCreateUserBodies() as $case => $body) {
+    foreach (invalidCreateUserCases() as $case => $input) {
         try {
             $handler->handle(new Request(
                 'POST',
                 '/accounts/42/users',
-                body: $body,
+                body: $input['body'],
                 headers: ['content-type' => 'application/json'],
                 pathParameters: PathParameters::onePositiveInteger('account_id', 42),
             ));
-        } catch (InvalidRequest | RequestBodyTooLarge) {
+        } catch (InvalidRequest | RequestBodyTooLarge | UnacceptableCreateUserValues $failure) {
+            if ($failure::class !== $input['failure']) {
+                throw new RuntimeException(sprintf(
+                    'Expected create-user input case "%s" to fail as %s, received %s.',
+                    $case,
+                    $input['failure'],
+                    $failure::class,
+                ));
+            }
+
             continue;
         }
 
@@ -2176,11 +2195,19 @@ function inputProjectionBehaviorTests(): Generator
         new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
     $registry = exampleErrorResponseRegistry();
-    $invalidResponses = [];
+    $expectedHeaders = [
+        'Content-Type' => 'application/json; charset=utf-8',
+        'Cache-Control' => 'private, no-store',
+    ];
+    $expectedBodies = [
+        400 => "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+        413 => "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n",
+        422 => "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
+    ];
 
-    foreach (invalidCreateUserBodies() as $case => $invalidBody) {
-        $invalidResponses[$case] = (new RequestBoundary(
-            requestReaderForBody($invalidBody, 8_192),
+    foreach (invalidCreateUserCases() as $case => $input) {
+        $invalidResponse = (new RequestBoundary(
+            requestReaderForBody($input['body'], 8_192),
             $application,
             $registry,
         ))->handle(
@@ -2188,10 +2215,23 @@ function inputProjectionBehaviorTests(): Generator
                 'REQUEST_METHOD' => 'POST',
                 'REQUEST_URI' => '/accounts/42/users',
                 'CONTENT_TYPE' => 'application/json',
-                'CONTENT_LENGTH' => (string) strlen($invalidBody),
+                'CONTENT_LENGTH' => (string) strlen($input['body']),
             ],
             [],
         );
+
+        if (
+            $invalidResponse->status !== $input['status']
+            || $invalidResponse->headers !== $expectedHeaders
+            || $invalidResponse->body !== $expectedBodies[$input['status']]
+            || str_contains($invalidResponse->body, createUserSecretProbe())
+            || str_contains(implode("\n", $invalidResponse->headers), createUserSecretProbe())
+        ) {
+            throw new RuntimeException(sprintf(
+                'Expected create-user input case "%s" to receive its exact generic redacted response.',
+                $case,
+            ));
+        }
     }
 
     $validBody = '{"name":"Ada","email":"ada@example.com"}';
@@ -2221,40 +2261,13 @@ function inputProjectionBehaviorTests(): Generator
         [],
     );
 
-    $expectedHeaders = [
-        'Content-Type' => 'application/json; charset=utf-8',
-        'Cache-Control' => 'private, no-store',
-    ];
-    $expectedInvalidBody = "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n";
-    $expectedTooLargeBody = "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n";
-
-    foreach ($invalidResponses as $case => $invalidResponse) {
-        $expectedStatus = $case === 'exact_endpoint_overflow' ? 413 : 400;
-        $expectedBody = $case === 'exact_endpoint_overflow'
-            ? $expectedTooLargeBody
-            : $expectedInvalidBody;
-
-        if (
-            $invalidResponse->status !== $expectedStatus
-            || $invalidResponse->headers !== $expectedHeaders
-            || $invalidResponse->body !== $expectedBody
-            || str_contains($invalidResponse->body, createUserSecretProbe())
-            || str_contains(implode("\n", $invalidResponse->headers), createUserSecretProbe())
-        ) {
-            throw new RuntimeException(sprintf(
-                'Expected create-user input case "%s" to receive one generic redacted response.',
-                $case,
-            ));
-        }
-    }
-
     if (
         $unsupportedResponse->status !== 415
         || $unsupportedResponse->headers !== $expectedHeaders
         || $unsupportedResponse->body !== "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n"
         || $outerTooLargeResponse->status !== 413
         || $outerTooLargeResponse->headers !== $expectedHeaders
-        || $outerTooLargeResponse->body !== $expectedTooLargeBody
+        || $outerTooLargeResponse->body !== $expectedBodies[413]
         || $readBudget->used() !== 0
         || $getBudget->used() !== 0
         || $writeBudget->used() !== 0
@@ -2284,7 +2297,18 @@ function inputProjectionBehaviorTests(): Generator
         }
     };
     $secret = createUserSecretProbe();
-    $body = '{"name":"Ada","email":"ada@example.com","api_token":"' . $secret . '"}';
+    $cases = [
+        'invalid_structure' => [
+            'body' => '{"name":"Ada","email":"ada@example.com","api_token":"' . $secret . '"}',
+            'status' => 400,
+            'response_body' => "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+        ],
+        'unacceptable_values' => [
+            'body' => '{"name":"Ada","email":"' . $secret . '"}',
+            'status' => 422,
+            'response_body' => "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
+        ],
+    ];
     $application = new Application(new Router([
         new Route(
             'POST',
@@ -2298,20 +2322,24 @@ function inputProjectionBehaviorTests(): Generator
         throw new RuntimeException('Unable to redirect the mapped-input test log.');
     }
 
+    $responses = [];
+
     try {
-        $response = (new RequestBoundary(
-            requestReaderForBody($body, 8_192),
-            $application,
-            exampleErrorResponseRegistry(),
-        ))->handle(
-            [
-                'REQUEST_METHOD' => 'POST',
-                'REQUEST_URI' => '/accounts/42/users',
-                'CONTENT_TYPE' => 'application/json',
-                'CONTENT_LENGTH' => (string) strlen($body),
-            ],
-            [],
-        );
+        foreach ($cases as $case => $input) {
+            $responses[$case] = (new RequestBoundary(
+                requestReaderForBody($input['body'], 8_192),
+                $application,
+                exampleErrorResponseRegistry(),
+            ))->handle(
+                [
+                    'REQUEST_METHOD' => 'POST',
+                    'REQUEST_URI' => '/accounts/42/users',
+                    'CONTENT_TYPE' => 'application/json',
+                    'CONTENT_LENGTH' => (string) strlen($input['body']),
+                ],
+                [],
+            );
+        }
     } finally {
         if (is_string($previousErrorLog)) {
             ini_set('error_log', $previousErrorLog);
@@ -2324,16 +2352,30 @@ function inputProjectionBehaviorTests(): Generator
         !is_string($log)
         || $log !== ''
         || $operation->calls !== 0
-        || $response->status !== 400
-        || $response->headers !== [
-            'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'private, no-store',
-        ]
-        || $response->body !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
-        || str_contains($response->body, $secret)
-        || str_contains(implode("\n", $response->headers), $secret)
     ) {
-        throw new RuntimeException('Expected one generic mapped input failure with no submitted data or log entry.');
+        throw new RuntimeException('Expected mapped input failures to perform no operation work or logging.');
+    }
+
+    $expectedHeaders = [
+        'Content-Type' => 'application/json; charset=utf-8',
+        'Cache-Control' => 'private, no-store',
+    ];
+
+    foreach ($cases as $case => $input) {
+        $response = $responses[$case];
+
+        if (
+            $response->status !== $input['status']
+            || $response->headers !== $expectedHeaders
+            || $response->body !== $input['response_body']
+            || str_contains($response->body, $secret)
+            || str_contains(implode("\n", $response->headers), $secret)
+        ) {
+            throw new RuntimeException(sprintf(
+                'Expected mapped input case "%s" to emit one generic redacted response.',
+                $case,
+            ));
+        }
     }
 };
 
@@ -2830,16 +2872,25 @@ function crudBehaviorTests(): Generator
     $connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
     $handler = createUserTestHandler(new TransactionalCreateUser($connection));
 
-    foreach (invalidCreateUserBodies() as $case => $body) {
+    foreach (invalidCreateUserCases() as $case => $input) {
         try {
             $handler->handle(new Request(
                 'POST',
                 '/accounts/42/users',
-                body: $body,
+                body: $input['body'],
                 headers: ['content-type' => 'application/json'],
                 pathParameters: PathParameters::onePositiveInteger('account_id', 42),
             ));
-        } catch (InvalidRequest | RequestBodyTooLarge) {
+        } catch (InvalidRequest | RequestBodyTooLarge | UnacceptableCreateUserValues $failure) {
+            if ($failure::class !== $input['failure']) {
+                throw new RuntimeException(sprintf(
+                    'Expected create-user input case "%s" to fail as %s, received %s.',
+                    $case,
+                    $input['failure'],
+                    $failure::class,
+                ));
+            }
+
             continue;
         }
 
@@ -3189,6 +3240,11 @@ function exampleErrorResponseRegistry(): ErrorResponseRegistry
             $headers,
             "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
         ),
+        UnacceptableCreateUserValues::class => new Response(
+            422,
+            $headers,
+            "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
+        ),
         RequestBodyTooLarge::class => new Response(
             413,
             $headers,
@@ -3317,10 +3373,38 @@ function exactCreateUserBody(int $bytes): string
     return $prefix . str_repeat('a', $nameBytes) . $suffix;
 }
 
-/**
- * @return array<string, string>
- */
-function invalidCreateUserBodies(): array
+/** @return array<string, array{body: string, failure: class-string<Throwable>, status: 400|413|422}> */
+function invalidCreateUserCases(): array
+{
+    $cases = [];
+
+    foreach (structurallyInvalidCreateUserBodies() as $case => $body) {
+        $cases[$case] = [
+            'body' => $body,
+            'failure' => InvalidRequest::class,
+            'status' => 400,
+        ];
+    }
+
+    foreach (unacceptableCreateUserValueBodies() as $case => $body) {
+        $cases[$case] = [
+            'body' => $body,
+            'failure' => UnacceptableCreateUserValues::class,
+            'status' => 422,
+        ];
+    }
+
+    $cases['exact_endpoint_overflow'] = [
+        'body' => exactCreateUserBody(2_049),
+        'failure' => RequestBodyTooLarge::class,
+        'status' => 413,
+    ];
+
+    return $cases;
+}
+
+/** @return array<string, string> */
+function structurallyInvalidCreateUserBodies(): array
 {
     $tooDeep = str_repeat('{"value":', 17) . 'null' . str_repeat('}', 17);
 
@@ -3335,7 +3419,6 @@ function invalidCreateUserBodies(): array
         'top_level_list' => '[]',
         'malformed_utf8_document' => "\xB1\x31",
         'excessive_depth' => $tooDeep,
-        'exact_endpoint_overflow' => exactCreateUserBody(2_049),
         'missing_name' => '{"email":"ada@example.com"}',
         'missing_email' => '{"name":"Ada"}',
         'null_name' => '{"name":null,"email":"ada@example.com"}',
@@ -3345,28 +3428,43 @@ function invalidCreateUserBodies(): array
             . createUserSecretProbe()
             . '"}',
         'case_mismatched_name' => '{"Name":"Ada","email":"ada@example.com"}',
-        'empty_name' => '{"name":"","email":"ada@example.com"}',
-        'blank_name' => '{"name":"   ","email":"ada@example.com"}',
         'integer_name' => '{"name":7,"email":"ada@example.com"}',
         'float_name' => '{"name":7.5,"email":"ada@example.com"}',
         'boolean_name' => '{"name":true,"email":"ada@example.com"}',
         'list_name' => '{"name":[],"email":"ada@example.com"}',
         'object_name' => '{"name":{},"email":"ada@example.com"}',
         'nested_name' => '{"name":{"value":["Ada"]},"email":"ada@example.com"}',
-        'padded_name' => '{"name":" Ada","email":"ada@example.com"}',
         'integer_email' => '{"name":"Ada","email":7}',
+        'float_email' => '{"name":"Ada","email":7.5}',
         'boolean_email' => '{"name":"Ada","email":false}',
         'list_email' => '{"name":"Ada","email":[]}',
         'object_email' => '{"name":"Ada","email":{}}',
         'nested_email' => '{"name":"Ada","email":{"value":["ada@example.com"]}}',
+        'unacceptable_name_with_integer_email' => '{"name":"","email":7}',
+        'integer_email_before_unacceptable_name' => '{"email":7,"name":""}',
+        'integer_name_with_unacceptable_email' => '{"name":7,"email":"not-an-email"}',
+        'unacceptable_email_before_integer_name' => '{"email":"not-an-email","name":7}',
+        'unacceptable_name_with_unknown_field' => '{"name":"","email":"ada@example.com","unexpected":"value"}',
+        'unknown_field_before_unacceptable_name' => '{"unexpected":"value","email":"ada@example.com","name":""}',
+        'malformed_utf8_in_name' => "{\"name\":\"\xB1\",\"email\":\"ada@example.com\"}",
+        'lone_surrogate_in_name' => '{"name":"\uD800","email":"ada@example.com"}',
+    ];
+}
+
+/** @return array<string, string> */
+function unacceptableCreateUserValueBodies(): array
+{
+    return [
+        'empty_name' => '{"name":"","email":"ada@example.com"}',
+        'blank_name' => '{"name":"   ","email":"ada@example.com"}',
+        'padded_name' => '{"name":" Ada","email":"ada@example.com"}',
+        'empty_email' => '{"name":"Ada","email":""}',
         'invalid_email' => '{"name":"Ada","email":"not-an-email"}',
         'unicode_local_email' => '{"name":"Ada","email":"jos\u00e9@example.com"}',
         'double_dot_email' => '{"name":"Ada","email":"ada@example..com"}',
         'local_domain_email' => '{"name":"Ada","email":"ada@localhost"}',
         'trailing_dot_email' => '{"name":"Ada","email":"ada@example.com."}',
         'padded_email' => '{"name":"Ada","email":" ada@example.com"}',
-        'malformed_utf8_in_name' => "{\"name\":\"\xB1\",\"email\":\"ada@example.com\"}",
-        'lone_surrogate_in_name' => '{"name":"\uD800","email":"ada@example.com"}',
     ];
 }
 
@@ -3801,7 +3899,7 @@ function frameworkBehaviorInventory(): array
         $contents === ''
         || !str_ends_with($contents, "\n")
         || str_contains($contents, "\r")
-        || hash('sha256', $contents) !== '0b214db64bffdc1f544e4010c8faa71cc62a08feffb2aae27fde5e8cfe8b19eb'
+        || hash('sha256', $contents) !== '2e775ff43a5ba3d7f530dbecad3ab2aff2b0e8df7869150abf58e528a560db65'
     ) {
         throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
     }

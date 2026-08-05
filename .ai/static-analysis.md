@@ -9,7 +9,7 @@ Rules:
 - Do not create a PHPStan baseline.
 - Do not add broad `ignoreErrors` patterns or weaken the configured level.
 - Resolve `mixed` at an input boundary with validation and a typed value.
-- For an ADR 021 input boundary, use PHT001 and maximum-level PHPStan to prove narrowing, the concrete command or request type, and any typed operation signature; use adversarial runtime tests for representations, bounds, deterministic generic errors, zero typed-seam calls when present, and zero operation-owned downstream work. Do not broaden PHT007 beyond canonical process-environment access.
+- For an ADR 021 input boundary, use PHT001 and maximum-level PHPStan to prove narrowing, the concrete command or request type, and any typed operation signature; use adversarial runtime tests for representations, bounds, deterministic generic errors, zero typed-seam calls when present, and zero operation-owned downstream work. ADR 042 adds no static diagnostic: structured request-body behavior tests own the complete structural phase, the default generic `400` versus exact application-owned generic `422` classification, mixed-failure property-order invariance, redaction, and separate query, header, route, transport, and non-input failures. Do not broaden PHT007 beyond canonical process-environment access.
 - Add precise PHPDoc generics or array shapes only when native PHP cannot express the type.
 - Prefer a tested custom PHPStan rule over a text-based exception for framework architecture.
 - Give every PHPThis-owned rule a permanent `PHT` identifier and positive and negative fixtures.

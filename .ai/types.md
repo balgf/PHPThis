@@ -15,8 +15,8 @@ Routing likewise exposes only typed metadata. Choose the narrowest declaration a
 Every factory must:
 
 1. Reject missing required fields and unknown fields; use `array_key_exists` to distinguish absence from an allowed explicit `null`.
-2. Check the runtime type before conversion and parse fields in a fixed code-owned order.
-3. Accept only documented canonical representations, ranges, list shapes, and bounds supplied by the operation or source schema.
+2. Complete the entire field-set, absent-versus-null, native-type, and nested-shape pass before any value rule, and keep both phases in a fixed code-owned order.
+3. After that complete structural phase succeeds, accept only documented canonical representations, ranges, lengths, enum cases, dates, cross-field rules, list values, and bounds supplied by the operation or source schema.
 4. Throw without including the rejected value and before that invalid value enters typed application behavior.
 5. Use a private constructor so invalid instances cannot be created.
 
@@ -24,7 +24,7 @@ Inbound request and command factories bound their complete representation before
 
 No normalization is implicit. A field-specific normalization must name its transformation, order, bounds, collision policy, and canonical retained value. Validation decides acceptance; output escaping or encoding belongs at the final sink; authorization remains a separate current action decision. Validated SQL data still uses a named binding.
 
-Validate inbound fields deterministically rather than following submitted property order. Keep public input failures finite, stable, generic, and free of submitted values or internal messages. Native `json_decode` does not expose duplicate object keys and retains the last value; do not claim duplicate-key rejection without a separately accepted parser.
+Validate inbound fields deterministically rather than following submitted property order. For application-owned structured request-body content, malformed JSON, wrong top-level kind, missing or unknown fields, disallowed `null`, wrong native types, and wrong nested shapes default to generic `400`. Only after that whole phase succeeds does an unacceptable grammar, range, length, enum, date, canonical representation, or cross-field rule default through an exact application-owned failure to generic `422`. A mixed unacceptable value and wrong-typed field remains `400`; an application override must be explicit and tested. Query, header, route, and transport representations retain their separately recorded contracts and do not inherit this request-body default. Keep both public failures finite, stable, generic, and free of submitted field names, values, credentials, or internal messages. Native `json_decode` does not expose duplicate object keys and retains the last value; do not claim duplicate-key rejection without a separately accepted parser.
 
 Do not use scalar casts, `intval`, `floatval`, `boolval`, `strval`, `settype`, inline `@var`, or `assert` as validation. Do not add reflection hydration, a generic collection, or a second parsing style.
 
@@ -32,4 +32,4 @@ Do not use scalar casts, `intval`, `floatval`, `boolval`, `strval`, `settype`, i
 
 PHPStan `list<T>`, array shapes, and `@template` are static contracts only. They supplement boundary parsing; they never replace it.
 
-ADR 021 adds application-owned command and projection evidence without a generic input API or diagnostic. ADR 026 adds only the concrete typed upload value. ADR 032 adds fixed UUID and ULID route syntax without a framework identifier type. ADR 033 and Consumer Contract v9 add no request or response type and leave Strict Profile v2 unchanged.
+ADR 021 adds application-owned command and projection evidence without a generic input API or diagnostic. ADR 042 adds the two-phase request-content failure default and one application-owned exact `422` mapping without a core exception, validator, renderer, or diagnostic. ADR 026 adds only the concrete typed upload value. ADR 032 adds fixed UUID and ULID route syntax without a framework identifier type. ADR 033 and Consumer Contract v9 add no request or response type and leave Strict Profile v2 unchanged.

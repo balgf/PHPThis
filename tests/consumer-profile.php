@@ -24,6 +24,7 @@ use Example\Routes;
 use Example\Users\CreateUser\AuthorizeCreateUser;
 use Example\Users\CreateUser\CreateUserCommand;
 use Example\Users\CreateUser\TransactionalCreateUser;
+use Example\Users\CreateUser\UnacceptableCreateUserValues;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -225,29 +226,46 @@ function consumerProfileTests(): Generator
             }
         };
     yield 'consumer profile denials and invalid input stop before protected SQL' => static function (): void {
+            $validBody = consumerProfileValidBody();
             $cases = [
-                'authenticate' => ['authenticate', 401, ['authenticate']],
+                'authenticate' => [
+                    'authenticate',
+                    401,
+                    ['authenticate'],
+                    $validBody,
+                    "{\"error\":{\"code\":\"unauthenticated\",\"message\":\"Authentication is required.\"}}\n",
+                ],
                 'resolve_tenant' => [
                     'resolve_tenant',
                     403,
                     ['authenticate', 'resolve_tenant'],
+                    $validBody,
+                    "{\"error\":{\"code\":\"forbidden\",\"message\":\"Request is forbidden.\"}}\n",
                 ],
                 'authorize_create' => [
                     'authorize_create',
                     403,
                     ['authenticate', 'resolve_tenant', 'authorize_create'],
+                    $validBody,
+                    "{\"error\":{\"code\":\"forbidden\",\"message\":\"Request is forbidden.\"}}\n",
                 ],
-                'invalid_input' => [
+                'invalid_structure' => [
                     null,
                     400,
                     ['authenticate', 'resolve_tenant', 'authorize_create'],
+                    '{"name":"Profile Name Marker","email":"profile-secret@example.com","api_token":"ConsumerProfileInputSecretMarker"}',
+                    "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+                ],
+                'unacceptable_values' => [
+                    null,
+                    422,
+                    ['authenticate', 'resolve_tenant', 'authorize_create'],
+                    '{"name":"Profile Name Marker","email":"ConsumerProfileUnacceptableValueMarker"}',
+                    "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
                 ],
             ];
 
-            foreach ($cases as $case => [$failureStage, $status, $steps]) {
-                $body = $case === 'invalid_input'
-                    ? '{"name":"Profile Name Marker","email":"profile-secret@example.com","api_token":"ConsumerProfileInputSecretMarker"}'
-                    : consumerProfileValidBody();
+            foreach ($cases as $case => [$failureStage, $status, $steps, $body, $expectedBody]) {
                 $result = runConsumerProfileScenario(
                     'denial-' . $case,
                     0,
@@ -271,12 +289,15 @@ function consumerProfileTests(): Generator
 
                 if (
                     $result->response->status !== $status
+                    || $result->response->body !== $expectedBody
                     || $result->response->headers !== $expectedHeaders
                     || $result->policySteps !== $steps
                     || $result->budgetUsed !== 0
                     || $result->queryTrace['statements'] !== 0
                     || $result->summary->queryStatements !== 0
+                    || $result->summary->responseStatus !== $status
                     || $result->summary->outcome !== 'known_failure'
+                    || $result->summary->unknownFailureClass !== null
                     || $result->counts->users !== 0
                     || $result->counts->accountUsers !== 0
                     || $result->counts->events !== 0
@@ -286,6 +307,7 @@ function consumerProfileTests(): Generator
                     || str_contains($encodedEvidence, 'Profile Name Marker')
                     || str_contains($encodedEvidence, 'profile-secret@example.com')
                     || str_contains($encodedEvidence, 'ConsumerProfileInputSecretMarker')
+                    || str_contains($encodedEvidence, 'ConsumerProfileUnacceptableValueMarker')
                     || str_contains($encodedEvidence, 'ConsumerProfileCredentialFailureMarker')
                     || str_contains($encodedEvidence, 'ConsumerProfileTenantFailureMarker')
                     || str_contains($encodedEvidence, 'ConsumerProfileAuthorizationFailureMarker')
@@ -572,6 +594,11 @@ function consumerProfileErrorResponses(): ErrorResponseRegistry
             400,
             $privateHeaders,
             "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+        ),
+        UnacceptableCreateUserValues::class => new Response(
+            422,
+            $privateHeaders,
+            "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
         ),
         RequestBodyTooLarge::class => new Response(
             413,

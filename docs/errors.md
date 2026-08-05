@@ -7,14 +7,21 @@ The example registers only these client failures:
 | Exception | Status | Public code |
 | --- | ---: | --- |
 | `InvalidRequest` | 400 | `invalid_request` |
+| application-owned `UnacceptableCreateUserValues` | 422 | `unprocessable_content` |
 | `RequestBodyTooLarge` | 413 | `request_body_too_large` |
 | `UnsupportedMediaType` | 415 | `unsupported_media_type` |
 
 Their internal exception messages explain the rejected boundary to developers but never enter the response. The registry returns a prebuilt generic JSON value with an explicit content type.
 
-ADR 021 keeps operation-input failures on this static disclosure-safe path. Missing fields, explicit `null`, wrong types, unknown fields, malformed Unicode, and other invalid values share the stable `invalid_request` code; endpoint and outer body-limit failures share `request_body_too_large`. The parser uses a deterministic code-owned validation order, but neither the submitted value nor its internal rule message becomes public or enters the terminal request summary. Tests include secret-looking submitted fields and values and prove their absence from bodies, headers, summaries, query traces, and operation calls.
+ADR 042 supersedes only ADR 021's original blanket-`400` default for application-owned structured request-body content. Its parser first validates the complete payload structure and every native type. Malformed JSON or UTF-8, excessive parser depth, a wrong top-level kind, missing or unknown fields, disallowed explicit `null`, wrong native field types, and wrong nested container or item shapes use `InvalidRequest` and the stable generic `400 invalid_request` response. Only after that entire phase succeeds may an operation-owned grammar, range, length, enum, date, canonical-representation, or cross-field failure use an application-owned exact exception such as `UnacceptableCreateUserValues` and the generic `422 unprocessable_content` response:
 
-A consumer that needs field-addressable issue codes, localization, or a different status owns that finite response contract and its compatibility policy. It must not change `ErrorResponseRegistry` into a callback renderer, expose exception messages, or add a generic validation-result convention merely to produce details.
+```json
+{"error":{"code":"unprocessable_content","message":"Request content is unacceptable."}}
+```
+
+This precedence is deterministic. A payload containing both an unacceptable string and another field of the wrong native type returns `400` regardless of schema or submitted property order. Endpoint and outer body-limit failures remain `413 request_body_too_large`; unsupported media remains `415 unsupported_media_type`. Query-string, header, route, and transport representations retain their separately recorded contracts. Neither body status exposes the submitted field name, value, internal rule, or exception message in a response, terminal summary, log, or trace. Tests include secret-looking submitted fields and values and prove their absence from both paths, plus zero operation calls and downstream work.
+
+A consumer may record and prove a different finite public status contract, and a consumer that needs field-addressable issue codes or localization owns that response contract and its compatibility policy. It must not change `ErrorResponseRegistry` into a callback renderer, expose exception messages, or add a generic validation-result convention merely to produce details. PHPThis adds no core unacceptable-value exception: each adopted application failure remains named and exact, and multiple exact classes may visibly reuse one immutable generic `422` response.
 
 Broad runtime types are never registered. A database projection `UnexpectedValueException`, response-encoding `JsonException`, `PDOException`, `QueryBudgetExceeded`, cardinality `RuntimeException`, or other unknown failure is rethrown unchanged. The application coordinator catches it, calls `UnknownFailureBoundary::respond()` without passing the failure to select `internal_server_error` with status 500, and retains only its concrete class for the same terminal sink attempt used by every selected response.
 

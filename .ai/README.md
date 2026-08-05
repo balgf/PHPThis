@@ -40,7 +40,7 @@ Then read only what the task needs:
 | Change the development-pattern proof | `.ai/testing.md`, `.ai/database.md` | `tools/test-query-scaling.php`, `tests/fixtures/` |
 | Map failures | `.ai/errors.md`, `.ai/request-boundary.md` | named failure, registry wiring, front controller |
 | Change types or analysis rules | `.ai/static-analysis.md` | `phpstan.neon`, affected PHP files |
-| Parse or change JSON, query, database, or other external values | `.ai/types.md`, `.ai/http.md`, ADR 021 | operation-specific boundary factory, typed downstream entry or justified seam, public error mapping, policy order, and adversarial tests |
+| Parse or change JSON, query, database, or other external values | `.ai/types.md`, `.ai/http.md`, ADR 021, and ADR 042 for structured request-body content | operation-specific boundary factory, typed downstream entry or justified seam, complete structural-before-value phase and default generic `400`/application-owned generic `422` body classification where applicable, public error mapping, policy order, and adversarial tests |
 | Add or change a strict-profile rule | `.ai/strict-profile.md`, `.ai/static-analysis.md` | rule implementation, positive/negative fixtures, and installed-consumer proof |
 
 Durable framework knowledge and decision rationale live in `docs/`. The `.ai/` files are compact operational routing contracts. Both remain human-auditable, but neither is a traditional tutorial manual.

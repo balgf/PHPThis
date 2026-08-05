@@ -49,3 +49,4 @@ Accepted records:
 - `039-recommended-database-migration-structure.md`
 - `040-bounded-alpha-5-release-scope.md`
 - `041-optional-development-workbench.md`
+- `042-application-owned-input-failure-classification.md`
