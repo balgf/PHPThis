@@ -27,9 +27,9 @@ The example chooses to associate a successfully created user with the requested 
 
 | Boundary | Accepted proof |
 | --- | --- |
-| Typed routing | ADR 019 and routing tests in `tests/run.php` |
+| Typed routing | ADR 019 and `tests/routing.php` |
 | Request policy | ADR 020 and `tests/request-policy.php` |
-| Typed external input | ADR 021 and the Create tests in `tests/run.php` |
+| Typed external input | ADR 021 and the Create tests in `tests/input-projection.php` |
 | Finite SQL and scaling | ADR 022, `tests/request-policy.php`, and `tools/test-query-scaling.php` |
 | Correlation and redacted summaries | ADR 023 and `tests/observability.php` |
 | Durable work | ADR 024 and `tests/jobs.php` |

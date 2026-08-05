@@ -932,10 +932,19 @@ $requiredRepositoryFiles = [
     'src/Session/SessionUnavailable.php',
     'tests/FrameworkBehaviorTest.php',
     'tests/behavior-names.txt',
+    'tests/composition.php',
+    'tests/create-user-support.php',
+    'tests/crud.php',
+    'tests/database-boundary.php',
     'tests/document-files.php',
+    'tests/http-boundary.php',
+    'tests/input-projection.php',
     'tests/large-file-emitter.php',
     'tests/observability.php',
+    'tests/process-support.php',
+    'tests/request-reader-support.php',
     'tests/response-emitter.php',
+    'tests/routing.php',
     'tests/upload-request-boundary.php',
     'tests/jobs.php',
     'tests/migrations.php',
@@ -1494,7 +1503,7 @@ $configurationArtifactMarkers = [
     'src/Database/Connection.php' => [
         '#[\\SensitiveParameter]',
     ],
-    'tests/run.php' => [
+    'tests/database-boundary.php' => [
         'connection marks only its password argument as sensitive',
     ],
     'tools/test-strict-profile.php' => [
@@ -2381,7 +2390,7 @@ $routingArtifactMarkers = [
         'public function ulid(string $name): string',
         'Path parameters cannot contain more than two values.',
     ],
-    'tests/run.php' => [
+    'tests/routing.php' => [
         'router matches canonical lowercase UUID path parameters',
         'router matches canonical lowercase ULID path parameters',
         'invalid UUID and ULID routes stop before handler and database work',
@@ -3023,18 +3032,22 @@ $typedInputBoundaryArtifactMarkers = [
         'INSERT INTO account_users (user_id, account_id)',
         'INSERT INTO application_jobs (',
     ],
-    'tests/run.php' => [
+    'tests/input-projection.php' => [
         'HTTP command parses one exact JSON object',
         'HTTP command exposes native duplicate-key last-value behavior',
         'HTTP command classifies structural and unacceptable input',
         'HTTP handler invokes only its typed create-user operation',
         'HTTP handler rejects invalid commands before use-case invocation',
         'mapped input failures emit no submitted data or log entry',
+        'UnacceptableCreateUserValues::class => new Response(',
+        'example request boundary maps client failures before database work',
+    ],
+    'tests/create-user-support.php' => [
         'function unacceptableCreateUserValueBodies(): array',
         "'integer_name_with_unacceptable_email'",
         "'unacceptable_name_with_unknown_field'",
-        'UnacceptableCreateUserValues::class => new Response(',
-        'example request boundary maps client failures before database work',
+    ],
+    'tests/crud.php' => [
         'account-scoped user creation rejects invalid input before database work',
     ],
     'templates/application/.ai/architecture.md' => [
@@ -3636,6 +3649,8 @@ $durableJobArtifactMarkers = [
     'tests/run.php' => [
         "require __DIR__ . '/jobs.php';",
         "frameworkBehaviorGroupDefinitions('jobs', jobTests())",
+    ],
+    'tests/crud.php' => [
         'account-scoped user creation publishes one job with four writes across dataset sizes',
     ],
     'tests/jobs.php' => [
@@ -5475,8 +5490,9 @@ if (!is_string($composerContents)) {
         !is_array($archiveExclusions)
         || !in_array('/phpunit.xml.dist', $archiveExclusions, true)
         || !in_array('/.phpunit.cache', $archiveExclusions, true)
+        || !in_array('/tests', $archiveExclusions, true)
     ) {
-        $failures[] = 'Maintainer-only PHPUnit configuration and reports must remain outside Composer package archives.';
+        $failures[] = 'Framework-maintainer tests, PHPUnit configuration, and reports must remain outside Composer package archives.';
     }
 
     if (!is_array($scripts) || ($scripts['test:database-drivers'] ?? null) !== 'php tools/test-database-drivers.php') {
@@ -5525,8 +5541,9 @@ if (
     !is_string($gitAttributes)
     || preg_match('/^\/phpunit\.xml\.dist export-ignore$/m', $gitAttributes) !== 1
     || preg_match('/^\/\.phpunit\.cache export-ignore$/m', $gitAttributes) !== 1
+    || preg_match('/^\/tests export-ignore$/m', $gitAttributes) !== 1
 ) {
-    $failures[] = 'Maintainer-only PHPUnit configuration and reports must remain outside Git exports.';
+    $failures[] = 'Framework-maintainer tests, PHPUnit configuration, and reports must remain outside Git exports.';
 }
 
 $phpunitConfig = file_get_contents($root . '/phpunit.xml.dist');
@@ -5565,7 +5582,7 @@ $maintainerTestPackageInventory = file_get_contents($root . '/tools/package-file
 if (
     is_string($maintainerTestPackageInventory)
     && preg_match(
-        '/^(?:phpunit\.xml\.dist|tests\/FrameworkBehaviorTest\.php|tests\/behavior-names\.txt)$/m',
+        '/^(?:phpunit\.xml\.dist|tests\/)/m',
         $maintainerTestPackageInventory,
     ) === 1
 ) {
@@ -5602,10 +5619,15 @@ $maintainerTestArtifactMarkers = [
         'Add or focus framework-maintainer tests',
         '`tests/FrameworkBehaviorTest.php`',
         '`phpunit.xml.dist`',
+        'the applicable concern-owned test file explicitly required by it',
+        'narrowly shared support file',
     ],
     '.ai/testing.md' => [
         'PHPUnit 13 as a maintainer-only development runner',
-        '`tests/behavior-names.txt` locks their complete order',
+        '`tests/run.php` is the explicit ordered loader',
+        '`tests/composition.php`, `tests/http-boundary.php`, `tests/routing.php`, `tests/input-projection.php`, `tests/crud.php`, and `tests/database-boundary.php`',
+        '`tests/request-reader-support.php`, `tests/process-support.php`, and `tests/create-user-support.php`',
+        '`tests/behavior-names.txt` locks the complete behavior order',
         "composer test -- --group routing",
         'migrated query-trace comparison slice',
         'Applications continue to own their test library, runner, organization',
@@ -5615,20 +5637,70 @@ $maintainerTestArtifactMarkers = [
         'do not affect the framework runtime or require consumers to select the same test runner',
     ],
     'tests/run.php' => [
+        "require dirname(__DIR__) . '/autoload.php';",
+        "require __DIR__ . '/request-reader-support.php';",
+        "require __DIR__ . '/process-support.php';",
+        "require __DIR__ . '/create-user-support.php';",
+        "require __DIR__ . '/composition.php';",
+        "require __DIR__ . '/http-boundary.php';",
+        "require __DIR__ . '/routing.php';",
+        "require __DIR__ . '/input-projection.php';",
+        "require __DIR__ . '/crud.php';",
+        "require __DIR__ . '/database-boundary.php';",
         'function frameworkBehaviorDefinitions(): Generator',
         "frameworkBehaviorGroupDefinitions('request-policy', requestPolicyTests())",
         "frameworkBehaviorGroupDefinitions('composition', compositionBehaviorTests())",
+        "frameworkBehaviorGroupDefinitions('http-boundary', httpBoundaryBehaviorTests())",
+        "frameworkBehaviorGroupDefinitions('routing', routingBehaviorTests())",
+        "frameworkBehaviorGroupDefinitions('input-projection', inputProjectionBehaviorTests())",
+        "frameworkBehaviorGroupDefinitions('crud', crudBehaviorTests())",
         "frameworkBehaviorGroupDefinitions('database-boundary', databaseBoundaryBehaviorTests())",
         'function frameworkBehaviorGroupDefinitions(string $group, iterable $tests): Generator',
-        'function compositionBehaviorTests(): Generator',
-        'function databaseBoundaryBehaviorTests(): Generator',
         'function frameworkBehaviorRegistry(): array',
         'function frameworkBehaviorTests(): array',
         'function frameworkBehaviorGroups(): array',
         'function frameworkBehaviorNamesForGroup(string $group): array',
+        'function frameworkBehaviorInventory(): array',
         'array_key_exists($name, $registered)',
-        'Assert::assertSame(',
         '2e775ff43a5ba3d7f530dbecad3ab2aff2b0e8df7869150abf58e528a560db65',
+    ],
+    'tests/composition.php' => [
+        'function compositionBehaviorTests(): Generator',
+    ],
+    'tests/http-boundary.php' => [
+        'function httpBoundaryBehaviorTests(): Generator',
+    ],
+    'tests/routing.php' => [
+        'function routingBehaviorTests(): Generator',
+    ],
+    'tests/input-projection.php' => [
+        'function inputProjectionBehaviorTests(): Generator',
+        'function exampleErrorResponseRegistry(): ErrorResponseRegistry',
+    ],
+    'tests/crud.php' => [
+        'function crudBehaviorTests(): Generator',
+        'function runListUsersPageScenario(string $databasePath, ?string $afterUserId): array',
+        'function runCreateUserScenario(string $name, int $preexistingUsers): array',
+    ],
+    'tests/database-boundary.php' => [
+        'function databaseBoundaryBehaviorTests(): Generator',
+        'Assert::assertSame(',
+    ],
+    'tests/request-reader-support.php' => [
+        'function requestReaderForBody(string $body, int $maximumBodyBytes): RequestReader',
+    ],
+    'tests/process-support.php' => [
+        'function runIsolatedPhpTest(string $path, array $arguments = []): array',
+    ],
+    'tests/create-user-support.php' => [
+        'final readonly class RunTestAllowCreateUserPolicy implements',
+        'function createUserTestHandler(CreateUserOperation $operation): CreateUserHandler',
+        'function invalidCreateUserCases(): array',
+        'function structurallyInvalidCreateUserBodies(): array',
+        'function unacceptableCreateUserValueBodies(): array',
+        'function createUserSecretProbe(): string',
+        'function exactCreateUserBody(int $bytes): string',
+        'function createUserDatabaseFixture(string $name, int $userCount, bool $seedEvents): string',
     ],
     'tests/FrameworkBehaviorTest.php' => [
         "#[Group('request-policy')]",
@@ -5814,6 +5886,271 @@ if (
     $failures[] = 'The removed custom framework test execution loop must not return.';
 }
 
+if (is_string($frameworkBehaviorRegistry)) {
+    /** @var list<array{depth: int, statement: non-empty-string}> $expectedFrameworkTestIncludes */
+    $expectedFrameworkTestIncludes = [
+        ['depth' => 0, 'statement' => "requiredirname(__DIR__).'/autoload.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/request-reader-support.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/process-support.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/create-user-support.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/request-policy.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/observability.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/jobs.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/cli.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/migrations.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/document-files.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/cache.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/redis-coordination.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/consumer-profile.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/handler-decorator.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/composition.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/http-boundary.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/routing.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/input-projection.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/crud.php';"],
+        ['depth' => 0, 'statement' => "require__DIR__.'/database-boundary.php';"],
+    ];
+    /** @var list<array{depth: int, yielded: bool, call: non-empty-string}> $expectedFrameworkBehaviorCalls */
+    $expectedFrameworkBehaviorCalls = [
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('request-policy',requestPolicyTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('observability',observabilityTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('jobs',jobTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('cli',cliTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('migrations',migrationTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('document-files',documentFileTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('cache',cacheTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('redis-coordination',redisCoordinationTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('consumer-profile',consumerProfileTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('handler-decorator',handlerDecoratorTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('composition',compositionBehaviorTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('http-boundary',httpBoundaryBehaviorTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('routing',routingBehaviorTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('input-projection',inputProjectionBehaviorTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('crud',crudBehaviorTests())",
+        ],
+        [
+            'depth' => 1,
+            'yielded' => true,
+            'call' => "frameworkBehaviorGroupDefinitions('database-boundary',databaseBoundaryBehaviorTests())",
+        ],
+    ];
+    $frameworkBehaviorTokens = token_get_all($frameworkBehaviorRegistry);
+    /** @var list<int> $frameworkBehaviorDefinitionIndexes */
+    $frameworkBehaviorDefinitionIndexes = [];
+    $frameworkBehaviorDeclareIndex = null;
+    $frameworkBehaviorIncludeCount = 0;
+    $frameworkBehaviorGroupIdentifierCount = 0;
+
+    foreach ($frameworkBehaviorTokens as $index => $token) {
+        if (!is_array($token)) {
+            continue;
+        }
+
+        if ($token[0] === T_DECLARE && $frameworkBehaviorDeclareIndex === null) {
+            $frameworkBehaviorDeclareIndex = $index;
+        }
+
+        if (in_array($token[0], [T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE], true)) {
+            $frameworkBehaviorIncludeCount++;
+        }
+
+        if (
+            in_array($token[0], [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED, T_NAME_RELATIVE], true)
+            && str_ends_with(strtolower(ltrim($token[1], '\\')), 'frameworkbehaviorgroupdefinitions')
+        ) {
+            $identifier = ltrim($token[1], '\\');
+            $namespaceSeparator = strrpos($identifier, '\\');
+            $identifier = $namespaceSeparator === false
+                ? $identifier
+                : substr($identifier, $namespaceSeparator + 1);
+
+            if (strtolower($identifier) === 'frameworkbehaviorgroupdefinitions') {
+                $frameworkBehaviorGroupIdentifierCount++;
+            }
+        }
+
+        if ($token[0] !== T_FUNCTION) {
+            continue;
+        }
+
+        $nameIndex = routingNextSignificantTokenIndex($frameworkBehaviorTokens, $index + 1);
+
+        if (
+            $nameIndex !== null
+            && routingTokenText($frameworkBehaviorTokens[$nameIndex]) === 'frameworkBehaviorDefinitions'
+        ) {
+            $frameworkBehaviorDefinitionIndexes[] = $index;
+        }
+    }
+
+    $expectedFrameworkTestPreamble = 'declare(strict_types=1);';
+
+    foreach ($expectedFrameworkTestIncludes as $expectedFrameworkTestInclude) {
+        $expectedFrameworkTestPreamble .= $expectedFrameworkTestInclude['statement'];
+    }
+
+    $actualFrameworkTestPreamble = '';
+    $frameworkBehaviorDefinitionIndex = count($frameworkBehaviorDefinitionIndexes) === 1
+        ? $frameworkBehaviorDefinitionIndexes[0]
+        : null;
+
+    if ($frameworkBehaviorDeclareIndex !== null && $frameworkBehaviorDefinitionIndex !== null) {
+        for (
+            $index = $frameworkBehaviorDeclareIndex;
+            $index < $frameworkBehaviorDefinitionIndex;
+            $index++
+        ) {
+            $token = $frameworkBehaviorTokens[$index];
+
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            $actualFrameworkTestPreamble .= routingTokenText($token);
+        }
+    }
+
+    if (
+        $actualFrameworkTestPreamble !== $expectedFrameworkTestPreamble
+        || $frameworkBehaviorIncludeCount !== count($expectedFrameworkTestIncludes)
+    ) {
+        $failures[] = 'The framework test loader include manifest must remain explicit, literal, top-level, and ordered.';
+    }
+
+    $expectedFrameworkBehaviorBody = '';
+
+    foreach ($expectedFrameworkBehaviorCalls as $expectedFrameworkBehaviorCall) {
+        $expectedFrameworkBehaviorBody .= 'yield from' . $expectedFrameworkBehaviorCall['call'] . ';';
+    }
+
+    $actualFrameworkBehaviorBody = '';
+
+    if ($frameworkBehaviorDefinitionIndex !== null) {
+        $bodyOpenIndex = null;
+
+        for (
+            $index = $frameworkBehaviorDefinitionIndex + 1, $count = count($frameworkBehaviorTokens);
+            $index < $count;
+            $index++
+        ) {
+            if (routingTokenText($frameworkBehaviorTokens[$index]) === '{') {
+                $bodyOpenIndex = $index;
+                break;
+            }
+        }
+
+        if ($bodyOpenIndex !== null) {
+            $bodyDepth = 1;
+
+            for (
+                $index = $bodyOpenIndex + 1, $count = count($frameworkBehaviorTokens);
+                $index < $count;
+                $index++
+            ) {
+                $token = $frameworkBehaviorTokens[$index];
+                $tokenText = routingTokenText($token);
+
+                if ($tokenText === '{') {
+                    $bodyDepth++;
+                } elseif ($tokenText === '}') {
+                    $bodyDepth--;
+
+                    if ($bodyDepth === 0) {
+                        break;
+                    }
+                }
+
+                if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                $actualFrameworkBehaviorBody .= $tokenText;
+            }
+        }
+    }
+
+    if (
+        $actualFrameworkBehaviorBody !== $expectedFrameworkBehaviorBody
+        || $frameworkBehaviorGroupIdentifierCount !== count($expectedFrameworkBehaviorCalls) + 1
+    ) {
+        $failures[] = 'The framework behavior group manifest must remain explicit, yielded, and ordered.';
+    }
+
+    foreach (
+        [
+            'glob(',
+            'scandir(',
+            'opendir(',
+            'readdir(',
+            'DirectoryIterator',
+            'FilesystemIterator',
+        ] as $testDiscoveryMarker
+    ) {
+        if (str_contains($frameworkBehaviorRegistry, $testDiscoveryMarker)) {
+            $failures[] = "The framework test loader must not discover files dynamically: {$testDiscoveryMarker}.";
+        }
+    }
+}
+
 $ciPath = $root . '/.github/workflows/ci.yml';
 $ciContents = file_get_contents($ciPath);
 
@@ -5859,6 +6196,8 @@ $consumerProfileArtifactMarkers = [
         'four complete raw SQL statements',
         'The checked-in HTTP composition remains deny-all.',
         'Framework and skeleton Composer metadata use `~8.4.0`',
+        'Typed routing | ADR 019 and `tests/routing.php`',
+        'Typed external input | ADR 021 and the Create tests in `tests/input-projection.php`',
     ],
     'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => [
         'Status: accepted',
@@ -5872,6 +6211,8 @@ $consumerProfileArtifactMarkers = [
         '| #9 | bounded file transfers, ADR 026 | `core` |',
         '| #10 | explicit SQLite migrations, ADR 027 | `application pattern` |',
         '| #11 | Redis cache and schedule lease, ADR 028 | `application pattern` |',
+        '`src/Routing/`; routing and application tests in `tests/routing.php`',
+        '`example/src/Users/CreateUser/`; `tests/input-projection.php` and `tests/consumer-profile.php`',
         'No capability has an overall `defer` exit.',
         'The supported PHP runtime is exactly the PHP 8.4.x Composer range `~8.4.0`.',
     ],

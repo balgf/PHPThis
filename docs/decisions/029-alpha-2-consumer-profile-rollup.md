@@ -14,10 +14,10 @@ The ten capability exits are:
 
 | Child | Capability and accepted record | Exit | Source owner and executable evidence | AI guidance |
 | --- | --- | --- | --- | --- |
-| #2 | bounded multiple typed routes, ADR 019 | `core` | `src/Routing/`; routing and application tests in `tests/run.php` | `.ai/routing.md` |
+| #2 | bounded multiple typed routes, ADR 019 | `core` | `src/Routing/`; routing and application tests in `tests/routing.php` | `.ai/routing.md` |
 | #3 | request policy, ADR 020 | `application pattern` | `example/src/Accounts/`, protected actions under `example/src/Documents/` and `example/src/Users/`; `tests/request-policy.php` and `tests/consumer-profile.php` | `.ai/request-policy.md` |
-| #4 | typed input boundaries, ADR 021 | `application pattern` | `example/src/Users/CreateUser/`; `tests/run.php` and `tests/consumer-profile.php` | `.ai/types.md`, `.ai/http.md` |
-| #5 | finite data paths, ADR 022 | `application pattern` | direct application SQL; `tests/request-policy.php`, `tests/run.php`, and `tools/test-query-scaling.php` | `.ai/database.md` |
+| #4 | typed input boundaries, ADR 021 | `application pattern` | `example/src/Users/CreateUser/`; `tests/input-projection.php` and `tests/consumer-profile.php` | `.ai/types.md`, `.ai/http.md` |
+| #5 | finite data paths, ADR 022 | `application pattern` | direct application SQL; `tests/request-policy.php`, `tests/crud.php`, and `tools/test-query-scaling.php` | `.ai/database.md` |
 | #6 | terminal request summaries, ADR 023 | `application pattern` | `example/src/Observability/`; `tests/observability.php` and `tests/consumer-profile.php` | `.ai/observability.md` |
 | #7 | SQLite durable jobs, ADR 024 | `application pattern` | `example/src/Jobs/`; `tests/jobs.php` and `tests/consumer-profile.php` | `.ai/jobs.md` |
 | #8 | explicit CLI and scheduler, ADR 025 | `application pattern` | `example/src/Cli/`, `example/bin/console.php`; `tests/cli.php` | `.ai/cli.md` |
