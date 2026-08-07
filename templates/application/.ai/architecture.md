@@ -128,6 +128,7 @@ Cached values are derived, reproducible data and remain outside sessions, authen
 
 - Adoption or coherent alternate organization: {{CRUD_PROFILE_DECISION}}
 - Feature and operation directory rule: `{{CRUD_DIRECTORY_RULE_OR_NOT_APPLICABLE}}`
+- Multiple access surfaces, separate operation paths, and permitted sharing: {{CRUD_MULTI_SURFACE_ORGANIZATION_AND_SHARING_POLICY_OR_NOT_APPLICABLE}}
 - Identifier representation and route binding: {{CRUD_IDENTIFIER_AND_ROUTE_BINDING_POLICY_OR_NOT_APPLICABLE}}
 - Explicit route-shape and HTTP-method policy: {{CRUD_ROUTE_AND_METHOD_POLICY_OR_NOT_APPLICABLE}}
 - Authorization owner and check location by operation: {{CRUD_AUTHORIZATION_POLICY_OR_NOT_APPLICABLE}}
@@ -135,6 +136,8 @@ Cached values are derived, reproducible data and remain outside sessions, authen
 - Accepted deviation record: `{{CRUD_PROFILE_DECISION_RECORD_OR_NOT_APPLICABLE}}`
 
 The installed `vendor/phpthis/framework/docs/crud.md` profile recommends structure only. An alternate directory and naming policy cannot weaken the installed consumer contract or Strict Profile, and layout never determines identifiers, routes, authorization, or audit behavior.
+
+When one resource is exposed through multiple access surfaces, record the selected grouping rule and permitted sharing above. Give every surface its own named route-area list with explicit route entries. Separate its action-specific policy composition when authentication, named authorization action, tenant resolution, or policy budget or trace differs. Separate its HTTP handler and boundary types when accepted input, tenant, resource or data scope, SQL, projection or disclosure, failure behavior, HTTP cache policy, handler query budget or trace, side effects, or audit effects differ. Keep its SQL owner separate when data scope or SQL differs. Do not share an existing independently meaningful typed business or transaction operation when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ. A route or method difference alone does not require duplicating an otherwise identical handler or typed operation. A directory, namespace, route prefix, or route-list label never establishes authority; every protected route retains its explicit action-specific request policy and scoped protected work. Stable domain values and genuine invariants may be shared. Narrowly typed authentication, tenant-resolution, or denial implementations may be shared when their contracts are identical, while every protected named action retains its own action-specific authorization contract. Share one independently meaningful typed business operation only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization. Do not put role, audience, mode, or permission branching inside a shared handler or business operation to select SQL, behavior, side effects, or disclosure. Do not add a superset projection filtered for another surface or SQL broader than the receiving surface's recorded contract. Do not add generic services or repositories, discovery, or automatic binding. Do not impose a forced surface directory hierarchy.
 
 ## Placement rules
 

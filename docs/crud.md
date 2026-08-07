@@ -79,6 +79,30 @@ src/
 
 Shared account boundary values carry only stable application meaning. Create, document Get, and document List retain action-specific authorization and data behavior. The List handler itself owns its eight complete raw SQLite statements and explicit parameter arrays; no repository, query object, generic paginator, or binding helper sits below it.
 
+## Multiple access surfaces
+
+When the same resource is exposed through more than one access surface, keep those surfaces explicit. Give every surface its own named route-area list with explicit route entries. Separate its action-specific policy composition when authentication, named authorization action, tenant resolution, or policy budget or trace differs. Separate its HTTP handler and boundary types when accepted input, tenant, resource or data scope, SQL, projection or disclosure, failure behavior, HTTP cache policy, handler query budget or trace, side effects, or audit effects differ. Keep its SQL owner separate when data scope or SQL differs. Do not share an existing independently meaningful typed business or transaction operation when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ. A route or method difference alone does not require duplicating an otherwise identical handler or typed operation when every explicit route and policy path remains visible.
+
+Use contract differences, not audience labels, to decide what remains separate:
+
+| Observed relationship | Recommended organization |
+| --- | --- |
+| Every distinct access surface | Give it its own named route-area list with explicit route entries. |
+| A difference in authentication, named authorization action, tenant resolution, or policy budget or trace | Keep each surface's applicable action-specific policy composition separate. If the post-policy handler contract remains identical, this difference alone does not require duplicating it. |
+| A difference in accepted input, projection or disclosure, failure behavior, HTTP cache policy, or handler query budget or trace | Keep its boundary types and handler separate. Do not add a SQL seam solely for surface organization. |
+| A difference in tenant, resource, or data scope, or in SQL | Keep its handler and SQL owner separate. |
+| A difference in typed input, transaction or concurrency policy, result contract, side effects, or audit effects | Keep its handler and any existing independently meaningful typed business or transaction operation separate. |
+| One existing independently meaningful typed operation has the same complete responsibility after each surface's applicable validation and, when protected, current authorization | Surface-specific paths may call that operation; do not add a seam merely to share it. |
+| Only the route, method, or audience label differs and the complete behavior and authority contract is identical | Keep route-area lists explicit; the handler and any existing typed operation need not be duplicated. |
+
+The table selects no directory hierarchy. An application may record one coherent resource-first, surface-first, or capability-first organization in `.ai/architecture.md`. Use application vocabulary for each surface; a name such as `PublicApi` does not establish that its routes are unauthenticated.
+
+A directory, namespace, route prefix, or route-list name is an authoring and review aid, never an authorization mechanism. Every protected route retains explicit composition through its named action-specific request-policy adapter, current authorization, tenant- and resource-scoped protected work, and denial evidence. For a resource exposed through multiple access surfaces, prove that each named route-area list selects its intended handler and its applicable policy path or recorded not-applicable policy; when protected, denial performs no protected work; and no surface executes SQL or side effects or emits fields outside its recorded operation contract and, when applicable, named authorization action and tenant or resource scope.
+
+Stable resource identifiers and genuine domain invariants may remain shared. Narrowly typed authentication, tenant-resolution, or denial implementations may be shared when their contracts are identical, while every protected named action retains its own action-specific authorization contract. Share one independently meaningful typed business operation only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization. Each surface still owns any differing input adaptation, response projection, disclosure, cache policy, failure mapping, query budget, or trace.
+
+Do not put role, audience, mode, or permission branching inside a shared handler or business operation to select SQL, behavior, side effects, or disclosure. Do not add a superset projection filtered for another surface or SQL broader than the receiving surface's recorded contract. Do not add a generic CRUD controller, service, repository, query layer, route registry, discovery mechanism, or automatic binding to obtain reuse. Prefer small explicit repetition when sharing would obscure authority, data scope, disclosure, or effects. Conversely, do not split genuinely identical behavior merely because two routes carry different audience labels.
+
 ## Operation-specific decisions
 
 The letters in CRUD are a classification, not permission to infer behavior. Before implementing an operation, read the application's `.ai/architecture.md`, `.ai/data.md`, security context, accepted decisions, and nearest tests. Surface any missing policy for accountable human judgment.

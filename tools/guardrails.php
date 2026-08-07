@@ -6486,18 +6486,80 @@ if (is_file($applicationDataTemplatePath) && is_file($applicationTestingTemplate
     }
 }
 
-$crudGuidePath = $root . '/docs/crud.md';
+$crudAccessSurfaceContractMarkers = [
+    'Give every surface its own named route-area list with explicit route entries.',
+    'Separate its action-specific policy composition when authentication, named authorization action, tenant resolution, or policy budget or trace differs.',
+    'Separate its HTTP handler and boundary types when accepted input, tenant, resource or data scope, SQL, projection or disclosure, failure behavior, HTTP cache policy, handler query budget or trace, side effects, or audit effects differ.',
+    'Keep its SQL owner separate when data scope or SQL differs.',
+    'Do not share an existing independently meaningful typed business or transaction operation when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ.',
+    'A route or method difference alone does not require duplicating an otherwise identical handler or typed operation',
+    'Narrowly typed authentication, tenant-resolution, or denial implementations may be shared when their contracts are identical, while every protected named action retains its own action-specific authorization contract.',
+    'Share one independently meaningful typed business operation only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization.',
+    'Do not put role, audience, mode, or permission branching inside a shared handler or business operation to select SQL, behavior, side effects, or disclosure.',
+    "Do not add a superset projection filtered for another surface or SQL broader than the receiving surface's recorded contract.",
+];
 
-if (is_file($crudGuidePath)) {
-    $crudGuide = file_get_contents($crudGuidePath);
+$crudAccessSurfaceEvidenceMarker = 'For a resource exposed through multiple access surfaces, prove that each named route-area list selects its intended handler and its applicable policy path or recorded not-applicable policy; when protected, denial performs no protected work; and no surface executes SQL or side effects or emits fields outside its recorded operation contract and, when applicable, named authorization action and tenant or resource scope.';
 
-    if (!is_string($crudGuide)) {
-        $failures[] = 'Cannot read docs/crud.md.';
-    } elseif (!str_contains(
-        $crudGuide,
+$crudGuidanceMarkers = [
+    'docs/crud.md' => [
         'The CRUD reference profile is optional application structure. The PHPThis consumer contract and Strict Profile remain mandatory.',
-    )) {
-        $failures[] = 'docs/crud.md must preserve the optional CRUD-profile and mandatory consumer-contract boundary.';
+        '## Multiple access surfaces',
+        ...$crudAccessSurfaceContractMarkers,
+        'The table selects no directory hierarchy.',
+        'An application may record one coherent resource-first, surface-first, or capability-first organization in `.ai/architecture.md`.',
+        'A directory, namespace, route prefix, or route-list name is an authoring and review aid, never an authorization mechanism.',
+        $crudAccessSurfaceEvidenceMarker,
+        'do not split genuinely identical behavior merely because two routes carry different audience labels',
+        'PHPThis never discovers or validates a feature from its directory name.',
+    ],
+    '.ai/crud.md' => [
+        '## Multiple access surfaces',
+        ...$crudAccessSurfaceContractMarkers,
+        'The application may record another layout without adding a second way to perform the same task inside that application.',
+        'Treat every directory, namespace, route prefix, and route-list label as authoring organization only.',
+        $crudAccessSurfaceEvidenceMarker,
+        'Do not add directory checker enforcement.',
+    ],
+    'skeleton/.ai/architecture.md' => [
+        'Before exposing one resource through a second access surface, record the selected surface-grouping rule and permitted sharing here.',
+        ...$crudAccessSurfaceContractMarkers,
+        'An alternate layout cannot weaken the installed consumer contract or Strict Profile.',
+        'A directory, namespace, route prefix, or route-list label never establishes authority',
+        'Do not impose a forced surface directory hierarchy.',
+    ],
+    'templates/application/.ai/architecture.md' => [
+        '{{CRUD_MULTI_SURFACE_ORGANIZATION_AND_SHARING_POLICY_OR_NOT_APPLICABLE}}',
+        'When one resource is exposed through multiple access surfaces, record the selected grouping rule and permitted sharing above.',
+        ...$crudAccessSurfaceContractMarkers,
+        'An alternate directory and naming policy cannot weaken the installed consumer contract or Strict Profile',
+        'Do not impose a forced surface directory hierarchy.',
+    ],
+    'skeleton/.ai/testing.md' => [
+        $crudAccessSurfaceEvidenceMarker,
+        'Do not add runtime or checker assertions for optional CRUD directory and naming choices.',
+    ],
+    'templates/application/.ai/testing.md' => [
+        $crudAccessSurfaceEvidenceMarker,
+        'Directory and naming choices in the optional CRUD profile are application context, not runtime or checker assertions.',
+    ],
+];
+
+foreach ($crudGuidanceMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read {$relativePath}.";
+
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "{$relativePath} is missing required optional multi-surface CRUD guidance marker: {$marker}";
+
+            break;
+        }
     }
 }
 

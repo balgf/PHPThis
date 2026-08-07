@@ -94,6 +94,7 @@ try {
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
+    proveInstalledCrudAccessSurfaceGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);
     proveInstalledMigrationStructureGuidanceDistribution(
         $project,
@@ -504,6 +505,81 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
     }
 
     fwrite(STDOUT, "PASS installed startup and probe guidance distribution\n");
+}
+
+function proveInstalledCrudAccessSurfaceGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void
+{
+    $crudAccessSurfaceContractMarkers = [
+        'Give every surface its own named route-area list with explicit route entries.',
+        'Separate its action-specific policy composition when authentication, named authorization action, tenant resolution, or policy budget or trace differs.',
+        'Separate its HTTP handler and boundary types when accepted input, tenant, resource or data scope, SQL, projection or disclosure, failure behavior, HTTP cache policy, handler query budget or trace, side effects, or audit effects differ.',
+        'Keep its SQL owner separate when data scope or SQL differs.',
+        'Do not share an existing independently meaningful typed business or transaction operation when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ.',
+        'A route or method difference alone does not require duplicating an otherwise identical handler or typed operation',
+        'Narrowly typed authentication, tenant-resolution, or denial implementations may be shared when their contracts are identical, while every protected named action retains its own action-specific authorization contract.',
+        'Share one independently meaningful typed business operation only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization.',
+        'Do not put role, audience, mode, or permission branching inside a shared handler or business operation to select SQL, behavior, side effects, or disclosure.',
+        "Do not add a superset projection filtered for another surface or SQL broader than the receiving surface's recorded contract.",
+    ];
+
+    $crudAccessSurfaceEvidenceMarker = 'For a resource exposed through multiple access surfaces, prove that each named route-area list selects its intended handler and its applicable policy path or recorded not-applicable policy; when protected, denial performs no protected work; and no surface executes SQL or side effects or emits fields outside its recorded operation contract and, when applicable, named authorization action and tenant or resource scope.';
+
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/architecture.md' => [
+            'Before exposing one resource through a second access surface, record the selected surface-grouping rule and permitted sharing here.',
+            ...$crudAccessSurfaceContractMarkers,
+            'An alternate layout cannot weaken the installed consumer contract or Strict Profile.',
+            'A directory, namespace, route prefix, or route-list label never establishes authority',
+            'Do not impose a forced surface directory hierarchy.',
+        ],
+        $installedFramework . '/docs/crud.md' => [
+            '## Multiple access surfaces',
+            ...$crudAccessSurfaceContractMarkers,
+            'The table selects no directory hierarchy.',
+            'An application may record one coherent resource-first, surface-first, or capability-first organization in `.ai/architecture.md`.',
+            'A directory, namespace, route prefix, or route-list name is an authoring and review aid, never an authorization mechanism.',
+            $crudAccessSurfaceEvidenceMarker,
+            'do not split genuinely identical behavior merely because two routes carry different audience labels',
+            'PHPThis never discovers or validates a feature from its directory name.',
+        ],
+        $installedFramework . '/templates/application/.ai/architecture.md' => [
+            '{{CRUD_MULTI_SURFACE_ORGANIZATION_AND_SHARING_POLICY_OR_NOT_APPLICABLE}}',
+            'When one resource is exposed through multiple access surfaces, record the selected grouping rule and permitted sharing above.',
+            ...$crudAccessSurfaceContractMarkers,
+            'An alternate directory and naming policy cannot weaken the installed consumer contract or Strict Profile',
+            'Do not impose a forced surface directory hierarchy.',
+        ],
+        $project . '/.ai/testing.md' => [
+            $crudAccessSurfaceEvidenceMarker,
+            'Do not add runtime or checker assertions for optional CRUD directory and naming choices.',
+        ],
+        $installedFramework . '/templates/application/.ai/testing.md' => [
+            $crudAccessSurfaceEvidenceMarker,
+            'Directory and naming choices in the optional CRUD profile are application context, not runtime or checker assertions.',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed CRUD access-surface guidance artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException(
+                    "Installed CRUD access-surface guidance artifact {$path} is missing marker: {$marker}",
+                );
+            }
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed CRUD access-surface guidance distribution\n");
 }
 
 function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(
