@@ -95,6 +95,7 @@ try {
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledCrudAccessSurfaceGuidanceDistribution($project, $installedFramework);
+    proveInstalledIdentifierRepresentationGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);
     proveInstalledMigrationStructureGuidanceDistribution(
         $project,
@@ -582,6 +583,107 @@ function proveInstalledCrudAccessSurfaceGuidanceDistribution(
     fwrite(STDOUT, "PASS installed CRUD access-surface guidance distribution\n");
 }
 
+function proveInstalledIdentifierRepresentationGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    $architectureMarkers = [
+        'one narrowly named application-owned representation primitive for shared validation and canonical scalar representation',
+        'generation remains a separate explicitly versioned policy',
+        'operations still require the concrete domain identifier, never the shared primitive',
+    ];
+    $testingMarkers = [
+        'When multiple concrete identifiers compose one recorded application-owned representation primitive',
+        'operation signatures continue to require the concrete identifier',
+        'versions 1 through 8 and RFC variant nibbles `8`, `9`, `a`, and `b`',
+        'Test generation separately from acceptance',
+        'prove the exact recorded generator source contract',
+        'Version and variant bits alone are insufficient.',
+        'finite generated samples do not prove uniqueness or total creation order',
+    ];
+    $skeletonDataMarkers = [
+        '`NOT_APPLICABLE(UUID_POLICY)`',
+        'The reference acceptance policy is canonical lowercase RFC-variant versions 1 through 8.',
+        'Version 7 is recommended for newly generated database row identifiers when embedded approximate creation-time disclosure is accepted',
+        'generation owner and exact application source path, selected package and version, database facility and engine version, or external owner',
+        'accepted metadata-bearing UUID exposure and handling',
+        'failure and no-fallback policy',
+        'Choosing version 4 does not prevent metadata disclosure',
+        'PHPThis selects no generator, package, database facility, schema rule, or persistence representation.',
+    ];
+    $templateDataMarkers = [
+        '`UUID_POLICY(ADOPTED)`',
+        '{{UUID_POLICY_1_SCOPE_AND_CONCRETE_IDENTIFIERS}}',
+        '{{UUID_POLICY_1_ACCEPTED_CANONICAL_VERSIONS}}',
+        '{{UUID_POLICY_1_GENERATED_VERSION_AND_PURPOSE_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_GENERATION_OWNER_AND_EXACT_APPLICATION_SOURCE_PACKAGE_DATABASE_OR_EXTERNAL_SOURCE_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_GENERATED_VALUE_METADATA_AND_TIME_DISCLOSURE_DECISION}}',
+        '{{UUID_POLICY_1_ACCEPTED_METADATA_BEARING_UUID_EXPOSURE_AND_HANDLING}}',
+        '{{UUID_POLICY_1_SAME_TIMESTAMP_ORDERING_SCOPE_AND_CLOCK_REGRESSION_BEHAVIOR_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_FAILURE_AND_NO_FALLBACK_POLICY_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_NARROWER_DOMAIN_RULES_OR_NONE}}',
+        '{{UUID_POLICY_1_PERSISTENCE_REPRESENTATION_AND_ORDERING_ASSUMPTIONS}}',
+        '{{UUID_POLICY_1_EVIDENCE_SOURCE}}',
+        'Keep accepted versions separate from the version generated for new values.',
+        'PHPThis recommends version 7 for newly generated database row identifiers when embedded approximate creation-time disclosure is accepted',
+        'That choice does not prevent metadata disclosure if accepted or persisted time-bearing UUID versions such as 1, 6, or 7 are exposed.',
+        'Record the generation owner as an application source path, selected package and version, database facility and engine version, or explicit external owner.',
+        'PHPThis selects no generator, package, database facility, schema rule, or persistence representation.',
+    ];
+
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/architecture.md' => $architectureMarkers,
+        $project . '/.ai/data.md' => $skeletonDataMarkers,
+        $project . '/.ai/testing.md' => $testingMarkers,
+        $project . '/.ai/README.md' => [
+            '.ai/data.md`\'s `NOT_APPLICABLE(UUID_POLICY)` declaration',
+            'exact generation owner and source',
+            'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
+            'it supplies no framework generator and does not reject other accepted versions',
+        ],
+        $installedFramework . '/docs/request-handling.md' => [
+            'one narrowly named application-owned representation primitive',
+            'That primitive may own only the shared validation and canonical scalar representation',
+            'Generation remains a separate, explicitly versioned application policy',
+            'application operations continue to require that concrete type rather than the shared primitive',
+            'Treat accepted UUID versions and newly generated UUID versions as separate decisions.',
+            'PHPThis recommends UUID version 7 when disclosing its embedded approximate creation time is acceptable.',
+            'not an adopted application fact',
+            'Accepted metadata-bearing UUID exposure and handling',
+            'application source path, selected package and version, database facility and engine version, or explicit external owner',
+            'PHPThis supplies no UUID value object, generator, package choice, database function, schema rule, binding, or persistence abstraction.',
+        ],
+        $installedFramework . '/templates/application/.ai/architecture.md' => $architectureMarkers,
+        $installedFramework . '/templates/application/.ai/data.md' => $templateDataMarkers,
+        $installedFramework . '/templates/application/.ai/testing.md' => $testingMarkers,
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            'For UUID identifiers, `.ai/data.md` separately records accepted canonical versions',
+            'the exact generation owner and source',
+            'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
+            'it does not make a framework generator or reject other accepted versions',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed identifier representation guidance artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException(
+                    "Installed identifier representation guidance artifact {$path} is missing marker: {$marker}",
+                );
+            }
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed identifier representation guidance distribution\n");
+}
+
 function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(
     string $project,
     string $installedFramework,
@@ -937,17 +1039,55 @@ $router = new Router([
     new Route('GET', '/accounts/{account_id:uuid}', $handler),
     new Route('POST', '/events/{event_id:ulid}', $handler),
 ]);
-$uuid = '01890f5a-4c96-7a2b-8c3d-123456789abc';
+$validUuids = [
+    '123e4567-e89b-12d3-8456-426614174000',
+    '123e4567-e89b-22d3-9456-426614174000',
+    '123e4567-e89b-32d3-a456-426614174000',
+    '123e4567-e89b-42d3-b456-426614174000',
+    '123e4567-e89b-52d3-8456-426614174000',
+    '123e4567-e89b-62d3-8456-426614174000',
+    '01890f5a-4c96-7a2b-8c3d-123456789abc',
+    '123e4567-e89b-82d3-8456-426614174000',
+];
+$invalidUuids = [
+    '00000000-0000-0000-0000-000000000000',
+    'ffffffff-ffff-ffff-ffff-ffffffffffff',
+    '123e4567-e89b-02d3-8456-426614174000',
+    '123e4567-e89b-92d3-8456-426614174000',
+    '123e4567-e89b-42d3-7456-426614174000',
+    '123e4567-e89b-42d3-c456-426614174000',
+    '123E4567-E89B-42D3-8456-426614174000',
+    '123e4567e89b42d38456426614174000',
+    '{123e4567-e89b-42d3-8456-426614174000}',
+    'urn:uuid:123e4567-e89b-42d3-8456-426614174000',
+    '%31' . '23e4567-e89b-42d3-8456-426614174000',
+];
 $ulid = '01arz3ndektsv4rrffq69g5fav';
-$uuidMatch = $router->match(new Request('GET', '/accounts/' . $uuid));
 $ulidMatch = $router->match(new Request('POST', '/events/' . $ulid));
 
+foreach ($validUuids as $uuid) {
+    $uuidMatch = $router->match(new Request('GET', '/accounts/' . $uuid));
+
+    if (
+        $uuidMatch?->pathParameters->uuid('account_id') !== $uuid
+        || $router->allowedMethodsForPath('/accounts/' . $uuid) !== ['GET']
+    ) {
+        throw new RuntimeException('Installed UUID routing did not accept every canonical version and RFC variant.');
+    }
+}
+
+foreach ($invalidUuids as $uuid) {
+    if (
+        $router->match(new Request('GET', '/accounts/' . $uuid)) !== null
+        || $router->allowedMethodsForPath('/accounts/' . $uuid) !== []
+    ) {
+        throw new RuntimeException('Installed UUID routing accepted an invalid or alternate representation.');
+    }
+}
+
 if (
-    $uuidMatch?->pathParameters->uuid('account_id') !== $uuid
-    || $ulidMatch?->pathParameters->ulid('event_id') !== $ulid
-    || $router->match(new Request('GET', '/accounts/' . strtoupper($uuid))) !== null
+    $ulidMatch?->pathParameters->ulid('event_id') !== $ulid
     || $router->match(new Request('POST', '/events/' . strtoupper($ulid))) !== null
-    || $router->allowedMethodsForPath('/accounts/' . $uuid) !== ['GET']
     || $router->allowedMethodsForPath('/events/' . $ulid) !== ['POST']
 ) {
     throw new RuntimeException('Installed UUID and ULID routing did not preserve the canonical contract.');

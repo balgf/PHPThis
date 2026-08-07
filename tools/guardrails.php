@@ -6563,6 +6563,108 @@ foreach ($crudGuidanceMarkers as $relativePath => $markers) {
     }
 }
 
+$uuidIdentifierPolicyGuidanceMarkers = [
+    'docs/request-handling.md' => [
+        'one narrowly named application-owned representation primitive',
+        'That primitive may own only the shared validation and canonical scalar representation',
+        'Generation remains a separate, explicitly versioned application policy',
+        'application operations continue to require that concrete type rather than the shared primitive',
+        'Treat accepted UUID versions and newly generated UUID versions as separate decisions.',
+        'PHPThis recommends UUID version 7 when disclosing its embedded approximate creation time is acceptable.',
+        'not an adopted application fact',
+        'Accepted metadata-bearing UUID exposure and handling',
+        'application source path, selected package and version, database facility and engine version, or explicit external owner',
+        'PHPThis supplies no UUID value object, generator, package choice, database function, schema rule, binding, or persistence abstraction.',
+    ],
+    'skeleton/.ai/architecture.md' => [
+        'one narrowly named application-owned representation primitive for shared validation and canonical scalar representation',
+        'generation remains a separate explicitly versioned policy',
+        'operations still require the concrete domain identifier, never the shared primitive',
+    ],
+    'templates/application/.ai/architecture.md' => [
+        'one narrowly named application-owned representation primitive for shared validation and canonical scalar representation',
+        'generation remains a separate explicitly versioned policy',
+        'operations still require the concrete domain identifier, never the shared primitive',
+    ],
+    'skeleton/.ai/data.md' => [
+        '`NOT_APPLICABLE(UUID_POLICY)`',
+        'The reference acceptance policy is canonical lowercase RFC-variant versions 1 through 8.',
+        'Version 7 is recommended for newly generated database row identifiers when embedded approximate creation-time disclosure is accepted',
+        'generation owner and exact application source path, selected package and version, database facility and engine version, or external owner',
+        'accepted metadata-bearing UUID exposure and handling',
+        'failure and no-fallback policy',
+        'Choosing version 4 does not prevent metadata disclosure',
+        'PHPThis selects no generator, package, database facility, schema rule, or persistence representation.',
+    ],
+    'templates/application/.ai/data.md' => [
+        '`UUID_POLICY(ADOPTED)`',
+        '{{UUID_POLICY_1_SCOPE_AND_CONCRETE_IDENTIFIERS}}',
+        '{{UUID_POLICY_1_ACCEPTED_CANONICAL_VERSIONS}}',
+        '{{UUID_POLICY_1_GENERATED_VERSION_AND_PURPOSE_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_GENERATION_OWNER_AND_EXACT_APPLICATION_SOURCE_PACKAGE_DATABASE_OR_EXTERNAL_SOURCE_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_GENERATED_VALUE_METADATA_AND_TIME_DISCLOSURE_DECISION}}',
+        '{{UUID_POLICY_1_ACCEPTED_METADATA_BEARING_UUID_EXPOSURE_AND_HANDLING}}',
+        '{{UUID_POLICY_1_SAME_TIMESTAMP_ORDERING_SCOPE_AND_CLOCK_REGRESSION_BEHAVIOR_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_FAILURE_AND_NO_FALLBACK_POLICY_OR_NOT_APPLICABLE}}',
+        '{{UUID_POLICY_1_NARROWER_DOMAIN_RULES_OR_NONE}}',
+        '{{UUID_POLICY_1_PERSISTENCE_REPRESENTATION_AND_ORDERING_ASSUMPTIONS}}',
+        '{{UUID_POLICY_1_EVIDENCE_SOURCE}}',
+        'Keep accepted versions separate from the version generated for new values.',
+        'PHPThis recommends version 7 for newly generated database row identifiers when embedded approximate creation-time disclosure is accepted',
+        'That choice does not prevent metadata disclosure if accepted or persisted time-bearing UUID versions such as 1, 6, or 7 are exposed.',
+        'Record the generation owner as an application source path, selected package and version, database facility and engine version, or explicit external owner.',
+        'PHPThis selects no generator, package, database facility, schema rule, or persistence representation.',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'When multiple concrete identifiers compose one recorded application-owned representation primitive',
+        'operation signatures continue to require the concrete identifier',
+        'versions 1 through 8 and RFC variant nibbles `8`, `9`, `a`, and `b`',
+        'Test generation separately from acceptance',
+        'prove the exact recorded generator source contract',
+        'Version and variant bits alone are insufficient.',
+        'finite generated samples do not prove uniqueness or total creation order',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'When multiple concrete identifiers compose one recorded application-owned representation primitive',
+        'operation signatures continue to require the concrete identifier',
+        'versions 1 through 8 and RFC variant nibbles `8`, `9`, `a`, and `b`',
+        'Test generation separately from acceptance',
+        'prove the exact recorded generator source contract',
+        'Version and variant bits alone are insufficient.',
+        'finite generated samples do not prove uniqueness or total creation order',
+    ],
+    'skeleton/.ai/README.md' => [
+        '.ai/data.md`\'s `NOT_APPLICABLE(UUID_POLICY)` declaration',
+        'exact generation owner and source',
+        'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
+        'it supplies no framework generator and does not reject other accepted versions',
+    ],
+    'templates/application/.ai/README.md' => [
+        'For UUID identifiers, `.ai/data.md` separately records accepted canonical versions',
+        'the exact generation owner and source',
+        'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
+        'it does not make a framework generator or reject other accepted versions',
+    ],
+];
+
+foreach ($uuidIdentifierPolicyGuidanceMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read {$relativePath}.";
+
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "{$relativePath} is missing required application-owned UUID policy guidance marker: {$marker}";
+
+            break;
+        }
+    }
+}
+
 foreach (['templates/application/.ai/README.md', 'skeleton/.ai/README.md'] as $applicationContextIndex) {
     $applicationContextIndexContents = file_get_contents($root . '/' . $applicationContextIndex);
 

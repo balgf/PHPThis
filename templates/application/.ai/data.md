@@ -99,15 +99,25 @@ If the application has no server-side cache, record `NOT_APPLICABLE(CACHE)` for 
 
 Every key includes a reviewed schema version and the applicable environment and tenant ownership. Every payload is parsed as untrusted external input into a bounded typed projection. A cache entry is never authoritative, and a TTL is a maximum staleness policy rather than a promise that an entry remains available.
 
+## UUID representation and generation policy
+
+If this application uses no UUID identifier, replace this section body with the exact standalone declaration `NOT_APPLICABLE(UUID_POLICY)`. Otherwise begin the section body with the exact standalone declaration `UUID_POLICY(ADOPTED)` and complete one row for each coherent policy group before implementation.
+
+| Policy scope and concrete identifiers | Accepted canonical versions | Generated version and purpose | Generation owner and exact source | Generated-value metadata/time-disclosure decision | Accepted metadata-bearing UUID exposure and handling | Same-timestamp ordering scope and clock-regression behavior | Failure behavior and fallback policy | Narrower domain rules | Persistence representation and ordering assumptions | Evidence source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `{{UUID_POLICY_1_SCOPE_AND_CONCRETE_IDENTIFIERS}}` | {{UUID_POLICY_1_ACCEPTED_CANONICAL_VERSIONS}} | {{UUID_POLICY_1_GENERATED_VERSION_AND_PURPOSE_OR_NOT_APPLICABLE}} | {{UUID_POLICY_1_GENERATION_OWNER_AND_EXACT_APPLICATION_SOURCE_PACKAGE_DATABASE_OR_EXTERNAL_SOURCE_OR_NOT_APPLICABLE}} | {{UUID_POLICY_1_GENERATED_VALUE_METADATA_AND_TIME_DISCLOSURE_DECISION}} | {{UUID_POLICY_1_ACCEPTED_METADATA_BEARING_UUID_EXPOSURE_AND_HANDLING}} | {{UUID_POLICY_1_SAME_TIMESTAMP_ORDERING_SCOPE_AND_CLOCK_REGRESSION_BEHAVIOR_OR_NOT_APPLICABLE}} | {{UUID_POLICY_1_FAILURE_AND_NO_FALLBACK_POLICY_OR_NOT_APPLICABLE}} | {{UUID_POLICY_1_NARROWER_DOMAIN_RULES_OR_NONE}} | {{UUID_POLICY_1_PERSISTENCE_REPRESENTATION_AND_ORDERING_ASSUMPTIONS}} | {{UUID_POLICY_1_EVIDENCE_SOURCE}} |
+
+Keep accepted versions separate from the version generated for new values. The reference acceptance policy is canonical lowercase RFC-variant UUID versions 1 through 8. PHPThis recommends version 7 for newly generated database row identifiers when embedded approximate creation-time disclosure is accepted; record same-timestamp, clock-regression, process or node, and failure behavior before claiming ordering beyond the canonical version and variant bits. Choose version 4 when embedded time disclosure from newly generated values is unacceptable or random-only identifiers are required. That choice does not prevent metadata disclosure if accepted or persisted time-bearing UUID versions such as 1, 6, or 7 are exposed. Choose version 5 only for a deterministic policy with the namespace UUID, exact name bytes, canonicalization, and change behavior recorded. Record the generation owner as an application source path, selected package and version, database facility and engine version, or explicit external owner. A generated-version choice does not by itself reject or convert other accepted versions. PHPThis selects no generator, package, database facility, schema rule, or persistence representation.
+
 ## CRUD operation semantics
 
 If there is no CRUD-shaped resource behavior, replace this section with an explicit not-applicable statement. Otherwise record defaults and resource-specific exceptions before implementation, and mark decisions for operations the application does not implement as not applicable.
 
 | Decision | Recorded policy and authority |
 | --- | --- |
-| Resource identifiers and route lookup | {{CRUD_IDENTIFIER_TYPE_GENERATION_PUBLIC_REPRESENTATION_AND_ROUTE_POLICY}} |
+| Resource identifiers and route lookup | {{CRUD_IDENTIFIER_ROUTE_LOOKUP_WRAPPER_NARROWER_RULE_AND_RECORDED_UUID_POLICY_REFERENCE}} |
 | List pagination | {{CRUD_PAGINATION_MODEL_MAXIMUM_PAGE_SIZE_STABLE_ORDER_AND_CURSOR_OR_OFFSET_POLICY}} |
-| Create identity and conflicts | {{CRUD_CREATE_IDENTITY_GENERATION_DUPLICATE_CONFLICT_AND_IDEMPOTENCY_POLICY}} |
+| Create identity and conflicts | {{CRUD_CREATE_GENERATION_POLICY_REFERENCE_DUPLICATE_CONFLICT_AND_IDEMPOTENCY_POLICY}} |
 | Update method and concurrency | {{CRUD_PUT_PATCH_OMITTED_NULL_AND_CONCURRENT_WRITE_POLICY}} |
 | Missing-resource behavior | {{CRUD_MISSING_BEHAVIOR_BY_GET_LIST_UPDATE_AND_DELETE_OPERATION}} |
 | Delete and retention | {{CRUD_HARD_OR_SOFT_DELETE_RETENTION_RESTORE_AND_DEPENDENT_RECORD_POLICY}} |
