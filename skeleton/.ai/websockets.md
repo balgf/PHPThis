@@ -14,7 +14,7 @@ Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md`, o
 
 Keep every WebSocket type and the selected runtime application-owned and manually composed. Frames never become PHPThis HTTP `Request` or `Response` values and never enter the HTTP router, request boundary, response emitter, or terminal request-summary schema. Parse one complete bounded message into one operation-specific final readonly command, then invoke one narrowly named typed application operation after current policy succeeds. The existing `GET /health` path remains an independent HTTP path.
 
-Record the WebSocket process's external input names without values, source file, factory, final readonly type, validation, injection, failure, authority separation, rotation/restart, secret redaction, and configuration tests only in `.ai/configuration.md`.
+Record the WebSocket process's external input names without values, source file, factory, final readonly type, validation, injection, failure, profile, input-name, and credential separation without inheritance, combined credentials, or fallback, rotation/restart, secret redaction, and configuration tests only in `.ai/configuration.md`.
 
 Application-owned automated tests must include pure parser, policy, operation, encoding, resource-bound, and redaction evidence plus real child-process and socket evidence for startup, accepted and denied handshakes, ordered messages, malformed and oversized traffic, rate and connection limits, heartbeat, idle and absolute lifetime, backpressure, reconnect, listener failure, signal shutdown, bounded exit, and cleanup. Record the exact tested topology and do not generalize it to production TLS, proxy, supervisor, capacity, scaling, or availability behavior.
 

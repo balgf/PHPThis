@@ -4,15 +4,17 @@
 
 Before adoption, read installed `vendor/phpthis/framework/docs/cli.md`, then replace this marker with:
 
-- the sole console path and finite command-to-operation map;
+- the sole console path and finite command-to-operation map, plus each command's configuration-profile and authority references; every adopted migration history has its own separately scoped references;
 - every typed argument, exact spelling, bound, default, and pre-I/O rejection rule;
 - exact exit codes, stdout and stderr JSON bytes, finite outcomes, and redaction;
-- process-specific configuration factory and final readonly type recorded in `.ai/configuration.md`, plus fresh per-invocation state;
-- explicit clock, timezone, cadence, one-pass bound, missed-run, catch-up, and repeated-slot policy;
-- app-private same-host lock path, permissions, filesystem topology, contention, failure, and release behavior;
-- cron or supervisor frequency, timeout, restart, and incident ownership; and
-- real-console subprocess, time-boundary, overlap, failure, redaction, and resource tests.
+- exact process identity, process-specific configuration factory, and final readonly type recorded in `.ai/configuration.md`, database-authority facts recorded in `.ai/data.md`, plus fresh per-invocation state;
+- one-pass work and resource bounds; and
+- real-console subprocess, failure, redaction, and resource tests.
+
+When a scheduled pass is adopted, additionally record its explicit clock, timezone, cadence, due test, missed-run, catch-up, and repeated-slot policy; app-private overlap mechanism and namespace, topology, acquisition, expiry or cleanup, contention, failure, release, and crash behavior; cron or supervisor frequency, timeout, restart, and incident ownership; and time-boundary, not-due, overlap, and release evidence. Otherwise record those schedule-only facts as not applicable.
+
+A migration-only console records writer coordination or serialization in `.ai/migrations.md` under ADR 043. Do not invent a scheduler cadence, supervisor, or overlap lock for that command.
 
 Keep framework `phpthis` dedicated to `check`. Do not add command discovery, class-name dispatch, a service-container resolver, generic console or scheduler facade, daemon, hidden loop, or distributed-coordination claim.
 
-Record configuration names, factories, validation, injection, authority, failure, rotation/restart, and secret redaction only in `.ai/configuration.md`.
+Record configuration names, factories, validation, injection, exact process identity, failure, rotation/restart, and secret redaction only in `.ai/configuration.md`; record database-authority facts only in `.ai/data.md`; keep only command-to-profile and authority references here.

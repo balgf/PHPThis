@@ -41,9 +41,9 @@
 | dead letter | terminal job state with one finite redacted diagnostic code after poison input or exhausted delivery | exception archive, automatic replay queue, failure log payload |
 | application migration | one permanent engine-specific forward database change owned and explicitly invoked by the application | framework migration, discovered script, reversible schema object |
 | recommended migration placement | `src/Database/Migrations/` plus the matching application namespace for new adoption; a recorded coherent alternative remains valid | enforced filesystem convention, discovery source, automatic relocation, generic database layer |
-| connection-owned migration subdivision | an application-selected source and namespace boundary for one named connection that independently owns an adopted migration history | required multi-database tree, speculative single-database directory, framework registry |
+| connection-owned migration subdivision | an application-selected source and namespace boundary for one named connection that owns a separately tracked adopted migration history | required multi-database tree, speculative single-database directory, framework registry |
 | migration manifest | finite reviewed application source that names concrete migration steps in permanent order and invokes pending private methods without database I/O in a loop | directory scan, registry, automatic discovery |
-| migration ledger | bounded inspectable table of committed manifest position, permanent identifier, content checksum, and explicitly sourced timestamp | executable migration source, SQL store, rollback history |
+| migration ledger | bounded inspectable table of committed manifest position, permanent identifier, content checksum, and any explicitly selected bounded non-executable metadata | executable migration source, SQL store, rollback history |
 | migration drift | mismatch between validated committed ledger history and the current permanent manifest identity, order, or checksum-covered content | pending migration, automatic repair target |
 | projection | final readonly typed value parsed from a selected database row | model, entity, active record |
 | command | final readonly typed input parsed at an external boundary | request array, payload bag |

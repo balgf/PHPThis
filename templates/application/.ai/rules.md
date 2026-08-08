@@ -31,7 +31,7 @@ These rules supplement installed PHPThis Consumer Contract v10 and Strict Profil
 - Treat cached payloads as untrusted derived data, parse them into bounded typed projections, and preserve correctness when an entry is absent or evicted.
 - Keep HTTP response caching separate from server-side data caching and give each response-producing path an explicit `no-store`, `private`, or `public` policy with finite freshness or revalidation, validators, and complete `Vary` behavior where applicable.
 - Start every new or unreviewed response path with an explicit `Cache-Control: no-store` header, including success, redirect, mapped client-error, unknown server-error, and cookie-emitting responses; change that path only after its recorded policy and tests support reuse.
-- Keep every adopted operational command behind the sole application console with the finite command and typed-argument map, exit and stream contract, fresh composition, clock, cadence, one-pass work, local overlap topology, supervisor, redaction, and tests recorded in `.ai/cli.md`, `.ai/operations.md`, and `.ai/testing.md`.
+- Keep every adopted operational command behind the sole application console with the finite command and typed-argument map, exit and stream contract, fresh composition, one-pass work, redaction, and tests recorded in `.ai/cli.md`, `.ai/operations.md`, and `.ai/testing.md`. Add clock, cadence, overlap, topology, and supervisor policy only for a scheduled pass; keep migration-writer coordination in `.ai/migrations.md`.
 - Run the complete application validity gate defined in `.ai/testing.md` before reporting completion.
 
 ## Forbidden

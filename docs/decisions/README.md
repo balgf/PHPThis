@@ -50,3 +50,4 @@ Accepted records:
 - `040-bounded-alpha-5-release-scope.md`
 - `041-optional-development-workbench.md`
 - `042-application-owned-input-failure-classification.md`
+- `043-engine-specific-application-migration-invariants.md`

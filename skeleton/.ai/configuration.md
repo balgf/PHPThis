@@ -10,8 +10,8 @@ When the application introduces an external setting, replace this marker with:
 
 - one application-owned PHP file containing every direct `\getenv('EXACT_LITERAL_KEY')` read;
 - exact input names without values, their source owner, required/optional policy, grammar, and byte bounds;
-- one separately named factory and final readonly output type for each adopted process profile;
-- explicit composition injection sites for adopted infrastructure, or an explicit deferred marker when configuration-only scope stops before connection composition; when an elevated profile is adopted, record no credential fallback between authority profiles;
+- one separately named factory, final readonly output type, and process identity for each adopted process profile; every migration history is a separate profile even when histories target the same engine;
+- explicit composition injection sites for adopted infrastructure, or an explicit deferred marker when configuration-only scope stops before connection composition; each migration history records its own exact input names and never inherits, combines, or falls back to another history's, runtime's, or administrative credentials;
 - pre-I/O failure, rotation/restart, and redaction policy; and
 - automated parsing, separation, non-disclosure, and child-process parser or adopted-entrypoint evidence.
 

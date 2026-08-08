@@ -12,7 +12,7 @@ On 2026-08-01 in Asia/Manila, the accountable human approved Issue #20 and this 
 
 ## Decision
 
-Migrations are specialized application-owned database evolution. They remain part of the database concern while retaining the dedicated `.ai/migrations.md` policy because ordering, checksums, ledgers, authority, locking, rollout, and recovery require focused evidence.
+Migrations are specialized application-owned database evolution. They remain part of the database concern while retaining the dedicated `.ai/migrations.md` policy because ordering, checksums, ledgers, authority, coordination, and per-history compatibility, handoff, failure, and recovery constraints require focused evidence. `.ai/operations.md` owns rollout sequencing.
 
 For a new application that adopts migrations, PHPThis recommends:
 
@@ -26,7 +26,7 @@ The PHP namespace follows the application's own Composer root, for example `App\
 
 A consumer may instead record any coherent application-owned path and namespace. That recorded project context is authoritative for the application. PHPThis does not reject an alternative, enforce this directory through the checker or Strict Profile, discover or order migrations from filesystem placement, or automatically relocate an established structure. An AI may propose a relocation, but it must preserve the current structure unless an accountable human explicitly approves that architecture change and its namespace, autoload, command, test, and deployment consequences.
 
-When multiple named database connections genuinely own independent migration histories, the application may record an explicit connection-owned subdivision for each adopted history. Each subdivision owns its source path, namespace, command, manifest, ledger, authority, and exact-engine evidence. PHPThis prescribes no subdivision spelling and does not create speculative connection directories for a single-database application or a connection without its own migration history.
+When multiple named database connections own separately tracked migration histories, the application may record an explicit connection-owned subdivision for each adopted history. Each subdivision owns its source path, namespace, command, manifest, ledger, authority, and exact-engine evidence. ADR 043 later clarifies that separately tracked ownership—not already-proved independence—is the subdivision condition: histories are called independent only after their managed objects, data, authority transitions, and coordination domains are proved disjoint; intersecting histories keep explicit subdivisions but share their recorded dependency, serialization, release, and recovery boundary. PHPThis prescribes no subdivision spelling and does not create speculative connection directories for a single-database application or a connection without its own migration history.
 
 The database-free skeleton does not create an empty migration directory. It records migrations as not applicable until the application adopts them; adoption creates only the selected structure.
 

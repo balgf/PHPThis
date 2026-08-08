@@ -1,8 +1,8 @@
 # Application CLI and scheduler
 
-PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API. The application keeps its finite command map, typed arguments, dependencies, exit codes, output, clock, overlap policy, and process lifecycle explicit. The installed `vendor/bin/phpthis` executable remains the framework-owned `check` boundary; it is not an application command host. The optional separate `phpthis/workbench` development package is an unchecked expression workspace, not this operational console and not a production one-off path.
+PHPThis accepts one application-owned operational console pattern and provides no core command or scheduler API. The application keeps its finite command map, typed arguments, dependencies, exit codes, output, one-pass bounds, and process lifecycle explicit. When a scheduled pass is adopted, its clock, cadence, overlap, and supervisor policy are explicit too. The installed `vendor/bin/phpthis` executable remains the framework-owned `check` boundary; it is not an application command host. The optional separate `phpthis/workbench` development package is an unchecked expression workspace, not this operational console and not a production one-off path.
 
-ADR 025 records the initial job and scheduler proof through the executable example. ADR 027 extends that same application-owned console with one explicit SQLite migration command. ADR 028 replaces only the example's same-host schedule file lock with one Redis-specific owner-token lease. None adds a framework command, migration, cache, lock, or lease API. The concrete names and cadence below are evidence for that application, not reserved PHPThis APIs that every consumer must copy.
+ADR 025 records the initial job and scheduler proof through the executable example. ADR 027 extends that same application-owned console with one explicit SQLite migration command, while ADR 043 separates its transaction, rollback, and same-host `flock` choices from the universal application-owned migration invariants. ADR 028 replaces only the example's same-host schedule file lock with one Redis-specific owner-token lease. None adds a framework command, migration, cache, lock, or lease API. The concrete names and cadence below are evidence for that application, not reserved PHPThis APIs that every consumer must copy.
 
 ## Adoption boundary
 
@@ -10,14 +10,21 @@ An application with no operational command or scheduler records `NOT_APPLICABLE(
 
 Before adoption, the accountable human records:
 
-- the sole application console path and deployment identity;
+- the sole application console path plus each command's configuration-profile and authority references; `.ai/configuration.md` owns exact process identity and configuration, `.ai/data.md` owns effective database-authority facts and accountable transition ownership, and `.ai/migrations.md` owns each history's transition implementation and handoff constraints;
 - every finite command name, operation owner, typed argument, bound, default, and normalization or explicit non-normalization policy;
 - exact exit codes, stdout and stderr JSON schemas, outcome vocabulary, redaction, and compatibility policy;
 - fresh composition ownership and the immutable configuration, if any, shared with HTTP composition;
-- explicit clock, timezone, cadence, due test, missed-run and catch-up behavior, maximum work per pass, and cron or supervisor invocation frequency;
-- overlap mechanism, namespace, topology, acquisition, expiry, renewal, contention, failure, release, and crash behavior, including whether it is a same-host lock or an accepted backend-specific lease;
-- timeout, forced termination, restart, capacity, and incident behavior; and
-- tests for parsing, output bytes, time boundaries, overlap, failure, resource bounds, and secrets exclusion.
+- the one-pass work and resource bound for each command; and
+- real-console tests for parsing, output bytes, expected and unexpected failure, resource bounds, and secrets exclusion.
+
+A scheduled pass additionally records:
+
+- its explicit clock, timezone, cadence, due test, missed-run, catch-up, and repeated-slot behavior;
+- its overlap mechanism and namespace, topology, acquisition, expiry, renewal when applicable, contention, failure, release, crash behavior, maximum work, and coordination limit;
+- cron or supervisor invocation frequency, timeout, forced termination, restart, capacity, and incident behavior; and
+- real-console time-boundary, not-due, overlap, cleanup or release, supervisor, and topology evidence.
+
+A console with no scheduled pass records those schedule-only facts as not applicable. In particular, a migration-only console does not need a scheduler overlap lock or cadence policy. Its engine- and topology-specific writer coordination or serialization is recorded and proved independently in `.ai/migrations.md` under [ADR 043](decisions/043-engine-specific-application-migration-invariants.md).
 
 Do not add a command framework, registry, or scheduler in anticipation of future operations.
 
@@ -88,7 +95,7 @@ The lease reduces overlap only for cooperating scheduled processes that reach th
 
 `database:migrate` is the sole migration spelling in the accepted example. It freshly composes the separately authorized migration connection, final concrete coordinator, finite ordered manifest, unrolled private migration-step calls, bounded ledger, budget, trace, and application-private nonblocking same-host lock. The ledger insert explicitly records SQLite `unixepoch()`; no PHP migration clock exists. The command applies every pending migration once in manifest order and exits; an unchanged database returns `up_to_date`.
 
-The command does not run from HTTP startup, `schedule:run`, Composer dependency hooks, or framework `vendor/bin/phpthis`. It neither discovers migration files nor loads runtime SQL. Each migration and its ledger row use one explicit transaction, and a later failure preserves earlier committed entries. See [Explicit application migrations](migrations.md) and [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the ledger, checksum, authority, transaction, lock, recovery, and engine boundary.
+The command does not run from HTTP startup, `schedule:run`, Composer dependency hooks, or framework `vendor/bin/phpthis`. It neither discovers migration files nor loads runtime SQL. Each migration and its ledger row use one explicit transaction, and a later failure preserves earlier committed entries. See [Explicit application migrations](migrations.md), [ADR 043](decisions/043-engine-specific-application-migration-invariants.md), and [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the universal invariants and this proof's ledger, checksum, authority, transaction, lock, recovery, and engine boundary.
 
 ## Composition boundary
 
@@ -105,15 +112,15 @@ A production adopter must execute its real console in fresh subprocesses and add
 - unknown commands and invalid arguments perform no filesystem, lock, database, job, or external I/O;
 - exact exit codes, stream exclusivity, key order, one-line JSON bytes, and final newline;
 - a missing or inaccessible database and an unexpected throwable produce only `command_failed`, while Redis lease connection, acquisition, renewal, or release failure produces `command_failed` plus its finite coordination list;
-- UTC minute boundaries immediately before, on, and after the five-minute cadence using an explicit deterministic clock;
-- `not_due` performs no scheduled application work;
-- two concurrent owner-token lease attempts produce one bounded pass and one `overlap_skipped` without waiting;
-- stale-owner renewal and release cannot change a later owner's lease, and process termination permits later acquisition only after finite expiry;
-- sequential invocations in one due minute are not misreported as deduplicated;
-- one due pass invokes the same one-job operation at most once and handles at most one delivery;
-- HTTP and CLI composition create fresh mutable state while sharing only the recorded immutable configuration; and
+- for an adopted scheduled pass, UTC minute boundaries immediately before, on, and after the five-minute cadence using an explicit deterministic clock;
+- for an adopted scheduled pass, `not_due` performs no scheduled application work;
+- for the adopted Redis-coordinated scheduled pass, two concurrent owner-token lease attempts produce one bounded pass and one `overlap_skipped` without waiting;
+- for that scheduled pass, stale-owner renewal and release cannot change a later owner's lease, and process termination permits later acquisition only after finite expiry;
+- for that scheduled pass, sequential invocations in one due minute are not misreported as deduplicated;
+- for that scheduled pass, one due invocation calls the same one-job operation at most once and handles at most one delivery;
+- HTTP and CLI composition create fresh mutable state while sharing only the recorded immutable configuration;
 - stdout, stderr, durable job state, terminal request summaries, and traces omit every submitted or sensitive value; and
-- an adopted migration command also proves fresh-database manifest order, exact bounded ledger, unchanged no-op rerun, checksum drift rejection before pending work, malformed and overflowing ledger rejection, nonblocking migration-lock contention, per-migration rollback with earlier commits preserved, forward continuation, and no HTTP migration path.
+- an adopted migration command also proves its exact recorded initial baseline and manifest order, finite exact-engine ledger-metadata acceptance and incompatible or additional-object rejection, exact bounded ledger, unchanged no-op rerun, checksum drift rejection before pending work, malformed and overflowing ledger rejection, same- and cross-topology exclusion or authority gating, stable coordination namespace and protected interval at its owning boundary, prior-owner fencing or confirmed termination when coordination can expire or be lost, bypass denial for external serialization, every applicable transaction, implicit-commit, non-atomic, and crash-visible state across checksum-covered DDL, data, and authority effects, cross-history recovery when histories interact, immutable committed history, forward continuation, and no HTTP migration path; the ADR 027 SQLite proof additionally requires its empty-database case, nonblocking same-host `flock` contention, and per-migration rollback with earlier commits preserved.
 
 The complete application gate remains mandatory. Focused CLI tests shorten feedback but do not replace static analysis, the Strict Profile, or the application's other behavior evidence.
 
@@ -125,4 +132,4 @@ PHPThis ships no application console, command interface, command registry, argum
 
 The example proves one application-owned Redis-specific overlap pattern. It does not promise command compatibility across applications, absolute distributed exclusion, persistent schedule deduplication, catch-up, production cron delivery, a fencing token, exactly-once job execution, or exactly-once external effects.
 
-See [ADR 025](decisions/025-application-owned-explicit-cli-and-scheduler.md) for the console boundary, [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the migration boundary, [ADR 028](decisions/028-application-owned-redis-cache-and-schedule-lease.md) for the Redis lease boundary, and [PHPThis Workbench](workbench.md) for the distinct development-only inspection boundary.
+See [ADR 025](decisions/025-application-owned-explicit-cli-and-scheduler.md) for the console boundary, [ADR 043](decisions/043-engine-specific-application-migration-invariants.md) for universal application-owned migration invariants, [ADR 027](decisions/027-application-owned-explicit-sqlite-migrations.md) for the SQLite migration proof, [ADR 028](decisions/028-application-owned-redis-cache-and-schedule-lease.md) for the Redis lease boundary, and [PHPThis Workbench](workbench.md) for the distinct development-only inspection boundary.

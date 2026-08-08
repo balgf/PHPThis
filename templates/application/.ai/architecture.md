@@ -40,7 +40,7 @@ If existing identifier classes establish a coherent convention, record and prese
 
 ## Configuration boundary
 
-`.ai/configuration.md` is the single writable authority for the boundary path or not-applicable marker, external input names without values, the one process-environment-reading file, process-specific factories and final readonly types, validation bounds, authority separation, injection sites, failure, rotation/restart, redaction, and tests. Do not duplicate those fields here or in another application guide. This architecture retains only the dependency rule: entrypoints invoke their matching factory, and routes, handlers, operations, policies, and SQL owners receive concrete typed dependencies rather than a configuration reader or string-keyed bag.
+`.ai/configuration.md` is the single writable authority for the boundary path or not-applicable marker, external input names without values, the one process-environment-reading file, process-specific factories and final readonly types, validation bounds, profile, input-name, and credential separation without inheritance, combined credentials, or fallback, injection sites, failure, rotation/restart, redaction, and tests. Do not duplicate those fields here or in another application guide. This architecture retains only the dependency rule: entrypoints invoke their matching factory, and routes, handlers, operations, policies, and SQL owners receive concrete typed dependencies rather than a configuration reader or string-keyed bag.
 
 ## Inbound data boundaries
 

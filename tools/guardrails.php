@@ -744,6 +744,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/039-recommended-database-migration-structure.md',
     'docs/decisions/040-bounded-alpha-5-release-scope.md',
     'docs/decisions/041-optional-development-workbench.md',
+    'docs/decisions/043-engine-specific-application-migration-invariants.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -1368,6 +1369,7 @@ $alpha5ReleaseIdentityArtifactMarkers = [
         'It is not production-ready and makes no backward-compatibility promise across prereleases.',
         'Alpha 4 consumers move from Consumer Contract version 9 to version 10 and Strict Profile version 2 to version 3',
         'At the Alpha 4 tag, `docs/consumer-contract.md` defined Consumer Contract version 9 and Strict Profile version 2.',
+        'ADR 043 later clarified the current rule: a separately tracked history may own an explicit subdivision',
         'composer create-project --stability=alpha phpthis/skeleton',
     ],
     'docs/decisions/040-bounded-alpha-5-release-scope.md' => [
@@ -1439,7 +1441,7 @@ $configurationArtifactMarkers = [
         'private static function required(#[\\SensitiveParameter] string|false $value, int $maximumBytes): string',
         '->handle($_SERVER, $_GET, $_POST, $_FILES)',
         'HTTP calls only `forHttp()`.',
-        'When migrations are adopted, their command calls only `forMigrations()`',
+        'In the illustrated single-history case, that history\'s command calls only `forMigrations()`',
         'PHPThis does not load it',
         '#[\\SensitiveParameter]',
         '### Copyable child-process configuration evidence',
@@ -1469,7 +1471,7 @@ $configurationArtifactMarkers = [
     ],
     'templates/application/.ai/configuration.md' => [
         '{{CONFIGURATION_BOUNDARY_PATH_OR_NOT_APPLICABLE}}',
-        '{{CONFIGURATION_AUTHORITY_SEPARATION_OR_NOT_APPLICABLE}}',
+        '{{CONFIGURATION_PROFILE_CREDENTIAL_SEPARATION_OR_NOT_APPLICABLE}}',
         '{{CONFIGURATION_REDACTION_EVIDENCE_OR_NOT_APPLICABLE}}',
     ],
     'skeleton/.ai/configuration.md' => [
@@ -1679,8 +1681,8 @@ $databaseSetupScopeArtifactMarkers = [
         'should I only add PostgreSQL configuration, connect this project to an existing PostgreSQL server, or provision a project-local PostgreSQL server?',
         'Record the non-secret input contract and add its typed parser or factory with parsing, failure, redaction, and child-process evidence.',
         'Configuration-only scope records infrastructure injection and connection evidence as deferred and does not create dead wiring.',
-        'For PostgreSQL or another engine, first record an engine-specific application decision',
-        'when migrations are deferred, omit the migration inputs, type, factory, entrypoint, and tests',
+        'For PostgreSQL or another engine, first record the exact accepted initial baseline',
+        'When migrations are deferred, omit the migration inputs, type, factory, entrypoint, and tests',
         'Provisioning and production evidence is required only for an explicitly selected scope.',
     ],
     'docs/evaluation.md' => [
@@ -1713,7 +1715,7 @@ $databaseSetupScopeArtifactMarkers = [
         'Apply this gate before the full task read order',
         'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
         'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
-        'Record isolated migration or administrative authority only when that elevated path is adopted.',
+        'When a migration or administrative path is adopted, keep its configuration and process entry separate from HTTP, record its exact effective authority overlap, and claim capability isolation only where the selected engine supports it.',
         'for configuration-only scope, record connection composition as deferred and prove the parser in a child process.',
     ],
     'skeleton/AGENTS.md' => [
@@ -1721,7 +1723,7 @@ $databaseSetupScopeArtifactMarkers = [
         'Apply this gate before the full task read order',
         'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
         'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
-        'Record isolated migration or administrative authority only when that elevated path is adopted.',
+        'When a migration or administrative path is adopted, keep its configuration and process entry separate from HTTP, record its exact effective authority overlap, and claim capability isolation only where the selected engine supports it.',
         'Record visible injection sites for adopted infrastructure, or explicitly defer connection composition when configuration-only scope stops before it.',
     ],
     'templates/application/.ai/README.md' => [
@@ -1751,16 +1753,18 @@ $databaseSetupScopeArtifactMarkers = [
     ],
     'skeleton/.ai/configuration.md' => [
         'Database-engine selection does not authorize a connection attempt, server provisioning, or migration adoption.',
-        'one separately named factory and final readonly output type for each adopted process profile',
+        'one separately named factory, final readonly output type, and process identity for each adopted process profile',
         'child-process parser or adopted-entrypoint evidence',
     ],
     'templates/application/.ai/data.md' => [
-        'Record a separate migration or administrative identity only when that path is adopted',
-        '{{ELEVATED_DATABASE_IDENTITY_REFERENCE_OR_NOT_APPLICABLE}}',
-        '{{ELEVATED_DATABASE_AUTHORITY_ISOLATION_OR_NOT_APPLICABLE}}',
+        'Record one separate row per adopted migration history and one separate administrative row only when that path is adopted',
+        '{{ELEVATED_PROFILE_1_IDENTITY_AND_CONFIGURATION_REFERENCE_OR_NOT_APPLICABLE}}',
+        '{{ELEVATED_PROFILE_1_EFFECTIVE_AUTHORITY_BOUNDARY_OR_NOT_APPLICABLE}}',
+        'capability isolation where supported or exact effective overlap and residual risk',
+        'otherwise record the exact effective-authority overlap and residual risk, including SQLite file-level limits',
     ],
     'skeleton/.ai/data.md' => [
-        'a separate migration or administrative identity only when that elevated path is adopted',
+        'one separately named no-fallback identity/configuration profile per adopted migration history plus a separate administrative profile when adopted',
     ],
     'templates/application/.ai/testing.md' => [
         'Provisioning and production evidence is required only for explicitly selected scopes.',
@@ -1868,7 +1872,7 @@ $databaseAuthorityLifecycleArtifactMarkers = [
         'Migration success proves the migration path only.',
         'Before dependent code receives traffic, positive evidence executes its exact runtime statements under the runtime identity',
         'PHPThis does not prescribe migration-first or code-first rollout.',
-        'does not establish production lock duration, availability, free-space behavior, crash recovery, backup restore, live effective authority, release ordering',
+        'No proof establishes production coordination duration or loss behavior, availability, free-space behavior, crash recovery, backup restore, live effective authority, release ordering',
     ],
     'docs/knowledge-map.md' => [
         'ADR 040, ADR 036 through ADR 039 for the Alpha 5 rollup',
@@ -1888,7 +1892,8 @@ $databaseAuthorityLifecycleArtifactMarkers = [
         'database, catalog, schema, or attachment namespace selection and qualification as supported by the chosen engine',
         'namespace and object control or ownership model, with explicit not-applicable facts where the engine has no such model',
         'effective authority resolution source, using only applicable mechanisms such as direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
-        'Give each adopted authority activation or deactivation one non-HTTP owner and path; record `GRANT` or `REVOKE` only where supported.',
+        'Give each adopted authority activation or deactivation one accountable non-HTTP owner and authoritative implementation reference',
+        'keep the complete transition implementation in `.ai/migrations.md` when an adopted migration owns it',
         'activate and verify it before dependent code receives traffic',
     ],
     'templates/application/.ai/data.md' => [
@@ -1899,21 +1904,20 @@ $databaseAuthorityLifecycleArtifactMarkers = [
         '{{CONNECTION_1_NAMESPACE_AND_OBJECT_CONTROL_OR_OWNERSHIP_MODEL_OR_NOT_APPLICABLE}}',
         '{{DATABASE_AUTHORITY_1_CONNECTION_AND_OPERATION}}',
         '{{DATABASE_AUTHORITY_1_EFFECTIVE_AUTHORITY_RESOLUTION_SOURCE}}',
-        '{{DATABASE_AUTHORITY_ACTIVATION_AND_DEACTIVATION_PATH_OR_NOT_APPLICABLE}}',
-        'Authority activation and deactivation owner, complete non-HTTP path, and transition source; `GRANT` and `REVOKE` only where supported',
+        '{{ELEVATED_PROFILE_1_AUTHORITY_TRANSITION_OWNER_AND_IMPLEMENTATION_REFERENCE_OR_NOT_APPLICABLE}}',
+        'Activation/deactivation accountable owner and authoritative implementation reference',
         'Activate and verify authority against the exact engine and version before dependent code receives traffic.',
     ],
     'templates/application/.ai/migrations.md' => [
         '{{MIGRATION_ENGINE_DECISION_SOURCE_OR_NOT_APPLICABLE}}',
-        '{{MIGRATION_REQUIRED_AND_PROHIBITED_CAPABILITIES_OR_NOT_APPLICABLE}}',
-        '{{MIGRATION_AUTHORITY_TRANSITION_PATH_OR_NOT_APPLICABLE}}',
-        '{{MIGRATION_RUNTIME_AUTHORITY_HANDOFF_AND_EVIDENCE_OR_NOT_APPLICABLE}}',
-        '{{MIGRATION_RELEASE_SEQUENCE_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_CONFIGURATION_AND_AUTHORITY_REFERENCES_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_AUTHORITY_TRANSITION_IMPLEMENTATION_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_RELEASE_CONSTRAINTS_OR_NOT_APPLICABLE}}',
         'Migration success alone does not prove runtime authority is active.',
     ],
     'templates/application/.ai/operations.md' => [
         '{{DATABASE_AUTHORITY_AND_RELEASE_DECISION_SOURCE_OR_NOT_APPLICABLE}}',
-        '{{DATABASE_AUTHORITY_TRANSITION_OPERATIONS_OR_NOT_APPLICABLE}}',
+        '{{DATABASE_AUTHORITY_TRANSITION_RUNBOOK_AND_EVIDENCE_MAPPING_OR_NOT_APPLICABLE}}',
         '{{DATABASE_RELEASE_SEQUENCE_OR_NOT_APPLICABLE}}',
         '{{DATABASE_COMPATIBILITY_DEACTIVATION_AND_REMOVAL_POLICY_OR_NOT_APPLICABLE}}',
         '{{DATABASE_PRE_TRAFFIC_AUTHORITY_GATE_EVIDENCE_AND_OWNER_OR_NOT_APPLICABLE}}',
@@ -1930,18 +1934,19 @@ $databaseAuthorityLifecycleArtifactMarkers = [
         'database/catalog/schema/attachment namespace selection and qualification as supported',
         'namespace and object control or ownership model or explicit N/A',
         'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
-        'one non-HTTP owner and path for every adopted authority activation and deactivation, `GRANT` and `REVOKE` only where supported',
+        'one accountable non-HTTP owner and authoritative implementation reference for every adopted authority activation and deactivation',
         'Configuration, connectivity, target existence, and migration completion do not activate runtime authority.',
     ],
     'skeleton/.ai/migrations.md' => [
-        'one owner and complete non-HTTP path for each authority activation and deactivation, with `GRANT` and `REVOKE` only where supported',
-        'runtime-authority activation handoff, exact-engine positive and negative verification',
-        'application rollout and traffic-enablement order',
+        'selected authority-transition implementation source and complete non-HTTP implementation path',
+        'the history\'s engine-specific compatibility, authority-verification, failure-stop, and handoff constraints',
+        'application-wide release sequence recorded only in `.ai/operations.md`',
         'Migration success alone does not prove runtime authority is active.',
     ],
     'skeleton/.ai/operations.md' => [
         'authority-transition owner or activation stage',
-        'application-owned order and compatibility among migration, authority activation, exact-engine verification, application rollout, traffic enablement, later authority deactivation',
+        'Record here, keyed by stable history name or explicit intersecting-history set, the deployment runner',
+        'application-owned sequence through authority verification, rollout, traffic enablement, later deactivation',
         'No universal deployment order is inferred',
     ],
     'skeleton/.ai/testing.md' => [
@@ -3872,6 +3877,8 @@ $applicationCliArtifactMarkers = [
     ],
     'templates/application/.ai/cli.md' => [
         '{{CLI_ADOPTION_OR_NOT_APPLICABLE}}',
+        '{{CLI_CONSOLE_EXECUTABLE_OR_NOT_APPLICABLE}}',
+        '{{CLI_COMMAND_PROFILE_AND_AUTHORITY_REFERENCES_OR_NOT_APPLICABLE}}',
         '{{CLI_COMMAND_MAP_AND_BOUNDS_OR_NOT_APPLICABLE}}',
         '{{CLI_OVERLAP_POLICY_OR_NOT_APPLICABLE}}',
         'PHPThis provides no core application CLI or scheduler API',
@@ -4550,17 +4557,384 @@ if (is_string($composerManifest)) {
     }
 }
 
+$engineSpecificMigrationInvariantArtifactMarkers = [
+    'AGENTS.md' => [
+        'Keep migrations application-owned and engine/version-specific under ADR 043',
+        'Record one exact initial baseline per history',
+        'validates its accepted ledger prefix, and applies every pending checksum-covered statement',
+        '`.ai/operations.md` alone owns the application-wide release sequence',
+        'Concurrently reachable topologies for one history share an exclusion domain or are pairwise authority-gated',
+        'Keep the application-context authority split singular:',
+        'exact creation, acquisition, use, and release permissions or authority',
+        'Keep ADR 027 as the accepted application-owned SQLite reference proof, not a universal migration mechanism.',
+    ],
+    '.ai/README.md' => [
+        'ADR 043, ADR 038, ADR 039, and ADR 027 only for the SQLite reference proof',
+        'each separately tracked history\'s exact initial baseline',
+        'shared exclusion or pairwise authority gating across reachable topologies',
+        'operations-owned application-wide release order',
+        '`.ai/configuration.md`-owned configuration/process identity',
+    ],
+    '.ai/application-context.md' => [
+        'exact recorded initial baseline',
+        'shared exclusion or pairwise authority gating across concurrently reachable topologies',
+        '`.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
+        'typed-configuration/process-identity reference to `.ai/configuration.md`, database-authority reference to `.ai/data.md`',
+        'exact creation/acquisition/use/release permissions',
+        'Preserve ADR 027\'s explicit timestamp, per-migration transaction, same-host `flock`, active-transaction rollback, and earlier-commit proof only when the application deliberately adopts that SQLite reference shape.',
+    ],
+    '.ai/migrations.md' => [
+        'ADR 043 defines engine-neutral application-owned invariants; ADR 027 remains one accepted SQLite-specific reference proof.',
+        'For each history, record one exact initial baseline.',
+        'every accepted present object, data assumption, ledger row, and checksum',
+        'accepted-ledger-prefix validation, every pending checksum-covered statement',
+        '`.ai/operations.md` alone owns the application-wide release sequence',
+        'Record a finite exact-engine metadata acceptance policy for the ledger',
+        'every code-owned binding name/type/literal value or finite binding-derivation policy',
+        'exact creation, acquisition, use, and release permissions or authority',
+        'Concurrently reachable topologies for the same history must share one exclusion domain or be pairwise authority-gated',
+        'An expiring or lost owner is fenced from later mutations or confirmed terminated with no in-flight work before successor mutation.',
+        'the next owner reacquires coordination and re-detects exact state before mutating',
+        'cross-history partial-deployment evidence',
+        'typed-configuration/process-identity reference to `.ai/configuration.md`, database-authority reference to `.ai/data.md`',
+        'These are conditional SQLite/example and host-topology mechanics, not engine-neutral requirements.',
+    ],
+    'README.md' => [
+        'Schema evolution follows universal application-owned invariants:',
+        'The executable reference remains SQLite with one transaction per migration and a same-host nonblocking `flock`; those mechanisms are not cross-engine claims',
+        '[ADR 043](docs/decisions/043-engine-specific-application-migration-invariants.md)',
+    ],
+    'ROADMAP.md' => [
+        'ADR 043 separates universal application-owned migration invariants from ADR 027\'s SQLite-only transaction, rollback, ledger-definition, and same-host `flock` proof',
+        'ADR 043 accepts engine-neutral application-owned migration invariants, not a reusable ledger, coordinator, transaction, lock, or recovery implementation',
+    ],
+    'docs/cli.md' => [
+        'ADR 043 separates its transaction, rollback, and same-host `flock` choices from the universal application-owned migration invariants.',
+        'each command\'s configuration-profile and authority references',
+        '`.ai/configuration.md` owns exact process identity and configuration, `.ai/data.md` owns effective database-authority facts and accountable transition ownership, and `.ai/migrations.md` owns each history\'s transition implementation and handoff constraints',
+        'the ADR 027 SQLite proof additionally requires its empty-database case, nonblocking same-host `flock` contention, and per-migration rollback with earlier commits preserved.',
+        'a migration-only console does not need a scheduler overlap lock or cadence policy.',
+    ],
+    'docs/cli/testing.md' => [
+        'When a scheduled pass is adopted, use its explicit deterministic clock',
+        'When a scheduled pass adopts the ADR 028 lease',
+        'For an adopted migration command, prove the exact recorded initial baseline and manifest order',
+        'statement and code-owned binding or finite binding-policy drift',
+        'For the ADR 027 SQLite proof, additionally prove its empty-database case, immediate same-host `flock` contention with no database change, and per-migration rollback with earlier commits preserved',
+    ],
+    'docs/consumer-contract.md' => [
+        'ADR 043 defines universal application-owned migration invariants',
+        'engine-specific ledger-consistency boundary',
+        'every code-owned binding name/type/literal value or complete finite binding-derivation policy',
+        'ADR 027 remains the one executable SQLite reference proof.',
+        'SQLite- and topology-specific choices, not universal migration requirements.',
+        'PHPThis supplies no universal lock.',
+        'Exact configuration and process identity remain authoritative in `.ai/configuration.md`',
+    ],
+    'docs/decisions/043-engine-specific-application-migration-invariants.md' => [
+        '# ADR 043: Engine-specific application migration invariants',
+        'On 2026-08-08 in Asia/Manila, the accountable human approved Issue #30',
+        '### Universal application-owned invariants',
+        'These invariants require ledger consistency, not one universal transaction shape.',
+        'These invariants also require explicit concurrency decisions, not one universal lock.',
+        'record the exact effective-authority overlap between migration and runtime',
+        'including SQLite file-level authority limits',
+        'additional fields are finite, non-executable, validated, and never select migration work, define order, or authorize behavior',
+        'checksum-covered exact statement sequences plus every code-owned binding value or finite binding-derivation policy',
+        'All writer topologies that can reach one history must participate in one shared exclusion domain or use explicit authority gating',
+        'An expiring or losable mechanism is valid only when a successor cannot begin a mutation while an earlier owner\'s statement may still be executing',
+        'Before implementing any adoption, the accountable human approves an application decision',
+        '`.ai/configuration.md` owns exact configuration and process identity, `.ai/data.md` owns effective database-authority facts and accountable transition ownership, `.ai/migrations.md` owns the per-history migration constraints and transition implementation, and `.ai/operations.md` alone owns the application-wide sequence and operational runbooks.',
+        '### SQLite reference proof',
+        'Consumer Contract version 10 and Strict Profile version 3 remain unchanged.',
+        'No framework migration API, schema builder, DSL, discovery rule, generic ledger or lock type, transaction callback, permission abstraction, automatic rollback, runtime SQL loading, HTTP-startup behavior, core change, contract-version change, or Strict Profile change is introduced.',
+    ],
+    'docs/decisions/README.md' => [
+        '`043-engine-specific-application-migration-invariants.md`',
+    ],
+    'docs/getting-started.md' => [
+        'one accepted engine-specific migration policy following ADR 043',
+        'engine-specific ledger-consistency boundary and every non-atomic state',
+        'record the application-wide sequence through exact-engine verification, rollout, traffic enablement, later deactivation, and namespace removal only in `.ai/operations.md`',
+        'ADR 027\'s per-migration transaction, rollback, and same-host `flock` are required only when adopting its SQLite reference boundary',
+    ],
+    'docs/knowledge-map.md' => [
+        'ADR 043, ADR 027 for the SQLite reference proof',
+        '`.ai/configuration.md` for exact no-fallback process configuration and identity',
+        '`.ai/data.md` for effective database-authority facts, accountable transition ownership',
+        '`.ai/operations.md` for the application-wide release order and operational runbooks',
+        'scope transaction, rollback, and lock claims to their proved engine and topology',
+    ],
+    'docs/migrations.md' => [
+        '[universal application-owned migration invariants](decisions/043-engine-specific-application-migration-invariants.md)',
+        'Ledger consistency is universal; one transaction shape is not.',
+        'Concurrency coverage is universal; one lock is not.',
+        'Additional fields are finite, non-executable, validated, and never select migration work, define order, or authorize behavior.',
+        'every code-owned binding name, type, and literal value',
+        'checksum the complete finite derivation policy and its input contract instead of the runtime result',
+        'first pending migration may run',
+        'explicitly accepted ledger prefix that the migration identity validates rather than re-executes',
+        '`.ai/operations.md` alone owns the application-wide release sequence',
+        '## Engine-specific ledger-consistency path',
+        '### SQLite reference transaction',
+        'Those are SQLite reference requirements, not substitutes for another engine\'s exact coordination and partial-failure evidence.',
+        'exact creation, acquisition, use, and release permissions or authority',
+    ],
+    'docs/guardrails.md' => [
+        'The engine-specific migration-invariant guard is a separate documentation boundary.',
+        'retired exact unqualified wording on named universal guidance surfaces',
+        'they do not reject broad words such as transaction, rollback, lock, or `flock` in ADR 027, the executable example, or its tests.',
+        'A separate installed distribution proof checks ADR 043\'s engine-specific migration-invariant boundary',
+        'checksums covering every statement, code-owned binding value or finite binding-derivation policy',
+        'exact no-fallback configuration/process identity owned by `.ai/configuration.md`',
+        'exact creation, acquisition, use, and release permissions or authority',
+        'ADR 039\'s alternative migration-placement proof remains separate and unchanged.',
+    ],
+    'skeleton/AGENTS.md' => [
+        'each history\'s exact initial baseline',
+        'shared exclusion or pairwise authority gating across reachable topologies',
+        '`.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
+        'keep exact configuration and process identity only in `.ai/configuration.md`',
+        'exact creation, acquisition, use, and release permissions or authority',
+        'ADR 027\'s per-migration transaction, same-host `flock`, active-transaction rollback, and earlier-commit proof apply only when this application deliberately adopts that SQLite reference shape.',
+    ],
+    'skeleton/.ai/README.md' => [
+        'each history\'s exact initial baseline',
+        'cross-topology exclusion or authority gating',
+        'operations-owned application-wide release order',
+        '`.ai/configuration.md`-owned configuration/process identity',
+        'ADR 027 transaction/`flock`/rollback evidence only for its SQLite reference shape',
+    ],
+    'skeleton/.ai/migrations.md' => [
+        'each separately tracked history\'s exact initial baseline',
+        'required position, identifier, and checksum',
+        'code-owned binding name/type/literal value or finite binding-derivation policy',
+        'every accepted present object, data assumption, ledger row, and checksum',
+        'exact-baseline and accepted-ledger-prefix validation, every pending checksum-covered',
+        'application-wide release sequence recorded only in `.ai/operations.md`',
+        'shared exclusion across concurrently reachable topologies for one history or pairwise authority gating',
+        'owner fencing or confirmed termination',
+        'next owner to reacquire coordination and re-detect exact state before mutating',
+        'disjoint managed objects, data, authority transitions, and coordination domains between separately tracked histories',
+        'exact creation, acquisition, use, and release permissions or authority',
+        'ADR 027 remains the accepted SQLite reference proof.',
+        'Those mechanics and names are not another engine, topology, or application\'s defaults.',
+    ],
+    'skeleton/.ai/operations.md' => [
+        'Record exact configuration and process identity only in `.ai/configuration.md`',
+        'effective authority facts and accountable transition ownership only in `.ai/data.md`',
+        'This file records only stable-history-keyed operational owners, mappings, runbooks, and evidence references',
+        'it does not restate migration, configuration, identity, or authority policy',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'exact initial baseline',
+        'every concurrently reachable topology pair',
+        'migration-effect/ledger consistency at every failure boundary',
+        'validate the accepted ledger prefix; prove every pending checksum-covered statement',
+        'Multiple histories prove disjoint managed objects, data, authority transitions, and coordination domains before they are called independent',
+        'When ADR 027\'s SQLite reference shape is adopted',
+        'Do not generalize that SQLite transaction, file-lock, rollback, output, or filesystem-authority evidence to another engine or host topology.',
+        'Migration evidence separately proves exact creation, acquisition, use, and release permissions or authority',
+    ],
+    'templates/application/AGENTS.md' => [
+        'each history\'s exact initial baseline',
+        'shared exclusion or pairwise authority gating across reachable topologies',
+        '`.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
+        'keep exact configuration and process identity only in `.ai/configuration.md`',
+        'exact creation, acquisition, use, and release permissions or authority',
+        'ADR 027\'s per-migration transaction, same-host `flock`, active-transaction rollback, and earlier-commit proof apply only when the application deliberately adopts that SQLite reference shape.',
+    ],
+    'templates/application/.ai/README.md' => [
+        'each history\'s exact initial baseline',
+        'cross-topology exclusion or authority gating',
+        'operations-owned application-wide release order',
+        '`.ai/configuration.md`-owned configuration/process identity',
+        'ADR 027 transaction/`flock`/rollback evidence only for its SQLite reference shape',
+    ],
+    'templates/application/.ai/migrations.md' => [
+        '{{MIGRATION_CONSOLE_EXECUTABLE_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_HISTORY_STABLE_NAME_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_HISTORY_COMMAND_OR_NOT_APPLICABLE}}',
+        '## Separately tracked history: `{{MIGRATION_HISTORY_STABLE_NAME_OR_NOT_APPLICABLE}}`',
+        'copy this complete section once for every separately tracked history and replace every placeholder inside each copy',
+        'Use one stable application-owned history name consistently',
+        'Do not combine several histories in one field.',
+        '## Shared migration rules',
+        '{{MIGRATION_INITIAL_BASELINE_OR_NOT_APPLICABLE}}',
+        'every accepted present object, data assumption, ledger row, and checksum',
+        '{{MIGRATION_RELEASE_CONSTRAINTS_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_ATOMICITY_AND_LEDGER_CONSISTENCY_POLICY_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_COORDINATION_POLICY_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_CONFIGURATION_AND_AUTHORITY_REFERENCES_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_AUTHORITY_TRANSITION_IMPLEMENTATION_OR_NOT_APPLICABLE}}',
+        'exact creation, acquisition, use, and release permissions or authority',
+        '{{MIGRATION_CROSS_TOPOLOGY_POLICY_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_COORDINATION_COVERAGE_POLICY_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_CROSS_HISTORY_POLICY_OR_NOT_APPLICABLE}}',
+        'proved disjoint managed objects, data, authority transitions, and coordination domains',
+        'Ledger requiring position, identifier, and checksum',
+        'every code-owned binding name/type/literal value or finite binding-derivation policy',
+        'any selected extra metadata, including a timestamp, has an explicit source, representation, and bound, is parsed and validated as non-executable data, and cannot select work, define order, or grant authority',
+        'finite exact-engine accepted metadata and explicitly permitted supporting objects',
+        'rejection of missing, incompatible, and additional unrecorded ledger-related objects',
+        'next-owner reacquisition and exact-state redetection before mutation',
+        'partial-failure detection, forward-correction, backup, restore, and recovery policy',
+        'ADR 027 remains the accepted SQLite reference proof.',
+        'Those mechanics and names are conditional SQLite/example policy, not portable defaults.',
+    ],
+    'templates/application/.ai/operations.md' => [
+        '{{CLI_NON_MIGRATION_DEPLOYMENT_RUNNER_AND_INCIDENT_MAPPING_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_DEPLOYMENT_RUNNER_MAPPING_OR_NOT_APPLICABLE}}',
+        'Exact initial baseline per stable history name: `.ai/migrations.md`; do not duplicate it here.',
+        '{{MIGRATION_COORDINATION_RUNBOOK_AND_EVIDENCE_MAPPING_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_MAINTENANCE_CAPACITY_TERMINATION_AND_INCIDENT_MAPPING_OR_NOT_APPLICABLE}}',
+        '{{MIGRATION_RECOVERY_AND_CROSS_HISTORY_RUNBOOK_MAPPING_OR_NOT_APPLICABLE}}',
+        'The bullets above record only stable-history-keyed operational owners, mappings, runbooks, and evidence references; they do not restate those policies.',
+        'exact process identity and configuration remain authoritative in `.ai/configuration.md`, and effective authority facts plus accountable transition ownership remain authoritative in `.ai/data.md`',
+        'the underlying per-history and shared-mechanism policy remains in `.ai/migrations.md`',
+        'This guide owns the application-specific release sequence and operational runbooks',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'exact recorded initial baseline',
+        'every concurrently reachable topology pair',
+        'migration-effect/ledger consistency at every failure boundary',
+        'validates the accepted ledger prefix; proves every pending checksum-covered statement',
+        'Multiple histories prove disjoint managed objects, data, authority transitions, and coordination domains before they are called independent',
+        'When ADR 027\'s SQLite reference shape is adopted',
+        'Do not generalize that SQLite transaction, file-lock, rollback, output, or filesystem-authority evidence to another engine or host topology.',
+        'exact creation, acquisition, use, and release permissions or authority',
+    ],
+    'skeleton/.ai/configuration.md' => [
+        'one separately named factory, final readonly output type, and process identity for each adopted process profile',
+        'each migration history records its own exact input names and never inherits, combines, or falls back',
+    ],
+    'skeleton/.ai/data.md' => [
+        'each future history\'s source and namespace; exact initial baseline',
+        'stable coordination namespace, collision, creation/acquisition/use/release permissions, reachable-topology exclusion, and lost-owner behavior',
+        '`.ai/configuration.md` owns exact no-fallback configuration and process identity, this file owns effective authority facts and accountable transition ownership, and `.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
+    ],
+    'templates/application/.ai/configuration.md' => [
+        '{{ELEVATED_CONFIGURATION_FACTORIES_TYPES_IDENTITIES_AND_HISTORY_OWNERSHIP_OR_NOT_APPLICABLE}}',
+        'Runtime, each migration history, and administrative profile, input-name, and credential separation with no inheritance, combined credentials, or fallback',
+    ],
+    'templates/application/.ai/data.md' => [
+        '{{ELEVATED_PROFILE_1_HISTORY_OR_ADMIN_NAME_OR_NOT_APPLICABLE}}',
+        'Record one separate row per adopted migration history',
+        '{{ELEVATED_PROFILE_1_EFFECTIVE_AUTHORITY_BOUNDARY_OR_NOT_APPLICABLE}}',
+        'capability isolation where supported or exact effective overlap and residual risk',
+        'otherwise record the exact effective-authority overlap and residual risk, including SQLite file-level limits',
+        '{{ELEVATED_PROFILE_1_AUTHORITY_TRANSITION_OWNER_AND_IMPLEMENTATION_REFERENCE_OR_NOT_APPLICABLE}}',
+    ],
+    'skeleton/.ai/cli.md' => [
+        'When a scheduled pass is adopted, additionally record',
+        'every adopted migration history has its own separately scoped references',
+        'exact process identity, process-specific configuration factory, and final readonly type recorded in `.ai/configuration.md`',
+        'A migration-only console records writer coordination or serialization in `.ai/migrations.md` under ADR 043.',
+    ],
+    'templates/application/.ai/cli.md' => [
+        '{{CLI_CONSOLE_EXECUTABLE_OR_NOT_APPLICABLE}}',
+        '{{CLI_COMMAND_PROFILE_AND_AUTHORITY_REFERENCES_OR_NOT_APPLICABLE}}',
+        'Complete the clock, cadence, overlap, and supervisor fields only when a scheduled pass is adopted',
+        'A migration-only console records writer coordination or serialization in `.ai/migrations.md` under ADR 043',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(',
+        'PASS installed engine-specific migration-invariant guidance distribution',
+        'PASS installed migration alternative structure',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/043-engine-specific-application-migration-invariants.md',
+    ],
+];
+
+foreach ($engineSpecificMigrationInvariantArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read engine-specific migration-invariant artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Engine-specific migration-invariant artifact marker is missing from {$relativePath}: {$marker}.";
+        }
+    }
+}
+
+$retiredUnqualifiedMigrationRequirements = [
+    '.ai/README.md' => [
+        'bounded ledger, per-migration transactions, migration and authority-management capabilities',
+    ],
+    '.ai/application-context.md' => [
+        'bounded ledger, per-migration transaction, exact elevated required and prohibited capabilities, authority-transition ownership, same-host lock',
+    ],
+    '.ai/migrations.md' => [
+        'Execute each pending migration and its ledger insert in its own explicit transaction. Commit inside `try`; roll back in `finally` only when still active.',
+        'Acquire one application-private nonblocking exclusive `flock` before database work and release it in `finally`.',
+    ],
+    'docs/consumer-contract.md' => [
+        'bounded ledger, per-migration transactions, same-host lock topology',
+        'Each migration and its ledger row commit through one explicit transaction.',
+        'fresh separately authorized state and one application-private nonblocking same-host `flock`.',
+    ],
+    'docs/getting-started.md' => [
+        'bounded ledger, per-migration transactions, lock topology, immutable forward recovery',
+    ],
+    'docs/knowledge-map.md' => [
+        'bounded ledger, per-migration transactions, migration and authority-management capabilities',
+    ],
+    'docs/migrations.md' => [
+        '## Explicit transaction path',
+        'Acquire the application-private nonblocking migration lock before database work. After bounded ledger bootstrap and complete history validation, execute each pending migration through its own visible transaction:',
+    ],
+    'skeleton/AGENTS.md' => [
+        'bounded ledger, per-migration transaction, same-host lock, immutable forward recovery',
+    ],
+    'skeleton/.ai/migrations.md' => [
+        'one explicit transaction per migration and ledger insert, immutable history, forward correction, and backup or restore policy',
+        'one application-private nonblocking same-host lock path, permissions, filesystem topology, contention, and failure policy',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'nonblocking same-host lock contention with no state change, per-migration rollback with earlier commits preserved',
+    ],
+    'templates/application/AGENTS.md' => [
+        'bounded ledger, per-migration transactions, same-host lock topology, immutable forward recovery',
+    ],
+    'templates/application/.ai/migrations.md' => [
+        'Commit each pending migration and its ledger row in one visible transaction.',
+        'fresh separately authorized state and one application-private nonblocking same-host lock',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'nonblocking same-host lock contention with no database state change, per-migration rollback with earlier commits preserved',
+    ],
+];
+
+foreach ($retiredUnqualifiedMigrationRequirements as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "Universal migration guidance {$relativePath} retains retired unqualified SQLite wording: {$marker}.";
+        }
+    }
+}
+
 $migrationArtifactMarkers = [
     '.ai/README.md' => [
         'Add, change, place, or review database migrations',
-        '`.ai/migrations.md`, `.ai/database.md`, `.ai/cli.md`, `.ai/testing.md`, ADR 027',
+        '`.ai/migrations.md`, `.ai/database.md`, `.ai/configuration.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/cli.md`, `.ai/testing.md`, ADR 043',
     ],
     '.ai/application-context.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
         'Contract version 9 does not make that additional file a checker requirement',
         'Recommend `src/Database/Migrations/` with the matching application namespace',
         'preserve any coherent application-owned alternative',
-        'multiple named database connections adopt independent migration histories',
+        'multiple named database connections adopt separately tracked migration histories',
     ],
     '.ai/migrations.md' => [
         '# Migration authoring contract',
@@ -4568,9 +4942,9 @@ $migrationArtifactMarkers = [
         'recommend `src/Database/Migrations/` with a matching namespace',
         'Accept any coherent application-owned alternative.',
         'A relocation is an application architecture change requiring explicit human approval.',
-        'multiple named database connections actually own independent migration histories',
+        'multiple named database connections own separately tracked migration histories',
         'do not prescribe or scaffold speculative subdivisions for a single-database application',
-        'Never run it during HTTP startup or through framework `bin/phpthis`.',
+        'never run any migration command during HTTP startup or through framework `bin/phpthis`.',
         'Do not scan files, discover classes, resolve strings, or load runtime `.sql` files.',
         'Never call a database method in a loop',
     ],
@@ -4580,7 +4954,7 @@ $migrationArtifactMarkers = [
     ],
     'docs/migrations.md' => [
         '# Explicit application migrations',
-        'PHPThis accepts one application-owned SQLite migration-ledger pattern and provides no core migration runtime.',
+        'PHPThis defines [universal application-owned migration invariants]',
         '## Recommended application structure',
         'src/',
         'Database/',
@@ -4596,11 +4970,11 @@ $migrationArtifactMarkers = [
         'The manifest cap is 512 and the bounded ledger query uses `LIMIT 513`.',
         '`0007_create_account_users`',
         '23-statement budget and trace',
-        'Do not expose it through HTTP configuration or compose the coordinator during request startup.',
+        'Do not expose migration configuration through HTTP or compose the coordinator during request startup.',
     ],
     'docs/database.md' => [
         'Migrations are specialized application-owned database evolution.',
-        'multiple named database connections independently adopt migration histories',
+        'multiple named database connections adopt separately tracked migration histories',
         'creates no speculative connection directories for a single-database application',
     ],
     'docs/decisions/027-application-owned-explicit-sqlite-migrations.md' => [
@@ -4627,7 +5001,8 @@ $migrationArtifactMarkers = [
         'does not reject an alternative, enforce this directory through the checker or Strict Profile',
         'must preserve the current structure unless an accountable human explicitly approves',
         'The database-free skeleton does not create an empty migration directory.',
-        'multiple named database connections genuinely own independent migration histories',
+        'multiple named database connections own separately tracked migration histories',
+        'histories are called independent only after their managed objects, data, authority transitions, and coordination domains are proved disjoint',
         'does not create speculative connection directories for a single-database application',
         'does not establish a generic database layer',
         'Consumer Contract version 10 and Strict Profile version 3 remain unchanged',
@@ -4640,8 +5015,8 @@ $migrationArtifactMarkers = [
         'does not enforce migration placement through the checker or Strict Profile',
         'no empty migration directory',
         'explicit connection-owned subdivision for each adopted history',
-        'Do not invent connection subdivisions for a single-database application',
-        'It never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
+        'Do not combine their credentials or invent connection subdivisions for a single-database application',
+        'The command never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
     ],
     'docs/vocabulary.md' => [
         'recommended migration placement',
@@ -4655,18 +5030,18 @@ $migrationArtifactMarkers = [
     'docs/knowledge-map.md' => [
         'Add, place, apply, explain, or recover a database migration',
         '`docs/migrations.md`, `docs/database.md`, `docs/security.md`',
-        'connection-owned subdivision only for a named connection with an independently adopted migration history',
+        'connection-owned subdivision only for a named connection with a separately tracked migration history',
     ],
     'docs/guardrails.md' => [
         "ADR 039's migration-structure recommendation",
         'exact seven-file `example/src/Database/Migrations/` source set and namespace',
-        'Multiple named connections may receive application-selected connection-owned subdivisions only when they independently adopt migration histories',
+        'Multiple named connections may receive application-selected connection-owned subdivisions only when they adopt separately tracked migration histories',
         'Composer-autoload and installed-checker proof using the alternative `src/Infrastructure/ChangeHistory/` source and `App\\Infrastructure\\ChangeHistory` namespace',
         'installed-consumer proof separately runs the canonical checker with a coherent nonrecommended source directory and matching namespace',
         'places one valid final class there, proves Composer can autoload it, and requires the installed canonical checker to pass',
     ],
     'README.md' => [
-        'Schema evolution begins with one application-owned SQLite migration ledger',
+        'Schema evolution follows universal application-owned invariants',
         'php example/bin/console.php database:migrate',
     ],
     'ROADMAP.md' => [
@@ -4699,10 +5074,10 @@ $migrationArtifactMarkers = [
         '{{MIGRATION_CONNECTION_OWNERSHIP_OR_NOT_APPLICABLE}}',
         'PHPThis recommends `src/Database/Migrations/`',
         'A coherent consumer-selected alternative is authoritative',
-        'connection without an independently adopted migration history',
+        'connection without a separately tracked migration history',
         '{{MIGRATION_MANIFEST_SOURCE_OR_NOT_APPLICABLE}}',
         'no database call occurs in a loop',
-        'A non-SQLite adoption requires a separate engine-specific DDL, transaction, locking, privilege, recovery, and integration decision.',
+        'Every adoption requires separate engine/version transaction and DDL atomicity limits, ledger-consistency design, coordination, privilege, recovery, and integration evidence.',
     ],
     'skeleton/.ai/migrations.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
@@ -4710,7 +5085,7 @@ $migrationArtifactMarkers = [
         'PHPThis recommends `src/Database/Migrations/`',
         '`App\\Database\\Migrations` namespace',
         'A coherent consumer-selected alternative is authoritative',
-        'multiple named database connections later adopt independent migration histories',
+        'multiple named database connections later adopt separately tracked migration histories',
         'do not pre-create or prescribe connection subdivisions',
         'HTTP startup performs no data-definition or authority-transition work.',
         'runtime `.sql` loading',
@@ -4825,6 +5200,7 @@ $migrationArtifactMarkers = [
         'docs/migrations.md',
         'docs/decisions/027-application-owned-explicit-sqlite-migrations.md',
         'docs/decisions/039-recommended-database-migration-structure.md',
+        'docs/decisions/043-engine-specific-application-migration-invariants.md',
         'templates/application/.ai/migrations.md',
     ],
 ];
