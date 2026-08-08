@@ -20,7 +20,7 @@ An AI cannot accidentally weaken the accepted profile by editing `phpstan.neon`;
 
 No generic checker can determine whether an arbitrary application-owned suite adequately proves the requested behavior. It can verify only that the canonical gate retains a non-empty test stage. The implementing AI must report the tests changed and the behavior they prove, and the accountable human judges whether the evidence is sufficient.
 
-No checker can protect a repository that removes the checker from CI and refuses to run it. The skeleton CI therefore invokes the installed binary directly as well as owning the application behavior-test stage.
+No checker can protect a repository that removes the checker from CI and refuses to run it. The skeleton CI therefore invokes the canonical `composer check`, which runs the installed profile and the application-owned behavior-test stage in their recorded order instead of duplicating that sequence in the workflow.
 
 The local archive proof cannot establish the bytes later served by a hosting provider. The alpha publication process in `RELEASING.md` therefore remains incomplete until the actual Packagist-preferred dist is installed, compared with the same inventory manifest, and exercised through the public skeleton command.
 

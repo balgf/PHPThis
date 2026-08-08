@@ -73,7 +73,12 @@ This is a zero third-party runtime-dependency framework foundation. The current 
 The executable query-scaling proof holds every accepted page at one statement while traversing 125 users as 50, 50, and 25 rows without gaps or duplicates. Its isolated N+1 negative control grows from 3 statements for 2 users to 51 for 50 users; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
 
 ```text
-PHP runtime -> application terminal coordinator -> RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> optional explicit route-local decorator(s) -> route policy adapter -> protected Handler -> Response + X-Request-ID -> one sink attempt -> ResponseEmitter
+PHP runtime / front controller
+├─ calls application terminal coordinator
+│  ├─ RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> optional explicit route-local decorator(s) -> route policy adapter -> protected Handler -> selected Response
+│  ├─ adds X-Request-ID and makes one failure-isolated summary sink attempt
+│  └─ returns the selected Response
+└─ passes the returned Response to ResponseEmitter
 ```
 
 ## Start a PHPThis application

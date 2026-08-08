@@ -49,6 +49,14 @@ try {
         throw new RuntimeException(inventoryDifference($expectedArchiveFiles, $archiveFiles));
     }
 
+    proveInstalledGuidanceReferencesResolve(
+        $root,
+        $workspace,
+        $archivePath,
+        $composerBinary,
+        $environment,
+    );
+
     $project = $workspace . '/application';
     copyDirectory($root . '/skeleton', $project);
     configureIsolatedConsumer($root, $project, $archivePath);
@@ -200,6 +208,296 @@ try {
     );
 } finally {
     removeDirectory($workspace);
+}
+
+/**
+ * @param array<string, string> $environment
+ */
+function proveInstalledGuidanceReferencesResolve(
+    string $root,
+    string $workspace,
+    string $archivePath,
+    string $composerBinary,
+    array $environment,
+): void {
+    $project = $workspace . '/guidance-application';
+    copyDirectory($root . '/skeleton', $project);
+    configureIsolatedConsumer($root, $project, $archivePath);
+
+    $composerPath = $project . '/composer.json';
+    $composer = jsonFile($composerPath);
+    $config = $composer['config'] ?? null;
+
+    if (!is_array($config)) {
+        throw new RuntimeException('The isolated guidance consumer must define Composer configuration.');
+    }
+
+    $config['vendor-dir'] = 'build/dependencies';
+    $composer['config'] = $config;
+    writeJson($composerPath, $composer);
+
+    $installResult = runProcess(
+        composerCommand($composerBinary, [
+            'install',
+            '--no-interaction',
+            '--no-progress',
+            '--prefer-dist',
+        ]),
+        $project,
+        $environment,
+    );
+    requireSuccess($installResult, 'Custom-vendor-directory guidance consumer installation failed.');
+
+    $vendorDirectory = configuredComposerVendorDirectory($project);
+    $expectedVendorDirectory = $project . '/build/dependencies';
+
+    if ($vendorDirectory !== $expectedVendorDirectory) {
+        throw new RuntimeException('The guidance proof did not resolve the configured custom Composer vendor directory.');
+    }
+
+    $installedFramework = $vendorDirectory . '/phpthis/framework';
+
+    if (!is_dir($installedFramework) || is_link($installedFramework)) {
+        throw new RuntimeException('The guidance proof must use the mirrored framework under the configured vendor directory.');
+    }
+
+    $requiredFrameworkGuides = [
+        'docs/file-transfers/README.md',
+        'docs/request-policy.md',
+        'docs/jobs.md',
+        'docs/cli.md',
+        'docs/migrations.md',
+    ];
+    $skeletonMarkdown = markdownFilesFromInventory($project, directoryFiles($root . '/skeleton'));
+    $templateRoot = $installedFramework . '/templates/application';
+    $templateMarkdown = markdownFilesFromInventory($templateRoot, directoryFiles($templateRoot));
+
+    requireInstalledGuidanceReferences(
+        'generated skeleton',
+        $skeletonMarkdown,
+        $project . '/AGENTS.md',
+        $vendorDirectory,
+        $requiredFrameworkGuides,
+    );
+    requireInstalledGuidanceReferences(
+        'installed application template',
+        $templateMarkdown,
+        $templateRoot . '/AGENTS.md',
+        $vendorDirectory,
+        $requiredFrameworkGuides,
+    );
+
+    $missingTarget = $installedFramework . '/docs/request-policy.md';
+    $parkedTarget = $missingTarget . '.installed-reference-control';
+
+    if (!rename($missingTarget, $parkedTarget)) {
+        throw new RuntimeException('Unable to prepare the missing installed-reference negative control.');
+    }
+
+    try {
+        requireInstalledGuidanceReferenceFailure(
+            'generated skeleton',
+            $skeletonMarkdown,
+            $project . '/AGENTS.md',
+            $vendorDirectory,
+            $requiredFrameworkGuides,
+            'does not resolve through the configured Composer vendor directory',
+        );
+    } finally {
+        if (!rename($parkedTarget, $missingTarget)) {
+            throw new RuntimeException('Unable to restore the missing installed-reference negative control.');
+        }
+    }
+
+    $localTarget = $project . '/docs/jobs.md';
+    $localControl = $project . '/application-local-installed-reference-control.md';
+    writeFile($localTarget, "# Incorrect local framework guide target\n");
+    writeFile($localControl, "Read `docs/jobs.md` before changing durable work.\n");
+
+    try {
+        requireInstalledGuidanceReferenceFailure(
+            'generated skeleton',
+            [...$skeletonMarkdown, $localControl],
+            $project . '/AGENTS.md',
+            $vendorDirectory,
+            $requiredFrameworkGuides,
+            'uses application-local framework guide docs/jobs.md',
+        );
+    } finally {
+        foreach ([$localControl, $localTarget] as $controlPath) {
+            if (is_file($controlPath) && !unlink($controlPath)) {
+                throw new RuntimeException("Unable to remove installed-reference control {$controlPath}.");
+            }
+        }
+    }
+
+    fwrite(
+        STDOUT,
+        "PASS installed guidance references: custom Composer vendor directory and negative controls\n",
+    );
+}
+
+function configuredComposerVendorDirectory(string $project): string
+{
+    $composer = jsonFile($project . '/composer.json');
+    $config = $composer['config'] ?? null;
+    $configured = is_array($config) ? ($config['vendor-dir'] ?? 'vendor') : 'vendor';
+
+    if (!is_string($configured) || $configured === '') {
+        throw new RuntimeException('Composer config.vendor-dir must be a non-empty string.');
+    }
+
+    if (str_starts_with($configured, '/')) {
+        return rtrim($configured, '/');
+    }
+
+    return $project . '/' . rtrim($configured, '/');
+}
+
+/**
+ * @param list<string> $inventory
+ * @return list<string>
+ */
+function markdownFilesFromInventory(string $root, array $inventory): array
+{
+    $markdownFiles = [];
+
+    foreach ($inventory as $relativePath) {
+        if (str_ends_with(strtolower($relativePath), '.md')) {
+            $markdownFiles[] = $root . '/' . $relativePath;
+        }
+    }
+
+    if ($markdownFiles === []) {
+        throw new RuntimeException("No Markdown guidance files found under {$root}.");
+    }
+
+    return $markdownFiles;
+}
+
+/**
+ * @param list<string> $markdownFiles
+ * @param list<string> $requiredFrameworkGuides
+ */
+function requireInstalledGuidanceReferences(
+    string $surface,
+    array $markdownFiles,
+    string $agentInstructions,
+    string $vendorDirectory,
+    array $requiredFrameworkGuides,
+): void {
+    $installedReferenceCount = 0;
+
+    foreach ($markdownFiles as $markdownFile) {
+        $contents = file_get_contents($markdownFile);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read {$surface} guidance file {$markdownFile}.");
+        }
+
+        foreach ($requiredFrameworkGuides as $requiredFrameworkGuide) {
+            $localPattern = '~(?<![A-Za-z0-9_./-])'
+                . preg_quote($requiredFrameworkGuide, '~')
+                . '(?![A-Za-z0-9_./-])~';
+
+            if (preg_match($localPattern, $contents) === 1) {
+                throw new RuntimeException(
+                    "{$surface} uses application-local framework guide {$requiredFrameworkGuide}; "
+                    . 'installed framework guidance must resolve through Composer config.vendor-dir.',
+                );
+            }
+        }
+
+        $installedReferences = installedDependencyReferences($contents, $markdownFile);
+
+        foreach ($installedReferences as $installedReference) {
+            $installedReferenceCount++;
+            $dependencyPath = substr($installedReference, strlen('vendor/'));
+            $resolvedPath = $dependencyPath === ''
+                ? $vendorDirectory
+                : $vendorDirectory . '/' . $dependencyPath;
+
+            if (!file_exists($resolvedPath)) {
+                throw new RuntimeException(
+                    "{$surface} installed reference {$installedReference} does not resolve through "
+                    . 'the configured Composer vendor directory.',
+                );
+            }
+
+        }
+    }
+
+    if ($installedReferenceCount === 0) {
+        throw new RuntimeException("{$surface} contains no installed dependency references.");
+    }
+
+    $agentContents = file_get_contents($agentInstructions);
+
+    if (!is_string($agentContents)) {
+        throw new RuntimeException("Unable to read {$surface} agent instructions {$agentInstructions}.");
+    }
+
+    $agentReferences = installedDependencyReferences($agentContents, $agentInstructions);
+
+    foreach ($requiredFrameworkGuides as $requiredFrameworkGuide) {
+        $expectedReference = 'vendor/phpthis/framework/' . $requiredFrameworkGuide;
+
+        if (!in_array($expectedReference, $agentReferences, true)) {
+            throw new RuntimeException(
+                "{$surface} AGENTS.md is missing required installed framework guide {$requiredFrameworkGuide}.",
+            );
+        }
+    }
+}
+
+/** @return list<string> */
+function installedDependencyReferences(string $contents, string $sourcePath): array
+{
+    $matches = [];
+    $matchCount = preg_match_all(
+        '~`(vendor/[A-Za-z0-9._/-]*)(?:\\s+[^`]*)?`~',
+        $contents,
+        $matches,
+    );
+
+    if ($matchCount === false) {
+        throw new RuntimeException("Unable to parse installed dependency references in {$sourcePath}.");
+    }
+
+    return $matches[1];
+}
+
+/**
+ * @param list<string> $markdownFiles
+ * @param list<string> $requiredFrameworkGuides
+ */
+function requireInstalledGuidanceReferenceFailure(
+    string $surface,
+    array $markdownFiles,
+    string $agentInstructions,
+    string $vendorDirectory,
+    array $requiredFrameworkGuides,
+    string $expectedDiagnostic,
+): void {
+    try {
+        requireInstalledGuidanceReferences(
+            $surface,
+            $markdownFiles,
+            $agentInstructions,
+            $vendorDirectory,
+            $requiredFrameworkGuides,
+        );
+    } catch (RuntimeException $exception) {
+        if (!str_contains($exception->getMessage(), $expectedDiagnostic)) {
+            throw new RuntimeException(
+                "Installed-reference control failed with an unexpected diagnostic: {$exception->getMessage()}",
+            );
+        }
+
+        return;
+    }
+
+    throw new RuntimeException('Installed-reference negative control unexpectedly passed.');
 }
 
 function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string $installedFramework): void

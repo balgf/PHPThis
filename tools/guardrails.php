@@ -6752,6 +6752,82 @@ if (is_file($skeletonAgentInstructionsPath)) {
     }
 }
 
+$scaffoldParityMarkers = [
+    'templates/application/AGENTS.md' => [
+        'every installed dependency path beginning with `vendor/` uses Composer\'s default vendor directory',
+        'including the checker binary and installed PHPThis package paths',
+    ],
+    'skeleton/AGENTS.md' => [
+        'every installed dependency path beginning with `vendor/` uses Composer\'s default vendor directory',
+        'including the checker binary and installed PHPThis package paths',
+    ],
+    'templates/application/.ai/operations.md' => [
+        'Required extensions: `ext-pdo` and `ext-session`',
+        'A database adoption additionally records its actual `ext-pdo_*` driver.',
+    ],
+    'skeleton/.ai/operations.md' => [
+        'Required extensions: `ext-pdo` and `ext-session`',
+    ],
+    'templates/application/.ai/architecture.md' => [
+        'construction and dependency ownership only, not temporal request flow',
+        'Record the temporal request flow separately from the dependency diagram:',
+        'The coordinator invokes the boundary and sink, then returns the selected response.',
+        'The front controller owns the separate emission step',
+    ],
+    'skeleton/.ai/architecture.md' => [
+        'This diagram records construction and dependency ownership, not request-time control flow.',
+        'Request-time control flow is separate from dependency ownership:',
+        'The coordinator invokes the request boundary and sink, then returns the selected response.',
+        'The front controller separately gives that returned response to `ResponseEmitter`',
+    ],
+];
+
+foreach ($scaffoldParityMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read scaffold-parity artifact {$relativePath}.";
+
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Scaffold-parity artifact {$relativePath} is missing: {$marker}";
+        }
+    }
+}
+
+$falseTerminalFlowChains = [
+    'public/index.php -> bootstrap.php -> TerminalRequestCoordinator -> RequestBoundary -> Routes -> HealthRoutes -> HealthHandler -> Response -> RequestSummarySink -> ResponseEmitter',
+    'front controller -> application terminal coordinator -> RequestBoundary -> selected Response -> one sink attempt -> ResponseEmitter',
+];
+
+foreach (['templates/application/.ai/architecture.md', 'skeleton/.ai/architecture.md'] as $architectureContext) {
+    $contents = file_get_contents($root . '/' . $architectureContext);
+
+    if (!is_string($contents)) {
+        continue;
+    }
+
+    foreach ($falseTerminalFlowChains as $falseTerminalFlowChain) {
+        if (str_contains($contents, $falseTerminalFlowChain)) {
+            $failures[] = "{$architectureContext} retains the false linear terminal-flow chain.";
+        }
+    }
+}
+
+$skeletonCi = file_get_contents($root . '/skeleton/.github/workflows/ci.yml');
+
+if (
+    !is_string($skeletonCi)
+    || substr_count($skeletonCi, '- run: composer check') !== 1
+    || str_contains($skeletonCi, '- run: vendor/bin/phpthis check')
+    || str_contains($skeletonCi, '- run: composer test')
+) {
+    $failures[] = 'Skeleton CI must invoke the canonical composer check exactly once without duplicating its component stages.';
+}
+
 $iterator = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
 );

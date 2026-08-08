@@ -9,6 +9,8 @@
 
 ## Dependency direction
 
+Replace the token below with construction and dependency ownership only, not temporal request flow.
+
 ```text
 {{DEPENDENCY_DIRECTION}}
 ```
@@ -96,7 +98,20 @@ For each protected route, use one action-specific adapter with visible `authenti
 
 ## Terminal request summary
 
-Project-owned correlation, coordinator, sink, database-source, destination, and attempt facts live only in `.ai/observability.md`. The dependency position is `front controller -> application terminal coordinator -> RequestBoundary -> selected Response -> one sink attempt -> ResponseEmitter`. Keep this application-owned and explicit; do not move it into an application-owned request-handler decorator, copy the installed schema here, or add a core logging type, facade, global helper, generic or framework logging middleware, event pipeline, automatic discovery, per-query I/O, or hidden `Connection` instrumentation.
+Project-owned correlation, coordinator, sink, database-source, destination, and attempt facts live only in `.ai/observability.md`. Keep this application-owned and explicit; do not move it into an application-owned request-handler decorator, copy the installed schema here, or add a core logging type, facade, global helper, generic or framework logging middleware, event pipeline, automatic discovery, per-query I/O, or hidden `Connection` instrumentation.
+
+Record the temporal request flow separately from the dependency diagram:
+
+```text
+front controller
+  -> application terminal coordinator
+     -> RequestBoundary -> selected Response
+     -> RequestSummarySink (one failure-isolated invocation attempt)
+     <- returns the selected Response
+  -> ResponseEmitter emits the returned Response
+```
+
+The coordinator invokes the boundary and sink, then returns the selected response. The front controller owns the separate emission step; the coordinator does not own or invoke `ResponseEmitter`, and the sink is not downstream of `Response` in the dependency graph.
 
 ## Cache policies
 

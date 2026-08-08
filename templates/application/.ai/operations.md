@@ -16,7 +16,7 @@
 - Worker runtime: {{WORKER_RUNTIME_OR_NOT_APPLICABLE}}
 - Operational application console and scheduler: `.ai/cli.md`
 - Database migrations: `.ai/migrations.md`
-- Required extensions: `ext-session` plus {{ADDITIONAL_REQUIRED_PHP_EXTENSIONS_OR_NONE}}
+- Required extensions: `ext-pdo` and `ext-session` plus {{ADDITIONAL_REQUIRED_PHP_EXTENSIONS_OR_NONE}}
 
 ## Configuration runtime
 
@@ -31,7 +31,7 @@
 - Deployment topology, concurrent-request evidence, and lock assumptions: {{SESSION_TOPOLOGY_AND_CONCURRENCY_POLICY_OR_NOT_APPLICABLE}}
 - Garbage collection and obsolete-file cleanup: {{SESSION_GARBAGE_COLLECTION_POLICY_OR_NOT_APPLICABLE}}
 
-`ext-session` is an installed-framework requirement even when session state is not adopted. Adoption additionally requires the native `files` handler, an exact save path proven isolated to this application identity, the fixed runtime settings, and cleanup retention beyond the absolute session lifetime described in installed `vendor/phpthis/framework/docs/sessions.md`. Do not copy session IDs, cookie values, CSRF tokens, or snapshots into this file.
+`ext-pdo` and `ext-session` are installed-framework requirements even when database or session state is not adopted. A database adoption additionally records its actual `ext-pdo_*` driver. Session adoption additionally requires the native `files` handler, an exact save path proven isolated to this application identity, the fixed runtime settings, and cleanup retention beyond the absolute session lifetime described in installed `vendor/phpthis/framework/docs/sessions.md`. Do not copy session IDs, cookie values, CSRF tokens, or snapshots into this file.
 
 ## Request-policy runtime
 

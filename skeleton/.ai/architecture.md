@@ -9,8 +9,17 @@
 
 ## Dependency direction
 
+This diagram records construction and dependency ownership, not request-time control flow.
+
 ```text
-public/index.php -> bootstrap.php -> TerminalRequestCoordinator -> RequestBoundary -> Routes -> HealthRoutes -> HealthHandler -> Response -> RequestSummarySink -> ResponseEmitter
+public/index.php
+├── requires bootstrap.php -> TerminalRequestCoordinator
+│   ├── RequestBoundary -> Application -> Router
+│   │   └── Routes -> HealthRoutes -> HealthHandler
+│   ├── UnknownFailureBoundary
+│   ├── CorrelationId
+│   └── RequestSummarySink
+└── constructs ResponseEmitter
 ```
 
 Dependencies may point only in the direction shown above. Record a deliberate exception in `docs/decisions/` before implementation.
@@ -66,7 +75,20 @@ Before protecting a route, record its named action, concrete principal and tenan
 
 ## Terminal request summary
 
-`.ai/observability.md` is the single project authority for starter correlation, source registration, sink, scope, and evidence facts. The architecture constraint is `public/index.php -> bootstrap.php -> TerminalRequestCoordinator -> RequestBoundary -> selected Response -> RequestSummarySink -> ResponseEmitter`; the types remain application-owned under `src/Observability/`.
+`.ai/observability.md` is the single project authority for starter correlation, source registration, sink, scope, and evidence facts. The types remain application-owned under `src/Observability/`.
+
+Request-time control flow is separate from dependency ownership:
+
+```text
+public/index.php
+  -> TerminalRequestCoordinator::handle(...)
+     -> RequestBoundary::handle(...) -> selected Response
+     -> RequestSummarySink::emit(...) (one failure-isolated attempt)
+     <- returns the selected Response
+  -> ResponseEmitter::emit(...) with the returned Response
+```
+
+The coordinator invokes the request boundary and sink, then returns the selected response. The front controller separately gives that returned response to `ResponseEmitter`; the coordinator does not own or invoke the emitter, and the sink is not downstream of `Response` in the dependency graph.
 
 ## Cache policies
 
