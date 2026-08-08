@@ -192,7 +192,7 @@ try {
     proveEveryApplicationDirectoryIsChecked($project, $profileCommand, $environment);
     proveValidExtensionlessExecutableIsChecked($project, $profileCommand, $environment);
     proveMagicMethodsAreRejected($project, $profileCommand, $environment);
-    proveEvalMethodsAreAllowedAndLanguageConstructIsRejected($project, $profileCommand, $environment);
+    proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected($project, $profileCommand, $environment);
     proveDependencyDirectoryIsExcluded($project, $profileCommand, $environment);
     proveMixedCoercionIsRejected($project, $profileCommand, $environment);
     proveDirectPdoConstructionIsRejected($project, $profileCommand, $environment);
@@ -408,6 +408,66 @@ function proveInstalledGuidanceReferencesResolve(
         '.ai/jobs.md',
     );
 
+    $segmentEscapeReferences = [
+        'parent' => 'vendor/../composer.json',
+        'empty' => 'vendor//phpthis/framework/docs/jobs.md',
+        'dot' => 'vendor/./phpthis/framework/docs/jobs.md',
+    ];
+
+    foreach ($segmentEscapeReferences as $controlName => $installedReference) {
+        $escapeControl = $project . "/vendor-{$controlName}-installed-reference-control.md";
+        writeFile($escapeControl, "Read `{$installedReference}` before changing dependencies.\n");
+
+        try {
+            requireInstalledGuidanceReferenceFailure(
+                'generated skeleton',
+                [...$skeletonMarkdown, $escapeControl],
+                $project,
+                $vendorDirectory,
+                $requiredFrameworkGuideOwners,
+                'escapes the configured Composer vendor directory',
+            );
+        } finally {
+            if (is_file($escapeControl) && !unlink($escapeControl)) {
+                throw new RuntimeException('Unable to remove a vendor-directory segment escape control.');
+            }
+        }
+    }
+
+    $symlinkControl = $project . '/vendor-symlink-installed-reference-control.md';
+    $symlinkReference = $vendorDirectory . '/outside-vendor-reference-control';
+
+    if (file_exists($symlinkReference) || is_link($symlinkReference)) {
+        throw new RuntimeException('The vendor-directory symlink escape control already exists.');
+    }
+
+    if (!symlink($project . '/composer.json', $symlinkReference)) {
+        throw new RuntimeException('Unable to create the vendor-directory symlink escape control.');
+    }
+
+    try {
+        writeFile(
+            $symlinkControl,
+            "Read `vendor/outside-vendor-reference-control` before changing dependencies.\n",
+        );
+        requireInstalledGuidanceReferenceFailure(
+            'generated skeleton',
+            [...$skeletonMarkdown, $symlinkControl],
+            $project,
+            $vendorDirectory,
+            $requiredFrameworkGuideOwners,
+            'does not resolve through the configured Composer vendor directory',
+        );
+    } finally {
+        if (is_file($symlinkControl) && !unlink($symlinkControl)) {
+            throw new RuntimeException('Unable to remove the vendor-directory symlink Markdown control.');
+        }
+
+        if (is_link($symlinkReference) && !unlink($symlinkReference)) {
+            throw new RuntimeException('Unable to remove the vendor-directory symlink escape control.');
+        }
+    }
+
     fwrite(
         STDOUT,
         "PASS installed guidance references: custom Composer vendor directory and negative controls\n",
@@ -493,11 +553,33 @@ function requireInstalledGuidanceReferences(
             $installedReferenceCount++;
             $installedReferencesByPath[$installedReference] = true;
             $dependencyPath = substr($installedReference, strlen('vendor/'));
+            $dependencySegments = $dependencyPath === '' ? [] : explode('/', $dependencyPath);
+
+            if (
+                in_array('', $dependencySegments, true)
+                || in_array('.', $dependencySegments, true)
+                || in_array('..', $dependencySegments, true)
+            ) {
+                throw new RuntimeException(
+                    "{$surface} installed reference {$installedReference} escapes the configured Composer "
+                    . 'vendor directory through an empty or dot path segment.',
+                );
+            }
+
             $resolvedPath = $dependencyPath === ''
                 ? $vendorDirectory
                 : $vendorDirectory . '/' . $dependencyPath;
+            $normalizedVendorDirectory = realpath($vendorDirectory);
+            $normalizedResolvedPath = realpath($resolvedPath);
 
-            if (!file_exists($resolvedPath)) {
+            if (
+                !is_string($normalizedVendorDirectory)
+                || !is_string($normalizedResolvedPath)
+                || (
+                    $normalizedResolvedPath !== $normalizedVendorDirectory
+                    && !str_starts_with($normalizedResolvedPath, $normalizedVendorDirectory . '/')
+                )
+            ) {
                 throw new RuntimeException(
                     "{$surface} installed reference {$installedReference} does not resolve through "
                     . 'the configured Composer vendor directory.',
@@ -692,6 +774,11 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
             'metadata' => 'Superseded in part by [ADR 042](042-application-owned-input-failure-classification.md), which replaces only the blanket-`400` authoring default for application-owned structured request-body content.',
             'targets' => ['042-application-owned-input-failure-classification.md'],
         ],
+        'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
+            'title' => 'ADR 025: Application-owned explicit CLI and scheduler',
+            'metadata' => "Superseded in part by [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md), which replaces only the executable example's same-host schedule file lock with one application-owned Redis owner-token lease and extends `schedule:run` success and Redis-failure JSON with a bounded `coordination` list.",
+            'targets' => ['028-application-owned-redis-cache-and-schedule-lease.md'],
+        ],
     ];
 
     foreach ($decisionHeaders as $relativePath => $expected) {
@@ -738,6 +825,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
+        '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
     ];
     $indexPath = $installedFramework . '/docs/decisions/README.md';
 
@@ -927,6 +1015,21 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         $installedFramework . '/docs/getting-started.md' => [
             'Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists.',
         ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            "Read the application's `.ai/rules.md`, `.ai/change-workflow.md`, and `.ai/project.md`.",
+            'Start with the one current operational guide selected by `.ai/README.md`.',
+            "ADR 028 replaces only the executable example's schedule file lock with one application-owned Redis owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
+        ],
+        $installedFramework . '/docs/cli.md' => [
+            "ADR 028 replaces only the example's same-host schedule file lock with one Redis-specific owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
+        ],
+        $installedFramework . '/docs/consumer-profile.md' => [
+            'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.10`',
+            'no unlisted engine version inherits certification',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            'application response headers, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md`',
+        ],
         $installedFramework . '/src/Routing/PathParameters.php' => [
             'public static function fromValues(',
         ],
@@ -939,6 +1042,10 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
 
     requireInstalledArtifactMarkers($requiredMarkers, 'historical and reference clarity');
     forbidInstalledArtifactMarkers($forbiddenMarkers, 'routing compatibility');
+    forbidInstalledArtifactMarkers(
+        [$installedFramework . '/docs/knowledge-map.md' => ['.ai/cache.md']],
+        'application context routing',
+    );
 
     fwrite(STDOUT, "PASS installed historical and reference clarity distribution\n");
 }
@@ -4944,7 +5051,7 @@ PHP;
  * @param list<string> $profileCommand
  * @param array<string, string> $environment
  */
-function proveEvalMethodsAreAllowedAndLanguageConstructIsRejected(
+function proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected(
     string $project,
     array $profileCommand,
     array $environment,
@@ -4973,15 +5080,68 @@ final class StaticEvalMethodControl
     }
 }
 
-/** @return array{string, ?string, string} */
+final class EvalConstantControl
+{
+    public const string eval = 'constant';
+}
+
+enum EvalCaseControl: string
+{
+    case eval = 'case';
+}
+
+trait EvalAliasSource
+{
+    public function original(): string
+    {
+        return 'alias';
+    }
+}
+
+final class EvalAliasControl
+{
+    use EvalAliasSource {
+        original as eval;
+    }
+}
+
+function acceptNamedEval(string $eval): string
+{
+    return $eval;
+}
+
+final class EvalNamedConstructorControl
+{
+    public function __construct(public string $eval) {}
+}
+
+#[\Attribute(\Attribute::TARGET_CLASS)]
+final class EvalNamedAttributeControl
+{
+    public function __construct(public string $eval) {}
+}
+
+#[EvalNamedAttributeControl(eval: 'attribute')]
+final class EvalAttributedControl
+{
+}
+
+/** @return array{string, ?string, string, string, EvalCaseControl, string, string, string} */
 function evalMethodControl(?InstanceEvalMethodControl $optional): array
 {
     $instance = new InstanceEvalMethodControl();
+    $alias = new EvalAliasControl();
+    $constructed = new EvalNamedConstructorControl(eval: 'constructor');
 
     return [
         $instance -> /* instance comment */ EvAl('instance'),
         $optional ?-> /* nullsafe comment */ EvAl('nullsafe'),
         StaticEvalMethodControl :: /* static comment */ EVAL('static'),
+        EvalConstantControl::eval,
+        EvalCaseControl::eval,
+        $alias->eval(),
+        acceptNamedEval(eval: 'function'),
+        $constructed->eval,
     ];
 }
 PHP;
@@ -5005,7 +5165,7 @@ PHP;
 
     try {
         $methodResult = runProcess($profileCommand, $project, $environment);
-        requireSuccess($methodResult, 'Legal method declarations or calls named eval unexpectedly failed.');
+        requireSuccess($methodResult, 'Legal identifiers named eval unexpectedly failed.');
         requireOutputContains($methodResult, 'PASS PHPThis application check');
 
         writeFile($constructPath, $constructSource . "\n");

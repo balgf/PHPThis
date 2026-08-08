@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md), which replaces only the executable example's same-host schedule file lock with one application-owned Redis owner-token lease and extends `schedule:run` success and Redis-failure JSON with a bounded `coordination` list.
+
 ## Context
 
 Applications need repeatable operational commands and cron-driven work with stable machine behavior. A framework command registry, automatic discovery, service-container lookup, scheduler facade, daemon, or hidden process lifecycle would enlarge the non-local state an AI and human must infer. PHPThis already has one framework-owned executable for the installed `check` gate and ADR 024 has one application-owned one-job operation, but neither is an application command host or scheduler.

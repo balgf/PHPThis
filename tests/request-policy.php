@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Example\Documents\DocumentRoutes;
+use Example\ApplicationComposition;
 use Example\Accounts\AccountId;
 use Example\Accounts\AuthenticateAccountRequest;
 use Example\Accounts\AuthenticatedPrincipal;
@@ -10,6 +11,7 @@ use Example\Accounts\CrossTenant;
 use Example\Documents\DocumentKey;
 use Example\Accounts\Forbidden;
 use Example\Documents\GetDocument\AuthorizeGetDocument;
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
 use Example\Documents\GetDocument\DocumentDetails;
 use Example\Documents\GetDocument\RetrieveAuthorizedDocument;
 use Example\Documents\GetDocument\SelectAuthorizedDocument;
@@ -20,6 +22,11 @@ use Example\Documents\ListDocuments\ListDocumentsPageRequest;
 use Example\Accounts\ResolveAccountTenant;
 use Example\Accounts\ResolvedTenant;
 use Example\Accounts\Unauthenticated;
+use Example\Observability\CorrelationId;
+use Example\Observability\QuerySummarySource;
+use Example\Observability\RequestSummary;
+use Example\Observability\RequestSummarySink;
+use Example\Observability\TerminalRequestCoordinator;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -77,6 +84,29 @@ final class RequestPolicyTestTrace
         $this->record('authorize_list');
         $this->listedPrincipal = $principal;
         $this->listedTenant = $tenant;
+    }
+}
+
+/** @phpstan-import-type RequestSummaryPayload from RequestSummary */
+final class RequestPolicySummarySink implements RequestSummarySink
+{
+    private ?RequestSummary $summary = null;
+    private int $attempts = 0;
+
+    public function emit(RequestSummary $summary): void
+    {
+        $this->attempts++;
+        $this->summary = $summary;
+    }
+
+    /** @return RequestSummaryPayload */
+    public function onlyPayload(): array
+    {
+        if ($this->attempts !== 1 || $this->summary === null) {
+            throw new RuntimeException('Expected exactly one request-policy summary attempt.');
+        }
+
+        return $this->summary->toArray();
     }
 }
 
@@ -265,11 +295,8 @@ function requestPolicyTests(): Generator
             $budget = new QueryBudget(1);
             $queryTrace = new QueryTrace(1);
             $policyTrace = new RequestPolicyTestTrace();
-            $expected = new Response(
-                400,
-                requestPolicyJsonHeaders(),
-                "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
-            );
+            $registry = ApplicationComposition::errorResponses();
+            $expected = $registry->responseFor(new InvalidRequest());
             $response = handleDocumentListPolicyRequest(
                 requestPolicyListApplication(
                     $databasePath,
@@ -279,11 +306,12 @@ function requestPolicyTests(): Generator
                     $queryTrace,
                 ),
                 ['order' => 'not-supported'],
-                new ErrorResponseRegistry([InvalidRequest::class => $expected]),
+                $registry,
             );
 
             if (
-                $response !== $expected
+                !$expected instanceof Response
+                || $response !== $expected
                 || $response->status !== 400
                 || $response->headers !== requestPolicyJsonHeaders()
                 || $response->body
@@ -771,10 +799,11 @@ function requestPolicyTests(): Generator
             $getBudget = new QueryBudget(1);
             $getQueryTrace = new QueryTrace(1);
             $getPolicyTrace = new RequestPolicyTestTrace();
-            $getFailureMessage = null;
-
-            try {
-                handleDocumentPolicyRequest(
+            $getCorrelationId = CorrelationId::generate();
+            $getSink = new RequestPolicySummarySink();
+            $getCoordinator = new TerminalRequestCoordinator(
+                new RequestBoundary(
+                    requestReaderForBody('', 8_192),
                     requestPolicyApplication(
                         $getPolicyTrace,
                         null,
@@ -784,12 +813,23 @@ function requestPolicyTests(): Generator
                             $getQueryTrace,
                         )),
                     ),
-                    '/accounts/42/documents/Doc_9-z',
-                );
-            } catch (UnexpectedValueException $failure) {
-                $getFailureMessage = $failure->getMessage();
-                $getResponse = (new UnknownFailureBoundary())->respond();
-            }
+                    ApplicationComposition::errorResponses(),
+                ),
+                new UnknownFailureBoundary(),
+                $getCorrelationId,
+                $getSink,
+                new DocumentDetailsCacheTrace(),
+                [new QuerySummarySource('get_document', $getBudget, $getQueryTrace)],
+            );
+            $getResponse = $getCoordinator->handle(
+                [
+                    'REQUEST_METHOD' => 'GET',
+                    'REQUEST_URI' => '/accounts/42/documents/Doc_9-z',
+                    'HTTP_AUTHORIZATION' => 'Bearer CredentialSecretMarker',
+                ],
+                [],
+            );
+            $getSummary = $getSink->onlyPayload();
 
             $listDatabasePath = createDocumentListDatabaseFixture('list-invalid-stored-title', 0);
             $listSeed = Connection::connect(
@@ -825,10 +865,11 @@ function requestPolicyTests(): Generator
             $listBudget = new QueryBudget(1);
             $listQueryTrace = new QueryTrace(1);
             $listPolicyTrace = new RequestPolicyTestTrace();
-            $listFailureMessage = null;
-
-            try {
-                handleDocumentListPolicyRequest(
+            $listCorrelationId = CorrelationId::generate();
+            $listSink = new RequestPolicySummarySink();
+            $listCoordinator = new TerminalRequestCoordinator(
+                new RequestBoundary(
+                    requestReaderForBody('', 8_192),
                     requestPolicyListApplication(
                         $listDatabasePath,
                         $listPolicyTrace,
@@ -836,32 +877,83 @@ function requestPolicyTests(): Generator
                         $listBudget,
                         $listQueryTrace,
                     ),
-                    [],
-                );
-            } catch (UnexpectedValueException $failure) {
-                $listFailureMessage = $failure->getMessage();
-                $listResponse = (new UnknownFailureBoundary())->respond();
-            }
+                    ApplicationComposition::errorResponses(),
+                ),
+                new UnknownFailureBoundary(),
+                $listCorrelationId,
+                $listSink,
+                new DocumentDetailsCacheTrace(),
+                [new QuerySummarySource('list_documents', $listBudget, $listQueryTrace)],
+            );
+            $listResponse = $listCoordinator->handle(
+                [
+                    'REQUEST_METHOD' => 'GET',
+                    'REQUEST_URI' => '/accounts/42/documents',
+                    'HTTP_AUTHORIZATION' => 'Bearer CredentialSecretMarker',
+                ],
+                [],
+            );
+            $listSummary = $listSink->onlyPayload();
 
             $expectedBody = "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n";
-            $expectedHeaders = requestPolicyJsonHeaders();
+            $getExpectedHeaders = [
+                ...requestPolicyJsonHeaders(),
+                'X-Request-ID' => $getCorrelationId->value,
+            ];
+            $listExpectedHeaders = [
+                ...requestPolicyJsonHeaders(),
+                'X-Request-ID' => $listCorrelationId->value,
+            ];
             $getSnapshot = $getQueryTrace->snapshot();
             $listSnapshot = $listQueryTrace->snapshot();
+            $getSource = $getSummary['database_sources'][0] ?? null;
+            $listSource = $listSummary['database_sources'][0] ?? null;
+            $encodedEvidence = json_encode([$getSummary, $listSummary], JSON_THROW_ON_ERROR);
 
             if (
-                !isset($getResponse, $listResponse)
-                || $getFailureMessage
-                    !== 'Document details title has an invalid database representation.'
-                || $listFailureMessage
-                    !== 'Document summary title has an invalid database representation.'
-                || $getResponse->status !== 500
+                $getResponse->status !== 500
                 || $listResponse->status !== 500
-                || $getResponse->headers !== $expectedHeaders
-                || $listResponse->headers !== $expectedHeaders
+                || $getResponse->headers !== $getExpectedHeaders
+                || $listResponse->headers !== $listExpectedHeaders
                 || $getResponse->body !== $expectedBody
                 || $listResponse->body !== $expectedBody
                 || str_contains($getResponse->body, 'PrivateStoredTitleMarker')
                 || str_contains($listResponse->body, 'PrivateStoredTitleMarker')
+                || str_contains($encodedEvidence, 'PrivateStoredTitleMarker')
+                || str_contains($encodedEvidence, 'CredentialSecretMarker')
+                || str_contains($encodedEvidence, 'invalid database representation')
+                || $getSummary['correlation_id'] !== $getCorrelationId->value
+                || $listSummary['correlation_id'] !== $listCorrelationId->value
+                || $getSummary['response_status'] !== 500
+                || $listSummary['response_status'] !== 500
+                || $getSummary['outcome'] !== 'unknown_failure'
+                || $listSummary['outcome'] !== 'unknown_failure'
+                || $getSummary['unknown_failure_class'] !== UnexpectedValueException::class
+                || $listSummary['unknown_failure_class'] !== UnexpectedValueException::class
+                || $getSummary['query_count'] !== 1
+                || $listSummary['query_count'] !== 1
+                || $getSummary['query_failures'] !== 0
+                || $listSummary['query_failures'] !== 0
+                || $getSummary['query_budget_exceeded']
+                || $listSummary['query_budget_exceeded']
+                || !is_array($getSource)
+                || !is_array($listSource)
+                || $getSource['name'] !== 'get_document'
+                || $listSource['name'] !== 'list_documents'
+                || $getSource['budget_limit'] !== 1
+                || $listSource['budget_limit'] !== 1
+                || $getSource['budget_used'] !== 1
+                || $listSource['budget_used'] !== 1
+                || $getSource['budget_exceeded']
+                || $listSource['budget_exceeded']
+                || $getSource['query_trace']['statements'] !== 1
+                || $listSource['query_trace']['statements'] !== 1
+                || $getSource['query_trace']['failures'] !== 0
+                || $listSource['query_trace']['failures'] !== 0
+                || $getSource['query_trace']['tracked_fingerprints'] !== 1
+                || $listSource['query_trace']['tracked_fingerprints'] !== 1
+                || $getSource['query_trace']['maximum_executions_per_fingerprint'] !== 1
+                || $listSource['query_trace']['maximum_executions_per_fingerprint'] !== 1
                 || $getPolicyTrace->steps
                     !== ['authenticate', 'resolve_tenant', 'authorize', 'retrieve']
                 || $listPolicyTrace->steps
@@ -874,7 +966,7 @@ function requestPolicyTests(): Generator
                 || $listSnapshot['failures'] !== 0
             ) {
                 throw new RuntimeException(
-                    'Invalid stored UTF-8 must fail at each projection before generic JSON output.',
+                    'Invalid stored UTF-8 must reach the terminal generic response and redacted summary path.',
                 );
             }
         };
@@ -952,7 +1044,7 @@ function requestPolicyTests(): Generator
     yield 'document policy rejects cross-tenant requests before authorization' => static function (): void {
             $fixture = requestPolicyRetrievalFixture('policy-cross-tenant', 0);
             $trace = new RequestPolicyTestTrace();
-            $registry = requestPolicyErrorRegistry();
+            $registry = ApplicationComposition::errorResponses();
             $response = handleDocumentPolicyRequest(
                 requestPolicyApplication($trace, 'resolve_tenant', $fixture['retrieve']),
                 '/accounts/42/documents/SecretDocumentMarker',
@@ -1368,7 +1460,7 @@ function handleDocumentListPolicyRequest(
     return (new RequestBoundary(
         requestReaderForBody('', 8_192),
         $application,
-        $registry ?? requestPolicyErrorRegistry(),
+        $registry ?? ApplicationComposition::errorResponses(),
     ))->handle(
         [
             'REQUEST_METHOD' => 'GET',
@@ -1643,7 +1735,7 @@ function handleDocumentPolicyRequest(
     return (new RequestBoundary(
         requestReaderForBody('', 8_192),
         $application,
-        $registry ?? requestPolicyErrorRegistry(),
+        $registry ?? ApplicationComposition::errorResponses(),
     ))->handle(
         [
             'REQUEST_METHOD' => 'GET',
@@ -1661,34 +1753,6 @@ function requestPolicyJsonHeaders(): array
         'Content-Type' => 'application/json; charset=utf-8',
         'Cache-Control' => 'private, no-store',
     ];
-}
-
-function requestPolicyErrorRegistry(): ErrorResponseRegistry
-{
-    $forbidden = new Response(
-        403,
-        requestPolicyJsonHeaders(),
-        "{\"error\":{\"code\":\"forbidden\",\"message\":\"Request is forbidden.\"}}\n",
-    );
-
-    return new ErrorResponseRegistry([
-        InvalidRequest::class => new Response(
-            400,
-            requestPolicyJsonHeaders(),
-            "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
-        ),
-        Unauthenticated::class => new Response(
-            401,
-            [
-                'Content-Type' => 'application/json; charset=utf-8',
-                'Cache-Control' => 'private, no-store',
-                'WWW-Authenticate' => 'Bearer',
-            ],
-            "{\"error\":{\"code\":\"unauthenticated\",\"message\":\"Authentication is required.\"}}\n",
-        ),
-        CrossTenant::class => $forbidden,
-        Forbidden::class => $forbidden,
-    ]);
 }
 
 /**

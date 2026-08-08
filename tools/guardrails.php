@@ -787,6 +787,11 @@ function decisionSuccessorRelationshipFailures(string $root): array
             'metadata' => 'Superseded in part by [ADR 042](042-application-owned-input-failure-classification.md), which replaces only the blanket-`400` authoring default for application-owned structured request-body content.',
             'targets' => ['042-application-owned-input-failure-classification.md'],
         ],
+        'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
+            'title' => 'ADR 025: Application-owned explicit CLI and scheduler',
+            'metadata' => "Superseded in part by [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md), which replaces only the executable example's same-host schedule file lock with one application-owned Redis owner-token lease and extends `schedule:run` success and Redis-failure JSON with a bounded `coordination` list.",
+            'targets' => ['028-application-owned-redis-cache-and-schedule-lease.md'],
+        ],
     ];
     $failures = [];
 
@@ -873,6 +878,7 @@ function decisionSuccessorRelationshipFailures(string $root): array
         '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
+        '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
     ];
     $actualRows = [];
     $tableEndIndex = null;
@@ -1300,11 +1306,55 @@ $proofMaintainabilityArtifactMarkers = [
     'docs/guardrails.md' => [
         'Repeated documentation-marker checks use file-local helpers rather than duplicated loops.',
         'The decision-navigation and vocabulary guard uses one fixed reviewed map of partial-supersession relationships.',
+        'the `eval(...)` language construct and variable variables are absent, while legal declarations, aliases, accesses, and named arguments whose identifier is `eval` remain accepted',
+    ],
+    'docs/consumer-contract.md' => [
+        "Read the application's `.ai/rules.md`, `.ai/change-workflow.md`, and `.ai/project.md`.",
+        'Start with the one current operational guide selected by `.ai/README.md`.',
+        "ADR 028 replaces only the executable example's schedule file lock with one application-owned Redis owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
+    ],
+    'docs/cli.md' => [
+        "ADR 028 replaces only the example's same-host schedule file lock with one Redis-specific owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
+    ],
+    'docs/consumer-profile.md' => [
+        'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.10`',
+        'no unlisted engine version inherits certification',
+    ],
+    'docs/knowledge-map.md' => [
+        'application response headers, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md`',
+    ],
+    'ROADMAP.md' => [
+        'the final post-Issue-35 correctness sweep restricts the forbidden `eval` check to the actual language construct while accepting legal same-named identifiers',
+        'It changes no framework core, Consumer Contract version 11, Strict Profile version 3, runtime dependency, or consumer API.',
+    ],
+    'verification/SyntaxProfile.php' => [
+        'private static function isEvalLanguageConstruct(array $tokens, int $index): bool',
+        "return !self::isEvalMethodIdentifier(\$tokens, \$index);",
+    ],
+    'tools/test-strict-profile.php' => [
+        'final class EvalConstants',
+        'enum EvalCases: string',
+        'original as eval;',
+        "#[EvalNamedAttribute(eval: 'attribute')]",
+        "acceptNamedEval(eval: 'function')",
     ],
     'tools/test-consumer-project.php' => [
         'proveInstalledReferenceClarityDistribution($installedFramework);',
         'function proveInstalledReferenceClarityDistribution(string $installedFramework): void',
         'PASS installed historical and reference clarity distribution',
+        'proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected($project, $profileCommand, $environment);',
+        'function proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected(',
+        'final class EvalConstantControl',
+        'enum EvalCaseControl: string',
+        'original as eval;',
+        "#[EvalNamedAttributeControl(eval: 'attribute')]",
+        "'parent' => 'vendor/../composer.json'",
+        "'empty' => 'vendor//phpthis/framework/docs/jobs.md'",
+        "'dot' => 'vendor/./phpthis/framework/docs/jobs.md'",
+        '`vendor/outside-vendor-reference-control`',
+        "symlink(\$project . '/composer.json', \$symlinkReference)",
+        'escapes the configured Composer vendor directory',
+        'does not resolve through the configured Composer vendor directory',
     ],
 ];
 
@@ -1312,6 +1362,13 @@ requireGuardrailArtifactMarkers(
     $root,
     $proofMaintainabilityArtifactMarkers,
     'proof maintainability',
+    $failures,
+);
+
+forbidGuardrailArtifactMarkers(
+    $root,
+    ['docs/knowledge-map.md' => ['.ai/cache.md']],
+    'current application context route',
     $failures,
 );
 
@@ -1770,6 +1827,7 @@ $requiredRepositoryFiles = [
     'tests/observability.php',
     'tests/process-support.php',
     'tests/request-reader-support.php',
+    'tests/response-framing.php',
     'tests/response-emitter.php',
     'tests/routing.php',
     'tests/upload-request-boundary.php',
@@ -2334,6 +2392,21 @@ $sessionCleanupAndResponseFramingArtifactMarkers = [
         "yield 'session cleanup preserves primary failures and resets deterministically'",
         "runIsolatedPhpTest(__DIR__ . '/fixtures/session-cleanup-failures.php.fixture')",
         'PASS isolated session cleanup failure precedence',
+        "yield 'ordinary response framing enforces final statuses and explicit HEAD routing'",
+        "runIsolatedPhpTest(__DIR__ . '/response-framing.php')",
+        "\$result['exit_code'] !== 0 || \$result['stderr'] !== ''",
+        "'get_only_head_status' => 405",
+        "'get_only_handler_calls' => 0",
+    ],
+    'tests/response-framing.php' => [
+        "new Response(199, [], '')",
+        "new Response(599, [], '')",
+        "new Route('HEAD', '/explicit-head', \$headHandler)",
+        "new Request('HEAD', '/explicit-head')",
+        "new Route('GET', '/get-only', \$getHandler)",
+        "new Request('HEAD', '/get-only')",
+        "'get_only_handler_calls' => \$getHandler->calls",
+        'Expected bounded final statuses without an inferred HEAD-to-GET fallback.',
     ],
     'tests/response-emitter.php' => [
         "new Response(103, [], '')",
@@ -2347,6 +2420,9 @@ $sessionCleanupAndResponseFramingArtifactMarkers = [
         'Expected supported ordinary response framing to remain valid.',
         'Expected the complete local file to be emitted in bounded chunks.',
     ],
+    'tests/behavior-names.txt' => [
+        'ordinary response framing enforces final statuses and explicit HEAD routing',
+    ],
     'tools/package-files.txt' => [
         'docs/decisions/045-bounded-session-cleanup-and-response-framing.md',
         'src/Session/SessionCleanupFailed.php',
@@ -2359,6 +2435,7 @@ $sessionCleanupAndResponseFramingArtifactMarkers = [
     'docs/guardrails.md' => [
         'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. Current unreleased source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. The five freed lines remain unallocated;',
         'The ADR 045 guard pins the bounded session-cleanup failure precedence and ordinary-response framing contract.',
+        'A dedicated selectable behavior also proves rejection at `199`, acceptance at `599`, explicit application-owned `HEAD`, and an exact `405` with zero GET-handler calls when only GET is declared; its subprocess must keep stderr empty.',
         'superseded-identifier restart and distinct-new-identifier cleanup',
         'start failure retained as primary when identifier clearing also fails',
         'clear and abort failure latches that prevent request-boundary cleanup re-entry',
@@ -2420,8 +2497,13 @@ $canonicalExecutableExampleBoundaryMarkers = [
         'These are limits for this cache representation only, not an authoritative database-title bound; a valid authoritative title that exceeds cache admission remains usable without being stored here.',
     ],
     'example/src/ApplicationComposition.php' => [
+        'public static function errorResponses(): ErrorResponseRegistry',
         'InvalidRequest::class => new Response(',
         '"{\\"error\\":{\\"code\\":\\"invalid_request\\",\\"message\\":\\"Request is invalid.\\"}}\\n"',
+        '$errorResponses = self::errorResponses();',
+    ],
+    '.ai/errors.md' => [
+        'The executable example and its boundary evidence obtain that map from `ApplicationComposition::errorResponses()`; do not reproduce the registry in a test helper.',
     ],
     'example/src/Documents/ListDocuments/ListDocumentsHandler.php' => [
         '$this->authorize->authorizeList($principal, $tenant);',
@@ -2471,10 +2553,16 @@ $canonicalExecutableExampleBoundaryMarkers = [
         'Document summary title has an invalid database representation.',
     ],
     'tests/request-policy.php' => [
+        'final class RequestPolicySummarySink implements RequestSummarySink',
         'document list invalid input uses the central exact-class response mapping',
         '$response !== $expected',
         'document projections reject invalid stored UTF-8 before JSON responses',
-        'Invalid stored UTF-8 must fail at each projection before generic JSON output.',
+        'ApplicationComposition::errorResponses()',
+        "[new QuerySummarySource('get_document', \$getBudget, \$getQueryTrace)]",
+        "[new QuerySummarySource('list_documents', \$listBudget, \$listQueryTrace)]",
+        "\$getSummary['outcome'] !== 'unknown_failure'",
+        "\$getSummary['unknown_failure_class'] !== UnexpectedValueException::class",
+        'Invalid stored UTF-8 must reach the terminal generic response and redacted summary path.',
     ],
     'tests/input-projection.php' => [
         '[\'id\' => 7, \'name\' => "Invalid \\xC3\\x28"]',
@@ -2504,6 +2592,8 @@ $canonicalExecutableExampleBoundaryMarkers = [
     ],
     'docs/guardrails.md' => [
         "The ADR 046 guard pins the executable example's canonical application boundaries without turning them into framework runtime or consumer-validity rules.",
+        'It retains the composition-root exact-class registry through `ApplicationComposition::errorResponses()` with no handler-local or test-local duplicate;',
+        'invalid stored UTF-8 traverses the real request boundary and terminal coordinator to the generic `500`, redacted unknown-failure summary, and one-query policy path using that production-owned registry.',
         'No generic identifier, validator, response renderer, scheduler, cache helper, repository, ORM, checker rule, or `PHT` diagnostic is added.',
     ],
 ];
@@ -2525,6 +2615,35 @@ if (is_string($listDocumentsHandler) && (
     || str_contains($listDocumentsHandler, '"invalid_request"')
 )) {
     $failures[] = 'ListDocumentsHandler must delegate InvalidRequest response selection to the composition-root registry.';
+}
+
+$applicationComposition = file_get_contents($root . '/example/src/ApplicationComposition.php');
+$requestPolicyEvidence = file_get_contents($root . '/tests/request-policy.php');
+$inputProjectionEvidence = file_get_contents($root . '/tests/input-projection.php');
+
+if (
+    !is_string($applicationComposition)
+    || str_contains($applicationComposition, 'UnexpectedValueException::class')
+) {
+    $failures[] = 'The production error registry must leave invalid stored representations on the unknown-failure path.';
+}
+
+if (
+    !is_string($requestPolicyEvidence)
+    || str_contains($requestPolicyEvidence, 'function requestPolicyErrorRegistry(')
+    || str_contains($requestPolicyEvidence, 'new ErrorResponseRegistry(')
+    || !is_string($inputProjectionEvidence)
+    || str_contains($inputProjectionEvidence, 'function exampleErrorResponseRegistry(')
+    || str_contains($inputProjectionEvidence, 'new ErrorResponseRegistry(')
+) {
+    $failures[] = 'Example boundary evidence must use the production-owned composition registry without a test-local duplicate.';
+}
+
+if (
+    !is_string($requestPolicyEvidence)
+    || str_contains($requestPolicyEvidence, 'new CapturingRequestSummarySink(')
+) {
+    $failures[] = 'Request-policy evidence must own its summary sink without depending on a later concern file.';
 }
 
 if (is_file($root . '/example/src/Users/GetUser/UserId.php')) {
@@ -4347,6 +4466,10 @@ $typedInputBoundaryArtifactMarkers = [
     'example/src/Users/CreateUser/UnacceptableCreateUserValues.php' => [
         'final class UnacceptableCreateUserValues extends RuntimeException',
     ],
+    'example/src/ApplicationComposition.php' => [
+        'UnacceptableCreateUserValues::class => new Response(',
+        '"{\\"error\\":{\\"code\\":\\"unprocessable_content\\",\\"message\\":\\"Request content is unacceptable.\\"}}\\n"',
+    ],
     'example/src/Users/CreateUser/CreateUserHandler.php' => [
         '$command = CreateUserCommand::fromJson($request->body);',
         '$this->createUser->execute($principal, $tenant, $accountId, $command);',
@@ -4371,7 +4494,7 @@ $typedInputBoundaryArtifactMarkers = [
         'HTTP handler invokes only its typed create-user operation',
         'HTTP handler rejects invalid commands before use-case invocation',
         'mapped input failures emit no submitted data or log entry',
-        'UnacceptableCreateUserValues::class => new Response(',
+        'ApplicationComposition::errorResponses()',
         'example request boundary maps client failures before database work',
     ],
     'tests/create-user-support.php' => [
@@ -7105,13 +7228,13 @@ if (!is_string($behaviorInventory)) {
 } else {
     $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-    if (count($behaviorNames) !== 180 || count(array_unique($behaviorNames)) !== 180) {
-        $failures[] = 'The framework suite must preserve exactly 180 unique named framework behaviors.';
+    if (count($behaviorNames) !== 181 || count(array_unique($behaviorNames)) !== 181) {
+        $failures[] = 'The framework suite must preserve exactly 181 unique named framework behaviors.';
     }
 
     if (
         hash('sha256', $behaviorInventory)
-        !== '0a2c7f34539ec5caa3e73ea14302ca702cfd4c812b52e3868a1680fea8bab5f8'
+        !== '85878e382942708ea8bf43a063b7c0fede99bf42bf4e39524fa10b655f632d8c'
     ) {
         $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
     }
@@ -7123,6 +7246,7 @@ $maintainerTestArtifactMarkers = [
     ],
     '.ai/testing.md' => [
         'PHPUnit 13 as a maintainer-only development runner',
+        'exactly 181 named behaviors',
         '`tests/run.php` is the explicit ordered loader',
         '`tests/composition.php`, `tests/http-boundary.php`, `tests/routing.php`, `tests/input-projection.php`, `tests/crud.php`, and `tests/database-boundary.php`',
         '`tests/request-reader-support.php`, `tests/process-support.php`, and `tests/create-user-support.php`',
@@ -7161,7 +7285,7 @@ $maintainerTestArtifactMarkers = [
         'function frameworkBehaviorNamesForGroup(string $group): array',
         'function frameworkBehaviorInventory(): array',
         'array_key_exists($name, $registered)',
-        '0a2c7f34539ec5caa3e73ea14302ca702cfd4c812b52e3868a1680fea8bab5f8',
+        '85878e382942708ea8bf43a063b7c0fede99bf42bf4e39524fa10b655f632d8c',
     ],
     'tests/composition.php' => [
         'function compositionBehaviorTests(): Generator',
@@ -7174,7 +7298,7 @@ $maintainerTestArtifactMarkers = [
     ],
     'tests/input-projection.php' => [
         'function inputProjectionBehaviorTests(): Generator',
-        'function exampleErrorResponseRegistry(): ErrorResponseRegistry',
+        'ApplicationComposition::errorResponses()',
     ],
     'tests/crud.php' => [
         'function crudBehaviorTests(): Generator',
@@ -8003,23 +8127,12 @@ $crudGuidanceMarkers = [
     ],
 ];
 
-foreach ($crudGuidanceMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read {$relativePath}.";
-
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "{$relativePath} is missing required optional multi-surface CRUD guidance marker: {$marker}";
-
-            break;
-        }
-    }
-}
+requireGuardrailArtifactMarkers(
+    $root,
+    $crudGuidanceMarkers,
+    'optional multi-surface CRUD guidance',
+    $failures,
+);
 
 $uuidIdentifierPolicyGuidanceMarkers = [
     'docs/request-handling.md' => [
@@ -8093,23 +8206,12 @@ $uuidIdentifierPolicyGuidanceMarkers = [
     ],
 ];
 
-foreach ($uuidIdentifierPolicyGuidanceMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read {$relativePath}.";
-
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "{$relativePath} is missing required application-owned UUID policy guidance marker: {$marker}";
-
-            break;
-        }
-    }
-}
+requireGuardrailArtifactMarkers(
+    $root,
+    $uuidIdentifierPolicyGuidanceMarkers,
+    'application-owned UUID policy guidance',
+    $failures,
+);
 
 foreach (['templates/application/.ai/README.md', 'skeleton/.ai/README.md'] as $applicationContextIndex) {
     $applicationContextIndexContents = file_get_contents($root . '/' . $applicationContextIndex);

@@ -13,8 +13,9 @@ For application work:
 1. Read this contract from the installed PHPThis package.
 2. Use the installed `docs/knowledge-map.md` to route the framework question or task.
 3. Read the application's root `AGENTS.md` and `.ai/README.md`.
-4. Read only the application guide relevant to the task.
-5. Inspect the concrete source and tests on the execution path.
+4. Read the application's `.ai/rules.md`, `.ai/change-workflow.md`, and `.ai/project.md`.
+5. Start with the one current operational guide selected by `.ai/README.md`.
+6. Inspect the concrete source and tests on the execution path.
 
 Ordinary implementation starts with the current operational guide selected by those routers. Read another guide only when that guide routes the chosen concern there. Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context.
 
@@ -202,7 +203,7 @@ Delivery remains at least once. A process may stop after claim, a lease may expi
 
 ## Optional application-owned CLI and scheduler
 
-ADR 025 records one application-owned operational console and initial single-host one-shot scheduler pattern without adding a framework CLI or scheduler API. ADR 028 replaces only the executable example's schedule file lock with one application-owned Redis owner-token lease. Framework `bin/phpthis` and installed `vendor/bin/phpthis` remain dedicated to the framework-owned `check`; an application does not register its operational commands there.
+ADR 025 records one application-owned operational console and initial single-host one-shot scheduler pattern without adding a framework CLI or scheduler API. ADR 028 replaces only the executable example's schedule file lock with one application-owned Redis owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list. Framework `bin/phpthis` and installed `vendor/bin/phpthis` remain dedicated to the framework-owned `check`; an application does not register its operational commands there.
 
 An application that adopts operational commands records one explicit console, a finite code-owned command map, one typed and bounded argument grammar, a closed exit and stdout/stderr contract, fresh composition, one-pass execution, and complete subprocess tests as described in installed `docs/cli.md`. A scheduled pass additionally records its explicit clock, timezone and cadence, missed-run and catch-up policy, supervisor frequency, app-private overlap mechanism and namespace, topology, acquisition, expiry, renewal when applicable, contention, failure, release, crash behavior, maximum work, and coordination limit. A same-host lock remains valid only for its recorded single-host topology; a backend-specific lease requires its own accepted atomic operations and evidence. An application with no operational command or scheduler records `NOT_APPLICABLE(CLI)` in its project context.
 

@@ -152,7 +152,7 @@ function frameworkBehaviorInventory(): array
         $contents === ''
         || !str_ends_with($contents, "\n")
         || str_contains($contents, "\r")
-        || hash('sha256', $contents) !== '0a2c7f34539ec5caa3e73ea14302ca702cfd4c812b52e3868a1680fea8bab5f8'
+        || hash('sha256', $contents) !== '85878e382942708ea8bf43a063b7c0fede99bf42bf4e39524fa10b655f632d8c'
     ) {
         throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
     }
@@ -160,11 +160,11 @@ function frameworkBehaviorInventory(): array
     $names = explode("\n", substr($contents, 0, -1));
 
     if (
-        count($names) !== 180
-        || count(array_unique($names)) !== 180
+        count($names) !== 181
+        || count(array_unique($names)) !== 181
         || in_array('', $names, true)
     ) {
-        throw new LogicException('Framework behavior inventory must contain 180 unique non-empty names.');
+        throw new LogicException('Framework behavior inventory must contain 181 unique non-empty names.');
     }
 
     return $names;

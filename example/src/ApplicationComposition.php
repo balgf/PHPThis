@@ -68,6 +68,58 @@ final readonly class ApplicationComposition
         $this->databasePath = $databasePath->value;
     }
 
+    public static function errorResponses(): ErrorResponseRegistry
+    {
+        $privateJsonHeaders = [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'private, no-store',
+        ];
+        $forbiddenResponse = new Response(
+            403,
+            $privateJsonHeaders,
+            "{\"error\":{\"code\":\"forbidden\",\"message\":\"Request is forbidden.\"}}\n",
+        );
+
+        return new ErrorResponseRegistry([
+            Unauthenticated::class => new Response(
+                401,
+                [
+                    'Content-Type' => 'application/json; charset=utf-8',
+                    'Cache-Control' => 'private, no-store',
+                    'WWW-Authenticate' => 'Bearer',
+                ],
+                "{\"error\":{\"code\":\"unauthenticated\",\"message\":\"Authentication is required.\"}}\n",
+            ),
+            Forbidden::class => $forbiddenResponse,
+            CrossTenant::class => $forbiddenResponse,
+            InvalidRequest::class => new Response(
+                400,
+                $privateJsonHeaders,
+                "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+            ),
+            UnacceptableCreateUserValues::class => new Response(
+                422,
+                $privateJsonHeaders,
+                "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
+            ),
+            RequestBodyTooLarge::class => new Response(
+                413,
+                $privateJsonHeaders,
+                "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n",
+            ),
+            UnsupportedMediaType::class => new Response(
+                415,
+                $privateJsonHeaders,
+                "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n",
+            ),
+            DocumentFileNotFound::class => new Response(
+                404,
+                $privateJsonHeaders,
+                "{\"error\":{\"code\":\"document_file_not_found\",\"message\":\"Document file was not found.\"}}\n",
+            ),
+        ]);
+    }
+
     public function http(): TerminalRequestCoordinator
     {
         $databasePath = $this->existingDatabasePath();
@@ -115,53 +167,7 @@ final readonly class ApplicationComposition
             $accountAuthorization,
             new LocalDocumentFiles($databasePath . '.files'),
         )));
-        $privateJsonHeaders = [
-            'Content-Type' => 'application/json; charset=utf-8',
-            'Cache-Control' => 'private, no-store',
-        ];
-        $forbiddenResponse = new Response(
-            403,
-            $privateJsonHeaders,
-            "{\"error\":{\"code\":\"forbidden\",\"message\":\"Request is forbidden.\"}}\n",
-        );
-        $errorResponses = new ErrorResponseRegistry([
-            Unauthenticated::class => new Response(
-                401,
-                [
-                    'Content-Type' => 'application/json; charset=utf-8',
-                    'Cache-Control' => 'private, no-store',
-                    'WWW-Authenticate' => 'Bearer',
-                ],
-                "{\"error\":{\"code\":\"unauthenticated\",\"message\":\"Authentication is required.\"}}\n",
-            ),
-            Forbidden::class => $forbiddenResponse,
-            CrossTenant::class => $forbiddenResponse,
-            InvalidRequest::class => new Response(
-                400,
-                $privateJsonHeaders,
-                "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
-            ),
-            UnacceptableCreateUserValues::class => new Response(
-                422,
-                $privateJsonHeaders,
-                "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
-            ),
-            RequestBodyTooLarge::class => new Response(
-                413,
-                $privateJsonHeaders,
-                "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n",
-            ),
-            UnsupportedMediaType::class => new Response(
-                415,
-                $privateJsonHeaders,
-                "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n",
-            ),
-            DocumentFileNotFound::class => new Response(
-                404,
-                $privateJsonHeaders,
-                "{\"error\":{\"code\":\"document_file_not_found\",\"message\":\"Document file was not found.\"}}\n",
-            ),
-        ]);
+        $errorResponses = self::errorResponses();
 
         return new TerminalRequestCoordinator(
             new RequestBoundary(

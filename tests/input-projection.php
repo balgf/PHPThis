@@ -6,6 +6,7 @@ use Example\Accounts\AccountId;
 use Example\Accounts\AuthenticatedPrincipal;
 use Example\Accounts\DenyAllAccountAuthorization;
 use Example\Accounts\ResolvedTenant;
+use Example\ApplicationComposition;
 use Example\Documents\GetDocument\SelectAuthorizedDocument;
 use Example\DocumentFiles\LocalDocumentFiles;
 use Example\Routes;
@@ -22,14 +23,11 @@ use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;
-use PHPThis\Http\ErrorResponseRegistry;
 use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestBodyTooLarge;
 use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\RequestReader;
-use PHPThis\Http\Response;
-use PHPThis\Http\UnsupportedMediaType;
 use PHPThis\Routing\PathParameters;
 use PHPThis\Routing\Route;
 use PHPThis\Routing\Router;
@@ -268,7 +266,7 @@ function inputProjectionBehaviorTests(): Generator
     $boundary = new RequestBoundary(
         requestReaderForBody('', 8_192),
         $application,
-        exampleErrorResponseRegistry(),
+        ApplicationComposition::errorResponses(),
     );
     $invalidQueries = [
         ['after_user_id' => '01'],
@@ -325,7 +323,7 @@ function inputProjectionBehaviorTests(): Generator
     $boundary = new RequestBoundary(
         requestReaderForBody('', 8_192),
         $application,
-        exampleErrorResponseRegistry(),
+        ApplicationComposition::errorResponses(),
     );
     $continued = $boundary->handle(
         ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/users?after_user_id=1'],
@@ -471,7 +469,7 @@ function inputProjectionBehaviorTests(): Generator
     $response = (new RequestBoundary(
         requestReaderForBody($body, 8_192),
         $application,
-        exampleErrorResponseRegistry(),
+        ApplicationComposition::errorResponses(),
     ))->handle(
         [
             'REQUEST_METHOD' => 'POST',
@@ -565,7 +563,7 @@ function inputProjectionBehaviorTests(): Generator
         new DenyAllAccountAuthorization(),
         new LocalDocumentFiles(__DIR__ . '/../tmp/application-tests/document-files'),
     )));
-    $registry = exampleErrorResponseRegistry();
+    $registry = ApplicationComposition::errorResponses();
     $expectedHeaders = [
         'Content-Type' => 'application/json; charset=utf-8',
         'Cache-Control' => 'private, no-store',
@@ -700,7 +698,7 @@ function inputProjectionBehaviorTests(): Generator
             $responses[$case] = (new RequestBoundary(
                 requestReaderForBody($input['body'], 8_192),
                 $application,
-                exampleErrorResponseRegistry(),
+                ApplicationComposition::errorResponses(),
             ))->handle(
                 [
                     'REQUEST_METHOD' => 'POST',
@@ -750,36 +748,4 @@ function inputProjectionBehaviorTests(): Generator
     }
 };
 
-}
-
-
-function exampleErrorResponseRegistry(): ErrorResponseRegistry
-{
-    $headers = [
-        'Content-Type' => 'application/json; charset=utf-8',
-        'Cache-Control' => 'private, no-store',
-    ];
-
-    return new ErrorResponseRegistry([
-        InvalidRequest::class => new Response(
-            400,
-            $headers,
-            "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
-        ),
-        UnacceptableCreateUserValues::class => new Response(
-            422,
-            $headers,
-            "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
-        ),
-        RequestBodyTooLarge::class => new Response(
-            413,
-            $headers,
-            "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n",
-        ),
-        UnsupportedMediaType::class => new Response(
-            415,
-            $headers,
-            "{\"error\":{\"code\":\"unsupported_media_type\",\"message\":\"Content-Type is unsupported.\"}}\n",
-        ),
-    ]);
 }

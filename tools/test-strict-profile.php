@@ -1351,6 +1351,76 @@ requireProfile(
     'Shared syntax guard rejected a legal method declaration or call named eval.',
 );
 
+$validEvalIdentifierFixture = <<<'PHP'
+<?php
+
+final class EvalConstants
+{
+    public const string eval = 'constant';
+}
+
+enum EvalCases: string
+{
+    case eval = 'case';
+}
+
+trait EvalAliasSource
+{
+    public function original(): string
+    {
+        return 'alias';
+    }
+}
+
+final class EvalAliasConsumer
+{
+    use EvalAliasSource {
+        original as eval;
+    }
+}
+
+function acceptNamedEval(string $eval): string
+{
+    return $eval;
+}
+
+final class EvalNamedConstructor
+{
+    public function __construct(public string $eval) {}
+}
+
+#[Attribute(Attribute::TARGET_CLASS)]
+final class EvalNamedAttribute
+{
+    public function __construct(public string $eval) {}
+}
+
+#[EvalNamedAttribute(eval: 'attribute')]
+final class EvalAttributedClass
+{
+}
+
+function useEvalIdentifiers(): array
+{
+    $alias = new EvalAliasConsumer();
+    $constructed = new EvalNamedConstructor(eval: 'constructor');
+
+    return [
+        EvalConstants::eval,
+        EvalCases::eval,
+        $alias->eval(),
+        acceptNamedEval(eval: 'function'),
+        $constructed->eval,
+    ];
+}
+PHP;
+
+requireParseable($validEvalIdentifierFixture);
+requireProfile(
+    SyntaxProfile::failures($validEvalIdentifierFixture, 'eval-identifiers.php') === [],
+    'Shared syntax guard rejected a legal class constant, enum case, trait alias, or named argument called eval.',
+);
+
 $invalidEvalConstructFixture = <<<'PHP'
 <?php
 

@@ -5,6 +5,7 @@ Failures must cross named boundaries as exceptions or explicit response values.
 - Do not catch `Throwable` in handlers unless the handler can fully recover.
 - Do not convert database failures to empty arrays, `null`, or success responses.
 - Map only deliberately named exception classes to immutable responses in one visible `ErrorResponseRegistry` at the composition root.
+- The executable example and its boundary evidence obtain that map from `ApplicationComposition::errorResponses()`; do not reproduce the registry in a test helper.
 - Use exact class matching. Never register broad built-ins such as `Throwable`, `RuntimeException`, `PDOException`, `JsonException`, or `UnexpectedValueException`.
 - Let unknown failures reach the top-level handler, select the generic 500 response, and contribute only their concrete class to the one application-owned terminal summary attempt.
 - Never include SQL credentials, parameter values, stack traces, or internal messages in public responses.

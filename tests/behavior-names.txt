@@ -118,6 +118,7 @@ request reader rejects malformed runtime metadata
 request reader enforces declared and actual body bounds
 request boundary maps exact known failures and rethrows unknown failures
 response cookies are explicit validated values
+ordinary response framing enforces final statuses and explicit HEAD routing
 response emitter preserves repeated Set-Cookie fields
 request boundary normalizes one bounded multipart upload
 session lifecycle is lazy strict scoped and fixation resistant

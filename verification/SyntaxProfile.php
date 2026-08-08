@@ -31,7 +31,7 @@ final class SyntaxProfile
             if (
                 !is_array($token)
                 || $token[0] !== T_EVAL
-                || self::isEvalMethodIdentifier($tokens, $index)
+                || !self::isEvalLanguageConstruct($tokens, $index)
             ) {
                 continue;
             }
@@ -40,6 +40,18 @@ final class SyntaxProfile
         }
 
         return $failures;
+    }
+
+    /** @param array<int, array{int, string, int}|string> $tokens */
+    private static function isEvalLanguageConstruct(array $tokens, int $index): bool
+    {
+        $nextIndex = self::nextSignificantIndex($tokens, $index + 1);
+
+        if ($nextIndex === null || ($tokens[$nextIndex] ?? null) !== '(') {
+            return false;
+        }
+
+        return !self::isEvalMethodIdentifier($tokens, $index);
     }
 
     /** @param array<int, array{int, string, int}|string> $tokens */

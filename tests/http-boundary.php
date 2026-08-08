@@ -341,10 +341,39 @@ function httpBoundaryBehaviorTests(): Generator
     throw new RuntimeException('Expected duplicate or manually encoded response cookies to be rejected.');
 };
 
+    yield 'ordinary response framing enforces final statuses and explicit HEAD routing' => static function (): void {
+    $result = runIsolatedPhpTest(__DIR__ . '/response-framing.php');
+
+    if ($result['exit_code'] !== 0 || $result['stderr'] !== '') {
+        throw new RuntimeException('Response-framing subprocess failed: ' . $result['stderr']);
+    }
+
+    $decoded = json_decode($result['stdout'], true, 32, JSON_THROW_ON_ERROR);
+
+    if (
+        !is_array($decoded)
+        || $decoded !== [
+            'maximum_status' => 599,
+            'minimum_status_rejected' => true,
+            'explicit_head_status' => 200,
+            'get_only_head_status' => 405,
+            'get_only_head_headers' => [
+                'Allow' => 'GET',
+                'Cache-Control' => 'no-store',
+                'Content-Type' => 'text/plain; charset=utf-8',
+            ],
+            'get_only_head_body' => "Method Not Allowed\n",
+            'get_only_handler_calls' => 0,
+        ]
+    ) {
+        throw new RuntimeException('Expected bounded final statuses without an inferred HEAD-to-GET fallback.');
+    }
+};
+
     yield 'response emitter preserves repeated Set-Cookie fields' => static function (): void {
     $result = runIsolatedPhpTest(__DIR__ . '/response-emitter.php');
 
-    if ($result['exit_code'] !== 0) {
+    if ($result['exit_code'] !== 0 || $result['stderr'] !== '') {
         throw new RuntimeException('Response emitter subprocess failed: ' . $result['stderr']);
     }
 
