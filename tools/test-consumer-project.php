@@ -102,6 +102,7 @@ try {
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledReleaseGuidanceDistribution($installedFramework);
     proveInstalledReferenceClarityDistribution($installedFramework);
+    proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);
@@ -1008,7 +1009,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
     $requiredMarkers = [
         $installedFramework . '/docs/guardrails.md' => [
             'Current unreleased source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines.',
-            'Repeated documentation-marker checks use file-local helpers rather than duplicated loops.',
+            'Repeated documentation-marker checks use explicit shared repository-module helpers rather than duplicated loops',
             'The decision-navigation and vocabulary guard uses one fixed reviewed map of partial-supersession relationships.',
             'The maintained SQLite negative control supplies an impossible version, requires the exact bounded failure and removal of its pre-DDL fixture, then proves clean recovery through the normal certification run.',
         ],
@@ -1180,6 +1181,32 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
     }
 
     fwrite(STDOUT, "PASS installed version-neutral release guidance distribution\n");
+}
+
+function proveInstalledTestRunnerModularizationGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    $guidanceMarkers = [
+        'When an application-owned test or validation entrypoint spans unrelated concerns or becomes difficult to review, prefer a small deterministic entrypoint',
+        'cohesive concern-owned modules in an explicit order, with narrowly shared support',
+        'Preserve deterministic execution and failure behavior, and keep focused evidence directly runnable where the selected tool allows.',
+        'Keep that composition explicit; do not introduce runtime discovery or a plugin framework merely to organize the runner.',
+        'Modularize only application-owned code; do not copy, replace, or modularize the installed `vendor/bin/phpthis check` entrypoint.',
+        'This is advisory organization guidance, not a validity rule: PHPThis sets no line-count threshold, prescribes no directory layout, test library, or module interface, and adds no checker rule.',
+        'The application owns whether and how to split the entrypoint; its documented complete project check remains the authoritative gate.',
+    ];
+
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/testing.md' => $guidanceMarkers,
+        $installedFramework . '/docs/consumer-contract.md' => $guidanceMarkers,
+        $installedFramework . '/templates/application/.ai/testing.md' => $guidanceMarkers,
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'test-runner modularization guidance');
+
+    fwrite(STDOUT, "PASS installed test-runner modularization guidance distribution\n");
 }
 
 function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string $installedFramework): void

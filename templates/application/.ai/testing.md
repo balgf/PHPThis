@@ -14,6 +14,8 @@ This command must call the installed `phpthis check` profile stage and then run 
 
 Every observable behavior change must add or update application-owned automated tests. The application owns the test library, runner, file placement, and organization; PHPThis does not require PHPUnit, Pest, a `tests/` directory, or a particular test category. Composer `scripts.test` must execute this evidence and return a non-zero status when it fails. Static analysis, documentation, manual verification, and a no-op test command are not behavior evidence.
 
+When an application-owned test or validation entrypoint spans unrelated concerns or becomes difficult to review, prefer a small deterministic entrypoint that invokes cohesive concern-owned modules in an explicit order, with narrowly shared support. Preserve deterministic execution and failure behavior, and keep focused evidence directly runnable where the selected tool allows. Keep that composition explicit; do not introduce runtime discovery or a plugin framework merely to organize the runner. Modularize only application-owned code; do not copy, replace, or modularize the installed `vendor/bin/phpthis check` entrypoint. This is advisory organization guidance, not a validity rule: PHPThis sets no line-count threshold, prescribes no directory layout, test library, or module interface, and adds no checker rule. The application owns whether and how to split the entrypoint; its documented complete project check remains the authoritative gate.
+
 ## Focused commands
 
 - Unit or behavior tests: `{{FOCUSED_TEST_COMMAND}}`
