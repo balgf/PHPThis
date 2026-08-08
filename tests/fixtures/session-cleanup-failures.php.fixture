@@ -1,0 +1,1406 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PHPThis\Session {
+    final class NativeSessionFaults
+    {
+        private static bool $abort = false;
+        private static bool $abortWithoutRelease = false;
+        private static bool $destroy = false;
+        private static bool $idClear = false;
+        private static bool $writeCloseWithoutRelease = false;
+        private static int $abortCalls = 0;
+        private static int $destroyCalls = 0;
+        private static int $idClearCalls = 0;
+        private static int $idClearFaultCallOffset = 0;
+        private static int $writeCloseCalls = 0;
+        private static ?string $failStartId = null;
+        private static ?string $lastStartedId = null;
+        private static int $startFaultAttemptOffset = 0;
+        /** @var list<array{id: string, failed: bool}> */
+        private static array $startAttempts = [];
+        /** @var list<array{id: string, failed: bool}> */
+        private static array $destroyAttempts = [];
+
+        public static function failNextAbort(): void
+        {
+            self::$abort = true;
+        }
+
+        public static function failNextAbortWithoutRelease(): void
+        {
+            self::$abortWithoutRelease = true;
+        }
+
+        public static function failNextDestroy(): void
+        {
+            self::$destroy = true;
+        }
+
+        public static function failNextStartForLastStartedId(): void
+        {
+            if (self::$lastStartedId === null) {
+                throw new \LogicException('No isolated native session identifier is available for a start fault.');
+            }
+
+            self::$failStartId = self::$lastStartedId;
+            self::$startFaultAttemptOffset = count(self::$startAttempts);
+        }
+
+        public static function failNextIdClear(): void
+        {
+            self::$idClear = true;
+            self::$idClearFaultCallOffset = self::$idClearCalls;
+        }
+
+        public static function failNextWriteCloseWithoutRelease(): void
+        {
+            self::$writeCloseWithoutRelease = true;
+        }
+
+        public static function abortResult(bool $nativeResult): bool
+        {
+            self::$abortCalls++;
+            $fail = self::$abort;
+            self::$abort = false;
+            return $fail ? false : $nativeResult;
+        }
+
+        public static function consumeAbortWithoutRelease(): bool
+        {
+            if (!self::$abortWithoutRelease) {
+                return false;
+            }
+
+            self::$abortWithoutRelease = false;
+            self::$abort = false;
+            self::$abortCalls++;
+            return true;
+        }
+
+        public static function destroyShouldFail(string $id): bool
+        {
+            self::$destroyCalls++;
+            $fail = self::$destroy;
+            self::$destroy = false;
+            self::$destroyAttempts[] = ['id' => $id, 'failed' => $fail];
+            return $fail;
+        }
+
+        public static function startShouldFail(string $id): bool
+        {
+            if (self::$failStartId !== $id) {
+                return false;
+            }
+
+            self::$failStartId = null;
+            self::$startAttempts[] = ['id' => $id, 'failed' => true];
+            return true;
+        }
+
+        public static function idClearShouldFail(): bool
+        {
+            self::$idClearCalls++;
+            $fail = self::$idClear;
+            self::$idClear = false;
+            return $fail;
+        }
+
+        public static function recordStart(string $requestedId, string $actualId, bool $nativeResult): void
+        {
+            $id = $actualId !== '' ? $actualId : $requestedId;
+            self::$startAttempts[] = ['id' => $id, 'failed' => !$nativeResult];
+
+            if ($nativeResult && $id !== '') {
+                self::$lastStartedId = $id;
+            }
+        }
+
+        public static function consumeWriteCloseWithoutRelease(): bool
+        {
+            if (!self::$writeCloseWithoutRelease) {
+                return false;
+            }
+
+            self::$writeCloseWithoutRelease = false;
+            self::$writeCloseCalls++;
+            return true;
+        }
+
+        public static function writeCloseResult(bool $nativeResult): bool
+        {
+            self::$writeCloseCalls++;
+            return $nativeResult;
+        }
+
+        public static function abortCalls(): int
+        {
+            return self::$abortCalls;
+        }
+
+        public static function destroyCalls(): int
+        {
+            return self::$destroyCalls;
+        }
+
+        /** @return list<array{id: string, failed: bool}> */
+        public static function destroyAttempts(): array
+        {
+            return self::$destroyAttempts;
+        }
+
+        /** @return list<array{id: string, failed: bool}> */
+        public static function startAttemptsSinceFault(): array
+        {
+            return array_slice(self::$startAttempts, self::$startFaultAttemptOffset);
+        }
+
+        public static function idClearCalls(): int
+        {
+            return self::$idClearCalls;
+        }
+
+        public static function idClearCallsSinceFault(): int
+        {
+            return self::$idClearCalls - self::$idClearFaultCallOffset;
+        }
+
+        public static function writeCloseCalls(): int
+        {
+            return self::$writeCloseCalls;
+        }
+    }
+
+    function session_abort(): bool
+    {
+        if (NativeSessionFaults::consumeAbortWithoutRelease()) {
+            return false;
+        }
+
+        return NativeSessionFaults::abortResult(\session_abort());
+    }
+
+    function session_destroy(): bool
+    {
+        $id = \session_id();
+
+        if (!is_string($id)) {
+            throw new \RuntimeException('Unable to inspect the isolated destroy-fault identifier.');
+        }
+
+        if (NativeSessionFaults::destroyShouldFail($id)) {
+            return false;
+        }
+
+        return \session_destroy();
+    }
+
+    function session_id(?string $id = null): string|false
+    {
+        if ($id === null) {
+            return \session_id();
+        }
+
+        if ($id === '' && NativeSessionFaults::idClearShouldFail()) {
+            return false;
+        }
+
+        return \session_id($id);
+    }
+
+    /** @param array<string, bool|string> $options */
+    function session_start(array $options = []): bool
+    {
+        $requestedId = \session_id();
+
+        if (!is_string($requestedId)) {
+            throw new \RuntimeException('Unable to inspect the isolated start-fault identifier.');
+        }
+
+        if (NativeSessionFaults::startShouldFail($requestedId)) {
+            return false;
+        }
+
+        $nativeResult = \session_start($options);
+        $actualId = \session_id();
+
+        if (!is_string($actualId)) {
+            throw new \RuntimeException('Unable to record the isolated start-fault identifier.');
+        }
+
+        NativeSessionFaults::recordStart($requestedId, $actualId, $nativeResult);
+        return $nativeResult;
+    }
+
+    function session_write_close(): bool
+    {
+        if (NativeSessionFaults::consumeWriteCloseWithoutRelease()) {
+            return false;
+        }
+
+        return NativeSessionFaults::writeCloseResult(\session_write_close());
+    }
+
+}
+
+namespace {
+    use PHPThis\Http\CookieSameSite;
+    use PHPThis\Http\ErrorResponseRegistry;
+    use PHPThis\Http\Request;
+    use PHPThis\Http\RequestBoundary;
+    use PHPThis\Http\RequestHandler;
+    use PHPThis\Http\RequestReader;
+    use PHPThis\Http\Response;
+    use PHPThis\Http\ResponseCookie;
+    use PHPThis\Http\UnknownFailureBoundary;
+    use PHPThis\Session\NativeSessionFaults;
+    use PHPThis\Session\SessionCleanupFailed;
+    use PHPThis\Session\SessionConfiguration;
+    use PHPThis\Session\SessionLifecycle;
+    use PHPThis\Session\SessionSnapshot;
+
+    require dirname(__DIR__, 2) . '/autoload.php';
+
+    $directory = dirname(__DIR__, 2) . '/tmp/session-cleanup-tests/' . bin2hex(random_bytes(12));
+
+    if (
+        !mkdir($directory, 0700, true)
+        || ini_set('session.save_path', $directory) === false
+        || ini_set('zend.exception_ignore_args', '0') === false
+    ) {
+        throw new RuntimeException('Unable to configure isolated cleanup-failure storage.');
+    }
+
+    try {
+        $configuration = new SessionConfiguration(
+            'PHPTHISSESSIONFAULTS',
+            '__Host-PHPThisSessionFaults',
+            true,
+            CookieSameSite::Strict,
+            $directory,
+        );
+        $sessions = new SessionLifecycle($configuration);
+        $emptyResponse = new Response(204, [], '');
+
+        $updateFailure = new DomainException('private-update-failure-marker');
+        $updateFailureHandler = new class ($sessions, $updateFailure) implements RequestHandler {
+            public function __construct(
+                private readonly SessionLifecycle $sessions,
+                private readonly DomainException $failure,
+            ) {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(function (SessionSnapshot $current): SessionSnapshot {
+                    throw $this->failure;
+                });
+                throw new RuntimeException('Update fault unexpectedly returned.');
+            }
+        };
+        $updateFailureBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $updateFailureHandler,
+            new ErrorResponseRegistry([
+                SessionCleanupFailed::class => new Response(409, [], 'must-not-map-cleanup-failure'),
+            ]),
+            $sessions,
+        );
+        $updateAbortCalls = NativeSessionFaults::abortCalls();
+        NativeSessionFaults::failNextAbort();
+
+        try {
+            $updateFailureBoundary->handle(['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/update-failure'], []);
+            throw new RuntimeException('Update cleanup fault unexpectedly returned a mapped response.');
+        } catch (SessionCleanupFailed $failure) {
+            requireCleanupAggregate($failure, $updateFailure, 'Unable to abort native session state.', [
+                'private-update-failure-marker',
+                'must-not-map-cleanup-failure',
+                $directory,
+            ]);
+        }
+
+        requireFaultTest(
+            NativeSessionFaults::abortCalls() === $updateAbortCalls + 1,
+            'Request abort must reset an operation cleanup failure without retrying native abort.',
+        );
+        proveLifecycleReset($sessions, $emptyResponse, '/after-update-failure');
+
+        $staleFailureHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot(['cart_id' => 'stale']),
+                );
+                throw new RuntimeException('Stale session cleanup fault unexpectedly returned.');
+            }
+        };
+        $staleFailureBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $staleFailureHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        NativeSessionFaults::failNextAbort();
+
+        try {
+            $staleFailureBoundary->handle([
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/stale-update',
+                'HTTP_COOKIE' => $configuration->cookieName . '=' . str_repeat('a', 32),
+            ], []);
+            throw new RuntimeException('Stale session cleanup fault unexpectedly succeeded.');
+        } catch (SessionCleanupFailed $failure) {
+            requireFaultTest(
+                $failure->primaryFailure instanceof \PHPThis\Session\SessionUnavailable
+                && $failure->cleanupFailure instanceof RuntimeException,
+                'A stale update must remain primary when rejecting its native state also fails.',
+            );
+            requireRedactedAggregate($failure, [str_repeat('a', 32), $directory]);
+        }
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-stale-update-failure');
+
+        $updateClearHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(static function (SessionSnapshot $current): SessionSnapshot {
+                    NativeSessionFaults::failNextIdClear();
+                    return new SessionSnapshot(['cart_id' => 'update-clear-private-marker']);
+                });
+                throw new Error('Update identifier-clear fault unexpectedly returned.');
+            }
+        };
+        $updateClearBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $updateClearHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        $updateClearAbortCalls = NativeSessionFaults::abortCalls();
+        $updateClearDestroyCalls = NativeSessionFaults::destroyCalls();
+
+        try {
+            $updateClearBoundary->handle([
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/update-clear-failure',
+            ], []);
+            throw new Error('Update identifier-clear fault unexpectedly produced a response.');
+        } catch (RuntimeException $failure) {
+            requireFaultTest(
+                !$failure instanceof SessionCleanupFailed
+                && $failure->getMessage() === 'Unable to clear native session request state.'
+                && NativeSessionFaults::idClearCallsSinceFault() === 1
+                && NativeSessionFaults::abortCalls() === $updateClearAbortCalls
+                && NativeSessionFaults::destroyCalls() === $updateClearDestroyCalls,
+                'A latched update clear failure must escape once without RequestBoundary cleanup retry.',
+            );
+        }
+
+        $_SESSION = [];
+        clearGlobalFaultIdentifier();
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-update-clear-failure');
+
+        $regenerationFailure = new DomainException('private-regeneration-failure-marker');
+        $sessions->begin(new Request('POST', '/regeneration-failure'));
+        $regenerationAbortCalls = NativeSessionFaults::abortCalls();
+        NativeSessionFaults::failNextAbort();
+
+        try {
+            $sessions->regenerateAndUpdate(
+                static function (SessionSnapshot $current) use ($regenerationFailure): SessionSnapshot {
+                    throw $regenerationFailure;
+                },
+            );
+            throw new RuntimeException('Regeneration fault unexpectedly succeeded.');
+        } catch (SessionCleanupFailed $failure) {
+            requireCleanupAggregate($failure, $regenerationFailure, 'Unable to abort native session state.', [
+                'private-regeneration-failure-marker',
+                $directory,
+            ]);
+        }
+
+        $sessions->abort();
+        requireFaultTest(
+            NativeSessionFaults::abortCalls() === $regenerationAbortCalls + 1,
+            'Terminal abort must not retry failed regeneration cleanup.',
+        );
+        proveLifecycleReset($sessions, $emptyResponse, '/after-regeneration-failure');
+
+        $sessions->begin(new Request('POST', '/direct-abort-failure'));
+        startNativeFaultSession($configuration);
+        $directAbortCalls = NativeSessionFaults::abortCalls();
+        NativeSessionFaults::failNextAbort();
+
+        try {
+            $sessions->abort();
+            throw new RuntimeException('Direct abort fault unexpectedly succeeded.');
+        } catch (RuntimeException $failure) {
+            requireFaultTest(
+                !$failure instanceof SessionCleanupFailed
+                && $failure->getMessage() === 'Unable to abort native session state.'
+                && NativeSessionFaults::abortCalls() === $directAbortCalls + 1
+                && !str_contains((string) $failure, $directory),
+                'A lone explicit-abort cleanup failure must escape directly once and reset.',
+            );
+        }
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-direct-abort-failure');
+
+        $knownOperationFailure = new DomainException('private-known-operation-marker');
+        $knownOperationHandler = new class ($sessions, $knownOperationFailure) implements RequestHandler {
+            public function __construct(
+                private readonly SessionLifecycle $sessions,
+                private readonly DomainException $failure,
+            ) {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'preserved-before-known-failure',
+                    ]),
+                );
+                $this->sessions->update(function (SessionSnapshot $current): SessionSnapshot {
+                    throw $this->failure;
+                });
+                throw new RuntimeException('Known operation failure unexpectedly returned.');
+            }
+        };
+        $knownOperationResponse = new Response(422, [], 'known-operation-response');
+        $knownOperationBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $knownOperationHandler,
+            new ErrorResponseRegistry([DomainException::class => $knownOperationResponse]),
+            $sessions,
+        );
+        $mappedOperationResponse = $knownOperationBoundary->handle([
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/known-operation-failure',
+        ], []);
+        $mappedOperationCookie = requireFaultTestCookie($mappedOperationResponse);
+        requireFaultTest(
+            $mappedOperationResponse->status === 422
+            && $mappedOperationResponse->body === 'known-operation-response',
+            'A registered original operation failure must finalize its exact known response.',
+        );
+
+        $sessions->begin(requestWithFaultCookie(
+            $configuration,
+            $mappedOperationCookie->value,
+            '/after-known-operation-failure',
+        ));
+        $preservedState = $sessions->read();
+        $sessions->finish($emptyResponse);
+        requireFaultTest(
+            $preservedState->values === ['cart_id' => 'preserved-before-known-failure'],
+            'Operation cleanup must preserve prior same-request state selected for known-response finalization.',
+        );
+
+        $knownRegenerationFailure = new DomainException('private-known-regeneration-marker');
+        $knownRegenerationHandler = new class ($sessions, $knownRegenerationFailure) implements RequestHandler {
+            public function __construct(
+                private readonly SessionLifecycle $sessions,
+                private readonly DomainException $failure,
+            ) {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'preserved-before-known-regeneration-failure',
+                    ]),
+                );
+                $this->sessions->regenerateAndUpdate(function (SessionSnapshot $current): SessionSnapshot {
+                    throw $this->failure;
+                });
+                throw new RuntimeException('Known regeneration failure unexpectedly returned.');
+            }
+        };
+        $knownRegenerationBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $knownRegenerationHandler,
+            new ErrorResponseRegistry([DomainException::class => $knownOperationResponse]),
+            $sessions,
+        );
+        $mappedRegenerationFailureResponse = $knownRegenerationBoundary->handle([
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/known-regeneration-failure',
+        ], []);
+        $mappedRegenerationFailureCookie = requireFaultTestCookie($mappedRegenerationFailureResponse);
+        requireFaultTest(
+            $mappedRegenerationFailureResponse->status === 422
+            && $mappedRegenerationFailureResponse->body === 'known-operation-response',
+            'A registered pre-regeneration failure must finalize its exact known response.',
+        );
+
+        $sessions->begin(requestWithFaultCookie(
+            $configuration,
+            $mappedRegenerationFailureCookie->value,
+            '/after-known-regeneration-failure',
+        ));
+        $preservedRegenerationState = $sessions->read();
+        $sessions->finish($emptyResponse);
+        requireFaultTest(
+            $preservedRegenerationState->values === [
+                'cart_id' => 'preserved-before-known-regeneration-failure',
+            ],
+            'Pre-regeneration cleanup must preserve prior pending state for known-response finalization.',
+        );
+
+        $postRegenerationAttemptOffset = count(NativeSessionFaults::destroyAttempts());
+        $postRegenerationHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'must-not-survive-regeneration-failure',
+                    ]),
+                );
+                NativeSessionFaults::failNextDestroy();
+                $this->sessions->regenerateAndUpdate(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        ...$current->values,
+                        'user_id' => 73,
+                    ]),
+                );
+                throw new RuntimeException('Post-regeneration failure unexpectedly returned.');
+            }
+        };
+        $postRegenerationResponse = new Response(503, [], 'mapped-post-regeneration-failure');
+        $postRegenerationBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $postRegenerationHandler,
+            new ErrorResponseRegistry([RuntimeException::class => $postRegenerationResponse]),
+            $sessions,
+        );
+        $postRegenerationDestroyCalls = NativeSessionFaults::destroyCalls();
+        $mappedRegenerationResponse = $postRegenerationBoundary->handle([
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/post-regeneration-failure',
+        ], []);
+        requireFaultTest(
+            $mappedRegenerationResponse === $postRegenerationResponse
+            && $mappedRegenerationResponse->cookies === [],
+            'A mapped superseded-ID cleanup failure must not emit a stale pending cookie.',
+        );
+        requireFaultTest(
+            NativeSessionFaults::destroyCalls() === $postRegenerationDestroyCalls + 2,
+            'A failed superseded-ID destroy must be followed only by destruction of the new identifier.',
+        );
+        $postRegenerationAttempts = array_slice(
+            NativeSessionFaults::destroyAttempts(),
+            $postRegenerationAttemptOffset,
+        );
+        requireFaultTest(
+            count($postRegenerationAttempts) === 2
+            && $postRegenerationAttempts[0]['failed']
+            && !$postRegenerationAttempts[1]['failed']
+            && $postRegenerationAttempts[0]['id'] !== $postRegenerationAttempts[1]['id']
+            && !in_array('sess_' . $postRegenerationAttempts[1]['id'], sessionFaultFiles($directory), true),
+            'A failed superseded-ID destroy must not leak the new pending identifier.',
+        );
+        proveLifecycleReset($sessions, $emptyResponse, '/after-post-regeneration-failure');
+
+        $startFailureHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'superseded-start-once',
+                    ]),
+                );
+                $this->sessions->regenerateAndUpdate(
+                    static function (SessionSnapshot $current): SessionSnapshot {
+                        NativeSessionFaults::failNextStartForLastStartedId();
+                        return new SessionSnapshot([...$current->values, 'user_id' => 84]);
+                    },
+                );
+                throw new RuntimeException('Superseded start fault unexpectedly returned.');
+            }
+        };
+        $startFailureResponse = new Response(503, [], 'mapped-superseded-start-failure');
+        $startFailureBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $startFailureHandler,
+            new ErrorResponseRegistry([RuntimeException::class => $startFailureResponse]),
+            $sessions,
+        );
+        $startFailureDestroyCalls = NativeSessionFaults::destroyCalls();
+        $startFailureDestroyOffset = count(NativeSessionFaults::destroyAttempts());
+        $mappedStartFailureResponse = $startFailureBoundary->handle([
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/superseded-start-once',
+        ], []);
+        $startFaultAttempts = NativeSessionFaults::startAttemptsSinceFault();
+        $startFaultDestroyAttempts = array_slice(
+            NativeSessionFaults::destroyAttempts(),
+            $startFailureDestroyOffset,
+        );
+        requireFaultTest(
+            $mappedStartFailureResponse === $startFailureResponse
+            && $mappedStartFailureResponse->cookies === []
+            && count($startFaultAttempts) === 2
+            && $startFaultAttempts[0]['failed']
+            && !$startFaultAttempts[1]['failed']
+            && $startFaultAttempts[0]['id'] !== $startFaultAttempts[1]['id']
+            && count($startFaultDestroyAttempts) === 1
+            && $startFaultDestroyAttempts[0]['id'] === $startFaultAttempts[1]['id']
+            && !$startFaultDestroyAttempts[0]['failed']
+            && NativeSessionFaults::destroyCalls() === $startFailureDestroyCalls + 1,
+            'A superseded-ID start failure must be attempted once before only the distinct new ID is destroyed.',
+        );
+        proveLifecycleReset($sessions, $emptyResponse, '/after-superseded-start-failure');
+
+        $activeAbortHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'active-abort-no-retry',
+                    ]),
+                );
+                NativeSessionFaults::failNextDestroy();
+                NativeSessionFaults::failNextAbortWithoutRelease();
+                $this->sessions->regenerateAndUpdate(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        ...$current->values,
+                        'user_id' => 91,
+                    ]),
+                );
+                throw new RuntimeException('Active-abort regeneration fault unexpectedly returned.');
+            }
+        };
+        $activeAbortBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $activeAbortHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        $activeAbortCalls = NativeSessionFaults::abortCalls();
+        $activeAbortDestroyCalls = NativeSessionFaults::destroyCalls();
+
+        try {
+            $activeAbortBoundary->handle([
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/active-abort-no-retry',
+            ], []);
+            throw new RuntimeException('Active-abort no-retry fault unexpectedly succeeded.');
+        } catch (SessionCleanupFailed $failure) {
+            requireFaultTest(
+                $failure->primaryFailure instanceof RuntimeException
+                && $failure->primaryFailure->getMessage() === 'Unable to discard an unissued native session.'
+                && $failure->cleanupFailure instanceof RuntimeException
+                && $failure->cleanupFailure->getMessage() === 'Unable to abort native session state.'
+                && NativeSessionFaults::destroyCalls() === $activeAbortDestroyCalls + 1
+                && NativeSessionFaults::abortCalls() === $activeAbortCalls + 1
+                && \session_status() === PHP_SESSION_ACTIVE,
+                'A failed abort must not be retried or followed by dependent identifier destruction.',
+            );
+            requireRedactedAggregate($failure, ['active-abort-no-retry', $directory]);
+        }
+
+        if (!\session_abort()) {
+            throw new RuntimeException('Unable to release the isolated active-abort fault control.');
+        }
+
+        $_SESSION = [];
+        clearGlobalFaultIdentifier();
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-active-abort-no-retry');
+
+        $sessions->begin(new Request('POST', '/finish-failure'));
+        $sessions->update(
+            static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                'cart_id' => 'private-finish-state-marker',
+            ]),
+        );
+        $conflictingResponse = new Response(422, [], '', [manualSessionCookie($configuration)]);
+        NativeSessionFaults::failNextDestroy();
+
+        try {
+            $sessions->finish($conflictingResponse);
+            throw new RuntimeException('Finalization cleanup fault unexpectedly succeeded.');
+        } catch (SessionCleanupFailed $failure) {
+            requireFaultTest(
+                $failure->primaryFailure instanceof InvalidArgumentException
+                && $failure->cleanupFailure instanceof RuntimeException
+                && $failure->cleanupFailure->getMessage() === 'Unable to discard an unissued native session.',
+                'Finalization must retain its response-copy failure before cleanup failure.',
+            );
+            requireRedactedAggregate($failure, ['private-finish-state-marker', $directory]);
+        }
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-finish-failure');
+
+        $requestFailure = new DomainException('private-request-failure-marker');
+        $requestFailureHandler = new class ($sessions, $requestFailure) implements RequestHandler {
+            public function __construct(
+                private readonly SessionLifecycle $sessions,
+                private readonly DomainException $failure,
+            ) {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot(['cart_id' => 'abort']),
+                );
+                throw $this->failure;
+            }
+        };
+        $requestFailureBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $requestFailureHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        NativeSessionFaults::failNextDestroy();
+
+        try {
+            $requestFailureBoundary->handle(['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/abort-failure'], []);
+            throw new RuntimeException('Request abort cleanup fault unexpectedly succeeded.');
+        } catch (SessionCleanupFailed $failure) {
+            requireCleanupAggregate(
+                $failure,
+                $requestFailure,
+                'Unable to discard an unissued native session.',
+                ['private-request-failure-marker', $directory],
+            );
+            $unknown = (new UnknownFailureBoundary())->respond();
+            requireFaultTest(
+                $unknown->status === 500
+                && !str_contains($unknown->body, 'private-request-failure-marker')
+                && (new ErrorResponseRegistry([]))->responseFor($failure) === null,
+                'A cleanup aggregate must retain the generic redacted unknown-failure path.',
+            );
+        }
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-request-abort-failure');
+
+        $invalidationWriteHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'invalidate-write-close-private-marker',
+                    ]),
+                );
+                NativeSessionFaults::failNextWriteCloseWithoutRelease();
+                NativeSessionFaults::failNextAbort();
+                $this->sessions->invalidate();
+                throw new RuntimeException('Invalidation write-close fault unexpectedly returned.');
+            }
+        };
+        $invalidationWriteBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $invalidationWriteHandler,
+            new ErrorResponseRegistry([
+                RuntimeException::class => new Response(409, [], 'must-not-map-invalidation-cleanup'),
+                SessionCleanupFailed::class => new Response(410, [], 'must-not-map-invalidation-aggregate'),
+            ]),
+            $sessions,
+        );
+        $invalidationAbortCalls = NativeSessionFaults::abortCalls();
+        $invalidationDestroyCalls = NativeSessionFaults::destroyCalls();
+        $invalidationWriteCloseCalls = NativeSessionFaults::writeCloseCalls();
+
+        try {
+            $invalidationWriteBoundary->handle([
+                'REQUEST_METHOD' => 'DELETE',
+                'REQUEST_URI' => '/invalidate-write-close-failure',
+            ], []);
+            throw new RuntimeException('Invalidation cleanup aggregate unexpectedly returned a response.');
+        } catch (SessionCleanupFailed $failure) {
+            requireFaultTest(
+                $failure->primaryFailure instanceof RuntimeException
+                && $failure->primaryFailure->getMessage() === 'Unable to invalidate native session state.'
+                && $failure->cleanupFailure instanceof RuntimeException
+                && $failure->cleanupFailure->getMessage() === 'Unable to abort native session state.'
+                && NativeSessionFaults::writeCloseCalls() === $invalidationWriteCloseCalls + 2
+                && NativeSessionFaults::abortCalls() === $invalidationAbortCalls + 1
+                && NativeSessionFaults::destroyCalls() === $invalidationDestroyCalls,
+                'Invalidation must retain its write-close failure before one abort failure without dependent cleanup.',
+            );
+            requireRedactedAggregate($failure, [
+                'invalidate-write-close-private-marker',
+                'must-not-map-invalidation-cleanup',
+                'must-not-map-invalidation-aggregate',
+                $directory,
+            ]);
+        }
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-invalidation-write-close-failure');
+
+        $mismatchedInvalidationHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->invalidate();
+                throw new Error('Mismatched invalidation abort fault unexpectedly returned.');
+            }
+        };
+        $mismatchedInvalidationBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $mismatchedInvalidationHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        $mismatchedInvalidationAbortCalls = NativeSessionFaults::abortCalls();
+        $mismatchedInvalidationDestroyCalls = NativeSessionFaults::destroyCalls();
+        NativeSessionFaults::failNextAbortWithoutRelease();
+
+        try {
+            $mismatchedInvalidationBoundary->handle([
+                'REQUEST_METHOD' => 'DELETE',
+                'REQUEST_URI' => '/mismatched-invalidation-abort',
+                'HTTP_COOKIE' => $configuration->cookieName . '=' . bin2hex(random_bytes(16)),
+            ], []);
+            throw new Error('Mismatched invalidation abort fault unexpectedly produced a response.');
+        } catch (RuntimeException $failure) {
+            requireFaultTest(
+                !$failure instanceof SessionCleanupFailed
+                && $failure->getMessage() === 'Unable to abort native session state.'
+                && NativeSessionFaults::abortCalls() === $mismatchedInvalidationAbortCalls + 1
+                && NativeSessionFaults::destroyCalls() === $mismatchedInvalidationDestroyCalls
+                && \session_status() === PHP_SESSION_ACTIVE,
+                'Mismatched invalidation must attempt a no-release abort once without RequestBoundary retry.',
+            );
+        }
+
+        releaseActiveFaultSession();
+        proveLifecycleReset($sessions, $emptyResponse, '/after-mismatched-invalidation-abort');
+
+        $obsoleteRegenerationId = createObsoleteFaultSession($configuration);
+        $rejectedRegenerationHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->regenerateAndUpdate(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot(['user_id' => 109]),
+                );
+                throw new Error('Rejected regeneration abort fault unexpectedly returned.');
+            }
+        };
+        $rejectedRegenerationBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $rejectedRegenerationHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        $rejectedRegenerationAbortCalls = NativeSessionFaults::abortCalls();
+        $rejectedRegenerationDestroyCalls = NativeSessionFaults::destroyCalls();
+        NativeSessionFaults::failNextAbortWithoutRelease();
+
+        try {
+            $rejectedRegenerationBoundary->handle([
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/rejected-regeneration-abort',
+                'HTTP_COOKIE' => $configuration->cookieName . '=' . $obsoleteRegenerationId,
+            ], []);
+            throw new Error('Rejected regeneration abort fault unexpectedly produced a response.');
+        } catch (RuntimeException $failure) {
+            requireFaultTest(
+                !$failure instanceof SessionCleanupFailed
+                && $failure->getMessage() === 'Unable to abort native session state.'
+                && NativeSessionFaults::abortCalls() === $rejectedRegenerationAbortCalls + 1
+                && NativeSessionFaults::destroyCalls() === $rejectedRegenerationDestroyCalls
+                && \session_status() === PHP_SESSION_ACTIVE,
+                'Rejected regeneration must attempt a no-release abort once without RequestBoundary retry.',
+            );
+        }
+
+        releaseActiveFaultSession();
+        proveLifecycleReset($sessions, $emptyResponse, '/after-rejected-regeneration-abort');
+
+        $invalidationStartHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'invalidate-start-private-marker',
+                    ]),
+                );
+                NativeSessionFaults::failNextStartForLastStartedId();
+                $this->sessions->invalidate();
+                throw new Error('Invalidation start fault unexpectedly returned.');
+            }
+        };
+        $invalidationStartResponse = new Response(503, [], 'mapped-invalidation-start-failure');
+        $invalidationStartBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $invalidationStartHandler,
+            new ErrorResponseRegistry([RuntimeException::class => $invalidationStartResponse]),
+            $sessions,
+        );
+        $invalidationStartAbortCalls = NativeSessionFaults::abortCalls();
+        $invalidationStartDestroyCalls = NativeSessionFaults::destroyCalls();
+        $mappedInvalidationStartResponse = $invalidationStartBoundary->handle([
+            'REQUEST_METHOD' => 'DELETE',
+            'REQUEST_URI' => '/invalidate-start-failure',
+        ], []);
+        $invalidationStartAttempts = NativeSessionFaults::startAttemptsSinceFault();
+        requireFaultTest(
+            $mappedInvalidationStartResponse === $invalidationStartResponse
+            && $mappedInvalidationStartResponse->cookies === []
+            && count($invalidationStartAttempts) === 1
+            && $invalidationStartAttempts[0]['id'] !== ''
+            && $invalidationStartAttempts[0]['failed']
+            && NativeSessionFaults::abortCalls() === $invalidationStartAbortCalls
+            && NativeSessionFaults::destroyCalls() === $invalidationStartDestroyCalls,
+            'An early mapped invalidation start failure must relinquish the live cookie without cleanup retry.',
+        );
+        proveLifecycleReset($sessions, $emptyResponse, '/after-invalidation-start-failure');
+
+        $combinedStartClearHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'combined-start-clear-private-marker',
+                    ]),
+                );
+                NativeSessionFaults::failNextStartForLastStartedId();
+                NativeSessionFaults::failNextIdClear();
+                $this->sessions->invalidate();
+                throw new Error('Combined start-clear fault unexpectedly returned.');
+            }
+        };
+        $combinedStartClearBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $combinedStartClearHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        $combinedStartClearAbortCalls = NativeSessionFaults::abortCalls();
+        $combinedStartClearDestroyCalls = NativeSessionFaults::destroyCalls();
+
+        try {
+            $combinedStartClearBoundary->handle([
+                'REQUEST_METHOD' => 'DELETE',
+                'REQUEST_URI' => '/combined-start-clear-failure',
+            ], []);
+            throw new Error('Combined start-clear fault unexpectedly produced a response.');
+        } catch (SessionCleanupFailed $failure) {
+            requireFaultTest(
+                $failure->primaryFailure instanceof RuntimeException
+                && $failure->primaryFailure->getMessage() === 'Unable to start native session storage.'
+                && $failure->cleanupFailure instanceof RuntimeException
+                && $failure->cleanupFailure->getMessage() === 'Unable to clear native session request state.'
+                && count(NativeSessionFaults::startAttemptsSinceFault()) === 1
+                && NativeSessionFaults::idClearCallsSinceFault() === 1
+                && NativeSessionFaults::abortCalls() === $combinedStartClearAbortCalls
+                && NativeSessionFaults::destroyCalls() === $combinedStartClearDestroyCalls,
+                'A failed start must remain primary when its single identifier-clear cleanup also fails.',
+            );
+            requireRedactedAggregate($failure, ['combined-start-clear-private-marker', $directory]);
+        }
+
+        $_SESSION = [];
+        clearGlobalFaultIdentifier();
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-combined-start-clear-failure');
+
+        $invalidationClearHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'invalidate-clear-private-marker',
+                    ]),
+                );
+                NativeSessionFaults::failNextIdClear();
+                $this->sessions->invalidate();
+                throw new Error('Invalidation identifier-clear fault unexpectedly returned.');
+            }
+        };
+        $invalidationClearResponse = new Response(503, [], 'mapped-invalidation-clear-failure');
+        $invalidationClearBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $invalidationClearHandler,
+            new ErrorResponseRegistry([RuntimeException::class => $invalidationClearResponse]),
+            $sessions,
+        );
+        $invalidationClearAbortCalls = NativeSessionFaults::abortCalls();
+        $invalidationClearDestroyCalls = NativeSessionFaults::destroyCalls();
+        $mappedInvalidationClearResponse = $invalidationClearBoundary->handle([
+            'REQUEST_METHOD' => 'DELETE',
+            'REQUEST_URI' => '/invalidate-clear-failure',
+        ], []);
+        requireFaultTest(
+            $mappedInvalidationClearResponse === $invalidationClearResponse
+            && $mappedInvalidationClearResponse->cookies === []
+            && NativeSessionFaults::idClearCallsSinceFault() === 1
+            && NativeSessionFaults::abortCalls() === $invalidationClearAbortCalls
+            && NativeSessionFaults::destroyCalls() === $invalidationClearDestroyCalls,
+            'A mapped invalidation identifier-clear failure must emit no stale cookie or cleanup retry.',
+        );
+        proveLifecycleReset($sessions, $emptyResponse, '/after-invalidation-clear-failure');
+
+        $unmappedInvalidationClearBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $invalidationClearHandler,
+            new ErrorResponseRegistry([]),
+            $sessions,
+        );
+        $unmappedInvalidationClearAbortCalls = NativeSessionFaults::abortCalls();
+        $unmappedInvalidationClearDestroyCalls = NativeSessionFaults::destroyCalls();
+
+        try {
+            $unmappedInvalidationClearBoundary->handle([
+                'REQUEST_METHOD' => 'DELETE',
+                'REQUEST_URI' => '/unmapped-invalidation-clear-failure',
+            ], []);
+            throw new Error('Unmapped invalidation identifier-clear fault unexpectedly produced a response.');
+        } catch (RuntimeException $failure) {
+            requireFaultTest(
+                !$failure instanceof SessionCleanupFailed
+                && $failure->getMessage() === 'Unable to clear native session request state.'
+                && NativeSessionFaults::idClearCallsSinceFault() === 1
+                && NativeSessionFaults::abortCalls() === $unmappedInvalidationClearAbortCalls
+                && NativeSessionFaults::destroyCalls() === $unmappedInvalidationClearDestroyCalls,
+                'An unmapped invalidation clear failure must escape once without RequestBoundary cleanup retry.',
+            );
+        }
+
+        $_SESSION = [];
+        clearGlobalFaultIdentifier();
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-unmapped-invalidation-clear-failure');
+
+        $destroyOnlyHandler = new class ($sessions) implements RequestHandler {
+            public function __construct(private readonly SessionLifecycle $sessions)
+            {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                        'cart_id' => 'single-destroy-attempt',
+                    ]),
+                );
+                NativeSessionFaults::failNextDestroy();
+                $this->sessions->invalidate();
+                throw new RuntimeException('Destroy-only cleanup fault unexpectedly returned.');
+            }
+        };
+        $destroyOnlyBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $destroyOnlyHandler,
+            new ErrorResponseRegistry([
+                RuntimeException::class => new Response(503, [], 'mapped-destroy-only-invalidation'),
+            ]),
+            $sessions,
+        );
+        $destroyCalls = NativeSessionFaults::destroyCalls();
+        $mappedDestroyOnlyResponse = $destroyOnlyBoundary->handle([
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/destroy-once',
+        ], []);
+        requireFaultTest(
+            $mappedDestroyOnlyResponse->status === 503
+            && $mappedDestroyOnlyResponse->body === 'mapped-destroy-only-invalidation'
+            && $mappedDestroyOnlyResponse->cookies === []
+            && NativeSessionFaults::destroyCalls() === $destroyCalls + 1,
+            'A lone mapped destruction failure must emit no stale cookie or second destroy attempt.',
+        );
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-destroy-once');
+
+        $sessions->begin(new Request('POST', '/destroy-failure'));
+        $sessions->update(
+            static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot([
+                'cart_id' => 'private-destroy-state-marker',
+            ]),
+        );
+        NativeSessionFaults::failNextDestroy();
+        NativeSessionFaults::failNextAbort();
+
+        try {
+            $sessions->abort();
+            throw new RuntimeException('Unissued destruction cleanup fault unexpectedly succeeded.');
+        } catch (SessionCleanupFailed $failure) {
+            requireFaultTest(
+                $failure->primaryFailure instanceof RuntimeException
+                && $failure->primaryFailure->getMessage() === 'Unable to discard an unissued native session.'
+                && $failure->cleanupFailure instanceof RuntimeException
+                && $failure->cleanupFailure->getMessage() === 'Unable to abort native session state.',
+                'Unissued destruction must retain its destroy failure before abort cleanup failure.',
+            );
+            requireRedactedAggregate($failure, ['private-destroy-state-marker', $directory]);
+        }
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-destruction-failure');
+
+        $knownFailure = new DomainException('private-known-handler-marker');
+        $knownFailureHandler = new class ($sessions, $knownFailure) implements RequestHandler {
+            public function __construct(
+                private readonly SessionLifecycle $sessions,
+                private readonly DomainException $failure,
+            ) {
+            }
+
+            public function handle(Request $request): Response
+            {
+                $this->sessions->update(
+                    static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot(['cart_id' => 'known']),
+                );
+                throw $this->failure;
+            }
+        };
+        $knownResponse = new Response(422, [], '', [manualSessionCookie($configuration)]);
+        $knownBoundary = new RequestBoundary(
+            new RequestReader(1, 'php://memory'),
+            $knownFailureHandler,
+            new ErrorResponseRegistry([
+                DomainException::class => $knownResponse,
+                RuntimeException::class => new Response(409, [], 'must-not-be-selected'),
+            ]),
+            $sessions,
+        );
+        NativeSessionFaults::failNextDestroy();
+
+        try {
+            $knownBoundary->handle(['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/known-failure'], []);
+            throw new RuntimeException('Known-response finalization cleanup fault unexpectedly returned a response.');
+        } catch (SessionCleanupFailed $failure) {
+            requireFaultTest(
+                $failure->primaryFailure instanceof InvalidArgumentException
+                && $failure->cleanupFailure instanceof RuntimeException,
+                'A mapped handler failure must select its known response before finalization becomes primary.',
+            );
+            requireRedactedAggregate($failure, [
+                'private-known-handler-marker',
+                'must-not-be-selected',
+                $directory,
+            ]);
+        }
+
+        proveLifecycleReset($sessions, $emptyResponse, '/after-known-finalization-failure');
+        fwrite(STDOUT, "PASS isolated session cleanup failure precedence\n");
+    } finally {
+        cleanupFaultDirectory($directory);
+    }
+
+    /** @param list<string> $privateMarkers */
+    function requireCleanupAggregate(
+        SessionCleanupFailed $failure,
+        Throwable $primaryFailure,
+        string $cleanupMessage,
+        array $privateMarkers,
+    ): void {
+        requireFaultTest(
+            $failure->primaryFailure === $primaryFailure
+            && $failure->cleanupFailure instanceof RuntimeException
+            && $failure->cleanupFailure->getMessage() === $cleanupMessage,
+            'Cleanup aggregation must preserve the exact primary failure and one cleanup failure.',
+        );
+        requireRedactedAggregate($failure, $privateMarkers);
+    }
+
+    /** @param list<string> $privateMarkers */
+    function requireRedactedAggregate(SessionCleanupFailed $failure, array $privateMarkers): void
+    {
+        requireFaultTest(
+            $failure->getMessage() === 'Session cleanup failed after a primary failure.'
+            && $failure->getPrevious() === null,
+            'The cleanup aggregate must expose only its fixed message and typed failure properties.',
+        );
+
+        foreach ($privateMarkers as $marker) {
+            requireFaultTest(
+                !str_contains($failure->getMessage(), $marker) && !str_contains((string) $failure, $marker),
+                'The cleanup aggregate text must not expose either retained failure or session storage details.',
+            );
+        }
+    }
+
+    function proveLifecycleReset(SessionLifecycle $sessions, Response $response, string $path): void
+    {
+        $sessions->begin(new Request('GET', $path));
+        $snapshot = $sessions->read();
+        $finished = $sessions->finish($response);
+        requireFaultTest(
+            $snapshot->values === [] && $finished === $response,
+            'Every cleanup path must reset local lifecycle state for the next request.',
+        );
+    }
+
+    function requireFaultTestCookie(Response $response): ResponseCookie
+    {
+        $cookie = $response->cookies[0] ?? null;
+
+        if (!$cookie instanceof ResponseCookie || $cookie->value === '') {
+            throw new RuntimeException('Expected one live session cookie after known-response finalization.');
+        }
+
+        return $cookie;
+    }
+
+    function requestWithFaultCookie(
+        SessionConfiguration $configuration,
+        string $id,
+        string $path,
+    ): Request {
+        return new Request('GET', $path, headers: [
+            'cookie' => $configuration->cookieName . '=' . $id,
+        ]);
+    }
+
+    function startNativeFaultSession(SessionConfiguration $configuration): void
+    {
+        $configured = \session_name($configuration->internalName) !== false
+            && \session_cache_limiter('') !== false;
+        clearGlobalFaultIdentifier();
+        $started = $configured && \session_start([
+            'cache_limiter' => '',
+            'use_cookies' => false,
+            'use_strict_mode' => true,
+        ]);
+
+        if (!$started) {
+            throw new RuntimeException('Unable to start the isolated native abort-fault control.');
+        }
+    }
+
+    function createObsoleteFaultSession(SessionConfiguration $configuration): string
+    {
+        $id = bin2hex(random_bytes(16));
+        $configured = \session_name($configuration->internalName) !== false
+            && \session_cache_limiter('') !== false;
+        \session_id($id);
+        $started = $configured && \session_start([
+            'cache_limiter' => '',
+            'use_cookies' => false,
+            'use_strict_mode' => false,
+        ]);
+
+        if (!$started) {
+            throw new RuntimeException('Unable to start the isolated rejected-regeneration control.');
+        }
+
+        $_SESSION = ['__phpthis_obsolete_at' => time()];
+
+        if (!\session_write_close()) {
+            throw new RuntimeException('Unable to commit the isolated rejected-regeneration control.');
+        }
+
+        clearGlobalFaultIdentifier();
+        return $id;
+    }
+
+    function releaseActiveFaultSession(): void
+    {
+        if (\session_status() !== PHP_SESSION_ACTIVE || !\session_abort()) {
+            throw new RuntimeException('Unable to release an isolated no-retry native session.');
+        }
+
+        $_SESSION = [];
+        clearGlobalFaultIdentifier();
+    }
+
+    function clearGlobalFaultIdentifier(): void
+    {
+        \session_id('');
+    }
+
+    function manualSessionCookie(SessionConfiguration $configuration): ResponseCookie
+    {
+        return new ResponseCookie(
+            $configuration->cookieName,
+            'manual',
+            '/',
+            true,
+            true,
+            CookieSameSite::Strict,
+        );
+    }
+
+    function requireFaultTest(bool $condition, string $message): void
+    {
+        if (!$condition) {
+            throw new RuntimeException($message);
+        }
+    }
+
+    function cleanupFaultDirectory(string $directory): void
+    {
+        $entries = scandir($directory);
+
+        if (is_array($entries)) {
+            foreach ($entries as $entry) {
+                $path = $directory . '/' . $entry;
+
+                if ($entry !== '.' && $entry !== '..' && is_file($path)) {
+                    unlink($path);
+                }
+            }
+        }
+
+        if (is_dir($directory)) {
+            rmdir($directory);
+        }
+    }
+
+    /** @return list<string> */
+    function sessionFaultFiles(string $directory): array
+    {
+        $entries = scandir($directory);
+
+        if (!is_array($entries)) {
+            throw new RuntimeException('Unable to inspect isolated cleanup-failure storage.');
+        }
+
+        return array_values(array_filter(
+            $entries,
+            static fn(string $entry): bool => str_starts_with($entry, 'sess_'),
+        ));
+    }
+}

@@ -28,6 +28,7 @@ AI-oriented explicitness does not replace security review.
 - Keep local-file download authorization and storage resolution application-owned. Use exact full-response framing, `nosniff`, an explicit cache policy, a code-owned download name, and `Accept-Ranges: none` while ranges remain deferred.
 - Query traces contain only SHA-256 SQL fingerprints and aggregate metrics; never add SQL, parameters, credentials, exception messages, or driver details.
 - Keep application code out of `$_SESSION` and native `session_*` calls. Access optional session state through narrowly named typed services with non-overlapping key ownership over one `SessionLifecycle`.
+- Keep native session cleanup bounded. Successful cleanup preserves the exact original failure; a second cleanup failure retains both failures only through redacted `SessionCleanupFailed`. Do not log, retry, suppress, or turn cleanup into a hidden response path.
 - Regenerate the session identifier before committing authenticated identity or another privilege elevation, invalidate it at logout, and reject malformed, attacker-selected, and obsolete identifiers.
 - Keep session cookies `HttpOnly`, use the environment's explicit `Secure` and SameSite policy, omit Domain, and emit them only as validated `ResponseCookie` values.
 - Add CSRF, authentication, authorization, idle and absolute session expiry, rate limiting, and security headers as explicit application policies when required. `SameSite` is not a replacement for CSRF validation.
@@ -35,6 +36,7 @@ AI-oriented explicitness does not replace security review.
 - Parse every cache hit into its expected typed projection and treat malformed, stale-schema, cross-tenant, or otherwise invalid values as a recorded miss or failure; never deserialize PHP objects from a cache.
 - Keep authentication, authorization, permissions, sessions, CSRF material, secrets, and other security decisions out of the initial application data-cache slice.
 - Give personalized, session-affecting, authenticated, and sensitive HTTP responses an explicit `private, no-store` policy until the application records and tests a different safe policy; test cookie-emitting responses separately because `Set-Cookie` is not a cache prohibition.
+- Construct final responses with explicit safe framing: no `Transfer-Encoding`, an ordinary `Content-Length` only when it exactly equals the body bytes, and no body or length on `204`, `205`, or `304`. Keep `HEAD` explicit; do not rely on a hidden `GET` fallback or emitter body suppression.
 - Treat every stored job envelope as untrusted input: bound bytes and nesting, reject unknown or coercive fields, select handlers only from a finite code-owned type/version map, and never deserialize PHP objects or resolve a class from storage.
 - Fence job completion, retry, and dead-letter writes with the leased state, job identity, attempt, opaque token, and a freshly observed unexpired deadline. Store only finite redacted diagnostic codes, never envelopes, payloads, idempotency keys, exception details, SQL, bindings, credentials, or external response bodies.
 - Do not deserialize untrusted PHP values or execute generated PHP.

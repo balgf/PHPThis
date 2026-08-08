@@ -103,6 +103,7 @@ try {
     proveInstalledReleaseGuidanceDistribution($installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
+    proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);
     proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project, $installedFramework);
     proveInstalledCrudAccessSurfaceGuidanceDistribution($project, $installedFramework);
     proveInstalledIdentifierRepresentationGuidanceDistribution($project, $installedFramework);
@@ -878,7 +879,7 @@ function proveInstalledWorkbenchGuidanceDistribution(
         $installedFramework . '/docs/consumer-contract.md' => [
             '## Optional development Workbench',
             'Existing applications need not add `.ai/workbench.md`',
-            'This changes neither Consumer Contract version 10 nor Strict Profile version 3',
+            'This changes neither the carried-forward Workbench contract nor Strict Profile version 3',
         ],
         $installedFramework . '/docs/security.md' => [
             '## Workbench limits',
@@ -1030,6 +1031,119 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
     }
 
     fwrite(STDOUT, "PASS installed startup and probe guidance distribution\n");
+}
+
+function proveInstalledSessionCleanupAndResponseFramingDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/testing.md' => [
+            'Cleanup evidence proves exact primary identity after success; redacted retention after cleanup failure',
+            'invalidation commit-failure precedence without a stale live cookie',
+            'terminal reset after finish or abort; no retry after cleanup failure',
+            '`HTTP_RESPONSE_FRAMING`',
+            'A `HEAD` route is explicit and returns an empty body without inferred representation length.',
+        ],
+        $installedFramework . '/docs/decisions/045-bounded-session-cleanup-and-response-framing.md' => [
+            '# ADR 045: Bounded session cleanup and response framing',
+            'Status: accepted',
+            'When cleanup also fails, it throws the narrow redacted `SessionCleanupFailed` failure',
+            'invalidation commit-failure precedence without a stale live cookie',
+            'Cleanup follows prerequisite order; it does not retry or attempt an unsafe dependent action after its prerequisite fails.',
+            '`Response` accepts final response statuses from `200` through `599`',
+            '`HEAD` remains application-owned and explicit.',
+            'Strict Profile version 3 remains unchanged',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'Contract version: 11',
+            'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
+            'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
+            'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
+        ],
+        $installedFramework . '/docs/request-handling.md' => [
+            'An ordinary final response has a status from `200` through `599`, no `Transfer-Encoding`',
+            'A `204`, `205`, or `304` has no ordinary body and no `Content-Length`.',
+            '`ResponseEmitter` receives only a `Response`',
+        ],
+        $installedFramework . '/docs/sessions.md' => [
+            '## Cleanup failure precedence',
+            'Failed invalidation cleanup likewise clears live pending-cookie ownership before it escapes.',
+            'Cleanup follows prerequisite order and does not retry or attempt an unsafe dependent action after its prerequisite fails.',
+            'If cleanup also fails, `SessionCleanupFailed` retains the original and cleanup failures',
+            'PHPThis does not log, retry, suppress, or turn either failure into a response inside session code.',
+        ],
+        $installedFramework . '/src/Http/Response.php' => [
+            '$status < 200 || $status > 599',
+            "isset(\$normalizedHeaderNames['transfer-encoding'])",
+            'in_array($status, [204, 205, 304], true)',
+            '$contentLength !== (string) strlen($body)',
+            '$contentLength !== (string) $fileBody->bytes',
+        ],
+        $installedFramework . '/src/Http/ResponseEmitter.php' => [
+            'public function emit(Response $response): void',
+            'echo $response->body;',
+            'private function emitFile(Response $response, LocalFileBody $body): void',
+        ],
+        $installedFramework . '/src/Session/SessionCleanupFailed.php' => [
+            'final class SessionCleanupFailed extends \\RuntimeException',
+            'public readonly \\Throwable $primaryFailure',
+            'public readonly \\Throwable $cleanupFailure',
+            "parent::__construct('Session cleanup failed after a primary failure.');",
+        ],
+        $installedFramework . '/src/Session/SessionLifecycle.php' => [
+            'private function failAfterCleanup(Throwable $primaryFailure, ?string $firstUnissuedId, ?string $secondUnissuedId = null, bool $abortActive = true): never',
+            'throw new SessionCleanupFailed($primaryFailure, $cleanupFailure);',
+            'if (!$this->cleanupFailed)',
+            "} catch (Throwable \$failure) {\n            if (\$this->cleanupFailed) {\n                throw \$failure;\n            }\n            \$this->failAfterCleanup(\$failure, \$createdId);",
+            '$this->cleanupFailed && session_status() !== PHP_SESSION_NONE',
+            '$this->failAfterCleanup($failure, $newId, null, false);',
+            "if (!session_start(\$options)) {\n            \$this->failAfterCleanup(new RuntimeException('Unable to start native session storage.'), null);\n        }",
+            "new RuntimeException('Unable to invalidate native session state.')",
+            "\$unissuedId = \$this->unissuedId;\n        \$this->unissuedId = \$this->pendingCookie = null;\n\n        \$this->start(\$incomingId, false);",
+            '$this->unissuedId = $this->pendingCookie = null;',
+            "if (session_status() === PHP_SESSION_NONE && session_id('') === false) {\n            \$this->cleanupFailed = true;\n            throw new RuntimeException('Unable to clear native session request state.');",
+            "if (session_status() === PHP_SESSION_ACTIVE && !session_abort()) {\n            \$this->cleanupFailed = true;\n            throw new RuntimeException('Unable to abort native session state.');",
+            'if ($abortActive)',
+            '$previousCleanupFailed = $this->cleanupFailed;',
+            '$this->cleanupFailed = true;',
+            '$this->resetRequestState();',
+        ],
+        $installedFramework . '/templates/application/.ai/testing.md' => [
+            'Cleanup evidence proves exact primary identity after success; redacted retention after cleanup failure',
+            'invalidation commit-failure precedence without a stale live cookie',
+            'terminal reset after finish or abort; no retry after cleanup failure',
+            'Every response test asserts the final status, body, and headers selected by the route.',
+            'a `HEAD` route remains explicit with an empty body and no inferred representation length.',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException(
+                "Unable to read installed session-cleanup and response-framing artifact {$path}.",
+            );
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException(
+                    "Installed session-cleanup and response-framing artifact {$path} is missing marker: {$marker}",
+                );
+            }
+        }
+    }
+
+    $installedEmitter = file_get_contents($installedFramework . '/src/Http/ResponseEmitter.php');
+
+    if (is_string($installedEmitter) && str_contains($installedEmitter, 'Request $request')) {
+        throw new RuntimeException('The installed ResponseEmitter gained request knowledge.');
+    }
+
+    fwrite(STDOUT, "PASS installed session cleanup and response framing distribution\n");
 }
 
 function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(

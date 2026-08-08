@@ -925,6 +925,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/041-optional-development-workbench.md',
     'docs/decisions/043-engine-specific-application-migration-invariants.md',
     'docs/decisions/044-bounded-task-routed-ai-context.md',
+    'docs/decisions/045-bounded-session-cleanup-and-response-framing.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -1107,6 +1108,7 @@ $requiredRepositoryFiles = [
     'src/Routing/RouteParameterType.php',
     'src/Routing/RouteSegment.php',
     'src/Routing/Router.php',
+    'src/Session/SessionCleanupFailed.php',
     'src/Session/SessionConfiguration.php',
     'src/Session/SessionLifecycle.php',
     'src/Session/SessionSnapshot.php',
@@ -1144,6 +1146,7 @@ $requiredRepositoryFiles = [
     'tests/fixtures/routing-lookup-helper-loop.php.fixture',
     'tests/fixtures/routing-path-segment-traversal.php.fixture',
     'tests/fixtures/routing-lookup-traversal.php.fixture',
+    'tests/fixtures/session-cleanup-failures.php.fixture',
     'tools/package-files.txt',
     'tools/test-application-duplication.php',
     'tools/setup-example.php',
@@ -1517,6 +1520,262 @@ foreach ($boundedTaskRoutedContextForbiddenMarkers as $relativePath => $markers)
     }
 }
 
+$sessionCleanupAndResponseFramingArtifactMarkers = [
+    'docs/decisions/045-bounded-session-cleanup-and-response-framing.md' => [
+        'Status: accepted',
+        'On 2026-08-08 in Asia/Manila, the accountable human approved this bounded correction',
+        'When an operation has an original failure and cleanup succeeds, PHPThis rethrows that exact original `Throwable` instance.',
+        'When cleanup also fails, it throws the narrow redacted `SessionCleanupFailed` failure, retaining both the original failure and cleanup failure',
+        'invalidation commit-failure precedence without a stale live cookie',
+        'Cleanup follows prerequisite order; it does not retry or attempt an unsafe dependent action after its prerequisite fails.',
+        'PHPThis neither logs, retries, suppresses, nor converts these failures into a response inside the lifecycle.',
+        '`Response` accepts final response statuses from `200` through `599`; it rejects final informational `1xx` statuses.',
+        'It rejects every `Transfer-Encoding` ordinary header.',
+        'A `204`, `205`, or `304` response has an empty ordinary body and no `Content-Length`.',
+        '`HEAD` remains application-owned and explicit.',
+        'The existing `LocalFileBody` contract remains stronger',
+        'Consumer Contract version 11 carries version 10 forward',
+        'Strict Profile version 3 remains unchanged',
+    ],
+    'docs/decisions/README.md' => [
+        '`045-bounded-session-cleanup-and-response-framing.md`',
+    ],
+    'docs/consumer-contract.md' => [
+        'Contract version: 11',
+        'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
+        '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
+        'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
+        'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
+    ],
+    '.ai/http.md' => [
+        'Construct only final `200` through `599` responses.',
+        'A `204`, `205`, or `304` has an empty ordinary body and no `Content-Length`.',
+        'Keep `HEAD` explicit and application-owned',
+        'Do not fall back to `GET`, suppress a `GET` body, give the emitter a request, or infer a representation length.',
+    ],
+    '.ai/session.md' => [
+        'A failed `update()` or `regenerateAndUpdate()` makes one bounded cleanup attempt while preserving the begun request and any earlier pending cookie or unissued state that remains coherent.',
+        'Failed `invalidate()` cleanup likewise clears live pending-cookie ownership before it escapes.',
+        'unsafe dependent cleanup is not attempted after its prerequisite fails.',
+        '`finish()` and `abort()` are terminal and reset local request state even when cleanup fails',
+        'If cleanup also fails, the narrow redacted `SessionCleanupFailed` retains both failures and is excluded from registered response mapping',
+        'do not log, retry, suppress, or map it inside session code.',
+    ],
+    '.ai/strict-profile.md' => [
+        'Consumer Contract version 11 carries Strict Profile version 3 forward unchanged.',
+        "ADR 045's response/session runtime behavior remain contract behavior; they are not part of PHT007.",
+    ],
+    '.ai/testing.md' => [
+        'Inject native cleanup faults only through the isolated framework test boundary',
+        'preservation of begun-request and earlier pending state after failed update or regeneration cleanup',
+        'invalidation commit-failure precedence with no stale live cookie',
+        'terminal reset after finish or abort; no retry after cleanup failure',
+        'normal finalization of a registered original response when operation cleanup succeeds.',
+        'Response tests cover final-status bounds, rejection of `Transfer-Encoding`, ordinary omitted or exact canonical `Content-Length`',
+        '`HEAD` remains a separately declared application route with an empty body and no inferred representation length; the emitter does not receive request knowledge.',
+    ],
+    'docs/request-handling.md' => [
+        'An ordinary final response has a status from `200` through `599`, no `Transfer-Encoding`, and one explicit string body.',
+        'A `204`, `205`, or `304` has no ordinary body and no `Content-Length`.',
+        '`ResponseEmitter` receives only a `Response`: PHPThis does not use a `GET` fallback, silently suppress output, or add request knowledge to emission.',
+    ],
+    'docs/sessions.md' => [
+        '## Cleanup failure precedence',
+        'Failed invalidation cleanup likewise clears live pending-cookie ownership before it escapes.',
+        'Cleanup follows prerequisite order and does not retry or attempt an unsafe dependent action after its prerequisite fails.',
+        'If cleanup also fails, `SessionCleanupFailed` retains the original and cleanup failures',
+        'PHPThis does not log, retry, suppress, or turn either failure into a response inside session code.',
+    ],
+    'docs/errors.md' => [
+        '`SessionCleanupFailed` is the narrow framework failure raised only when a session operation already failed and bounded native cleanup also failed.',
+        'It is not a retry instruction, log event, or client response, and `RequestBoundary` deliberately excludes it from `ErrorResponseRegistry` mapping.',
+    ],
+    'docs/security.md' => [
+        'Keep native session cleanup bounded.',
+        'Construct final responses with explicit safe framing: no `Transfer-Encoding`',
+        'Keep `HEAD` explicit; do not rely on a hidden `GET` fallback or emitter body suppression.',
+    ],
+    'skeleton/.ai/testing.md' => [
+        'Cleanup evidence proves exact primary identity after success; redacted retention after cleanup failure',
+        'invalidation commit-failure precedence without a stale live cookie',
+        'terminal reset after finish or abort; no retry after cleanup failure',
+        '`HTTP_RESPONSE_FRAMING`',
+        'A `HEAD` route is explicit and returns an empty body without inferred representation length.',
+    ],
+    'templates/application/.ai/testing.md' => [
+        'Cleanup evidence proves exact primary identity after success; redacted retention after cleanup failure',
+        'invalidation commit-failure precedence without a stale live cookie',
+        'terminal reset after finish or abort; no retry after cleanup failure',
+        'Every response test asserts the final status, body, and headers selected by the route.',
+        'a `HEAD` route remains explicit with an empty body and no inferred representation length.',
+    ],
+    'src/Http/Response.php' => [
+        '$status < 200 || $status > 599',
+        "isset(\$normalizedHeaderNames['transfer-encoding'])",
+        'in_array($status, [204, 205, 304], true)',
+        '$contentLength !== (string) strlen($body)',
+        '$contentLength !== (string) $fileBody->bytes',
+    ],
+    'src/Http/ResponseEmitter.php' => [
+        'public function emit(Response $response): void',
+        'echo $response->body;',
+        'private function emitFile(Response $response, LocalFileBody $body): void',
+    ],
+    'src/Http/RequestBoundary.php' => [
+        'use PHPThis\\Session\\SessionCleanupFailed;',
+        '$failure instanceof SessionCleanupFailed',
+        'throw new SessionCleanupFailed($failure, $cleanupFailure);',
+    ],
+    'src/Session/SessionCleanupFailed.php' => [
+        'final class SessionCleanupFailed extends \\RuntimeException',
+        'public readonly \\Throwable $primaryFailure',
+        'public readonly \\Throwable $cleanupFailure',
+        "parent::__construct('Session cleanup failed after a primary failure.');",
+    ],
+    'src/Session/SessionLifecycle.php' => [
+        'private function failAfterCleanup(Throwable $primaryFailure, ?string $firstUnissuedId, ?string $secondUnissuedId = null, bool $abortActive = true): never',
+        'throw new SessionCleanupFailed($primaryFailure, $cleanupFailure);',
+        'if (!$this->cleanupFailed)',
+        "} catch (Throwable \$failure) {\n            if (\$this->cleanupFailed) {\n                throw \$failure;\n            }\n            \$this->failAfterCleanup(\$failure, \$createdId);",
+        '$this->resetRequestState($this->cleanupFailed);',
+        '$this->cleanupFailed && session_status() !== PHP_SESSION_NONE',
+        '$this->failAfterCleanup($failure, $newId, null, false);',
+        "if (!session_start(\$options)) {\n            \$this->failAfterCleanup(new RuntimeException('Unable to start native session storage.'), null);\n        }",
+        "new RuntimeException('Unable to invalidate native session state.')",
+        "\$unissuedId = \$this->unissuedId;\n        \$this->unissuedId = \$this->pendingCookie = null;\n\n        \$this->start(\$incomingId, false);",
+        '$this->unissuedId = $this->pendingCookie = null;',
+        "if (session_status() === PHP_SESSION_NONE && session_id('') === false) {\n            \$this->cleanupFailed = true;\n            throw new RuntimeException('Unable to clear native session request state.');",
+        "if (session_status() === PHP_SESSION_ACTIVE && !session_abort()) {\n            \$this->cleanupFailed = true;\n            throw new RuntimeException('Unable to abort native session state.');",
+        'if ($abortActive)',
+        '$previousCleanupFailed = $this->cleanupFailed;',
+        '$this->cleanupFailed = true;',
+        '$this->resetRequestState();',
+    ],
+    'tests/fixtures/session-cleanup-failures.php.fixture' => [
+        'public static function failNextIdClear(): void',
+        'function session_abort(): bool',
+        'function session_destroy(): bool',
+        'function session_id(?string $id = null): string|false',
+        "\$id === '' && NativeSessionFaults::idClearShouldFail()",
+        'function session_start(array $options = []): bool',
+        'function session_write_close(): bool',
+        'Cleanup aggregation must preserve the exact primary failure and one cleanup failure.',
+        'Request abort must reset an operation cleanup failure without retrying native abort.',
+        'NativeSessionFaults::abortCalls() === $updateClearAbortCalls',
+        'NativeSessionFaults::destroyCalls() === $updateClearDestroyCalls',
+        'A latched update clear failure must escape once without RequestBoundary cleanup retry.',
+        'A lone explicit-abort cleanup failure must escape directly once and reset.',
+        'Operation cleanup must preserve prior same-request state selected for known-response finalization.',
+        'A mapped superseded-ID cleanup failure must not emit a stale pending cookie.',
+        'A failed superseded-ID destroy must be followed only by destruction of the new identifier.',
+        'A failed superseded-ID destroy must not leak the new pending identifier.',
+        'A superseded-ID start failure must be attempted once before only the distinct new ID is destroyed.',
+        'A failed abort must not be retried or followed by dependent identifier destruction.',
+        'Invalidation must retain its write-close failure before one abort failure without dependent cleanup.',
+        '$mappedInvalidationStartResponse->cookies === []',
+        'count($invalidationStartAttempts) === 1',
+        'NativeSessionFaults::abortCalls() === $invalidationStartAbortCalls',
+        'NativeSessionFaults::destroyCalls() === $invalidationStartDestroyCalls',
+        'An early mapped invalidation start failure must relinquish the live cookie without cleanup retry.',
+        'count(NativeSessionFaults::startAttemptsSinceFault()) === 1',
+        'NativeSessionFaults::abortCalls() === $combinedStartClearAbortCalls',
+        'NativeSessionFaults::destroyCalls() === $combinedStartClearDestroyCalls',
+        'A failed start must remain primary when its single identifier-clear cleanup also fails.',
+        '$mappedInvalidationClearResponse->cookies === []',
+        'NativeSessionFaults::idClearCallsSinceFault() === 1',
+        'NativeSessionFaults::abortCalls() === $invalidationClearAbortCalls',
+        'NativeSessionFaults::destroyCalls() === $invalidationClearDestroyCalls',
+        'A mapped invalidation identifier-clear failure must emit no stale cookie or cleanup retry.',
+        'NativeSessionFaults::abortCalls() === $unmappedInvalidationClearAbortCalls',
+        'NativeSessionFaults::destroyCalls() === $unmappedInvalidationClearDestroyCalls',
+        'An unmapped invalidation clear failure must escape once without RequestBoundary cleanup retry.',
+        'NativeSessionFaults::abortCalls() === $mismatchedInvalidationAbortCalls + 1',
+        'NativeSessionFaults::destroyCalls() === $mismatchedInvalidationDestroyCalls',
+        'Mismatched invalidation must attempt a no-release abort once without RequestBoundary retry.',
+        'NativeSessionFaults::abortCalls() === $rejectedRegenerationAbortCalls + 1',
+        'NativeSessionFaults::destroyCalls() === $rejectedRegenerationDestroyCalls',
+        'Rejected regeneration must attempt a no-release abort once without RequestBoundary retry.',
+        'A lone mapped destruction failure must emit no stale cookie or second destroy attempt.',
+        'Every cleanup path must reset local lifecycle state for the next request.',
+        'The cleanup aggregate text must not expose either retained failure or session storage details.',
+        'A cleanup aggregate must retain the generic redacted unknown-failure path.',
+        'A mapped handler failure must select its known response before finalization becomes primary.',
+        'PASS isolated session cleanup failure precedence',
+    ],
+    'tests/http-boundary.php' => [
+        "yield 'session cleanup preserves primary failures and resets deterministically'",
+        "runIsolatedPhpTest(__DIR__ . '/fixtures/session-cleanup-failures.php.fixture')",
+        'PASS isolated session cleanup failure precedence',
+    ],
+    'tests/response-emitter.php' => [
+        "new Response(103, [], '')",
+        "new Response(600, [], '')",
+        "new Response(200, ['Transfer-Encoding' => 'identity'], '')",
+        "new Response(200, ['Content-Length' => '07'], 'created')",
+        "new Response(204, ['Content-Length' => '0'], '')",
+        "new Route('HEAD', '/explicit-head', \$headHandler)",
+        "new Request('HEAD', '/explicit-head')",
+        '$explicitHeadResponse->body !== \'\'',
+        'Expected supported ordinary response framing to remain valid.',
+        'Expected the complete local file to be emitted in bounded chunks.',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/045-bounded-session-cleanup-and-response-framing.md',
+        'src/Session/SessionCleanupFailed.php',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);',
+        'function proveInstalledSessionCleanupAndResponseFramingDistribution(',
+        'PASS installed session cleanup and response framing distribution',
+    ],
+    'docs/guardrails.md' => [
+        'ADR 045 uses the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction; the implementation now occupies 2,600 lines and leaves no margin.',
+        'The ADR 045 guard pins the bounded session-cleanup failure precedence and ordinary-response framing contract.',
+        'superseded-identifier restart and distinct-new-identifier cleanup',
+        'start failure retained as primary when identifier clearing also fails',
+        'clear and abort failure latches that prevent request-boundary cleanup re-entry',
+        'distinct regenerated-identifier cleanup without a repeated active-session abort',
+        'one-attempt update-clear, unmapped-invalidation-clear, mismatched-invalidation-abort, and rejected-regeneration-abort evidence',
+        "local pending and unissued ownership cleared before invalidation's first fallible native operation",
+        'zero-cookie, no-retry mapped early-start and post-commit identifier-clear failures',
+        'invalidation write-close failure precedence, stale-cookie exclusion, and no dependent cleanup after a failed prerequisite',
+        'It does not reproduce those runtime semantics as a consumer checker rule or add a `PHT` diagnostic.',
+    ],
+];
+
+foreach ($sessionCleanupAndResponseFramingArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read session-cleanup and response-framing artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Session-cleanup and response-framing artifact {$relativePath} is missing: {$marker}";
+        }
+    }
+}
+
+$responseEmitter = file_get_contents($root . '/src/Http/ResponseEmitter.php');
+
+if (is_string($responseEmitter) && str_contains($responseEmitter, 'Request $request')) {
+    $failures[] = 'ResponseEmitter must remain request-unaware; HEAD behavior is explicit application-owned routing.';
+}
+
+foreach (['verification/ApplicationChecker.php', 'verification/SyntaxProfile.php'] as $consumerValidityPath) {
+    $contents = file_get_contents($root . '/' . $consumerValidityPath);
+
+    if (is_string($contents) && (
+        str_contains($contents, 'SessionCleanupFailed')
+        || str_contains($contents, 'Final response status must')
+        || str_contains($contents, 'Response framing is invalid')
+    )) {
+        $failures[] = "ADR 045 must not become a consumer checker rule: {$consumerValidityPath}.";
+    }
+}
+
 foreach (canonicalCrudTreeFailures($root) as $canonicalCrudTreeFailure) {
     $failures[] = $canonicalCrudTreeFailure;
 }
@@ -1553,7 +1812,7 @@ $versionNeutralReleaseContractMarkers = [
         '| Prepare or publish a release | `RELEASING.md` | approved scope, exact candidate commits, CI, packages, and public-install proof |',
     ],
     '.ai/application-context.md' => [
-        'Later accepted work on `main` is unreleased and creates no next candidate identity or publication authority.',
+        'it is unreleased work on `main`, creates no next candidate identity or publication authority',
         'Release preparation, approved-candidate proof or publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
     ],
     '.ai/testing.md' => [
@@ -1920,12 +2179,12 @@ foreach ($historicalAlpha5IdentityArtifactMarkers as $relativePath => $markers) 
 }
 
 $currentConsumerContractVersionMarkers = [
-    'docs/consumer-contract.md' => 'Contract version: 10',
-    'docs/getting-started.md' => 'contract-version-10 Composer scripts',
-    'skeleton/.ai/README.md' => 'Consumer Contract v10 and Strict Profile v3 remain mandatory.',
-    'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3',
-    'templates/application/.ai/README.md' => 'Consumer Contract v10 and Strict Profile v3 remain mandatory.',
-    'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3',
+    'docs/consumer-contract.md' => 'Contract version: 11',
+    'docs/getting-started.md' => 'contract-version-11 Composer scripts',
+    'skeleton/.ai/README.md' => 'Consumer Contract v11 and Strict Profile v3 remain mandatory.',
+    'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v11 and Strict Profile v3',
+    'templates/application/.ai/README.md' => 'Consumer Contract v11 and Strict Profile v3 remain mandatory.',
+    'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v11 and Strict Profile v3',
 ];
 
 foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -2873,7 +3132,7 @@ $routingArtifactMarkers = [
         '`032-explicit-uuid-and-ulid-route-types.md`',
     ],
     'docs/consumer-contract.md' => [
-        'Contract version: 10',
+        'Contract version: 11',
         'This is the canonical contract for an application built with the installed PHPThis version.',
         'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
         '`positive-int`, `token`, `uuid`, or `ulid`',
@@ -2977,7 +3236,7 @@ $requestHandlerDecoratorArtifactMarkers = [
         '`033-application-owned-request-handler-decorators.md`',
     ],
     'docs/consumer-contract.md' => [
-        'Contract version: 10',
+        'Contract version: 11',
         '## Optional application-owned request-handler decorators',
         'The decorator is composed only as the handler of an explicit `Route`.',
         'zero downstream calls or call its one downstream handler exactly once',
@@ -3087,7 +3346,7 @@ $websocketArtifactMarkers = [
         'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
     ],
     'docs/consumer-contract.md' => [
-        'Contract version: 10',
+        'Contract version: 11',
         '## Application-owned WebSocket profile',
         'PHPThis has no WebSocket runtime or core WebSocket API.',
         'Frames never become PHPThis HTTP `Request` or `Response` values',
@@ -3123,7 +3382,7 @@ $websocketArtifactMarkers = [
     ],
     'docs/guardrails.md' => [
         'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
-        'keeps `.ai/websockets.md` optional under current Contract version 10 as well as its originating Contract version 9',
+        'keeps `.ai/websockets.md` optional under current Contract version 11 as well as its originating Contract version 9',
     ],
     'README.md' => [
         'Accepted [application-owned WebSocket integration](docs/websockets.md)',
@@ -4573,7 +4832,7 @@ $workbenchArtifactMarkers = [
     'docs/consumer-contract.md' => [
         '## Optional development Workbench',
         'Existing applications need not add `.ai/workbench.md` when they do not adopt the package',
-        'This changes neither Consumer Contract version 10 nor Strict Profile version 3',
+        'This changes neither the carried-forward Workbench contract nor Strict Profile version 3',
     ],
     'docs/knowledge-map.md' => [
         '| Adopt, use, or review PHPThis Workbench |',
@@ -4607,7 +4866,7 @@ $workbenchArtifactMarkers = [
     ],
     'docs/guardrails.md' => [
         'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
-        'It keeps `.ai/workbench.md` optional under Consumer Contract version 10.',
+        'It keeps `.ai/workbench.md` optional under Consumer Contract version 11.',
     ],
     'README.md' => [
         'Optional [PHPThis Workbench](docs/workbench.md)',
@@ -4626,7 +4885,7 @@ $workbenchArtifactMarkers = [
     ],
     '.ai/application-context.md' => [
         'Include `.ai/workbench.md` in the current skeleton and template with `NOT_APPLICABLE(WORKBENCH)`',
-        'this optional file is not a checker requirement',
+        'Contract version 11 carries that optional file forward, and it is not a checker requirement.',
         'existing adopted business operation and transaction',
         'recorded finite tested console commands',
     ],
@@ -4777,7 +5036,7 @@ if (
 }
 
 if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveWorkbenchContextIsRequired')) {
-    $failures[] = 'Consumer Contract version 10 must not reject an existing consumer only because .ai/workbench.md is absent.';
+    $failures[] = 'Consumer Contract version 11 must not reject an existing consumer only because .ai/workbench.md is absent.';
 }
 
 $redisCoordinationArtifactMarkers = [
@@ -6363,13 +6622,13 @@ if (!is_string($behaviorInventory)) {
 } else {
     $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-    if (count($behaviorNames) !== 177 || count(array_unique($behaviorNames)) !== 177) {
-        $failures[] = 'The framework suite must preserve exactly 177 unique named framework behaviors.';
+    if (count($behaviorNames) !== 178 || count(array_unique($behaviorNames)) !== 178) {
+        $failures[] = 'The framework suite must preserve exactly 178 unique named framework behaviors.';
     }
 
     if (
         hash('sha256', $behaviorInventory)
-        !== '2e775ff43a5ba3d7f530dbecad3ab2aff2b0e8df7869150abf58e528a560db65'
+        !== 'cd28abb1e4a9e76b36178fa1eb2a68cc2487a3d862ce321c337b2797b41b07e5'
     ) {
         $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
     }
@@ -6419,7 +6678,7 @@ $maintainerTestArtifactMarkers = [
         'function frameworkBehaviorNamesForGroup(string $group): array',
         'function frameworkBehaviorInventory(): array',
         'array_key_exists($name, $registered)',
-        '2e775ff43a5ba3d7f530dbecad3ab2aff2b0e8df7869150abf58e528a560db65',
+        'cd28abb1e4a9e76b36178fa1eb2a68cc2487a3d862ce321c337b2797b41b07e5',
     ],
     'tests/composition.php' => [
         'function compositionBehaviorTests(): Generator',
@@ -7189,8 +7448,8 @@ if (is_file($consumerContractPath)) {
     if (!is_string($consumerContract)) {
         $failures[] = 'Cannot read docs/consumer-contract.md.';
     } else {
-        if (preg_match('/^Contract version: 10$/m', $consumerContract) !== 1) {
-            $failures[] = 'docs/consumer-contract.md must declare contract version 10.';
+        if (preg_match('/^Contract version: 11$/m', $consumerContract) !== 1) {
+            $failures[] = 'docs/consumer-contract.md must declare contract version 11.';
         }
 
         if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -7472,8 +7731,8 @@ if (is_file($applicationAgentInstructionsPath)) {
             $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
         }
 
-        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v10 and Strict Profile v3 are the minimum accepted rules')) {
-            $failures[] = 'Application AGENTS.md must identify Consumer Contract v10 and Strict Profile v3 as the minimum accepted rules.';
+        if (!str_contains($applicationAgentInstructions, 'Consumer Contract v11 and Strict Profile v3 are the minimum accepted rules')) {
+            $failures[] = 'Application AGENTS.md must identify Consumer Contract v11 and Strict Profile v3 as the minimum accepted rules.';
         }
     }
 }
@@ -7489,9 +7748,9 @@ if (is_file($skeletonAgentInstructionsPath)) {
         !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
         || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
         || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
-        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v10 and Strict Profile v3 are the minimum accepted rules')
+        || !str_contains($skeletonAgentInstructions, 'Consumer Contract v11 and Strict Profile v3 are the minimum accepted rules')
     ) {
-        $failures[] = 'Skeleton AGENTS.md must preserve Alpha 5 Contract v10 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+        $failures[] = 'Skeleton AGENTS.md must preserve current Contract v11 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
     }
 }
 

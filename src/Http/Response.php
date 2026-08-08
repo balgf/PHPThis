@@ -22,8 +22,8 @@ final readonly class Response
         array $cookies = [],
         public ?LocalFileBody $fileBody = null,
     ) {
-        if ($status < 100 || $status > 599) {
-            throw new InvalidArgumentException('Response status must be between 100 and 599.');
+        if ($status < 200 || $status > 599) {
+            throw new InvalidArgumentException('Final response status must be between 200 and 599.');
         }
 
         $normalizedHeaderNames = [];
@@ -50,15 +50,15 @@ final readonly class Response
             }
         }
 
-        if ($fileBody !== null && (
-            $body !== ''
-            || $status < 200
-            || in_array($status, [204, 205, 206, 304], true)
-            || isset($normalizedHeaderNames['content-range'])
-            || isset($normalizedHeaderNames['transfer-encoding'])
-            || $contentLength !== (string) $fileBody->bytes
-        )) {
-            throw new InvalidArgumentException('Local file response framing is invalid or unsupported.');
+        if (
+            isset($normalizedHeaderNames['transfer-encoding'])
+            || (in_array($status, [204, 205, 304], true) && ($body !== '' || $contentLength !== null))
+            || ($fileBody === null
+                ? ($contentLength !== null && $contentLength !== (string) strlen($body))
+                : ($body !== '' || $status === 206 || isset($normalizedHeaderNames['content-range'])
+                    || $contentLength !== (string) $fileBody->bytes))
+        ) {
+            throw new InvalidArgumentException('Response framing is invalid or unsupported.');
         }
 
         $cookieScopes = [];

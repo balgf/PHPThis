@@ -387,6 +387,18 @@ function httpBoundaryBehaviorTests(): Generator
     }
 };
 
+    yield 'session cleanup preserves primary failures and resets deterministically' => static function (): void {
+    $result = runIsolatedPhpTest(__DIR__ . '/fixtures/session-cleanup-failures.php.fixture');
+
+    if (
+        $result['exit_code'] !== 0
+        || $result['stdout'] !== "PASS isolated session cleanup failure precedence\n"
+        || $result['stderr'] !== ''
+    ) {
+        throw new RuntimeException('Session cleanup failure proof failed: ' . $result['stderr'] . $result['stdout']);
+    }
+};
+
     yield 'unknown failure boundary returns one generic response without logging' => static function (): void {
     $response = (new UnknownFailureBoundary())->respond();
 

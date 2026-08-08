@@ -68,7 +68,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
 - Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; the reviewed implementation occupies 2,593 lines after one sensitive-password annotation, and its seven-line maintenance margin pre-authorizes no adjacent mechanism. ADR 033 adds no core runtime or further increase.
+- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; that implementation occupied 2,593 lines after one sensitive-password annotation. ADR 033 adds no core runtime or further increase. ADR 045 uses the remaining seven lines only for bounded session-cleanup failure retention while its response-framing refactor is line-neutral; the current implementation occupies all 2,600 lines and leaves no margin or authority for an adjacent mechanism.
 
 ## Non-goals
 

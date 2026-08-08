@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPThis\Http;
 
+use PHPThis\Session\SessionCleanupFailed;
 use PHPThis\Session\SessionLifecycle;
 use Throwable;
 
@@ -43,11 +44,15 @@ final readonly class RequestBoundary
 
             $response = $this->handler->handle($request);
         } catch (Throwable $failure) {
-            $response = $this->errorResponses->responseFor($failure);
+            $response = $failure instanceof SessionCleanupFailed ? null : $this->errorResponses->responseFor($failure);
 
             if ($response === null) {
                 if ($sessionBegun && $sessions !== null) {
-                    $sessions->abort();
+                    try {
+                        $sessions->abort();
+                    } catch (Throwable $cleanupFailure) {
+                        throw new SessionCleanupFailed($failure, $cleanupFailure);
+                    }
                 }
 
                 throw $failure;

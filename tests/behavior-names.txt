@@ -119,6 +119,7 @@ response cookies are explicit validated values
 response emitter preserves repeated Set-Cookie fields
 request boundary normalizes one bounded multipart upload
 session lifecycle is lazy strict scoped and fixation resistant
+session cleanup preserves primary failures and resets deterministically
 unknown failure boundary returns one generic response without logging
 router rejects duplicate method and path pairs
 route accepts at most two full-segment typed parameter declarations

@@ -52,3 +52,4 @@ Accepted records:
 - `042-application-owned-input-failure-classification.md`
 - `043-engine-specific-application-migration-invariants.md`
 - `044-bounded-task-routed-ai-context.md`
+- `045-bounded-session-cleanup-and-response-framing.md`

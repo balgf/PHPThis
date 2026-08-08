@@ -20,10 +20,10 @@ final class SessionLifecycle
     private bool $begun = false;
     private ?string $cookieHeader = null;
     private bool $incomingIdResolved = false;
-    private bool $incomingCookieRejected = false;
-    private bool $incomingStateRejected = false;
+    private bool $incomingRejected = false;
     private bool $incomingObsolete = false;
     private bool $invalidated = false;
+    private bool $cleanupFailed = false;
     private ?string $incomingId = null;
     private ?string $unissuedId = null;
     private ?ResponseCookie $pendingCookie = null;
@@ -42,16 +42,9 @@ final class SessionLifecycle
             throw new RuntimeException('PHP session state must be inactive at the request boundary.');
         }
 
+        $this->resetRequestState();
         $this->begun = true;
         $this->cookieHeader = $request->headers['cookie'] ?? null;
-        $this->incomingIdResolved = false;
-        $this->incomingCookieRejected = false;
-        $this->incomingStateRejected = false;
-        $this->incomingObsolete = false;
-        $this->invalidated = false;
-        $this->incomingId = null;
-        $this->unissuedId = null;
-        $this->pendingCookie = null;
     }
 
     public function read(): SessionSnapshot
@@ -71,19 +64,14 @@ final class SessionLifecycle
 
         if ($actualId !== $incomingId) {
             $this->discardUnissuedSession($actualId);
-            $this->incomingId = null;
-            $this->incomingStateRejected = true;
-            return new SessionSnapshot([]);
+        } elseif ($state['accepted']) {
+            return $state['snapshot'];
         }
 
-        if (!$state['accepted']) {
-            $this->incomingId = null;
-            $this->incomingStateRejected = true;
-            $this->incomingObsolete = $obsolete;
-            return new SessionSnapshot([]);
-        }
-
-        return $state['snapshot'];
+        $this->incomingId = null;
+        $this->incomingRejected = true;
+        $this->incomingObsolete = $actualId === $incomingId && $obsolete;
+        return new SessionSnapshot([]);
     }
 
     /** @param Closure(SessionSnapshot): SessionSnapshot $change */
@@ -92,7 +80,6 @@ final class SessionLifecycle
         $this->requireOperationAllowed();
         $opened = $this->openWritableState();
         $createdId = $opened['incoming_id'] === null ? $opened['actual_id'] : null;
-
         try {
             $updated = $change($opened['snapshot']);
 
@@ -111,9 +98,10 @@ final class SessionLifecycle
                 $this->pendingCookie = $this->configuration->liveCookie($opened['actual_id']);
             }
         } catch (Throwable $failure) {
-            $this->abortActiveNativeSession();
-            $this->discardUnissuedSession($createdId);
-            throw $failure;
+            if ($this->cleanupFailed) {
+                throw $failure;
+            }
+            $this->failAfterCleanup($failure, $createdId);
         }
     }
 
@@ -126,7 +114,6 @@ final class SessionLifecycle
         $supersededId = $this->unissuedId ?? $createdId;
         $regenerationStarted = false;
         $newId = null;
-
         try {
             $updated = $change($opened['snapshot']);
             $_SESSION = $opened['snapshot']->values;
@@ -150,7 +137,6 @@ final class SessionLifecycle
             if (!session_write_close()) {
                 throw new RuntimeException('Unable to commit regenerated session state.');
             }
-
             $this->clearNativeState();
             $this->discardUnissuedSession($supersededId);
             $this->incomingId = $newId;
@@ -158,22 +144,21 @@ final class SessionLifecycle
             $this->unissuedId = $newId;
             $this->pendingCookie = $this->configuration->liveCookie($newId);
         } catch (Throwable $failure) {
-            $this->abortActiveNativeSession();
-            $failureId = $newId ?? $createdId;
-            $this->discardUnissuedSession($failureId);
-
-            if ($regenerationStarted && $supersededId !== $failureId) {
-                $this->discardUnissuedSession($supersededId);
-            }
-
             if ($regenerationStarted) {
-                $this->incomingId = null;
-                $this->incomingIdResolved = true;
-                $this->unissuedId = null;
-                $this->pendingCookie = null;
+                $this->resetRequestState($this->cleanupFailed);
+                $this->begun = true;
+                if ($this->cleanupFailed && session_status() !== PHP_SESSION_NONE) {
+                    throw $failure;
+                }
+                if ($this->cleanupFailed) {
+                    $this->failAfterCleanup($failure, $newId, null, false);
+                }
             }
-
-            throw $failure;
+            $this->failAfterCleanup(
+                $failure,
+                $newId ?? $createdId,
+                $regenerationStarted ? $supersededId : null,
+            );
         }
     }
 
@@ -190,6 +175,9 @@ final class SessionLifecycle
             return;
         }
 
+        $unissuedId = $this->unissuedId;
+        $this->unissuedId = $this->pendingCookie = null;
+
         $this->start($incomingId, false);
         $actualId = $this->currentId();
 
@@ -201,7 +189,6 @@ final class SessionLifecycle
         }
 
         $state = $this->snapshotFromNativeState();
-
         if (!$state['accepted']) {
             $obsolete = array_key_exists(self::OBSOLETE_KEY, $_SESSION);
             $this->abortActiveNativeSession();
@@ -210,22 +197,17 @@ final class SessionLifecycle
         }
 
         $_SESSION = [self::OBSOLETE_KEY => time()];
-
         if (!session_write_close()) {
-            $this->abortActiveNativeSession();
-            throw new RuntimeException('Unable to invalidate native session state.');
+            $this->failAfterCleanup(new RuntimeException('Unable to invalidate native session state.'), $unissuedId);
         }
-
         $this->clearNativeState();
-        $this->discardUnissuedSession($this->unissuedId);
-        $this->unissuedId = null;
+        $this->discardUnissuedSession($unissuedId);
         $this->pendingCookie = $this->configuration->expiredCookie();
     }
 
     public function finish(Response $response): Response
     {
         $this->requireBegun();
-
         try {
             if (session_status() !== PHP_SESSION_NONE) {
                 throw new RuntimeException('Native session lock remained active after request handling.');
@@ -243,9 +225,7 @@ final class SessionLifecycle
                 $response->fileBody,
             );
         } catch (Throwable $failure) {
-            $this->abortActiveNativeSession();
-            $this->discardUnissuedSession($this->unissuedId);
-            throw $failure;
+            $this->failAfterCleanup($failure, $this->unissuedId);
         } finally {
             $this->resetRequestState();
         }
@@ -253,16 +233,24 @@ final class SessionLifecycle
 
     public function abort(): void
     {
-        $this->abortActiveNativeSession();
-        $this->discardUnissuedSession($this->unissuedId);
-        $this->resetRequestState();
+        if (!$this->begun) {
+            return;
+        }
+        try {
+            if (!$this->cleanupFailed) {
+                $this->abortActiveNativeSession();
+                $this->discardUnissuedSession($this->unissuedId);
+            }
+        } finally {
+            $this->resetRequestState();
+        }
     }
 
     /** @return array{snapshot: SessionSnapshot, incoming_id: ?string, actual_id: string} */
     private function openWritableState(bool $replaceRejected = false): array
     {
         $incomingId = $this->resolveIncomingId();
-        $previouslyRejected = $this->incomingCookieRejected || $this->incomingStateRejected;
+        $previouslyRejected = $this->incomingRejected;
 
         if ($previouslyRejected && !$replaceRejected) {
             throw new SessionUnavailable('Session state is no longer current.');
@@ -278,7 +266,12 @@ final class SessionLifecycle
             || !$state['accepted']
         );
 
-        if ($rejected && $replaceRejected) {
+        if ($rejected) {
+            if (!$replaceRejected) {
+                $failure = new SessionUnavailable('Session state is no longer current.');
+                $this->failAfterCleanup($failure, $actualId !== $incomingId ? $actualId : null);
+            }
+
             if ($actualId === $incomingId || !$state['accepted']) {
                 $this->abortActiveNativeSession();
                 $this->discardUnissuedSession($actualId !== $incomingId ? $actualId : null);
@@ -286,24 +279,11 @@ final class SessionLifecycle
                 $actualId = $this->currentId();
             }
 
-            return [
-                'snapshot' => new SessionSnapshot([]),
-                'incoming_id' => null,
-                'actual_id' => $actualId,
-            ];
+            $state['snapshot'] = new SessionSnapshot([]);
+            $incomingId = null;
         }
 
-        if ($rejected) {
-            $this->abortActiveNativeSession();
-            $this->discardUnissuedSession($actualId !== $incomingId ? $actualId : null);
-            throw new SessionUnavailable('Session state is no longer current.');
-        }
-
-        return [
-            'snapshot' => $state['snapshot'],
-            'incoming_id' => $incomingId,
-            'actual_id' => $actualId,
-        ];
+        return ['snapshot' => $state['snapshot'], 'incoming_id' => $incomingId, 'actual_id' => $actualId];
     }
 
     private function start(?string $id, bool $readAndClose): void
@@ -322,26 +302,20 @@ final class SessionLifecycle
             throw new RuntimeException('Unable to configure the native session identifier.');
         }
 
-        $options = [
-            'cache_limiter' => '',
-            'use_cookies' => false,
-            'use_strict_mode' => true,
-        ];
+        $options = ['cache_limiter' => '', 'use_cookies' => false, 'use_strict_mode' => true];
 
         if ($readAndClose) {
             $options['read_and_close'] = true;
         }
 
         if (!session_start($options)) {
-            $this->clearNativeState();
-            throw new RuntimeException('Unable to start native session storage.');
+            $this->failAfterCleanup(new RuntimeException('Unable to start native session storage.'), null);
         }
 
         $expectedStatus = $readAndClose ? PHP_SESSION_NONE : PHP_SESSION_ACTIVE;
 
         if (session_status() !== $expectedStatus) {
-            $this->abortActiveNativeSession();
-            throw new RuntimeException('Native session storage entered an unexpected state.');
+            $this->failAfterCleanup(new RuntimeException('Native session storage entered an unexpected state.'), null);
         }
     }
 
@@ -418,7 +392,7 @@ final class SessionLifecycle
             $value = substr($pair, $separator + 1);
 
             if ($found !== null || preg_match('/^[a-f0-9]{32}$/D', $value) !== 1) {
-                $this->incomingCookieRejected = true;
+                $this->incomingRejected = true;
                 return null;
             }
 
@@ -443,8 +417,8 @@ final class SessionLifecycle
     private function clearNativeState(): void
     {
         $_SESSION = [];
-
         if (session_status() === PHP_SESSION_NONE && session_id('') === false) {
+            $this->cleanupFailed = true;
             throw new RuntimeException('Unable to clear native session request state.');
         }
     }
@@ -452,6 +426,7 @@ final class SessionLifecycle
     private function abortActiveNativeSession(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE && !session_abort()) {
+            $this->cleanupFailed = true;
             throw new RuntimeException('Unable to abort native session state.');
         }
 
@@ -465,16 +440,32 @@ final class SessionLifecycle
         if ($id === null) {
             return;
         }
-
+        $previousCleanupFailed = $this->cleanupFailed;
+        $this->cleanupFailed = true;
         $this->start($id, false);
         $_SESSION = [];
-
         if (!session_destroy()) {
-            $this->abortActiveNativeSession();
-            throw new RuntimeException('Unable to discard an unissued native session.');
+            $this->failAfterCleanup(new RuntimeException('Unable to discard an unissued native session.'), null);
         }
-
         $this->clearNativeState();
+        $this->cleanupFailed = $previousCleanupFailed;
+    }
+
+    private function failAfterCleanup(Throwable $primaryFailure, ?string $firstUnissuedId, ?string $secondUnissuedId = null, bool $abortActive = true): never
+    {
+        try {
+            if ($abortActive) {
+                $this->abortActiveNativeSession();
+            }
+            $this->discardUnissuedSession($firstUnissuedId);
+            if ($secondUnissuedId !== null && $secondUnissuedId !== $firstUnissuedId) {
+                $this->discardUnissuedSession($secondUnissuedId);
+            }
+        } catch (Throwable $cleanupFailure) {
+            $this->cleanupFailed = true;
+            throw new SessionCleanupFailed($primaryFailure, $cleanupFailure);
+        }
+        throw $primaryFailure;
     }
 
     private function requireBegun(): void
@@ -493,17 +484,16 @@ final class SessionLifecycle
         }
     }
 
-    private function resetRequestState(): void
+    private function resetRequestState(bool $cleanupFailed = false): void
     {
         $this->begun = false;
         $this->cookieHeader = null;
         $this->incomingIdResolved = false;
-        $this->incomingCookieRejected = false;
-        $this->incomingStateRejected = false;
+        $this->incomingRejected = false;
         $this->incomingObsolete = false;
         $this->invalidated = false;
-        $this->incomingId = null;
-        $this->unissuedId = null;
+        $this->cleanupFailed = $cleanupFailed;
+        $this->incomingId = $this->unissuedId = null;
         $this->pendingCookie = null;
     }
 }

@@ -47,13 +47,18 @@ namespace PHPThis\Http {
 }
 
 namespace {
+    use PHPThis\Application;
     use PHPThis\Http\CookieSameSite;
     use PHPThis\Http\LocalFileBody;
+    use PHPThis\Http\Request;
+    use PHPThis\Http\RequestHandler;
     use PHPThis\Http\Response;
     use PHPThis\Http\ResponseCookie;
     use PHPThis\Http\ResponseEmissionFailed;
     use PHPThis\Http\ResponseEmitter;
     use PHPThis\Http\ResponseEmitterSpy;
+    use PHPThis\Routing\Route;
+    use PHPThis\Routing\Router;
 
     require dirname(__DIR__) . '/autoload.php';
 
@@ -124,6 +129,17 @@ namespace {
             static fn(): LocalFileBody => new LocalFileBody('relative.file', 0),
             static fn(): LocalFileBody => new LocalFileBody($path . "\n", 0),
             static fn(): LocalFileBody => new LocalFileBody($path, -1),
+            static fn(): Response => new Response(103, [], ''),
+            static fn(): Response => new Response(600, [], ''),
+            static fn(): Response => new Response(200, ['Transfer-Encoding' => 'identity'], ''),
+            static fn(): Response => new Response(200, ['Content-Length' => '8'], 'created'),
+            static fn(): Response => new Response(200, ['Content-Length' => '07'], 'created'),
+            static fn(): Response => new Response(204, [], 'created'),
+            static fn(): Response => new Response(204, ['Content-Length' => '0'], ''),
+            static fn(): Response => new Response(205, [], 'created'),
+            static fn(): Response => new Response(205, ['Content-Length' => '0'], ''),
+            static fn(): Response => new Response(304, [], 'created'),
+            static fn(): Response => new Response(304, ['Content-Length' => '0'], ''),
             static fn(): Response => new Response(200, ['X-Test' => "value\0suffix"], ''),
             static fn(): Response => new Response(
                 200,
@@ -181,7 +197,35 @@ namespace {
                 continue;
             }
 
-            throw new RuntimeException('Expected invalid local-file response framing to be rejected.');
+            throw new RuntimeException('Expected invalid response framing to be rejected.');
+        }
+
+        $exactLengthResponse = new Response(200, ['Content-Length' => '7'], 'created');
+        $headHandler = new class implements RequestHandler {
+            public function handle(Request $request): Response
+            {
+                return new Response(200, [], '');
+            }
+        };
+        $explicitHeadResponse = (new Application(new Router([
+            new Route('HEAD', '/explicit-head', $headHandler),
+        ])))->handle(new Request('HEAD', '/explicit-head'));
+
+        if (
+            $exactLengthResponse->body !== 'created'
+            || $explicitHeadResponse->status !== 200
+            || $explicitHeadResponse->body !== ''
+            || $explicitHeadResponse->headers !== []
+        ) {
+            throw new RuntimeException('Expected supported ordinary response framing to remain valid.');
+        }
+
+        foreach ([204, 205, 304] as $emptyStatus) {
+            $emptyResponse = new Response($emptyStatus, [], '');
+
+            if ($emptyResponse->body !== '' || $emptyResponse->headers !== []) {
+                throw new RuntimeException('Expected a bodyless status without Content-Length to remain valid.');
+            }
         }
 
         $mismatchedBytes = $fileBytes + 1;
