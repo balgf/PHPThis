@@ -261,10 +261,6 @@ function distributionGuardrailFailures(
             'migrated query-trace comparison slice',
             'Applications continue to own their test library, runner, organization',
         ],
-        'README.md' => [
-            'PHPUnit 13 maintainer suite requires PHP 8.4.1 or newer',
-            'do not affect the framework runtime or require consumers to select the same test runner',
-        ],
         'tests/run.php' => [
             "require dirname(__DIR__) . '/autoload.php';",
             "require __DIR__ . '/request-reader-support.php';",
@@ -1005,10 +1001,6 @@ function distributionGuardrailFailures(
             'src/Http/RequestUpload.php',
             'src/Http/LocalFileBody.php',
             'templates/application/.ai/file-transfers.md',
-        ],
-        'README.md' => [
-            'The Alpha 2 core ceiling is 2,500 physical lines.',
-            'the reviewed implementation occupies 2,495 lines',
         ],
     ];
 

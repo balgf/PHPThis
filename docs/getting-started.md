@@ -10,17 +10,19 @@ The intended first request is:
 
 > Bootstrap this PHPThis application. Read `AGENTS.md`, inspect the installed PHPThis version, replace generic application context only with facts supported by this project, run the complete check, and report any product or operational decisions that require my approval.
 
-## Start from the published skeleton
+## Start from a proved published skeleton
 
-When Packagist lists the approved `phpthis/skeleton` Alpha, the canonical installation path is:
+Select the exact `phpthis/skeleton` version whose clean public `create-project` proof is complete in the release evidence. Do not use an unpinned prerelease constraint during partial publication: it can select a newly indexed skeleton before that public-install path has been proved.
+
+Alpha 5 is currently the last coordinated framework/skeleton pair with complete clean public-install evidence:
 
 ```bash
-composer create-project --stability=alpha phpthis/skeleton my-app
+composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.5'
 cd my-app
 composer check
 ```
 
-This creates the application root from `phpthis/skeleton` and installs `phpthis/framework` under `vendor/phpthis/framework`. Consumers do not clone or copy the PHPThis framework repository.
+This creates the application root from the exact proved `phpthis/skeleton` version and installs its matching `phpthis/framework` under `vendor/phpthis/framework`. Consumers do not clone or copy the PHPThis framework repository. Before selecting a later prerelease, verify its exact skeleton version and clean public-install evidence in the release work item, GitHub, and Packagist.
 
 ## Framework source evaluation only
 
@@ -136,9 +138,9 @@ The AI should cite concrete paths, distinguish existing behavior from proposals,
 
 ## Prerelease boundary
 
-The bounded Alpha 5 scope is accepted in `docs/decisions/040-bounded-alpha-5-release-scope.md`; `v0.1.0-alpha.5` remains the latest immutable release tag recorded by the repository source record. That boundary carries Alpha 4 and the earlier bounded prerelease surfaces forward and rolls ADR 036 through ADR 039 into Consumer Contract version 10 and Strict Profile version 3 with permanent diagnostic `PHT007`. Package availability is an external fact: inspect the exact requested tag and verify GitHub and Packagist rather than inferring publication from tracked text.
+The bounded Alpha 5 scope is accepted in `docs/decisions/040-bounded-alpha-5-release-scope.md`; `v0.1.0-alpha.5` remains the latest complete coordinated framework, skeleton, and public-install release. That boundary carries Alpha 4 and the earlier bounded prerelease surfaces forward and rolls ADR 036 through ADR 039 into Consumer Contract version 10 and Strict Profile version 3 with permanent diagnostic `PHT007`.
 
-The bounded Alpha 6 scope, identity `0.1.0-alpha.6`, planned date 2026-08-09 in Asia/Manila, release notes, announcement draft, and source preparation are approved in `docs/decisions/047-bounded-alpha-6-release-scope.md`. Exact candidate commits, commit and push operations, tags, package-host updates, dedicated-skeleton changes, GitHub prereleases, and announcement remain separately gated. Alpha 6 adopts Consumer Contract version 11 through ADR 045 while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`. Construct only supported final response framing, add the applicable session-cleanup failure-precedence evidence, and treat copyable child-process configuration proof, eager composition and exact probe claims, ADR 041 through ADR 046, identifier and UUID-generation policy, CRUD access-surface structure, and evidence organization as application-owned patterns rather than framework services.
+The bounded Alpha 6 scope is accepted in `docs/decisions/047-bounded-alpha-6-release-scope.md`; `v0.1.0-alpha.6` is the latest immutable framework tag and source boundary. Issue #37 records the exact framework candidate, tag, and package-distribution evidence, but its Alpha 6 record remains partial and unproved pending the dedicated skeleton, clean exact `create-project` proof, both GitHub prereleases, and announcement. Framework-side evidence therefore does not establish that an exact Alpha 6 skeleton command is available. Package availability is an external fact: verify the evidence record, GitHub, and Packagist before selecting a package version. Current `main` after the framework tag contains a documentation and guardrail coherence correction only, changes no core, and is not tagged Alpha 6 source. Alpha 6 adopts Consumer Contract version 11 through ADR 045 while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`. Construct only supported final response framing, add the applicable session-cleanup failure-precedence evidence, and treat copyable child-process configuration proof, eager composition and exact probe claims, ADR 041 through ADR 046, identifier and UUID-generation policy, CRUD access-surface structure, and evidence organization as application-owned patterns rather than framework services.
 
 Alpha 6 removes the public-prerelease convenience factory `PathParameters::onePositiveInteger($name, $value)`. Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists. This is a deliberate prerelease compatibility break in factory shape only; route matching, accepted positive-integer grammar, immutable delivery, and the `positiveInteger()` accessor remain unchanged. Reconcile framework guidance deliberately: the application's `AGENTS.md`, `.ai/` context, source layout, and decisions remain project-owned and are never overwritten or relocated by an upgrade. The source repository's `skeleton/` directory retains a VCS constraint and `repositories` override only as a source-evaluation bootstrap, so record the evaluated Git commit and commit the generated application lockfile.
 

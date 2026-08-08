@@ -160,10 +160,6 @@ function operationGuardrailFailures(string $root): array
             '| at-least-once delivery |',
             '| dead letter |',
         ],
-        'README.md' => [
-            'Durable deferred work begins with one application-owned SQLite recipe',
-            'without adding a framework queue or exactly-once claim',
-        ],
         'ROADMAP.md' => [
             'ADR 024 accepts one application-owned SQLite durable-job proof',
             'ADR 024 accepts one SQLite-specific application recipe, not core job, worker, dispatcher, broker, or exactly-once contracts',
@@ -402,11 +398,6 @@ function operationGuardrailFailures(string $root): array
             'Add or assess an operational application command or scheduled pass',
             '`docs/cli.md`',
             'no framework CLI, scheduler, lock, or lease API exists',
-        ],
-        'README.md' => [
-            'php example/bin/console.php jobs:run-one',
-            'php example/bin/console.php schedule:run',
-            'Application CLI and scheduler',
         ],
         'ROADMAP.md' => [
             'ADR 025 accepts one application-owned explicit console and cron-friendly scheduled pass',
@@ -703,10 +694,6 @@ function operationGuardrailFailures(string $root): array
         'docs/guardrails.md' => [
             'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
             'It keeps `.ai/workbench.md` optional under Consumer Contract version 11.',
-        ],
-        'README.md' => [
-            'Optional [PHPThis Workbench](docs/workbench.md)',
-            '[ADR 041](docs/decisions/041-optional-development-workbench.md)',
         ],
         'VISION.md' => [
             'A human can inspect one explicitly composed development object or operation through a fresh strict process',
@@ -1077,11 +1064,6 @@ function operationGuardrailFailures(string $root): array
             'cross-history partial-deployment evidence',
             'typed-configuration/process-identity reference to `.ai/configuration.md`, database-authority reference to `.ai/data.md`',
             'These are conditional SQLite/example and host-topology mechanics, not engine-neutral requirements.',
-        ],
-        'README.md' => [
-            'Schema evolution follows universal application-owned invariants:',
-            'The executable reference remains SQLite with one transaction per migration and a same-host nonblocking `flock`; those mechanisms are not cross-engine claims',
-            '[ADR 043](docs/decisions/043-engine-specific-application-migration-invariants.md)',
         ],
         'ROADMAP.md' => [
             'ADR 043 separates universal application-owned migration invariants from ADR 027\'s SQLite-only transaction, rollback, ledger-definition, and same-host `flock` proof',
@@ -1485,10 +1467,6 @@ function operationGuardrailFailures(string $root): array
             'Composer-autoload and installed-checker proof using the alternative `src/Infrastructure/ChangeHistory/` source and `App\\Infrastructure\\ChangeHistory` namespace',
             'installed-consumer proof separately runs the canonical checker with a coherent nonrecommended source directory and matching namespace',
             'places one valid final class there, proves Composer can autoload it, and requires the installed canonical checker to pass',
-        ],
-        'README.md' => [
-            'Schema evolution follows universal application-owned invariants',
-            'php example/bin/console.php database:migrate',
         ],
         'ROADMAP.md' => [
             'ADR 027 accepts one application-owned SQLite migration ledger',

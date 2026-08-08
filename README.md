@@ -1,160 +1,95 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/balgf/PHPThis/main/.github/assets/phpthis-readme-banner.png" alt="PHPThis" width="100%">
+  <img src="https://raw.githubusercontent.com/balgf/PHPThis/v0.1.0-alpha.6/.github/assets/phpthis-readme-banner.png" alt="PHPThis" width="100%">
 </p>
 
 # PHPThis
 
-PHPThis is an experimental, checked PHP profile and minimal web framework for **AI-first authoring with human accountability**. AI is the primary code author and knowledge interface. Humans provide intent, decide consequential tradeoffs, and remain accountable for the resulting software.
+PHPThis is an experimental PHP 8.4 framework foundation for **AI-first authoring with human accountability**. It stays close to ordinary PHP so an AI can follow the real execution path and a human can review it without first reconstructing hidden framework behavior.
 
-It stays close to ordinary PHP and favors code that is local, literal, typed, bounded, and easy to verify over APIs optimized for typing speed.
+PHPThis favors code that is local, literal, typed, bounded, and mechanically checked. It does not provide AI or LLM APIs; “AI-first” describes the code-authoring and knowledge workflow.
 
-PHPThis does not provide AI or LLM APIs. "AI" refers to the code-authoring workflow.
+> PHPThis is prerelease evaluation software. APIs may change between prereleases. Do not use it in production.
 
-The working rule is simple: if a behavior cannot be found by following ordinary PHP definitions, it does not belong in the framework.
+## Why PHPThis
 
-## Ask the project AI
+- Ordinary typed PHP with visible manual composition and zero third-party framework runtime dependencies.
+- Explicit finite routes, immutable HTTP values, and one traceable request path.
+- Direct engine-specific SQL through a thin PDO transport boundary, with bound data, query budgets, and scale-sensitive tests.
+- No ORM, Active Record, lazy loading, query builder, repository layer, service container, facade, autowiring, or runtime discovery.
+- A versioned checked PHP subset with permanent, repair-oriented `PHT` diagnostics.
+- Installed contracts, task-routed context, source, and tests that an AI can cite and a human can audit.
+- Application-owned product policy, configuration, authentication, authorization, caching, jobs, migrations, deployment, and operational evidence.
 
-PHPThis has no traditional framework manual. To learn how to code something, explain an existing path, or repair a diagnostic, ask the AI working in the application. Its first job is to inspect the installed PHPThis version, the application's `AGENTS.md` and `.ai/` context, and the concrete source and tests.
+The framework supplies a small execution foundation and strict verification boundary. It does not turn application decisions into hidden framework services.
 
-Useful requests include:
+## Current release state
 
-- `Explain how this application handles a request. Cite the installed PHPThis files and this project's wiring.`
-- `Add a bounded database read using this application's canonical PHPThis pattern and prove its query count stays constant.`
-- `Explain PHT005, show where this project violates it, and repair the cause.`
-- `Does PHPThis currently support middleware? Check the installed version and distinguish existing behavior from a proposal.`
+| Boundary | Recorded state |
+| --- | --- |
+| Latest framework tag | Alpha 6, [`v0.1.0-alpha.6`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.6), Consumer Contract version 11, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |
+| Last coordinated application starter | Alpha 5 remains the latest framework/skeleton pair with complete clean public-install evidence |
+| Alpha 6 completion | The matching skeleton, clean public `create-project` proof, GitHub prereleases, and final announcement remain tracked in [release issue #37](https://github.com/balgf/PHPThis/issues/37) |
 
-The versioned Markdown in this repository is not a linear tutorial. It is compact framework authority that an AI can route and a human can audit. Human-approved intent and decisions define desired application behavior; source, tests, and the complete check provide executable evidence of what was implemented.
+Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation. The [Alpha 6 release notes](docs/releases/0.1.0-alpha.6.md) describe the framework changes and compatibility boundary.
 
-## What makes it different
-
-- No ORM, Active Record, lazy loading, query builder, repository, SQL/binding/placeholder helper, generic paginator, transaction callback, generated SQL, dialect abstraction, facades, global helpers, autowiring, route discovery, or runtime macros.
-- SQL stays visible and engine-specific behind a thin PDO transport boundary; the base connection contract is exercised with SQLite locally, and dedicated CI is configured to certify the same contract against the exact SQLite, MySQL, and PostgreSQL versions in the [PDO transport certification matrix](docs/database.md#pdo-transport-certification-matrix).
-- Strict Profile version 3 keeps data in unique named parameters, limits direct `Connection` SQL to finite non-blank compile-time constant statements, and confines exact process-environment reads to one application-owned PHP file; application-owned structural choices map to reviewed statements rather than a sanitizer or query builder.
-- [Application configuration](docs/configuration.md) is one typed application-owned boundary: process-specific final readonly values, validation before application-controlled I/O, visible injection, and separate runtime/migration configuration and process-entry paths with exact-engine capability overlap and residual risk recorded, without a framework config service, bag, helper, facade, container, automatic dotenv loader, or secret-manager abstraction.
-- The finite data-path proof keeps eight complete raw SQLite document-list statements and their explicit parameter arrays at direct `Connection` call sites. It proves two orders, a composite cursor, bounded categories, parsed empty-selection zero-SQL behavior, and one statement per non-empty page without turning that evidence into a framework paginator.
-- Every database connection has an explicit query budget that fails before an excessive statement executes.
-- Every database connection has a bounded query trace that reports repeated SQL fingerprints, execution timing, and failures without retaining SQL or parameters.
-- Every application owns one explicit terminal request-summary coordinator and sink. It generates a 128-bit lowercase-hex correlation ID, propagates `X-Request-ID`, and makes one failure-isolated sink invocation attempt with bounded per-connection budget and trace evidence; PHPThis adds no core logger, middleware, facade, or hidden instrumentation.
-- External database and JSON values are parsed once into concrete final readonly projections and commands. Inbound [typed input boundaries](docs/type-safety.md) distinguish missing and null, complete the entire payload-shape and native-type pass before value rules, and default malformed or structurally invalid structured request-body content to generic `400` while correctly shaped and typed but unacceptable values use an application-owned exact generic `422` mapping. Query, header, route, and transport representations retain their separately recorded contracts. Both body paths remain redacted and permit downstream operation behavior only after complete parsing—without a core exception, generic validator, or mandatory service layer.
-- A versioned Strict Profile rejects legal-but-unsafe PHP with stable, repair-oriented `PHT` diagnostics.
-- Consuming applications run one installed `phpthis check` binary whose maximum-level PHPStan configuration cannot be weakened by project files.
-- An installed knowledge map routes framework questions to the relevant contract, decision, source, and test instead of relying on model memory.
-- Handlers implement one visible `handle` method and receive dependencies through normal constructors.
-- Routes are explicit method, path declaration, and already-constructed handler objects, composed from named route-area lists into one visible manifest. Consumer Contract version 11 carries forward four fixed full-segment types—`positive-int`, `uuid`, `ulid`, and bounded `token`—under an at-most-two-parameter limit. Applications use the narrowest type and reserve `token` for genuinely opaque identifiers; deterministic dispatch remains indexed and handlers keep `handle(Request)`.
-- An optional application-owned request-handler decorator can reuse the existing handler seam for one narrowly named route concern. Each final decorator has exactly one downstream handler, zero-or-one invocation with the same immutable request, unchanged exception propagation, bounded named I/O, and explicit nesting beside the route; PHPThis adds no middleware interface, pipeline, registry, discovery, `$next` callable, context bag, core class, or dependency.
-- Accepted [application-owned WebSocket integration](docs/websockets.md) keeps a pinned mature third-party runtime in a separate consumer process. Frames are parsed into a narrow typed command and never adapted to PHPThis HTTP requests or responses; connection, rate, lifetime, backpressure, delivery, redaction, shutdown, and deployment policy stay explicit, with no core WebSocket, channel, broadcaster, pub/sub, middleware, retry, replay, acknowledgement, or exactly-once API.
-- Optional [PHPThis Workbench](docs/workbench.md) is a separate development-only package for inspecting one explicitly composed application object through one fresh strict expression process at a time. It adds no framework core, container, discovery, generic dispatcher, production shell, batch or remote mode, sandbox claim, or validity shortcut; package availability must be verified externally before adoption.
-- Protected routes use one application-owned action-specific adapter with visible `authenticate -> resolve tenant -> authorize -> handler` order, concrete principal and tenant values, replaceable policies, and no framework middleware or request-context mechanism.
-- An optional feature-first [CRUD reference profile](docs/crud.md) gives AI-authored Create, List, and bounded item-Get work one compartmentalized default without adding a generic CRUD runtime or enforcing application directories.
-- One request boundary normalizes bounded PHP runtime input and maps only explicitly registered exception classes.
-- Optional [file transfers](docs/file-transfers/README.md) normalize at most one PHP-visible multipart upload into a typed value and emit one concrete local file in fixed chunks; storage, authorization, retention, raw duplicate enforcement, and deployment policy remain application-owned, with no storage facade or range implementation.
-- Optional session state uses one lazy native-PHP lifecycle with bounded scalar snapshots, explicit secure response cookies, short lock duration, and no session helper or session field on the request.
-- Caching begins with an explicit application policy, not a framework helper: HTTP response caching and server-side data caching are separate concerns. One application-owned Redis proof keeps current authorization before a tenant-scoped document cache and uses a separate owner-token schedule lease without adding a generic framework cache or lock runtime.
-- Durable deferred work begins with one application-owned SQLite recipe: the business write and versioned job row share one transaction, a fresh one-shot worker uses fenced leases and bounded retries, and one idempotent database effect is proved without adding a framework queue or exactly-once claim.
-- Schema evolution follows universal application-owned invariants: a finite ordered unrolled manifest, checksum-locked immutable history, bounded ledger, separately composed process and configuration authority with recorded exact-engine overlap and residual risk, engine-specific ledger consistency, coordination topology, partial-failure recovery, and exact-engine evidence. The executable reference remains SQLite with one transaction per migration and a same-host nonblocking `flock`; those mechanisms are not cross-engine claims, and PHPThis adds no migration API, schema builder, discovery, or rollback inference.
-- Markdown is part of the framework interface. The guardrail command requires more Markdown files than PHP files.
-- The Alpha 2 core ceiling is 2,500 physical lines. Under that accepted historical ceiling, the reviewed implementation occupies 2,495 lines.
-- ADR 032 raises the current-checkout ceiling only for the fixed UUID/ULID routing slice to 2,600 lines. ADR 045 uses the remaining seven lines only for bounded session-cleanup failure retention while its response-framing refactor is line-neutral. The approved Alpha 6 source-preparation scope removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines, leaving five unallocated lines. That freed margin authorizes no additional route type, configuration runtime, or adjacent mechanism.
-
-Removing an ORM does **not** prove that N+1 queries are impossible. PHPThis combines visible SQL with query budgets and scale-sensitive tests so that query count cannot silently grow with result size.
-
-Finite SQL and parameter binding do not prove authorization or least privilege. Consuming applications record and verify the objects and actions available to each runtime connection, activate only the authority required by named operations before those operations receive traffic, and keep namespace-control, migration, identity-management, authority-management, and administrative credentials outside the web runtime.
-
-## Current state
-
-**Status: experimental prerelease evaluation software.** Framework APIs may change without backward compatibility while the development pattern is being proven. Do not use PHPThis in production.
-
-The bounded [Alpha 5 scope](docs/decisions/040-bounded-alpha-5-release-scope.md) and tag `v0.1.0-alpha.5` remain the latest immutable release identity and tagged boundary recorded by the repository source record. That boundary rolls accepted [ADR 036](docs/decisions/036-one-typed-application-configuration-boundary.md) through [ADR 039](docs/decisions/039-recommended-database-migration-structure.md) into Consumer Contract version 10, Strict Profile version 3, and permanent diagnostic `PHT007`. Package availability and current release state are external facts: verify the exact tags and Packagist packages rather than inferring publication from this source file.
-
-The bounded [Alpha 6 scope](docs/decisions/047-bounded-alpha-6-release-scope.md), identity `0.1.0-alpha.6`, tags `v0.1.0-alpha.6`, planned date 2026-08-09 in Asia/Manila, [release notes](docs/releases/0.1.0-alpha.6.md), announcement draft, and source preparation are approved. Exact candidate commits, commit and push operations, tags, package-host updates, dedicated-skeleton changes, GitHub prereleases, and announcement remain separately gated. Alpha 6 advances the Consumer Contract to version 11 through [ADR 045](docs/decisions/045-bounded-session-cleanup-and-response-framing.md) while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`: session cleanup preserves the exact primary failure or retains both failures through redacted `SessionCleanupFailed`, and ordinary responses reject contradictory framing. [ADR 046](docs/decisions/046-canonical-executable-example-boundaries.md) consolidates four executable-example application boundaries without another contract or profile change.
-
-Alpha 6 also rolls up copyable child-process configuration evidence, explicit eager-composition and liveness/readiness probe semantics, the optional development-only Workbench, deterministic structured-body failure classification, engine-specific migration invariants, bounded task-routed AI context, semantic identifier and separate UUID acceptance and generation-policy guidance, explicit CRUD access-surface organization, and modular application-owned evidence guidance. UUID acceptance covers canonical versions 1 through 8 by default, while generation is explicitly versioned and recommends version 7 for new database row identifiers only when its embedded approximate-time disclosure is acceptable. Those remain application-owned patterns rather than framework services or checker validity. ADR 034 remains evidence-backed application-owned guidance for a separate pinned third-party runtime, not a core WebSocket capability. The prerelease removes `PathParameters::onePositiveInteger()` in favor of `PathParameters::fromValues()` and corrects the `eval` guardrail's same-named-identifier false positives without adding a diagnostic. PHP 8.4.x, zero third-party runtime dependencies, direct visible SQL, the 2,600-line core ceiling, and the permanent no-magic exclusions remain unchanged. [RELEASING.md](RELEASING.md) keeps this approved source-preparation state distinct from an approved exact candidate and immutable release history.
-
-This is a zero third-party runtime-dependency framework foundation. The current proof slice supports bounded runtime request ingestion, one typed bounded multipart upload, one fixed-chunk local-file response, immutable headers and validated response cookies, optional lazy native-file sessions, exact error mapping, directly indexed literal routes, and one deterministic state index for paths with at most two full-segment `positive-int`, `uuid`, `ulid`, or bounded `token` parameters, plus explicit handlers and instrumented PDO access. UUID is lowercase `[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`; ULID is lowercase `[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}`. Routing returns those bytes unchanged and adds no normalization, type fallback, model binding, record lookup, identifier generation, or persistence policy. ADR 033 additionally accepts the optional application-owned request-handler decorator pattern without adding framework runtime behavior or dependencies. It does not include a framework WebSocket runtime or API, middleware, middleware pipeline, cache client, cache interface, cache helper, lock or lease interface, general automatic HTTP cache policy, framework queue runtime, framework migration runtime, generic storage abstraction, or byte ranges. Framework-generated 404, 405, and 500 responses and every current skeleton/example response path explicitly include the `no-store` directive; protected responses additionally use `private`. Arbitrary application handler responses remain application-owned. The sample application includes a bounded `GET /users` List operation with one explicit application-owned keyset continuation, an account-scoped transactional `POST /accounts/{account_id:positive-int}/users` Create operation that records the new user-to-account relation separately from actor membership and commit-publishes one SQLite welcome job, the first bounded `GET /users/{user_id:positive-int}` item proof, nested protected document Get and List routes, public `POST`/`GET /document-files` transfer evidence with generated local identities, and an application-owned `database:migrate` SQLite proof with immutable checksummed history. ADR 024 adds a SQLite-specific one-delivery worker proof with a versioned envelope, finite dispatch, fenced leases, bounded retries, redacted dead letters, process-crash recovery, and one idempotent database effect. ADR 028 adds one application-owned Redis document-cache and schedule-lease proof with current authorization, explicit fallback, bounded stale refill, separate cache and `noeviction` lease endpoints, and owner-token-safe renewal and release. The Redis owner token is not a fencing token and the lease does not replace SQLite job correctness. ADR 020 establishes the explicit stateless authentication boundary, tenant resolution, current per-request authorization, denial bounds, and replaceable I/O-free application policies. ADR 022 adds the SQLite-only document collection proof with `rank_asc`/`rank_desc`, exact `v1:<order>:<sort_rank>:<document_key>` cursors, omitted/empty/one-to-three categories, and one statement per non-empty page. ADR 029 composes those boundaries in one sanitized consumer profile without adding framework runtime behavior. These proofs do not supply a credential parser, identity provider, credential lifecycle, policy engine, universal tenant model, generic paginator, snapshot guarantee, cross-engine application SQL, cross-engine queues or migrations, generic cache or lease APIs, Redis failover guarantees, or exactly-once external effects. Update and Delete are not yet claimed. Session transport is not an authentication, authorization, expiry, or CSRF implementation; applications own those policies.
-
-The executable query-scaling proof holds every accepted page at one statement while traversing 125 users as 50, 50, and 25 rows without gaps or duplicates. Its isolated N+1 negative control grows from 3 statements for 2 users to 51 for 50 users; `PHT003` rejects that implementation, and a query budget stops it before statement 4.
-
-```text
-PHP runtime / front controller
-├─ calls application terminal coordinator
-│  ├─ RequestBoundary -> optional lazy SessionLifecycle -> Application -> Router -> RouteMatch -> Request copy -> optional explicit route-local decorator(s) -> route policy adapter -> protected Handler -> selected Response
-│  ├─ adds X-Request-ID and makes one failure-isolated summary sink attempt
-│  └─ returns the selected Response
-└─ passes the returned Response to ResponseEmitter
-```
+The Alpha 6 framework tag is immutable. This `main`-branch README is a post-tag documentation correction for stale prepublication wording in that tag; it does not rewrite the tagged artifact.
 
 ## Start a PHPThis application
 
 Consumers install PHPThis through Composer. Do not clone or copy the PHPThis framework repository to start an application.
 
+Until the coordinated Alpha 6 skeleton and public-installation proof are complete, create the last completely proved framework/skeleton pair explicitly:
+
 ```bash
-composer create-project --stability=alpha phpthis/skeleton my-app
+composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.5'
 cd my-app
 composer check
 php -S 127.0.0.1:8080 -t public
 curl -i http://127.0.0.1:8080/health
 ```
 
-`phpthis/skeleton` becomes the application root and Composer installs `phpthis/framework` under `vendor/phpthis/framework`. The framework runtime supports PHP 8.4.x and requires PDO and ext-session.
+`phpthis/skeleton` becomes the application root and Composer installs `phpthis/framework` under `vendor/phpthis/framework`. The runtime requires PHP 8.4.x, PDO, and `ext-session`.
 
-The independently checked skeleton contains a runnable health application, project-owned AI context, the installed profile gate, behavior tests, and CI. The [getting-started guide](docs/getting-started.md) defines the canonical Packagist path, existing-application adoption, and the separate source-evaluation fallback while requiring current package availability to be verified externally.
+Do not infer a matching starter release from the framework tag. Use the Alpha 6 `create-project` path only after the exact skeleton version and clean public-install evidence are recorded; existing applications may assess the framework package independently against the [Alpha 6 upgrade notes](docs/releases/0.1.0-alpha.6.md#upgrade-from-alpha-5). The [getting-started guide](docs/getting-started.md) covers the Composer path, existing-application adoption, and source evaluation.
 
-Every application must own and commit a thin root `AGENTS.md` and a task-routed `.ai/` directory. These files record project-specific domain, scale, integration, operational, and verification facts without copying PHPThis's maintainer instructions.
+## Ask the project AI
 
-Ask the project AI to follow the [application bootstrap contract](docs/getting-started.md), the installed [consumer contract](docs/consumer-contract.md), and the [knowledge map](docs/knowledge-map.md). Existing applications can still adopt the documentation-only context under `templates/application/` deliberately.
+Every application owns a thin `AGENTS.md` and task-routed `.ai/` context. Ask the AI working in that application to inspect those files, the installed PHPThis contract, and the concrete source and tests before explaining or changing behavior.
+
+Useful requests include:
+
+- `Explain this request path and cite the installed PHPThis contract, application wiring, and nearest tests.`
+- `Add a bounded database read using this application's canonical pattern and prove its query count stays constant.`
+- `Explain this PHT diagnostic, find the cause in this project, and repair it without weakening the profile.`
+- `Does PHPThis support this mechanism? Distinguish installed behavior, application policy, and a proposal.`
+
+The AI may author code and draft decisions. A human still supplies intent, approves consequential choices, and remains accountable for the result.
+
+## Key documentation
+
+- [Vision](VISION.md) — AI-first authoring, human accountability, and framework non-goals.
+- [Getting started](docs/getting-started.md) — installation and deliberate adoption.
+- [Consumer Contract](docs/consumer-contract.md) — the portable application validity floor.
+- [Knowledge map](docs/knowledge-map.md) — the smallest relevant guide, source, and evidence route for each task.
+- [Request handling](docs/request-handling.md) and [database boundaries](docs/database.md) — the core HTTP and PDO patterns.
+- [Alpha 6 release notes](docs/releases/0.1.0-alpha.6.md) — compatibility changes and the carried-forward boundary.
+- [Architecture decisions](docs/decisions/README.md) — accepted rationale and reconsideration triggers.
+- [Security policy](SECURITY.md) and [release process](RELEASING.md) — experimental support limits and publication gates.
+
+Installed consumers use the packaged contract and knowledge map. The source repository’s `.ai/` context is maintainer-only and is intentionally excluded from the Composer package.
 
 ## Develop or evaluate PHPThis itself
 
-Cloning this repository is only for contributing to PHPThis or evaluating its framework source and checked example. It is not the consumer application installation path.
-
-Running this repository's complete maintainer checks additionally requires Composer and PDO SQLite; its development-only PHPUnit 13 maintainer suite requires PHP 8.4.1 or newer within that supported line. Local report-only coverage requires PCOV or Xdebug, and framework CI supplies PCOV. Composer deliberately excludes PHP 8.5 until that runtime has its own reviewed CI evidence. The repository's application-owned Redis integration proof additionally declares `ext-redis ^6.3`, tests Redis server `>=7.4` and `<9.0`, and requires two processes by default: cache at `127.0.0.1:6379` database `0`, and lease at `127.0.0.1:6380` database `0`. PHPStan, PHPUnit, and the PHPThis Strict Profile are mandatory framework-repository development components; they do not affect the framework runtime or require consumers to select the same test runner.
+Cloning this repository is for contributing to PHPThis or evaluating its framework source and checked example. It is not the consumer application installation path.
 
 ```bash
 git clone https://github.com/balgf/PHPThis.git
 cd PHPThis
 composer install
 composer check
-php example/bin/console.php database:migrate
-php -S 127.0.0.1:8080 -t example/public
-curl -i http://127.0.0.1:8080/health
-curl -i http://127.0.0.1:8080/users
-curl -i 'http://127.0.0.1:8080/users?after_user_id=1'
-curl -i http://127.0.0.1:8080/users/1
-curl -i http://127.0.0.1:8080/accounts/42/documents/Doc_9-z
-curl -i 'http://127.0.0.1:8080/accounts/42/documents?order=rank_asc'
-curl -i -X POST http://127.0.0.1:8080/accounts/42/users \
-  -H 'Content-Type: application/json' \
-  --data '{"name":"Katherine Johnson","email":"katherine@example.com"}'
-php example/bin/console.php jobs:run-one
-php example/bin/console.php schedule:run
 ```
 
-## Authority and project status
-
-- [Vision](VISION.md) defines AI-first authoring with human accountability.
-- [Consumer contract](docs/consumer-contract.md) is the portable application validity floor.
-- [Knowledge map](docs/knowledge-map.md) routes an AI to the smallest relevant installed source of authority.
-- [CRUD reference profile](docs/crud.md) defines the optional feature-first application structure and its current evidence boundary.
-- [Finite data paths](docs/decisions/022-application-owned-finite-data-paths.md) records the application-owned raw-SQL collection proof and its SQLite-only limits.
-- [Terminal request summaries](docs/logging.md) and [ADR 023](docs/decisions/023-application-owned-terminal-request-summaries.md) define application-owned correlation, redaction, bounded database evidence, one-attempt semantics, and sink-failure isolation.
-- [Application CLI and scheduler](docs/cli.md), historical [ADR 025](docs/decisions/025-application-owned-explicit-cli-and-scheduler.md), and current [ADR 028](docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md) define one application-owned console with finite command and output contracts; the executable example's scheduled pass separately records its explicit UTC cadence and Redis owner-token overlap boundary. None adds a core CLI or scheduler API, and migration-writer coordination remains application-owned under [ADR 043](docs/decisions/043-engine-specific-application-migration-invariants.md).
-- [Explicit application migrations](docs/migrations.md) and [ADR 043](docs/decisions/043-engine-specific-application-migration-invariants.md) define universal application-owned invariants for immutable bounded history, engine-specific ledger consistency, coordination, and recovery; [ADR 027](docs/decisions/027-application-owned-explicit-sqlite-migrations.md) remains the SQLite transaction and same-host `flock` proof without adding a core migration API.
-- [Security baseline](docs/security.md) defines SQL data/structure separation, least-privilege obligations, and the limits of automated proof.
-- [Session state](docs/sessions.md) defines the optional native lifecycle, explicit cookie contract, deployment requirements, and application-policy boundary.
-- [Request policy](docs/request-policy.md) defines the application-owned authentication, tenant-resolution, and authorization composition.
-- [Request handling](docs/request-handling.md) and [ADR 033](docs/decisions/033-application-owned-request-handler-decorators.md) define the optional route-local decorator pattern and preserve the absence of framework middleware.
-- [Application-owned WebSockets](docs/websockets.md) and accepted [ADR 034](docs/decisions/034-application-owned-websocket-integration.md) record one independent public-Alpha-3-package consumer proof while preserving the absence of a framework WebSocket runtime or API.
-- [PHPThis Workbench](docs/workbench.md) and accepted [ADR 041](docs/decisions/041-optional-development-workbench.md) define the separate optional development-only expression workspace while preserving the check-only framework CLI and finite application-owned production console.
-- [Caching policy](docs/caching.md) separates HTTP response caching from application data caching and defines the evidence required before either is adopted.
-- [Redis cache and schedule coordination](docs/redis-coordination.md) and [ADR 028](docs/decisions/028-application-owned-redis-cache-and-schedule-lease.md) define the one application-owned backend proof and its non-fencing limits.
-- [Durable jobs](docs/jobs.md) and [ADR 024](docs/decisions/024-application-owned-sqlite-durable-jobs.md) define the application-owned SQLite recipe and its at-least-once boundary.
-- [Architecture decisions](docs/decisions/README.md) preserve accepted rationale and reconsideration triggers.
-- [Explicit UUID and ULID route types](docs/decisions/032-explicit-uuid-and-ulid-route-types.md) records the accepted four-type grammar and its bounded core exception.
-- [Alpha 6 scope](docs/decisions/047-bounded-alpha-6-release-scope.md) and [Alpha 6 release notes](docs/releases/0.1.0-alpha.6.md) define the approved identity and source-preparation scope, [Alpha 5 scope](docs/decisions/040-bounded-alpha-5-release-scope.md) and [Alpha 5 release notes](docs/releases/0.1.0-alpha.5.md) preserve the latest immutable tagged boundary, the earlier Alpha scope records preserve their historical surfaces, and the [release process](RELEASING.md) distinguishes immutable history, unreleased `main`, a proposed candidate, and an explicitly approved candidate while defining the public-artifact gate.
-- [Evaluation](docs/evaluation.md) defines evidence and future AI-comparison work.
-- [Roadmap](ROADMAP.md), [contribution gate](CONTRIBUTING.md), and [security policy](SECURITY.md) communicate the experimental project's current boundaries.
-
-The source repository contains a maintainer-only `.ai/README.md` that routes changes to PHPThis itself. It is intentionally excluded from the Composer package; installed consumers use the [knowledge map](docs/knowledge-map.md).
+`composer check` is the complete maintainer gate. PHPStan, PHPUnit, and the Strict Profile are development and verification dependencies; they do not affect the framework runtime or require consumers to select the same test runner. See [CONTRIBUTING.md](CONTRIBUTING.md) and [the guardrail catalogue](docs/guardrails.md) before changing the framework.
 
 ## License
 

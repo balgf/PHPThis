@@ -366,11 +366,6 @@ function boundaryGuardrailFailures(string $root): array
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
             'keeps `.ai/websockets.md` optional under current Contract version 11 as well as its originating Contract version 9',
         ],
-        'README.md' => [
-            'Accepted [application-owned WebSocket integration](docs/websockets.md)',
-            'Frames are parsed into a narrow typed command and never adapted to PHPThis HTTP requests or responses',
-            'ADR 034 remains evidence-backed application-owned guidance for a separate pinned third-party runtime, not a core WebSocket capability.',
-        ],
         'VISION.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',
             'without adding a framework real-time runtime or adapting frames into HTTP values',
