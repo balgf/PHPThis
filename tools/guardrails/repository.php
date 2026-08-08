@@ -1155,7 +1155,7 @@ function legacyPositiveIntegerRouteConvenienceFailures(string $root): array
         $failures[] = 'The removed onePositiveInteger compatibility convenience must not remain in PathParameters.';
     }
 
-    $expectedUpgradeGuidance = 'This current unreleased checkout also removes the public-prerelease convenience factory `PathParameters::onePositiveInteger($name, $value)`. Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists. This is a deliberate next-prerelease compatibility break in factory shape only; route matching, accepted positive-integer grammar, immutable delivery, and the `positiveInteger()` accessor remain unchanged.';
+    $expectedUpgradeGuidance = 'Alpha 6 removes the public-prerelease convenience factory `PathParameters::onePositiveInteger($name, $value)`. Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists. This is a deliberate prerelease compatibility break in factory shape only; route matching, accepted positive-integer grammar, immutable delivery, and the `positiveInteger()` accessor remain unchanged. Reconcile framework guidance deliberately: the application\'s `AGENTS.md`, `.ai/` context, source layout, and decisions remain project-owned and are never overwritten or relocated by an upgrade. The source repository\'s `skeleton/` directory retains a VCS constraint and `repositories` override only as a source-evaluation bootstrap, so record the evaluated Git commit and commit the generated application lockfile.';
 
     if (substr_count($upgradeGuidance, $expectedUpgradeGuidance) !== 1) {
         $failures[] = 'The getting-started guide must retain the exact PathParameters source-consumer upgrade instruction.';
@@ -1546,6 +1546,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/releases/0.1.0-alpha.3.md',
         'docs/releases/0.1.0-alpha.4.md',
         'docs/releases/0.1.0-alpha.5.md',
+        'docs/releases/0.1.0-alpha.6.md',
         'docs/security.md',
         'docs/sessions.md',
         'docs/vocabulary.md',
@@ -1586,6 +1587,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/decisions/044-bounded-task-routed-ai-context.md',
         'docs/decisions/045-bounded-session-cleanup-and-response-framing.md',
         'docs/decisions/046-canonical-executable-example-boundaries.md',
+        'docs/decisions/047-bounded-alpha-6-release-scope.md',
         'example/AGENTS.md',
         'example/.ai/README.md',
         'example/.ai/cache.md',

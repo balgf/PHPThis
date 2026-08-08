@@ -514,7 +514,7 @@ function contextGuardrailFailures(string $root): array
             'PASS installed session cleanup and response framing distribution',
         ],
         'docs/guardrails.md' => [
-            'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. Current unreleased source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. The five freed lines remain unallocated;',
+            'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. The approved Alpha 6 source-preparation scope removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. The five freed lines remain unallocated;',
             'The ADR 045 guard pins the bounded session-cleanup failure precedence and ordinary-response framing contract.',
             'A dedicated selectable behavior also proves rejection at `199`, acceptance at `599`, explicit application-owned `HEAD`, and an exact `405` with zero GET-handler calls when only GET is declared; its subprocess must keep stderr empty.',
             'superseded-identifier restart and distinct-new-identifier cleanup',
@@ -558,7 +558,7 @@ function contextGuardrailFailures(string $root): array
             'ADR 046 consolidates four executable-example application boundaries without changing framework runtime, accepted PHP syntax, consumer checker validity, or the contract or Strict Profile version.',
         ],
         '.ai/application-context.md' => [
-            'ADR 046 then consolidates four application-owned executable-example boundaries without changing that contract, profile, or framework runtime.',
+            'ADR 047 accepts the exact Alpha 6 identity, bounded source scope, planned date, release notes, announcement draft, and source preparation; it rolls ADR 041 through ADR 046 and the other named post-Alpha-5 corrections into Consumer Contract version 11 while retaining Strict Profile version 3.',
         ],
         '.ai/crud.md' => [
             'One application-owned `Users\\UserId` carries the same positive `users.id` invariant through Get and List projections and the accepted List continuation while every operation-specific projection remains separate.',
@@ -823,8 +823,10 @@ function contextGuardrailFailures(string $root): array
             '| Prepare or publish a release | `RELEASING.md` | approved scope, exact candidate commits, CI, packages, and public-install proof |',
         ],
         '.ai/application-context.md' => [
-            'Both are unreleased work on `main`, create no next candidate identity or publication authority',
-            'Release preparation, approved-candidate proof or publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
+            'ADR 040 is the release-scoped authority for Alpha 5, the latest immutable release identity and tag recorded by the repository source record.',
+            'ADR 047 accepts the exact Alpha 6 identity, bounded source scope, planned date, release notes, announcement draft, and source preparation',
+            'Exact candidate commits and all commit, push, tag, package-host, dedicated-skeleton, GitHub-prerelease, and announcement operations remain pending and separately gated.',
+            'Release preparation, exact-candidate approval and proof, publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
         ],
         '.ai/testing.md' => [
             'The Git export comparison requires a clean worktree',
@@ -836,9 +838,10 @@ function contextGuardrailFailures(string $root): array
             'run: composer check',
         ],
         'README.md' => [
-            'That work is unreleased:',
-            'does not yet have an approved next-release identity',
-            'separates this unreleased state from a proposed candidate, an explicitly approved candidate, and immutable release history',
+            'remain the latest immutable release identity and tagged boundary recorded by the repository source record',
+            'The bounded [Alpha 6 scope](docs/decisions/047-bounded-alpha-6-release-scope.md), identity `0.1.0-alpha.6`, tags `v0.1.0-alpha.6`, planned date 2026-08-09 in Asia/Manila',
+            'Exact candidate commits, commit and push operations, tags, package-host updates, dedicated-skeleton changes, GitHub prereleases, and announcement remain separately gated.',
+            'keeps this approved source-preparation state distinct from an approved exact candidate and immutable release history',
         ],
         'RELEASING.md' => [
             '## Immutable release history',
@@ -885,7 +888,7 @@ function contextGuardrailFailures(string $root): array
             'Partial-publication state or NOT_APPLICABLE:',
         ],
         'ROADMAP.md' => [
-            'A future release requires its own bounded scope, fresh identity, exact candidate evidence, and accountable-human authorization through `RELEASING.md`.',
+            'Alpha 6 now has an accepted bounded source scope, identity, planned date, notes, announcement draft, and source-preparation authorization; exact candidate and external operations remain separately gated through `RELEASING.md`.',
         ],
         'SECURITY.md' => [
             'Any approved prerelease candidate may be announced only after its complete public-artifact gate in `RELEASING.md` passes.',
@@ -898,14 +901,16 @@ function contextGuardrailFailures(string $root): array
         ],
         'docs/getting-started.md' => [
             '## Prerelease boundary',
-            'Current `main` may contain later unreleased work;',
-            'nor an approved next candidate.',
+            '`v0.1.0-alpha.5` remains the latest immutable release tag recorded by the repository source record.',
+            'The bounded Alpha 6 scope, identity `0.1.0-alpha.6`, planned date 2026-08-09 in Asia/Manila, release notes, announcement draft, and source preparation are approved',
+            'Exact candidate commits, commit and push operations, tags, package-host updates, dedicated-skeleton changes, GitHub prereleases, and announcement remain separately gated.',
             'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
         ],
         'docs/guardrails.md' => [
-            'the reusable release gate keeps immutable Alpha 1 through Alpha 5 identity records separate from the version-neutral',
+            'the reusable release gate keeps immutable Alpha 1 through Alpha 5 identity records and the approved Alpha 6 source-preparation record separate from the version-neutral',
             'A separate installed distribution proof checks the version-neutral release guidance',
+            'It also requires ADR 047 and the Alpha 6 release notes to ship together with the exact approved source-preparation identity, planned date, Contract version 11, Strict Profile version 3, and permanent diagnostics `PHT001` through `PHT007`',
             'ordered local-proof-before-push, exact-CI, tag-creation-and-push',
             'discovers every current `docs/releases/*.md` note and rejects unqualified positive or negative live-publication claims',
             'performs no network request, tag operation, package-host write, release creation, or announcement',
@@ -924,9 +929,11 @@ function contextGuardrailFailures(string $root): array
             'README.md',
             'RELEASING.md',
             'SECURITY.md',
+            'docs/decisions/047-bounded-alpha-6-release-scope.md',
             'docs/getting-started.md',
             'docs/guardrails.md',
             'docs/knowledge-map.md',
+            'docs/releases/0.1.0-alpha.6.md',
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledReleaseGuidanceDistribution($installedFramework);',
@@ -1110,6 +1117,58 @@ function contextGuardrailFailures(string $root): array
     ];
 
     requireGuardrailArtifactMarkers($root, $historicalAlpha5IdentityArtifactMarkers, 'historical Alpha 5 identity', $failures);
+
+    $approvedAlpha6PreparationArtifactMarkers = [
+        'RELEASING.md' => [
+            '## Approved Alpha 6 identity and source preparation',
+            'Composer version: `0.1.0-alpha.6`',
+            'Framework tag: `v0.1.0-alpha.6`',
+            'Skeleton tag: `v0.1.0-alpha.6`',
+            'Planned release date: `2026-08-09` (Asia/Manila)',
+            'Bounded scope: `docs/decisions/047-bounded-alpha-6-release-scope.md`',
+            'Release notes: `docs/releases/0.1.0-alpha.6.md`',
+            'Alpha 6 source preparation is approved, while commit, push, tags, package-host updates, dedicated-skeleton changes, GitHub prereleases, and announcement remain separately gated.',
+            'The exact framework and skeleton candidate commits remain `PENDING`',
+        ],
+        'docs/decisions/047-bounded-alpha-6-release-scope.md' => [
+            'Status: accepted',
+            'On 2026-08-09 in Asia/Manila, the accountable human approved this bounded Alpha 6 scope, exact release identity, planned date, release notes, candidate-specific announcement draft, and source preparation.',
+            'Composer version: `0.1.0-alpha.6`',
+            'framework tag: `v0.1.0-alpha.6`',
+            'skeleton tag: `v0.1.0-alpha.6`',
+            'planned release date: `2026-08-09` (Asia/Manila)',
+            'release notes: `docs/releases/0.1.0-alpha.6.md`',
+            'Consumer Contract version 10 to version 11 while retaining Strict Profile version 3 and permanent diagnostics `PHT001` through `PHT007`',
+            'The exact framework and skeleton candidate commits remain pending',
+            'Publication state is external.',
+        ],
+        'docs/releases/0.1.0-alpha.6.md' => [
+            'Release identity: `0.1.0-alpha.6`. Publication state is external',
+            'Framework tag: `v0.1.0-alpha.6`',
+            'Skeleton tag: `v0.1.0-alpha.6`',
+            'Planned release date: `2026-08-09` (Asia/Manila)',
+            'These notes describe the accepted bounded Alpha 6 source claim.',
+            'Every external operation remains subject to the complete release proof and later accountable-human authorization in `RELEASING.md`.',
+            'Consumer Contract from version 10 to version 11 while retaining Strict Profile version 3 and permanent diagnostics `PHT001` through `PHT007`',
+            'PathParameters::fromValues([$name => $value], [])',
+            'This prerelease remains experimental evaluation software. It is not production-ready and makes no backward-compatibility promise across prereleases.',
+            'The exact candidate commits, accountable-human candidate and operation authorizations',
+        ],
+        'docs/decisions/README.md' => [
+            '`047-bounded-alpha-6-release-scope.md`',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/047-bounded-alpha-6-release-scope.md',
+            'docs/releases/0.1.0-alpha.6.md',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $approvedAlpha6PreparationArtifactMarkers,
+        'approved Alpha 6 source preparation',
+        $failures,
+    );
 
     $currentConsumerContractVersionMarkers = [
         'docs/consumer-contract.md' => 'Contract version: 11',
@@ -1679,11 +1738,13 @@ function contextGuardrailFailures(string $root): array
         'docs/releases/0.1.0-alpha.3.md',
         'docs/releases/0.1.0-alpha.4.md',
         'docs/releases/0.1.0-alpha.5.md',
+        'docs/releases/0.1.0-alpha.6.md',
         'docs/decisions/018-bounded-alpha-1-release-scope.md',
         'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
         'docs/decisions/031-bounded-alpha-3-release-scope.md',
         'docs/decisions/035-bounded-alpha-4-release-scope.md',
         'docs/decisions/040-bounded-alpha-5-release-scope.md',
+        'docs/decisions/047-bounded-alpha-6-release-scope.md',
         'skeleton/README.md',
     ];
 
@@ -1751,11 +1812,13 @@ function contextGuardrailFailures(string $root): array
         'docs/releases/0.1.0-alpha.3.md' => 'Publication state is external',
         'docs/releases/0.1.0-alpha.4.md' => 'Publication state is external',
         'docs/releases/0.1.0-alpha.5.md' => 'Publication state is external',
+        'docs/releases/0.1.0-alpha.6.md' => 'Publication state is external',
         'docs/decisions/018-bounded-alpha-1-release-scope.md' => 'This decision does not record mutable publication state',
         'docs/decisions/029-alpha-2-consumer-profile-rollup.md' => 'not mutable tag, package, GitHub release, or installation availability',
         'docs/decisions/031-bounded-alpha-3-release-scope.md' => 'Publication state is external',
         'docs/decisions/035-bounded-alpha-4-release-scope.md' => 'Publication state is external',
         'docs/decisions/040-bounded-alpha-5-release-scope.md' => 'Publication state is external',
+        'docs/decisions/047-bounded-alpha-6-release-scope.md' => 'Publication state is external',
         'skeleton/README.md' => 'Package availability is an external fact',
     ];
 

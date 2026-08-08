@@ -79,6 +79,7 @@ docs/decisions/043-engine-specific-application-migration-invariants.md
 docs/decisions/044-bounded-task-routed-ai-context.md
 docs/decisions/045-bounded-session-cleanup-and-response-framing.md
 docs/decisions/046-canonical-executable-example-boundaries.md
+docs/decisions/047-bounded-alpha-6-release-scope.md
 docs/decisions/README.md
 docs/errors.md
 docs/evaluation.md
@@ -120,6 +121,7 @@ docs/releases/0.1.0-alpha.2.md
 docs/releases/0.1.0-alpha.3.md
 docs/releases/0.1.0-alpha.4.md
 docs/releases/0.1.0-alpha.5.md
+docs/releases/0.1.0-alpha.6.md
 docs/request-handling.md
 docs/request-policy.md
 docs/security.md

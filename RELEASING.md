@@ -1,6 +1,6 @@
 # PHPThis release process
 
-Alpha 1 scope is preserved in `docs/decisions/018-bounded-alpha-1-release-scope.md`, Alpha 2 in `docs/decisions/029-alpha-2-consumer-profile-rollup.md`, Alpha 3 in `docs/decisions/031-bounded-alpha-3-release-scope.md`, Alpha 4 in `docs/decisions/035-bounded-alpha-4-release-scope.md`, and Alpha 5 in `docs/decisions/040-bounded-alpha-5-release-scope.md`. Alpha 5 and `v0.1.0-alpha.5` are the latest release identity and tag recorded by the repository source record. Publication state is external: verify GitHub and Packagist rather than inferring live availability from repository text.
+Alpha 1 scope is preserved in `docs/decisions/018-bounded-alpha-1-release-scope.md`, Alpha 2 in `docs/decisions/029-alpha-2-consumer-profile-rollup.md`, Alpha 3 in `docs/decisions/031-bounded-alpha-3-release-scope.md`, Alpha 4 in `docs/decisions/035-bounded-alpha-4-release-scope.md`, Alpha 5 in `docs/decisions/040-bounded-alpha-5-release-scope.md`, and the approved Alpha 6 source-preparation scope in `docs/decisions/047-bounded-alpha-6-release-scope.md`. Alpha 5 and `v0.1.0-alpha.5` remain the latest immutable release identity and tag recorded by the repository source record until an exact Alpha 6 candidate is separately approved and tagged. Publication state is external: verify GitHub and Packagist rather than inferring live availability from repository text.
 
 This is the maintainer release gate, not an application programming manual. Copy the checklist into the release work item and attach evidence there. Keep this canonical checklist unchecked and reusable.
 
@@ -65,13 +65,26 @@ The accountable human approved preparation of the following bounded release scop
 
 This approval authorizes source preparation and local verification only. It does not authorize committing or pushing the candidate, creating or pushing either tag, changing the dedicated skeleton repository, submitting or refreshing either Packagist package, creating either GitHub prerelease, or announcing Alpha 5. Those external operations require later explicit accountable-human authorization after the candidate evidence is reviewed. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
 
+## Approved Alpha 6 identity and source preparation
+
+The accountable human approved preparation of the following bounded release scope, exact identity, planned date, release notes, and candidate-specific announcement draft on 2026-08-09 (Asia/Manila):
+
+- Composer version: `0.1.0-alpha.6`
+- Framework tag: `v0.1.0-alpha.6`
+- Skeleton tag: `v0.1.0-alpha.6`
+- Planned release date: `2026-08-09` (Asia/Manila)
+- Bounded scope: `docs/decisions/047-bounded-alpha-6-release-scope.md`
+- Release notes: `docs/releases/0.1.0-alpha.6.md`
+
+Alpha 6 source preparation is approved, while commit, push, tags, package-host updates, dedicated-skeleton changes, GitHub prereleases, and announcement remain separately gated. The exact framework and skeleton candidate commits remain `PENDING` in the external release work item. Source preparation and local proof do not approve either exact candidate or authorize the next external operation. If any mandatory check fails, the next operation remains unauthorized until a new exact candidate passes and receives its required approval.
+
 ## Reusable release state model
 
 Keep these four states distinct:
 
 1. **Latest recorded release:** Alpha 5 is the latest immutable release identity and tag known to the repository source record. Its exact tagged source, release notes, scope decision, and external release evidence remain historical. Inspect that release from `v0.1.0-alpha.5`, not from mutable files on a later `main`; verify GitHub and Packagist state separately.
-2. **Unreleased `main`:** commits after the latest recorded tag are unreleased source. They are neither part of Alpha 5 nor an approved next candidate, and they establish no external publication state.
-3. **Proposed next candidate:** a maintainer may assess the unreleased delta and draft a bounded scope, version, tags, notes, and announcement. A proposal authorizes no candidate identity, tag, package, repository update, GitHub release, or announcement.
+2. **Unreleased `main`:** commits after the latest recorded tag are unreleased source. They are not part of Alpha 5 and establish no external publication state. Some may be inside an approved source-preparation scope without yet constituting an approved exact candidate.
+3. **Proposed next candidate:** a maintainer may assess the unreleased delta and draft a bounded scope, version, tags, notes, and announcement. Alpha 6 currently occupies this state with its identity, bounded scope, planned date, notes, announcement draft, and source preparation approved, while its exact candidate commits and all external operations remain pending. Preparation approval does not approve an exact candidate, tag, package, repository update, GitHub release, or announcement.
 4. **Approved candidate:** only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation. The skeleton candidate commit may remain explicitly `PENDING` until the dedicated skeleton is updated and proved, but it must be recorded and approved before any skeleton tag or package write. Record the framework and skeleton candidate approvals plus evolving evidence in the external release work item so proof does not require modifying either candidate commit. Keep the planned release date distinct from the observed timestamp of every external publication operation.
 
 Authorization is enumerable, not implied by reaching a checklist step. Record separately whether the accountable human authorizes candidate preparation; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement. An earlier scope, candidate, or publication approval does not authorize a later operation unless that exact operation is named.
