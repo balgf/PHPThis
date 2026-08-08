@@ -356,7 +356,7 @@ function routingBehaviorTests(): Generator
     yield 'path parameters reject invalid construction unknown names and wrong types' => static function (): void {
     foreach ([['Invalid', 1], ['user_id', 0]] as [$name, $value]) {
         try {
-            PathParameters::onePositiveInteger($name, $value);
+            PathParameters::fromValues([$name => $value], []);
         } catch (InvalidArgumentException) {
             continue;
         }

@@ -55,7 +55,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - A protected request exposes its fixed authentication, tenant-resolution, authorization, and handler order with independently replaceable application policies and separately bounded policy and protected data work.
 - An adopted application-owned request-handler decorator exposes its complete route-local order, one downstream handler, zero-or-one same-request invocation, response replacement, and bounded named I/O without creating a second execution model.
 - Database tests compare small and large fixtures and assert a constant query count.
-- The same explicit PDO transport contract passes SQLite, MySQL, and PostgreSQL certification without a dialect abstraction.
+- The same explicit PDO transport contract passes the exact SQLite, MySQL, and PostgreSQL versions in the maintained [PDO transport certification matrix](docs/database.md#pdo-transport-certification-matrix) without a dialect abstraction.
 - Direct database calls resolve to finite reviewed statements, SQL-looking values remain bound data, and unknown structural choices fail before database work.
 - Every process reads exact external configuration names through one application-owned source file, validates into process-specific final readonly values before application-controlled I/O, and injects them visibly without exposing elevated credentials to HTTP.
 - Complete raw engine-specific SQL and explicit named parameter arrays remain visible at direct call sites; bounded list cardinalities and cursor choices do not create generated SQL, binding helpers, or a generic paginator.
@@ -68,7 +68,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
 - Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; that implementation occupied 2,593 lines after one sensitive-password annotation. ADR 033 adds no core runtime or further increase. ADR 045 uses the remaining seven lines only for bounded session-cleanup failure retention while its response-framing refactor is line-neutral; the current implementation occupies all 2,600 lines and leaves no margin or authority for an adjacent mechanism.
+- Core source remains at or below the 2,600-line limit enforced by repository guardrails. ADR 026 raised the prior ceiling to 2,500 for bounded typed multipart ingestion and concrete local-file emission. ADR 032 raises it only for canonical UUID and ULID routing; that implementation occupied 2,593 lines after one sensitive-password annotation. ADR 033 adds no core runtime or further increase. ADR 045 used the remaining seven lines only for bounded session-cleanup failure retention while its response-framing refactor was line-neutral. Current unreleased source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines; the five freed lines remain unallocated and authorize no adjacent mechanism.
 
 ## Non-goals
 

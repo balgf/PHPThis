@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 008](008-explicit-request-boundary.md), which replaces only this decision's temporary Phase 0 core-source ceiling.
+
 ## Context
 
 Query budgets stop excessive statement counts but do not explain which SQL shape repeated, how long execution took, or whether PDO failed. Writing every query directly to a log would add noisy I/O and risk exposing SQL or parameter values.

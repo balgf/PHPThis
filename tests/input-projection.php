@@ -425,7 +425,7 @@ function inputProjectionBehaviorTests(): Generator
         '/accounts/42/users',
         body: '{"name":"Ada Lovelace","email":"ada@example.com"}',
         headers: ['content-type' => 'application/json'],
-        pathParameters: PathParameters::onePositiveInteger('account_id', 42),
+        pathParameters: PathParameters::fromValues(['account_id' => 42], []),
     ));
 
     if (
@@ -516,7 +516,7 @@ function inputProjectionBehaviorTests(): Generator
                 '/accounts/42/users',
                 body: $input['body'],
                 headers: ['content-type' => 'application/json'],
-                pathParameters: PathParameters::onePositiveInteger('account_id', 42),
+                pathParameters: PathParameters::fromValues(['account_id' => 42], []),
             ));
         } catch (InvalidRequest | RequestBodyTooLarge | UnacceptableCreateUserValues $failure) {
             if ($failure::class !== $input['failure']) {

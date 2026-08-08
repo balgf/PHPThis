@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the separate unknown-failure log, and [ADR 026](026-bounded-file-transfers.md), which resolves only the upload and response-streaming reconsideration item.
+
 ## Context
 
 The example front controller directly normalized PHP runtime values, read an unbounded input stream, and had no public failure boundary. Handlers could not inspect headers, known input failures remained uncaught, and an unknown exception could expose environment-dependent output. Adding generic request helpers or middleware would reduce visible code while enlarging the inference surface.

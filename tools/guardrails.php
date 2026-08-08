@@ -668,10 +668,653 @@ function canonicalCrudTreeFailures(string $root): array
     return ['docs/crud.md canonical current tree differs from example/src/Users; ' . implode('; ', $details) . '.'];
 }
 
+/**
+ * @param array<string, list<string>> $artifactMarkers
+ * @param non-empty-string $artifactLabel
+ * @param list<string> $failures
+ */
+function requireGuardrailArtifactMarkers(
+    string $root,
+    array $artifactMarkers,
+    string $artifactLabel,
+    array &$failures,
+): void {
+    foreach ($artifactMarkers as $relativePath => $markers) {
+        $path = $root . '/' . $relativePath;
+
+        if (!is_file($path)) {
+            $failures[] = "Required {$artifactLabel} artifact is not a regular file: {$relativePath}.";
+            continue;
+        }
+
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            $failures[] = "Cannot read {$artifactLabel} artifact {$relativePath}.";
+            continue;
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                $failures[] = "{$artifactLabel} artifact {$relativePath} is missing marker: {$marker}";
+            }
+        }
+    }
+}
+
+/**
+ * @param array<string, list<string>> $artifactMarkers
+ * @param non-empty-string $artifactLabel
+ * @param list<string> $failures
+ */
+function forbidGuardrailArtifactMarkers(
+    string $root,
+    array $artifactMarkers,
+    string $artifactLabel,
+    array &$failures,
+): void {
+    foreach ($artifactMarkers as $relativePath => $markers) {
+        $path = $root . '/' . $relativePath;
+
+        if (!is_file($path)) {
+            $failures[] = "Required {$artifactLabel} artifact is not a regular file: {$relativePath}.";
+            continue;
+        }
+
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            $failures[] = "Cannot read {$artifactLabel} artifact {$relativePath}.";
+            continue;
+        }
+
+        foreach ($markers as $marker) {
+            if (str_contains($contents, $marker)) {
+                $failures[] = "{$artifactLabel} artifact {$relativePath} contains forbidden marker: {$marker}";
+            }
+        }
+    }
+}
+
+/** @return list<string> */
+function decisionSuccessorRelationshipFailures(string $root): array
+{
+    /** @var array<string, array{title: non-empty-string, metadata: non-empty-string, targets: non-empty-list<non-empty-string>}> $decisionHeaders */
+    $decisionHeaders = [
+        'docs/decisions/005-bounded-query-tracing.md' => [
+            'title' => 'ADR 005: Bounded query tracing',
+            'metadata' => "Superseded in part by [ADR 008](008-explicit-request-boundary.md), which replaces only this decision's temporary Phase 0 core-source ceiling.",
+            'targets' => ['008-explicit-request-boundary.md'],
+        ],
+        'docs/decisions/008-explicit-request-boundary.md' => [
+            'title' => 'ADR 008: Explicit request boundary and exact error responses',
+            'metadata' => 'Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the separate unknown-failure log, and [ADR 026](026-bounded-file-transfers.md), which resolves only the upload and response-streaming reconsideration item.',
+            'targets' => [
+                '023-application-owned-terminal-request-summaries.md',
+                '026-bounded-file-transfers.md',
+            ],
+        ],
+        'docs/decisions/012-pdo-transport-application-owned-dialects.md' => [
+            'title' => 'ADR 012: PDO transport with application-owned SQL dialects',
+            'metadata' => 'Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the option to share one request-wide query budget across terminal-summary database sources.',
+            'targets' => ['023-application-owned-terminal-request-summaries.md'],
+        ],
+        'docs/decisions/013-optional-crud-reference-profile.md' => [
+            'title' => 'ADR 013: Optional CRUD reference profile',
+            'metadata' => "Superseded in part by [ADR 021](021-application-owned-typed-input-boundaries.md), which replaces only the earlier Create tree and handler-owned transaction description.\n\nCurrent executable-example placement is refined by [ADR 046](046-canonical-executable-example-boundaries.md), which moves the shared `UserId` invariant to the feature level without changing this optional profile.",
+            'targets' => [
+                '021-application-owned-typed-input-boundaries.md',
+                '046-canonical-executable-example-boundaries.md',
+            ],
+        ],
+        'docs/decisions/017-bounded-trailing-positive-integer-routes.md' => [
+            'title' => 'ADR 017: Bounded trailing positive-integer routes',
+            'metadata' => "Superseded in part by [ADR 019](019-bounded-multiple-typed-routes.md), which retains this decision's positive-integer and explicit-routing constraints while replacing its one-trailing-parameter limit, prefix index, and one-value metadata.",
+            'targets' => ['019-bounded-multiple-typed-routes.md'],
+        ],
+        'docs/decisions/019-bounded-multiple-typed-routes.md' => [
+            'title' => 'ADR 019: Bounded multiple typed routes',
+            'metadata' => "Superseded in part by [ADR 032](032-explicit-uuid-and-ulid-route-types.md), which retains this decision's parameter count, state index, opaque-token, conflict, and immutable-delivery constraints while extending the fixed parameter-type set with canonical UUID and ULID values.",
+            'targets' => ['032-explicit-uuid-and-ulid-route-types.md'],
+        ],
+        'docs/decisions/020-application-owned-request-policy.md' => [
+            'title' => 'ADR 020: Application-owned request policy composition',
+            'metadata' => 'Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the denial and unknown-failure logging wording with one application-owned terminal summary attempt.',
+            'targets' => ['023-application-owned-terminal-request-summaries.md'],
+        ],
+        'docs/decisions/021-application-owned-typed-input-boundaries.md' => [
+            'title' => 'ADR 021: Application-owned typed input boundaries',
+            'metadata' => 'Superseded in part by [ADR 042](042-application-owned-input-failure-classification.md), which replaces only the blanket-`400` authoring default for application-owned structured request-body content.',
+            'targets' => ['042-application-owned-input-failure-classification.md'],
+        ],
+    ];
+    $failures = [];
+
+    foreach ($decisionHeaders as $relativePath => $expected) {
+        $path = $root . '/' . $relativePath;
+
+        if (!is_file($path)) {
+            $failures[] = "Partially superseded decision is not a regular file: {$relativePath}.";
+            continue;
+        }
+
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            $failures[] = "Cannot read partially superseded decision {$relativePath}.";
+            continue;
+        }
+
+        $expectedPrefix = "# {$expected['title']}\n\nStatus: accepted\n\n{$expected['metadata']}\n\n## Context\n";
+
+        if (!str_starts_with($contents, $expectedPrefix)) {
+            $failures[] = "Partially superseded decision {$relativePath} must expose its exact successor metadata directly after accepted status.";
+        }
+
+        foreach ($expected['targets'] as $targetPath) {
+            if (!is_file($root . '/docs/decisions/' . $targetPath)) {
+                $failures[] = "Partially superseded decision {$relativePath} has no regular-file relationship target {$targetPath}.";
+            }
+        }
+    }
+
+    $indexPath = $root . '/docs/decisions/README.md';
+
+    if (!is_file($indexPath)) {
+        $failures[] = 'The decision successor index is not a regular file.';
+        return $failures;
+    }
+
+    $indexContents = file_get_contents($indexPath);
+
+    if (!is_string($indexContents)) {
+        $failures[] = 'Cannot read the decision index for successor relationships.';
+        return $failures;
+    }
+
+    $lines = preg_split('/\R/', $indexContents);
+
+    if (!is_array($lines)) {
+        $failures[] = 'Cannot parse the decision index for successor relationships.';
+        return $failures;
+    }
+
+    $heading = '## Current and successor relationships';
+    $headingIndex = null;
+    $headingCount = 0;
+
+    foreach ($lines as $index => $line) {
+        if ($line === $heading) {
+            $headingIndex = $index;
+            $headingCount++;
+        }
+    }
+
+    if ($headingIndex === null || $headingCount !== 1) {
+        $failures[] = 'The decision index must contain one current-and-successor relationship section.';
+        return $failures;
+    }
+
+    $expectedIntroduction = 'A partially superseded record remains accepted outside the exact scope named below. Follow the direct successor for that scope; use current operational guides for ordinary implementation rather than rewriting historical decision bodies.';
+
+    if (($lines[$headingIndex + 2] ?? null) !== $expectedIntroduction) {
+        $failures[] = 'The decision index must retain the bounded partially-superseded relationship explanation.';
+    }
+
+    $expectedRows = [
+        '| Accepted record | Scope superseded in part | Direct successor |',
+        '| --- | --- | --- |',
+        '| [ADR 005](005-bounded-query-tracing.md) | Temporary Phase 0 core-source ceiling | [ADR 008](008-explicit-request-boundary.md) |',
+        '| [ADR 008](008-explicit-request-boundary.md) | Separate unknown-failure log | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
+        '| [ADR 008](008-explicit-request-boundary.md) | Upload and response-streaming reconsideration item | [ADR 026](026-bounded-file-transfers.md) |',
+        '| [ADR 012](012-pdo-transport-application-owned-dialects.md) | Shared request-wide query-budget option for terminal-summary database sources | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
+        '| [ADR 013](013-optional-crud-reference-profile.md) | Earlier Create tree and handler-owned transaction description | [ADR 021](021-application-owned-typed-input-boundaries.md) |',
+        '| [ADR 017](017-bounded-trailing-positive-integer-routes.md) | One-trailing-parameter limit, prefix index, and one-value route metadata | [ADR 019](019-bounded-multiple-typed-routes.md) |',
+        '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
+        '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
+        '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
+    ];
+    $actualRows = [];
+    $tableEndIndex = null;
+
+    for ($index = $headingIndex + 1, $count = count($lines); $index < $count; $index++) {
+        if (!str_starts_with($lines[$index], '|')) {
+            if ($actualRows !== []) {
+                $tableEndIndex = $index;
+                break;
+            }
+
+            continue;
+        }
+
+        $actualRows[] = $lines[$index];
+    }
+
+    if ($actualRows !== $expectedRows) {
+        $failures[] = 'The decision index successor table must preserve the complete explicit relationship list and order.';
+    }
+
+    $expectedRefinement = "ADR 013's current executable-example identifier placement is additionally refined by [ADR 046](046-canonical-executable-example-boundaries.md); the canonical current tree remains in [Optional CRUD reference profile](../crud.md#reference-placement). This refinement does not additionally supersede ADR 013's optional structure decision.";
+
+    if ($tableEndIndex === null || ($lines[$tableEndIndex + 1] ?? null) !== $expectedRefinement) {
+        $failures[] = 'The decision index must retain ADR 013\'s separate current executable-example refinement pointer.';
+    }
+
+    return $failures;
+}
+
+/** @return list<string> */
+function canonicalVocabularyFailures(string $root): array
+{
+    $path = $root . '/docs/vocabulary.md';
+
+    if (!is_file($path)) {
+        return ['docs/vocabulary.md is not a regular file for the canonical concept rows.'];
+    }
+
+    $contents = file_get_contents($path);
+
+    if (!is_string($contents)) {
+        return ['Cannot read docs/vocabulary.md for the canonical concept rows.'];
+    }
+
+    /** @var array<string, array{meaning: non-empty-string, aliases: non-empty-string}> $expectedRows */
+    $expectedRows = [
+        'typed operation seam' => [
+            'meaning' => 'optional application-owned, narrowly typed interface, at most one in a request path, separating completed inbound transport or HTTP adaptation from one independently meaningful business or transaction responsibility while outbound response adaptation remains in the handler; omitted when behavior remains coherent in the handler',
+            'aliases' => 'service layer, repository, command bus, use-case interface required for every handler',
+        ],
+        'application-owned representation primitive' => [
+            'meaning' => 'optional narrowly named application value used through composition by distinct concrete domain identifiers that deliberately share one complete validation invariant and canonical scalar representation; operations continue to require concrete identifiers and generation stays separate',
+            'aliases' => 'framework identifier, generic domain ID, base class, trait, generator, binding or persistence abstraction',
+        ],
+        'UUID policy' => [
+            'meaning' => 'application-owned recorded separation of accepted canonical UUID versions from generation version and owner, metadata disclosure, ordering and clock behavior, failure, narrower domain rules, persistence, and evidence',
+            'aliases' => 'route grammar, framework UUID generator, package selection, database default, persistence abstraction',
+        ],
+    ];
+    /** @var array<string, list<array{meaning: string, aliases: string}>> $rowsByTerm */
+    $rowsByTerm = [];
+    $lines = preg_split('/\R/', $contents);
+
+    if (!is_array($lines)) {
+        return ['Cannot parse docs/vocabulary.md for the canonical concept rows.'];
+    }
+
+    foreach ($lines as $line) {
+        if (!str_starts_with($line, '| ')) {
+            continue;
+        }
+
+        $columns = explode(' | ', trim($line, '| '));
+
+        if (count($columns) !== 3 || !array_key_exists($columns[0], $expectedRows)) {
+            continue;
+        }
+
+        $rowsByTerm[$columns[0]][] = [
+            'meaning' => $columns[1],
+            'aliases' => $columns[2],
+        ];
+    }
+
+    $failures = [];
+
+    foreach ($expectedRows as $term => $expectedRow) {
+        $actualRows = $rowsByTerm[$term] ?? [];
+
+        if ($actualRows !== [$expectedRow]) {
+            $failures[] = "Canonical vocabulary term {$term} must have one exact reviewed meaning and alias boundary.";
+        }
+    }
+
+    return $failures;
+}
+
+/** @return list<string> */
+function databaseCertificationAgreementFailures(string $root): array
+{
+    /** @var array<string, array{provision: non-empty-string, label: non-empty-string, version: non-empty-string, environment: non-empty-string, query: non-empty-string, service: ?non-empty-string}> $drivers */
+    $drivers = [
+        'sqlite' => [
+            'provision' => 'PHP 8.4 `pdo_sqlite` on the `ubuntu-24.04` runner',
+            'label' => 'SQLite',
+            'version' => '3.45.1',
+            'environment' => 'PHPTHIS_SQLITE_EXPECTED_VERSION',
+            'query' => "'sqlite' => \$connection->selectOneRow('SELECT sqlite_version() AS engine_version')",
+            'service' => null,
+        ],
+        'mysql' => [
+            'provision' => 'Official `mysql:8.4` service',
+            'label' => 'MySQL',
+            'version' => '8.4.11',
+            'environment' => 'PHPTHIS_MYSQL_EXPECTED_VERSION',
+            'query' => "'mysql' => \$connection->selectOneRow('SELECT VERSION() AS engine_version')",
+            'service' => 'image: mysql:8.4',
+        ],
+        'pgsql' => [
+            'provision' => 'Official `postgres:17` service',
+            'label' => 'PostgreSQL',
+            'version' => '17.10',
+            'environment' => 'PHPTHIS_PGSQL_EXPECTED_VERSION',
+            'query' => '"SELECT split_part(current_setting(\'server_version\'), \' \', 1) AS engine_version"',
+            'service' => 'image: postgres:17',
+        ],
+    ];
+    $documentationPath = $root . '/docs/database.md';
+    $workflowPath = $root . '/.github/workflows/ci.yml';
+    $harnessPath = $root . '/tools/test-database-drivers.php';
+
+    if (!is_file($documentationPath) || !is_file($workflowPath) || !is_file($harnessPath)) {
+        return ['The database certification matrix, workflow, and harness must all be regular files.'];
+    }
+
+    $documentation = file_get_contents($documentationPath);
+    $workflow = file_get_contents($workflowPath);
+    $harness = file_get_contents($harnessPath);
+
+    if (!is_string($documentation) || !is_string($workflow) || !is_string($harness)) {
+        return ['Cannot read the database certification matrix, workflow, and harness agreement artifacts.'];
+    }
+
+    $expectedRows = [
+        '| PDO driver | CI provision | Required exact engine or server version |',
+        '| --- | --- | --- |',
+    ];
+
+    foreach ($drivers as $driver => $contract) {
+        $expectedRows[] = sprintf(
+            '| `%s` | %s | %s `%s` |',
+            $driver,
+            $contract['provision'],
+            $contract['label'],
+            $contract['version'],
+        );
+    }
+
+    $documentationLines = preg_split('/\R/', $documentation);
+
+    if (!is_array($documentationLines)) {
+        return ['Cannot parse the database certification matrix.'];
+    }
+
+    $matrixHeadingIndex = null;
+
+    foreach ($documentationLines as $index => $line) {
+        if ($line === '### PDO transport certification matrix') {
+            if ($matrixHeadingIndex !== null) {
+                return ['The database guide must contain one PDO transport certification matrix.'];
+            }
+
+            $matrixHeadingIndex = $index;
+        }
+    }
+
+    $actualRows = [];
+
+    if ($matrixHeadingIndex !== null) {
+        for ($index = $matrixHeadingIndex + 1, $count = count($documentationLines); $index < $count; $index++) {
+            if (!str_starts_with($documentationLines[$index], '|')) {
+                if ($actualRows !== []) {
+                    break;
+                }
+
+                continue;
+            }
+
+            $actualRows[] = $documentationLines[$index];
+        }
+    }
+
+    $failures = [];
+
+    if ($actualRows !== $expectedRows) {
+        $failures[] = 'The database guide must retain one exact ordered PDO transport certification matrix.';
+    }
+
+    if (!str_contains(
+        $documentation,
+        'No unlisted patch, minor, major, distribution build, extension build, service topology, or managed offering inherits certification from a listed row.',
+    )) {
+        $failures[] = 'The database certification matrix must retain its exact unlisted-version limitation.';
+    }
+
+    if (!str_contains(
+        $documentation,
+        'Its maintained SQLite negative control first supplies an impossible expected version, requires the exact bounded mismatch diagnostic and removal of the pre-DDL fixture, then proves clean recovery through the normal certification run.',
+    )) {
+        $failures[] = 'The database certification matrix must retain its SQLite mismatch-and-recovery evidence boundary.';
+    }
+
+    $expectedJobName = sprintf(
+        'name: PDO transport (%s %s, %s %s, %s %s)',
+        $drivers['sqlite']['label'],
+        $drivers['sqlite']['version'],
+        $drivers['mysql']['label'],
+        $drivers['mysql']['version'],
+        $drivers['pgsql']['label'],
+        $drivers['pgsql']['version'],
+    );
+
+    if (substr_count($workflow, $expectedJobName) !== 1) {
+        $failures[] = 'The database certification workflow name must agree with every documented exact version.';
+    }
+
+    /** @var array<string, string> $workflowVersions */
+    $workflowVersions = [];
+    $workflowMatches = [];
+    preg_match_all(
+        "/^\\s+(PHPTHIS_(?:SQLITE|MYSQL|PGSQL)_EXPECTED_VERSION): '([^']+)'$/m",
+        $workflow,
+        $workflowMatches,
+        PREG_SET_ORDER,
+    );
+
+    foreach ($workflowMatches as $workflowMatch) {
+        $workflowVersions[$workflowMatch[1]] = $workflowMatch[2];
+    }
+
+    if (count($workflowMatches) !== count($drivers)) {
+        $failures[] = 'The database certification workflow must define each reviewed expected-version input exactly once.';
+    }
+
+    /** @var array<string, string> $expectedWorkflowVersions */
+    $expectedWorkflowVersions = [];
+
+    foreach ($drivers as $driver => $contract) {
+        $expectedWorkflowVersions[$contract['environment']] = $contract['version'];
+
+        if ($contract['service'] !== null && substr_count($workflow, $contract['service']) !== 1) {
+            $failures[] = "The database certification workflow is missing the reviewed service selector {$contract['service']}.";
+        }
+
+        if (substr_count($harness, $contract['query']) !== 1) {
+            $failures[] = "The database certification harness must contain one reviewed {$contract['label']} version query.";
+        }
+
+        $harnessEnvironmentMapping = sprintf("'%s' => '%s'", $driver, $contract['environment']);
+
+        if (substr_count($harness, $harnessEnvironmentMapping) !== 1) {
+            $failures[] = "The database certification harness must contain one reviewed {$contract['label']} expected-version input.";
+        }
+    }
+
+    if ($workflowVersions !== $expectedWorkflowVersions) {
+        $failures[] = 'The database certification workflow expected-version inputs must exactly match the documented matrix.';
+    }
+
+    $versionProbePosition = strpos($harness, '$version = databaseDriverVersion($driver, $configuration);');
+    $expectedVersionPosition = strpos(
+        $harness,
+        '$expectedVersion = $expectedVersionOverride ?? expectedDatabaseVersion($driver);',
+    );
+    $versionMismatchPosition = strpos(
+        $harness,
+        'if ($expectedVersion !== null && $version !== $expectedVersion) {',
+    );
+    $versionMismatchFailurePosition = strpos($harness, 'Configured %s certification version mismatch');
+    $fixtureDdlPosition = strpos($harness, 'CREATE TABLE {$table}');
+    $negativeControlCallPosition = strpos(
+        $harness,
+        'proveSqliteVersionMismatchBeforeFixtureDdl($configuration);',
+    );
+    $normalCertificationPosition = strpos(
+        $harness,
+        'certifyDatabaseDriver($driver, $configuration),',
+    );
+    $orderedVersionMarkers = [
+        '$version = databaseDriverVersion($driver, $configuration);',
+        '$expectedVersion = $expectedVersionOverride ?? expectedDatabaseVersion($driver);',
+        'if ($expectedVersion !== null && $version !== $expectedVersion) {',
+        'Configured %s certification version mismatch',
+        'CREATE TABLE {$table}',
+    ];
+    $orderedVersionMarkersAreUnique = true;
+
+    foreach ($orderedVersionMarkers as $marker) {
+        if (substr_count($harness, $marker) !== 1) {
+            $orderedVersionMarkersAreUnique = false;
+        }
+    }
+
+    if (
+        !$orderedVersionMarkersAreUnique
+        || $versionProbePosition === false
+        || $expectedVersionPosition === false
+        || $versionMismatchPosition === false
+        || $versionMismatchFailurePosition === false
+        || $fixtureDdlPosition === false
+        || $negativeControlCallPosition === false
+        || $normalCertificationPosition === false
+        || $negativeControlCallPosition >= $normalCertificationPosition
+        || !(
+            $versionProbePosition < $expectedVersionPosition
+            && $expectedVersionPosition < $versionMismatchPosition
+            && $versionMismatchPosition < $versionMismatchFailurePosition
+            && $versionMismatchFailurePosition < $fixtureDdlPosition
+        )
+        || !str_contains($harness, 'function databaseDriverVersion(string $driver, array $configuration): string')
+        || !str_contains($harness, 'function expectedDatabaseVersion(string $driver): ?string')
+        || !str_contains(
+            $harness,
+            'function proveSqliteVersionMismatchBeforeFixtureDdl(array $configuration): void',
+        )
+        || !str_contains($harness, "certifyDatabaseDriver('sqlite', \$configuration, '0.0');")
+        || !str_contains(
+            $harness,
+            'SQLite version mismatch did not fail with the exact bounded diagnostic.',
+        )
+        || !str_contains($harness, 'SQLite version mismatch left its pre-DDL fixture behind.')
+        || !str_contains($harness, 'SQLite mismatch and recovery control passed')
+    ) {
+        $failures[] = 'The database certification harness must retain its ordered exact-version and SQLite mismatch-and-recovery proofs before fixture DDL.';
+    }
+
+    return $failures;
+}
+
+/** @return list<string> */
+function legacyPositiveIntegerRouteConvenienceFailures(string $root): array
+{
+    $sourcePath = $root . '/src/Routing/PathParameters.php';
+    $upgradeGuidancePath = $root . '/docs/getting-started.md';
+
+    if (!is_file($sourcePath) || !is_file($upgradeGuidancePath)) {
+        return ['The PathParameters source and upgrade guidance must both be regular files.'];
+    }
+
+    $source = file_get_contents($sourcePath);
+    $upgradeGuidance = file_get_contents($upgradeGuidancePath);
+
+    if (!is_string($source) || !is_string($upgradeGuidance)) {
+        return ['Cannot read the PathParameters source and upgrade guidance for the compatibility decision.'];
+    }
+
+    $failures = [];
+    $maintainerCallSitePaths = [
+        'tests/crud.php',
+        'tests/input-projection.php',
+        'tests/routing.php',
+        'tests/upload-request-boundary.php',
+    ];
+    $requiredCallSiteMarkers = [];
+    $forbiddenCallSiteMarkers = [];
+
+    foreach ($maintainerCallSitePaths as $relativePath) {
+        $requiredCallSiteMarkers[$relativePath] = ['PathParameters::fromValues('];
+        $forbiddenCallSiteMarkers[$relativePath] = ['PathParameters::onePositiveInteger('];
+    }
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $requiredCallSiteMarkers,
+        'PathParameters routing-compatibility call-site',
+        $failures,
+    );
+    forbidGuardrailArtifactMarkers(
+        $root,
+        $forbiddenCallSiteMarkers,
+        'PathParameters routing-compatibility call-site',
+        $failures,
+    );
+
+    if (!str_contains($source, 'public static function fromValues(')) {
+        $failures[] = 'PathParameters must retain its canonical explicit fromValues factory.';
+    }
+
+    if (str_contains($source, 'onePositiveInteger')) {
+        $failures[] = 'The removed onePositiveInteger compatibility convenience must not remain in PathParameters.';
+    }
+
+    $expectedUpgradeGuidance = 'This current unreleased checkout also removes the public-prerelease convenience factory `PathParameters::onePositiveInteger($name, $value)`. Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists. This is a deliberate next-prerelease compatibility break in factory shape only; route matching, accepted positive-integer grammar, immutable delivery, and the `positiveInteger()` accessor remain unchanged.';
+
+    if (substr_count($upgradeGuidance, $expectedUpgradeGuidance) !== 1) {
+        $failures[] = 'The getting-started guide must retain the exact PathParameters source-consumer upgrade instruction.';
+    }
+
+    return $failures;
+}
+
 $root = dirname(__DIR__);
 $phpFiles = [];
 $markdownFiles = [];
 $failures = [];
+
+foreach (decisionSuccessorRelationshipFailures($root) as $relationshipFailure) {
+    $failures[] = $relationshipFailure;
+}
+
+foreach (canonicalVocabularyFailures($root) as $vocabularyFailure) {
+    $failures[] = $vocabularyFailure;
+}
+
+foreach (databaseCertificationAgreementFailures($root) as $databaseCertificationFailure) {
+    $failures[] = $databaseCertificationFailure;
+}
+
+foreach (legacyPositiveIntegerRouteConvenienceFailures($root) as $routeCompatibilityFailure) {
+    $failures[] = $routeCompatibilityFailure;
+}
+
+$proofMaintainabilityArtifactMarkers = [
+    'docs/guardrails.md' => [
+        'Repeated documentation-marker checks use file-local helpers rather than duplicated loops.',
+        'The decision-navigation and vocabulary guard uses one fixed reviewed map of partial-supersession relationships.',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledReferenceClarityDistribution($installedFramework);',
+        'function proveInstalledReferenceClarityDistribution(string $installedFramework): void',
+        'PASS installed historical and reference clarity distribution',
+    ],
+];
+
+requireGuardrailArtifactMarkers(
+    $root,
+    $proofMaintainabilityArtifactMarkers,
+    'proof maintainability',
+    $failures,
+);
+
 $environmentIgnoreArtifacts = [
     '.gitignore',
     'skeleton/.gitignore',
@@ -1443,20 +2086,12 @@ $boundedTaskRoutedContextArtifactMarkers = [
     ],
 ];
 
-foreach ($boundedTaskRoutedContextArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read bounded task-routed context artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Bounded task-routed context artifact {$relativePath} is missing: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers(
+    $root,
+    $boundedTaskRoutedContextArtifactMarkers,
+    'bounded task-routed context',
+    $failures,
+);
 
 $boundedTaskRoutedContextForbiddenMarkers = [
     'AGENTS.md' => [
@@ -1506,20 +2141,12 @@ $boundedTaskRoutedContextForbiddenMarkers = [
     ],
 ];
 
-foreach ($boundedTaskRoutedContextForbiddenMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read bounded task-routed context artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (str_contains($contents, $marker)) {
-            $failures[] = "Bounded task-routed context artifact {$relativePath} retains duplicated or speculative wording: {$marker}";
-        }
-    }
-}
+forbidGuardrailArtifactMarkers(
+    $root,
+    $boundedTaskRoutedContextForbiddenMarkers,
+    'bounded task-routed context',
+    $failures,
+);
 
 $sessionCleanupAndResponseFramingArtifactMarkers = [
     'docs/decisions/045-bounded-session-cleanup-and-response-framing.md' => [
@@ -1730,7 +2357,7 @@ $sessionCleanupAndResponseFramingArtifactMarkers = [
         'PASS installed session cleanup and response framing distribution',
     ],
     'docs/guardrails.md' => [
-        'ADR 045 uses the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction; the implementation now occupies 2,600 lines and leaves no margin.',
+        'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. Current unreleased source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. The five freed lines remain unallocated;',
         'The ADR 045 guard pins the bounded session-cleanup failure precedence and ordinary-response framing contract.',
         'superseded-identifier restart and distinct-new-identifier cleanup',
         'start failure retained as primary when identifier clearing also fails',
@@ -1744,20 +2371,12 @@ $sessionCleanupAndResponseFramingArtifactMarkers = [
     ],
 ];
 
-foreach ($sessionCleanupAndResponseFramingArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read session-cleanup and response-framing artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Session-cleanup and response-framing artifact {$relativePath} is missing: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers(
+    $root,
+    $sessionCleanupAndResponseFramingArtifactMarkers,
+    'session-cleanup and response-framing',
+    $failures,
+);
 
 $canonicalExecutableExampleBoundaryMarkers = [
     'docs/decisions/046-canonical-executable-example-boundaries.md' => [
@@ -1889,20 +2508,12 @@ $canonicalExecutableExampleBoundaryMarkers = [
     ],
 ];
 
-foreach ($canonicalExecutableExampleBoundaryMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read canonical executable-example boundary artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Canonical executable-example boundary artifact {$relativePath} is missing: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers(
+    $root,
+    $canonicalExecutableExampleBoundaryMarkers,
+    'canonical executable-example boundary',
+    $failures,
+);
 
 $listDocumentsHandler = file_get_contents(
     $root . '/example/src/Documents/ListDocuments/ListDocumentsHandler.php',
@@ -2021,7 +2632,7 @@ $versionNeutralReleaseContractMarkers = [
     ],
     '.github/workflows/ci.yml' => [
         'name: PHP ${{ matrix.php }} validity',
-        'name: PDO transport (SQLite, MySQL 8.4, PostgreSQL 17)',
+        'name: PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.10)',
         'run: composer check',
     ],
     'README.md' => [
@@ -2127,20 +2738,7 @@ $versionNeutralReleaseContractMarkers = [
     ],
 ];
 
-foreach ($versionNeutralReleaseContractMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read version-neutral release artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Version-neutral release artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $versionNeutralReleaseContractMarkers, 'version-neutral release', $failures);
 
 $historicalAlpha1IdentityArtifactMarkers = [
     'RELEASING.md' => [
@@ -2168,20 +2766,7 @@ $historicalAlpha1IdentityArtifactMarkers = [
     ],
 ];
 
-foreach ($historicalAlpha1IdentityArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read historical Alpha 1 identity artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "The historical Alpha 1 identity marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $historicalAlpha1IdentityArtifactMarkers, 'historical Alpha 1 identity', $failures);
 
 $historicalAlpha2IdentityArtifactMarkers = [
     'RELEASING.md' => [
@@ -2209,20 +2794,7 @@ $historicalAlpha2IdentityArtifactMarkers = [
     ],
 ];
 
-foreach ($historicalAlpha2IdentityArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read historical Alpha 2 identity artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "The historical Alpha 2 identity marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $historicalAlpha2IdentityArtifactMarkers, 'historical Alpha 2 identity', $failures);
 
 $historicalAlpha3IdentityArtifactMarkers = [
     'RELEASING.md' => [
@@ -2257,20 +2829,7 @@ $historicalAlpha3IdentityArtifactMarkers = [
     ],
 ];
 
-foreach ($historicalAlpha3IdentityArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read historical Alpha 3 identity artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "The historical Alpha 3 identity marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $historicalAlpha3IdentityArtifactMarkers, 'historical Alpha 3 identity', $failures);
 
 $historicalAlpha4IdentityArtifactMarkers = [
     'RELEASING.md' => [
@@ -2309,20 +2868,7 @@ $historicalAlpha4IdentityArtifactMarkers = [
     ],
 ];
 
-foreach ($historicalAlpha4IdentityArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read historical Alpha 4 identity artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "The historical Alpha 4 identity marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $historicalAlpha4IdentityArtifactMarkers, 'historical Alpha 4 identity', $failures);
 
 $historicalAlpha5IdentityArtifactMarkers = [
     'RELEASING.md' => [
@@ -2363,20 +2909,7 @@ $historicalAlpha5IdentityArtifactMarkers = [
     ],
 ];
 
-foreach ($historicalAlpha5IdentityArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read historical Alpha 5 identity artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "The historical Alpha 5 identity marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $historicalAlpha5IdentityArtifactMarkers, 'historical Alpha 5 identity', $failures);
 
 $currentConsumerContractVersionMarkers = [
     'docs/consumer-contract.md' => 'Contract version: 11',
@@ -2517,20 +3050,7 @@ $configurationArtifactMarkers = [
     ],
 ];
 
-foreach ($configurationArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read configuration-boundary artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Configuration-boundary artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $configurationArtifactMarkers, 'configuration-boundary', $failures);
 
 $startupProbeSemanticsArtifactMarkers = [
     '.ai/README.md' => [
@@ -2604,20 +3124,7 @@ $startupProbeSemanticsArtifactMarkers = [
     ],
 ];
 
-foreach ($startupProbeSemanticsArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read startup and probe semantics artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Startup and probe semantics artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $startupProbeSemanticsArtifactMarkers, 'startup and probe semantics', $failures);
 
 $databaseSetupScopeArtifactMarkers = [
     'AGENTS.md' => [
@@ -2744,20 +3251,7 @@ $databaseSetupScopeArtifactMarkers = [
     ],
 ];
 
-foreach ($databaseSetupScopeArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read database setup scope artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Database setup scope artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $databaseSetupScopeArtifactMarkers, 'database setup scope', $failures);
 
 $databaseSetupScopeForbiddenArtifactMarkers = [
     '.ai/database.md' => [
@@ -2776,20 +3270,7 @@ $databaseSetupScopeForbiddenArtifactMarkers = [
     ],
 ];
 
-foreach ($databaseSetupScopeForbiddenArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read database setup scope artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (str_contains($contents, $marker)) {
-            $failures[] = "Forbidden database setup scope artifact marker remains in {$relativePath}: {$marker}";
-        }
-    }
-}
+forbidGuardrailArtifactMarkers($root, $databaseSetupScopeForbiddenArtifactMarkers, 'database setup scope', $failures);
 
 $databaseAuthorityLifecycleArtifactMarkers = [
     'docs/decisions/038-application-owned-database-authority-lifecycle.md' => [
@@ -2944,20 +3425,7 @@ $databaseAuthorityLifecycleArtifactMarkers = [
     ],
 ];
 
-foreach ($databaseAuthorityLifecycleArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read database authority lifecycle artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Database authority lifecycle artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $databaseAuthorityLifecycleArtifactMarkers, 'database authority lifecycle', $failures);
 
 $databaseAuthorityLifecycleForbiddenTemplateMarkers = [
     'templates/application/.ai/data.md' => [
@@ -2967,20 +3435,12 @@ $databaseAuthorityLifecycleForbiddenTemplateMarkers = [
     ],
 ];
 
-foreach ($databaseAuthorityLifecycleForbiddenTemplateMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read database authority lifecycle template {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (str_contains($contents, $marker)) {
-            $failures[] = "Forbidden ambiguous database authority template marker remains in {$relativePath}: {$marker}";
-        }
-    }
-}
+forbidGuardrailArtifactMarkers(
+    $root,
+    $databaseAuthorityLifecycleForbiddenTemplateMarkers,
+    'database authority lifecycle template',
+    $failures,
+);
 
 $mutableReleaseStateForbiddenMarkers = [
     'Status: unpublished; project state remains pre-alpha',
@@ -3271,20 +3731,7 @@ $cachePolicyArtifactMarkers = [
     ],
 ];
 
-foreach ($cachePolicyArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read cache policy artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Cache policy artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $cachePolicyArtifactMarkers, 'cache policy', $failures);
 
 $routingArtifactMarkers = [
     '.ai/routing.md' => [
@@ -3405,20 +3852,7 @@ $routingArtifactMarkers = [
     ],
 ];
 
-foreach ($routingArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read typed routing artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Typed routing artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $routingArtifactMarkers, 'typed routing', $failures);
 
 $requestHandlerDecoratorArtifactMarkers = [
     'docs/decisions/033-application-owned-request-handler-decorators.md' => [
@@ -3505,20 +3939,7 @@ $requestHandlerDecoratorArtifactMarkers = [
     ],
 ];
 
-foreach ($requestHandlerDecoratorArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read request-handler decorator artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Request-handler decorator artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $requestHandlerDecoratorArtifactMarkers, 'request-handler decorator', $failures);
 
 $websocketArtifactMarkers = [
     'docs/decisions/034-application-owned-websocket-integration.md' => [
@@ -3670,20 +4091,7 @@ $websocketArtifactMarkers = [
     ],
 ];
 
-foreach ($websocketArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read WebSocket boundary artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "WebSocket boundary artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $websocketArtifactMarkers, 'WebSocket boundary', $failures);
 
 $forbiddenWebSocketRuntimePathPattern = '/(?:websockets?|realtime|event[-_]?loop|daemon|supervisor|broadcast(?:ing)?|pub[-_]?sub|channels?)/i';
 $websocketFrameworkSourceFiles = new RecursiveIteratorIterator(
@@ -3846,20 +4254,7 @@ $requestPolicyArtifactMarkers = [
     ],
 ];
 
-foreach ($requestPolicyArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read request-policy artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Request-policy artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $requestPolicyArtifactMarkers, 'request-policy', $failures);
 
 $typedInputBoundaryArtifactMarkers = [
     '.ai/README.md' => [
@@ -4041,20 +4436,7 @@ $typedInputBoundaryArtifactMarkers = [
     ],
 ];
 
-foreach ($typedInputBoundaryArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read typed-input-boundary artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Typed-input-boundary artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $typedInputBoundaryArtifactMarkers, 'typed-input-boundary', $failures);
 
 $finiteDataPathArtifactMarkers = [
     'docs/decisions/022-application-owned-finite-data-paths.md' => [
@@ -4175,20 +4557,7 @@ $finiteDataPathArtifactMarkers = [
     ],
 ];
 
-foreach ($finiteDataPathArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read finite-data-path artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Finite-data-path artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $finiteDataPathArtifactMarkers, 'finite-data-path', $failures);
 
 $observabilityArtifactMarkers = [
     '.ai/README.md' => [
@@ -4395,20 +4764,7 @@ $observabilityArtifactMarkers = [
     ],
 ];
 
-foreach ($observabilityArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read observability artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Observability artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $observabilityArtifactMarkers, 'observability', $failures);
 
 $durableJobArtifactMarkers = [
     '.ai/README.md' => [
@@ -4620,20 +4976,7 @@ $durableJobArtifactMarkers = [
     ],
 ];
 
-foreach ($durableJobArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read durable-job artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Durable-job artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $durableJobArtifactMarkers, 'durable-job', $failures);
 
 $exampleSetup = file_get_contents($root . '/tools/setup-example.php');
 
@@ -4889,20 +5232,7 @@ $applicationCliArtifactMarkers = [
     ],
 ];
 
-foreach ($applicationCliArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read application CLI artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Application CLI artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $applicationCliArtifactMarkers, 'application CLI', $failures);
 
 if (is_file($root . '/example/bin/run-one-job.php')) {
     $failures[] = 'The superseded one-shot job entrypoint must not coexist with the explicit application command map.';
@@ -5153,20 +5483,7 @@ $workbenchArtifactMarkers = [
     ],
 ];
 
-foreach ($workbenchArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read Workbench boundary artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Workbench boundary artifact marker is missing from {$relativePath}: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $workbenchArtifactMarkers, 'Workbench boundary', $failures);
 
 $workbenchRuntimePathFixtures = [
     'src/Development/Workbench.php' => true,
@@ -5342,20 +5659,7 @@ $redisCoordinationArtifactMarkers = [
     ],
 ];
 
-foreach ($redisCoordinationArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read Redis coordination artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Redis coordination artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $redisCoordinationArtifactMarkers, 'Redis coordination', $failures);
 
 foreach (
     [
@@ -5692,20 +5996,12 @@ $engineSpecificMigrationInvariantArtifactMarkers = [
     ],
 ];
 
-foreach ($engineSpecificMigrationInvariantArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read engine-specific migration-invariant artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Engine-specific migration-invariant artifact marker is missing from {$relativePath}: {$marker}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers(
+    $root,
+    $engineSpecificMigrationInvariantArtifactMarkers,
+    'engine-specific migration-invariant',
+    $failures,
+);
 
 $retiredUnqualifiedMigrationRequirements = [
     '.ai/README.md' => [
@@ -6049,20 +6345,7 @@ $migrationArtifactMarkers = [
     ],
 ];
 
-foreach ($migrationArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read migration artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Migration artifact marker is missing from {$relativePath}: {$marker}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $migrationArtifactMarkers, 'migration', $failures);
 
 $recommendedExampleMigrationDirectory = $root . '/example/src/Database/Migrations';
 $legacyExampleMigrationDirectory = $root . '/example/src/Migrations';
@@ -6967,20 +7250,7 @@ $maintainerTestArtifactMarkers = [
     ],
 ];
 
-foreach ($maintainerTestArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read framework-maintainer test artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Framework-maintainer test artifact marker is missing from {$relativePath}: {$marker}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $maintainerTestArtifactMarkers, 'framework-maintainer test', $failures);
 
 $phpunitBehaviorBridge = file_get_contents($root . '/tests/FrameworkBehaviorTest.php');
 /** @var array<non-empty-string, array{test_method: non-empty-string, provider: non-empty-string}> $expectedPhpunitGroupBridges */
@@ -7488,20 +7758,7 @@ $consumerProfileArtifactMarkers = [
     ],
 ];
 
-foreach ($consumerProfileArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read consumer-profile artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Consumer-profile artifact marker is missing from {$relativePath}: {$marker}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $consumerProfileArtifactMarkers, 'consumer-profile', $failures);
 
 foreach (['composer.json', 'skeleton/composer.json'] as $phpManifestPath) {
     $manifestContents = file_get_contents($root . '/' . $phpManifestPath);
@@ -7625,20 +7882,7 @@ $fileTransferArtifactMarkers = [
     ],
 ];
 
-foreach ($fileTransferArtifactMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read file-transfer artifact {$relativePath}.";
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "File-transfer artifact marker is missing from {$relativePath}.";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $fileTransferArtifactMarkers, 'file-transfer', $failures);
 
 $consumerContractPath = $root . '/docs/consumer-contract.md';
 
@@ -7705,10 +7949,10 @@ $crudAccessSurfaceContractMarkers = [
     'Separate its action-specific policy composition when authentication, named authorization action, tenant resolution, or policy budget or trace differs.',
     'Separate its HTTP handler and boundary types when accepted input, tenant, resource or data scope, SQL, projection or disclosure, failure behavior, HTTP cache policy, handler query budget or trace, side effects, or audit effects differ.',
     'Keep its SQL owner separate when data scope or SQL differs.',
-    'Do not share an existing independently meaningful typed business or transaction operation when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ.',
-    'A route or method difference alone does not require duplicating an otherwise identical handler or typed operation',
+    'Do not share an existing independently meaningful typed business or transaction operation, including any typed operation seam, when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ.',
+    'A route or method difference alone does not require duplicating an otherwise identical handler or operation',
     'Narrowly typed authentication, tenant-resolution, or denial implementations may be shared when their contracts are identical, while every protected named action retains its own action-specific authorization contract.',
-    'Share one independently meaningful typed business operation only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization.',
+    'Share one existing independently meaningful typed business or transaction operation, including any typed operation seam, only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization.',
     'Do not put role, audience, mode, or permission branching inside a shared handler or business operation to select SQL, behavior, side effects, or disclosure.',
     "Do not add a superset projection filtered for another surface or SQL broader than the receiving surface's recorded contract.",
 ];
@@ -7984,21 +8228,7 @@ $scaffoldParityMarkers = [
     ],
 ];
 
-foreach ($scaffoldParityMarkers as $relativePath => $markers) {
-    $contents = file_get_contents($root . '/' . $relativePath);
-
-    if (!is_string($contents)) {
-        $failures[] = "Cannot read scaffold-parity artifact {$relativePath}.";
-
-        continue;
-    }
-
-    foreach ($markers as $marker) {
-        if (!str_contains($contents, $marker)) {
-            $failures[] = "Scaffold-parity artifact {$relativePath} is missing: {$marker}";
-        }
-    }
-}
+requireGuardrailArtifactMarkers($root, $scaffoldParityMarkers, 'scaffold-parity', $failures);
 
 $falseTerminalFlowChains = [
     'public/index.php -> bootstrap.php -> TerminalRequestCoordinator -> RequestBoundary -> Routes -> HealthRoutes -> HealthHandler -> Response -> RequestSummarySink -> ResponseEmitter',

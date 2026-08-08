@@ -11,16 +11,31 @@ require dirname(__DIR__) . '/autoload.php';
 
 $drivers = configuredDatabaseDrivers();
 $availableDrivers = PDO::getAvailableDrivers();
+$certifiedVersions = [];
+$sqliteMismatchControlPassed = false;
 
 foreach ($drivers as $driver) {
     if (!in_array($driver, $availableDrivers, true)) {
         throw new RuntimeException("Configured PDO driver is unavailable: {$driver}.");
     }
 
-    certifyDatabaseDriver($driver, databaseDriverConfiguration($driver));
+    if ($driver === 'sqlite') {
+        $configuration = sqliteDatabaseDriverConfiguration();
+        proveSqliteVersionMismatchBeforeFixtureDdl($configuration);
+        $sqliteMismatchControlPassed = true;
+    } else {
+        $configuration = databaseDriverConfiguration($driver);
+    }
+
+    $certifiedVersions[] = sprintf(
+        '%s %s',
+        $driver,
+        certifyDatabaseDriver($driver, $configuration),
+    );
 }
 
-fwrite(STDOUT, 'PASS database transport: ' . implode(', ', $drivers) . "\n");
+$mismatchControl = $sqliteMismatchControlPassed ? '; SQLite mismatch and recovery control passed' : '';
+fwrite(STDOUT, 'PASS database transport: ' . implode(', ', $certifiedVersions) . $mismatchControl . "\n");
 
 /** @return non-empty-list<'sqlite'|'mysql'|'pgsql'> */
 function configuredDatabaseDrivers(): array
@@ -71,8 +86,13 @@ function databaseDriverConfiguration(string $driver): array
 /**
  * @param 'sqlite'|'mysql'|'pgsql' $driver
  * @param array{dsn: non-empty-string, username: ?string, password: ?string, cleanup_file: ?string} $configuration
+ * @param ?non-empty-string $expectedVersionOverride
  */
-function certifyDatabaseDriver(string $driver, array $configuration): void
+function certifyDatabaseDriver(
+    string $driver,
+    array $configuration,
+    ?string $expectedVersionOverride = null,
+): string
 {
     if (!str_starts_with($configuration['dsn'], $driver . ':')) {
         throw new RuntimeException("Configured {$driver} DSN does not select the {$driver} PDO driver.");
@@ -105,6 +125,18 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
         SQL;
 
     try {
+        $version = databaseDriverVersion($driver, $configuration);
+        $expectedVersion = $expectedVersionOverride ?? expectedDatabaseVersion($driver);
+
+        if ($expectedVersion !== null && $version !== $expectedVersion) {
+            throw new RuntimeException(sprintf(
+                'Configured %s certification version mismatch: expected %s, received %s.',
+                $driver,
+                $expectedVersion,
+                $version,
+            ));
+        }
+
         $connection->executeStatement(
             <<<SQL
                 CREATE TABLE {$table} (
@@ -253,6 +285,8 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
             && !$snapshot['truncated'],
             "{$driver} query trace fingerprint shape changed.",
         );
+
+        return $version;
     } finally {
         if ($connection->inTransaction()) {
             $connection->rollBack();
@@ -280,6 +314,94 @@ function certifyDatabaseDriver(string $driver, array $configuration): void
             }
         }
     }
+}
+
+/**
+ * @param array{dsn: non-empty-string, username: null, password: null, cleanup_file: non-empty-string} $configuration
+ */
+function proveSqliteVersionMismatchBeforeFixtureDdl(array $configuration): void
+{
+    $failure = null;
+
+    try {
+        certifyDatabaseDriver('sqlite', $configuration, '0.0');
+    } catch (RuntimeException $caught) {
+        $failure = $caught;
+    }
+
+    if (
+        $failure === null
+        || preg_match(
+            '/^Configured sqlite certification version mismatch: expected 0\.0, received [0-9]+(?:\.[0-9]+){1,2}\.$/D',
+            $failure->getMessage(),
+        ) !== 1
+    ) {
+        throw new RuntimeException('SQLite version mismatch did not fail with the exact bounded diagnostic.');
+    }
+
+    if (is_file($configuration['cleanup_file'])) {
+        throw new RuntimeException('SQLite version mismatch left its pre-DDL fixture behind.');
+    }
+}
+
+/**
+ * @param 'sqlite'|'mysql'|'pgsql' $driver
+ * @param array{dsn: non-empty-string, username: ?string, password: ?string, cleanup_file: ?string} $configuration
+ * @return non-empty-string
+ */
+function databaseDriverVersion(string $driver, array $configuration): string
+{
+    $budget = new QueryBudget(1);
+    $trace = new QueryTrace(1);
+    $connection = Connection::connect(
+        $configuration['dsn'],
+        $budget,
+        $trace,
+        $configuration['username'],
+        $configuration['password'],
+    );
+    $row = match ($driver) {
+        'sqlite' => $connection->selectOneRow('SELECT sqlite_version() AS engine_version'),
+        'mysql' => $connection->selectOneRow('SELECT VERSION() AS engine_version'),
+        'pgsql' => $connection->selectOneRow(
+            "SELECT split_part(current_setting('server_version'), ' ', 1) AS engine_version",
+        ),
+    };
+    $version = $row['engine_version'] ?? null;
+    $snapshot = $trace->snapshot();
+
+    if (
+        !is_string($version)
+        || preg_match('/^[0-9]+(?:\.[0-9]+){1,2}$/D', $version) !== 1
+        || $budget->used() !== 1
+        || $snapshot['statements'] !== 1
+        || $snapshot['failures'] !== 0
+    ) {
+        throw new RuntimeException("Unable to attest the configured {$driver} engine version.");
+    }
+
+    return $version;
+}
+
+/** @param 'sqlite'|'mysql'|'pgsql' $driver */
+function expectedDatabaseVersion(string $driver): ?string
+{
+    $name = match ($driver) {
+        'sqlite' => 'PHPTHIS_SQLITE_EXPECTED_VERSION',
+        'mysql' => 'PHPTHIS_MYSQL_EXPECTED_VERSION',
+        'pgsql' => 'PHPTHIS_PGSQL_EXPECTED_VERSION',
+    };
+    $version = getenv($name);
+
+    if ($version === false || $version === '') {
+        return null;
+    }
+
+    if (preg_match('/^[0-9]+(?:\.[0-9]+){1,2}$/D', $version) !== 1) {
+        throw new RuntimeException("Configured database certification version is invalid: {$name}.");
+    }
+
+    return $version;
 }
 
 /** @return array{dsn: non-empty-string, username: null, password: null, cleanup_file: non-empty-string} */

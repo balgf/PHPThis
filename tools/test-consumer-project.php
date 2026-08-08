@@ -101,6 +101,7 @@ try {
 
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledReleaseGuidanceDistribution($installedFramework);
+    proveInstalledReferenceClarityDistribution($installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);
@@ -215,6 +216,56 @@ try {
     );
 } finally {
     removeDirectory($workspace);
+}
+
+/**
+ * @param array<string, list<string>> $artifactMarkers
+ * @param non-empty-string $artifactLabel
+ */
+function requireInstalledArtifactMarkers(array $artifactMarkers, string $artifactLabel): void
+{
+    foreach ($artifactMarkers as $path => $markers) {
+        if (!is_file($path)) {
+            throw new RuntimeException("Required installed {$artifactLabel} artifact is not a regular file: {$path}.");
+        }
+
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed {$artifactLabel} artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed {$artifactLabel} artifact {$path} is missing marker: {$marker}");
+            }
+        }
+    }
+}
+
+/**
+ * @param array<string, list<string>> $artifactMarkers
+ * @param non-empty-string $artifactLabel
+ */
+function forbidInstalledArtifactMarkers(array $artifactMarkers, string $artifactLabel): void
+{
+    foreach ($artifactMarkers as $path => $markers) {
+        if (!is_file($path)) {
+            throw new RuntimeException("Required installed {$artifactLabel} artifact is not a regular file: {$path}.");
+        }
+
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed {$artifactLabel} artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed {$artifactLabel} artifact {$path} contains forbidden marker: {$marker}");
+            }
+        }
+    }
 }
 
 /**
@@ -591,6 +642,307 @@ function proveRoutedInstalledGuidanceOwnerFailure(
     }
 }
 
+function proveInstalledReferenceClarityDistribution(string $installedFramework): void
+{
+    /** @var array<string, array{title: non-empty-string, metadata: non-empty-string, targets: non-empty-list<non-empty-string>}> $decisionHeaders */
+    $decisionHeaders = [
+        'docs/decisions/005-bounded-query-tracing.md' => [
+            'title' => 'ADR 005: Bounded query tracing',
+            'metadata' => "Superseded in part by [ADR 008](008-explicit-request-boundary.md), which replaces only this decision's temporary Phase 0 core-source ceiling.",
+            'targets' => ['008-explicit-request-boundary.md'],
+        ],
+        'docs/decisions/008-explicit-request-boundary.md' => [
+            'title' => 'ADR 008: Explicit request boundary and exact error responses',
+            'metadata' => 'Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the separate unknown-failure log, and [ADR 026](026-bounded-file-transfers.md), which resolves only the upload and response-streaming reconsideration item.',
+            'targets' => [
+                '023-application-owned-terminal-request-summaries.md',
+                '026-bounded-file-transfers.md',
+            ],
+        ],
+        'docs/decisions/012-pdo-transport-application-owned-dialects.md' => [
+            'title' => 'ADR 012: PDO transport with application-owned SQL dialects',
+            'metadata' => 'Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the option to share one request-wide query budget across terminal-summary database sources.',
+            'targets' => ['023-application-owned-terminal-request-summaries.md'],
+        ],
+        'docs/decisions/013-optional-crud-reference-profile.md' => [
+            'title' => 'ADR 013: Optional CRUD reference profile',
+            'metadata' => "Superseded in part by [ADR 021](021-application-owned-typed-input-boundaries.md), which replaces only the earlier Create tree and handler-owned transaction description.\n\nCurrent executable-example placement is refined by [ADR 046](046-canonical-executable-example-boundaries.md), which moves the shared `UserId` invariant to the feature level without changing this optional profile.",
+            'targets' => [
+                '021-application-owned-typed-input-boundaries.md',
+                '046-canonical-executable-example-boundaries.md',
+            ],
+        ],
+        'docs/decisions/017-bounded-trailing-positive-integer-routes.md' => [
+            'title' => 'ADR 017: Bounded trailing positive-integer routes',
+            'metadata' => "Superseded in part by [ADR 019](019-bounded-multiple-typed-routes.md), which retains this decision's positive-integer and explicit-routing constraints while replacing its one-trailing-parameter limit, prefix index, and one-value metadata.",
+            'targets' => ['019-bounded-multiple-typed-routes.md'],
+        ],
+        'docs/decisions/019-bounded-multiple-typed-routes.md' => [
+            'title' => 'ADR 019: Bounded multiple typed routes',
+            'metadata' => "Superseded in part by [ADR 032](032-explicit-uuid-and-ulid-route-types.md), which retains this decision's parameter count, state index, opaque-token, conflict, and immutable-delivery constraints while extending the fixed parameter-type set with canonical UUID and ULID values.",
+            'targets' => ['032-explicit-uuid-and-ulid-route-types.md'],
+        ],
+        'docs/decisions/020-application-owned-request-policy.md' => [
+            'title' => 'ADR 020: Application-owned request policy composition',
+            'metadata' => 'Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the denial and unknown-failure logging wording with one application-owned terminal summary attempt.',
+            'targets' => ['023-application-owned-terminal-request-summaries.md'],
+        ],
+        'docs/decisions/021-application-owned-typed-input-boundaries.md' => [
+            'title' => 'ADR 021: Application-owned typed input boundaries',
+            'metadata' => 'Superseded in part by [ADR 042](042-application-owned-input-failure-classification.md), which replaces only the blanket-`400` authoring default for application-owned structured request-body content.',
+            'targets' => ['042-application-owned-input-failure-classification.md'],
+        ],
+    ];
+
+    foreach ($decisionHeaders as $relativePath => $expected) {
+        $path = $installedFramework . '/' . $relativePath;
+
+        if (!is_file($path)) {
+            throw new RuntimeException("Installed partially superseded decision is not a regular file: {$path}.");
+        }
+
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed partially superseded decision {$path}.");
+        }
+
+        $expectedPrefix = "# {$expected['title']}\n\nStatus: accepted\n\n{$expected['metadata']}\n\n## Context\n";
+
+        if (!str_starts_with($contents, $expectedPrefix)) {
+            throw new RuntimeException(
+                "Installed partially superseded decision {$path} does not expose its exact successor metadata after accepted status.",
+            );
+        }
+
+        foreach ($expected['targets'] as $targetPath) {
+            $target = $installedFramework . '/docs/decisions/' . $targetPath;
+
+            if (!is_file($target)) {
+                throw new RuntimeException(
+                    "Installed partially superseded decision {$path} has no regular-file relationship target {$target}.",
+                );
+            }
+        }
+    }
+
+    $expectedIndexRows = [
+        '| Accepted record | Scope superseded in part | Direct successor |',
+        '| --- | --- | --- |',
+        '| [ADR 005](005-bounded-query-tracing.md) | Temporary Phase 0 core-source ceiling | [ADR 008](008-explicit-request-boundary.md) |',
+        '| [ADR 008](008-explicit-request-boundary.md) | Separate unknown-failure log | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
+        '| [ADR 008](008-explicit-request-boundary.md) | Upload and response-streaming reconsideration item | [ADR 026](026-bounded-file-transfers.md) |',
+        '| [ADR 012](012-pdo-transport-application-owned-dialects.md) | Shared request-wide query-budget option for terminal-summary database sources | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
+        '| [ADR 013](013-optional-crud-reference-profile.md) | Earlier Create tree and handler-owned transaction description | [ADR 021](021-application-owned-typed-input-boundaries.md) |',
+        '| [ADR 017](017-bounded-trailing-positive-integer-routes.md) | One-trailing-parameter limit, prefix index, and one-value route metadata | [ADR 019](019-bounded-multiple-typed-routes.md) |',
+        '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
+        '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
+        '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
+    ];
+    $indexPath = $installedFramework . '/docs/decisions/README.md';
+
+    if (!is_file($indexPath)) {
+        throw new RuntimeException('The installed decision successor index is not a regular file.');
+    }
+
+    $indexContents = file_get_contents($indexPath);
+
+    if (!is_string($indexContents)) {
+        throw new RuntimeException('Unable to read the installed decision successor index.');
+    }
+
+    $indexLines = preg_split('/\R/', $indexContents);
+
+    if (!is_array($indexLines)) {
+        throw new RuntimeException('Unable to parse the installed decision successor index.');
+    }
+
+    $heading = '## Current and successor relationships';
+    $headingIndex = null;
+    $headingCount = 0;
+
+    foreach ($indexLines as $index => $line) {
+        if ($line === $heading) {
+            $headingIndex = $index;
+            $headingCount++;
+        }
+    }
+
+    if ($headingIndex === null || $headingCount !== 1) {
+        throw new RuntimeException('The installed decision index must contain one successor relationship section.');
+    }
+
+    $expectedIntroduction = 'A partially superseded record remains accepted outside the exact scope named below. Follow the direct successor for that scope; use current operational guides for ordinary implementation rather than rewriting historical decision bodies.';
+
+    if (($indexLines[$headingIndex + 2] ?? null) !== $expectedIntroduction) {
+        throw new RuntimeException('The installed decision index changed its bounded successor explanation.');
+    }
+
+    $actualIndexRows = [];
+    $tableEndIndex = null;
+
+    for ($index = $headingIndex + 1, $count = count($indexLines); $index < $count; $index++) {
+        if (!str_starts_with($indexLines[$index], '|')) {
+            if ($actualIndexRows !== []) {
+                $tableEndIndex = $index;
+                break;
+            }
+
+            continue;
+        }
+
+        $actualIndexRows[] = $indexLines[$index];
+    }
+
+    if ($actualIndexRows !== $expectedIndexRows) {
+        throw new RuntimeException('The installed decision successor relationship table changed.');
+    }
+
+    $expectedRefinement = "ADR 013's current executable-example identifier placement is additionally refined by [ADR 046](046-canonical-executable-example-boundaries.md); the canonical current tree remains in [Optional CRUD reference profile](../crud.md#reference-placement). This refinement does not additionally supersede ADR 013's optional structure decision.";
+
+    if ($tableEndIndex === null || ($indexLines[$tableEndIndex + 1] ?? null) !== $expectedRefinement) {
+        throw new RuntimeException('The installed decision index changed ADR 013\'s current-tree refinement pointer.');
+    }
+
+    $vocabularyPath = $installedFramework . '/docs/vocabulary.md';
+
+    if (!is_file($vocabularyPath)) {
+        throw new RuntimeException('The installed canonical vocabulary is not a regular file.');
+    }
+
+    $vocabularyContents = file_get_contents($vocabularyPath);
+
+    if (!is_string($vocabularyContents)) {
+        throw new RuntimeException('Unable to read the installed canonical vocabulary.');
+    }
+
+    $expectedVocabularyRows = [
+        'typed operation seam' => '| typed operation seam | optional application-owned, narrowly typed interface, at most one in a request path, separating completed inbound transport or HTTP adaptation from one independently meaningful business or transaction responsibility while outbound response adaptation remains in the handler; omitted when behavior remains coherent in the handler | service layer, repository, command bus, use-case interface required for every handler |',
+        'application-owned representation primitive' => '| application-owned representation primitive | optional narrowly named application value used through composition by distinct concrete domain identifiers that deliberately share one complete validation invariant and canonical scalar representation; operations continue to require concrete identifiers and generation stays separate | framework identifier, generic domain ID, base class, trait, generator, binding or persistence abstraction |',
+        'UUID policy' => '| UUID policy | application-owned recorded separation of accepted canonical UUID versions from generation version and owner, metadata disclosure, ordering and clock behavior, failure, narrower domain rules, persistence, and evidence | route grammar, framework UUID generator, package selection, database default, persistence abstraction |',
+    ];
+    /** @var array<string, list<string>> $installedVocabularyRows */
+    $installedVocabularyRows = [];
+    $vocabularyLines = preg_split('/\R/', $vocabularyContents);
+
+    if (!is_array($vocabularyLines)) {
+        throw new RuntimeException('Unable to parse the installed canonical vocabulary.');
+    }
+
+    foreach ($vocabularyLines as $line) {
+        if (!str_starts_with($line, '| ')) {
+            continue;
+        }
+
+        $columns = explode(' | ', trim($line, '| '));
+
+        if (count($columns) === 3 && array_key_exists($columns[0], $expectedVocabularyRows)) {
+            $installedVocabularyRows[$columns[0]][] = $line;
+        }
+    }
+
+    foreach ($expectedVocabularyRows as $term => $expectedRow) {
+        if (($installedVocabularyRows[$term] ?? []) !== [$expectedRow]) {
+            throw new RuntimeException("Installed canonical vocabulary term {$term} changed or is repeated.");
+        }
+    }
+
+    $databasePath = $installedFramework . '/docs/database.md';
+
+    if (!is_file($databasePath)) {
+        throw new RuntimeException('The installed database certification guide is not a regular file.');
+    }
+
+    $databaseContents = file_get_contents($databasePath);
+
+    if (!is_string($databaseContents)) {
+        throw new RuntimeException('Unable to read the installed database certification guide.');
+    }
+
+    $databaseLines = preg_split('/\R/', $databaseContents);
+
+    if (!is_array($databaseLines)) {
+        throw new RuntimeException('Unable to parse the installed database certification guide.');
+    }
+
+    $databaseHeading = '### PDO transport certification matrix';
+    $databaseHeadingIndex = null;
+    $databaseHeadingCount = 0;
+
+    foreach ($databaseLines as $index => $line) {
+        if ($line === $databaseHeading) {
+            $databaseHeadingIndex = $index;
+            $databaseHeadingCount++;
+        }
+    }
+
+    if ($databaseHeadingIndex === null || $databaseHeadingCount !== 1) {
+        throw new RuntimeException('The installed database guide must contain one certification matrix.');
+    }
+
+    $expectedDatabaseRows = [
+        '| PDO driver | CI provision | Required exact engine or server version |',
+        '| --- | --- | --- |',
+        '| `sqlite` | PHP 8.4 `pdo_sqlite` on the `ubuntu-24.04` runner | SQLite `3.45.1` |',
+        '| `mysql` | Official `mysql:8.4` service | MySQL `8.4.11` |',
+        '| `pgsql` | Official `postgres:17` service | PostgreSQL `17.10` |',
+    ];
+    $installedDatabaseRows = [];
+
+    for ($index = $databaseHeadingIndex + 1, $count = count($databaseLines); $index < $count; $index++) {
+        if (!str_starts_with($databaseLines[$index], '|')) {
+            if ($installedDatabaseRows !== []) {
+                break;
+            }
+
+            continue;
+        }
+
+        $installedDatabaseRows[] = $databaseLines[$index];
+    }
+
+    if ($installedDatabaseRows !== $expectedDatabaseRows) {
+        throw new RuntimeException('The installed database certification matrix changed.');
+    }
+
+    $databaseLimitation = 'No unlisted patch, minor, major, distribution build, extension build, service topology, or managed offering inherits certification from a listed row.';
+
+    if (substr_count($databaseContents, $databaseLimitation) !== 1) {
+        throw new RuntimeException('The installed database certification matrix changed its unlisted-version limitation.');
+    }
+
+    $databaseMismatchEvidence = 'Its maintained SQLite negative control first supplies an impossible expected version, requires the exact bounded mismatch diagnostic and removal of the pre-DDL fixture, then proves clean recovery through the normal certification run.';
+
+    if (substr_count($databaseContents, $databaseMismatchEvidence) !== 1) {
+        throw new RuntimeException('The installed database certification matrix changed its mismatch evidence boundary.');
+    }
+
+    $requiredMarkers = [
+        $installedFramework . '/docs/guardrails.md' => [
+            'Current unreleased source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines.',
+            'Repeated documentation-marker checks use file-local helpers rather than duplicated loops.',
+            'The decision-navigation and vocabulary guard uses one fixed reviewed map of partial-supersession relationships.',
+            'The maintained SQLite negative control supplies an impossible version, requires the exact bounded failure and removal of its pre-DDL fixture, then proves clean recovery through the normal certification run.',
+        ],
+        $installedFramework . '/docs/getting-started.md' => [
+            'Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists.',
+        ],
+        $installedFramework . '/src/Routing/PathParameters.php' => [
+            'public static function fromValues(',
+        ],
+    ];
+    $forbiddenMarkers = [
+        $installedFramework . '/src/Routing/PathParameters.php' => [
+            'onePositiveInteger',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($requiredMarkers, 'historical and reference clarity');
+    forbidInstalledArtifactMarkers($forbiddenMarkers, 'routing compatibility');
+
+    fwrite(STDOUT, "PASS installed historical and reference clarity distribution\n");
+}
+
 function proveInstalledReleaseGuidanceDistribution(string $installedFramework): void
 {
     /** @var array<string, list<string>> $artifactMarkers */
@@ -674,19 +1026,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed release guidance artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException("Installed release guidance artifact {$path} is missing marker: {$marker}");
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'release guidance');
 
     $releaseGuidance = file_get_contents($installedFramework . '/RELEASING.md');
 
@@ -818,19 +1158,7 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed database setup guidance artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException("Installed database setup guidance artifact {$path} is missing marker: {$marker}");
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'database setup guidance');
 
     fwrite(STDOUT, "PASS installed database setup guidance distribution\n");
 }
@@ -899,19 +1227,7 @@ function proveInstalledWorkbenchGuidanceDistribution(
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed Workbench guidance artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException("Installed Workbench guidance artifact {$path} is missing marker: {$marker}");
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'Workbench guidance');
 
     $consumerComposer = file_get_contents($project . '/composer.json');
 
@@ -1016,19 +1332,7 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed startup and probe guidance artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException("Installed startup and probe guidance artifact {$path} is missing marker: {$marker}");
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'startup and probe guidance');
 
     fwrite(STDOUT, "PASS installed startup and probe guidance distribution\n");
 }
@@ -1119,23 +1423,7 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException(
-                "Unable to read installed session-cleanup and response-framing artifact {$path}.",
-            );
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException(
-                    "Installed session-cleanup and response-framing artifact {$path} is missing marker: {$marker}",
-                );
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'session-cleanup and response-framing');
 
     $installedEmitter = file_get_contents($installedFramework . '/src/Http/ResponseEmitter.php');
 
@@ -1259,21 +1547,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed bounded task-routed context artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException(
-                    "Installed bounded task-routed context artifact {$path} is missing marker: {$marker}",
-                );
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'bounded task-routed context');
 
     /** @var array<string, list<string>> $forbiddenMarkers */
     $forbiddenMarkers = [
@@ -1344,10 +1618,10 @@ function proveInstalledCrudAccessSurfaceGuidanceDistribution(
         'Separate its action-specific policy composition when authentication, named authorization action, tenant resolution, or policy budget or trace differs.',
         'Separate its HTTP handler and boundary types when accepted input, tenant, resource or data scope, SQL, projection or disclosure, failure behavior, HTTP cache policy, handler query budget or trace, side effects, or audit effects differ.',
         'Keep its SQL owner separate when data scope or SQL differs.',
-        'Do not share an existing independently meaningful typed business or transaction operation when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ.',
-        'A route or method difference alone does not require duplicating an otherwise identical handler or typed operation',
+        'Do not share an existing independently meaningful typed business or transaction operation, including any typed operation seam, when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ.',
+        'A route or method difference alone does not require duplicating an otherwise identical handler or operation',
         'Narrowly typed authentication, tenant-resolution, or denial implementations may be shared when their contracts are identical, while every protected named action retains its own action-specific authorization contract.',
-        'Share one independently meaningful typed business operation only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization.',
+        'Share one existing independently meaningful typed business or transaction operation, including any typed operation seam, only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization.',
         'Do not put role, audience, mode, or permission branching inside a shared handler or business operation to select SQL, behavior, side effects, or disclosure.',
         "Do not add a superset projection filtered for another surface or SQL broader than the receiving surface's recorded contract.",
     ];
@@ -1390,21 +1664,7 @@ function proveInstalledCrudAccessSurfaceGuidanceDistribution(
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed CRUD access-surface guidance artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException(
-                    "Installed CRUD access-surface guidance artifact {$path} is missing marker: {$marker}",
-                );
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'CRUD access-surface guidance');
 
     fwrite(STDOUT, "PASS installed CRUD access-surface guidance distribution\n");
 }
@@ -1479,21 +1739,7 @@ function proveInstalledIdentifierRepresentationGuidanceDistribution(
         $installedFramework . '/templates/application/.ai/testing.md' => $testingMarkers,
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed identifier representation guidance artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException(
-                    "Installed identifier representation guidance artifact {$path} is missing marker: {$marker}",
-                );
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'identifier representation guidance');
 
     fwrite(STDOUT, "PASS installed identifier representation guidance distribution\n");
 }
@@ -1604,19 +1850,7 @@ function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed database authority lifecycle artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException("Installed database authority lifecycle artifact {$path} is missing marker: {$marker}");
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'database authority lifecycle');
 
     fwrite(STDOUT, "PASS installed database authority lifecycle guidance distribution\n");
 }
@@ -1834,19 +2068,7 @@ function proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed engine-specific migration-invariant artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException("Installed engine-specific migration-invariant artifact {$path} is missing marker: {$marker}");
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'engine-specific migration-invariant');
 
     fwrite(STDOUT, "PASS installed engine-specific migration-invariant guidance distribution\n");
 }
@@ -1927,19 +2149,7 @@ function proveInstalledMigrationStructureGuidanceDistribution(
         ],
     ];
 
-    foreach ($artifactMarkers as $path => $markers) {
-        $contents = file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException("Unable to read installed migration-structure guidance artifact {$path}.");
-        }
-
-        foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
-                throw new RuntimeException("Installed migration-structure guidance artifact {$path} is missing marker: {$marker}");
-            }
-        }
-    }
+    requireInstalledArtifactMarkers($artifactMarkers, 'migration-structure guidance');
 
     if (is_dir($project . '/src/Database/Migrations') || is_dir($project . '/src/Migrations')) {
         throw new RuntimeException('The database-free installed skeleton unexpectedly contains a migration directory.');

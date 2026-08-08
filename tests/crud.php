@@ -419,7 +419,7 @@ function crudBehaviorTests(): Generator
             '/accounts/42/users',
             body: '{"name":"Ada","email":"ada@example.com"}',
             headers: ['content-type' => 'application/json'],
-            pathParameters: PathParameters::onePositiveInteger('account_id', 42),
+            pathParameters: PathParameters::fromValues(['account_id' => 42], []),
         ));
     } catch (QueryBudgetExceeded) {
         $budgetFailed = true;
@@ -479,7 +479,7 @@ function crudBehaviorTests(): Generator
             '/accounts/42/users',
             body: '{"name":"Ada","email":"ada@example.com"}',
             headers: ['content-type' => 'application/json'],
-            pathParameters: PathParameters::onePositiveInteger('account_id', 42),
+            pathParameters: PathParameters::fromValues(['account_id' => 42], []),
         ));
     } catch (PDOException) {
         $statementFailed = true;
@@ -525,7 +525,7 @@ function crudBehaviorTests(): Generator
                 '/accounts/42/users',
                 body: $input['body'],
                 headers: ['content-type' => 'application/json'],
-                pathParameters: PathParameters::onePositiveInteger('account_id', 42),
+                pathParameters: PathParameters::fromValues(['account_id' => 42], []),
             ));
         } catch (InvalidRequest | RequestBodyTooLarge | UnacceptableCreateUserValues $failure) {
             if ($failure::class !== $input['failure']) {
@@ -674,7 +674,7 @@ function runCreateUserScenario(string $name, int $preexistingUsers): array
         '/accounts/42/users',
         body: '{"name":"New User","email":"new@example.com"}',
         headers: ['content-type' => 'application/json'],
-        pathParameters: PathParameters::onePositiveInteger('account_id', 42),
+        pathParameters: PathParameters::fromValues(['account_id' => 42], []),
     ));
     $verification = Connection::connect(
         'sqlite:' . $databasePath,

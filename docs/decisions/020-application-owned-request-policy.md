@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the denial and unknown-failure logging wording with one application-owned terminal summary attempt.
+
 ## Context
 
 A protected tenant-scoped request must establish a current principal, resolve its tenant context, and authorize one named action before protected business or database work. PHPThis already supplies immutable normalized requests, bounded typed route parameters, explicit handlers, exact error mapping, query budgets, and redacted query traces. It does not supply identity meaning, credential verification, tenant membership, or permission policy.

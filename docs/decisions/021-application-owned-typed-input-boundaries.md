@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 042](042-application-owned-input-failure-classification.md), which replaces only the blanket-`400` authoring default for application-owned structured request-body content.
+
 ## Context
 
 `RequestReader` bounds and normalizes PHP runtime transport values, but an operation still receives JSON strings, query values, and other external representations whose fields may be absent, explicitly `null`, wrongly typed, oversized, nested, or malformed. PHP strict types do not validate those values. A generic validator, rule-string language, sanitizer, automatic hydrator, or mass-assignment API would hide the operation's accepted representations and create another inference surface.

@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 023](023-application-owned-terminal-request-summaries.md), which replaces only the option to share one request-wide query budget across terminal-summary database sources.
+
 ## Context
 
 `Connection` accepts a native PDO DSN and already owns the behavior PHPThis needs around PDO: named scalar binding, associative fetching, explicit local transactions, query budgets, and bounded query traces. The framework's executable evidence previously used only SQLite, so that shape did not justify a MySQL or PostgreSQL support claim.

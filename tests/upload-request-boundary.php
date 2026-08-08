@@ -53,7 +53,7 @@ if ($response->status !== 204 || !$handler->receivedUpload) {
     throw new RuntimeException('Expected RequestBoundary to pass explicit multipart runtime input once.');
 }
 
-$routed = $request->withPathParameters(PathParameters::onePositiveInteger('file_id', 7));
+$routed = $request->withPathParameters(PathParameters::fromValues(['file_id' => 7], []));
 
 if (
     ($routed->uploads['document'] ?? null) !== $upload

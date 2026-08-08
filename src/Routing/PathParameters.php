@@ -28,11 +28,6 @@ final readonly class PathParameters
         return new self([], [], [], []);
     }
 
-    public static function onePositiveInteger(string $name, int $value): self
-    {
-        return self::fromValues([$name => $value], [], [], []);
-    }
-
     /**
      * @param array<array-key, mixed> $positiveIntegers
      * @param array<array-key, mixed> $tokens
