@@ -100,6 +100,7 @@ try {
     }
 
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
+    proveInstalledReleaseGuidanceDistribution($installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledCrudAccessSurfaceGuidanceDistribution($project, $installedFramework);
@@ -502,6 +503,150 @@ function requireInstalledGuidanceReferenceFailure(
     }
 
     throw new RuntimeException('Installed-reference negative control unexpectedly passed.');
+}
+
+function proveInstalledReleaseGuidanceDistribution(string $installedFramework): void
+{
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $installedFramework . '/RELEASING.md' => [
+            '## Immutable release history',
+            'Historical release authority means the exact bytes reachable from the approved tag.',
+            'A later `main` file at the same path may contain a clarification, but it is current documentation rather than evidence of the tagged release.',
+            '## Reusable release state model',
+            '**Latest recorded release:**',
+            '**Unreleased `main`:**',
+            '**Proposed next candidate:**',
+            '**Approved candidate:**',
+            'only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation.',
+            'The skeleton candidate commit may remain explicitly `PENDING`',
+            'Keep the planned release date distinct from the observed timestamp of every external publication operation.',
+            'Authorization is enumerable, not implied by reaching a checklist step.',
+            'candidate preparation; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement.',
+            '## Version-neutral release gate',
+            'Preparing a proposal, proving or publishing an approved candidate, and inspecting an older release are different tasks.',
+            'candidate-specific announcement',
+            'An unexplained collision stops the release and requires a new approved version.',
+            'When resuming a recorded partial publication, require every existing tag and artifact to match its recorded commit and distribution evidence exactly',
+            'Existing state never authorizes overwrite, tag movement, deletion and recreation, or artifact replacement.',
+            'record the framework side as published but the overall release as partial and unproved',
+            'preserve and record that exact partial-publication state',
+            '### 2. Prove the framework candidate',
+            'Do not push it before the local proof in Step 2 passes.',
+            'After the complete local gate passes, confirm the authorization record permits pushing the exact framework candidate commit',
+            'GitHub CI passes both the PHP 8.4 validity job and the SQLite/MySQL/PostgreSQL PDO transport job for that exact pushed candidate commit.',
+            '### 3. Publish the framework prerelease',
+            'push that exact tag to the approved remote',
+            '### 4. Publish the skeleton prerelease',
+            'push the exact skeleton candidate commit without modification',
+            'Confirm skeleton CI passes for that exact pushed candidate commit',
+            'push that exact tag to the approved remote without moving or reusing an existing tag',
+            '### 5. Prove the public distribution path',
+            "composer create-project --stability=alpha --prefer-dist phpthis/skeleton phpthis-release-proof 'APPROVED_SKELETON_VERSION'",
+            '### 6. Announce or stop',
+            'publish both approved GitHub prereleases for the already-pushed proven tags',
+            'Exact framework candidate commit:',
+            'Exact-candidate approval record:',
+            'Exact skeleton candidate commit:',
+            'Planned release date:',
+            'Observed external operation timestamps and results:',
+            'Accountable-human authorization records by exact operation:',
+            'Partial-publication state or NOT_APPLICABLE:',
+        ],
+        $installedFramework . '/README.md' => [
+            'That work is unreleased:',
+            'does not yet have an approved next-release identity',
+            'separates this unreleased state from a proposed candidate, an explicitly approved candidate, and immutable release history',
+        ],
+        $installedFramework . '/SECURITY.md' => [
+            'Any approved prerelease candidate may be announced only after its complete public-artifact gate in `RELEASING.md` passes.',
+            'A partially published framework or skeleton remains unannounced until both packages and the clean public installation path are proved.',
+            'This tracked policy does not record current publication state',
+        ],
+        $installedFramework . '/docs/getting-started.md' => [
+            '## Prerelease boundary',
+            'Current `main` may contain later unreleased work;',
+            'nor an approved next candidate.',
+            'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
+            'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            'Assess or prepare a proposed PHPThis release',
+            'Prove or publish an approved PHPThis candidate',
+            'Inspect an installed or historical PHPThis release',
+            'exact framework and skeleton candidate commits recorded at their respective freeze points',
+            'planned release date separate from observed publication timestamps',
+            'distinct exact-candidate approval and separately enumerable preparation, commit/push, tag creation/push, package, GitHub-prerelease, and announcement authorization',
+            'clean-tree local proof before push and exact pushed-commit CI',
+            'exact-version clean public installation evidence',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'A separate installed distribution proof checks the version-neutral release guidance',
+            'ordered local-proof-before-push, exact-CI, tag-creation-and-push',
+            'discovers every current `docs/releases/*.md` note and rejects unqualified positive or negative live-publication claims',
+            'performs no network request, tag operation, package-host write, release creation, or announcement',
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed release guidance artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException("Installed release guidance artifact {$path} is missing marker: {$marker}");
+            }
+        }
+    }
+
+    $releaseGuidance = file_get_contents($installedFramework . '/RELEASING.md');
+
+    if (!is_string($releaseGuidance)) {
+        throw new RuntimeException('Unable to read installed release guidance for ordered proof.');
+    }
+
+    $orderedReleaseMarkers = [
+        '### 1. Freeze the release candidate',
+        'Do not push it before the local proof in Step 2 passes.',
+        '### 2. Prove the framework candidate',
+        'composer validate --strict',
+        'composer check',
+        'After the complete local gate passes, confirm the authorization record permits pushing the exact framework candidate commit',
+        'GitHub CI passes both the PHP 8.4 validity job and the SQLite/MySQL/PostgreSQL PDO transport job for that exact pushed candidate commit.',
+        '### 3. Publish the framework prerelease',
+        'Create the approved framework prerelease tag from the proven commit',
+        'push that exact tag to the approved remote',
+        'Submit or refresh `phpthis/framework` on Packagist',
+        '### 4. Publish the skeleton prerelease',
+        'Export the contents of `skeleton/` as the root of its dedicated repository',
+        'Run `composer validate --strict` and `composer check` from the skeleton root.',
+        'push the exact skeleton candidate commit without modification',
+        'Confirm skeleton CI passes for that exact pushed candidate commit',
+        'Tag the proven skeleton commit and push that exact tag to the approved remote',
+        'Submit or refresh `phpthis/skeleton` on Packagist',
+        '### 5. Prove the public distribution path',
+        "composer create-project --stability=alpha --prefer-dist phpthis/skeleton phpthis-release-proof 'APPROVED_SKELETON_VERSION'",
+        'composer check',
+        '### 6. Announce or stop',
+        'publish both approved GitHub prereleases for the already-pushed proven tags',
+        'Publish only the approved candidate-specific announcement',
+    ];
+    $previousPosition = -1;
+
+    foreach ($orderedReleaseMarkers as $marker) {
+        $position = strpos($releaseGuidance, $marker, $previousPosition + 1);
+
+        if ($position === false) {
+            throw new RuntimeException("Installed release guidance is missing or misorders marker: {$marker}");
+        }
+
+        $previousPosition = $position;
+    }
+
+    fwrite(STDOUT, "PASS installed version-neutral release guidance distribution\n");
 }
 
 function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string $installedFramework): void

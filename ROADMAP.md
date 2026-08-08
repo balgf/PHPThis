@@ -84,9 +84,14 @@
 - Complete: ADR 038 defines an engine-neutral application-owned database authority lifecycle that separates connectivity, namespace and object control-or-ownership, operation authority, activation, exact-engine verification, and rollout without adding permission magic or framework-owned request-time grant introspection.
 - Complete: ADR 039 recommends `src/Database/Migrations/` only for newly adopting applications, preserves coherent alternatives, and adds no path enforcement, discovery, relocation, repository layer, or migration runtime.
 - Complete: ADR 040 accepts the bounded Alpha 5 source scope and exact identity, carries Alpha 4 forward, and rolls ADR 036 through ADR 039 into Consumer Contract version 10 and Strict Profile version 3 while retaining PHP 8.4.x, zero third-party runtime dependencies, and the 2,600-line core ceiling.
+- Alpha 5 is the latest release identity and tag recorded by the repository source record. Its live GitHub, Packagist, installation, and announcement state remains external; inspect its exact tagged source and external evidence rather than later `main` files.
+
+## Phase 6: unreleased evaluation after Alpha 5
+
+- Current `main` after `v0.1.0-alpha.5` is unreleased source, not an expansion of Alpha 5 and not an approved next candidate. A future release requires its own bounded scope, fresh identity, exact candidate evidence, and accountable-human authorization through `RELEASING.md`.
 - Complete: ADR 041 accepts PHPThis Workbench as a separate optional development-only package with one checked concrete workspace, one expression per fresh strict child, explicit process authority, and no framework core, container, discovery, generic dispatch, production shell, or validity claim.
+- Complete: ADR 042 clarifies application-owned structured request-body failure classification by separating malformed structure and native types from unacceptable field values without adding a generic validator or framework validation runtime.
 - Complete: ADR 043 separates universal application-owned migration invariants from ADR 027's SQLite-only transaction, rollback, ledger-definition, and same-host `flock` proof; every other engine owns its ledger-consistency boundary, coordination topology, partial-failure recovery, and exact-engine evidence without a cross-engine runtime.
-- Alpha 5 publication state is external; ADR 040 and `RELEASING.md` define the coordinated framework, dedicated skeleton, Packagist, clean-install, and announcement proof without embedding mutable availability in the tagged artifact.
 - Freeze core mechanisms except for a demonstrated release blocker, correctness defect, or security defect within the accepted surface.
 - Exercise the Packagist-installed release through at least two independent consumer applications with materially different work, recording task outcomes, incorrect AI assumptions, file and token churn, checker evidence, and human decisions.
 - Run the same bounded consumer tasks across several AI models and classify unsupported claims, contract violations, query-scaling mistakes, unnecessary abstraction, and successful self-repair.
