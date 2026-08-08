@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Example\Users\ListUsers;
 
+use Example\Users\UserId;
 use UnexpectedValueException;
 
 final readonly class UserSummary
 {
     /** @param non-empty-string $name */
     private function __construct(
-        public int $id,
+        public UserId $id,
         public string $name,
     ) {
     }
@@ -28,33 +29,12 @@ final readonly class UserSummary
 
         $name = $row['name'];
 
-        if (!is_string($name) || $name === '') {
-            throw new UnexpectedValueException('User summary name must be a non-empty string.');
+        if (!is_string($name) || $name === '' || preg_match('//u', $name) !== 1) {
+            throw new UnexpectedValueException(
+                'User summary name has an invalid database representation.',
+            );
         }
 
-        return new self(self::positiveIdentifier($row['id']), $name);
-    }
-
-    private static function positiveIdentifier(mixed $value): int
-    {
-        if (is_int($value)) {
-            if ($value > 0) {
-                return $value;
-            }
-
-            throw new UnexpectedValueException('User summary id must be positive.');
-        }
-
-        if (!is_string($value) || preg_match('/^[1-9][0-9]*$/D', $value) !== 1) {
-            throw new UnexpectedValueException('User summary id has an invalid database representation.');
-        }
-
-        $parsed = filter_var($value, FILTER_VALIDATE_INT);
-
-        if (!is_int($parsed) || $parsed < 1) {
-            throw new UnexpectedValueException('User summary id is outside the supported integer range.');
-        }
-
-        return $parsed;
+        return new self(UserId::fromDatabaseValue($row['id']), $name);
     }
 }

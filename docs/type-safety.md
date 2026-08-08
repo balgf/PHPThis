@@ -52,7 +52,7 @@ Native `json_decode` keeps the final value when a JSON object repeats a key. Thi
 
 ## Query parameters
 
-When constructed through `RequestReader`, `Request::$query` receives at most 64 string-named top-level entries with `mixed` values. Each accepting operation parses the complete array through a concrete factory before I/O, rejects unknown keys and non-canonical representations, and exposes only native typed state afterward. The example `ListUsersPageRequest::fromQuery` turns its optional canonical decimal `after_user_id` string into `?int`; it does not create a generic query bag or coercive input helper.
+When constructed through `RequestReader`, `Request::$query` receives at most 64 string-named top-level entries with `mixed` values. Each accepting operation parses the complete array through a concrete factory before I/O, rejects unknown keys and non-canonical representations, and exposes only native typed state afterward. The example `ListUsersPageRequest::fromQuery` turns its optional canonical decimal `after_user_id` string into `?UserId`, reusing the same application-owned positive `users.id` invariant as the Get and List database projections; it does not create a generic query bag, identifier helper, or coercive input helper.
 
 ## Multipart upload values
 

@@ -25,6 +25,7 @@ use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;
 use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\Response;
@@ -257,6 +258,43 @@ function requestPolicyTests(): Generator
                         $case,
                     ));
                 }
+            }
+        };
+    yield 'document list invalid input uses the central exact-class response mapping' => static function (): void {
+            $databasePath = createDocumentListDatabaseFixture('list-central-error-mapping', 3);
+            $budget = new QueryBudget(1);
+            $queryTrace = new QueryTrace(1);
+            $policyTrace = new RequestPolicyTestTrace();
+            $expected = new Response(
+                400,
+                requestPolicyJsonHeaders(),
+                "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+            );
+            $response = handleDocumentListPolicyRequest(
+                requestPolicyListApplication(
+                    $databasePath,
+                    $policyTrace,
+                    null,
+                    $budget,
+                    $queryTrace,
+                ),
+                ['order' => 'not-supported'],
+                new ErrorResponseRegistry([InvalidRequest::class => $expected]),
+            );
+
+            if (
+                $response !== $expected
+                || $response->status !== 400
+                || $response->headers !== requestPolicyJsonHeaders()
+                || $response->body
+                    !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
+                || $policyTrace->steps !== ['authenticate', 'resolve_tenant', 'authorize_list']
+                || $budget->used() !== 0
+                || $queryTrace->snapshot()['statements'] !== 0
+            ) {
+                throw new RuntimeException(
+                    'Document-list input failure must use the central exact-class response mapping.',
+                );
             }
         };
     yield 'document list executes eight finite raw SQL branches and empty filters use zero SQL' => static function (): void {
@@ -707,6 +745,137 @@ function requestPolicyTests(): Generator
                         $order,
                     ));
                 }
+            }
+        };
+    yield 'document projections reject invalid stored UTF-8 before JSON responses' => static function (): void {
+            $invalidTitle = "Invalid title \xC3\x28 PrivateStoredTitleMarker";
+            $getDatabasePath = createRequestPolicyDatabaseFixture('get-invalid-stored-title', 0);
+            $getSeed = Connection::connect(
+                'sqlite:' . $getDatabasePath,
+                new QueryBudget(1),
+                new QueryTrace(1),
+            );
+            $getSeed->executeStatement(
+                <<<'SQL'
+                    UPDATE documents
+                    SET title = :title
+                    WHERE account_id = :account_id
+                      AND document_key = :document_key
+                    SQL,
+                [
+                    'title' => $invalidTitle,
+                    'account_id' => 42,
+                    'document_key' => 'Doc_9-z',
+                ],
+            );
+            $getBudget = new QueryBudget(1);
+            $getQueryTrace = new QueryTrace(1);
+            $getPolicyTrace = new RequestPolicyTestTrace();
+            $getFailureMessage = null;
+
+            try {
+                handleDocumentPolicyRequest(
+                    requestPolicyApplication(
+                        $getPolicyTrace,
+                        null,
+                        new SelectAuthorizedDocument(Connection::connect(
+                            'sqlite:' . $getDatabasePath,
+                            $getBudget,
+                            $getQueryTrace,
+                        )),
+                    ),
+                    '/accounts/42/documents/Doc_9-z',
+                );
+            } catch (UnexpectedValueException $failure) {
+                $getFailureMessage = $failure->getMessage();
+                $getResponse = (new UnknownFailureBoundary())->respond();
+            }
+
+            $listDatabasePath = createDocumentListDatabaseFixture('list-invalid-stored-title', 0);
+            $listSeed = Connection::connect(
+                'sqlite:' . $listDatabasePath,
+                new QueryBudget(1),
+                new QueryTrace(1),
+            );
+            $listSeed->executeStatement(
+                <<<'SQL'
+                    INSERT INTO documents (
+                        account_id,
+                        document_key,
+                        title,
+                        category,
+                        sort_rank
+                    )
+                    VALUES (
+                        :account_id,
+                        :document_key,
+                        :title,
+                        :category,
+                        :sort_rank
+                    )
+                    SQL,
+                [
+                    'account_id' => 42,
+                    'document_key' => 'InvalidStoredTitle',
+                    'title' => $invalidTitle,
+                    'category' => 'alpha',
+                    'sort_rank' => 1,
+                ],
+            );
+            $listBudget = new QueryBudget(1);
+            $listQueryTrace = new QueryTrace(1);
+            $listPolicyTrace = new RequestPolicyTestTrace();
+            $listFailureMessage = null;
+
+            try {
+                handleDocumentListPolicyRequest(
+                    requestPolicyListApplication(
+                        $listDatabasePath,
+                        $listPolicyTrace,
+                        null,
+                        $listBudget,
+                        $listQueryTrace,
+                    ),
+                    [],
+                );
+            } catch (UnexpectedValueException $failure) {
+                $listFailureMessage = $failure->getMessage();
+                $listResponse = (new UnknownFailureBoundary())->respond();
+            }
+
+            $expectedBody = "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n";
+            $expectedHeaders = requestPolicyJsonHeaders();
+            $getSnapshot = $getQueryTrace->snapshot();
+            $listSnapshot = $listQueryTrace->snapshot();
+
+            if (
+                !isset($getResponse, $listResponse)
+                || $getFailureMessage
+                    !== 'Document details title has an invalid database representation.'
+                || $listFailureMessage
+                    !== 'Document summary title has an invalid database representation.'
+                || $getResponse->status !== 500
+                || $listResponse->status !== 500
+                || $getResponse->headers !== $expectedHeaders
+                || $listResponse->headers !== $expectedHeaders
+                || $getResponse->body !== $expectedBody
+                || $listResponse->body !== $expectedBody
+                || str_contains($getResponse->body, 'PrivateStoredTitleMarker')
+                || str_contains($listResponse->body, 'PrivateStoredTitleMarker')
+                || $getPolicyTrace->steps
+                    !== ['authenticate', 'resolve_tenant', 'authorize', 'retrieve']
+                || $listPolicyTrace->steps
+                    !== ['authenticate', 'resolve_tenant', 'authorize_list']
+                || $getBudget->used() !== 1
+                || $listBudget->used() !== 1
+                || $getSnapshot['statements'] !== 1
+                || $listSnapshot['statements'] !== 1
+                || $getSnapshot['failures'] !== 0
+                || $listSnapshot['failures'] !== 0
+            ) {
+                throw new RuntimeException(
+                    'Invalid stored UTF-8 must fail at each projection before generic JSON output.',
+                );
             }
         };
     yield 'document list source uses direct raw SQL without ORM binding or pagination helpers' => static function (): void {
@@ -1190,12 +1359,16 @@ function requestPolicyListApplication(
 }
 
 /** @param array<string, mixed> $query */
-function handleDocumentListPolicyRequest(Application $application, array $query): Response
+function handleDocumentListPolicyRequest(
+    Application $application,
+    array $query,
+    ?ErrorResponseRegistry $registry = null,
+): Response
 {
     return (new RequestBoundary(
         requestReaderForBody('', 8_192),
         $application,
-        requestPolicyErrorRegistry(),
+        $registry ?? requestPolicyErrorRegistry(),
     ))->handle(
         [
             'REQUEST_METHOD' => 'GET',
@@ -1499,12 +1672,9 @@ function requestPolicyErrorRegistry(): ErrorResponseRegistry
     );
 
     return new ErrorResponseRegistry([
-        \PHPThis\Http\InvalidRequest::class => new Response(
+        InvalidRequest::class => new Response(
             400,
-            [
-                'Content-Type' => 'application/json; charset=utf-8',
-                'Cache-Control' => 'no-store',
-            ],
+            requestPolicyJsonHeaders(),
             "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
         ),
         Unauthenticated::class => new Response(

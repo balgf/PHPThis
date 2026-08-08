@@ -54,7 +54,6 @@ final readonly class ApplicationCommands
 
     private function runSchedule(ApplicationCommandName $command): ApplicationCommandExecution
     {
-        $databasePath = $this->existingDatabasePath();
         $currentMinute = intdiv($this->clock->now(), 60);
 
         if ($currentMinute % 5 !== 0) {
@@ -65,6 +64,7 @@ final readonly class ApplicationCommands
             );
         }
 
+        $databasePath = $this->existingDatabasePath();
         $trace = new RedisScheduleRunLeaseTrace();
         $scheduleLease = RedisScheduleRunLease::connect(
             $this->redisHost,

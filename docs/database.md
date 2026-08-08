@@ -34,6 +34,8 @@ Only named data parameters are accepted. Names use an optional leading colon fol
 
 `Connection` binds strings, integers, booleans, and null with explicit PDO parameter types. Arrays and objects must be transformed by application code before execution. Selected columns and expressions must have unique names or aliases because associative fetching cannot preserve duplicate keys. Raw driver values remain `mixed` and are parsed immediately by an application projection because engines can return different scalar representations.
 
+A projection also validates any representation required by its next explicit sink. For example, a selected string later emitted as JSON must be valid UTF-8 at the named database-projection boundary; do not defer corrupt stored bytes to `json_encode`, substitute them, or normalize them implicitly. A failed database projection remains an application-owned unexpected failure unless the application has accepted and proved a narrower explicit policy. Field byte or character limits remain separate schema or operation decisions and must not be inferred from an optional cache's admission policy.
+
 `executeStatement` returns PDO's affected-row count. PHPThis certifies exact counts only for unambiguous single-row inserts and deletes. Do not use affected-row counts for reads, and test any update matched-versus-changed semantics against the selected engine.
 
 ## Database authority

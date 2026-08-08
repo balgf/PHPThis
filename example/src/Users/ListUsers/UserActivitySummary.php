@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Example\Users\ListUsers;
 
+use Example\Users\UserId;
 use UnexpectedValueException;
 
 final readonly class UserActivitySummary
 {
     /** @param non-empty-string $name */
     private function __construct(
-        public int $id,
+        public UserId $id,
         public string $name,
         public int $eventCount,
     ) {
@@ -32,26 +33,17 @@ final readonly class UserActivitySummary
 
         $name = $row['name'];
 
-        if (!is_string($name) || $name === '') {
-            throw new UnexpectedValueException('User activity name must be a non-empty string.');
+        if (!is_string($name) || $name === '' || preg_match('//u', $name) !== 1) {
+            throw new UnexpectedValueException(
+                'User activity name has an invalid database representation.',
+            );
         }
 
         return new self(
-            self::positiveInteger($row['id'], 'id'),
+            UserId::fromDatabaseValue($row['id']),
             $name,
             self::nonNegativeInteger($row['event_count'], 'event_count'),
         );
-    }
-
-    private static function positiveInteger(mixed $value, string $field): int
-    {
-        $parsed = self::nonNegativeInteger($value, $field);
-
-        if ($parsed < 1) {
-            throw new UnexpectedValueException("User activity {$field} must be positive.");
-        }
-
-        return $parsed;
     }
 
     private static function nonNegativeInteger(mixed $value, string $field): int

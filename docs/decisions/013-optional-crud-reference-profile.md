@@ -41,6 +41,8 @@ ADR 021 supersedes this record only where the earlier Create tree showed `Create
 
 ADR 029 later makes the example Create path account-scoped and adds the fourth `account_users` relation write. That newer application evidence does not change this decision's optional placement rule or authorize a shared identity or persistence layer.
 
+ADR 046 later refines only the current executable example's identifier placement: `UserId.php` moves from `GetUser/` to the feature-level `Users/` directory because Get, List projections, and the accepted List continuation carry the same positive `users.id` invariant. The operation-specific projections remain separate, and every other optional placement and no-generic-infrastructure boundary in this record remains unchanged. Historical release inspection uses the exact tagged copy of this decision.
+
 An application may use this reference placement or record one coherent alternate placement and naming rule in its `.ai/architecture.md`. That selection guides authoring within the application; it does not add a second framework runtime API. An alternate structure may strengthen the installed consumer contract but cannot weaken its typing, explicit routing, visible SQL, bounded database work, analysis, or verification requirements.
 
 PHPThis does not add a CRUD base handler, generic repository, resource registration API, automatic routes, mass assignment, SQL generation, runtime discovery, filesystem enforcement, or code-generation requirement. The framework dispatches the explicitly constructed objects supplied by the application regardless of their directories.

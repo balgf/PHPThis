@@ -21,6 +21,7 @@ Use application vocabulary for the feature and operation names. For the checked-
 ```text
 src/
   Users/
+    UserId.php
     UserRoutes.php
     CreateUser/
       AuthorizeCreateUser.php
@@ -32,7 +33,6 @@ src/
     GetUser/
       GetUserHandler.php
       UserDetails.php
-      UserId.php
     ListUsers/
       ListUsersHandler.php
       ListUsersPageRequest.php
@@ -40,16 +40,16 @@ src/
       UserSummary.php
 ```
 
-The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Under Consumer Contract version 11, carrying ADR 032 forward, each resource chooses the narrowest fixed route type: `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or `token` only for a genuinely opaque bounded identifier. Routing neither normalizes nor looks up the value and never falls back between types. Each operation directory contains only the boundary values and behavior needed by that use case:
+The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Under Consumer Contract version 11, carrying ADR 032 forward, each resource chooses the narrowest fixed route type: `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or `token` only for a genuinely opaque bounded identifier. Routing neither normalizes nor looks up the value and never falls back between types. The feature-scoped application-owned `UserId` carries the stable positive `users.id` invariant across operations without becoming a framework identifier, binding helper, or record lookup. Each operation directory contains only the boundary values and behavior needed by that use case:
 
 - a Create command parses and validates the complete external input before typed use-case entry;
 - a Create handler owns HTTP media and parsing order, response encoding, and delegation through the concrete command;
 - the example-owned `CreateUserOperation` interface separates HTTP adaptation from the independently meaningful Create transaction and accepts only the authenticated principal, resolved tenant, requested account, and final command;
 - `TransactionalCreateUser` owns the visible transaction, direct `Connection` calls, write SQL, and expected database failure behavior;
-- a Get handler immediately wraps its validated path parameter in a route-specific application identifier, applies any narrower domain rule before database work, owns one bounded item query and explicit missing behavior, and parses a concrete projection; the current user proof specifically wraps `positive-int` in `UserId`;
-- a List page request parses its exact query-parameter contract before database work;
+- a Get handler immediately wraps its validated path parameter in a concrete application identifier, applies any narrower domain rule before database work, owns one bounded item query and explicit missing behavior, and parses a concrete projection; the current user proof specifically wraps `positive-int` in `UserId`;
+- a List page request parses its exact query-parameter contract into the same semantic identifier before database work;
 - a List handler owns a bounded, deterministically ordered read, continuation behavior, and response;
-- a List projection parses each selected row into a concrete final readonly value;
+- each Get or List projection remains operation-specific while parsing the selected row's identifier through the shared stable `UserId` invariant;
 - SQL stays in its handler unless an independently meaningful transaction needs a separate concrete operation. `TransactionalCreateUser` directly owns the complete Create transaction SQL because that transaction is separate from HTTP adaptation; the resulting rejection proof does not authorize a generic service, repository, query object, or helper layer.
 
 Do not create a generic feature record shared across write input, selected rows, and responses. Those boundaries change for different reasons and require their own concrete types.
@@ -125,7 +125,7 @@ Every database operation still uses complete engine-specific visible SQL and exp
 The framework repository's runnable example currently proves these structural and query-cost properties:
 
 - `POST /accounts/{account_id:positive-int}/users`: a concrete command after explicit account authentication, tenant resolution, and action authorization; a handler that admits only typed authority and that command to `CreateUserOperation`; explicit `TransactionalCreateUser` SQL and transaction ownership; generic safe failures; named SQL parameters; zero rejected-input operation calls; and a four-statement count that remains constant as pre-existing data grows;
-- `GET /users`: a bounded List handler with a concrete page request and projections. Its example-owned contract accepts only optional canonical `after_user_id`, orders by ascending user ID, returns at most 50 users, probes one extra row, emits the last returned ID as the next canonical string or `null`, and keeps every page to one aggregate statement;
+- `GET /users`: a bounded List handler with a concrete page request and projections. Its example-owned contract accepts only optional canonical `after_user_id`, carries accepted and projected identities as `Users\UserId`, orders by ascending user ID, returns at most 50 users, probes one extra row, emits the last returned ID as the next canonical string or `null`, and keeps every page to one aggregate statement;
 - `GET /users/{user_id:positive-int}`: the declared trailing positive-integer route, immediate `UserId` conversion, a concrete `UserDetails` projection, explicit missing response, and one bounded database statement.
 - `GET /accounts/{account_id:positive-int}/documents`: a protected SQLite-only List handler with `order=rank_asc|rank_desc`, an exact versioned rank/key cursor, omitted, parsed `['']` empty-selection (produced by native PHP inputs such as `?categories[]=`), and one-to-three-category behavior, eight complete raw statements, explicit account/tenant/membership and page bindings, at most 50 returned rows from a 51-row lookahead, and one statement per non-empty page.
 

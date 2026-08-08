@@ -926,6 +926,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/043-engine-specific-application-migration-invariants.md',
     'docs/decisions/044-bounded-task-routed-ai-context.md',
     'docs/decisions/045-bounded-session-cleanup-and-response-framing.md',
+    'docs/decisions/046-canonical-executable-example-boundaries.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -1020,7 +1021,7 @@ $requiredRepositoryFiles = [
     'example/src/DocumentFiles/UploadDocumentFileHandler.php',
     'example/src/Users/GetUser/GetUserHandler.php',
     'example/src/Users/GetUser/UserDetails.php',
-    'example/src/Users/GetUser/UserId.php',
+    'example/src/Users/UserId.php',
     'example/src/Users/CreateUser/CreateUserOperation.php',
     'example/src/Users/CreateUser/TransactionalCreateUser.php',
     'example/src/Users/CreateUser/UnacceptableCreateUserValues.php',
@@ -1758,6 +1759,205 @@ foreach ($sessionCleanupAndResponseFramingArtifactMarkers as $relativePath => $m
     }
 }
 
+$canonicalExecutableExampleBoundaryMarkers = [
+    'docs/decisions/046-canonical-executable-example-boundaries.md' => [
+        'Status: accepted',
+        'On 2026-08-09 in Asia/Manila, the accountable human approved Issue #34 and this application-example consolidation.',
+        '### One exact-class error-response owner',
+        '### One semantic user identifier',
+        "This narrowly refines ADR 013's historical executable-example tree by moving `UserId.php` from `GetUser/` to the feature-level `Users/` directory.",
+        '### Cadence before dependency work',
+        '### Authoritative title and cache-admission boundaries',
+        'Consumer Contract version 11, Strict Profile version 3, PHPThis core at 2,600 lines, runtime dependencies, consumer checker validity, and the skeleton/template application API remain unchanged.',
+    ],
+    'docs/decisions/README.md' => [
+        '`046-canonical-executable-example-boundaries.md`',
+    ],
+    'docs/decisions/013-optional-crud-reference-profile.md' => [
+        'ADR 046 later refines only the current executable example\'s identifier placement:',
+        'Historical release inspection uses the exact tagged copy of this decision.',
+    ],
+    'docs/consumer-contract.md' => [
+        'ADR 046 consolidates four executable-example application boundaries without changing framework runtime, accepted PHP syntax, consumer checker validity, or the contract or Strict Profile version.',
+    ],
+    '.ai/application-context.md' => [
+        'ADR 046 then consolidates four application-owned executable-example boundaries without changing that contract, profile, or framework runtime.',
+    ],
+    '.ai/crud.md' => [
+        'One application-owned `Users\\UserId` carries the same positive `users.id` invariant through Get and List projections and the accepted List continuation while every operation-specific projection remains separate.',
+    ],
+    '.ai/cli.md' => [
+        'The current example evaluates its injected clock and cadence before database-path inspection, Redis, PDO, token generation, SQL, or job work.',
+        'A non-due pass returns `not_due` with empty coordination and is not a dependency-readiness result;',
+    ],
+    'docs/type-safety.md' => [
+        '`ListUsersPageRequest::fromQuery` turns its optional canonical decimal `after_user_id` string into `?UserId`',
+    ],
+    'docs/database.md' => [
+        'A projection also validates any representation required by its next explicit sink.',
+        "Field byte or character limits remain separate schema or operation decisions and must not be inferred from an optional cache's admission policy.",
+    ],
+    'docs/redis/cache-value.md' => [
+        'These are limits for this cache representation only, not an authoritative database-title bound; a valid authoritative title that exceeds cache admission remains usable without being stored here.',
+    ],
+    'example/src/ApplicationComposition.php' => [
+        'InvalidRequest::class => new Response(',
+        '"{\\"error\\":{\\"code\\":\\"invalid_request\\",\\"message\\":\\"Request is invalid.\\"}}\\n"',
+    ],
+    'example/src/Documents/ListDocuments/ListDocumentsHandler.php' => [
+        '$this->authorize->authorizeList($principal, $tenant);',
+        '$pageRequest = ListDocumentsPageRequest::fromQuery($request->query);',
+    ],
+    'example/src/Users/UserId.php' => [
+        'final readonly class UserId',
+        'public static function fromPositiveInteger(int $value): self',
+        'public static function fromDatabaseValue(mixed $value): self',
+        "preg_match('/^[1-9][0-9]*$/D', \$value)",
+    ],
+    'example/src/Users/GetUser/UserDetails.php' => [
+        'public UserId $id,',
+        "UserId::fromDatabaseValue(\$row['id'])",
+        "preg_match('//u', \$name) !== 1",
+    ],
+    'example/src/Users/ListUsers/UserSummary.php' => [
+        'public UserId $id,',
+        "UserId::fromDatabaseValue(\$row['id'])",
+        "preg_match('//u', \$name) !== 1",
+    ],
+    'example/src/Users/ListUsers/UserActivitySummary.php' => [
+        'public UserId $id,',
+        "UserId::fromDatabaseValue(\$row['id'])",
+        "preg_match('//u', \$name) !== 1",
+    ],
+    'example/src/Users/ListUsers/ListUsersPageRequest.php' => [
+        'private function __construct(public ?UserId $afterUserId)',
+        'return new self(UserId::fromPositiveInteger($afterUserId));',
+    ],
+    'example/src/Users/GetUser/GetUserHandler.php' => [
+        'UserId::fromPositiveInteger(',
+        "['user_id' => \$userId->value]",
+        "['user' => ['id' => \$user->id->value, 'name' => \$user->name]]",
+    ],
+    'example/src/Users/ListUsers/ListUsersHandler.php' => [
+        ': $pageRequest->afterUserId->value,',
+        "'id' => \$user->id->value,",
+        '$nextAfterUserId = (string) $lastUserId->value;',
+    ],
+    'example/src/Documents/GetDocument/DocumentDetails.php' => [
+        "!is_string(\$title) || \$title === '' || preg_match('//u', \$title) !== 1",
+        'Document details title has an invalid database representation.',
+    ],
+    'example/src/Documents/ListDocuments/DocumentSummary.php' => [
+        "!is_string(\$title) || \$title === '' || preg_match('//u', \$title) !== 1",
+        'Document summary title has an invalid database representation.',
+    ],
+    'tests/request-policy.php' => [
+        'document list invalid input uses the central exact-class response mapping',
+        '$response !== $expected',
+        'document projections reject invalid stored UTF-8 before JSON responses',
+        'Invalid stored UTF-8 must fail at each projection before generic JSON output.',
+    ],
+    'tests/input-projection.php' => [
+        '[\'id\' => 7, \'name\' => "Invalid \\xC3\\x28"]',
+        '[\'id\' => 7, \'name\' => "Invalid \\xC3\\x28", \'event_count\' => 1]',
+    ],
+    'tests/cli.php' => [
+        "new TestUserWelcomeJobClock(299)",
+        "new TestUserWelcomeJobClock(300)",
+        'The explicit clock must gate database and Redis work and select complete UTC five-minute slots without catch-up.',
+    ],
+    'tests/cache.php' => [
+        'Redis document cache keeps a 513-byte authoritative title usable while rejecting cache admission',
+        "strlen(\$title) !== 513",
+        "preg_match('//u', \$title) !== 1",
+        "cacheTrace('miss', 'payload_rejected')",
+    ],
+    'tests/behavior-names.txt' => [
+        'document list invalid input uses the central exact-class response mapping',
+        'document projections reject invalid stored UTF-8 before JSON responses',
+        'Redis document cache keeps a 513-byte authoritative title usable while rejecting cache admission',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/046-canonical-executable-example-boundaries.md',
+    ],
+    'ROADMAP.md' => [
+        'ADR 046 consolidates the executable example around one exact-class response owner, one application-owned semantic user identifier, cadence-first scheduled preflight, and valid-UTF-8 authoritative document projections',
+    ],
+    'docs/guardrails.md' => [
+        "The ADR 046 guard pins the executable example's canonical application boundaries without turning them into framework runtime or consumer-validity rules.",
+        'No generic identifier, validator, response renderer, scheduler, cache helper, repository, ORM, checker rule, or `PHT` diagnostic is added.',
+    ],
+];
+
+foreach ($canonicalExecutableExampleBoundaryMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read canonical executable-example boundary artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Canonical executable-example boundary artifact {$relativePath} is missing: {$marker}";
+        }
+    }
+}
+
+$listDocumentsHandler = file_get_contents(
+    $root . '/example/src/Documents/ListDocuments/ListDocumentsHandler.php',
+);
+
+if (is_string($listDocumentsHandler) && (
+    str_contains($listDocumentsHandler, 'catch (InvalidRequest')
+    || str_contains($listDocumentsHandler, 'use PHPThis\\Http\\InvalidRequest;')
+    || str_contains($listDocumentsHandler, '"invalid_request"')
+)) {
+    $failures[] = 'ListDocumentsHandler must delegate InvalidRequest response selection to the composition-root registry.';
+}
+
+if (is_file($root . '/example/src/Users/GetUser/UserId.php')) {
+    $failures[] = 'The semantic user identifier must remain feature-owned rather than nested under GetUser.';
+}
+
+foreach (
+    [
+        'example/src/Documents/GetDocument/DocumentDetails.php',
+        'example/src/Documents/ListDocuments/DocumentSummary.php',
+    ] as $authoritativeTitleProjection
+) {
+    $contents = file_get_contents($root . '/' . $authoritativeTitleProjection);
+
+    if (is_string($contents) && (
+        str_contains($contents, 'strlen($title) > 512')
+        || str_contains($contents, 'strlen($title) <= 512')
+        || str_contains($contents, 'MAX_TITLE_BYTES')
+    )) {
+        $failures[] = "Authoritative title projection {$authoritativeTitleProjection} must not inherit the cache-only 512-byte bound.";
+    }
+}
+
+$applicationCommands = file_get_contents($root . '/example/src/Cli/ApplicationCommands.php');
+
+if (is_string($applicationCommands)) {
+    $clockPosition = strpos($applicationCommands, 'intdiv($this->clock->now(), 60)');
+    $cadencePosition = strpos($applicationCommands, 'if ($currentMinute % 5 !== 0)');
+    $databasePathPosition = strpos($applicationCommands, '$databasePath = $this->existingDatabasePath();');
+    $redisPosition = strpos($applicationCommands, 'RedisScheduleRunLease::connect(');
+
+    if (
+        $clockPosition === false
+        || $cadencePosition === false
+        || $databasePathPosition === false
+        || $redisPosition === false
+        || $clockPosition >= $cadencePosition
+        || $cadencePosition >= $databasePathPosition
+        || $databasePathPosition >= $redisPosition
+    ) {
+        $failures[] = 'The example schedule must evaluate clock and cadence before database-path and Redis work.';
+    }
+}
+
 $responseEmitter = file_get_contents($root . '/src/Http/ResponseEmitter.php');
 
 if (is_string($responseEmitter) && str_contains($responseEmitter, 'Request $request')) {
@@ -1812,7 +2012,7 @@ $versionNeutralReleaseContractMarkers = [
         '| Prepare or publish a release | `RELEASING.md` | approved scope, exact candidate commits, CI, packages, and public-install proof |',
     ],
     '.ai/application-context.md' => [
-        'it is unreleased work on `main`, creates no next candidate identity or publication authority',
+        'Both are unreleased work on `main`, create no next candidate identity or publication authority',
         'Release preparation, approved-candidate proof or publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
     ],
     '.ai/testing.md' => [
@@ -6622,13 +6822,13 @@ if (!is_string($behaviorInventory)) {
 } else {
     $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-    if (count($behaviorNames) !== 178 || count(array_unique($behaviorNames)) !== 178) {
-        $failures[] = 'The framework suite must preserve exactly 178 unique named framework behaviors.';
+    if (count($behaviorNames) !== 180 || count(array_unique($behaviorNames)) !== 180) {
+        $failures[] = 'The framework suite must preserve exactly 180 unique named framework behaviors.';
     }
 
     if (
         hash('sha256', $behaviorInventory)
-        !== 'cd28abb1e4a9e76b36178fa1eb2a68cc2487a3d862ce321c337b2797b41b07e5'
+        !== '0a2c7f34539ec5caa3e73ea14302ca702cfd4c812b52e3868a1680fea8bab5f8'
     ) {
         $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
     }
@@ -6678,7 +6878,7 @@ $maintainerTestArtifactMarkers = [
         'function frameworkBehaviorNamesForGroup(string $group): array',
         'function frameworkBehaviorInventory(): array',
         'array_key_exists($name, $registered)',
-        'cd28abb1e4a9e76b36178fa1eb2a68cc2487a3d862ce321c337b2797b41b07e5',
+        '0a2c7f34539ec5caa3e73ea14302ca702cfd4c812b52e3868a1680fea8bab5f8',
     ],
     'tests/composition.php' => [
         'function compositionBehaviorTests(): Generator',

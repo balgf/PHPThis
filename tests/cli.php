@@ -124,19 +124,17 @@ function cliTests(): Generator
                 'stderr' => "{\"error\":\"command_failed\"}\n",
             ];
 
-            foreach (['jobs:run-one', 'schedule:run'] as $command) {
-                $result = runApplicationConsole([
-                    $command,
-                    '--database=' . $missingDatabasePath,
-                ]);
+            $result = runApplicationConsole([
+                'jobs:run-one',
+                '--database=' . $missingDatabasePath,
+            ]);
 
-                if (
-                    $result !== $expected
-                    || str_contains($result['stderr'], $missingDatabasePath)
-                    || is_file($missingDatabasePath)
-                ) {
-                    throw new RuntimeException('Operational failures must use one redacted stderr line.');
-                }
+            if (
+                $result !== $expected
+                || str_contains($result['stderr'], $missingDatabasePath)
+                || is_file($missingDatabasePath)
+            ) {
+                throw new RuntimeException('Operational failures must use one redacted stderr line.');
             }
         };
 
@@ -181,6 +179,25 @@ function cliTests(): Generator
             $redisEnvironment = cliRedisEnvironment('schedule-slots');
             resetScheduleRedisLease($redisEnvironment);
             $databasePath = createUserDatabaseFixture('cli-schedule-slots', 0, false);
+            $missingDatabasePath = dirname(__DIR__)
+                . '/tmp/application-tests/cli-schedule-preflight-private.sqlite';
+            resetCliMissingPath($missingDatabasePath);
+            $preflightComposition = new ApplicationComposition(
+                ApplicationDatabasePath::fromString($missingDatabasePath),
+                leaseRedisHost: 'schedule-preflight.invalid',
+            );
+            $notDueWithoutDatabase = $preflightComposition
+                ->commands(new TestUserWelcomeJobClock(299))
+                ->run(ApplicationCommandName::ScheduleRun);
+            $dueDatabaseFailure = null;
+
+            try {
+                $preflightComposition
+                    ->commands(new TestUserWelcomeJobClock(300))
+                    ->run(ApplicationCommandName::ScheduleRun);
+            } catch (Throwable $failure) {
+                $dueDatabaseFailure = $failure;
+            }
 
             foreach (['one', 'two', 'three'] as $suffix) {
                 $job = UserWelcomeJobEnvelope::forEmail('schedule-' . $suffix . '@example.com');
@@ -206,7 +223,13 @@ function cliTests(): Generator
             $afterAfterSlot = jobAggregate($databasePath);
 
             if (
-                $beforeSlot->stdoutLine() !== successfulConsoleLine('schedule:run', 'not_due', [])
+                $notDueWithoutDatabase->stdoutLine()
+                    !== successfulConsoleLine('schedule:run', 'not_due', [])
+                || !$dueDatabaseFailure instanceof RuntimeException
+                || $dueDatabaseFailure::class !== RuntimeException::class
+                || $dueDatabaseFailure->getMessage() !== 'The application database is unavailable.'
+                || is_file($missingDatabasePath)
+                || $beforeSlot->stdoutLine() !== successfulConsoleLine('schedule:run', 'not_due', [])
                 || $afterBeforeSlot['available_count'] !== 3
                 || $afterBeforeSlot['succeeded_count'] !== 0
                 || $afterBeforeSlot['effect_count'] !== 0
@@ -229,7 +252,9 @@ function cliTests(): Generator
                 || $afterSlot->stdoutLine() !== successfulConsoleLine('schedule:run', 'not_due', [])
                 || $afterAfterSlot !== $afterSlotEnd
             ) {
-                throw new RuntimeException('The explicit clock must select complete UTC five-minute slots without catch-up work.');
+                throw new RuntimeException(
+                    'The explicit clock must gate database and Redis work and select complete UTC five-minute slots without catch-up.',
+                );
             }
         };
 

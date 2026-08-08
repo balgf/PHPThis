@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Example\Users\ListUsers;
 
+use Example\Users\UserId;
 use PHPThis\Http\InvalidRequest;
 
 final readonly class ListUsersPageRequest
 {
-    private function __construct(public ?int $afterUserId)
+    private function __construct(public ?UserId $afterUserId)
     {
     }
 
@@ -35,6 +36,6 @@ final readonly class ListUsersPageRequest
             throw new InvalidRequest('List-users after_user_id is outside the supported integer range.');
         }
 
-        return new self($afterUserId);
+        return new self(UserId::fromPositiveInteger($afterUserId));
     }
 }

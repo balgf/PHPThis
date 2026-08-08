@@ -40,7 +40,9 @@ final class ListUsersHandler implements RequestHandler
                 ORDER BY selected_users.id
                 SQL,
             [
-                'after_user_id' => $pageRequest->afterUserId ?? 0,
+                'after_user_id' => $pageRequest->afterUserId === null
+                    ? 0
+                    : $pageRequest->afterUserId->value,
                 'fetch_limit' => self::USER_FETCH_LIMIT,
             ],
         );
@@ -59,7 +61,7 @@ final class ListUsersHandler implements RequestHandler
 
             $lastUserId = $user->id;
             $users[] = [
-                'id' => $user->id,
+                'id' => $user->id->value,
                 'name' => $user->name,
                 'event_count' => $user->eventCount,
             ];
@@ -72,7 +74,7 @@ final class ListUsersHandler implements RequestHandler
                 throw new LogicException('A continued user page must contain a last returned identifier.');
             }
 
-            $nextAfterUserId = (string) $lastUserId;
+            $nextAfterUserId = (string) $lastUserId->value;
         }
 
         $body = json_encode(

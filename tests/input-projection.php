@@ -13,11 +13,11 @@ use Example\Users\CreateUser\CreateUserCommand;
 use Example\Users\CreateUser\CreateUserOperation;
 use Example\Users\CreateUser\UnacceptableCreateUserValues;
 use Example\Users\GetUser\UserDetails;
-use Example\Users\GetUser\UserId;
 use Example\Users\ListUsers\ListUsersHandler;
 use Example\Users\ListUsers\ListUsersPageRequest;
 use Example\Users\ListUsers\UserActivitySummary;
 use Example\Users\ListUsers\UserSummary;
+use Example\Users\UserId;
 use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -67,6 +67,7 @@ function inputProjectionBehaviorTests(): Generator
         ['id' => '01', 'name' => 'Ada'],
         ['id' => (string) PHP_INT_MAX . '0', 'name' => 'Ada'],
         ['id' => 7, 'name' => ''],
+        ['id' => 7, 'name' => "Invalid \xC3\x28"],
         ['id' => 7, 'name' => 'Ada', 'email' => 'ada@example.com'],
         ['id' => 7],
     ];
@@ -87,9 +88,9 @@ function inputProjectionBehaviorTests(): Generator
     $canonicalString = UserSummary::fromDatabaseRow(['id' => '8', 'name' => 'Grace']);
 
     if (
-        $nativeInteger->id !== 7
+        $nativeInteger->id->value !== 7
         || $nativeInteger->name !== 'Ada'
-        || $canonicalString->id !== 8
+        || $canonicalString->id->value !== 8
         || $canonicalString->name !== 'Grace'
     ) {
         throw new RuntimeException('Expected strict database rows to become typed projections.');
@@ -138,6 +139,7 @@ function inputProjectionBehaviorTests(): Generator
         ['id' => 7],
         ['id' => 7, 'name' => 'Ada', 'is_admin' => true],
         ['id' => 7, 'name' => ''],
+        ['id' => 7, 'name' => "Invalid \xC3\x28"],
         ['id' => 7, 'name' => null],
         ['id' => 7, 'name' => true],
         ['id' => 7, 'name' => []],
@@ -168,9 +170,9 @@ function inputProjectionBehaviorTests(): Generator
     ]);
 
     if (
-        $nativeValues->id !== 7
+        $nativeValues->id->value !== 7
         || $nativeValues->eventCount !== 2
-        || $canonicalStrings->id !== 8
+        || $canonicalStrings->id->value !== 8
         || $canonicalStrings->eventCount !== 0
     ) {
         throw new RuntimeException('Expected aggregate rows to become typed user activity summaries.');
@@ -184,6 +186,7 @@ function inputProjectionBehaviorTests(): Generator
         ['id' => 0, 'name' => 'Ada', 'event_count' => 1],
         ['id' => '01', 'name' => 'Ada', 'event_count' => 1],
         ['id' => 7, 'name' => '', 'event_count' => 1],
+        ['id' => 7, 'name' => "Invalid \xC3\x28", 'event_count' => 1],
         ['id' => 7, 'name' => 'Ada', 'event_count' => -1],
         ['id' => 7, 'name' => 'Ada', 'event_count' => '-1'],
         ['id' => 7, 'name' => 'Ada', 'event_count' => '01'],
@@ -211,8 +214,8 @@ function inputProjectionBehaviorTests(): Generator
 
     if (
         $firstPage->afterUserId !== null
-        || $continuedPage->afterUserId !== 1
-        || $maximumPage->afterUserId !== PHP_INT_MAX
+        || $continuedPage->afterUserId?->value !== 1
+        || $maximumPage->afterUserId?->value !== PHP_INT_MAX
     ) {
         throw new RuntimeException('Expected canonical list continuation input to become typed page requests.');
     }

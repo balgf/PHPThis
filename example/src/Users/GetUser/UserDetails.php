@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Example\Users\GetUser;
 
+use Example\Users\UserId;
 use UnexpectedValueException;
 
 final readonly class UserDetails
@@ -28,33 +29,12 @@ final readonly class UserDetails
 
         $name = $row['name'];
 
-        if (!is_string($name) || $name === '') {
-            throw new UnexpectedValueException('User details name must be a non-empty string.');
+        if (!is_string($name) || $name === '' || preg_match('//u', $name) !== 1) {
+            throw new UnexpectedValueException(
+                'User details name has an invalid database representation.',
+            );
         }
 
-        return new self(self::userId($row['id']), $name);
-    }
-
-    private static function userId(mixed $value): UserId
-    {
-        if (is_int($value)) {
-            if ($value > 0) {
-                return UserId::fromPositiveInteger($value);
-            }
-
-            throw new UnexpectedValueException('User details id must be positive.');
-        }
-
-        if (!is_string($value) || preg_match('/^[1-9][0-9]*$/D', $value) !== 1) {
-            throw new UnexpectedValueException('User details id has an invalid database representation.');
-        }
-
-        $parsed = filter_var($value, FILTER_VALIDATE_INT);
-
-        if (!is_int($parsed) || $parsed < 1) {
-            throw new UnexpectedValueException('User details id is outside the supported integer range.');
-        }
-
-        return UserId::fromPositiveInteger($parsed);
+        return new self(UserId::fromDatabaseValue($row['id']), $name);
     }
 }

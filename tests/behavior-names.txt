@@ -2,12 +2,14 @@ document list page request accepts only finite orders categories and canonical c
 document list page request rejects adversarial shapes and malformed cursors before SQL
 protected document list preserves policy order and rejects denials before SQL
 protected document list passes typed authority and rejects invalid query before protected SQL
+document list invalid input uses the central exact-class response mapping
 document list executes eight finite raw SQL branches and empty filters use zero SQL
 protected document list SQL fails closed across tenant and membership mismatches
 document list binds SQL-shaped category data and preserves tenant isolation
 document list composite cursor covers exact lookahead and stable 125-document traversal
 document list page keeps one statement and fingerprint across fixture sizes for all eight shapes
 document list first pages surface out-of-domain stored ranks to strict projection
+document projections reject invalid stored UTF-8 before JSON responses
 document list source uses direct raw SQL without ORM binding or pagination helpers
 document policy rejects unauthenticated requests before later work
 document policy rejects cross-tenant requests before authorization
@@ -80,7 +82,7 @@ document authorization denial performs no cache or protected source work
 Redis document cache deliberately permits duplicate reads on interleaved cold misses
 Redis document cache preserves constant authoritative SQL on cold small and large fixtures
 Redis document cache bounds the accepted stale-refill race with finite TTL
-Redis document cache skips an oversized authoritative payload
+Redis document cache keeps a 513-byte authoritative title usable while rejecting cache admission
 authoritative document update commits before explicit Redis invalidation
 failed authoritative document update never invalidates the existing cache key
 authoritative document update survives explicit invalidation outage

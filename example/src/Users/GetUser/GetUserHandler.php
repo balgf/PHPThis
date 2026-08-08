@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Example\Users\GetUser;
 
+use Example\Users\UserId;
 use PHPThis\Database\Connection;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestHandler;

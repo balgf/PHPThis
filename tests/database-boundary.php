@@ -54,7 +54,7 @@ function databaseBoundaryBehaviorTests(): Generator
 
     $user = UserSummary::fromDatabaseRow($row);
 
-    if ($user->id !== 7 || $user->name !== 'Ada') {
+    if ($user->id->value !== 7 || $user->name !== 'Ada') {
         throw new RuntimeException('Expected the raw PDO row to be parsed immediately.');
     }
 

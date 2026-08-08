@@ -48,7 +48,7 @@ try {
                 FROM user_events
                 WHERE user_events.user_id = :user_id
                 SQL,
-            ['user_id' => $user->id],
+            ['user_id' => $user->id->value],
         );
 
         if ($eventRow === null) {
@@ -56,12 +56,12 @@ try {
         }
 
         $activity = UserActivitySummary::fromDatabaseRow([
-            'id' => $user->id,
+            'id' => $user->id->value,
             'name' => $user->name,
             'event_count' => $eventRow['event_count'] ?? null,
         ]);
         $users[] = [
-            'id' => $activity->id,
+            'id' => $activity->id->value,
             'name' => $activity->name,
             'event_count' => $activity->eventCount,
         ];

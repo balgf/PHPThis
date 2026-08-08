@@ -9,7 +9,6 @@ use Example\Accounts\AuthenticateAccountRequest;
 use Example\Accounts\ResolveAccountTenant;
 use LogicException;
 use PHPThis\Database\Connection;
-use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
@@ -36,18 +35,7 @@ final readonly class ListDocumentsHandler implements RequestHandler
         $tenant = $this->resolveTenant->resolve($principal, $accountId);
         $this->authorize->authorizeList($principal, $tenant);
 
-        try {
-            $pageRequest = ListDocumentsPageRequest::fromQuery($request->query);
-        } catch (InvalidRequest) {
-            return new Response(
-                status: 400,
-                headers: [
-                    'Content-Type' => 'application/json; charset=utf-8',
-                    'Cache-Control' => 'private, no-store',
-                ],
-                body: "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
-            );
-        }
+        $pageRequest = ListDocumentsPageRequest::fromQuery($request->query);
 
         if ($pageRequest->categories === []) {
             return new Response(

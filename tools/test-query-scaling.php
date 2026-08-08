@@ -159,7 +159,7 @@ function acceptedPageData(string $body): array
         }
 
         $user = UserActivitySummary::fromDatabaseRow($row);
-        $ids[] = $user->id;
+        $ids[] = $user->id->value;
         $eventCounts[] = $user->eventCount;
     }
 

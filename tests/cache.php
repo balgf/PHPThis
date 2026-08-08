@@ -810,7 +810,7 @@ function cacheTests(): Generator
             cacheDeleteKey($redis, $key);
         };
 
-    yield 'Redis document cache skips an oversized authoritative payload' => static function (): void {
+    yield 'Redis document cache keeps a 513-byte authoritative title usable while rejecting cache admission' => static function (): void {
             $redis = cacheRedisConnection();
             $environment = cacheTestEnvironment('payload-bound');
             $accountId = AccountId::fromPositiveInteger(42);
@@ -828,7 +828,9 @@ function cacheTests(): Generator
             $cached = $redis->get(cacheTestKey($environment, $accountId, $documentKey));
 
             if (
-                $result?->title !== $title
+                strlen($title) !== 513
+                || preg_match('//u', $title) !== 1
+                || $result?->title !== $title
                 || $source->calls !== 1
                 || $trace->snapshot() !== cacheTrace('miss', 'payload_rejected')
                 || $cached !== false

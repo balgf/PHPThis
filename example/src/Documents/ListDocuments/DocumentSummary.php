@@ -51,8 +51,10 @@ final readonly class DocumentSummary
             throw new UnexpectedValueException('Document summary key has an invalid database representation.');
         }
 
-        if (!is_string($title) || $title === '') {
-            throw new UnexpectedValueException('Document summary title must be a non-empty string.');
+        if (!is_string($title) || $title === '' || preg_match('//u', $title) !== 1) {
+            throw new UnexpectedValueException(
+                'Document summary title has an invalid database representation.',
+            );
         }
 
         if (
