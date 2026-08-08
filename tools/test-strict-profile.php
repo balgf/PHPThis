@@ -1314,6 +1314,66 @@ requireProfile(
     'Shared syntax guard rejected valid syntax or text inside a string.',
 );
 
+$validEvalMethodFixture = <<<'PHP'
+<?php
+
+final class InstanceEvalMethod
+{
+    public function & /* declaration comment */ EvAl(string $value): string
+    {
+        return $value;
+    }
+}
+
+final class StaticEvalMethod
+{
+    public static function EVAL(string $value): string
+    {
+        return $value;
+    }
+}
+
+function callEvalMethods(?InstanceEvalMethod $optional): array
+{
+    $instance = new InstanceEvalMethod();
+
+    return [
+        $instance -> /* instance comment */ EvAl('instance'),
+        $optional ?-> /* nullsafe comment */ EvAl('nullsafe'),
+        StaticEvalMethod :: /* static comment */ EVAL('static'),
+    ];
+}
+PHP;
+
+requireParseable($validEvalMethodFixture);
+requireProfile(
+    SyntaxProfile::failures($validEvalMethodFixture, 'eval-methods.php') === [],
+    'Shared syntax guard rejected a legal method declaration or call named eval.',
+);
+
+$invalidEvalConstructFixture = <<<'PHP'
+<?php
+
+function lowerCaseEval(string $source): mixed
+{
+    return eval($source);
+}
+
+function mixedCaseEval(string $source): mixed
+{
+    return EVAL /* construct comment */ ($source);
+}
+PHP;
+
+requireParseable($invalidEvalConstructFixture);
+requireProfile(
+    SyntaxProfile::failures($invalidEvalConstructFixture, 'eval-constructs.php') === [
+        'eval-constructs.php:5 uses eval.',
+        'eval-constructs.php:10 uses eval.',
+    ],
+    'Shared syntax guard did not distinguish eval methods from the eval language construct.',
+);
+
 $fixtureDirectory = $root . '/tmp/strict-profile-tests';
 
 if (!is_dir($fixtureDirectory) && !mkdir($fixtureDirectory, 0777, true) && !is_dir($fixtureDirectory)) {

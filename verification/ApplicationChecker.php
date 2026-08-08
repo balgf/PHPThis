@@ -844,10 +844,6 @@ final class ApplicationChecker
                 $insideFunctionImport = false;
             }
 
-            if ($tokenId === T_EVAL) {
-                $failures[] = "{$relativePath}:{$tokenLine} uses eval.";
-            }
-
             if ($tokenText === '$') {
                 $failures[] = "{$relativePath}:{$tokenLine} uses a variable variable.";
             }

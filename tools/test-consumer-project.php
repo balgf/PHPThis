@@ -176,6 +176,7 @@ try {
     proveEveryApplicationDirectoryIsChecked($project, $profileCommand, $environment);
     proveValidExtensionlessExecutableIsChecked($project, $profileCommand, $environment);
     proveMagicMethodsAreRejected($project, $profileCommand, $environment);
+    proveEvalMethodsAreAllowedAndLanguageConstructIsRejected($project, $profileCommand, $environment);
     proveDependencyDirectoryIsExcluded($project, $profileCommand, $environment);
     proveMixedCoercionIsRejected($project, $profileCommand, $environment);
     proveDirectPdoConstructionIsRejected($project, $profileCommand, $environment);
@@ -3700,6 +3701,92 @@ PHP;
         requireOutputContains($result, 'defines forbidden magic method __get');
     } finally {
         unlink($path);
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveEvalMethodsAreAllowedAndLanguageConstructIsRejected(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $methodPath = $project . '/src/EvalMethodControl.php';
+    $methodSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class InstanceEvalMethodControl
+{
+    public function /* declaration comment */ EvAl(string $value): string
+    {
+        return $value;
+    }
+}
+
+final class StaticEvalMethodControl
+{
+    public static function EVAL(string $value): string
+    {
+        return $value;
+    }
+}
+
+/** @return array{string, ?string, string} */
+function evalMethodControl(?InstanceEvalMethodControl $optional): array
+{
+    $instance = new InstanceEvalMethodControl();
+
+    return [
+        $instance -> /* instance comment */ EvAl('instance'),
+        $optional ?-> /* nullsafe comment */ EvAl('nullsafe'),
+        StaticEvalMethodControl :: /* static comment */ EVAL('static'),
+    ];
+}
+PHP;
+    $constructPath = $project . '/src/EvalLanguageConstructControl.php';
+    $constructSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class EvalLanguageConstructControl
+{
+    public function run(string $source): mixed
+    {
+        return EVAL /* construct comment */ ($source);
+    }
+}
+PHP;
+    writeFile($methodPath, $methodSource . "\n");
+
+    try {
+        $methodResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess($methodResult, 'Legal method declarations or calls named eval unexpectedly failed.');
+        requireOutputContains($methodResult, 'PASS PHPThis application check');
+
+        writeFile($constructPath, $constructSource . "\n");
+        $constructResult = runProcess($profileCommand, $project, $environment);
+        requireFailure($constructResult, 'The eval language construct unexpectedly passed.');
+        requireOutputContains(
+            $constructResult,
+            'src/EvalLanguageConstructControl.php:11 uses eval.',
+        );
+    } finally {
+        if (is_file($constructPath)) {
+            unlink($constructPath);
+        }
+
+        if (is_file($methodPath)) {
+            unlink($methodPath);
+        }
     }
 }
 

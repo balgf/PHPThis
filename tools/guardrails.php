@@ -6809,30 +6809,6 @@ foreach ($phpFiles as $relativePath => $path) {
         $failures[] = "{$relativePath} must declare strict types immediately after <?php.";
     }
 
-    $previousSignificantTokenId = null;
-
-    foreach (token_get_all($contents) as $token) {
-        $tokenId = is_array($token) ? $token[0] : null;
-        $isSignificant = !is_array($token)
-            || !in_array($tokenId, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true);
-
-        if (
-            $tokenId === T_EVAL
-            && !in_array(
-                $previousSignificantTokenId,
-                [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION],
-                true,
-            )
-        ) {
-            $failures[] = "{$relativePath} uses eval.";
-            break;
-        }
-
-        if ($isSignificant) {
-            $previousSignificantTokenId = $tokenId;
-        }
-    }
-
     if (preg_match('/\\$\\$[A-Za-z_{]/', $contents) === 1) {
         $failures[] = "{$relativePath} uses a variable variable.";
     }

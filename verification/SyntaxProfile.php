@@ -15,7 +15,68 @@ final class SyntaxProfile
             ...self::nonFinalClassFailures($tokens, $relativePath),
             ...self::databaseLoopFailures($tokens, $relativePath),
             ...self::magicMethodFailures($tokens, $relativePath),
+            ...self::evalLanguageConstructFailures($tokens, $relativePath),
         ];
+    }
+
+    /**
+     * @param array<int, array{int, string, int}|string> $tokens
+     * @return list<string>
+     */
+    private static function evalLanguageConstructFailures(array $tokens, string $relativePath): array
+    {
+        $failures = [];
+
+        foreach ($tokens as $index => $token) {
+            if (
+                !is_array($token)
+                || $token[0] !== T_EVAL
+                || self::isEvalMethodIdentifier($tokens, $index)
+            ) {
+                continue;
+            }
+
+            $failures[] = "{$relativePath}:{$token[2]} uses eval.";
+        }
+
+        return $failures;
+    }
+
+    /** @param array<int, array{int, string, int}|string> $tokens */
+    private static function isEvalMethodIdentifier(array $tokens, int $index): bool
+    {
+        $previousIndex = self::previousSignificantIndex($tokens, $index - 1);
+
+        if ($previousIndex === null) {
+            return false;
+        }
+
+        $previous = $tokens[$previousIndex];
+        $previousTokenId = is_array($previous) ? $previous[0] : null;
+
+        if (
+            in_array(
+                $previousTokenId,
+                [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON],
+                true,
+            )
+        ) {
+            return true;
+        }
+
+        if (
+            $previous === '&'
+            || in_array(
+                $previousTokenId,
+                [T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG, T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG],
+                true,
+            )
+        ) {
+            $previousIndex = self::previousSignificantIndex($tokens, $previousIndex - 1);
+            $previous = $previousIndex === null ? null : $tokens[$previousIndex];
+        }
+
+        return self::tokenHasId($previous, T_FUNCTION);
     }
 
     /**
@@ -700,6 +761,24 @@ final class SyntaxProfile
     private static function nextSignificantIndex(array $tokens, int $startIndex): ?int
     {
         for ($cursor = $startIndex, $count = count($tokens); $cursor < $count; $cursor++) {
+            $token = $tokens[$cursor];
+
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            return $cursor;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<int, array{int, string, int}|string> $tokens
+     */
+    private static function previousSignificantIndex(array $tokens, int $startIndex): ?int
+    {
+        for ($cursor = $startIndex; $cursor >= 0; $cursor--) {
             $token = $tokens[$cursor];
 
             if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
