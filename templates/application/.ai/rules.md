@@ -1,66 +1,31 @@
-# Application rules
+# Universal application rules
 
-These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3. They may strengthen those rules but may not weaken them.
+These rules supplement installed PHPThis Consumer Contract v10 and Strict Profile v3. They apply to every change in this application; concern-specific contracts live in the current guide routed by `.ai/README.md`.
 
 ## Required
 
-- Use the canonical domain terms defined in `.ai/project.md`.
-- Preserve the dependency direction and boundaries defined in `.ai/architecture.md`.
-- Apply the data and resource limits defined in `.ai/data.md`.
-- Keep every process-environment read in the one PHP file recorded by `.ai/configuration.md`, use only direct `\getenv('EXACT_LITERAL_KEY')`, immediately validate into process-specific final readonly types before application-controlled I/O, and inject only concrete typed values through visible composition.
-- Declare every resource path identifier with the narrowest fixed type: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only when it is genuinely opaque. Use the matching `PathParameters` accessor, immediately wrap the unchanged value in an application-owned route-specific identifier, and enforce narrower domain rules before database work; never normalize, bind, look up, or fall back between route types.
-- Prove invalid resource-identifier syntax returns `404` with zero handler and database work, and prove a canonical valid path with the wrong method returns `405`.
-- Keep every adopted application-owned request-handler decorator final, route-local, and explicit: exactly one downstream `RequestHandler`, complete unrolled nesting beside each route, zero-or-one delegation with the exact same immutable `Request` instance, unchanged exception propagation, explicit immutable `Response` replacement with complete field preservation, and named bounded side effects with behavior tests.
-- Parse each complete inbound operation representation exactly once through the operation-specific named factory recorded in `.ai/architecture.md`, into a concrete final readonly request or command with a private constructor, before downstream operation behavior. Add a typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership.
-- Enforce every recorded byte, depth, field, list, item, and scalar bound; distinguish absence with `array_key_exists`, reject unknown fields, check runtime types before conversion, and accept only the operation's recorded canonical representations.
-- For structured request-body content, complete the whole field-set, nullability, native-type, and nested-shape phase before value rules. Unless `.ai/architecture.md` records another explicit finite API contract, map structural failures to generic `400`, correctly shaped and typed unacceptable values through an exact application-owned failure to generic `422`, and mixed failures to `400` regardless of property order. Query, header, route, and transport representations retain separately recorded contracts.
-- Keep field normalization opt-in and exactly recorded with transformation order, pre- and post-transform bounds, collision behavior, and retained canonical value. Keep validation separate from output encoding, SQL binding, and current authorization.
-- Keep parser position relative to authentication, tenant resolution, and authorization explicit. Rejection prevents operation-owned downstream I/O and mutation; it does not erase separately bounded policy work deliberately ordered before parsing.
-- Keep every database definition or provisioning source; supported database, catalog, schema, or attachment namespace selection and qualification policy; namespace and object control or ownership model or explicit N/A; SQL structural selector; bounded-list shape; per-operation exact statement, target, required capability, and prohibited capability; effective authority resolution source; elevated-capability boundary; activation and deactivation owner and path; and exact-engine verification source current in `.ai/data.md`.
-- Keep every adopted migration source directory and matching application namespace current in `.ai/migrations.md`. Use `src/Database/Migrations/` with `{{APPLICATION_ROOT_NAMESPACE}}\Database\Migrations` as the PHPThis recommendation only when the application has not selected another coherent structure; preserve a recorded alternative and never relocate established migration code without explicit human approval.
-- Activate and verify required database authority before dependent code receives traffic. Stop the dependent rollout stage on failure, and drain or remove dependent code before authority deactivation or removal of a namespace or object it still needs.
-- Make every external side effect and failure path named in `.ai/integrations.md` visible in the execution path.
-- Keep `NOT_APPLICABLE(WEBSOCKETS)` until `.ai/websockets.md` records one approved application-owned third-party runtime, separate visible process, exact handshake and current authorization, one bounded final readonly command, one narrowly named typed operation, sequential bounded sends, finite connection and lifecycle policy, redacted connection summary, deployment limits, and real process/socket evidence.
-- Preserve the identity, tenant, and authorization boundaries defined in `.ai/architecture.md`.
-- Keep each protected route behind its recorded action-specific request-policy adapter with explicit `authenticate -> resolve tenant -> authorize -> handler` order, concrete immutable principal and tenant values, and manually replaceable policies.
-- Keep any policy reads on their recorded connections, budgets, and traces, separate from protected handler work; a denial executes no protected query, write, session mutation, cache mutation, or external business side effect.
-- Keep one application-owned terminal request-summary coordinator and sink in the visible front-controller path, generated correlation and `X-Request-ID`, at most eight finite database sources, complete redaction, and exactly one failure-isolated sink invocation attempt.
-- Keep adopted session state behind typed application services and the deployment policy recorded in `.ai/architecture.md` and `.ai/operations.md`; mutate only owned keys and preserve every unowned key from the supplied snapshot.
-- Keep session mutation callbacks bounded and side-effect-free; finish fallible work before the final immediately committed mutation.
-- Keep adopted server-side caching behind narrowly named typed services with explicit hit, miss, authoritative-read, write, and invalidation paths; apply the key, payload, TTL, tenant, invalidation, stale-refill, failure, stampede, and observability policies recorded in `.ai/data.md` and `.ai/operations.md`.
-- Treat cached payloads as untrusted derived data, parse them into bounded typed projections, and preserve correctness when an entry is absent or evicted.
-- Keep HTTP response caching separate from server-side data caching and give each response-producing path an explicit `no-store`, `private`, or `public` policy with finite freshness or revalidation, validators, and complete `Vary` behavior where applicable.
-- Start every new or unreviewed response path with an explicit `Cache-Control: no-store` header, including success, redirect, mapped client-error, unknown server-error, and cookie-emitting responses; change that path only after its recorded policy and tests support reuse.
-- Keep every adopted operational command behind the sole application console with the finite command and typed-argument map, exit and stream contract, fresh composition, one-pass work, redaction, and tests recorded in `.ai/cli.md`, `.ai/operations.md`, and `.ai/testing.md`. Add clock, cadence, overlap, topology, and supervisor policy only for a scheduled pass; keep migration-writer coordination in `.ai/migrations.md`.
-- Run the complete application validity gate defined in `.ai/testing.md` before reporting completion.
+- Preserve the canonical terms in `.ai/project.md` and the dependency direction in `.ai/architecture.md`.
+- Write direct, typed PHP with `declare(strict_types=1);`.
+- Every named class is final. Express extension points with interfaces, never non-final classes.
+- Construct dependencies manually at the visible composition root and keep I/O visible in method names and call sites.
+- Keep routes explicit and handlers on `RequestHandler::handle(Request): Response`.
+- Parse external `mixed` once into one bounded concrete final readonly boundary value before downstream behavior.
+- An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.
+- Execute application SQL only through direct `Connection` calls with finite compile-time-constant engine-specific SQL and distinct named bindings.
+- Map structural choices to finite code-owned values and reject unknown choices before I/O.
+- Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.
+- Keep every external side effect, failure path, and resource bound named in current application context.
+- Add or update application-owned automated tests for every observable behavior change and run the complete gate in `.ai/testing.md`.
 
 ## Forbidden
 
-- Do not invent missing product behavior, schema meaning, production limits, or external-service semantics.
-- Do not add a generic validator, result wrapper, string-rule language, automatic request binding, reflection hydration, mass assignment, sanitization magic, or unvalidated array beyond its named boundary.
-- Do not read configuration in handlers, routes, operations, policies, or SQL owners; add a string-keyed configuration bag, arbitrary getter, global helper, facade, provider, container binding, discovery, automatic dotenv loading, hidden reload, or migration-to-runtime credential fallback.
-- Do not parse the same inbound representation again downstream, silently transform or coerce an application field, or treat validation as output encoding or authorization.
-- Do not introduce an undocumented side effect, retry, fallback, cache, queue, or scheduled operation.
-- Do not add application commands to framework `phpthis`, command discovery, class-name dispatch, a service-container command resolver, generic console or scheduler facade, daemon, hidden loop, unrecorded persistent slot or catch-up behavior, or distributed coordination without an accepted application decision and evidence.
-- Do not add a generic cache service, global cache helper, hidden cache-aside behavior, automatic query caching, implicit forever TTL, or arbitrary PHP object deserialization.
-- Do not use cached data as a source of truth or cache sessions, authentication state, authorization decisions, permissions, credentials, secrets, or another class prohibited by `.ai/architecture.md`.
-- Do not infer that `Set-Cookie`, a server-side cache miss, or a server-side cache hit makes an HTTP response safely private, uncacheable, or public.
-- Do not add a cache helper, application-owned request-handler decorator, generic or framework middleware default, or response post-processor to hide which response-producing path owns its HTTP cache policy.
-- Do not invent human approval or claim unsupported framework or application behavior.
-- Do not bypass authentication, authorization, validation, audit, or data-retention requirements to simplify a change.
-- Do not add a generic or framework middleware interface, pipeline, iterable registry, priority ordering, discovery, `$next` abstraction, request-context or attribute bag, hidden binding or I/O, service-located policy, hidden tenant resolution, an implicit or global authorization scope, or stored or cached authorization decisions. Do not wrap `Application`, `RequestBoundary`, the terminal coordinator, or `ResponseEmitter` in a decorator.
-- Do not add core WebSocket, event-loop, connection-manager, daemon, or supervisor primitives. Do not adapt frames into PHPThis HTTP `Request` or `Response`. Do not add a generic WebSocket middleware, gateway, channel, room, broadcaster, pub/sub, event bus, service locator, context bag, discovery, application send queue, hidden retry, replay, acknowledgement, resume, or exactly-once claim.
-- Do not add framework logging event, sink, or coordinator types; logger facades, global logging helpers, generic or framework logging middleware, terminal observability inside an application-owned request-handler decorator, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or durable-delivery claims.
-- Do not read `$_SESSION`, call native `session_*` functions, manually emit the framework session cookie, add a generic session helper, or treat stored identity as authorization.
-- Do not accept SQL text from external input, invent an SQL sanitizer, interpolate data, or grant the runtime database identity migration or administrative authority to simplify a change.
-- Do not turn the recommended migration directory into checker enforcement, filesystem discovery, automatic registration, or a second migration execution path.
-- Do not add a permission or authority-transition helper, role registry, runtime authority introspection, automatic privilege hook, or inferred broad authority set.
-- Do not claim that PHT006, tenant predicates, adversarial bindings, or base PDO transport tests universally prove authorization, tenant isolation, injection safety, or application-SQL portability.
-- Do not copy secrets or real customer data into code, instructions, fixtures, logs, or reports.
-- Do not add a second spelling or execution path for an existing application operation.
+- Invented product behavior, schema meaning, limits, human approval, or external-service semantics.
+- Runtime discovery, reflection wiring, string class resolution, dynamic properties, macros, facades, service location, hidden globals, or magic methods except `__construct`.
+- ORM, Active Record, lazy loading, query builders, repositories, generic service layers, generated SQL, positional parameters, interpolation, SQL sanitizers, `SELECT *`, or unbounded collection reads.
+- Hidden I/O, undocumented side effects, implicit retries, silent exception conversion, fallback credentials, default success after failure, or a second execution path.
+- Scalar casts used as validation, repeated parsing of the same inbound representation, reflection hydration, mass assignment, or unvalidated arrays crossing a named boundary.
+- Generic mechanisms that hide middleware, policy, configuration, cache, queue, logging, migration, storage, WebSocket, console, or Workbench behavior. Follow the routed concern guide's explicit application-owned boundary.
+- Baselines, inline ignores, wildcard exclusions, broad ignores, comment exemptions, or a weaker analysis level.
+- Credentials, tokens, private keys, customer data, production payloads, or other secrets in context, code, fixtures, logs, or reports.
 
-## Additional project constraints
-
-- {{PROJECT_RULE_1}}
-- {{PROJECT_RULE_2}}
-- {{PROJECT_RULE_3}}
+If a task requires a forbidden mechanism or a new consequential decision, stop at that boundary and request accountable-human judgment.

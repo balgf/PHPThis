@@ -1,6 +1,6 @@
 # Durable jobs contract
 
-Read [ADR 024](../docs/decisions/024-application-owned-sqlite-durable-jobs.md) and [Durable jobs](../docs/jobs.md) before adding or changing deferred work. PHPThis provides no core queue, worker, job, dispatcher, scheduler, or command-map API. The accepted evidence is one application-owned SQLite recipe.
+Start ordinary deferred-work implementation with [Durable jobs](../docs/jobs.md) and this current guide. Read [ADR 024](../docs/decisions/024-application-owned-sqlite-durable-jobs.md) only when reviewing or changing its SQLite durable-job decision. PHPThis provides no core queue, worker, job, dispatcher, scheduler, or command-map API. The accepted evidence is one application-owned SQLite recipe.
 
 Rules:
 

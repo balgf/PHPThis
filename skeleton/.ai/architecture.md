@@ -15,7 +15,7 @@ This diagram records construction and dependency ownership, not request-time con
 public/index.php
 ├── requires bootstrap.php -> TerminalRequestCoordinator
 │   ├── RequestBoundary -> Application -> Router
-│   │   └── Routes -> HealthRoutes -> HealthHandler
+│   │   └── Routes -> HealthRoutes -> dependency-free HealthHandler
 │   ├── UnknownFailureBoundary
 │   ├── CorrelationId
 │   └── RequestSummarySink
@@ -31,7 +31,7 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | HTTP runtime | `public/index.php` | Load request-scoped composition, read PHP runtime globals, invoke the terminal coordinator, and emit its unchanged response. |
 | Application configuration | `.ai/configuration.md` | Owns the health-only `NOT_APPLICABLE(CONFIGURATION)` marker and any later external-input-to-typed-value contract. |
 | WebSocket runtime | `NOT_APPLICABLE(WEBSOCKETS)` | The health-only starter has no WebSocket process, listener, protocol, or connection state. |
-| Application-owned request-handler decorators | `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)` | `HealthHandler` is constructed directly for the sole route. |
+| Application-owned request-handler decorators | `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)` | `HealthRoutes` constructs dependency-free `HealthHandler` inline for the sole route. |
 | Terminal request summary | `src/Observability/` | Own correlation, finite database-source observation, the closed redacted event, one injected sink, and failure-isolated attempt semantics. |
 | Inbound operation data | `NOT_APPLICABLE(INPUT)` | The public health operation accepts no application-owned fields and constructs no request or command. |
 | Typed session services | `NOT_APPLICABLE` | The starter does not configure session state. |
@@ -60,7 +60,7 @@ Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` an
 
 ## Optional application-owned request-handler decorators
 
-`NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`: `src/Routes.php` constructs `HealthHandler` directly. The starter has no route-local wrapping concern, decorator side effect, early response, response replacement, or nesting order.
+`NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`: `src/HealthRoutes.php` constructs dependency-free `HealthHandler` inline in the exact route declaration; `src/Routes.php` only includes that existing named route-area list. The starter has no route-local wrapping concern, decorator side effect, early response, response replacement, or nesting order.
 
 Before adoption, record every final application-owned request-handler decorator, its one downstream `RequestHandler`, affected routes, complete unrolled outer-to-inner construction, zero-or-one delegation with the exact same immutable `Request` instance, unchanged exception propagation, explicit immutable `Response` replacement with complete field preservation, and named bounded side effects and tests. Do not add a generic or framework middleware interface, pipeline, iterable registry, priorities, discovery, `$next` abstraction, context bag, hidden binding, or hidden I/O. Never wrap `Application`, `RequestBoundary`, the terminal coordinator, or `ResponseEmitter`, and do not move session, cache, request-policy, or terminal-observability ownership into a decorator.
 
@@ -112,7 +112,7 @@ If existing identifier classes establish a coherent convention, record and prese
 
 ## Placement rules
 
-- Group routes in narrowly named `src/*Routes.php` route-area classes.
+- Group routes in narrowly named `src/*Routes.php` route-area classes. A qualifying dependency-free simple endpoint may be constructed inline only in an existing named route-area manifest so the root `Routes::create()` remains unchanged; every handler with a constructor dependency stays visibly constructed in the root and passed into its route area.
 - Place handlers at `src/*Handler.php`.
 - Add commands and projections only at explicit external-data boundaries.
 - Keep terminal coordinator, summary, source, correlation, and sink types under `src/Observability/` and wire them manually in `bootstrap.php`.

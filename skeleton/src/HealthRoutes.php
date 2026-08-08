@@ -9,8 +9,8 @@ use PHPThis\Routing\Route;
 final class HealthRoutes
 {
     /** @return list<Route> */
-    public static function create(HealthHandler $handler): array
+    public static function create(): array
     {
-        return [new Route('GET', '/health', $handler)];
+        return [new Route('GET', '/health', new HealthHandler())];
     }
 }

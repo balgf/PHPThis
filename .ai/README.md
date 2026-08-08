@@ -1,48 +1,55 @@
 # AI context index
 
-This directory is the task router for AI context. Do not load every document by default. Framework questions and changes must be answered from this checkout, not model memory.
+This directory routes framework-maintainer work to current operational context. Answer from this checkout, not model memory, and do not load every guide by default.
 
-Always read:
+## Universal entrypoints
+
+After `AGENTS.md`, always read:
 
 1. `VISION.md`
 2. `.ai/rules.md`
 3. `.ai/change-workflow.md`
 4. `.ai/strict-profile.md`
 
-Then read only what the task needs:
+Then start with exactly one current operational guide from the table. Add another guide only when the task actually enters its concern.
 
-| Task | Read | Inspect |
+Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.
+
+## Simple endpoint route
+
+Use the exact simple-endpoint definition and four-file locality metric in the already-read `VISION.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.
+
+An ordinary route change starts with `.ai/routing.md`; read a decision record only when reviewing or changing the decision it records.
+
+## Task routes
+
+| Task | Start with | Inspect next; add another guide only if entered |
 | --- | --- | --- |
-| Explain PHPThis behavior or answer a usage question | `VISION.md`, `docs/knowledge-map.md`, relevant contract or decision | current framework source, tests, and application pattern |
-| Add or change a route | `.ai/routing.md`, ADR 032, ADR 019, and ADR 017 for the retained positive-integer rationale | `example/src/Routes.php`, `src/Routing/`, `src/Http/Request.php`, route and application tests |
-| Add or change an application-owned request-handler decorator | `.ai/routing.md`, `.ai/http.md`, `.ai/request-boundary.md`, `.ai/testing.md`, and ADR 033 | explicit route construction, final decorator and downstream handler, named bounded side effects, response replacement, and order, short-circuit, identity, and failure tests |
-| Propose, adopt, or change application-owned WebSockets | `.ai/websockets.md`, `.ai/types.md`, `.ai/testing.md`, `docs/websockets.md`, and ADR 034 | application composition root, selected third-party runtime, handshake and current policy, typed command and operation, connection and message bounds, sequential send path, lifecycle, redaction, and real process/socket tests |
-| Add or change authentication, tenant resolution, or authorization | `.ai/request-policy.md`, `.ai/http.md`, `.ai/errors.md`, and ADR 020 | application composition root, route-specific policy adapter, concrete principal and tenant values, policy and protected connections, exact error registrations, and denial plus replacement tests |
-| Add or change a CRUD-shaped resource profile or example | `.ai/crud.md`, `.ai/routing.md`, `.ai/database.md` as applicable | `docs/crud.md`, ADR 013, ADR 022 for the finite document-list proof, resource route list, operation directories, and behavior tests |
-| Read or write database data, map a structural SQL choice, or review database authority | `.ai/database.md`, `.ai/strict-profile.md`, ADR 038, and ADR 022 when changing the finite document-list proof | `src/Database/`, the direct complete-SQL call site and explicit parameter array, database/catalog/schema/attachment namespace selection and qualification as supported, namespace and object control-or-ownership model, per-operation runtime authority, activation and deactivation ownership, exact-engine positive and negative evidence, selector, cursor, list-cardinality, and scale tests |
-| Change PDO transport or database-driver certification | `.ai/database.md`, `.ai/testing.md` | `src/Database/Connection.php`, `tools/test-database-drivers.php`, database CI job |
-| Define, change, or review application configuration or database setup scope | `.ai/application-context.md`, `.ai/database.md`, `.ai/static-analysis.md`, `.ai/testing.md` | `docs/configuration.md`, ADR 036, ADR 037, ADR 038 when connection or authority scope is adopted, `EnvironmentAccessProfile`, application context templates, installed-consumer evidence |
-| Define, change, or review startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md`, `.ai/testing.md`, and `.ai/database.md` only when a database dependency is involved | `docs/configuration.md`, `Connection::connect` when used, application bootstrap and front controller, application operations/testing context, and installed-consumer evidence |
-| Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php` |
-| Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | `src/Http/RequestReader.php`, `src/Http/RequestBoundary.php`, front controller |
-| Add, change, or review file uploads or local-file responses | `.ai/file-transfers.md`, `.ai/http.md`, `.ai/request-boundary.md`, `.ai/testing.md`, ADR 026 | `src/Http/RequestUpload.php`, `RequestUploadError.php`, `LocalFileBody.php`, `ResponseEmitter.php`, application upload parser and storage operation, front controller, and real-SAPI evidence |
-| Change request correlation or terminal summaries | `.ai/observability.md`, `docs/observability/README.md`, `.ai/request-boundary.md`, ADR 023 | application front controller, application-owned coordinator and sink, finite database-source registration, response propagation, redaction, budget, trace, and throwing-sink tests |
-| Add, use, or change cookie-backed session state | `.ai/session.md`, `.ai/http.md`, `.ai/request-boundary.md` | `src/Session/`, `src/Http/ResponseCookie.php`, typed service key ownership, composition root, isolated save path, and transport plus applicable policy tests |
-| Propose, adopt, or change HTTP caching, application data caching, or the Redis schedule lease proof | `.ai/cache.md`, `.ai/http.md`, `.ai/testing.md`, `.ai/cli.md` when scheduling changes | `docs/caching.md`, `docs/redis-coordination.md`, ADR 016, ADR 028, application cache and lease policy, explicit call sites, cold-cache database proof, backend-specific integration, and applicable cache or lease tests |
-| Add or change durable deferred work | `.ai/jobs.md`, `.ai/database.md`, `.ai/testing.md`, ADR 024 | application producer transaction, SQLite job schema, envelope parser, finite dispatch, idempotent effect, one-shot worker, lease and retry transitions, subprocess crash proof, and application context |
-| Add or change an application command or scheduled pass | `.ai/cli.md`, `.ai/jobs.md` when the command invokes durable work, `.ai/testing.md`, ADR 025, and ADR 028 when Redis coordination applies | sole application console, finite command map, typed argument boundary, exit and stream contract, one-pass operation, HTTP/CLI composition, and real-console tests; for a scheduled pass additionally inspect its explicit clock, cadence, overlap, topology, and supervisor policy; keep migration-writer coordination in `.ai/migrations.md` under ADR 043 |
-| Propose, adopt, or change the optional development Workbench | `.ai/workbench.md`, `.ai/application-context.md`, `.ai/testing.md`, `docs/workbench.md`, and ADR 041; when exposing a real side effect also add `docs/security.md` and `.ai/database.md` plus `docs/database.md` when data is involved; when job behavior is involved also add `.ai/jobs.md`, `.ai/cli.md`, `docs/jobs.md`, and `docs/cli.md` | separate `require-dev` package, checked application bootstrap, concrete workspace object, explicit exposed values and operations, full arbitrary-PHP authority, fresh-child resource and hang limits, existing business producer transaction, recorded finite one-delivery command, exploratory evidence boundary, production/operational-console exclusion, and the corresponding `skeleton/.ai/` plus `templates/application/.ai/` data, integration, operations, and Workbench context |
-| Add, change, place, or review database migrations | `.ai/migrations.md`, `.ai/database.md`, `.ai/configuration.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/cli.md`, `.ai/testing.md`, ADR 043, ADR 038, ADR 039, and ADR 027 only for the SQLite reference proof | sole console executable plus each separately tracked history's exact initial baseline, finite explicit command, `.ai/configuration.md`-owned configuration/process identity, `.ai/data.md`-owned effective authority facts, `.ai/migrations.md`-owned transition implementation and per-history constraints, final concrete coordinator, recorded source path and namespace (`src/Database/Migrations/` is the new-application recommendation), finite ordered manifest and checksum-covered DDL/data/authority effects, bounded ledger plus finite exact-engine metadata and unrecorded-object rejection, exact transaction and DDL atomicity limits, ledger consistency and recovery, stable coordination identifier/namespace/collision and creation/acquisition/use/release permission policy, shared exclusion or pairwise authority gating across reachable topologies, proved independent-history isolation or shared serialization/release/recovery, lost-owner fencing or confirmed termination, operations-owned application-wide release order, redaction, and boundary-appropriate plus cross-topology, cross-history, and exact-engine evidence; preserve a coherent established alternative and never infer a generic query or repository layer from migration placement |
-| Change the consumer contract, checker, skeleton, or application context | `.ai/application-context.md`, `.ai/crud.md`, `.ai/static-analysis.md`, `.ai/testing.md` | `docs/consumer-contract.md`, `verification/`, `bin/phpthis`, `skeleton/`, `templates/application/` |
-| Prepare or assess a proposed next release | `RELEASING.md`, `ROADMAP.md`, `README.md`, `.ai/application-context.md`, `.ai/testing.md`, and the decisions accepted after the latest recorded tag | exact diff after the latest recorded tag, unreleased `main`, bounded proposed scope, fresh proposed version and tags, draft release notes and candidate-specific announcement, and unresolved accountable-human approval; perform no external write and do not treat the proposal as a candidate |
-| Prove or publish an approved release candidate | `RELEASING.md`, the exact approved candidate scope decision and release notes, `SECURITY.md`, `.ai/application-context.md`, and `.ai/testing.md` | explicit version and framework/skeleton tags; exact framework and skeleton candidate commits recorded at their respective freeze points; planned release date kept separate from observed publication timestamps; distinct exact-candidate approval and separately enumerable preparation, commit/push, tag creation/push, package, GitHub-prerelease, and announcement authorization; identity non-reuse or exact unchanged partial-release resumption; clean-tree local proof before push, exact pushed-commit CI, package inventory, dedicated skeleton lockfile, Packagist-preferred artifacts, version-pinned public installation proof, and candidate-specific announcement |
-| Inspect a historical release | the exact requested tag and its tagged `RELEASING.md`, release notes, and scope decision | tagged Consumer Contract, Strict Profile, diagnostics, source and package inventory; external GitHub and Packagist evidence separately; do not use later `main` clarifications as historical release evidence |
-| Review the Alpha 2 consumer profile or a capability exit | `.ai/consumer-profile.md`, `docs/consumer-profile.md`, ADR 029, and the affected ADR 019 through ADR 028 | checked-in account Create path, `tests/consumer-profile.php`, supporting capability tests, Composer runtime range, CI matrix, package inventory, and complete gate |
-| Add or focus framework-maintainer tests | `.ai/testing.md` | `tests/run.php`; the applicable concern-owned test file explicitly required by it; its narrowly shared support file when needed; `tests/behavior-names.txt`; `tests/FrameworkBehaviorTest.php`; `phpunit.xml.dist` |
-| Change the development-pattern proof | `.ai/testing.md`, `.ai/database.md` | `tools/test-query-scaling.php`, `tests/fixtures/` |
-| Map failures | `.ai/errors.md`, `.ai/request-boundary.md` | named failure, registry wiring, front controller |
-| Change types or analysis rules | `.ai/static-analysis.md` | `phpstan.neon`, affected PHP files |
-| Parse or change JSON, query, database, or other external values | `.ai/types.md`, `.ai/http.md`, ADR 021, and ADR 042 for structured request-body content | operation-specific boundary factory, typed downstream entry or justified seam, complete structural-before-value phase and default generic `400`/application-owned generic `422` body classification where applicable, public error mapping, policy order, and adversarial tests |
-| Add or change a strict-profile rule | `.ai/strict-profile.md`, `.ai/static-analysis.md` | rule implementation, positive/negative fixtures, and installed-consumer proof |
+| Add or change a qualifying simple endpoint | `.ai/routing.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
+| Explain current PHPThis behavior | `docs/knowledge-map.md` | relevant contract, source, and nearest tests |
+| Change route grammar, matching, or route composition | `.ai/routing.md` | route manifest, `src/Routing/`, request delivery, and route tests |
+| Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php`, and nearest behavior tests |
+| Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | reader, boundary, front controller, and boundary tests |
+| Parse or change external values | `.ai/types.md` | operation-specific boundary value, failure map, and adversarial tests |
+| Add or change database behavior or PDO transport | `.ai/database.md` | direct `Connection` call, exact SQL, authority facts, and scale tests |
+| Change configuration, consumer context, checker, skeleton, or template | `.ai/application-context.md` | affected contract, template, checker, and installed-consumer evidence |
+| Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |
+| Change authentication, tenant resolution, or authorization | `.ai/request-policy.md` | action-specific policy path, protected work, and denial tests |
+| Change cookie-backed session state | `.ai/session.md` | typed service, lifecycle composition, transport, and policy tests |
+| Change HTTP or server-side caching | `.ai/cache.md` | response path or typed cache service, backend policy, and cache tests |
+| Change durable deferred work | `.ai/jobs.md` | producer transaction, worker path, and lifecycle tests |
+| Change an application command or scheduled pass | `.ai/cli.md` | console composition, one-pass operation, and real-console tests |
+| Change database migrations | `.ai/migrations.md` | command, configuration, authority, manifest, ledger, coordination, and exact-engine tests |
+| Change uploads or local-file responses | `.ai/file-transfers.md` | boundary, storage operation, emitter path, and transfer tests |
+| Change correlation or terminal summaries | `.ai/observability.md` | front-controller coordinator, sink, finite sources, and summary tests |
+| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, typed operation, and real socket tests |
+| Change the optional development Workbench | `.ai/workbench.md` | separate package, checked bootstrap, explicit workspace, and retained tests |
+| Change CRUD-shaped reference structure | `.ai/crud.md` | canonical current tree, implemented operations, routes, and behavior tests |
+| Change failure mapping | `.ai/errors.md` | exact failure, registry wiring, response, and boundary tests |
+| Change PHPStan or static-analysis configuration or implementation | `.ai/static-analysis.md` | affected extension, configuration, fixtures, and installed-consumer proof |
+| Add or change a Strict Profile rule | `.ai/strict-profile.md` | then inspect its enforcement owner, positive and negative fixtures, catalogue, and installed-consumer proof |
+| Change maintainer tests or evidence organization | `.ai/testing.md` | applicable concern-owned test file, behavior names, and complete gate |
+| Review the consumer capability profile | `.ai/consumer-profile.md` | checked-in application proof and affected current guides |
+| Prepare or publish a release | `RELEASING.md` | approved scope, exact candidate commits, CI, packages, and public-install proof |
 
-Durable framework knowledge and decision rationale live in `docs/`. The `.ai/` files are compact operational routing contracts. Both remain human-auditable, but neither is a traditional tutorial manual.
+Durable framework knowledge and rationale live in `docs/`. Current mutable authoring contracts live in the routed operational guides.

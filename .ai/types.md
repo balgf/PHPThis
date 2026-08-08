@@ -12,13 +12,13 @@ ADR 026 adds one framework runtime boundary value before application parsing: `R
 
 Routing likewise exposes only typed metadata. Choose the narrowest declaration among `positive-int`, `uuid`, `ulid`, and `token`, reserving `token` for genuinely opaque identifiers. Read the value only through the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, then immediately wrap the unchanged value in an application-owned route-specific identifier and apply any narrower domain validation before database work. Do not normalize it, bind or look up a domain object, or fall back between route types.
 
-Every factory must:
+Every parser-owned operation-specific request, command, page-request, or projection factory must:
 
 1. Reject missing required fields and unknown fields; use `array_key_exists` to distinguish absence from an allowed explicit `null`.
 2. Complete the entire field-set, absent-versus-null, native-type, and nested-shape pass before any value rule, and keep both phases in a fixed code-owned order.
 3. After that complete structural phase succeeds, accept only documented canonical representations, ranges, lengths, enum cases, dates, cross-field rules, list values, and bounds supplied by the operation or source schema.
 4. Throw without including the rejected value and before that invalid value enters typed application behavior.
-5. Use a private constructor so invalid instances cannot be created.
+5. Use a private constructor so invalid instances cannot be created. This is not a universal constructor rule for application identifiers or other domain values; they follow their recorded construction contract in `docs/request-handling.md`.
 
 Inbound request and command factories bound their complete representation before detailed parsing. After success, downstream behavior uses only the resulting typed value; add a separate typed operation seam only when it owns an independently meaningful business or transaction responsibility. Rejection makes zero seam calls when present and prevents all operation-owned downstream I/O and mutation. Earlier transport or protected-request policy work follows its separately recorded order and bounds. For JSON, require an object, `JSON_THROW_ON_ERROR`, and an explicit depth. JSON booleans use `is_bool`; JSON integers use `is_int` plus a range; canonical integer strings receive a complete lexical check before range-checked conversion; enums require an exact backing type and accepted case; dates require one format and an exact parse-and-format round trip; arrays require an explicit list or object decision, applicable count bound, and per-item parsing. Individual field bounds are application decisions. A deliberately recorded total representation bound may be the effective ceiling for its fields; do not invent redundant limits. When a string has its own limit, record whether it counts bytes or characters. Database projections instead parse the exact selected row after I/O and add field bounds only when the schema or operation supplies them.
 

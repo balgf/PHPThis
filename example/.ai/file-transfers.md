@@ -7,6 +7,8 @@
 | Upload one document | `POST /document-files` with `multipart/form-data` and the sole field `document` | `201` JSON containing one generated `file_id`, `Location: /document-files/{file_id}`, and `Cache-Control: private, no-store` |
 | Download one document | `GET /document-files/{file_id:token}` | `200` full file response with the fixed headers recorded below |
 
+`{file_id}` in the `Location` entry is human-readable response-template shorthand for the generated token value; the exact route declaration is the typed `GET /document-files/{file_id:token}` shown above.
+
 Both routes are public in this executable example: they perform no authentication, tenant resolution, or authorization check. The generated identifier is routing identity, not proof of permission.
 
 `public/index.php` forwards `$_POST` and `$_FILES` through the terminal coordinator. `ApplicationComposition::http()` configures an 8,192-byte ordinary-body limit and a 2,097,152-byte total multipart limit. Multipart requires `POST`, `Content-Length`, one bounded boundary parameter, no transfer encoding, no text fields, and at most one PHP-normalized flat file value. The application then requires exactly the `document` field and limits its reported and actual content to 1,048,576 bytes. Duplicate raw scalar parts collapse before the boundary and cannot be distinguished; the real-SAPI test records this limit rather than claiming rejection.

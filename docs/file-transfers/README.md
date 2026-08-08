@@ -1,6 +1,6 @@
 # File transfers
 
-This knowledge set routes an AI through PHPThis's one accepted file-transfer path. Read [ADR 026](../decisions/026-bounded-file-transfers.md), then load only the page needed for the task and inspect the named source and tests.
+This knowledge set routes an AI through PHPThis's one accepted file-transfer path. Load only the page needed for the task and inspect the named source and tests. Read [ADR 026](../decisions/026-bounded-file-transfers.md) only when reviewing or changing its bounded file-transfer decision; ordinary implementation follows this current knowledge set without loading that historical record.
 
 | Task | Read | Inspect |
 | --- | --- | --- |

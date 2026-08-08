@@ -10,6 +10,6 @@
 - One-shot worker entrypoint, timeout, supervisor, and stop policy: {{JOBS_WORKER_LIFECYCLE_OR_NOT_APPLICABLE}}
 - Query budgets, bounded traces, and behavior-test command: {{JOBS_EVIDENCE_OR_NOT_APPLICABLE}}
 
-Before adoption, read installed `vendor/phpthis/framework/docs/jobs.md` and ADR 024. PHPThis provides no core queue or worker API. A job row may share atomicity with a business write only through the same `Connection`, transaction, and database. Record delivery as at-least-once, parse stored envelopes as untrusted input, use finite explicit dispatch, fence every transition with an unexpired opaque lease token, and make the concrete effect idempotent.
+Before adoption, read installed `vendor/phpthis/framework/docs/jobs.md`. Read ADR 024 only when explicitly reviewing or changing its SQLite durable-job decision or deliberately adopting that exact historical proof shape. PHPThis provides no core queue or worker API. A job row may share atomicity with a business write only through the same `Connection`, transaction, and database. Record delivery as at-least-once, parse stored envelopes as untrusted input, use finite explicit dispatch, fence every transition with an unexpired opaque lease token, and make the concrete effect idempotent.
 
 Do not add an ORM, repository, generic queue facade, event bus, automatic discovery, serialized PHP objects, transaction callback, hidden retry loop, in-process polling loop, or exactly-once external-effect claim.

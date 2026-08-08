@@ -1,6 +1,6 @@
 # Application-owned WebSocket integration contract
 
-WebSockets are an optional consuming-application capability, not a PHPThis runtime feature. Read `docs/websockets.md` and ADR 034 before proposing, adopting, or changing a WebSocket path. An application that does not use WebSockets records `NOT_APPLICABLE(WEBSOCKETS)` in its own `.ai/websockets.md`.
+WebSockets are an optional consuming-application capability, not a PHPThis runtime feature. Start ordinary application-owned WebSocket guidance or integration work with `docs/websockets.md` and this current guide. Read ADR 034 only when reviewing or changing its framework-ownership and independent-proof decision. An application that does not use WebSockets records `NOT_APPLICABLE(WEBSOCKETS)` in its own `.ai/websockets.md`.
 
 ## Ownership and composition
 

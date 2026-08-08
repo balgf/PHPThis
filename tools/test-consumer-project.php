@@ -103,6 +103,7 @@ try {
     proveInstalledReleaseGuidanceDistribution($installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
+    proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project, $installedFramework);
     proveInstalledCrudAccessSurfaceGuidanceDistribution($project, $installedFramework);
     proveInstalledIdentifierRepresentationGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);
@@ -266,12 +267,12 @@ function proveInstalledGuidanceReferencesResolve(
         throw new RuntimeException('The guidance proof must use the mirrored framework under the configured vendor directory.');
     }
 
-    $requiredFrameworkGuides = [
-        'docs/file-transfers/README.md',
-        'docs/request-policy.md',
-        'docs/jobs.md',
-        'docs/cli.md',
-        'docs/migrations.md',
+    $requiredFrameworkGuideOwners = [
+        'docs/file-transfers/README.md' => '.ai/file-transfers.md',
+        'docs/request-policy.md' => '.ai/request-policy.md',
+        'docs/jobs.md' => '.ai/jobs.md',
+        'docs/cli.md' => '.ai/cli.md',
+        'docs/migrations.md' => '.ai/migrations.md',
     ];
     $skeletonMarkdown = markdownFilesFromInventory($project, directoryFiles($root . '/skeleton'));
     $templateRoot = $installedFramework . '/templates/application';
@@ -280,16 +281,16 @@ function proveInstalledGuidanceReferencesResolve(
     requireInstalledGuidanceReferences(
         'generated skeleton',
         $skeletonMarkdown,
-        $project . '/AGENTS.md',
+        $project,
         $vendorDirectory,
-        $requiredFrameworkGuides,
+        $requiredFrameworkGuideOwners,
     );
     requireInstalledGuidanceReferences(
         'installed application template',
         $templateMarkdown,
-        $templateRoot . '/AGENTS.md',
+        $templateRoot,
         $vendorDirectory,
-        $requiredFrameworkGuides,
+        $requiredFrameworkGuideOwners,
     );
 
     $missingTarget = $installedFramework . '/docs/request-policy.md';
@@ -303,9 +304,9 @@ function proveInstalledGuidanceReferencesResolve(
         requireInstalledGuidanceReferenceFailure(
             'generated skeleton',
             $skeletonMarkdown,
-            $project . '/AGENTS.md',
+            $project,
             $vendorDirectory,
-            $requiredFrameworkGuides,
+            $requiredFrameworkGuideOwners,
             'does not resolve through the configured Composer vendor directory',
         );
     } finally {
@@ -323,9 +324,9 @@ function proveInstalledGuidanceReferencesResolve(
         requireInstalledGuidanceReferenceFailure(
             'generated skeleton',
             [...$skeletonMarkdown, $localControl],
-            $project . '/AGENTS.md',
+            $project,
             $vendorDirectory,
-            $requiredFrameworkGuides,
+            $requiredFrameworkGuideOwners,
             'uses application-local framework guide docs/jobs.md',
         );
     } finally {
@@ -335,6 +336,25 @@ function proveInstalledGuidanceReferencesResolve(
             }
         }
     }
+
+    proveRoutedInstalledGuidanceOwnerFailure(
+        'generated skeleton',
+        $skeletonMarkdown,
+        $project,
+        $vendorDirectory,
+        $requiredFrameworkGuideOwners,
+        'docs/jobs.md',
+        '.ai/jobs.md',
+    );
+    proveRoutedInstalledGuidanceOwnerFailure(
+        'installed application template',
+        $templateMarkdown,
+        $templateRoot,
+        $vendorDirectory,
+        $requiredFrameworkGuideOwners,
+        'docs/jobs.md',
+        '.ai/jobs.md',
+    );
 
     fwrite(
         STDOUT,
@@ -382,16 +402,18 @@ function markdownFilesFromInventory(string $root, array $inventory): array
 
 /**
  * @param list<string> $markdownFiles
- * @param list<string> $requiredFrameworkGuides
+ * @param array<string, string> $requiredFrameworkGuideOwners
  */
 function requireInstalledGuidanceReferences(
     string $surface,
     array $markdownFiles,
-    string $agentInstructions,
+    string $surfaceRoot,
     string $vendorDirectory,
-    array $requiredFrameworkGuides,
+    array $requiredFrameworkGuideOwners,
 ): void {
     $installedReferenceCount = 0;
+    /** @var array<string, true> $installedReferencesByPath */
+    $installedReferencesByPath = [];
 
     foreach ($markdownFiles as $markdownFile) {
         $contents = file_get_contents($markdownFile);
@@ -400,7 +422,7 @@ function requireInstalledGuidanceReferences(
             throw new RuntimeException("Unable to read {$surface} guidance file {$markdownFile}.");
         }
 
-        foreach ($requiredFrameworkGuides as $requiredFrameworkGuide) {
+        foreach (array_keys($requiredFrameworkGuideOwners) as $requiredFrameworkGuide) {
             $localPattern = '~(?<![A-Za-z0-9_./-])'
                 . preg_quote($requiredFrameworkGuide, '~')
                 . '(?![A-Za-z0-9_./-])~';
@@ -417,6 +439,7 @@ function requireInstalledGuidanceReferences(
 
         foreach ($installedReferences as $installedReference) {
             $installedReferenceCount++;
+            $installedReferencesByPath[$installedReference] = true;
             $dependencyPath = substr($installedReference, strlen('vendor/'));
             $resolvedPath = $dependencyPath === ''
                 ? $vendorDirectory
@@ -428,7 +451,6 @@ function requireInstalledGuidanceReferences(
                     . 'the configured Composer vendor directory.',
                 );
             }
-
         }
     }
 
@@ -436,20 +458,32 @@ function requireInstalledGuidanceReferences(
         throw new RuntimeException("{$surface} contains no installed dependency references.");
     }
 
-    $agentContents = file_get_contents($agentInstructions);
-
-    if (!is_string($agentContents)) {
-        throw new RuntimeException("Unable to read {$surface} agent instructions {$agentInstructions}.");
-    }
-
-    $agentReferences = installedDependencyReferences($agentContents, $agentInstructions);
-
-    foreach ($requiredFrameworkGuides as $requiredFrameworkGuide) {
+    foreach ($requiredFrameworkGuideOwners as $requiredFrameworkGuide => $routedOwner) {
         $expectedReference = 'vendor/phpthis/framework/' . $requiredFrameworkGuide;
 
-        if (!in_array($expectedReference, $agentReferences, true)) {
+        if (!isset($installedReferencesByPath[$expectedReference])) {
             throw new RuntimeException(
-                "{$surface} AGENTS.md is missing required installed framework guide {$requiredFrameworkGuide}.",
+                "{$surface} context is missing required installed framework guide {$requiredFrameworkGuide}.",
+            );
+        }
+
+        $routedOwnerPath = $surfaceRoot . '/' . $routedOwner;
+        $routedOwnerContents = file_get_contents($routedOwnerPath);
+
+        if (!is_string($routedOwnerContents)) {
+            throw new RuntimeException(
+                "Unable to read {$surface} routed owner {$routedOwner} for {$requiredFrameworkGuide}.",
+            );
+        }
+
+        if (!in_array(
+            $expectedReference,
+            installedDependencyReferences($routedOwnerContents, $routedOwnerPath),
+            true,
+        )) {
+            throw new RuntimeException(
+                "{$surface} routed owner {$routedOwner} is missing required installed framework guide "
+                . "{$requiredFrameworkGuide}.",
             );
         }
     }
@@ -474,23 +508,23 @@ function installedDependencyReferences(string $contents, string $sourcePath): ar
 
 /**
  * @param list<string> $markdownFiles
- * @param list<string> $requiredFrameworkGuides
+ * @param array<string, string> $requiredFrameworkGuideOwners
  */
 function requireInstalledGuidanceReferenceFailure(
     string $surface,
     array $markdownFiles,
-    string $agentInstructions,
+    string $surfaceRoot,
     string $vendorDirectory,
-    array $requiredFrameworkGuides,
+    array $requiredFrameworkGuideOwners,
     string $expectedDiagnostic,
 ): void {
     try {
         requireInstalledGuidanceReferences(
             $surface,
             $markdownFiles,
-            $agentInstructions,
+            $surfaceRoot,
             $vendorDirectory,
-            $requiredFrameworkGuides,
+            $requiredFrameworkGuideOwners,
         );
     } catch (RuntimeException $exception) {
         if (!str_contains($exception->getMessage(), $expectedDiagnostic)) {
@@ -503,6 +537,57 @@ function requireInstalledGuidanceReferenceFailure(
     }
 
     throw new RuntimeException('Installed-reference negative control unexpectedly passed.');
+}
+
+/**
+ * @param list<string> $markdownFiles
+ * @param array<string, string> $requiredFrameworkGuideOwners
+ */
+function proveRoutedInstalledGuidanceOwnerFailure(
+    string $surface,
+    array $markdownFiles,
+    string $surfaceRoot,
+    string $vendorDirectory,
+    array $requiredFrameworkGuideOwners,
+    string $requiredFrameworkGuide,
+    string $routedOwner,
+): void {
+    $routedOwnerPath = $surfaceRoot . '/' . $routedOwner;
+    $originalContents = file_get_contents($routedOwnerPath);
+
+    if (!is_string($originalContents)) {
+        throw new RuntimeException("Unable to read {$surface} routed-owner negative control {$routedOwner}.");
+    }
+
+    $expectedReference = '`vendor/phpthis/framework/' . $requiredFrameworkGuide . '`';
+    $replacementCount = 0;
+    $controlContents = str_replace(
+        $expectedReference,
+        'the installed framework guide',
+        $originalContents,
+        $replacementCount,
+    );
+
+    if ($replacementCount !== 1) {
+        throw new RuntimeException(
+            "{$surface} routed-owner negative control expected one {$requiredFrameworkGuide} reference in {$routedOwner}.",
+        );
+    }
+
+    writeFile($routedOwnerPath, $controlContents);
+
+    try {
+        requireInstalledGuidanceReferenceFailure(
+            $surface,
+            $markdownFiles,
+            $surfaceRoot,
+            $vendorDirectory,
+            $requiredFrameworkGuideOwners,
+            "routed owner {$routedOwner} is missing required installed framework guide {$requiredFrameworkGuide}",
+        );
+    } finally {
+        writeFile($routedOwnerPath, $originalContents);
+    }
 }
 
 function proveInstalledReleaseGuidanceDistribution(string $installedFramework): void
@@ -655,9 +740,10 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
     $artifactMarkers = [
         $project . '/AGENTS.md' => [
             '## Early database setup gate',
-            'Apply this gate before the full task read order',
-            'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
-            'After the human resolves the scope, resume the normal read order and load only the selected path.',
+            'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
+            'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
+            'Resume the ordinary read order after scope is resolved.',
+            'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
         ],
         $project . '/.ai/change-workflow.md' => [
             '## Ambiguous database setup scope',
@@ -667,8 +753,7 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
             'Treat a current `NOT_APPLICABLE` marker as present-state evidence',
         ],
         $project . '/.ai/README.md' => [
-            'visible adopted composition or explicit connection-composition deferral',
-            'child-process parser or adopted-entrypoint tests',
+            '| Select or set up a database engine | `.ai/change-workflow.md` | prompt and current configuration/data facts before any external action |',
         ],
         $project . '/.ai/configuration.md' => [
             'Database-engine selection does not authorize a connection attempt, server provisioning, or migration adoption.',
@@ -710,13 +795,14 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
             'An explicit request such as “Provision a project-local PostgreSQL server, configure it, and do not add migrations” proceeds without this scope question.',
         ],
         $installedFramework . '/templates/application/.ai/README.md' => [
-            'visible adopted composition or explicit connection-composition deferral',
-            'child-process parser or adopted-entrypoint tests',
+            '| Select or set up a database engine | `.ai/change-workflow.md` | prompt and current configuration/data facts before any external action |',
         ],
         $installedFramework . '/templates/application/AGENTS.md' => [
             '## Early database setup gate',
-            'Apply this gate before the full task read order',
-            'An explicit request proceeds without a redundant scope question.',
+            'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
+            'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
+            'Resume the ordinary read order after scope is resolved.',
+            'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
         ],
         $installedFramework . '/templates/application/.ai/configuration.md' => [
             'Record only adopted external input contracts.',
@@ -761,16 +847,8 @@ function proveInstalledWorkbenchGuidanceDistribution(
 {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/AGENTS.md' => [
-            '`NOT_APPLICABLE(WORKBENCH)`',
-            'Install only through `require-dev`',
-            'do not add a container, registry, generic dispatcher',
-        ],
         $project . '/.ai/README.md' => [
-            '| Adopt or change PHPThis Workbench |',
-            '`.ai/workbench.md`',
-            'complete arbitrary-PHP development authority',
-            'existing business producer transaction',
+            '| Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |',
         ],
         $project . '/.ai/workbench.md' => [
             '`NOT_APPLICABLE(WORKBENCH)`',
@@ -883,8 +961,7 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
         $project . '/.ai/README.md' => [
-            'Change runtime, logging, liveness, or readiness behavior',
-            'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, and evidence',
+            '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
         ],
         $project . '/.ai/operations.md' => [
             '`GET /health` is the starter liveness route; no readiness route exists.',
@@ -924,8 +1001,7 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
             'does not connect to a service, prove that a deployment classified a probe correctly, establish dependency availability or traffic readiness',
         ],
         $installedFramework . '/templates/application/.ai/README.md' => [
-            'Change runtime, logging, deployment, liveness, or readiness behavior',
-            'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, evidence',
+            '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
         ],
         $installedFramework . '/templates/application/.ai/operations.md' => [
             '{{HEALTH_AND_READINESS_PATHS}}',
@@ -954,6 +1030,194 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
     }
 
     fwrite(STDOUT, "PASS installed startup and probe guidance distribution\n");
+}
+
+function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    $simpleEndpointDefinition = 'A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision.';
+    $simpleEndpointLocality = 'After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.';
+    $ordinaryImplementationRoute = 'Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.';
+    $installedOrdinaryRoute = 'An ordinary route change starts with installed `vendor/phpthis/framework/docs/request-handling.md`; read a decision record only when reviewing or changing the decision it records.';
+    $slimUniversalEntrypoint = 'Concern-specific rules live in the current guide routed by `.ai/README.md`; do not copy them into this universal entrypoint.';
+    $finalClassContract = 'Every named class is final. Express extension points with interfaces, never non-final classes.';
+    $databaseLoopContract = 'Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.';
+    $privateConstructorScope = 'An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.';
+
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/AGENTS.md' => [
+            $slimUniversalEntrypoint,
+            '## Early database setup gate',
+            'Start with the one current operational guide selected by `.ai/README.md`.',
+            '## Project gate',
+        ],
+        $project . '/.ai/README.md' => [
+            $installedOrdinaryRoute,
+            'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
+            '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+        ],
+        $project . '/.ai/rules.md' => [
+            $finalClassContract,
+            $databaseLoopContract,
+            $privateConstructorScope,
+        ],
+        $project . '/.ai/architecture.md' => [
+            'A qualifying dependency-free simple endpoint may be constructed inline only in an existing named route-area manifest so the root `Routes::create()` remains unchanged; every handler with a constructor dependency stays visibly constructed in the root and passed into its route area.',
+        ],
+        $project . '/src/Routes.php' => [
+            'return [...HealthRoutes::create()];',
+        ],
+        $project . '/src/HealthRoutes.php' => [
+            'public static function create(): array',
+            "return [new Route('GET', '/health', new HealthHandler())];",
+        ],
+        $project . '/src/HealthHandler.php' => [
+            'final class HealthHandler implements RequestHandler',
+        ],
+        $installedFramework . '/VISION.md' => [
+            $simpleEndpointDefinition,
+            $simpleEndpointLocality,
+            $ordinaryImplementationRoute,
+        ],
+        $installedFramework . '/docs/decisions/044-bounded-task-routed-ai-context.md' => [
+            '# ADR 044: Bounded task-routed AI context',
+            $simpleEndpointDefinition,
+            $simpleEndpointLocality,
+            $ordinaryImplementationRoute,
+            'Consumer Contract version 10 and Strict Profile version 3 remain unchanged.',
+            'A report-only context-size or repeated-rule advisory was considered and is not adopted.',
+            'Human review remains responsible for whether task routes stay compact and unambiguous.',
+            'No context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate is added.',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'Ordinary implementation starts with the current operational guide selected by those routers.',
+            'Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context.',
+            'ADR 044 defines bounded task-routed AI context',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            $simpleEndpointDefinition,
+            $simpleEndpointLocality,
+            '| Add a simple application endpoint | `docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged, and this is the complete four-file task-specific set after universal entrypoints |',
+        ],
+        $installedFramework . '/docs/strict-profile.md' => [
+            'Every named class in checked PHP is `final`; abstract classes also fail.',
+            '`for`, `foreach`, `while`, or `do` header or body',
+            'Mark the class final or expose an interface as the explicit extension point.',
+        ],
+        $installedFramework . '/docs/type-safety.md' => [
+            'A parser-owned request, command, page-request, or projection value uses a private constructor',
+            'This is not a universal constructor rule for application identifiers or other domain values',
+            'Parser-owned request, command, page-request, and projection factories use private constructors',
+        ],
+        $installedFramework . '/docs/crud.md' => [
+            'this is the single canonical current tree',
+            'contains no speculative Update or Delete scaffold',
+            'AuthorizeCreateUser.php',
+            'UnacceptableCreateUserValues.php',
+            'UserSummary.php',
+            '/users/{user_id:positive-int}',
+        ],
+        $installedFramework . '/docs/database.md' => [
+            '/accounts/{account_id:positive-int}/documents',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            "The bounded task-routed context guard pins ADR 044's exact simple-endpoint definition and four-file locality metric",
+            'The installed proof checks the copied local skeleton plus packaged public guidance and application template, including the starter',
+            'The guard adds no context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate.',
+        ],
+        $installedFramework . '/templates/application/AGENTS.md' => [
+            $slimUniversalEntrypoint,
+            '## Early database setup gate',
+            'Start with the one current operational guide selected by `.ai/README.md`.',
+            '## Project gate',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            $installedOrdinaryRoute,
+            'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
+            '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+        ],
+        $installedFramework . '/templates/application/.ai/rules.md' => [
+            $finalClassContract,
+            $databaseLoopContract,
+            $privateConstructorScope,
+        ],
+    ];
+
+    foreach ($artifactMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed bounded task-routed context artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (!str_contains($contents, $marker)) {
+                throw new RuntimeException(
+                    "Installed bounded task-routed context artifact {$path} is missing marker: {$marker}",
+                );
+            }
+        }
+    }
+
+    /** @var array<string, list<string>> $forbiddenMarkers */
+    $forbiddenMarkers = [
+        $project . '/AGENTS.md' => [
+            '`NOT_APPLICABLE(WEBSOCKETS)`',
+            '`NOT_APPLICABLE(WORKBENCH)`',
+            '`NOT_APPLICABLE(CLI)`',
+            'each history\'s exact initial baseline',
+        ],
+        $project . '/.ai/rules.md' => [
+            'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
+            'Keep `NOT_APPLICABLE(CLI)`',
+            'Keep `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`',
+        ],
+        $project . '/src/Routes.php' => [
+            'HealthRoutes::create(new HealthHandler())',
+        ],
+        $project . '/src/HealthHandler.php' => [
+            'function __construct',
+        ],
+        $installedFramework . '/docs/crud.md' => [
+            'UpdateUser/',
+            'DeleteUser/',
+        ],
+        $installedFramework . '/templates/application/AGENTS.md' => [
+            '`NOT_APPLICABLE(WEBSOCKETS)`',
+            '`NOT_APPLICABLE(WORKBENCH)`',
+            'each history\'s exact initial baseline',
+        ],
+        $installedFramework . '/templates/application/.ai/rules.md' => [
+            'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
+            'Keep every adopted operational command behind the sole application console',
+            'Keep every adopted application-owned request-handler decorator',
+        ],
+        $installedFramework . '/verification/ApplicationChecker.php' => [
+            'context-size',
+            'repeated-rule',
+            'context report',
+        ],
+    ];
+
+    foreach ($forbiddenMarkers as $path => $markers) {
+        $contents = file_get_contents($path);
+
+        if (!is_string($contents)) {
+            throw new RuntimeException("Unable to read installed bounded-context boundary artifact {$path}.");
+        }
+
+        foreach ($markers as $marker) {
+            if (str_contains(strtolower($contents), strtolower($marker))) {
+                throw new RuntimeException(
+                    "Installed bounded-context boundary artifact {$path} retains forbidden marker: {$marker}",
+                );
+            }
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed bounded task-routed context guidance distribution\n");
 }
 
 function proveInstalledCrudAccessSurfaceGuidanceDistribution(
@@ -1084,12 +1348,6 @@ function proveInstalledIdentifierRepresentationGuidanceDistribution(
         $project . '/.ai/architecture.md' => $architectureMarkers,
         $project . '/.ai/data.md' => $skeletonDataMarkers,
         $project . '/.ai/testing.md' => $testingMarkers,
-        $project . '/.ai/README.md' => [
-            '.ai/data.md`\'s `NOT_APPLICABLE(UUID_POLICY)` declaration',
-            'exact generation owner and source',
-            'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
-            'it supplies no framework generator and does not reject other accepted versions',
-        ],
         $installedFramework . '/docs/request-handling.md' => [
             'one narrowly named application-owned representation primitive',
             'That primitive may own only the shared validation and canonical scalar representation',
@@ -1105,12 +1363,6 @@ function proveInstalledIdentifierRepresentationGuidanceDistribution(
         $installedFramework . '/templates/application/.ai/architecture.md' => $architectureMarkers,
         $installedFramework . '/templates/application/.ai/data.md' => $templateDataMarkers,
         $installedFramework . '/templates/application/.ai/testing.md' => $testingMarkers,
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            'For UUID identifiers, `.ai/data.md` separately records accepted canonical versions',
-            'the exact generation owner and source',
-            'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
-            'it does not make a framework generator or reject other accepted versions',
-        ],
     ];
 
     foreach ($artifactMarkers as $path => $markers) {
@@ -1206,15 +1458,6 @@ function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(
             "A separate installed distribution proof checks that ADR 038's application-owned authority lifecycle remains present",
             'This marker proof is a source-distribution check only: it performs no live authority probe, validates no engine privilege or control model',
         ],
-        $installedFramework . '/templates/application/AGENTS.md' => [
-            'database, catalog, schema, or attachment namespace selection and qualification as supported by the chosen engine',
-            'namespace and object control or ownership model, with explicit not-applicable facts where the engine has no such model',
-            'each named operation\'s exact statements, targets, required capabilities, and prohibited capabilities',
-            'effective authority resolution source, using only applicable mechanisms such as direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
-            'Give each adopted authority activation or deactivation one accountable non-HTTP owner and authoritative implementation reference',
-            'keep the complete transition implementation in `.ai/migrations.md` when an adopted migration owns it',
-            'activate and verify it before dependent code receives traffic',
-        ],
         $installedFramework . '/templates/application/.ai/data.md' => [
             '{{CONNECTION_1_DATABASE_DEFINITION_OR_PROVISIONING_SOURCE}}',
             '{{CONNECTION_1_NAMESPACE_SELECTION_AND_QUALIFICATION_POLICY}}',
@@ -1270,21 +1513,8 @@ function proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/AGENTS.md' => [
-            'each history\'s exact initial baseline',
-            'shared exclusion or pairwise authority gating across reachable topologies',
-            '`.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
-            'lost-owner database-work fencing or confirmed termination',
-            'keep exact configuration and process identity only in `.ai/configuration.md`',
-            'exact creation, acquisition, use, and release permissions or authority',
-            "ADR 027's per-migration transaction, same-host `flock`, active-transaction rollback, and earlier-commit proof apply only when this application deliberately adopts that SQLite reference shape.",
-        ],
         $project . '/.ai/README.md' => [
-            'each history\'s exact initial baseline',
-            'cross-topology exclusion or authority gating',
-            'operations-owned application-wide release order',
-            '`.ai/configuration.md`-owned configuration/process identity',
-            'ADR 027 transaction/`flock`/rollback evidence only for its SQLite reference shape',
+            '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
         ],
         $project . '/.ai/migrations.md' => [
             'each separately tracked history\'s exact initial baseline',
@@ -1414,21 +1644,8 @@ function proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(
             '`.ai/operations.md` for the application-wide release order and operational runbooks',
             'scope transaction, rollback, and lock claims to their proved engine and topology',
         ],
-        $installedFramework . '/templates/application/AGENTS.md' => [
-            'each history\'s exact initial baseline',
-            'shared exclusion or pairwise authority gating across reachable topologies',
-            '`.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
-            'lost-owner database-work fencing or confirmed termination',
-            'keep exact configuration and process identity only in `.ai/configuration.md`',
-            'exact creation, acquisition, use, and release permissions or authority',
-            "ADR 027's per-migration transaction, same-host `flock`, active-transaction rollback, and earlier-commit proof apply only when the application deliberately adopts that SQLite reference shape.",
-        ],
         $installedFramework . '/templates/application/.ai/README.md' => [
-            'each history\'s exact initial baseline',
-            'cross-topology exclusion or authority gating',
-            'operations-owned application-wide release order',
-            '`.ai/configuration.md`-owned configuration/process identity',
-            'ADR 027 transaction/`flock`/rollback evidence only for its SQLite reference shape',
+            '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
         ],
         $installedFramework . '/templates/application/.ai/migrations.md' => [
             '{{MIGRATION_CONSOLE_EXECUTABLE_OR_NOT_APPLICABLE}}',
@@ -1532,12 +1749,6 @@ function proveInstalledMigrationStructureGuidanceDistribution(
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/AGENTS.md' => [
-            'the health-only starter has no database, migration path, or migration directory',
-            'PHPThis recommends `src/Database/Migrations/` and `App\\Database\\Migrations`',
-            'A coherent consumer-selected alternative is authoritative',
-            'must not be relocated by AI without explicit human approval',
-        ],
         $project . '/.ai/migrations.md' => [
             'No migration directory, code, or dependency is included',
             'PHPThis recommends `src/Database/Migrations/`',
@@ -1590,12 +1801,6 @@ function proveInstalledMigrationStructureGuidanceDistribution(
             'The proof then records `src/Infrastructure/ChangeHistory/` and `App\\Infrastructure\\ChangeHistory` in the isolated consumer',
             'proves Composer can autoload it, and requires the installed canonical checker to pass',
             'The fixture performs no database I/O or migration execution',
-        ],
-        $installedFramework . '/templates/application/AGENTS.md' => [
-            'PHPThis recommends `src/Database/Migrations/`',
-            '`.ai/migrations.md` must record the actual adopted source directory and namespace.',
-            'A coherent consumer-selected alternative is authoritative',
-            'must not be relocated by AI without explicit human approval',
         ],
         $installedFramework . '/templates/application/.ai/migrations.md' => [
             '{{MIGRATION_SOURCE_DIRECTORY_OR_NOT_APPLICABLE}}',

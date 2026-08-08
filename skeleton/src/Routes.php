@@ -11,6 +11,6 @@ final class Routes
     /** @return list<Route> */
     public static function create(): array
     {
-        return [...HealthRoutes::create(new HealthHandler())];
+        return [...HealthRoutes::create()];
     }
 }

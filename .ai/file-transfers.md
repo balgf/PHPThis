@@ -1,6 +1,6 @@
 # File-transfer contract
 
-Use ADR 026 and `docs/file-transfers/README.md` for multipart uploads or local-file responses. Keep transport normalization in core and every storage decision in the application.
+Start ordinary multipart-upload or local-file-response work with `docs/file-transfers/README.md` and this current guide. Read ADR 026 only when reviewing or changing its typed multipart and local-file-response decision. Keep transport normalization in core and every storage decision in the application.
 
 ## Multipart request path
 

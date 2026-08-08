@@ -1,47 +1,51 @@
 # Application AI context index
 
-This directory is owned by `{{PROJECT_NAME}}`. It grounds the AI that explains and authors this project; it is not a framework manual. It supplies project facts that the PHPThis consumer contract cannot know. Keep it committed, current, concise, and free of secrets.
+This directory owns current context for `{{PROJECT_NAME}}`. Resolve every template token before feature work. Keep context committed, concise, and free of secrets.
 
 Consumer Contract v10 and Strict Profile v3 remain mandatory. Application guidance may strengthen them but may not weaken them.
 
-Always read:
+## Universal entrypoints
+
+After `AGENTS.md` and the installed Consumer Contract and knowledge map, always read:
 
 1. `.ai/rules.md`
 2. `.ai/change-workflow.md`
 3. `.ai/project.md`
 
-Then read only what the task needs:
+Then start with exactly one current operational guide from the table. Add another guide only when the task actually enters its concern.
 
-| Task | Read | Inspect |
+Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.
+
+## Simple endpoint route
+
+Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.
+
+An ordinary route change starts with installed `vendor/phpthis/framework/docs/request-handling.md`; read a decision record only when reviewing or changing the decision it records.
+
+## Task routes
+
+| Task | Start with | Inspect next; add another guide only if entered |
 | --- | --- | --- |
-| Explain framework or application behavior | installed PHPThis knowledge map, matching application guide | installed framework source, application execution path, and tests |
-| Change application structure or dependencies | `.ai/architecture.md` | composition root and affected source boundary named there |
-| Select or set up a database engine | `.ai/change-workflow.md`, installed `vendor/phpthis/framework/docs/configuration.md`, `.ai/configuration.md`, and `.ai/data.md`; add migration guidance only after migration scope is selected | prompt and current project facts first; configuration-only, existing-server, or project-local provisioning scope; deferred or adopted migrations; database/catalog/schema/attachment namespace selection, namespace/object control model, and authority lifecycle only for adopted connection scope and only as supported; no external database I/O or mutation before unresolved scope is clarified |
-| Add or change deployment configuration or secrets | installed `vendor/phpthis/framework/docs/configuration.md`, `.ai/configuration.md`, `.ai/testing.md` | one environment-reading file, exact names without values, adopted process-specific final readonly types, validation, profile, input-name, and credential separation without inheritance, combined credentials, or fallback, visible adopted composition or explicit connection-composition deferral, rotation/restart, redaction, and child-process parser or adopted-entrypoint tests; `.ai/configuration.md` is the single writable authority |
-| Add or change a route | installed `vendor/phpthis/framework/docs/request-handling.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/testing.md` | route manifest, narrowest identifier declaration, matching `PathParameters` accessor, application-owned identifier wrapper, accepted and generated UUID policies when applicable, relevant route area, handler, and behavior tests |
-| Add or change an application-owned request-handler decorator | installed `vendor/phpthis/framework/docs/request-handling.md`, `.ai/architecture.md`, `.ai/testing.md` | explicit route construction, final decorator and one downstream handler, complete unrolled order, named bounded side effects, response replacement, and order, short-circuit, identity, and failure tests |
-| Add or change inbound operation data | installed `vendor/phpthis/framework/docs/type-safety.md`, `.ai/architecture.md`, `.ai/testing.md` | raw representation and bounds, operation-specific parser factory, final readonly request or command, downstream typed behavior or justified seam, request-policy order, public error mapping, and adversarial tests |
-| Adopt or change application-owned WebSockets | installed `vendor/phpthis/framework/docs/websockets.md`, `.ai/websockets.md`, `.ai/configuration.md`, `.ai/architecture.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md` | selected third-party runtime and process, process-specific typed configuration, handshake and current policy, typed command and operation, connection and message bounds, sequential sends, lifecycle, redaction, and real process/socket tests |
-| Add or change a file upload or download | installed `vendor/phpthis/framework/docs/file-transfers/README.md`, `.ai/file-transfers.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | front controller, composition root, exact route and handler, concrete file path, response emission, failure mapping, and transfer tests |
-| Protect a route or change identity, tenant, or authorization policy | installed `vendor/phpthis/framework/docs/request-policy.md`, `.ai/request-policy.md`, `.ai/configuration.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/testing.md` | composition root, verifier configuration authority, action-specific policy adapter, concrete principal and tenant values, policy and protected connections, exact denial registrations, and order, denial, redaction, and replacement tests |
-| Add or change cookie-backed session state | installed `vendor/phpthis/framework/docs/sessions.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | composition root, typed key ownership, isolated save path, mandatory transport evidence, and each applicable security-policy test |
-| Set or change HTTP response cache policy | installed `vendor/phpthis/framework/docs/caching.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | response-producing path, explicit `no-store`, `private`, or `public` policy, freshness or revalidation, validators, `Vary`, intermediary topology, and behavior tests |
-| Add or change server-side cached data | installed `vendor/phpthis/framework/docs/caching.md`, `.ai/configuration.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md` | composition root, backend process configuration authority, narrowly named typed cache service, authoritative data path, backend boundary, key and tenant ownership, bounds, invalidation, observability, and cold, warm, failure, and concurrency tests |
-| Add or change durable deferred work | installed `vendor/phpthis/framework/docs/jobs.md`, `.ai/jobs.md`, `.ai/configuration.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md` | worker process configuration authority, producer transaction, complete job SQL, versioned envelope parser, finite dispatch, idempotent effect, lease and retry policy, one-shot worker composition, and crash plus redaction tests |
-| Add or change an operational application command or scheduled pass | installed `vendor/phpthis/framework/docs/cli.md`, `.ai/cli.md`, `.ai/configuration.md`, `.ai/operations.md`, `.ai/testing.md`, and `.ai/jobs.md` when invoking durable work | sole application console, process-specific typed configuration, finite command map, typed argument boundary, exact exit and stream contract, one-pass operation, composition root, and real-console tests; for a scheduled pass additionally inspect clock, cadence, overlap, topology, and supervisor policy; keep migration-writer coordination in `.ai/migrations.md` |
-| Adopt or change PHPThis Workbench | installed `vendor/phpthis/framework/docs/workbench.md`, `.ai/workbench.md`, `.ai/configuration.md`, and `.ai/testing.md`; for real side effects also read installed `vendor/phpthis/framework/docs/security.md`, `.ai/data.md`, `.ai/integrations.md`, and `.ai/operations.md`, plus installed `vendor/phpthis/framework/docs/database.md` when data is involved; for job behavior also read installed `vendor/phpthis/framework/docs/jobs.md`, installed `vendor/phpthis/framework/docs/cli.md`, `.ai/jobs.md`, and `.ai/cli.md` | separate `require-dev` package with approved adoption and verified clean Composer installation, checked project-relative bootstrap, concrete workspace type, explicit values and operations, complete arbitrary-PHP development authority, hang and resource limits, absent elevated credentials, existing business producer transaction, recorded finite one-delivery command, exploratory evidence boundary, and retained automated tests |
-| Add or change database migrations | installed `vendor/phpthis/framework/docs/migrations.md`, `.ai/migrations.md`, `.ai/configuration.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/testing.md`, and `.ai/cli.md` | actual source and namespace; each history's exact initial baseline, engine/version decision, finite command, `.ai/configuration.md`-owned configuration/process identity, `.ai/data.md`-owned effective authority facts, `.ai/migrations.md`-owned transition implementation and per-history constraints, unrolled manifest and checksum-covered DDL/data/authority effects, bounded ledger with finite exact-engine metadata and extra-object rejection, exact atomicity/consistency/recovery, stable coordination namespace/collision and creation/acquisition/use/release permissions, cross-topology exclusion or authority gating, lost-owner safety, independent-history isolation or shared serialization/release/recovery, operations-owned application-wide release order, redaction, and cross-topology/cross-history/exact-engine evidence; ADR 027 transaction/`flock`/rollback evidence only for its SQLite reference shape and `GRANT`/`REVOKE` only where supported |
-| Add or change CRUD-shaped resource operations | installed `vendor/phpthis/framework/docs/crud.md`, `.ai/architecture.md`, `.ai/data.md`, `.ai/testing.md` | explicit resource routes, operation area, data path, and behavior tests |
-| Read or write application data or map a structural SQL selector | `.ai/data.md`, `.ai/testing.md` | database definition or provisioning source, supported namespace selection and qualification, namespace/object control or ownership model or explicit N/A, direct `Connection` call, finite code-owned SQL mapping, per-operation exact authority and effective-resolution source, activation path, exact-engine positive and negative evidence, and adversarial and scale tests |
-| Change an external service or side effect | `.ai/integrations.md` | client boundary, contract fixture, failure tests |
-| Change runtime, logging, deployment, liveness, or readiness behavior | installed `vendor/phpthis/framework/docs/configuration.md` when eager infrastructure or probe semantics change, `.ai/operations.md`, `.ai/testing.md` | composition root and front controller, exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, evidence, and deployment configuration |
-| Change request correlation or terminal summaries | installed `vendor/phpthis/framework/docs/observability/README.md`, `.ai/observability.md`, `.ai/architecture.md`, `.ai/operations.md`, `.ai/testing.md` | front controller, application-owned coordinator and sink, finite database sources, response propagation, redaction, budget, trace, and throwing-sink tests |
-| Add or change tests | `.ai/testing.md` | nearest behavior tests and complete project check |
+| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
+| Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
+| Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
+| Select or set up a database engine | `.ai/change-workflow.md` | prompt and current configuration/data facts before any external action |
+| Change deployment configuration | `.ai/configuration.md` | one environment-reading file, typed values, composition, and parser tests |
+| Change a non-simple route or request input | installed `vendor/phpthis/framework/docs/request-handling.md` | route manifest and only the application guides for concerns actually entered |
+| Change application data or SQL | `.ai/data.md` | direct call site, authority, exact-engine, adversarial, and scale evidence |
+| Change authentication, tenant, or authorization policy | `.ai/request-policy.md` | action-specific composition, protected work, and denial tests |
+| Change file transfer | `.ai/file-transfers.md` | front controller, storage operation, response path, and transfer tests |
+| Change an external side effect | `.ai/integrations.md` | named client boundary, failure policy, and contract tests |
+| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |
+| Change correlation or terminal summaries | `.ai/observability.md` | coordinator, sink, finite database sources, and summary tests |
+| Change cookie-backed session state | installed `vendor/phpthis/framework/docs/sessions.md` | architecture, operations, and testing facts only when adopted |
+| Change HTTP or server-side caching | installed `vendor/phpthis/framework/docs/caching.md` | response path or data, integration, operations, and testing facts |
+| Change durable deferred work | `.ai/jobs.md` | configuration, producer, worker, operations, and lifecycle tests |
+| Change an application command or scheduled pass | `.ai/cli.md` | console, typed arguments, operations, and real-console tests |
+| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |
+| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, configuration, operation, and socket tests |
+| Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |
+| Change CRUD-shaped operations | installed `vendor/phpthis/framework/docs/crud.md` | implemented routes plus architecture, data, and testing facts actually affected |
+| Add or change tests | `.ai/testing.md` | nearest behavior test and complete project gate |
 
-For every resource path identifier, choose the narrowest fixed type among `positive-int`, `uuid`, `ulid`, and genuinely opaque `token`; use the matching `PathParameters` accessor, preserve the value unchanged, immediately wrap it in an application-owned route-specific identifier, and apply narrower domain rules before database work. Routing never normalizes, binds, looks up, or falls back between types. Invalid syntax must remain a `404` with zero handler and database work; a canonical valid path with the wrong method remains a `405`.
-
-For UUID identifiers, `.ai/data.md` separately records accepted canonical versions, the version generated for new values or explicit non-generation, the exact generation owner and source, time-disclosure and ordering decisions, failure behavior, persistence representation, and evidence. The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers when its embedded approximate creation time is acceptable; it does not make a framework generator or reject other accepted versions.
-
-The CRUD reference profile is optional application structure. Record its adoption or one coherent alternate placement and naming rule; neither may weaken the accepted installed Consumer Contract or Strict Profile v3.
-
-Accepted architectural decisions and durable rationale live in `docs/decisions/`. AI may draft and update a decision record, but acceptance requires explicit approval from an accountable human. Add a narrowly named area guide when a recurring task needs context that does not fit this map; do not turn this index into a complete project description.
+Accepted application decisions live in `docs/decisions/`. Read one only when the task reviews or changes its underlying decision. Add a narrowly named guide when a recurring task needs current context that does not fit this map.

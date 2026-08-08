@@ -28,7 +28,7 @@
 - Complete: Consumer Contract version 3 with explicit response cookies and one optional lazy native-file session lifecycle; authentication, authorization, expiry, revocation, and CSRF remain application policy.
 - Complete: accepted cache policy that separates explicit application-owned HTTP response caching from server-side derived-data caching while adding no pre-Alpha generic cache mechanism or Consumer Contract version.
 - Complete: one bounded trailing `{name:positive-int}` route grammar, immutable `RouteMatch` and `PathParameters` delivery without changing the handler interface, literal precedence, ambiguity rejection, and indexed request-time lookup.
-- Complete: first bounded `GET /users/{user_id}` proof with immediate concrete-identifier conversion; this does not claim complete authorization or tenant policy.
+- Complete: first bounded `GET /users/{user_id:positive-int}` proof with immediate concrete-identifier conversion; this does not claim complete authorization or tenant policy.
 - Complete: application-owned `GET /users` keyset continuation with strict `after_user_id` parsing, fixed 50-row pages, one-statement lookahead, and no-gap/no-duplicate scaling evidence.
 - Complete: accepted bounded Alpha 1 release scope; complete CRUD, authentication, authorization, and tenancy are explicitly not publication prerequisites.
 
@@ -92,6 +92,7 @@
 - Complete: ADR 041 accepts PHPThis Workbench as a separate optional development-only package with one checked concrete workspace, one expression per fresh strict child, explicit process authority, and no framework core, container, discovery, generic dispatch, production shell, or validity claim.
 - Complete: ADR 042 clarifies application-owned structured request-body failure classification by separating malformed structure and native types from unacceptable field values without adding a generic validator or framework validation runtime.
 - Complete: ADR 043 separates universal application-owned migration invariants from ADR 027's SQLite-only transaction, rollback, ledger-definition, and same-host `flock` proof; every other engine owns its ledger-consistency boundary, coordination topology, partial-failure recovery, and exact-engine evidence without a cross-engine runtime.
+- Complete: ADR 044 bounds ordinary AI context around one current operational guide, defines an exact four-file simple-endpoint metric for a dependency-free handler inside an existing named route-area manifest, makes historical ADR reads conditional on decision work, and reconciles current PHT002, PHT003, constructor, CRUD-tree, and typed-route guidance without changing framework runtime, the Consumer Contract, or the Strict Profile.
 - Freeze core mechanisms except for a demonstrated release blocker, correctness defect, or security defect within the accepted surface.
 - Exercise the Packagist-installed release through at least two independent consumer applications with materially different work, recording task outcomes, incorrect AI assumptions, file and token churn, checker evidence, and human decisions.
 - Run the same bounded consumer tasks across several AI models and classify unsupported claims, contract violations, query-scaling mistakes, unnecessary abstraction, and successful self-repair.

@@ -1,6 +1,6 @@
 # Terminal request-summary contract
 
-Read ADR 023 and `docs/logging.md` before changing request correlation or operational summaries.
+Start ordinary request-correlation or operational-summary work with `docs/logging.md` and this current guide. Read ADR 023 only when reviewing or changing its terminal request-summary decision.
 
 Rules:
 

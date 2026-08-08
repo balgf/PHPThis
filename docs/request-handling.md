@@ -33,6 +33,12 @@ The state index is compiled once from explicit `Route` objects. Parameterized de
 
 A successful match is an immutable `RouteMatch`. `Application` creates a new immutable `Request` carrying its immutable `PathParameters` and calls the unchanged `RequestHandler::handle(Request)` interface. A literal route receives empty parameters. Typed routes expose only `positiveInteger(name): int`, `token(name): string`, `uuid(name): string`, and `ulid(name): string`; route-specific code immediately converts each value to a concrete identifier before domain or database work. This metadata is not a generic context or domain-value bag, and it does not prove record existence, authorization, tenant scope, generation policy, or storage representation.
 
+### Dependency-free simple endpoints
+
+Ordinary composition constructs a handler in root `Routes::create()` and passes it into a named route-area list. One narrow locality exception applies when an unprotected exact-literal endpoint fits an existing named route-area manifest, its final handler has no constructor dependency, and it enters no application input, policy, session, cache, configuration, database, request-handler-decorator, external-I/O, or unresolved decision concern. In that exact case, the existing route-area file constructs the dependency-free handler inline in its `Route` declaration, and root `Routes::create()` remains unchanged.
+
+That exception changes only visible construction placement. The route still enters the same explicit finite list, `Router`, `Application`, and `RequestHandler::handle(Request): Response` path. It adds no closure handler, discovery, automatic wiring, alternate router, or second execution pattern. A handler with any constructor dependency and every endpoint needing a new route area or root-composition change remains non-simple and follows ordinary root construction.
+
 For example, an application whose account domain permits only UUID version 7 can make that narrower policy visible immediately after routing:
 
 ```php

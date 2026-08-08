@@ -29,6 +29,18 @@ PHPThis reduces that inference surface. It does not attempt to make AI infallibl
 9. **Inspectable:** SQL, routes, dependencies, errors, and side effects remain visible.
 10. **Checked:** accepted PHP is a versioned subset with stable, executable diagnostics.
 
+## Locality metric
+
+A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision.
+
+After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.
+
+Query, form, or application-owned header input also makes an endpoint non-simple because it requires an additional boundary contract. External I/O in this metric means endpoint-owned work; the application's already-adopted outer request boundary and terminal request-summary path remain in force. If the task enters another concern or requires a new decision, it leaves this metric and follows the applicable routed guide instead.
+
+The existing named route-area manifest constructs the dependency-free handler inline in its exact `Route` declaration. The root `Routes::create()` already includes that route area and remains unchanged. A handler with any constructor dependency follows ordinary root composition and is not a simple endpoint under this metric.
+
+Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.
+
 ## Performance-obscuring shorthand
 
 PHPThis does not reject every convenience method. It rejects shorthand when its cost depends on hidden I/O, hidden iteration, runtime discovery, mutable global state, or an implicit stale-data decision. A small response constructor is acceptable; a property access that may execute SQL or a remember-style callback that may perform network and database work is not.
@@ -37,7 +49,7 @@ PHPThis does not reject every convenience method. It rejects shorthand when its 
 
 - An AI can answer a framework question from the installed version and name the contract, source, test, or decision that supports its answer.
 - A human can inspect one explicitly composed development object or operation through a fresh strict process without introducing a temporary HTTP route, production command, service container, discovery, or persistent hidden state.
-- After the universal contract, knowledge map, and application entrypoints are loaded, an AI can add a simple endpoint after reading at most four task-specific guide or code files.
+- The framework and application task routers preserve the exact simple-endpoint locality metric above.
 - A completed change reports its behavior, evidence, resource cost, and any consequential decision that still belongs to a human.
 - The request path remains directly traceable through route, handler, at most one operation-specific typed seam when required, database, and response.
 - A protected request exposes its fixed authentication, tenant-resolution, authorization, and handler order with independently replaceable application policies and separately bounded policy and protected data work.

@@ -1,6 +1,6 @@
 # Optional CRUD reference profile
 
-Use this guide when adding or changing CRUD-shaped application examples, the public CRUD profile, or its application-context template. Read `docs/crud.md` and ADR 013 first, then inspect the concrete route manifest, feature area, database path, and behavior tests.
+Use this guide when adding or changing CRUD-shaped application examples, the public CRUD profile, or its application-context template. Start with `docs/crud.md`, then inspect the concrete route manifest, feature area, database path, and behavior tests. Read ADR 013 only when reviewing or changing the optional CRUD-profile decision; ordinary implementation follows this current guide and `docs/crud.md` without loading that historical record.
 
 ## Boundary of the profile
 
@@ -8,42 +8,11 @@ Use this guide when adding or changing CRUD-shaped application examples, the pub
 - A consuming application may adopt the profile or record one coherent alternate organization in its own `.ai/architecture.md`.
 - An organization override never weakens the installed consumer contract or Strict Profile. Explicit routes, typed boundaries, visible SQL, query budgets, authorization, and complete behavior evidence still apply.
 - Do not add a generic CRUD controller, base repository, automatic resource routing, mass assignment, route discovery, reflection-based hydration, ORM, query builder, generic paginator, SQL/binding/placeholder helper, runtime SQL generator, arbitrary SQL string, transaction callback, dialect abstraction, query abstraction, or checker rule for directories and names.
-- Keep create, get, list, update, and delete as separately named operations. Do not hide their different input, authorization, transaction, concurrency, or lifecycle semantics behind one reusable operation.
+- Keep each adopted create, get, list, update, or delete behavior as a separately named operation. Do not create an absent operation merely to complete the acronym or hide adopted operations' different input, authorization, transaction, concurrency, or lifecycle semantics behind one reusable operation.
 
 ## Recommended organization
 
-Prefer a resource area containing its explicit route list and one directory per operation:
-
-```text
-src/
-  Accounts/
-    AccountId.php
-    AuthenticatedPrincipal.php
-    ResolvedTenant.php
-    AuthenticateAccountRequest.php
-    ResolveAccountTenant.php
-  Users/
-    UserRoutes.php
-    CreateUser/
-      CreateUserCommand.php
-      CreateUserHandler.php
-      CreateUserOperation.php
-      AuthorizeCreateUser.php
-      TransactionalCreateUser.php
-    GetUser/
-      GetUserHandler.php
-      UserDetails.php
-      UserId.php
-    ListUsers/
-      ListUsersHandler.php
-      ListUsersPageRequest.php
-      UserActivitySummary.php
-    UpdateUser/
-      UpdateUserCommand.php
-      UpdateUserHandler.php
-    DeleteUser/
-      DeleteUserHandler.php
-```
+Use the [single canonical current reference tree](../docs/crud.md#reference-placement) in `docs/crud.md`. It lists only files that exist in the checked-in Create, List, and Get reference; inspect those concrete files before relying on the tree. Update and Delete remain prose-only decisions and evidence requirements until their policies are accepted and executable files exist; do not scaffold absent operations from this guide.
 
 Include only files the operation needs. SQL stays in a narrowly scoped handler unless an independently meaningful transaction belongs to one narrowly named concrete operation that directly owns its complete statements, as `TransactionalCreateUser` does. ADR 021's accepted Create path uses `CreateUserOperation` to separate HTTP adaptation from that transaction. Rejection evidence follows from the responsibility split; it does not authorize a generic service, repository, query object, command bus, SQL helper, or automatic handler split. The application may record another layout without adding a second way to perform the same task inside that application.
 

@@ -16,17 +16,19 @@ PHPThis never discovers or validates a feature from its directory name. Routes, 
 
 ## Reference placement
 
-Use application vocabulary for the feature and operation names. For the `Users` feature whose current proof covers Create, List, and a first Get slice:
+Use application vocabulary for the feature and operation names. For the checked-in `example/src/Users` reference, this is the single canonical current tree. It lists every current Create, List, and Get source file and contains no speculative Update or Delete scaffold:
 
 ```text
 src/
   Users/
     UserRoutes.php
     CreateUser/
+      AuthorizeCreateUser.php
       CreateUserCommand.php
       CreateUserHandler.php
       CreateUserOperation.php
       TransactionalCreateUser.php
+      UnacceptableCreateUserValues.php
     GetUser/
       GetUserHandler.php
       UserDetails.php
@@ -35,6 +37,7 @@ src/
       ListUsersHandler.php
       ListUsersPageRequest.php
       UserActivitySummary.php
+      UserSummary.php
 ```
 
 The feature route list explicitly constructs literal or bounded typed routes for already-constructed handlers. Under Consumer Contract version 10, carrying ADR 032 forward, each resource chooses the narrowest fixed route type: `positive-int`, lowercase canonical `uuid`, lowercase canonical `ulid`, or `token` only for a genuinely opaque bounded identifier. Routing neither normalizes nor looks up the value and never falls back between types. Each operation directory contains only the boundary values and behavior needed by that use case:
@@ -123,8 +126,8 @@ The framework repository's runnable example currently proves these structural an
 
 - `POST /accounts/{account_id:positive-int}/users`: a concrete command after explicit account authentication, tenant resolution, and action authorization; a handler that admits only typed authority and that command to `CreateUserOperation`; explicit `TransactionalCreateUser` SQL and transaction ownership; generic safe failures; named SQL parameters; zero rejected-input operation calls; and a four-statement count that remains constant as pre-existing data grows;
 - `GET /users`: a bounded List handler with a concrete page request and projections. Its example-owned contract accepts only optional canonical `after_user_id`, orders by ascending user ID, returns at most 50 users, probes one extra row, emits the last returned ID as the next canonical string or `null`, and keeps every page to one aggregate statement;
-- `GET /users/{user_id}`: the declared trailing positive-integer route, immediate `UserId` conversion, a concrete `UserDetails` projection, explicit missing response, and one bounded database statement.
-- `GET /accounts/{account_id}/documents`: a protected SQLite-only List handler with `order=rank_asc|rank_desc`, an exact versioned rank/key cursor, omitted, parsed `['']` empty-selection (produced by native PHP inputs such as `?categories[]=`), and one-to-three-category behavior, eight complete raw statements, explicit account/tenant/membership and page bindings, at most 50 returned rows from a 51-row lookahead, and one statement per non-empty page.
+- `GET /users/{user_id:positive-int}`: the declared trailing positive-integer route, immediate `UserId` conversion, a concrete `UserDetails` projection, explicit missing response, and one bounded database statement.
+- `GET /accounts/{account_id:positive-int}/documents`: a protected SQLite-only List handler with `order=rank_asc|rank_desc`, an exact versioned rank/key cursor, omitted, parsed `['']` empty-selection (produced by native PHP inputs such as `?categories[]=`), and one-to-three-category behavior, eight complete raw statements, explicit account/tenant/membership and page bindings, at most 50 returned rows from a 51-row lookahead, and one statement per non-empty page.
 
 This is not complete Create, List, or Get policy evidence. Account-scoped Create now proves visible policy order and tenant-bound mutation but still lacks a named identity/conflict contract, and user Get does not establish authorization or tenant scope. Each List proves only its specific continuation contract; neither becomes a framework default or provides snapshot consistency during concurrent writes. The tenant predicates and adversarial binding probes are not universal authorization or injection proof, and the application SQL is only SQLite-specific evidence under the current unpinned PDO SQLite runtime. Update and Delete have no executable reference. Every operation still requires the relevant application-owned decisions for pagination, concurrency, deletion, authorization, tenant scope, and conflict behavior; PHPThis does not invent those policies.
 

@@ -503,6 +503,171 @@ function mutableReleaseStateClaim(string $contents, array $markers): ?string
     return null;
 }
 
+/**
+ * @return list<string>
+ */
+function canonicalCrudTreeFailures(string $root): array
+{
+    $documentationPath = $root . '/docs/crud.md';
+    $documentation = file_get_contents($documentationPath);
+
+    if (!is_string($documentation)) {
+        return ['Cannot read docs/crud.md for the canonical current CRUD tree comparison.'];
+    }
+
+    $matches = [];
+    $matched = preg_match(
+        '~For the checked-in `example/src/Users` reference, this is the single canonical current tree\..*?'
+        . '```text\R(?<tree>.*?)\R```~s',
+        $documentation,
+        $matches,
+    );
+    $tree = $matches['tree'] ?? null;
+
+    if ($matched !== 1 || !is_string($tree)) {
+        return ['docs/crud.md must contain one parseable canonical current example/src/Users tree.'];
+    }
+
+    $treeLines = preg_split('/\R/', $tree);
+
+    if (!is_array($treeLines)) {
+        return ['Cannot split the canonical current CRUD tree in docs/crud.md.'];
+    }
+
+    /** @var array<int, string> $directoriesByDepth */
+    $directoriesByDepth = [];
+    /** @var list<string> $documentedFiles */
+    $documentedFiles = [];
+
+    foreach ($treeLines as $lineOffset => $treeLine) {
+        if ($treeLine === '') {
+            continue;
+        }
+
+        $lineMatches = [];
+
+        if (preg_match('/^(?<indent> *)(?<entry>\S.*)$/D', $treeLine, $lineMatches) !== 1) {
+            return [sprintf(
+                'docs/crud.md canonical current tree line %d must use two-space indentation and one path entry.',
+                $lineOffset + 1,
+            )];
+        }
+
+        $indent = $lineMatches['indent'];
+        $entry = $lineMatches['entry'];
+
+        if (strlen($indent) % 2 !== 0) {
+            return [sprintf(
+                'docs/crud.md canonical current tree line %d must use two-space indentation and one path entry.',
+                $lineOffset + 1,
+            )];
+        }
+
+        $depth = intdiv(strlen($indent), 2);
+
+        if (str_ends_with($entry, '/')) {
+            $directory = substr($entry, 0, -1);
+
+            if ($directory === '' || str_contains($directory, '/')) {
+                return [sprintf(
+                    'docs/crud.md canonical current tree line %d has an invalid directory entry.',
+                    $lineOffset + 1,
+                )];
+            }
+
+            foreach (array_keys($directoriesByDepth) as $knownDepth) {
+                if ($knownDepth >= $depth) {
+                    unset($directoriesByDepth[$knownDepth]);
+                }
+            }
+
+            $directoriesByDepth[$depth] = $directory;
+            continue;
+        }
+
+        if (!str_ends_with($entry, '.php') || str_contains($entry, '/')) {
+            return [sprintf(
+                'docs/crud.md canonical current tree line %d must name one PHP source file.',
+                $lineOffset + 1,
+            )];
+        }
+
+        $segments = [];
+
+        for ($parentDepth = 0; $parentDepth < $depth; $parentDepth++) {
+            if (!isset($directoriesByDepth[$parentDepth])) {
+                return [sprintf(
+                    'docs/crud.md canonical current tree line %d has no directory at depth %d.',
+                    $lineOffset + 1,
+                    $parentDepth,
+                )];
+            }
+
+            $segments[] = $directoriesByDepth[$parentDepth];
+        }
+
+        $segments[] = $entry;
+        $documentedFiles[] = implode('/', $segments);
+    }
+
+    if ($documentedFiles === [] || count(array_unique($documentedFiles)) !== count($documentedFiles)) {
+        return ['docs/crud.md canonical current tree must contain a non-empty unique source-file list.'];
+    }
+
+    $actualRoot = $root . '/example/src/Users';
+
+    if (!is_dir($actualRoot)) {
+        return ['Cannot read example/src/Users for the canonical current CRUD tree comparison.'];
+    }
+
+    $examplePrefix = $root . '/example/';
+    /** @var list<string> $actualFiles */
+    $actualFiles = [];
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($actualRoot, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::LEAVES_ONLY,
+    );
+
+    foreach ($iterator as $file) {
+        if (!$file instanceof SplFileInfo) {
+            return ['Cannot inspect one example/src/Users entry for the canonical current CRUD tree comparison.'];
+        }
+
+        if (!$file->isFile()) {
+            continue;
+        }
+
+        $absolutePath = $file->getPathname();
+
+        if (!str_starts_with($absolutePath, $examplePrefix)) {
+            return ['Canonical CRUD source escaped the expected example directory.'];
+        }
+
+        $actualFiles[] = substr($absolutePath, strlen($examplePrefix));
+    }
+
+    sort($documentedFiles, SORT_STRING);
+    sort($actualFiles, SORT_STRING);
+
+    if ($documentedFiles === $actualFiles) {
+        return [];
+    }
+
+    $undocumentedFiles = array_values(array_diff($actualFiles, $documentedFiles));
+    $missingFiles = array_values(array_diff($documentedFiles, $actualFiles));
+    $details = [];
+
+    if ($undocumentedFiles !== []) {
+        $details[] = 'undocumented current files: ' . implode(', ', $undocumentedFiles);
+    }
+
+    if ($missingFiles !== []) {
+        $details[] = 'documented files absent from the example: ' . implode(', ', $missingFiles);
+    }
+
+    return ['docs/crud.md canonical current tree differs from example/src/Users; ' . implode('; ', $details) . '.'];
+}
+
 $root = dirname(__DIR__);
 $phpFiles = [];
 $markdownFiles = [];
@@ -759,6 +924,7 @@ $requiredRepositoryFiles = [
     'docs/decisions/040-bounded-alpha-5-release-scope.md',
     'docs/decisions/041-optional-development-workbench.md',
     'docs/decisions/043-engine-specific-application-migration-invariants.md',
+    'docs/decisions/044-bounded-task-routed-ai-context.md',
     'example/AGENTS.md',
     'example/.ai/README.md',
     'example/.ai/cache.md',
@@ -1103,11 +1269,288 @@ if ($installedConsumerStage === false) {
     $failures[] = 'The canonical framework check must execute the installed release and consumer-distribution proof.';
 }
 
+$simpleEndpointDefinition = 'A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision.';
+$simpleEndpointLocality = 'After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.';
+$ordinaryImplementationRoute = 'Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.';
+$frameworkOrdinaryRoute = 'An ordinary route change starts with `.ai/routing.md`; read a decision record only when reviewing or changing the decision it records.';
+$installedOrdinaryRoute = 'An ordinary route change starts with installed `vendor/phpthis/framework/docs/request-handling.md`; read a decision record only when reviewing or changing the decision it records.';
+$slimUniversalEntrypoint = 'Concern-specific rules live in the current guide routed by `.ai/README.md`; do not copy them into this universal entrypoint.';
+$finalClassContract = 'Every named class is final. Express extension points with interfaces, never non-final classes.';
+$databaseLoopContract = 'Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.';
+$privateConstructorScope = 'An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.';
+
+$boundedTaskRoutedContextArtifactMarkers = [
+    'docs/decisions/044-bounded-task-routed-ai-context.md' => [
+        'Status: accepted',
+        $simpleEndpointDefinition,
+        $simpleEndpointLocality,
+        $ordinaryImplementationRoute,
+        'Consumer Contract version 10 and Strict Profile version 3 remain unchanged.',
+        'A report-only context-size or repeated-rule advisory was considered and is not adopted.',
+        'Human review remains responsible for whether task routes stay compact and unambiguous.',
+        'No context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate is added.',
+        'No runtime API, dependency, automatic discovery, generated policy, consumer validity diagnostic',
+    ],
+    'docs/decisions/README.md' => [
+        '`044-bounded-task-routed-ai-context.md`',
+    ],
+    'docs/knowledge-map.md' => [
+        $simpleEndpointDefinition,
+        $simpleEndpointLocality,
+        '| Add a simple application endpoint | `docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged, and this is the complete four-file task-specific set after universal entrypoints |',
+        'Read an ADR only when reviewing or changing the decision it records',
+    ],
+    'docs/consumer-contract.md' => [
+        'Ordinary implementation starts with the current operational guide selected by those routers.',
+        'Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context.',
+        'ADR 044 defines bounded task-routed AI context',
+    ],
+    'docs/getting-started.md' => [
+        'begin ordinary implementation with one current operational guide',
+        'current guide, existing named route-area manifest, dependency-free handler, and nearest behavior test',
+    ],
+    'VISION.md' => [
+        $simpleEndpointDefinition,
+        $simpleEndpointLocality,
+        $ordinaryImplementationRoute,
+    ],
+    'AGENTS.md' => [
+        $slimUniversalEntrypoint,
+        '## Early database setup gate',
+        'Start with the one current operational guide selected by `.ai/README.md`.',
+        'final named classes, interface extension points',
+        $databaseLoopContract,
+        '## Project gate',
+    ],
+    '.ai/README.md' => [
+        $frameworkOrdinaryRoute,
+        'Use the exact simple-endpoint definition and four-file locality metric in the already-read `VISION.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
+        '| Add or change a qualifying simple endpoint | `.ai/routing.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+    ],
+    '.ai/rules.md' => [
+        $finalClassContract,
+        $databaseLoopContract,
+        $privateConstructorScope,
+    ],
+    '.ai/strict-profile.md' => [
+        'every named repository class is `final`. Use an interface for an extension point',
+        'inside the header or body of any `for`, `foreach`, `while`, or `do` loop',
+    ],
+    '.ai/types.md' => [
+        'Every parser-owned operation-specific request, command, page-request, or projection factory must:',
+        'Use a private constructor so invalid instances cannot be created.',
+        'This is not a universal constructor rule for application identifiers or other domain values',
+    ],
+    'docs/type-safety.md' => [
+        'A parser-owned request, command, page-request, or projection value uses a private constructor',
+        'This is not a universal constructor rule for application identifiers or other domain values',
+        'Parser-owned request, command, page-request, and projection factories use private constructors',
+    ],
+    '.ai/crud.md' => [
+        'single canonical current reference tree',
+        'Update and Delete remain prose-only decisions',
+        'do not scaffold absent operations from this guide',
+    ],
+    'docs/crud.md' => [
+        'this is the single canonical current tree',
+        'contains no speculative Update or Delete scaffold',
+        'AuthorizeCreateUser.php',
+        'UnacceptableCreateUserValues.php',
+        'UserSummary.php',
+        '/users/{user_id:positive-int}',
+    ],
+    'README.md' => [
+        '/users/{user_id:positive-int}',
+    ],
+    'ROADMAP.md' => [
+        '/users/{user_id:positive-int}',
+    ],
+    'docs/database.md' => [
+        '/accounts/{account_id:positive-int}/documents',
+    ],
+    'docs/evaluation.md' => [
+        '/users/{user_id:positive-int}',
+    ],
+    'example/.ai/file-transfers.md' => [
+        'human-readable response-template shorthand',
+        'GET /document-files/{file_id:token}',
+    ],
+    'templates/application/AGENTS.md' => [
+        $slimUniversalEntrypoint,
+        '## Early database setup gate',
+        'Start with the one current operational guide selected by `.ai/README.md`.',
+        '## Project gate',
+    ],
+    'templates/application/.ai/README.md' => [
+        $installedOrdinaryRoute,
+        'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
+        '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+    ],
+    'templates/application/.ai/rules.md' => [
+        $finalClassContract,
+        $databaseLoopContract,
+        $privateConstructorScope,
+    ],
+    'skeleton/AGENTS.md' => [
+        $slimUniversalEntrypoint,
+        '## Early database setup gate',
+        'Start with the one current operational guide selected by `.ai/README.md`.',
+        '## Project gate',
+    ],
+    'skeleton/.ai/README.md' => [
+        $installedOrdinaryRoute,
+        'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
+        '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+    ],
+    'skeleton/.ai/rules.md' => [
+        $finalClassContract,
+        $databaseLoopContract,
+        $privateConstructorScope,
+    ],
+    'skeleton/.ai/architecture.md' => [
+        'A qualifying dependency-free simple endpoint may be constructed inline only in an existing named route-area manifest so the root `Routes::create()` remains unchanged; every handler with a constructor dependency stays visibly constructed in the root and passed into its route area.',
+    ],
+    'skeleton/src/Routes.php' => [
+        'return [...HealthRoutes::create()];',
+    ],
+    'skeleton/src/HealthRoutes.php' => [
+        'public static function create(): array',
+        "return [new Route('GET', '/health', new HealthHandler())];",
+    ],
+    'skeleton/src/HealthHandler.php' => [
+        'final class HealthHandler implements RequestHandler',
+    ],
+    '.ai/testing.md' => [
+        'A report-only context-size or repeated-rule advisory was considered and rejected',
+        'Do not add a context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate',
+    ],
+    'docs/guardrails.md' => [
+        "The bounded task-routed context guard pins ADR 044's exact simple-endpoint definition and four-file locality metric",
+        'The installed proof checks the copied local skeleton plus packaged public guidance and application template, including the starter',
+        'The guard adds no context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate.',
+    ],
+    'tools/package-files.txt' => [
+        'docs/decisions/044-bounded-task-routed-ai-context.md',
+    ],
+    'tools/test-consumer-project.php' => [
+        'proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project, $installedFramework);',
+        'function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(',
+        'PASS installed bounded task-routed context guidance distribution',
+    ],
+];
+
+foreach ($boundedTaskRoutedContextArtifactMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read bounded task-routed context artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (!str_contains($contents, $marker)) {
+            $failures[] = "Bounded task-routed context artifact {$relativePath} is missing: {$marker}";
+        }
+    }
+}
+
+$boundedTaskRoutedContextForbiddenMarkers = [
+    'AGENTS.md' => [
+        'Keep optional WebSockets application-owned and separate from PHPThis HTTP:',
+        'Keep optional Workbench use development-only and explicit:',
+        'Keep migrations application-owned and engine/version-specific under ADR 043',
+    ],
+    '.ai/rules.md' => [
+        'Keep optional WebSockets application-owned:',
+        'Keep optional Workbench use development-only and explicit:',
+        'Keep ADR 027 schema migration explicit and application-owned:',
+    ],
+    'templates/application/AGENTS.md' => [
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+        '`NOT_APPLICABLE(WORKBENCH)`',
+        'each history\'s exact initial baseline',
+    ],
+    'templates/application/.ai/rules.md' => [
+        'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
+        'Keep every adopted operational command behind the sole application console',
+        'Keep every adopted application-owned request-handler decorator',
+    ],
+    'skeleton/AGENTS.md' => [
+        '`NOT_APPLICABLE(WEBSOCKETS)`',
+        '`NOT_APPLICABLE(WORKBENCH)`',
+        '`NOT_APPLICABLE(CLI)`',
+        'each history\'s exact initial baseline',
+    ],
+    'skeleton/.ai/rules.md' => [
+        'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
+        'Keep `NOT_APPLICABLE(CLI)`',
+        'Keep `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`',
+    ],
+    'skeleton/src/Routes.php' => [
+        'HealthRoutes::create(new HealthHandler())',
+    ],
+    'skeleton/src/HealthHandler.php' => [
+        'function __construct',
+    ],
+    '.ai/crud.md' => [
+        'UpdateUser/',
+        'DeleteUser/',
+    ],
+    'docs/crud.md' => [
+        'UpdateUser/',
+        'DeleteUser/',
+    ],
+];
+
+foreach ($boundedTaskRoutedContextForbiddenMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read bounded task-routed context artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (str_contains($contents, $marker)) {
+            $failures[] = "Bounded task-routed context artifact {$relativePath} retains duplicated or speculative wording: {$marker}";
+        }
+    }
+}
+
+foreach (canonicalCrudTreeFailures($root) as $canonicalCrudTreeFailure) {
+    $failures[] = $canonicalCrudTreeFailure;
+}
+
+$contextValidityForbiddenMarkers = [
+    'verification/ApplicationChecker.php' => ['context-size', 'repeated-rule', 'context report'],
+    'verification/SyntaxProfile.php' => ['context-size', 'repeated-rule', 'context report'],
+    'composer.json' => ['"test:context', '"context:report'],
+];
+
+foreach ($contextValidityForbiddenMarkers as $relativePath => $markers) {
+    $contents = file_get_contents($root . '/' . $relativePath);
+
+    if (!is_string($contents)) {
+        $failures[] = "Cannot read consumer-validity boundary artifact {$relativePath}.";
+        continue;
+    }
+
+    foreach ($markers as $marker) {
+        if (str_contains(strtolower($contents), strtolower($marker))) {
+            $failures[] = "Consumer-validity boundary artifact {$relativePath} adds forbidden context validity: {$marker}";
+        }
+    }
+}
+
+foreach (['tools/context-report.php', 'tools/report-context.php', 'tools/test-context-size.php'] as $forbiddenContextReport) {
+    if (is_file($root . '/' . $forbiddenContextReport)) {
+        $failures[] = "A context report script must not become a consumer validity mechanism: {$forbiddenContextReport}.";
+    }
+}
+
 $versionNeutralReleaseContractMarkers = [
     '.ai/README.md' => [
-        'Prepare or assess a proposed next release',
-        'Prove or publish an approved release candidate',
-        'Inspect a historical release',
+        '| Prepare or publish a release | `RELEASING.md` | approved scope, exact candidate commits, CI, packages, and public-install proof |',
     ],
     '.ai/application-context.md' => [
         'Later accepted work on `main` is unreleased and creates no next candidate identity or publication authority.',
@@ -1632,8 +2075,7 @@ foreach ($configurationArtifactMarkers as $relativePath => $markers) {
 
 $startupProbeSemanticsArtifactMarkers = [
     '.ai/README.md' => [
-        'Define, change, or review startup, liveness, dependency health, or readiness semantics',
-        '`.ai/database.md` only when a database dependency is involved',
+        '| Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |',
     ],
     '.ai/application-context.md' => [
         'That sink\'s destination may itself involve network or remote-filesystem I/O.',
@@ -1665,8 +2107,7 @@ $startupProbeSemanticsArtifactMarkers = [
         'does not connect to a service, prove that a deployment classified a probe correctly, establish dependency availability or traffic readiness',
     ],
     'templates/application/.ai/README.md' => [
-        'Change runtime, logging, deployment, liveness, or readiness behavior',
-        'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, evidence',
+        '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
     ],
     'templates/application/.ai/operations.md' => [
         '{{HEALTH_AND_READINESS_PATHS}}',
@@ -1679,8 +2120,7 @@ $startupProbeSemanticsArtifactMarkers = [
         'Connection construction alone is not exact-statement database-authority or complete-readiness evidence.',
     ],
     'skeleton/.ai/README.md' => [
-        'Change runtime, logging, liveness, or readiness behavior',
-        'exact probe claim, inherited dependencies, bounds, failure behavior, local or deployment operations owner, and evidence',
+        '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
     ],
     'skeleton/.ai/operations.md' => [
         '`GET /health` is the starter liveness route; no readiness route exists.',
@@ -1722,8 +2162,10 @@ foreach ($startupProbeSemanticsArtifactMarkers as $relativePath => $markers) {
 
 $databaseSetupScopeArtifactMarkers = [
     'AGENTS.md' => [
-        'invent elevated authority for a deferred path.',
-        'configuration-only scope instead records connection composition as deferred and proves its parser in a child process.',
+        '## Early database setup gate',
+        'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
+        'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
+        'Resume the ordinary read order after scope is resolved.',
     ],
     'docs/decisions/037-database-setup-scope-gate.md' => [
         'Status: accepted',
@@ -1778,29 +2220,25 @@ $databaseSetupScopeArtifactMarkers = [
     ],
     'templates/application/AGENTS.md' => [
         '## Early database setup gate',
-        'Apply this gate before the full task read order',
+        'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
         'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
-        'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
-        'When a migration or administrative path is adopted, keep its configuration and process entry separate from HTTP, record its exact effective authority overlap, and claim capability isolation only where the selected engine supports it.',
-        'for configuration-only scope, record connection composition as deferred and prove the parser in a child process.',
+        'Resume the ordinary read order after scope is resolved.',
+        'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
     ],
     'skeleton/AGENTS.md' => [
         '## Early database setup gate',
-        'Apply this gate before the full task read order',
+        'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
         'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
-        'A current `NOT_APPLICABLE` marker describes present behavior and does not resolve intent for a new adoption request.',
-        'When a migration or administrative path is adopted, keep its configuration and process entry separate from HTTP, record its exact effective authority overlap, and claim capability isolation only where the selected engine supports it.',
-        'Record visible injection sites for adopted infrastructure, or explicitly defer connection composition when configuration-only scope stops before it.',
+        'Resume the ordinary read order after scope is resolved.',
+        'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
     ],
     'templates/application/.ai/README.md' => [
         '| Select or set up a database engine |',
-        'no external database I/O or mutation before unresolved scope is clarified',
-        'visible adopted composition or explicit connection-composition deferral',
+        'prompt and current configuration/data facts before any external action',
     ],
     'skeleton/.ai/README.md' => [
         '| Select or set up a database engine |',
-        'no external database I/O or mutation before unresolved scope is clarified',
-        'visible adopted composition or explicit connection-composition deferral',
+        'prompt and current configuration/data facts before any external action',
     ],
     'templates/application/.ai/change-workflow.md' => [
         '## Ambiguous database setup scope',
@@ -1895,11 +2333,6 @@ foreach ($databaseSetupScopeForbiddenArtifactMarkers as $relativePath => $marker
 }
 
 $databaseAuthorityLifecycleArtifactMarkers = [
-    'AGENTS.md' => [
-        'Keep the database and object definition source, database/catalog/schema/attachment namespace selection and qualification as supported, namespace and object control-or-ownership model (`NOT_APPLICABLE` when the engine has no ownership concept), and active database authority as separate application facts.',
-        'record how migration, authority activation, verification, rollout, traffic, later deactivation, and failure recovery are ordered.',
-        'before dependent code receives traffic, execute its exact statements under the runtime identity and safely verify selected prohibited actions against the recorded engine and version.',
-    ],
     'docs/decisions/038-application-owned-database-authority-lifecycle.md' => [
         'Status: accepted',
         'Configuration and source presence do not activate database authority.',
@@ -1953,14 +2386,6 @@ $databaseAuthorityLifecycleArtifactMarkers = [
         "Keep ADR 038's application-owned database authority lifecycle in the consumer contract, both application contexts, and compact task routing.",
         'Configuration, connectivity, object existence, and migration completion do not activate authority.',
         'Do not prescribe a namespace, identity topology, default privilege, universal deployment order, permission helper, runtime introspection, or automatic hook.',
-    ],
-    'templates/application/AGENTS.md' => [
-        'database, catalog, schema, or attachment namespace selection and qualification as supported by the chosen engine',
-        'namespace and object control or ownership model, with explicit not-applicable facts where the engine has no such model',
-        'effective authority resolution source, using only applicable mechanisms such as direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
-        'Give each adopted authority activation or deactivation one accountable non-HTTP owner and authoritative implementation reference',
-        'keep the complete transition implementation in `.ai/migrations.md` when an adopted migration owns it',
-        'activate and verify it before dependent code receives traffic',
     ],
     'templates/application/.ai/data.md' => [
         'Its first non-heading declaration is the canonical standalone marker:',
@@ -2375,8 +2800,7 @@ $cachePolicyArtifactMarkers = [
         'a concurrent miss racing an authoritative write',
     ],
     'skeleton/.ai/README.md' => [
-        'HTTP_CACHE_POLICY(NO_STORE)',
-        'Cache-Control: no-store',
+        '| Change HTTP or server-side caching | installed `vendor/phpthis/framework/docs/caching.md` | response path or data, integration, operations, and testing facts |',
     ],
     'skeleton/.ai/testing.md' => [
         'HTTP_CACHE_EVIDENCE(NO_STORE)',
@@ -2589,7 +3013,8 @@ $requestHandlerDecoratorArtifactMarkers = [
     ],
     'skeleton/.ai/architecture.md' => [
         '`NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`',
-        '`src/Routes.php` constructs `HealthHandler` directly.',
+        '`src/HealthRoutes.php` constructs dependency-free `HealthHandler` inline in the exact route declaration',
+        '`src/Routes.php` only includes that existing named route-area list',
         'Never wrap `Application`, `RequestBoundary`, the terminal coordinator, or `ResponseEmitter`',
     ],
     'tests/handler-decorator.php' => [
@@ -2714,8 +3139,7 @@ $websocketArtifactMarkers = [
         'Accountable-human review accepted the exact local recipe as evidence; no framework runtime, dependency, API, contract version, Strict Profile rule, or core-line increase is added.',
     ],
     '.ai/README.md' => [
-        '| Propose, adopt, or change application-owned WebSockets |',
-        '`.ai/websockets.md`',
+        '| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, typed operation, and real socket tests |',
     ],
     '.ai/application-context.md' => [
         'Include `.ai/websockets.md` in the current skeleton and template with `NOT_APPLICABLE(WEBSOCKETS)`',
@@ -2727,21 +3151,12 @@ $websocketArtifactMarkers = [
         'A frame becomes one operation-specific final readonly command, not an HTTP request.',
         'Do not add framework-owned WebSocket, event-loop, connection-manager, daemon, or supervisor primitives.',
     ],
-    '.ai/rules.md' => [
-        'Keep optional WebSockets application-owned:',
-        'adapting frames into PHPThis HTTP requests or responses',
-    ],
     '.ai/testing.md' => [
         'An application that adopts WebSockets must test its parser, current authentication and authorization',
         'Real child-process and socket evidence must cover readiness without a blind sleep',
     ],
-    'AGENTS.md' => [
-        'Keep optional WebSockets application-owned and separate from PHPThis HTTP:',
-        'Do not adapt frames into PHPThis `Request` or `Response`.',
-    ],
     'templates/application/.ai/README.md' => [
-        '| Adopt or change application-owned WebSockets |',
-        'installed `vendor/phpthis/framework/docs/websockets.md`',
+        '| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, configuration, operation, and socket tests |',
     ],
     'templates/application/.ai/websockets.md' => [
         '`NOT_APPLICABLE(WEBSOCKETS)`',
@@ -2761,21 +3176,12 @@ $websocketArtifactMarkers = [
         '## WebSocket runtime',
         'forced-stop owner, deployment topology, capacity, scaling, incident policy',
     ],
-    'templates/application/.ai/rules.md' => [
-        'Do not adapt frames into PHPThis HTTP `Request` or `Response`.',
-        'Do not add a generic WebSocket middleware, gateway, channel, room, broadcaster, pub/sub, event bus, service locator, context bag, discovery, application send queue, hidden retry, replay, acknowledgement, resume, or exactly-once claim.',
-    ],
     'templates/application/.ai/testing.md' => [
         'WebSocket integration and lifecycle tests: `NOT_APPLICABLE(WEBSOCKETS)`',
         'Real child-process and socket tests prove readiness without a blind sleep',
     ],
-    'templates/application/AGENTS.md' => [
-        '`NOT_APPLICABLE(WEBSOCKETS)`',
-        'Frames never become PHPThis HTTP `Request` or `Response` values.',
-    ],
     'skeleton/.ai/README.md' => [
-        '| Introduce or change application-owned WebSockets |',
-        'installed `vendor/phpthis/framework/docs/websockets.md`',
+        '| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, configuration, operation, and socket tests |',
     ],
     'skeleton/.ai/websockets.md' => [
         '`NOT_APPLICABLE(WEBSOCKETS)`',
@@ -2794,17 +3200,9 @@ $websocketArtifactMarkers = [
         '## WebSocket runtime',
         'forced-stop owner, deployment topology, capacity, scaling, incident policy',
     ],
-    'skeleton/.ai/rules.md' => [
-        'Do not adapt frames into PHPThis HTTP `Request` or `Response`.',
-        'Do not add a generic WebSocket middleware, gateway, channel, room, broadcaster, pub/sub, event bus, service locator, context bag, discovery, application send queue, hidden retry, replay, acknowledgement, resume, or exactly-once claim.',
-    ],
     'skeleton/.ai/testing.md' => [
         'WebSocket integration and lifecycle tests: `NOT_APPLICABLE(WEBSOCKETS)`',
         'Real child-process and socket tests prove readiness without a blind sleep',
-    ],
-    'skeleton/AGENTS.md' => [
-        '`NOT_APPLICABLE(WEBSOCKETS)`',
-        'Frames never become PHPThis HTTP `Request` or `Response` values.',
     ],
     'tools/package-files.txt' => [
         'docs/decisions/034-application-owned-websocket-integration.md',
@@ -3006,8 +3404,7 @@ foreach ($requestPolicyArtifactMarkers as $relativePath => $markers) {
 
 $typedInputBoundaryArtifactMarkers = [
     '.ai/README.md' => [
-        'ADR 042 for structured request-body content',
-        'default generic `400`/application-owned generic `422` body classification',
+        '| Parse or change external values | `.ai/types.md` | operation-specific boundary value, failure map, and adversarial tests |',
     ],
     '.ai/application-context.md' => [
         'every adopted inbound operation',
@@ -3147,24 +3544,13 @@ $typedInputBoundaryArtifactMarkers = [
         'mixed unacceptable-value plus wrong-native-type case in property-order variants that both remain `400`',
         'Query, header, route, and transport representations retain their separately recorded contracts',
     ],
-    'templates/application/AGENTS.md' => [
-        'finish the complete field-set, nullability, native-type, and nested-shape pass before value rules',
-        'correctly shaped and typed body content with unacceptable values returns generic `422` through an exact application-owned failure',
-        'Query, header, route, and transport representations retain their separately recorded contracts.',
-    ],
-    'templates/application/.ai/rules.md' => [
-        'For structured request-body content, complete the whole field-set, nullability, native-type, and nested-shape phase before value rules.',
-        'mixed failures to `400` regardless of property order',
-        'Query, header, route, and transport representations retain separately recorded contracts.',
-    ],
     'templates/application/.ai/change-workflow.md' => [
         'For structured request-body content, record the complete structural phase before value rules',
         'do not apply that body-content default implicitly to query, header, route, or transport representations.',
         'Structured request-body tests must prove mixed structural and value failures remain `400` in property-order variants',
     ],
     'skeleton/.ai/README.md' => [
-        'NOT_APPLICABLE(INPUT)',
-        'do not add a generic input guide or validation mechanism',
+        '| Change a non-simple route or request input | installed `vendor/phpthis/framework/docs/request-handling.md` | route manifest and only the application guides for concerns actually entered |',
     ],
     'skeleton/.ai/architecture.md' => [
         'NOT_APPLICABLE(INPUT)',
@@ -3179,11 +3565,6 @@ $typedInputBoundaryArtifactMarkers = [
         'zero typed-seam calls when one exists',
         'property-order variants that remain `400`',
         'Query, header, route, and transport representations retain their separately recorded contracts.',
-    ],
-    'skeleton/.ai/rules.md' => [
-        'complete the entire field-set, nullability, native-type, and nested-shape pass before value rules',
-        'correctly shaped and typed body content with unacceptable values returns generic `422` through an exact application-owned failure',
-        'Query, header, route, and transport representations retain separately recorded contracts.',
     ],
     'skeleton/.ai/change-workflow.md' => [
         'complete structural phase before value rules',
@@ -3352,8 +3733,7 @@ foreach ($finiteDataPathArtifactMarkers as $relativePath => $markers) {
 
 $observabilityArtifactMarkers = [
     '.ai/README.md' => [
-        '`.ai/observability.md`',
-        'ADR 023',
+        '| Change correlation or terminal summaries | `.ai/observability.md` | front-controller coordinator, sink, finite sources, and summary tests |',
     ],
     '.ai/observability.md' => [
         'application.request_summary',
@@ -3573,9 +3953,7 @@ foreach ($observabilityArtifactMarkers as $relativePath => $markers) {
 
 $durableJobArtifactMarkers = [
     '.ai/README.md' => [
-        'Add or change durable deferred work',
-        '`.ai/jobs.md`',
-        'ADR 024',
+        '| Change durable deferred work | `.ai/jobs.md` | producer transaction, worker path, and lifecycle tests |',
     ],
     '.ai/jobs.md' => [
         '# Durable jobs contract',
@@ -3839,9 +4217,7 @@ if (
 
 $applicationCliArtifactMarkers = [
     '.ai/README.md' => [
-        'Add or change an application command or scheduled pass',
-        '`.ai/cli.md`, `.ai/jobs.md`',
-        'ADR 025',
+        '| Change an application command or scheduled pass | `.ai/cli.md` | console composition, one-pass operation, and real-console tests |',
     ],
     '.ai/application-context.md' => [
         '`NOT_APPLICABLE(CLI)`',
@@ -3963,14 +4339,6 @@ $applicationCliArtifactMarkers = [
         '`NOT_APPLICABLE(CLI)`',
         'Keep framework `phpthis` dedicated to `check`.',
         'Do not add command discovery, class-name dispatch, a service-container resolver, generic console or scheduler facade, daemon, hidden loop, or distributed-coordination claim.',
-    ],
-    'skeleton/.ai/rules.md' => [
-        'Keep `NOT_APPLICABLE(CLI)` until one operational application console',
-        'Do not add application commands to framework `phpthis`',
-    ],
-    'skeleton/AGENTS.md' => [
-        '`NOT_APPLICABLE(CLI)`',
-        'Do not add application commands to `vendor/bin/phpthis`',
     ],
     'tools/package-files.txt' => [
         'docs/cli.md',
@@ -4254,8 +4622,7 @@ $workbenchArtifactMarkers = [
         'ADR 041 accepts only a separate development Workbench package',
     ],
     '.ai/README.md' => [
-        '| Propose, adopt, or change the optional development Workbench |',
-        '`.ai/workbench.md`',
+        '| Change the optional development Workbench | `.ai/workbench.md` | separate package, checked bootstrap, explicit workspace, and retained tests |',
     ],
     '.ai/application-context.md' => [
         'Include `.ai/workbench.md` in the current skeleton and template with `NOT_APPLICABLE(WORKBENCH)`',
@@ -4273,19 +4640,12 @@ $workbenchArtifactMarkers = [
         'existing adopted business producer transaction',
         'no sandbox, redaction, dry-run, output-bound, production-safety, authorization, or validity claim',
     ],
-    '.ai/rules.md' => [
-        'Keep optional Workbench use development-only and explicit:',
-        'Core or production Workbench types;',
-    ],
     '.ai/testing.md' => [
         'An application that adopts ADR 041 Workbench keeps its bootstrap and concrete workspace type inside the ordinary application manifest and complete check.',
         'Entered expressions and displayed values remain unchecked exploratory evidence.',
     ],
     'templates/application/.ai/README.md' => [
-        '| Adopt or change PHPThis Workbench |',
-        'installed `vendor/phpthis/framework/docs/workbench.md`',
-        'complete arbitrary-PHP development authority',
-        'existing business producer transaction',
+        '| Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |',
     ],
     'templates/application/.ai/workbench.md' => [
         '{{WORKBENCH_ADOPTION_OR_NOT_APPLICABLE}}',
@@ -4295,16 +4655,8 @@ $workbenchArtifactMarkers = [
         '{{WORKBENCH_JOB_PATH_OR_NOT_APPLICABLE}}',
         'Workbench is arbitrary development code, not a sandbox',
     ],
-    'templates/application/AGENTS.md' => [
-        'record adoption or `NOT_APPLICABLE(WORKBENCH)` in `.ai/workbench.md`',
-        'Install only through `require-dev`',
-        'existing adopted business producer transaction',
-    ],
     'skeleton/.ai/README.md' => [
-        '| Adopt or change PHPThis Workbench |',
-        '`NOT_APPLICABLE(WORKBENCH)`',
-        'complete arbitrary-PHP development authority',
-        'existing business producer transaction',
+        '| Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |',
     ],
     'skeleton/.ai/workbench.md' => [
         '`NOT_APPLICABLE(WORKBENCH)`',
@@ -4313,10 +4665,6 @@ $workbenchArtifactMarkers = [
         'existing adopted business producer transaction and the application-recorded finite one-delivery console command',
         'Install Workbench only through `require-dev`',
         'Production artifacts install with `--no-dev`',
-    ],
-    'skeleton/AGENTS.md' => [
-        '`NOT_APPLICABLE(WORKBENCH)`',
-        'do not add a container, registry, generic dispatcher',
     ],
     'tools/package-files.txt' => [
         'docs/decisions/041-optional-development-workbench.md',
@@ -4634,22 +4982,8 @@ if (is_string($composerManifest)) {
 }
 
 $engineSpecificMigrationInvariantArtifactMarkers = [
-    'AGENTS.md' => [
-        'Keep migrations application-owned and engine/version-specific under ADR 043',
-        'Record one exact initial baseline per history',
-        'validates its accepted ledger prefix, and applies every pending checksum-covered statement',
-        '`.ai/operations.md` alone owns the application-wide release sequence',
-        'Concurrently reachable topologies for one history share an exclusion domain or are pairwise authority-gated',
-        'Keep the application-context authority split singular:',
-        'exact creation, acquisition, use, and release permissions or authority',
-        'Keep ADR 027 as the accepted application-owned SQLite reference proof, not a universal migration mechanism.',
-    ],
     '.ai/README.md' => [
-        'ADR 043, ADR 038, ADR 039, and ADR 027 only for the SQLite reference proof',
-        'each separately tracked history\'s exact initial baseline',
-        'shared exclusion or pairwise authority gating across reachable topologies',
-        'operations-owned application-wide release order',
-        '`.ai/configuration.md`-owned configuration/process identity',
+        '| Change database migrations | `.ai/migrations.md` | command, configuration, authority, manifest, ledger, coordination, and exact-engine tests |',
     ],
     '.ai/application-context.md' => [
         'exact recorded initial baseline',
@@ -4766,20 +5100,8 @@ $engineSpecificMigrationInvariantArtifactMarkers = [
         'exact creation, acquisition, use, and release permissions or authority',
         'ADR 039\'s alternative migration-placement proof remains separate and unchanged.',
     ],
-    'skeleton/AGENTS.md' => [
-        'each history\'s exact initial baseline',
-        'shared exclusion or pairwise authority gating across reachable topologies',
-        '`.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
-        'keep exact configuration and process identity only in `.ai/configuration.md`',
-        'exact creation, acquisition, use, and release permissions or authority',
-        'ADR 027\'s per-migration transaction, same-host `flock`, active-transaction rollback, and earlier-commit proof apply only when this application deliberately adopts that SQLite reference shape.',
-    ],
     'skeleton/.ai/README.md' => [
-        'each history\'s exact initial baseline',
-        'cross-topology exclusion or authority gating',
-        'operations-owned application-wide release order',
-        '`.ai/configuration.md`-owned configuration/process identity',
-        'ADR 027 transaction/`flock`/rollback evidence only for its SQLite reference shape',
+        '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
     ],
     'skeleton/.ai/migrations.md' => [
         'each separately tracked history\'s exact initial baseline',
@@ -4812,20 +5134,8 @@ $engineSpecificMigrationInvariantArtifactMarkers = [
         'Do not generalize that SQLite transaction, file-lock, rollback, output, or filesystem-authority evidence to another engine or host topology.',
         'Migration evidence separately proves exact creation, acquisition, use, and release permissions or authority',
     ],
-    'templates/application/AGENTS.md' => [
-        'each history\'s exact initial baseline',
-        'shared exclusion or pairwise authority gating across reachable topologies',
-        '`.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence',
-        'keep exact configuration and process identity only in `.ai/configuration.md`',
-        'exact creation, acquisition, use, and release permissions or authority',
-        'ADR 027\'s per-migration transaction, same-host `flock`, active-transaction rollback, and earlier-commit proof apply only when the application deliberately adopts that SQLite reference shape.',
-    ],
     'templates/application/.ai/README.md' => [
-        'each history\'s exact initial baseline',
-        'cross-topology exclusion or authority gating',
-        'operations-owned application-wide release order',
-        '`.ai/configuration.md`-owned configuration/process identity',
-        'ADR 027 transaction/`flock`/rollback evidence only for its SQLite reference shape',
+        '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
     ],
     'templates/application/.ai/migrations.md' => [
         '{{MIGRATION_CONSOLE_EXECUTABLE_OR_NOT_APPLICABLE}}',
@@ -5002,8 +5312,7 @@ foreach ($retiredUnqualifiedMigrationRequirements as $relativePath => $markers) 
 
 $migrationArtifactMarkers = [
     '.ai/README.md' => [
-        'Add, change, place, or review database migrations',
-        '`.ai/migrations.md`, `.ai/database.md`, `.ai/configuration.md`, `.ai/data.md`, `.ai/operations.md`, `.ai/cli.md`, `.ai/testing.md`, ADR 043',
+        '| Change database migrations | `.ai/migrations.md` | command, configuration, authority, manifest, ledger, coordination, and exact-engine tests |',
     ],
     '.ai/application-context.md' => [
         '`NOT_APPLICABLE(MIGRATIONS)`',
@@ -6068,11 +6377,7 @@ if (!is_string($behaviorInventory)) {
 
 $maintainerTestArtifactMarkers = [
     '.ai/README.md' => [
-        'Add or focus framework-maintainer tests',
-        '`tests/FrameworkBehaviorTest.php`',
-        '`phpunit.xml.dist`',
-        'the applicable concern-owned test file explicitly required by it',
-        'narrowly shared support file',
+        '| Change maintainer tests or evidence organization | `.ai/testing.md` | applicable concern-owned test file, behavior names, and complete gate |',
     ],
     '.ai/testing.md' => [
         'PHPUnit 13 as a maintainer-only development runner',
@@ -6635,8 +6940,7 @@ if (
 
 $consumerProfileArtifactMarkers = [
     '.ai/README.md' => [
-        'Review the Alpha 2 consumer profile or a capability exit',
-        '`.ai/consumer-profile.md`',
+        '| Review the consumer capability profile | `.ai/consumer-profile.md` | checked-in application proof and affected current guides |',
     ],
     '.ai/consumer-profile.md' => [
         'framework behavior lives only in `src/` and the Consumer Contract',
@@ -6772,8 +7076,7 @@ if (is_string($packageInventory)) {
 
 $fileTransferArtifactMarkers = [
     '.ai/README.md' => [
-        'Add, change, or review file uploads or local-file responses',
-        '`.ai/file-transfers.md`',
+        '| Change uploads or local-file responses | `.ai/file-transfers.md` | boundary, storage operation, emitter path, and transfer tests |',
     ],
     '.ai/file-transfers.md' => [
         'A `null` multipart limit disables multipart input.',
@@ -7085,18 +7388,6 @@ $uuidIdentifierPolicyGuidanceMarkers = [
         'Version and variant bits alone are insufficient.',
         'finite generated samples do not prove uniqueness or total creation order',
     ],
-    'skeleton/.ai/README.md' => [
-        '.ai/data.md`\'s `NOT_APPLICABLE(UUID_POLICY)` declaration',
-        'exact generation owner and source',
-        'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
-        'it supplies no framework generator and does not reject other accepted versions',
-    ],
-    'templates/application/.ai/README.md' => [
-        'For UUID identifiers, `.ai/data.md` separately records accepted canonical versions',
-        'the exact generation owner and source',
-        'The reference accepts versions 1 through 8 and recommends version 7 only for newly generated database row identifiers',
-        'it does not make a framework generator or reject other accepted versions',
-    ],
 ];
 
 foreach ($uuidIdentifierPolicyGuidanceMarkers as $relativePath => $markers) {
@@ -7177,7 +7468,7 @@ if (is_file($applicationAgentInstructionsPath)) {
             $failures[] = 'Application AGENTS.md must define the AI authoring role.';
         }
 
-        if (!str_contains($applicationAgentInstructions, 'explicit approval from an accountable human')) {
+        if (!str_contains($applicationAgentInstructions, 'only an accountable human may accept it')) {
             $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
         }
 
@@ -7197,7 +7488,7 @@ if (is_file($skeletonAgentInstructionsPath)) {
     } elseif (
         !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
         || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
-        || !str_contains($skeletonAgentInstructions, 'explicit approval from an accountable human')
+        || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
         || !str_contains($skeletonAgentInstructions, 'Consumer Contract v10 and Strict Profile v3 are the minimum accepted rules')
     ) {
         $failures[] = 'Skeleton AGENTS.md must preserve Alpha 5 Contract v10 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
@@ -7206,12 +7497,12 @@ if (is_file($skeletonAgentInstructionsPath)) {
 
 $scaffoldParityMarkers = [
     'templates/application/AGENTS.md' => [
-        'every installed dependency path beginning with `vendor/` uses Composer\'s default vendor directory',
-        'including the checker binary and installed PHPThis package paths',
+        'If Composer uses a non-default vendor directory, replace the leading `vendor/` segment in every installed path.',
+        'Never substitute a framework-maintainer checkout for installed application authority.',
     ],
     'skeleton/AGENTS.md' => [
-        'every installed dependency path beginning with `vendor/` uses Composer\'s default vendor directory',
-        'including the checker binary and installed PHPThis package paths',
+        'If Composer uses a non-default vendor directory, replace the leading `vendor/` segment in every installed path.',
+        'Never substitute a framework-maintainer checkout for installed application authority.',
     ],
     'templates/application/.ai/operations.md' => [
         'Required extensions: `ext-pdo` and `ext-session`',

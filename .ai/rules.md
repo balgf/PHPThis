@@ -1,48 +1,31 @@
-# Global implementation rules
+# Universal implementation rules
+
+These rules apply to every framework-maintainer change. Concern-specific contracts live in the current guide routed by `.ai/README.md`.
 
 ## Required
 
-- Write direct, typed PHP with strict types.
-- Prefer public data in immutable request/response values and explicit methods for behavior.
-- Construct dependencies manually where the application starts.
-- Keep I/O visible in method names and call sites.
-- Parse external `mixed` values once into concrete final readonly boundary values: operation-specific requests or commands for inbound data, and projections for returned data.
-- Execute application SQL only through direct `Connection` calls, bind every data value with a distinct named placeholder per occurrence, and keep the final SQL a finite non-blank compile-time constant.
-- Map external SQL-structure selectors to finite reviewed code-owned choices and reject unknown selectors before database work.
-- Keep every adopted cache read, write, and invalidation visible behind a narrowly named typed application service and an explicitly wired backend; parse cache hits as untrusted external values before use.
-- Keep durable-job publication, claim, effect, completion, retry, and dead-letter SQL visible in the application-owned backend-specific path; parse stored envelopes as untrusted values and dispatch only finite code-owned type/version combinations.
-- Keep protected request policy in one application-owned action-specific adapter with explicit `authenticate -> resolve tenant -> authorize -> handler` order, concrete immutable principal and tenant values, and independently replaceable constructor-injected policies.
-- Give any policy reads distinct named connections, budgets, and traces from protected handler work; every denial must stop before protected queries, writes, session mutation, cache mutation, or external business side effects.
-- Keep every application-owned request-handler decorator final, route-local, and explicit: implement only `RequestHandler`, own one narrowly named route concern, wrap exactly one downstream `RequestHandler`, construct any nesting as one visible unrolled expression beside the route, delegate zero or one time with the exact same immutable `Request` instance, propagate its own and downstream exceptions unchanged, replace a response only through an explicit immutable `Response` that preserves every unchanged field, and name, bound, and test every owned side effect.
-- Keep one application-owned ADR 023 terminal coordinator and sink at the visible front-controller boundary, with generated correlation, finite distinct database sources, complete redaction, and exactly one failure-isolated invocation attempt.
-- Keep ADR 026 file transfer explicit: one typed bounded multipart upload, application-owned provenance and storage, one concrete local-file body, exact framing, fixed-chunk emission, and no range implementation.
-- Keep ADR 027 schema migration explicit and application-owned: one SQLite-only console path, finite ordered unrolled manifest, checksum-locked immutable history, bounded inspectable ledger, one transaction per migration, a migration-only configuration and process-entry path with recorded SQLite file-authority overlap, and one application-private same-host lock.
-- Keep optional WebSockets application-owned: one explicitly selected third-party runtime, separate visible process and composition root, exact handshake and current authorization, one bounded operation-specific command, one narrowly named typed operation, awaited bounded sends, finite connection and lifecycle policy, redacted connection summary, and real process/socket evidence.
-- Keep optional Workbench use development-only and explicit: one checked application bootstrap, one concrete workspace object, one expression per fresh strict child, the complete arbitrary-PHP authority surface, no persisted state, no timeout or resource-isolation claim, the existing adopted business producer transaction for real publication, the application-recorded finite one-delivery command for delivery, and ordinary tests for every retained behavior.
-- Pass the complete Strict Profile; PHP execution without `composer check` is not sufficient verification.
-- Add a test for success, expected failure, and resource bounds when relevant.
-- Use one stable term for each concept: route, handler, application-owned request-handler decorator, connection, request, request upload, response, local file body, response cookie, session lifecycle, session snapshot, session unavailable, query budget, query trace, terminal request summary, correlation ID, sink invocation attempt, HTTP cache policy, application cache service, stale-refill race, application migration, migration manifest, migration ledger, migration drift, development Workbench, Workbench workspace.
+- Write direct, typed PHP with `declare(strict_types=1);`.
+- Every named class is final. Express extension points with interfaces, never non-final classes.
+- Construct dependencies manually at the visible composition root; keep I/O visible in method names and call sites.
+- Use immutable request and response values and explicit behavior methods. Keep handlers on `RequestHandler::handle(Request): Response`.
+- Keep routes in explicit finite lists and use only the documented exact literal or typed full-segment declarations.
+- Parse external `mixed` once into one bounded concrete final readonly boundary value before downstream behavior.
+- An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.
+- Execute application SQL only through direct `Connection` calls. Keep SQL engine-specific, finite, non-blank, and PHPStan-resolvable to compile-time constants; bind every data value with a distinct named placeholder per occurrence.
+- Map every external structural selector to finite reviewed code-owned choices and reject unknown choices before I/O.
+- Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.
+- Preserve one canonical execution pattern for each framework task and one stable term for each concept.
+- Add or update automated tests for observable behavior and run `composer check` before reporting completion.
 
 ## Forbidden
 
-- Runtime discovery, reflection-based wiring, dynamic properties, macros, facades, service location, hidden globals, and magic methods except constructors.
-- Database calls in loops or property access that can perform I/O.
-- Positional SQL parameters, interpolated data values, runtime-built SQL structure, SQL sanitizers, `SELECT *`, and unbounded collection reads.
-- A runtime database identity with migration, schema-change, user-management, or other authority not required by its application paths.
-- Silent exception conversion, implicit retries, or default success values after failure.
-- Scalar casts or conversion functions used as validation for `mixed` input.
-- Reflection hydration, generic domain collections, and unvalidated arrays crossing a boundary.
-- Aliases or shortcuts that provide a second spelling for existing behavior.
-- Direct application access to `$_SESSION`, native `session_*` calls, generic session helpers, or authentication state stored without a typed application boundary.
-- Generic or framework middleware interfaces, pipelines, iterable registries, priority ordering, discovery, `$next` abstractions, generic request-context or attribute bags, hidden binding or I/O, service-located policies, hidden tenant resolution, implicit or global authorization scopes, and treating stored or cached identity as current authorization.
-- Generic cache facades or bags, remember-style callbacks, implicit cache fallback or retries, automatic query caching, hidden cache middleware, unbounded keys or values, implicit forever lifetimes, and claims that distinct backends are behaviorally interchangeable.
-- Framework job types, generic queue or worker facades, event buses, automatic job discovery, serialized PHP objects, hidden after-commit callbacks, in-process polling or retry loops, and exactly-once external-effect claims.
-- Core logging event, sink, or coordinator types; logger facades, global log helpers, generic or framework logging middleware, observability inside an application-owned request-handler decorator, event pipelines, automatic sink discovery, per-query log I/O, hidden database instrumentation, or claims that one sink invocation attempt guarantees delivery.
-- Raw `$_FILES` outside the front controller, trusted client file metadata, generic storage or stream facades, automatic file persistence or cleanup, image processing, and partial range support.
-- Core migration types, schema builders or DSLs, automatic migration discovery, runtime `.sql` loading, stored executable SQL or class names, migration database calls in loops, inferred down migrations, HTTP-startup migrations, and a SQLite proof presented as portable DDL.
-- Core WebSocket, event-loop, connection-manager, daemon, or supervisor types; adapting frames into PHPThis HTTP requests or responses; generic WebSocket middleware, gateways, channels, rooms, broadcasters, pub/sub, event buses, service location, context bags, discovery, application send queues, hidden retry, replay, acknowledgement, resume, or exactly-once claims.
-- Core or production Workbench types; a container-backed shell, string-keyed workspace registry, generic dispatcher, automatic booting, HTTP or remote expression endpoint, noninteractive batch expressions, persisted history or mutable session state, elevated-credential fallback, or sandbox, redaction, dry-run, and validity claims.
-- Baselines, inline ignores, wildcard exclusions, or comment exemptions for Strict Profile findings.
-- Invented product intent, inferred human approval, or claims about PHPThis behavior unsupported by the current checkout.
+- Runtime discovery, reflection-based wiring, string class resolution, dynamic properties, macros, facades, service location, hidden globals, and magic methods except `__construct`.
+- ORM, Active Record, lazy loading, query builders, repository or generic service layers, generated SQL, positional parameters, interpolated data, SQL sanitizers, `SELECT *`, and unbounded collection reads.
+- Hidden I/O, implicit retry, silent exception conversion, default success after failure, or a second spelling or execution path for existing behavior.
+- Scalar casts or conversion functions used as validation for external `mixed`; reflection hydration, mass assignment, or unvalidated arrays crossing a named boundary.
+- Generic framework or application abstractions that hide optional middleware, policy, configuration, cache, queue, logging, migration, storage, WebSocket, console, or Workbench behavior. Use the routed concern guide's explicit application-owned boundary.
+- Baselines, inline ignores, wildcard exclusions, broad ignore patterns, comment exemptions, or a weaker PHPStan level for Strict Profile findings.
+- Invented intent, approval, external-system facts, or behavior unsupported by the current checkout.
+- Credentials, tokens, private keys, customer data, production payloads, or other secrets in AI context, source comments, fixtures, logs, or reports.
 
-If a task appears to require a forbidden mechanism, stop and propose a decision record describing the concrete need and a more explicit alternative.
+If a task appears to require a forbidden mechanism or a new consequential decision, stop implementation at that boundary and present the concrete need for accountable-human judgment.

@@ -110,7 +110,8 @@ Do not restate ordinary PHP syntax or copy the framework repository's maintainer
 ## Keep it useful
 
 - Keep `AGENTS.md` short enough to read for every task.
-- Use `.ai/README.md` as a task router and load only the relevant area guide.
+- Use `.ai/README.md` as a task router and begin ordinary implementation with one current operational guide. Read another guide only when the selected concern requires it, and read an ADR only when reviewing or changing its decision.
+- Preserve the installed knowledge map's four-file simple-endpoint route after universal entrypoints: current guide, existing named route-area manifest, dependency-free handler, and nearest behavior test. The root route manifest remains unchanged for that narrow case.
 - State concrete limits and paths instead of broad advice.
 - Link to source-of-truth schemas, contracts, and decisions instead of duplicating them.
 - Update the context in the same change when a public application pattern changes.

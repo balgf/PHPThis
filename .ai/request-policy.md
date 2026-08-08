@@ -1,6 +1,6 @@
 # Request-policy contract
 
-Authentication, tenant resolution, and authorization remain application-owned. Use ADR 020's one canonical shape for a protected route.
+Authentication, tenant resolution, and authorization remain application-owned. Follow the canonical protected-route shape in this current guide and `docs/request-policy.md`; read ADR 020 only when reviewing or changing its application-owned request-policy decision.
 
 Rules:
 

@@ -1,12 +1,13 @@
 # Application AI context contract
 
-This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/configuration.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/websockets.md`, `docs/workbench.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, ADR 009, ADR 011, ADR 013, or ADR 015 through ADR 043.
+This guide applies when changing `docs/consumer-contract.md`, `docs/knowledge-map.md`, `docs/getting-started.md`, `docs/configuration.md`, `docs/crud.md`, `docs/caching.md`, `docs/jobs.md`, `docs/cli.md`, `docs/migrations.md`, `docs/websockets.md`, `docs/workbench.md`, `docs/file-transfers/`, `docs/logging.md`, `docs/observability/`, `RELEASING.md`, `templates/application/`, `skeleton/`, or any accepted decision that changes application AI context or task routing. ADR 009, ADR 011, ADR 013, and ADR 044 are the primary ownership and routing decisions; concern-specific decisions remain conditional context for their own guides.
 
 ADR 040 is the release-scoped authority for Alpha 5, the latest release identity and tag recorded by the repository source record. It carries ADR 015 through ADR 035 forward and rolls accepted ADR 036 through ADR 039 into Consumer Contract version 10 and Strict Profile version 3 without changing the historical Alpha 4 identity. Later accepted work on `main` is unreleased and creates no next candidate identity or publication authority. Release preparation, approved-candidate proof or publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.
 
 Rules:
 
 - Keep the framework-maintainer `AGENTS.md` and `.ai/` separate from the application template.
+- Keep one routed current owner for every mutable authoring rule. Root entrypoints retain only universal authority, safety, scope, and verification; concern-specific detail belongs in its current operational guide, and historical ADRs are read only for decision review or change.
 - Preserve AI as the primary author and knowledge interface while keeping human intent, consequential approval, and accountability explicit.
 - Require framework explanations to use the installed contract, knowledge map, source, and tests rather than model memory.
 - Keep the framework consumer contract portable: do not include maintainer-only paths, framework source limits, example-specific behavior, or fixture mechanics.
