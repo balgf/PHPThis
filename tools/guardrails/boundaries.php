@@ -798,6 +798,116 @@ function boundaryGuardrailFailures(string $root): array
 
     requireGuardrailArtifactMarkers($root, $typedInputBoundaryArtifactMarkers, 'typed-input-boundary', $failures);
 
+    $nativeDateTimeGuidanceArtifactMarkers = [
+        '.ai/README.md' => [
+            '| Change date, time, timezone, duration, or clock behavior | `.ai/types.md` | `docs/date-time.md`',
+        ],
+        '.ai/application-context.md' => [
+            'Route application date and time work through installed `vendor/phpthis/framework/docs/date-time.md`.',
+            'A selected third-party date-time or clock package remains an explicit application-owned dependency',
+        ],
+        '.ai/types.md' => [
+            'Date and time work follows `docs/date-time.md`.',
+            'Native `DateTimeImmutable`, `DateTimeZone`, and `DateInterval` are the default application tools',
+            'External values require a complete lexical and component grammar',
+            'requires a recorded daylight-saving gap and overlap policy.',
+            'Behavior that depends on “now” receives an operation-specific injected clock',
+        ],
+        'docs/date-time.md' => [
+            '# Native date and time',
+            "PHPThis recommends PHP's native date and time API.",
+            'The framework and default skeleton do not require Carbon or another date-time package as a runtime dependency.',
+            'An application may deliberately adopt a third-party package when a concrete requirement justifies it',
+            '## Name the temporal concept first',
+            'An **instant** is one point on the timeline.',
+            'A **calendar date** such as `2026-08-10`',
+            'A **local date-time** contains civil clock fields',
+            'An **elapsed duration** is a measured amount of time.',
+            'A **calendar interval** such as one month or one day',
+            'An operation records which concept it owns before selecting a PHP type, database column, JSON representation, or arithmetic rule.',
+            'PHP has no native calendar-date or unresolved-local-date-time value type.',
+            'Pass an explicit `DateTimeZone` whenever timezone affects parsing, conversion, display, or calendar arithmetic.',
+            'Use `hrtime(true)` only for elapsed measurement inside one running system.',
+            'must not be persisted, serialized, compared across processes, or used for scheduling.',
+            'The effective ceiling may be a recorded total request bound; add a separate field byte bound only when the operation needs one.',
+            "complete every field's shape and native-type phase before applying any timestamp value rule",
+            'This example assumes the native-type phase has already established that `$value` is a string.',
+            'apply an operation-owned complete lexical grammar and component ranges before parsing one fixed format',
+            'PHP format tokens are parsers, not standards validators:',
+            "'2026-08-10T12:00:00+24:00'",
+            'str_contains($value, "\0")',
+            '!checkdate($month, $day, $year)',
+            '|| $offsetHour > 14',
+            '|| ($offsetHour === 14 && $offsetMinute !== 0)',
+            "(\$parts['sign'] === '-' && \$offsetHour === 0 && \$offsetMinute === 0)",
+            "DateTimeImmutable::createFromFormat('!' . \$format, \$value)",
+            '$errors = DateTimeImmutable::getLastErrors();',
+            "(\$errors !== false && (\$errors['warning_count'] !== 0 || \$errors['error_count'] !== 0))",
+            '$parsed->format($format) !== $value',
+            '`InvalidTimestamp` is an illustrative operation-owned value failure, not a PHPThis type.',
+            'query, header, route, and transport inputs retain their own contracts;',
+            'a database projection uses its recorded persisted-state failure',
+            'Call it immediately after `createFromFormat()` because it describes the most recent parse.',
+            'requires a recorded daylight-saving transition policy.',
+            'A skipped local time in a forward gap and a repeated local time in a backward overlap',
+            'A forward gap has no matching instant in that zone:',
+            'A supplied offset cannot make the skipped local fields valid in the named zone.',
+            'validate it against an actual candidate for the named zone.',
+            'inject one narrowly named application clock into that operation.',
+            'For every persisted or transmitted temporal value, record:',
+            '- the temporal concept and authoritative clock;',
+            '- exact format or integer unit, precision, accepted range, and canonical spelling;',
+            '- timezone, offset, or named-zone retention policy;',
+            '- database engine representation and projection parser;',
+            '- JSON or other sink format and normalization policy; and',
+            '- compatibility and migration behavior when the representation changes.',
+            'Calendar arithmetic requires boundary evidence.',
+            'Cover every applicable leap day, month end, daylight-saving gap and overlap, offset change, minimum and maximum accepted value, fractional precision, and serialization round trip.',
+            'prefer `CarbonImmutable` over mutable `Carbon\\Carbon`.',
+            'global `setTestNow()` state',
+            'PHPThis adds no date-time facade, generic parser, normalization helper, clock API, persistence mapping, checker rule, or `PHT` diagnostic.',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Parse, persist, format, calculate, schedule, or test date and time behavior | `docs/date-time.md`',
+        ],
+        'docs/type-safety.md' => [
+            '[Native date and time](date-time.md)',
+            'A date or timestamp has a complete lexical and component grammar',
+            'PHP format tokens and generic date guessing are not standards validation.',
+        ],
+        'templates/application/.ai/README.md' => [
+            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
+        ],
+        'skeleton/.ai/README.md' => [
+            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
+        ],
+        'tools/package-files.txt' => [
+            'docs/date-time.md',
+        ],
+        'tools/guardrails/distribution.php' => [
+            'Framework runtime dependencies must remain native PHP and extensions:',
+            'The default skeleton must require only PHP and phpthis/framework.',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledNativeDateTimeGuidanceDistribution($project, $installedFramework);',
+            'function proveInstalledNativeDateTimeGuidanceDistribution(',
+            'PASS installed native date and time guidance distribution',
+        ],
+        'docs/guardrails.md' => [
+            'native date/time guidance, installed task routes, exact package inventory, and Composer dependency checks preserve PHP',
+            'without adding a framework or default-skeleton runtime date/time package',
+            'The native date/time guidance guard pins the dedicated installed guide',
+            'It adds no framework clock, date/time type, parser, consumer-checker rule, behavior requirement, or `PHT` diagnostic.',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $nativeDateTimeGuidanceArtifactMarkers,
+        'native date and time guidance',
+        $failures,
+    );
+
     $finiteDataPathArtifactMarkers = [
         'docs/decisions/022-application-owned-finite-data-paths.md' => [
             'Status: accepted',

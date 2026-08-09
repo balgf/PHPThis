@@ -33,6 +33,7 @@ docs/consumer-contract.md
 docs/consumer-profile.md
 docs/crud.md
 docs/database.md
+docs/date-time.md
 docs/decisions/001-manual-composition-root.md
 docs/decisions/002-visible-sql-no-orm.md
 docs/decisions/003-query-budgets.md

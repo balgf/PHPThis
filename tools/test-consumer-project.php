@@ -102,6 +102,7 @@ try {
     $profileCommand = [$project . '/vendor/bin/phpthis', 'check'];
     proveInstalledReleaseGuidanceDistribution($installedFramework);
     proveInstalledReferenceClarityDistribution($installedFramework);
+    proveInstalledNativeDateTimeGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
@@ -1267,6 +1268,131 @@ function proveInstalledTestRunnerModularizationGuidanceDistribution(
     requireInstalledArtifactMarkers($artifactMarkers, 'test-runner modularization guidance');
 
     fwrite(STDOUT, "PASS installed test-runner modularization guidance distribution\n");
+}
+
+function proveInstalledNativeDateTimeGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/README.md' => [
+            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
+        ],
+        $installedFramework . '/docs/date-time.md' => [
+            '# Native date and time',
+            "PHPThis recommends PHP's native date and time API.",
+            'The framework and default skeleton do not require Carbon or another date-time package as a runtime dependency.',
+            'An application may deliberately adopt a third-party package when a concrete requirement justifies it',
+            '## Name the temporal concept first',
+            'An **instant** is one point on the timeline.',
+            'A **calendar date** such as `2026-08-10`',
+            'A **local date-time** contains civil clock fields',
+            'An **elapsed duration** is a measured amount of time.',
+            'A **calendar interval** such as one month or one day',
+            'An operation records which concept it owns before selecting a PHP type, database column, JSON representation, or arithmetic rule.',
+            'PHP has no native calendar-date or unresolved-local-date-time value type.',
+            'Pass an explicit `DateTimeZone` whenever timezone affects parsing, conversion, display, or calendar arithmetic.',
+            'Use `hrtime(true)` only for elapsed measurement inside one running system.',
+            'must not be persisted, serialized, compared across processes, or used for scheduling.',
+            'The effective ceiling may be a recorded total request bound; add a separate field byte bound only when the operation needs one.',
+            "complete every field's shape and native-type phase before applying any timestamp value rule",
+            'This example assumes the native-type phase has already established that `$value` is a string.',
+            'apply an operation-owned complete lexical grammar and component ranges before parsing one fixed format',
+            'PHP format tokens are parsers, not standards validators:',
+            "'2026-08-10T12:00:00+24:00'",
+            'str_contains($value, "\0")',
+            '!checkdate($month, $day, $year)',
+            '|| $offsetHour > 14',
+            '|| ($offsetHour === 14 && $offsetMinute !== 0)',
+            "(\$parts['sign'] === '-' && \$offsetHour === 0 && \$offsetMinute === 0)",
+            "DateTimeImmutable::createFromFormat('!' . \$format, \$value)",
+            '$errors = DateTimeImmutable::getLastErrors();',
+            "(\$errors !== false && (\$errors['warning_count'] !== 0 || \$errors['error_count'] !== 0))",
+            '$parsed->format($format) !== $value',
+            '`InvalidTimestamp` is an illustrative operation-owned value failure, not a PHPThis type.',
+            'query, header, route, and transport inputs retain their own contracts;',
+            'a database projection uses its recorded persisted-state failure',
+            'Call it immediately after `createFromFormat()` because it describes the most recent parse.',
+            'requires a recorded daylight-saving transition policy.',
+            'A skipped local time in a forward gap and a repeated local time in a backward overlap',
+            'A forward gap has no matching instant in that zone:',
+            'A supplied offset cannot make the skipped local fields valid in the named zone.',
+            'validate it against an actual candidate for the named zone.',
+            'inject one narrowly named application clock into that operation.',
+            'For every persisted or transmitted temporal value, record:',
+            '- the temporal concept and authoritative clock;',
+            '- exact format or integer unit, precision, accepted range, and canonical spelling;',
+            '- timezone, offset, or named-zone retention policy;',
+            '- database engine representation and projection parser;',
+            '- JSON or other sink format and normalization policy; and',
+            '- compatibility and migration behavior when the representation changes.',
+            'Calendar arithmetic requires boundary evidence.',
+            'Cover every applicable leap day, month end, daylight-saving gap and overlap, offset change, minimum and maximum accepted value, fractional precision, and serialization round trip.',
+            'prefer `CarbonImmutable` over mutable `Carbon\\Carbon`.',
+            'global `setTestNow()` state',
+            'PHPThis adds no date-time facade, generic parser, normalization helper, clock API, persistence mapping, checker rule, or `PHT` diagnostic.',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Parse, persist, format, calculate, schedule, or test date and time behavior | `docs/date-time.md`',
+        ],
+        $installedFramework . '/docs/type-safety.md' => [
+            '[Native date and time](date-time.md)',
+            'A date or timestamp has a complete lexical and component grammar',
+            'PHP format tokens and generic date guessing are not standards validation.',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'native date and time guidance');
+
+    $installedComposer = jsonFile($installedFramework . '/composer.json');
+    $installedRuntimeRequirements = $installedComposer['require'] ?? null;
+
+    if (!is_array($installedRuntimeRequirements)) {
+        throw new RuntimeException('Installed framework runtime requirements must be an explicit Composer map.');
+    }
+
+    foreach (array_keys($installedRuntimeRequirements) as $runtimePackage) {
+        if (
+            !is_string($runtimePackage)
+            || (
+                $runtimePackage !== 'php'
+                && !str_starts_with($runtimePackage, 'ext-')
+            )
+        ) {
+            throw new RuntimeException(
+                'Installed framework runtime dependencies must remain native PHP and extensions.',
+            );
+        }
+    }
+
+    $consumerComposer = jsonFile($project . '/composer.json');
+    $consumerRuntimeRequirements = $consumerComposer['require'] ?? null;
+
+    if (!is_array($consumerRuntimeRequirements)) {
+        throw new RuntimeException('Installed skeleton runtime requirements must be an explicit Composer map.');
+    }
+
+    $consumerRuntimePackages = array_keys($consumerRuntimeRequirements);
+
+    foreach ($consumerRuntimePackages as $consumerRuntimePackage) {
+        if (!is_string($consumerRuntimePackage)) {
+            throw new RuntimeException('Installed skeleton runtime requirement names must be strings.');
+        }
+    }
+
+    sort($consumerRuntimePackages, SORT_STRING);
+
+    if ($consumerRuntimePackages !== ['php', 'phpthis/framework']) {
+        throw new RuntimeException(
+            'Installed default skeleton must require only PHP and phpthis/framework.',
+        );
+    }
+
+    fwrite(STDOUT, "PASS installed native date and time guidance distribution\n");
 }
 
 function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string $installedFramework): void

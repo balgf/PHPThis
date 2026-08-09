@@ -31,6 +31,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php`, and nearest behavior tests |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | reader, boundary, front controller, and boundary tests |
 | Parse or change external values | `.ai/types.md` | operation-specific boundary value, failure map, and adversarial tests |
+| Change date, time, timezone, duration, or clock behavior | `.ai/types.md` | `docs/date-time.md`, the exact operation source and representation, and boundary or clock tests |
 | Add or change database behavior or PDO transport | `.ai/database.md` | direct `Connection` call, exact SQL, authority facts, and scale tests |
 | Change configuration, consumer context, checker, skeleton, or template | `.ai/application-context.md` | affected contract, template, checker, and installed-consumer evidence |
 | Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |

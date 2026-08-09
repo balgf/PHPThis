@@ -63,6 +63,22 @@ function distributionGuardrailFailures(
         $archive = is_array($composer) ? ($composer['archive'] ?? null) : null;
         $archiveExclusions = is_array($archive) ? ($archive['exclude'] ?? null) : null;
 
+        if (!is_array($runtimeRequirements)) {
+            $failures[] = 'Framework runtime requirements must remain an explicit Composer map.';
+        } else {
+            foreach (array_keys($runtimeRequirements) as $runtimePackage) {
+                if (
+                    !is_string($runtimePackage)
+                    || (
+                        $runtimePackage !== 'php'
+                        && !str_starts_with($runtimePackage, 'ext-')
+                    )
+                ) {
+                    $failures[] = "Framework runtime dependencies must remain native PHP and extensions: {$runtimePackage}.";
+                }
+            }
+        }
+
         if (
             !is_array($developmentRequirements)
             || ($developmentRequirements['phpunit/phpunit'] ?? null) !== '^13.0'
@@ -143,6 +159,17 @@ function distributionGuardrailFailures(
     $skeletonRuntimeRequirements = is_array($skeletonComposer) ? ($skeletonComposer['require'] ?? null) : null;
     $skeletonDevelopmentRequirements = is_array($skeletonComposer) ? ($skeletonComposer['require-dev'] ?? null) : null;
     $skeletonScripts = is_array($skeletonComposer) ? ($skeletonComposer['scripts'] ?? null) : null;
+
+    if (!is_array($skeletonRuntimeRequirements)) {
+        $failures[] = 'The default skeleton runtime requirements must remain an explicit Composer map.';
+    } else {
+        $skeletonRuntimePackages = array_keys($skeletonRuntimeRequirements);
+        sort($skeletonRuntimePackages, SORT_STRING);
+
+        if ($skeletonRuntimePackages !== ['php', 'phpthis/framework']) {
+            $failures[] = 'The default skeleton must require only PHP and phpthis/framework.';
+        }
+    }
 
     foreach (
         [

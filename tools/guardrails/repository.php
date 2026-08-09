@@ -1497,6 +1497,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/cli/scheduling-locking.md',
         'docs/cli/testing.md',
         'docs/crud.md',
+        'docs/date-time.md',
         'docs/file-transfers/README.md',
         'docs/file-transfers/deployment.md',
         'docs/file-transfers/emission.md',
