@@ -98,6 +98,7 @@ docs/file-transfers/storage-ownership.md
 docs/file-transfers/testing.md
 docs/file-transfers/upload-errors.md
 docs/file-transfers/upload-value.md
+docs/frontend-integration.md
 docs/getting-started.md
 docs/guardrails.md
 docs/jobs.md

@@ -1512,6 +1512,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/file-transfers/testing.md',
         'docs/file-transfers/upload-errors.md',
         'docs/file-transfers/upload-value.md',
+        'docs/frontend-integration.md',
         'docs/getting-started.md',
         'docs/jobs.md',
         'docs/jobs/README.md',

@@ -29,6 +29,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Explain current PHPThis behavior | `docs/knowledge-map.md` | relevant contract, source, and nearest tests |
 | Change route grammar, matching, or route composition | `.ai/routing.md` | route manifest, `src/Routing/`, request delivery, and route tests |
 | Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php`, and nearest behavior tests |
+| Change frontend integration or application-owned HTML rendering | `.ai/http.md` | `docs/frontend-integration.md`, exact HTTP paths, and behavior evidence; add other concern guides only when entered |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | reader, boundary, front controller, and boundary tests |
 | Parse or change external values | `.ai/types.md` | operation-specific boundary value, failure map, and adversarial tests |
 | Change date, time, timezone, duration, or clock behavior | `.ai/types.md` | `docs/date-time.md`, the exact operation source and representation, and boundary or clock tests |

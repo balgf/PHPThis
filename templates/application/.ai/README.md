@@ -29,6 +29,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
 | Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
 | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
+| Build or change frontend integration or application-owned HTML rendering | installed `vendor/phpthis/framework/docs/frontend-integration.md` | `.ai/architecture.md`, `.ai/testing.md`, and exact HTTP paths; add other concern guides only when entered |
 | Select or set up a database engine | `.ai/change-workflow.md` | prompt and current configuration/data facts before any external action |
 | Change deployment configuration | `.ai/configuration.md` | one environment-reading file, typed values, composition, and parser tests |
 | Change a non-simple route or request input | installed `vendor/phpthis/framework/docs/request-handling.md` | route manifest and only the application guides for concerns actually entered |
