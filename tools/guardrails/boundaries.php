@@ -1022,6 +1022,173 @@ function boundaryGuardrailFailures(string $root): array
         $failures,
     );
 
+    $transactionalEmailGuidanceArtifactMarkers = [
+        '.ai/README.md' => [
+            '| Change email guidance or application email context | `.ai/application-context.md` | `docs/email.md`, task routes, integration context, package inventory, focused guardrails, and installed-consumer evidence |',
+        ],
+        '.ai/application-context.md' => [
+            '`docs/email.md`',
+            'Keep transactional email composition and delivery application-owned.',
+            'Require `.ai/integrations.md` to record `NOT_APPLICABLE(EMAIL)`',
+            'Route adoption through installed `vendor/phpthis/framework/docs/email.md`',
+            'do not add another always-read context file or template a framework mailer, renderer, notification system, queue, worker, webhook receiver, provider, or runtime dependency.',
+        ],
+        'docs/email.md' => [
+            '# Application-owned transactional email',
+            'PHPThis provides no mail transport or email-rendering runtime.',
+            'The checked `user.welcome` example is not an email implementation.',
+            '`RecordUserWelcomeDelivery` records one idempotent database effect',
+            'Email HTML is a distinct MIME output sink.',
+            'replace `NOT_APPLICABLE(EMAIL)` in application `.ai/integrations.md` with a reviewed adoption record.',
+            'Separate deterministic message composition from transport and provider I/O.',
+            'one operation-specific final readonly message or view model containing already validated values.',
+            'Select a template only through a finite code-owned choice',
+            'Template execution performs no database or network I/O, filesystem discovery, service lookup, session or environment access, mutable-global access, or dynamic code execution.',
+            'Every message has an intentionally authored UTF-8 `text/plain` body.',
+            'authoritative plain text must not be produced by naively stripping HTML.',
+            'the renderer\'s finite public or operational failure mapping without template values or exception details;',
+            'template input cardinality, execution timeout or other effective execution bound, and maximum rendered bytes;',
+            'A template package is optional.',
+            '## Encode at each output context',
+            'every deliberate raw-output boundary is finite, code-owned, named, reviewed, and tested with adversarial values.',
+            'Build absolute reviewed HTTPS links from typed canonical application configuration.',
+            'Never derive their origin, scheme, authority, or base path from an untrusted `Host`, `Forwarded`, or `X-Forwarded-*` request header.',
+            'Do not use native `mail()` or hand-build MIME boundaries, header folding, address encoding, or transfer encoding.',
+            'Keep these identities distinct:',
+            'Reject CR, LF, NUL, and the selected package\'s other invalid control characters in every value that can reach a header.',
+            'Never accept a user-selected header name, raw header line, MIME part type, transfer encoding, or boundary.',
+            'Record and enforce limits for recipient count, header count and bytes, each text and HTML body, attachment count and bytes, inline-image count and bytes, and total encoded message bytes.',
+            '## One explicit transport boundary',
+            'the exact package and version, provider and API or SMTP contract version, and supported feature subset;',
+            'separate finite connect, operation, and total timeouts;',
+            'dependency and contract update cadence plus redacted behavior for every known and unknown failure.',
+            'Provider acceptance means only that the selected provider accepted a request under its contract.',
+            'Permit synchronous sending only after the application explicitly accepts and tests its latency, timeout, provider-outage, client-disconnect, process-termination, duplicate-submission, and public-failure consequences',
+            'An external call does not belong inside the business database transaction.',
+            'When delivery must survive request or process termination, prefer a durable deferred intent',
+            'The current `jobs:run-one` example remains a one-delivery application console operation;',
+            'Preserve at-least-once semantics.',
+            'one bounded business-event idempotency key distinct from recipient-controlled input;',
+            'provider idempotency support and key scope, retention window, collision policy, and unsupported cases;',
+            'durable internal request identity and any provider request, message, and receipt identifiers;',
+            'ambiguous-timeout behavior when the provider may have accepted a request but the application received no conclusive response;',
+            'finite attempt count and code-owned backoff, with retryable and terminal classifications;',
+            'redacted dead-letter inspection and retention;',
+            'authoritative reconciliation inputs, cadence, timeout, and unavailable-provider behavior;',
+            'compensation policy when the external effect cannot be reversed;',
+            'the identity authorized to perform an operator replay and the checks that preserve idempotency and audit evidence.',
+            'Treat bounce, complaint, suppression, unsubscribe, and delivery-status webhooks as separate external integrations.',
+            'SPF, DKIM, DMARC, sender and domain verification, consent, unsubscribe and legal policy',
+            'Keep credentials, recipient data, message bodies, rendered HTML and text, link or action tokens, provider responses, exception details, and webhook payloads out of default logs and durable diagnostic codes.',
+            'Composition tests cover address and header injection, finite template selection, every output-context encoder, every deliberate raw boundary, intentional text and HTML semantic parity, absolute HTTPS links and token encoding, supported locales, recipient and byte limits, attachments and inline images when adopted, renderer failures, and deterministic semantic composition.',
+            'Inspect composed messages semantically through the selected mail or MIME package.',
+            'Transport tests cover success, provider rejection, authentication failure, rate limiting, retryable and terminal failures, ambiguous timeout, provider-idempotent retry, redaction, reconciliation, and dead-letter behavior without contacting production.',
+            'Prove that synchronous failure follows its recorded public contract and that deferred failure follows its recorded at-least-once lifecycle.',
+            'Use only a local fake, captured transport, or explicitly approved provider sandbox for integration evidence.',
+            '## Unsupported framework boundary',
+            'Adopting email changes no Consumer Contract or Strict Profile requirement.',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Compose, deliver, or review transactional email | `docs/email.md`;',
+            'verify that the welcome-delivery example remains a database-effect proof and that no framework mailer, renderer, queue, worker, or webhook receiver was implied',
+        ],
+        'skeleton/.ai/README.md' => [
+            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
+        ],
+        'skeleton/.ai/integrations.md' => [
+            '`NOT_APPLICABLE`: the starter application contacts no external services and performs no external side effects.',
+            '`NOT_APPLICABLE(EMAIL)`',
+            'Before adoption, read installed `vendor/phpthis/framework/docs/email.md`',
+            'Do not add a framework mailer, renderer, notification system, queue, worker, or webhook receiver.',
+        ],
+        'templates/application/.ai/README.md' => [
+            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
+        ],
+        'templates/application/.ai/integrations.md' => [
+            '## Transactional email boundary',
+            'Adoption or `NOT_APPLICABLE(EMAIL)`',
+            '{{EMAIL_COMPOSITION_BOUNDARY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_PACKAGE_CONTRACT_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_RENDERING_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_OUTPUT_AND_ADDRESS_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_RESOURCE_BOUNDS_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_TRANSPORT_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_DELIVERY_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_WEBHOOK_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_OPERATIONS_AND_EVIDENCE_OR_NOT_APPLICABLE}}',
+            'PHPThis provides no mail transport or email-rendering runtime;',
+            'Do not use native `mail()`, hand-build MIME, or add a framework mailer, renderer, notification system, queue, worker, webhook receiver, provider, or hidden retry.',
+        ],
+        'tools/package-files.txt' => [
+            'docs/email.md',
+        ],
+        'tools/guardrails/repository.php' => [
+            "'docs/email.md',",
+        ],
+        'tools/guardrails/distribution.php' => [
+            'Framework runtime dependencies must remain native PHP and extensions:',
+            'The default skeleton must require only PHP and phpthis/framework.',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);',
+            'function proveInstalledTransactionalEmailGuidanceDistribution(',
+            'PASS installed application-owned transactional email guidance distribution',
+        ],
+        'docs/guardrails.md' => [
+            'transactional-email guidance, installed task and integration routes, exact package inventory, and Composer dependency checks keep composition, MIME, rendering, delivery, provider operations, and evidence application-owned',
+            'without adding a framework mailer, renderer, notification system, queue, worker, webhook receiver, or runtime dependency',
+            'The transactional-email guidance guard pins the dedicated installed guide',
+            'It adds no framework mailer, renderer, notification system, provider adapter, queue, worker, webhook receiver, runtime dependency, consumer-checker rule, behavior requirement, or `PHT` diagnostic.',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $transactionalEmailGuidanceArtifactMarkers,
+        'application-owned transactional email guidance',
+        $failures,
+    );
+
+    $forbiddenTransactionalEmailRuntimePathPattern = '/(?:email|mail(?:er)?|mime|smtp|notifications?)/i';
+    $transactionalEmailFrameworkSourceFiles = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),
+    );
+
+    foreach ($transactionalEmailFrameworkSourceFiles as $transactionalEmailFrameworkSourceFile) {
+        if (
+            !$transactionalEmailFrameworkSourceFile instanceof SplFileInfo
+            || !$transactionalEmailFrameworkSourceFile->isFile()
+        ) {
+            continue;
+        }
+
+        $relativePath = substr($transactionalEmailFrameworkSourceFile->getPathname(), strlen($root) + 1);
+
+        if (preg_match($forbiddenTransactionalEmailRuntimePathPattern, $relativePath) === 1) {
+            $failures[] = "Transactional-email runtime mechanism must remain outside framework source: {$relativePath}.";
+        }
+    }
+
+    $transactionalEmailPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+    if (is_string($transactionalEmailPackageInventory)) {
+        $transactionalEmailPackagePaths = preg_split('/\R/', $transactionalEmailPackageInventory);
+
+        if (is_array($transactionalEmailPackagePaths)) {
+            foreach ($transactionalEmailPackagePaths as $transactionalEmailPackagePath) {
+                if (
+                    str_starts_with($transactionalEmailPackagePath, 'src/')
+                    && preg_match(
+                        $forbiddenTransactionalEmailRuntimePathPattern,
+                        $transactionalEmailPackagePath,
+                    ) === 1
+                ) {
+                    $failures[] = "Transactional-email runtime mechanism must remain outside the framework package API: {$transactionalEmailPackagePath}.";
+                }
+            }
+        }
+    }
+
     $finiteDataPathArtifactMarkers = [
         'docs/decisions/022-application-owned-finite-data-paths.md' => [
             'Status: accepted',

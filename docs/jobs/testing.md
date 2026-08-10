@@ -14,4 +14,4 @@ An adopted durable-job path requires automated behavior evidence. At minimum pro
 
 Use a real file-backed SQLite fixture with the deployed feature level. Tests must control the application clock explicitly and sample it again before every fenced transition; a claim-time snapshot is not sufficient proof that a lease remains current after handler work.
 
-See [the complete durable-jobs guide](../jobs.md) and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md).
+Production supervisor evidence is separately required by [externally supervised one-shot durable jobs](operations.md). See [the complete durable-jobs guide](../jobs.md) and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md).

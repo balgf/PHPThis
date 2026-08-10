@@ -78,9 +78,15 @@ function operationGuardrailFailures(string $root): array
         ],
         '.ai/jobs.md' => [
             '# Durable jobs contract',
+            'Use [Externally supervised one-shot durable jobs](../docs/jobs/operations.md) as the canonical production-operations guide when continual consumption or worker deployment is involved.',
             'same `Connection`, in the same explicit SQLite transaction',
             'Treat delivery as at-least-once.',
             'claim and finalize zero or one delivery',
+            '`schedule:run` is a bounded cadence-gated pass that may invoke the operation once and is not the ordinary queue-draining worker.',
+            'Every finite `jobs:run-one` outcome—`idle`, `completed`, `retry_scheduled`, and `dead_lettered`—exits `0`',
+            'Require positive bounded idle pacing or equivalent supervisor delay;',
+            'SQLite has one writer, and its busy timeout does not add write capacity',
+            'A production adopter separately supplies the deployment and supervisor evidence required by the operations guide.',
             'generic framework command map',
             'Do not add an ORM',
         ],
@@ -90,14 +96,19 @@ function operationGuardrailFailures(string $root): array
         ],
         'docs/jobs.md' => [
             'one accepted durable-job recipe and no framework queue mechanism',
+            '[externally supervised one-shot durable jobs](jobs/operations.md) is the focused canonical production-operations guide.',
             'This is at-least-once delivery.',
             'one finite complete `UPDATE ... RETURNING` statement',
             'claim-time snapshot is not sufficient',
+            'failure-only restart behavior does not provide continual consumption.',
+            'Each enabled supervisor slot requires a positive bounded idle delay or equivalent pacing',
+            'Production one-offs also stay in the finite tested application console rather than an arbitrary expression process.',
             'PHPThis ships no job or envelope type',
         ],
         'docs/jobs/README.md' => [
             'Durable-job knowledge index',
             'SQLite schema',
+            '[Externally supervised one-shot operations](operations.md): canonical production topology, direct continual consumption, supervisor policy, SQLite capacity, monitoring, recovery, and reconsideration triggers.',
         ],
         'docs/jobs/envelope.md' => [
             'bounded untrusted input',
@@ -108,8 +119,32 @@ function operationGuardrailFailures(string $root): array
             'freshly observed transition time',
         ],
         'docs/jobs/operations.md' => [
+            '# Externally supervised one-shot durable jobs',
+            'This is the focused canonical operations guide for continual consumption',
+            'The supervisor is long-running; each PHP worker process is one-shot:',
             'Each invocation creates a fresh connection',
+            'It is not the ordinary queue-draining worker.',
+            'A supervisor configured to restart only after failure therefore stops after the first expected result',
+            'the separately owned supervisor and the location and owner of its configuration, without making a named process manager or platform part of PHPThis;',
+            'the exact application console invocation, deployment identity, configuration source and redaction boundary, and access to the selected database path;',
+            'the invocation or restart delay, worker-slot count, total concurrency limit, process timeout, and forced-termination policy;',
+            'the deployment replacement and configuration-change behavior, including when old children stop and fresh composition begins;',
+            'the shutdown behavior and the finite allowance before a current child is terminated;',
+            'restart-storm protection for repeated startup, configuration, database, or other operational failures.',
+            'Every enabled slot uses a positive bounded idle delay or equivalent supervisor pacing',
+            'Clean stopping has three steps:',
+            'Recovery relies on the existing finite SQLite lease:',
+            'SQLite permits one writer at a time.',
             'repository proves behavior on file-backed fixtures',
+            '## Required production evidence',
+            'launch another fresh process after a successful expected exit `0`;',
+            'drain multiple queued jobs through multiple fresh processes, with each process claiming and finalizing at most one delivery;',
+            'raise the recorded queue-depth, oldest-due-age, duration, operational-failure, and dead-letter-growth capacity alarms.',
+            'A bounded multi-delivery process or an indefinite worker loop requires a separate accountable decision and evidence.',
+            'queue-age or throughput objectives remain unmet after the application tunes and proves one-shot supervision;',
+            'PHP startup and fresh-composition cost materially dominates delivery work;',
+            'independent applications reproduce the same smaller lifecycle need.',
+            'Strict Profile diagnostic `PHT003`',
         ],
         'docs/jobs/schema.md' => [
             'SQLite `STRICT` tables',
@@ -119,6 +154,21 @@ function operationGuardrailFailures(string $root): array
         'docs/jobs/testing.md' => [
             'real worker subprocess terminated after claim',
             'sample it again before every fenced transition',
+            'Production supervisor evidence is separately required by [externally supervised one-shot durable jobs](operations.md).',
+        ],
+        'docs/cli.md' => [
+            'Continual durable-job consumption follows the separate [externally supervised one-shot operations guide](jobs/operations.md).',
+            '`schedule:run` remains a bounded cadence-gated scheduled pass that may call the same operation once; it is not the ordinary queue-draining worker.',
+            'A supervisor configured to restart only after failure will stop after any expected outcome.',
+            'Continual consumption therefore launches another fresh process after expected exit `0`',
+            'the production evidence required by [the durable-job operations guide](jobs/operations.md)',
+        ],
+        'docs/cli/README.md' => [
+            'continual job consumption instead follows [externally supervised one-shot operations](../jobs/operations.md).',
+        ],
+        'docs/cli/scheduling-locking.md' => [
+            'It is a bounded scheduled pass, not the ordinary queue-draining worker;',
+            'continual consumption directly supervises fresh `jobs:run-one` processes under [the durable-job operations guide](../jobs/operations.md).',
         ],
         'docs/decisions/024-application-owned-sqlite-durable-jobs.md' => [
             'Status: accepted',
@@ -142,10 +192,14 @@ function operationGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'The durable-job guard retains ADR 024',
+            'the canonical externally supervised continual-consumption policy',
+            'The installed proof rereads the packaged job, CLI, operations, index, testing, and application-context guidance.',
+            'it does not inspect or run a process manager, drain a real production queue, certify a filesystem or SQLite deployment, measure throughput or contention, activate an alarm',
             'continued absence from framework core and package runtime APIs',
         ],
         'docs/knowledge-map.md' => [
-            '`docs/jobs.md`, `docs/security.md`',
+            '`docs/jobs.md`, `docs/security.md`, `docs/jobs/operations.md` for production supervision',
+            'externally supervised successful-exit repetition, pacing, stop, capacity, and alarm policy',
             'verify that no framework queue mechanism exists',
         ],
         'docs/security.md' => [
@@ -273,8 +327,14 @@ function operationGuardrailFailures(string $root): array
         ],
         'tools/package-files.txt' => [
             'docs/decisions/024-application-owned-sqlite-durable-jobs.md',
+            'docs/jobs/operations.md',
             'docs/jobs/schema.md',
             'templates/application/.ai/jobs.md',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);',
+            'function proveInstalledOneShotWorkerSupervisionGuidanceDistribution(',
+            'PASS installed one-shot worker supervision guidance distribution',
         ],
     ];
 

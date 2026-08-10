@@ -4,7 +4,7 @@ PHPThis has one accepted durable-job recipe and no framework queue mechanism. Th
 
 This is at-least-once delivery. It is not a claim that every application needs background work, that SQLite is a universal queue backend, or that an external side effect can execute exactly once.
 
-For focused AI retrieval, use the [job knowledge index](jobs/README.md): envelope and dispatch, lifecycle and fencing, operations, and required testing are split into small authoritative slices. This page remains the complete decision guide.
+For focused AI retrieval, use the [job knowledge index](jobs/README.md): envelope and dispatch, lifecycle and fencing, operations, and required testing are split into small authoritative slices. This page remains the complete decision guide; [externally supervised one-shot durable jobs](jobs/operations.md) is the focused canonical production-operations guide.
 
 ## Adoption boundary
 
@@ -14,7 +14,7 @@ Before adopting this recipe, the accountable human records:
 - the exact SQLite version, database path and filesystem topology, locking mode, busy-timeout policy, and supported worker concurrency;
 - the producer transaction, finite job types and envelope versions, payload bounds, idempotency-key owner, and retention classification;
 - lease duration, maximum attempts, exact finite backoff schedule, diagnostic-code catalogue, clock source, and clock-skew assumptions;
-- the worker supervisor, invocation interval, timeout and forced-termination policy, deployment user, shutdown behavior, and capacity alarm;
+- the worker supervisor and configuration, invocation or restart delay, worker-slot count and concurrency limit, timeout and forced-termination policy, deployment identity and configuration source, shutdown and deployment-replacement behavior, restart-storm protection, and bounded capacity alarms;
 - completed-row and dead-letter retention, inspection, replay, cancellation, schema migration, backup, and recovery ownership; and
 - whether each effect is confined to the same SQLite database or reaches an external system with weaker guarantees.
 
@@ -67,7 +67,9 @@ Each worker process or invocation performs exactly one bounded cycle:
 6. finalize a successful idempotent database effect and completion together, or record one retry or dead-letter transition; and
 7. emit one bounded redacted terminal result and exit.
 
-A supervisor creates repetition by starting another process. The recipe deliberately has no long-running loop, reused container or connection, mutable state carried between deliveries, signal subsystem, automatic heartbeat, implicit retry, or graceful-stop protocol. Stopping cleanly means the supervisor does not launch the next invocation. ADR 025 keeps this composition application-owned: the accepted example routes the one-job operation through its sole console as `jobs:run-one`, and ADR 028's current `schedule:run` may call that exact in-process operation once under its explicit UTC cadence and Redis owner-token lease. Neither decision adds a framework command map, scheduler, process manager, or second job path.
+A supervisor creates repetition by starting another process after each finite result. Every expected example outcome—`idle`, `completed`, `retry_scheduled`, and `dead_lettered`—exits `0`, so failure-only restart behavior does not provide continual consumption. Each enabled supervisor slot requires a positive bounded idle delay or equivalent pacing so an empty queue cannot cause an uncontrolled hot restart loop. The recipe deliberately has no long-running loop, reused container or connection, mutable state carried between deliveries, signal subsystem, automatic heartbeat, implicit retry, or graceful-stop protocol. Stopping cleanly means the supervisor stops launching new invocations, then allows or finitely terminates the current child according to its recorded policy; post-termination recovery still waits for lease expiry and remains fenced by the lease token.
+
+ADR 025 keeps this composition application-owned: the accepted example routes the one-job operation through its sole console as `jobs:run-one`. For continual consumption the external supervisor invokes that command directly. ADR 028's current `schedule:run` is instead a bounded scheduled pass that may call the same operation once under its explicit UTC cadence and Redis owner-token lease; it is not the ordinary queue-draining worker. Neither decision adds a framework command map, scheduler, process manager, or second job path. The complete stack-neutral supervisor policy, capacity signals, production evidence, and reconsideration triggers are defined in [the operations guide](jobs/operations.md).
 
 ## Development exploration is not delivery
 
@@ -118,7 +120,7 @@ The application uses a real file-backed SQLite fixture and proves:
 - output and durable diagnostics omit the envelope, payload, idempotency key, exception message, stack, SQL, bindings, DSN, credentials, and external response values; and
 - every transition has an explicit query budget and bounded trace, with constant statement counts across materially different fixture cardinalities.
 
-ADR 025 fixes the checked example's console mapping: every finite worker outcome exits `0` as one redacted `{"command":"jobs:run-one","outcome":"..."}` stdout line, while operational or unexpected failure exits `1` with only `{"error":"command_failed"}` on stderr. That is an application supervisor contract, not a framework CLI API. See [the application CLI and scheduler guide](cli.md).
+ADR 025 fixes the checked example's console mapping: every finite worker outcome exits `0` as one redacted `{"command":"jobs:run-one","outcome":"..."}` stdout line, while operational or unexpected failure exits `1` with only `{"error":"command_failed"}` on stderr. That is an application supervisor contract, not a framework CLI API. A production adopter also proves its actual supervisor's successful-exit repetition, fresh-process backlog draining, idle pacing, clean stop, post-expiry crash recovery, concurrency and timeout bounds, and capacity alarms as required by [the operations guide](jobs/operations.md). See [the application CLI and scheduler guide](cli.md).
 
 ## Unsupported boundary
 

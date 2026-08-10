@@ -104,6 +104,8 @@ try {
     proveInstalledReferenceClarityDistribution($installedFramework);
     proveInstalledNativeDateTimeGuidanceDistribution($project, $installedFramework);
     proveInstalledFrontendIntegrationGuidanceDistribution($project, $installedFramework);
+    proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
+    proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
@@ -1524,6 +1526,249 @@ function proveInstalledFrontendIntegrationGuidanceDistribution(
     }
 
     fwrite(STDOUT, "PASS installed frontend integration guidance distribution\n");
+}
+
+function proveInstalledTransactionalEmailGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/README.md' => [
+            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
+        ],
+        $project . '/.ai/integrations.md' => [
+            '`NOT_APPLICABLE`: the starter application contacts no external services and performs no external side effects.',
+            '`NOT_APPLICABLE(EMAIL)`',
+            'Before adoption, read installed `vendor/phpthis/framework/docs/email.md`',
+            'Do not add a framework mailer, renderer, notification system, queue, worker, or webhook receiver.',
+        ],
+        $installedFramework . '/docs/email.md' => [
+            '# Application-owned transactional email',
+            'PHPThis provides no mail transport or email-rendering runtime.',
+            'The checked `user.welcome` example is not an email implementation.',
+            '`RecordUserWelcomeDelivery` records one idempotent database effect',
+            'Email HTML is a distinct MIME output sink.',
+            'replace `NOT_APPLICABLE(EMAIL)` in application `.ai/integrations.md` with a reviewed adoption record.',
+            'Separate deterministic message composition from transport and provider I/O.',
+            'one operation-specific final readonly message or view model containing already validated values.',
+            'Select a template only through a finite code-owned choice',
+            'Template execution performs no database or network I/O, filesystem discovery, service lookup, session or environment access, mutable-global access, or dynamic code execution.',
+            'Every message has an intentionally authored UTF-8 `text/plain` body.',
+            'authoritative plain text must not be produced by naively stripping HTML.',
+            'the renderer\'s finite public or operational failure mapping without template values or exception details;',
+            'template input cardinality, execution timeout or other effective execution bound, and maximum rendered bytes;',
+            'A template package is optional.',
+            '## Encode at each output context',
+            'every deliberate raw-output boundary is finite, code-owned, named, reviewed, and tested with adversarial values.',
+            'Build absolute reviewed HTTPS links from typed canonical application configuration.',
+            'Never derive their origin, scheme, authority, or base path from an untrusted `Host`, `Forwarded`, or `X-Forwarded-*` request header.',
+            'Do not use native `mail()` or hand-build MIME boundaries, header folding, address encoding, or transfer encoding.',
+            'Keep these identities distinct:',
+            'Reject CR, LF, NUL, and the selected package\'s other invalid control characters in every value that can reach a header.',
+            'Never accept a user-selected header name, raw header line, MIME part type, transfer encoding, or boundary.',
+            'Record and enforce limits for recipient count, header count and bytes, each text and HTML body, attachment count and bytes, inline-image count and bytes, and total encoded message bytes.',
+            '## One explicit transport boundary',
+            'the exact package and version, provider and API or SMTP contract version, and supported feature subset;',
+            'separate finite connect, operation, and total timeouts;',
+            'dependency and contract update cadence plus redacted behavior for every known and unknown failure.',
+            'Provider acceptance means only that the selected provider accepted a request under its contract.',
+            'Permit synchronous sending only after the application explicitly accepts and tests its latency, timeout, provider-outage, client-disconnect, process-termination, duplicate-submission, and public-failure consequences',
+            'An external call does not belong inside the business database transaction.',
+            'When delivery must survive request or process termination, prefer a durable deferred intent',
+            'The current `jobs:run-one` example remains a one-delivery application console operation;',
+            'Preserve at-least-once semantics.',
+            'one bounded business-event idempotency key distinct from recipient-controlled input;',
+            'provider idempotency support and key scope, retention window, collision policy, and unsupported cases;',
+            'durable internal request identity and any provider request, message, and receipt identifiers;',
+            'ambiguous-timeout behavior when the provider may have accepted a request but the application received no conclusive response;',
+            'finite attempt count and code-owned backoff, with retryable and terminal classifications;',
+            'redacted dead-letter inspection and retention;',
+            'authoritative reconciliation inputs, cadence, timeout, and unavailable-provider behavior;',
+            'compensation policy when the external effect cannot be reversed;',
+            'the identity authorized to perform an operator replay and the checks that preserve idempotency and audit evidence.',
+            'Treat bounce, complaint, suppression, unsubscribe, and delivery-status webhooks as separate external integrations.',
+            'SPF, DKIM, DMARC, sender and domain verification, consent, unsubscribe and legal policy',
+            'Keep credentials, recipient data, message bodies, rendered HTML and text, link or action tokens, provider responses, exception details, and webhook payloads out of default logs and durable diagnostic codes.',
+            'Composition tests cover address and header injection, finite template selection, every output-context encoder, every deliberate raw boundary, intentional text and HTML semantic parity, absolute HTTPS links and token encoding, supported locales, recipient and byte limits, attachments and inline images when adopted, renderer failures, and deterministic semantic composition.',
+            'Inspect composed messages semantically through the selected mail or MIME package.',
+            'Transport tests cover success, provider rejection, authentication failure, rate limiting, retryable and terminal failures, ambiguous timeout, provider-idempotent retry, redaction, reconciliation, and dead-letter behavior without contacting production.',
+            'Prove that synchronous failure follows its recorded public contract and that deferred failure follows its recorded at-least-once lifecycle.',
+            'Use only a local fake, captured transport, or explicitly approved provider sandbox for integration evidence.',
+            '## Unsupported framework boundary',
+            'Adopting email changes no Consumer Contract or Strict Profile requirement.',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Compose, deliver, or review transactional email | `docs/email.md`;',
+            'verify that the welcome-delivery example remains a database-effect proof and that no framework mailer, renderer, queue, worker, or webhook receiver was implied',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
+        ],
+        $installedFramework . '/templates/application/.ai/integrations.md' => [
+            '## Transactional email boundary',
+            'Adoption or `NOT_APPLICABLE(EMAIL)`',
+            '{{EMAIL_COMPOSITION_BOUNDARY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_PACKAGE_CONTRACT_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_RENDERING_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_OUTPUT_AND_ADDRESS_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_RESOURCE_BOUNDS_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_TRANSPORT_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_DELIVERY_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_WEBHOOK_POLICY_OR_NOT_APPLICABLE}}',
+            '{{EMAIL_OPERATIONS_AND_EVIDENCE_OR_NOT_APPLICABLE}}',
+            'PHPThis provides no mail transport or email-rendering runtime;',
+            'Do not use native `mail()`, hand-build MIME, or add a framework mailer, renderer, notification system, queue, worker, webhook receiver, provider, or hidden retry.',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'transactional-email guidance, installed task and integration routes, exact package inventory, and Composer dependency checks keep composition, MIME, rendering, delivery, provider operations, and evidence application-owned',
+            'without adding a framework mailer, renderer, notification system, queue, worker, webhook receiver, or runtime dependency',
+            'The transactional-email guidance guard pins the dedicated installed guide',
+            'It adds no framework mailer, renderer, notification system, provider adapter, queue, worker, webhook receiver, runtime dependency, consumer-checker rule, behavior requirement, or `PHT` diagnostic.',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'application-owned transactional email guidance');
+    requireInstalledNativeRuntimeDependencyBoundary($project, $installedFramework);
+
+    fwrite(STDOUT, "PASS installed application-owned transactional email guidance distribution\n");
+}
+
+function proveInstalledOneShotWorkerSupervisionGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/jobs.md' => [
+            '`NOT_APPLICABLE(JOBS)`',
+            'Before adopting jobs, read installed `vendor/phpthis/framework/docs/jobs.md`',
+            'PHPThis supplies no core queue or worker API.',
+        ],
+        $installedFramework . '/docs/jobs.md' => [
+            '[externally supervised one-shot durable jobs](jobs/operations.md) is the focused canonical production-operations guide.',
+            'failure-only restart behavior does not provide continual consumption.',
+            'Each enabled supervisor slot requires a positive bounded idle delay or equivalent pacing',
+            'Production one-offs also stay in the finite tested application console rather than an arbitrary expression process.',
+            'A production adopter also proves its actual supervisor\'s successful-exit repetition, fresh-process backlog draining, idle pacing, clean stop, post-expiry crash recovery, concurrency and timeout bounds, and capacity alarms',
+        ],
+        $installedFramework . '/docs/jobs/operations.md' => [
+            '# Externally supervised one-shot durable jobs',
+            'This is the focused canonical operations guide for continual consumption',
+            'The supervisor is long-running; each PHP worker process is one-shot:',
+            'Each invocation creates a fresh connection',
+            'It is not the ordinary queue-draining worker.',
+            'A supervisor configured to restart only after failure therefore stops after the first expected result',
+            'the separately owned supervisor and the location and owner of its configuration, without making a named process manager or platform part of PHPThis;',
+            'the exact application console invocation, deployment identity, configuration source and redaction boundary, and access to the selected database path;',
+            'the invocation or restart delay, worker-slot count, total concurrency limit, process timeout, and forced-termination policy;',
+            'the deployment replacement and configuration-change behavior, including when old children stop and fresh composition begins;',
+            'the shutdown behavior and the finite allowance before a current child is terminated;',
+            'restart-storm protection for repeated startup, configuration, database, or other operational failures.',
+            'Every enabled slot uses a positive bounded idle delay or equivalent supervisor pacing',
+            'Clean stopping has three steps:',
+            'Recovery relies on the existing finite SQLite lease:',
+            'SQLite permits one writer at a time.',
+            '## Required production evidence',
+            'launch another fresh process after a successful expected exit `0`;',
+            'drain multiple queued jobs through multiple fresh processes, with each process claiming and finalizing at most one delivery;',
+            'raise the recorded queue-depth, oldest-due-age, duration, operational-failure, and dead-letter-growth capacity alarms.',
+            'A bounded multi-delivery process or an indefinite worker loop requires a separate accountable decision and evidence.',
+            'queue-age or throughput objectives remain unmet after the application tunes and proves one-shot supervision;',
+            'PHP startup and fresh-composition cost materially dominates delivery work;',
+            'independent applications reproduce the same smaller lifecycle need.',
+            'Strict Profile diagnostic `PHT003`',
+        ],
+        $installedFramework . '/docs/jobs/README.md' => [
+            '[Externally supervised one-shot operations](operations.md): canonical production topology, direct continual consumption, supervisor policy, SQLite capacity, monitoring, recovery, and reconsideration triggers.',
+        ],
+        $installedFramework . '/docs/jobs/testing.md' => [
+            'Production supervisor evidence is separately required by [externally supervised one-shot durable jobs](operations.md).',
+        ],
+        $installedFramework . '/docs/cli.md' => [
+            'Continual durable-job consumption follows the separate [externally supervised one-shot operations guide](jobs/operations.md).',
+            '`schedule:run` remains a bounded cadence-gated scheduled pass that may call the same operation once; it is not the ordinary queue-draining worker.',
+            'A supervisor configured to restart only after failure will stop after any expected outcome.',
+            'Continual consumption therefore launches another fresh process after expected exit `0`',
+            'the production evidence required by [the durable-job operations guide](jobs/operations.md)',
+        ],
+        $installedFramework . '/docs/cli/README.md' => [
+            'continual job consumption instead follows [externally supervised one-shot operations](../jobs/operations.md).',
+        ],
+        $installedFramework . '/docs/cli/scheduling-locking.md' => [
+            'It is a bounded scheduled pass, not the ordinary queue-draining worker;',
+            'continual consumption directly supervises fresh `jobs:run-one` processes under [the durable-job operations guide](../jobs/operations.md).',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '`docs/jobs.md`, `docs/security.md`, `docs/jobs/operations.md` for production supervision',
+            'externally supervised successful-exit repetition, pacing, stop, capacity, and alarm policy',
+            'verify that no framework queue mechanism exists',
+        ],
+        $installedFramework . '/templates/application/.ai/jobs.md' => [
+            '{{JOBS_WORKER_LIFECYCLE_OR_NOT_APPLICABLE}}',
+            'Before adoption, read installed `vendor/phpthis/framework/docs/jobs.md`.',
+            'PHPThis provides no core queue or worker API.',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'the canonical externally supervised continual-consumption policy',
+            'The installed proof rereads the packaged job, CLI, operations, index, testing, and application-context guidance.',
+            'it does not inspect or run a process manager, drain a real production queue, certify a filesystem or SQLite deployment, measure throughput or contention, activate an alarm',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'one-shot worker supervision guidance');
+    requireInstalledNativeRuntimeDependencyBoundary($project, $installedFramework);
+
+    fwrite(STDOUT, "PASS installed one-shot worker supervision guidance distribution\n");
+}
+
+function requireInstalledNativeRuntimeDependencyBoundary(
+    string $project,
+    string $installedFramework,
+): void {
+    $installedComposer = jsonFile($installedFramework . '/composer.json');
+    $installedRuntimeRequirements = $installedComposer['require'] ?? null;
+
+    if (!is_array($installedRuntimeRequirements)) {
+        throw new RuntimeException('Installed framework runtime requirements must be an explicit Composer map.');
+    }
+
+    foreach (array_keys($installedRuntimeRequirements) as $runtimePackage) {
+        if (
+            !is_string($runtimePackage)
+            || (
+                $runtimePackage !== 'php'
+                && !str_starts_with($runtimePackage, 'ext-')
+            )
+        ) {
+            throw new RuntimeException(
+                'Installed framework runtime dependencies must remain native PHP and extensions.',
+            );
+        }
+    }
+
+    $consumerComposer = jsonFile($project . '/composer.json');
+    $consumerRuntimeRequirements = $consumerComposer['require'] ?? null;
+
+    if (!is_array($consumerRuntimeRequirements)) {
+        throw new RuntimeException('Installed skeleton runtime requirements must be an explicit Composer map.');
+    }
+
+    $consumerRuntimePackages = array_keys($consumerRuntimeRequirements);
+
+    foreach ($consumerRuntimePackages as $consumerRuntimePackage) {
+        if (!is_string($consumerRuntimePackage)) {
+            throw new RuntimeException('Installed skeleton runtime requirement names must be strings.');
+        }
+    }
+
+    sort($consumerRuntimePackages, SORT_STRING);
+
+    if ($consumerRuntimePackages !== ['php', 'phpthis/framework']) {
+        throw new RuntimeException(
+            'Installed default skeleton must require only PHP and phpthis/framework.',
+        );
+    }
 }
 
 function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string $installedFramework): void

@@ -3,7 +3,7 @@
 Use this index when a task concerns an operational application command, scheduled pass, or an application-owned migration command. Read [the complete CLI and scheduler guide](../cli.md), ADR 025, [ADR 028](../decisions/028-application-owned-redis-cache-and-schedule-lease.md) for the executable example's Redis lease, and [ADR 043](../decisions/043-engine-specific-application-migration-invariants.md) when migration work applies; read [ADR 027](../decisions/027-application-owned-explicit-sqlite-migrations.md) only for the SQLite reference proof. These smaller pages route an AI to the relevant invariant without inventing a framework console.
 
 - [Arguments and output](arguments-output.md): sole entrypoint, finite job, scheduler, and migration commands, bounded arguments, exit codes, stream bytes, and redaction.
-- [Scheduling and coordination](scheduling-locking.md): explicit UTC cadence, one-pass work, the example's application-private Redis owner-token lease, and known non-deduplication and fencing limits.
+- [Scheduling and coordination](scheduling-locking.md): explicit UTC cadence, one-pass work, the example's application-private Redis owner-token lease, and known non-deduplication and fencing limits; continual job consumption instead follows [externally supervised one-shot operations](../jobs/operations.md).
 - [Composition](composition.md): immutable configuration shared between fresh HTTP, CLI, and migration graphs without a container or mutable request state.
 - [Testing](testing.md): universal real-console failure, redaction, and resource-bound evidence; time and overlap evidence only for scheduled passes; and separate migration-history and writer-coordination evidence under ADR 043.
 
