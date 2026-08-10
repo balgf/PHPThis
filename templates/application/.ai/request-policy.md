@@ -1,6 +1,6 @@
 # Application request policy
 
-Complete this guide before protecting a route. Read installed `vendor/phpthis/framework/docs/request-policy.md` first. Record application facts and accepted decisions here; do not copy credentials or sensitive identifiers.
+Complete this guide before protecting a route. Read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md` first. Record application facts and accepted decisions here; do not copy credentials, signing material, raw-token verifiers, provider secrets, or sensitive identifiers.
 
 ## Protected path
 
@@ -19,12 +19,18 @@ Complete this guide before protecting a route. Read installed `vendor/phpthis/fr
 
 ## Failure and runtime policy
 
-- Credential scheme, parser, verifier, expiry, and revocation: {{CREDENTIAL_POLICY}}
+- Sole credential source, TLS boundary, raw duplicate handling, proxy/SAPI forwarding, strict Bearer grammar, and byte bound: {{AUTHORIZATION_HEADER_BOUNDARY}}
+- Selected JWT, opaque/PAT/API-token, or external-verification profile and explicitly unsupported kinds: {{CREDENTIAL_PROFILE}}
+- Pinned maintained dependency, verifier or timing-safe comparison, exact non-secret configuration, and key or verifier ownership: {{CREDENTIAL_VERIFIER_AND_CONFIGURATION}}
+- Issuance or one-time disclosure, refresh or replacement, authoritative clock, expiry, rotation, revocation, owner, tenant, scope, rate-limit, audit, and redaction: {{CREDENTIAL_LIFECYCLE}}
 - Unauthenticated response and challenge: {{UNAUTHENTICATED_RESPONSE}}
+- Bare reference challenge and explicit non-RFC-6750 compatibility, or fixed non-sensitive auth-param grammar and exact absent/`invalid_request`/`invalid_token`/`insufficient_scope` status and error profile: {{RFC_6750_COMPATIBILITY_POLICY}}
+- Verifier-uncertainty generic `5xx`, no-invalid-token/no-refresh-signal behavior: {{UNVERIFIABLE_CREDENTIAL_RESPONSE}}
 - Ordinary forbidden and cross-tenant response: {{FORBIDDEN_RESPONSE}}
 - Terminal summary: use `.ai/observability.md`; this policy adds no denial-specific field or event.
 - Authenticated and denial cache policy: {{POLICY_RESPONSE_CACHE_CONTROL}}
-- Policy dependency outage behavior: {{POLICY_DEPENDENCY_FAILURE}}
+- Verifier database, trusted-key source, or external-provider I/O, timeout, response bound, budget, trace, cache staleness, and fail-closed outage behavior: {{POLICY_DEPENDENCY_FAILURE}}
+- Frontend storage and XSS boundary, or cookie/session and CSRF policy; CORS and preflight when cross-origin: {{FRONTEND_CREDENTIAL_BOUNDARY}}
 
 ## Data and concurrency
 
@@ -37,6 +43,6 @@ Complete this guide before protecting a route. Read installed `vendor/phpthis/fr
 
 - Focused command: {{REQUEST_POLICY_TEST_COMMAND}}
 - Denial, order, zero-protected-work, redaction, and replacement evidence: {{REQUEST_POLICY_EVIDENCE}}
-- Credential-parser evidence or explicit proof limit: {{CREDENTIAL_PARSER_EVIDENCE_OR_LIMIT}}
+- Raw-boundary, credential-profile, lifecycle, outage, and frontend or non-browser evidence or explicit proof limit: {{CREDENTIAL_EVIDENCE_OR_LIMIT}}
 
 Do not replace or obscure the action-specific adapter with an application-owned request-handler decorator, generic or framework middleware, a policy registry, a request-context bag, service location, discovery, hidden tenant resolution, an implicit or global authorization scope, or stored authorization decisions.

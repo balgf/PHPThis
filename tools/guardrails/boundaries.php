@@ -547,7 +547,7 @@ function boundaryGuardrailFailures(string $root): array
         ],
         '.ai/request-policy.md' => [
             'authenticate -> resolve tenant -> authorize -> protected handler',
-            'PHPThis provides no credential parser or verifier.',
+            'PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.',
             'Cache-Control: private, no-store',
         ],
         'docs/knowledge-map.md' => [
@@ -557,7 +557,7 @@ function boundaryGuardrailFailures(string $root): array
             'PHPThis keeps authentication, tenant resolution, and authorization application-owned.',
             'Missing, malformed, and rejected credentials map to one generic `401`',
             'Ordinary forbidden and cross-tenant decisions map to the same generic `403`.',
-            'When a policy reads storage, give it a separately named connection, budget, and trace from protected handler work.',
+            'When a policy reads storage, a trusted-key endpoint, or an external verifier, give it a separately named dependency, budget, trace, timeout, response bound, cache-staleness rule, and outage proof distinct from protected handler work.',
         ],
         'docs/decisions/020-application-owned-request-policy.md' => [
             'Status: accepted',
@@ -597,7 +597,12 @@ function boundaryGuardrailFailures(string $root): array
         ],
         'templates/application/.ai/request-policy.md' => [
             '{{REQUEST_POLICY_ADAPTER_PATH}}',
-            '{{CREDENTIAL_PARSER_EVIDENCE_OR_LIMIT}}',
+            '{{AUTHORIZATION_HEADER_BOUNDARY}}',
+            '{{CREDENTIAL_PROFILE}}',
+            '{{CREDENTIAL_VERIFIER_AND_CONFIGURATION}}',
+            '{{CREDENTIAL_LIFECYCLE}}',
+            '{{RFC_6750_COMPATIBILITY_POLICY}}',
+            '{{CREDENTIAL_EVIDENCE_OR_LIMIT}}',
         ],
         'skeleton/.ai/request-policy.md' => [
             'NOT_APPLICABLE(REQUEST_POLICY)',
@@ -611,6 +616,10 @@ function boundaryGuardrailFailures(string $root): array
     ];
 
     requireGuardrailArtifactMarkers($root, $requestPolicyArtifactMarkers, 'request-policy', $failures);
+
+    foreach (statelessAuthenticationGuidanceFailures($root) as $failure) {
+        $failures[] = $failure;
+    }
 
     $typedInputBoundaryArtifactMarkers = [
         '.ai/README.md' => [
@@ -1518,4 +1527,357 @@ function boundaryGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, $observabilityArtifactMarkers, 'observability', $failures);
 
     return $failures;
+}
+
+/** @return list<string> */
+function statelessAuthenticationGuidanceFailures(string $root): array
+{
+    $failures = [];
+    $artifactMarkers = [
+        '.ai/README.md' => [
+            '| Change authentication, stateless Bearer/JWT/PAT/external-IdP policy, tenant resolution, or authorization | `.ai/request-policy.md` | `docs/stateless-authentication.md`, action-specific policy path, protected work, and denial tests |',
+        ],
+        '.ai/application-context.md' => [
+            'route adoption through installed `vendor/phpthis/framework/docs/stateless-authentication.md` plus the application\'s `.ai/request-policy.md`.',
+            'Require one strict Bearer header over TLS with no query, body, cookie, path, alternate-header, or fallback source',
+        ],
+        '.ai/request-policy.md' => [
+            'For Bearer, JWT, opaque/PAT/API-token, or external-identity-provider adoption, also follow `docs/stateless-authentication.md`',
+            'Treat PHPThis as Bearer-ready only at the bounded lowercase `authorization` header seam.',
+            'Accept one strict Bearer credential over TLS with no query, body, cookie, path, alternate-header, or fallback credential source.',
+            'Test Bearers are synthetic only and are never production credential evidence.',
+            'explicitly non-RFC-6750-compatible',
+        ],
+        'docs/stateless-authentication.md' => [
+            '# Application-owned stateless authentication',
+            'PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.',
+            'This guide changes no core source, runtime dependency, Consumer Contract, Strict Profile, checker rule, or `PHT` diagnostic.',
+            'Here, stateless means that each request presents its credential without using PHPThis session or cookie identity.',
+            'an application-owned verifier may perform explicit bounded database, trusted-key, or external-provider I/O under the budgets and outage contract below.',
+            "\$request->headers['authorization'] ?? null",
+            'use TLS with certificate validation for every credential-bearing request',
+            'The application authenticator then accepts one Bearer representation under a smaller recorded byte bound and finite grammar.',
+            'HTTP authentication-scheme matching is ASCII case-insensitive, while the credential bytes are case-sensitive and opaque.',
+            'Do not fall back to a query parameter, request body, cookie, path segment, alternate header, or previously stored identity',
+            '`WWW-Authenticate: Bearer` is response semantics for the generic unauthenticated result.',
+            'That disclosure-minimizing reference challenge and error policy is not RFC-6750-compatible',
+            'Record the exact absent-credential challenge, `invalid_request` status and error mapping',
+            '`invalid_token` `401` mapping for definitively invalid credentials',
+            '`insufficient_scope` `403` mapping where that application can disclose the classification safely',
+            'test Bearers are synthetic only; neither is production credential evidence.',
+            'Never guess a format after one verifier fails, accept the same bytes under multiple profiles, or use a fallback verifier.',
+            'An ordinary Bearer credential is replayable by any party that possesses it.',
+            'Record whether sender constraint is not applicable or is a separately adopted and proved profile.',
+            'one fixed code-owned set of acceptable algorithms, selected independently of the received `alg`',
+            'one fixed JOSE protection and serialization profile',
+            'UTF-8 for the protected header and claims JSON, one finite allowlist of protected-header parameter names',
+            'an untrusted `x5c`, embedded key, certificate, thumbprint, or other header never supplies or substitutes verification trust material',
+            'rejection of duplicate protected-header and claim member names, or one explicitly recorded canonical duplicate-member behavior of the selected library',
+            'the exact trusted issuer and its binding to the verification keys',
+            'the exact required audience for this API',
+            'the required `exp`, permitted `nbf` and `iat` relationships, maximum accepted lifetime, authoritative injected clock, and finite allowed clock skew',
+            'a received `jku`, `x5u`, issuer, or other claim never selects an arbitrary file, database expression, class, command, or outbound URL',
+            'Local signature verification does not prove current revocation.',
+            'never make the raw value retrievable later, and store only a purpose-built one-way verification value rather than the raw credential',
+            'Name the exact maintained verifier construction:',
+            'Record what an offline database reader and an application-host compromise can recover.',
+            'Require a timing-safe final secret comparison',
+            'Every request checks the verifier, active state, expiry, revocation, owner state, tenant relationship, and scopes needed as input to the separate authorizer.',
+            'A token-controlled issuer or key URL never selects an outbound destination.',
+            'Disable HTTP redirects for key retrieval and introspection by default.',
+            'send the exact protocol `POST` to the configured endpoint over TLS with certificate validation',
+            'A trusted `active: false` is definitive credential rejection.',
+            'provider outage is verifier uncertainty: it fails closed and never produces an authenticated principal, but it is not evidence that the caller\'s credential is invalid.',
+            'Derive its lookup key from the credential with one selected maintained one-way keyed primitive and a cache-specific key',
+            'This resource-server guide does not define an OAuth authorization server or client flow.',
+            'following [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700)',
+            'authenticate -> resolve tenant -> authorize -> protected handler',
+            'Authorization runs for the current named action on every request.',
+            'one named generic `5xx` application failure, distinct from a definitive invalid-credential `401`',
+            'Missing, malformed, oversized, expired, not-yet-valid, revoked, definitively inactive, wrong-issuer, wrong-audience, wrong-type, invalid-signature, and otherwise definitively rejected credentials share the application\'s generic `401` Bearer response.',
+            'Production acceptance requires evidence for the consuming application\'s selected parser, verifier, credential lifecycle, external dependencies, deployment, and clients.',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Add, explain, or review stateless Bearer, JWT, opaque/PAT/API-token, external-provider authentication, tenant resolution, or authorization | `docs/stateless-authentication.md`, `docs/request-policy.md`, `docs/security.md`, `docs/errors.md`, `docs/decisions/020-application-owned-request-policy.md` |',
+            'verify that PHPThis adds no JWT, PAT, OAuth, identity-provider, or authentication runtime/API',
+        ],
+        'docs/request-policy.md' => [
+            '[Application-owned stateless authentication](stateless-authentication.md)',
+            '`WWW-Authenticate: Bearer` is response semantics, not token support.',
+            'accepts one strict Bearer header over TLS with no alternate credential source',
+            'explicitly not an RFC-6750-compatible challenge and error profile',
+        ],
+        'docs/security.md' => [
+            'PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.',
+            'A JWT profile owns RFC 8725\'s fixed algorithm and key binding',
+            'that bare challenge and generic error policy are deliberately disclosure-minimizing and non-RFC-6750-compatible',
+            'Selected external key retrieval or RFC 7662 introspection owns authenticated TLS I/O, bounds, timeouts, cache-staleness, outage, and fail-closed behavior.',
+            '[Application-owned stateless authentication](stateless-authentication.md)',
+        ],
+        'skeleton/.ai/README.md' => [
+            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
+        ],
+        'skeleton/.ai/request-policy.md' => [
+            '`NOT_APPLICABLE(REQUEST_POLICY)`',
+            'read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md`',
+            'one strict TLS-protected `Authorization: Bearer` source with no alternate or fallback source',
+            'selected JWT, opaque/PAT/API-token, or external-verification profile',
+            'preserve the bare non-RFC-6750-compatible reference challenge',
+        ],
+        'templates/application/.ai/README.md' => [
+            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
+        ],
+        'templates/application/.ai/request-policy.md' => [
+            'Read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md` first.',
+            '{{AUTHORIZATION_HEADER_BOUNDARY}}',
+            '{{CREDENTIAL_PROFILE}}',
+            '{{CREDENTIAL_VERIFIER_AND_CONFIGURATION}}',
+            '{{CREDENTIAL_LIFECYCLE}}',
+            '{{RFC_6750_COMPATIBILITY_POLICY}}',
+            '{{POLICY_DEPENDENCY_FAILURE}}',
+            '{{FRONTEND_CREDENTIAL_BOUNDARY}}',
+            '{{CREDENTIAL_EVIDENCE_OR_LIMIT}}',
+        ],
+        'tools/package-files.txt' => [
+            'docs/stateless-authentication.md',
+        ],
+        'tools/guardrails/distribution.php' => [
+            'Framework runtime dependencies must remain native PHP and extensions:',
+            'The default skeleton must require only PHP and phpthis/framework.',
+        ],
+        'tools/guardrails/boundaries.php' => [
+            'Stateless authentication dependency detector fixture must fail:',
+            'roave/security-advisories',
+            'src/Identity/Auth0Client.php',
+            'src/Security/ClaimsVerifier.php',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledStatelessAuthenticationGuidanceDistribution($project, $installedFramework);',
+            'function proveInstalledStatelessAuthenticationGuidanceDistribution(',
+            'Installed stateless authentication dependency detector fixture must fail:',
+            'roave/security-advisories',
+            'ClaimsVerifier',
+            'PASS installed stateless authentication guidance distribution',
+        ],
+        'docs/guardrails.md' => [
+            'stateless-authentication guidance, source and installed routes, exact package inventory, Composer dependency checks, and runtime-API path and identifier checks preserve application-owned JWT, PAT, OAuth, and external-provider choices',
+            'The stateless-authentication guidance guard pins the dedicated installed guide',
+            'It adds no core API, runtime or development authentication dependency, Consumer Contract or Strict Profile change, checker rule, behavior requirement, or `PHT` diagnostic.',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $artifactMarkers,
+        'stateless authentication guidance',
+        $failures,
+    );
+
+    $forbiddenPackageFixtures = [
+        'auth0/auth0-php',
+        'firebase/php-jwt',
+        'laravel/sanctum',
+        'league/oauth2-server',
+        'paragonie/paseto',
+        'vendor/identity-provider',
+        'vendor/pat',
+    ];
+    $allowedPackageFixtures = [
+        'ext-session',
+        'phpstan/phpstan',
+        'phpthis/framework',
+        'psr/http-message',
+        'roave/security-advisories',
+    ];
+
+    foreach ($forbiddenPackageFixtures as $package) {
+        if (!statelessAuthenticationPackageIsForbidden($package)) {
+            $failures[] = "Stateless authentication dependency detector fixture must fail: {$package}.";
+        }
+    }
+
+    foreach ($allowedPackageFixtures as $package) {
+        if (statelessAuthenticationPackageIsForbidden($package)) {
+            $failures[] = "Stateless authentication dependency detector fixture must remain allowed: {$package}.";
+        }
+    }
+
+    $forbiddenRuntimePathFixtures = [
+        'src/Auth/BearerAuthenticator.php',
+        'src/Auth/AuthManager.php',
+        'src/Identity/Auth0Client.php',
+        'src/Identity/IdentityProvider.php',
+        'src/Security/AccessToken.php',
+        'src/Security/ApiTokenVerifier.php',
+        'src/Security/ClaimsVerifier.php',
+        'src/Security/JwtVerifier.php',
+        'src/Security/OpaqueTokenStore.php',
+        'src/Security/PatVerifier.php',
+        'src/Security/PersonalAccessTokenIssuer.php',
+    ];
+    $allowedRuntimePathFixtures = [
+        'src/Database/QueryTrace.php',
+        'src/Http/RequestReader.php',
+        'src/Routing/RouteParameterType.php',
+        'src/Session/SessionLifecycle.php',
+    ];
+
+    foreach ($forbiddenRuntimePathFixtures as $relativePath) {
+        if (!statelessAuthenticationRuntimeApiPathIsForbidden($relativePath)) {
+            $failures[] = "Stateless authentication runtime/API detector fixture must fail: {$relativePath}.";
+        }
+    }
+
+    foreach ($allowedRuntimePathFixtures as $relativePath) {
+        if (statelessAuthenticationRuntimeApiPathIsForbidden($relativePath)) {
+            $failures[] = "Stateless authentication runtime/API detector fixture must remain allowed: {$relativePath}.";
+        }
+    }
+
+    foreach (['composer.json', 'skeleton/composer.json'] as $relativeComposerPath) {
+        $composerContents = file_get_contents($root . '/' . $relativeComposerPath);
+        $composer = is_string($composerContents) ? json_decode($composerContents, true) : null;
+
+        if (!is_array($composer)) {
+            $failures[] = "Cannot decode {$relativeComposerPath} for the stateless authentication dependency boundary.";
+            continue;
+        }
+
+        foreach (['require', 'require-dev'] as $dependencySection) {
+            $dependencies = $composer[$dependencySection] ?? null;
+
+            if (!is_array($dependencies)) {
+                $failures[] = "{$relativeComposerPath}:{$dependencySection} must remain an explicit Composer map.";
+                continue;
+            }
+
+            foreach (array_keys($dependencies) as $dependency) {
+                if (
+                    is_string($dependency)
+                    && statelessAuthenticationPackageIsForbidden($dependency)
+                ) {
+                    $failures[] = "Authentication package {$dependency} must remain application-owned and absent from {$relativeComposerPath}:{$dependencySection}.";
+                }
+            }
+        }
+    }
+
+    foreach (
+        [
+            'src' => 'framework',
+            'skeleton/src' => 'default skeleton',
+        ] as $relativeSourceRoot => $surface
+    ) {
+        foreach (statelessAuthenticationRuntimeApiFailures($root, $relativeSourceRoot, $surface) as $failure) {
+            $failures[] = $failure;
+        }
+    }
+
+    return $failures;
+}
+
+function statelessAuthenticationPackageIsForbidden(string $package): bool
+{
+    $normalized = strtolower($package);
+
+    return preg_match(
+        '~(?:^|[/._-])(?:access[-_]?token|api[-_]?token|auth[0-9]*|authn|authz|authentication|authorization|bearer|credential|identity[-_]?provider|jose|jwe|jwk|jws|jwt|oauth2?|oidc|openid|opaque[-_]?token|paseto|pat|passport|personal[-_]?access[-_]?token|sanctum)(?:$|[/._-])~i',
+        $package,
+    ) === 1
+        || str_starts_with($normalized, 'symfony/security-');
+}
+
+/** @return list<string> */
+function statelessAuthenticationRuntimeApiFailures(
+    string $root,
+    string $relativeSourceRoot,
+    string $surface,
+): array {
+    $sourceRoot = $root . '/' . $relativeSourceRoot;
+
+    if (!is_dir($sourceRoot) || is_link($sourceRoot)) {
+        return ["The stateless authentication {$surface} source boundary is unavailable: {$relativeSourceRoot}."];
+    }
+
+    $failures = [];
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($sourceRoot, FilesystemIterator::SKIP_DOTS),
+    );
+
+    foreach ($files as $file) {
+        if (!$file instanceof SplFileInfo || !$file->isFile()) {
+            continue;
+        }
+
+        $relativePath = substr($file->getPathname(), strlen($root) + 1);
+
+        if (statelessAuthenticationRuntimeApiPathIsForbidden($relativePath)) {
+            $failures[] = "Authentication runtime/API path must remain outside {$surface} source: {$relativePath}.";
+        }
+
+        if (strtolower($file->getExtension()) !== 'php') {
+            continue;
+        }
+
+        $contents = file_get_contents($file->getPathname());
+
+        if (!is_string($contents)) {
+            $failures[] = "Cannot read {$surface} source for the stateless authentication API boundary: {$relativePath}.";
+            continue;
+        }
+
+        foreach (token_get_all($contents) as $token) {
+            if (
+                !is_array($token)
+                || !in_array(
+                    $token[0],
+                    [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED, T_NAME_RELATIVE],
+                    true,
+                )
+            ) {
+                continue;
+            }
+
+            $identifiers = preg_split('/\\\\/', $token[1]);
+
+            foreach (is_array($identifiers) ? $identifiers : [] as $identifier) {
+                if (statelessAuthenticationRuntimeApiIdentifierIsForbidden($identifier)) {
+                    $failures[] = "Authentication runtime/API identifier {$identifier} must remain outside {$surface} source: {$relativePath}.";
+                    continue 3;
+                }
+            }
+        }
+    }
+
+    return $failures;
+}
+
+function statelessAuthenticationRuntimeApiPathIsForbidden(string $relativePath): bool
+{
+    foreach (explode('/', $relativePath) as $segment) {
+        $name = str_ends_with(strtolower($segment), '.php')
+            ? substr($segment, 0, -4)
+            : $segment;
+
+        if (statelessAuthenticationRuntimeApiIdentifierIsForbidden($name)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function statelessAuthenticationRuntimeApiIdentifierIsForbidden(string $identifier): bool
+{
+    if (
+        preg_match('/claims(?:parser|validator|verifier)/i', $identifier) === 1
+        || preg_match('/(?:\A|[a-z0-9])(?:Auth|PAT|Pat)(?:[A-Z]|\z)/', $identifier) === 1
+    ) {
+        return true;
+    }
+
+    return preg_match(
+        '/(?:accesstoken|apitoken|auth[0-9]+|auth(?:enticate|enticated|entication|enticator|orize|orization|orizer)|bearer|credential(?:introspector|parser|refresher|repository|revoker|service|store|validator|verifier|issuer)?|identityprovider|jose|jwe|jwk|jws|jwt|oauth|oidc|openid|opaquetoken|paseto|personalaccesstoken|token(?:introspector|parser|refresher|repository|revoker|service|store|validator|verifier|issuer))/i',
+        $identifier,
+    ) === 1;
 }

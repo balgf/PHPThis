@@ -36,7 +36,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Change a non-simple route or request input | installed `vendor/phpthis/framework/docs/request-handling.md` | route manifest and only the application guides for concerns actually entered |
 | Change application data or SQL | `.ai/data.md` | direct call site, authority, exact-engine, adversarial, and scale evidence |
 | Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md` | exact operation representation; add architecture, configuration, data, CLI, operations, and testing context only when entered |
-| Change authentication, tenant, or authorization policy | `.ai/request-policy.md` | action-specific composition, protected work, and denial tests |
+| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |
 | Change file transfer | `.ai/file-transfers.md` | front controller, storage operation, response path, and transfer tests |
 | Change an external side effect | `.ai/integrations.md` | named client boundary, failure policy, and contract tests |
 | Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |

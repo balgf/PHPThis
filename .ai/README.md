@@ -37,7 +37,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Add or change database behavior or PDO transport | `.ai/database.md` | direct `Connection` call, exact SQL, authority facts, and scale tests |
 | Change configuration, consumer context, checker, skeleton, or template | `.ai/application-context.md` | affected contract, template, checker, and installed-consumer evidence |
 | Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |
-| Change authentication, tenant resolution, or authorization | `.ai/request-policy.md` | action-specific policy path, protected work, and denial tests |
+| Change authentication, stateless Bearer/JWT/PAT/external-IdP policy, tenant resolution, or authorization | `.ai/request-policy.md` | `docs/stateless-authentication.md`, action-specific policy path, protected work, and denial tests |
 | Change cookie-backed session state | `.ai/session.md` | typed service, lifecycle composition, transport, and policy tests |
 | Change HTTP or server-side caching | `.ai/cache.md` | response path or typed cache service, backend policy, and cache tests |
 | Change durable deferred work | `.ai/jobs.md` | producer transaction, worker path, and lifecycle tests |

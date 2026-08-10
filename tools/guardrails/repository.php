@@ -1552,6 +1552,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/releases/0.1.0-alpha.6.md',
         'docs/security.md',
         'docs/sessions.md',
+        'docs/stateless-authentication.md',
         'docs/vocabulary.md',
         'docs/websockets.md',
         'docs/workbench.md',
@@ -2132,7 +2133,7 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 1;',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 2;',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',

@@ -130,6 +130,7 @@ docs/request-handling.md
 docs/request-policy.md
 docs/security.md
 docs/sessions.md
+docs/stateless-authentication.md
 docs/static-analysis.md
 docs/strict-profile.md
 docs/type-safety.md

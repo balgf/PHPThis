@@ -107,6 +107,7 @@ try {
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
+    proveInstalledStatelessAuthenticationGuidanceDistribution($project, $installedFramework);
     proveInstalledAgentEvaluationGuidanceDistribution($installedFramework, $archiveFiles);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
@@ -328,6 +329,7 @@ function proveInstalledGuidanceReferencesResolve(
     $requiredFrameworkGuideOwners = [
         'docs/file-transfers/README.md' => '.ai/file-transfers.md',
         'docs/request-policy.md' => '.ai/request-policy.md',
+        'docs/stateless-authentication.md' => '.ai/request-policy.md',
         'docs/jobs.md' => '.ai/jobs.md',
         'docs/cli.md' => '.ai/cli.md',
         'docs/migrations.md' => '.ai/migrations.md',
@@ -1272,6 +1274,329 @@ function proveInstalledTestRunnerModularizationGuidanceDistribution(
     requireInstalledArtifactMarkers($artifactMarkers, 'test-runner modularization guidance');
 
     fwrite(STDOUT, "PASS installed test-runner modularization guidance distribution\n");
+}
+
+function proveInstalledStatelessAuthenticationGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    $guideMarkers = [
+        '# Application-owned stateless authentication',
+        'PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.',
+        'This guide changes no core source, runtime dependency, Consumer Contract, Strict Profile, checker rule, or `PHT` diagnostic.',
+        'Here, stateless means that each request presents its credential without using PHPThis session or cookie identity.',
+        'an application-owned verifier may perform explicit bounded database, trusted-key, or external-provider I/O under the budgets and outage contract below.',
+        "\$request->headers['authorization'] ?? null",
+        'use TLS with certificate validation for every credential-bearing request',
+        'The application authenticator then accepts one Bearer representation under a smaller recorded byte bound and finite grammar.',
+        'HTTP authentication-scheme matching is ASCII case-insensitive, while the credential bytes are case-sensitive and opaque.',
+        'Do not fall back to a query parameter, request body, cookie, path segment, alternate header, or previously stored identity',
+        '`WWW-Authenticate: Bearer` is response semantics for the generic unauthenticated result.',
+        'That disclosure-minimizing reference challenge and error policy is not RFC-6750-compatible',
+        'Record the exact absent-credential challenge, `invalid_request` status and error mapping',
+        '`invalid_token` `401` mapping for definitively invalid credentials',
+        '`insufficient_scope` `403` mapping where that application can disclose the classification safely',
+        'test Bearers are synthetic only; neither is production credential evidence.',
+        'Never guess a format after one verifier fails, accept the same bytes under multiple profiles, or use a fallback verifier.',
+        'An ordinary Bearer credential is replayable by any party that possesses it.',
+        'Record whether sender constraint is not applicable or is a separately adopted and proved profile.',
+        'one fixed code-owned set of acceptable algorithms, selected independently of the received `alg`',
+        'one fixed JOSE protection and serialization profile',
+        'UTF-8 for the protected header and claims JSON, one finite allowlist of protected-header parameter names',
+        'an untrusted `x5c`, embedded key, certificate, thumbprint, or other header never supplies or substitutes verification trust material',
+        'rejection of duplicate protected-header and claim member names, or one explicitly recorded canonical duplicate-member behavior of the selected library',
+        'the exact trusted issuer and its binding to the verification keys',
+        'the exact required audience for this API',
+        'the required `exp`, permitted `nbf` and `iat` relationships, maximum accepted lifetime, authoritative injected clock, and finite allowed clock skew',
+        'a received `jku`, `x5u`, issuer, or other claim never selects an arbitrary file, database expression, class, command, or outbound URL',
+        'Local signature verification does not prove current revocation.',
+        'never make the raw value retrievable later, and store only a purpose-built one-way verification value rather than the raw credential',
+        'Name the exact maintained verifier construction:',
+        'Record what an offline database reader and an application-host compromise can recover.',
+        'Require a timing-safe final secret comparison',
+        'Every request checks the verifier, active state, expiry, revocation, owner state, tenant relationship, and scopes needed as input to the separate authorizer.',
+        'A token-controlled issuer or key URL never selects an outbound destination.',
+        'Disable HTTP redirects for key retrieval and introspection by default.',
+        'send the exact protocol `POST` to the configured endpoint over TLS with certificate validation',
+        'A trusted `active: false` is definitive credential rejection.',
+        'provider outage is verifier uncertainty: it fails closed and never produces an authenticated principal, but it is not evidence that the caller\'s credential is invalid.',
+        'Derive its lookup key from the credential with one selected maintained one-way keyed primitive and a cache-specific key',
+        'This resource-server guide does not define an OAuth authorization server or client flow.',
+        'following [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700)',
+        'authenticate -> resolve tenant -> authorize -> protected handler',
+        'Authorization runs for the current named action on every request.',
+        'one named generic `5xx` application failure, distinct from a definitive invalid-credential `401`',
+        'Missing, malformed, oversized, expired, not-yet-valid, revoked, definitively inactive, wrong-issuer, wrong-audience, wrong-type, invalid-signature, and otherwise definitively rejected credentials share the application\'s generic `401` Bearer response.',
+        'Production acceptance requires evidence for the consuming application\'s selected parser, verifier, credential lifecycle, external dependencies, deployment, and clients.',
+    ];
+
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/README.md' => [
+            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
+        ],
+        $project . '/.ai/request-policy.md' => [
+            '`NOT_APPLICABLE(REQUEST_POLICY)`',
+            'read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md`',
+            'one strict TLS-protected `Authorization: Bearer` source with no alternate or fallback source',
+            'selected JWT, opaque/PAT/API-token, or external-verification profile',
+            'preserve the bare non-RFC-6750-compatible reference challenge',
+        ],
+        $installedFramework . '/docs/stateless-authentication.md' => $guideMarkers,
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Add, explain, or review stateless Bearer, JWT, opaque/PAT/API-token, external-provider authentication, tenant resolution, or authorization | `docs/stateless-authentication.md`, `docs/request-policy.md`, `docs/security.md`, `docs/errors.md`, `docs/decisions/020-application-owned-request-policy.md` |',
+            'verify that PHPThis adds no JWT, PAT, OAuth, identity-provider, or authentication runtime/API',
+        ],
+        $installedFramework . '/docs/request-policy.md' => [
+            '[Application-owned stateless authentication](stateless-authentication.md)',
+            '`WWW-Authenticate: Bearer` is response semantics, not token support.',
+            'accepts one strict Bearer header over TLS with no alternate credential source',
+            'explicitly not an RFC-6750-compatible challenge and error profile',
+        ],
+        $installedFramework . '/docs/security.md' => [
+            'PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.',
+            'A JWT profile owns RFC 8725\'s fixed algorithm and key binding',
+            'that bare challenge and generic error policy are deliberately disclosure-minimizing and non-RFC-6750-compatible',
+            'Selected external key retrieval or RFC 7662 introspection owns authenticated TLS I/O, bounds, timeouts, cache-staleness, outage, and fail-closed behavior.',
+            '[Application-owned stateless authentication](stateless-authentication.md)',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
+        ],
+        $installedFramework . '/templates/application/.ai/request-policy.md' => [
+            'Read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md` first.',
+            '{{AUTHORIZATION_HEADER_BOUNDARY}}',
+            '{{CREDENTIAL_PROFILE}}',
+            '{{CREDENTIAL_VERIFIER_AND_CONFIGURATION}}',
+            '{{CREDENTIAL_LIFECYCLE}}',
+            '{{RFC_6750_COMPATIBILITY_POLICY}}',
+            '{{POLICY_DEPENDENCY_FAILURE}}',
+            '{{FRONTEND_CREDENTIAL_BOUNDARY}}',
+            '{{CREDENTIAL_EVIDENCE_OR_LIMIT}}',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'stateless-authentication guidance, source and installed routes, exact package inventory, Composer dependency checks, and runtime-API path and identifier checks preserve application-owned JWT, PAT, OAuth, and external-provider choices',
+            'The stateless-authentication guidance guard pins the dedicated installed guide',
+            'It adds no core API, runtime or development authentication dependency, Consumer Contract or Strict Profile change, checker rule, behavior requirement, or `PHT` diagnostic.',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'stateless authentication guidance');
+    requireInstalledNativeRuntimeDependencyBoundary($project, $installedFramework);
+
+    $forbiddenPackageFixtures = [
+        'auth0/auth0-php',
+        'firebase/php-jwt',
+        'laravel/sanctum',
+        'league/oauth2-server',
+        'paragonie/paseto',
+        'vendor/identity-provider',
+        'vendor/pat',
+    ];
+    $allowedPackageFixtures = [
+        'ext-session',
+        'phpstan/phpstan',
+        'phpthis/framework',
+        'psr/http-message',
+        'roave/security-advisories',
+    ];
+
+    foreach ($forbiddenPackageFixtures as $package) {
+        if (!installedStatelessAuthenticationPackageIsForbidden($package)) {
+            throw new RuntimeException(
+                "Installed stateless authentication dependency detector fixture must fail: {$package}.",
+            );
+        }
+    }
+
+    foreach ($allowedPackageFixtures as $package) {
+        if (installedStatelessAuthenticationPackageIsForbidden($package)) {
+            throw new RuntimeException(
+                "Installed stateless authentication dependency detector fixture must remain allowed: {$package}.",
+            );
+        }
+    }
+
+    $forbiddenRuntimeIdentifierFixtures = [
+        'AccessToken',
+        'ApiTokenVerifier',
+        'AuthManager',
+        'Auth0Client',
+        'AuthenticatedPrincipal',
+        'BearerAuthenticator',
+        'ClaimsVerifier',
+        'IdentityProvider',
+        'JwtVerifier',
+        'OpaqueTokenStore',
+        'PatVerifier',
+        'PersonalAccessTokenIssuer',
+    ];
+    $allowedRuntimeIdentifierFixtures = [
+        'QueryTrace',
+        'RequestReader',
+        'RouteParameterType',
+        'SessionLifecycle',
+    ];
+
+    foreach ($forbiddenRuntimeIdentifierFixtures as $identifier) {
+        if (!installedStatelessAuthenticationRuntimeApiIdentifierIsForbidden($identifier)) {
+            throw new RuntimeException(
+                "Installed stateless authentication runtime/API detector fixture must fail: {$identifier}.",
+            );
+        }
+    }
+
+    foreach ($allowedRuntimeIdentifierFixtures as $identifier) {
+        if (installedStatelessAuthenticationRuntimeApiIdentifierIsForbidden($identifier)) {
+            throw new RuntimeException(
+                "Installed stateless authentication runtime/API detector fixture must remain allowed: {$identifier}.",
+            );
+        }
+    }
+
+    foreach (
+        [
+            $installedFramework . '/composer.json' => 'installed framework',
+            $project . '/composer.json' => 'installed default skeleton',
+        ] as $composerPath => $surface
+    ) {
+        $composer = jsonFile($composerPath);
+
+        foreach (['require', 'require-dev'] as $dependencySection) {
+            $dependencies = $composer[$dependencySection] ?? null;
+
+            if (!is_array($dependencies)) {
+                throw new RuntimeException(
+                    "{$surface} {$dependencySection} dependencies must remain an explicit Composer map.",
+                );
+            }
+
+            foreach (array_keys($dependencies) as $dependency) {
+                if (
+                    is_string($dependency)
+                    && installedStatelessAuthenticationPackageIsForbidden($dependency)
+                ) {
+                    throw new RuntimeException(
+                        "Authentication package {$dependency} must remain application-owned and absent from {$surface}:{$dependencySection}.",
+                    );
+                }
+            }
+        }
+    }
+
+    foreach (
+        [
+            $installedFramework . '/src' => 'installed framework',
+            $project . '/src' => 'installed default skeleton',
+        ] as $sourceRoot => $surface
+    ) {
+        requireInstalledStatelessAuthenticationRuntimeApiBoundary($sourceRoot, $surface);
+    }
+
+    fwrite(STDOUT, "PASS installed stateless authentication guidance distribution\n");
+}
+
+function installedStatelessAuthenticationPackageIsForbidden(string $package): bool
+{
+    $normalized = strtolower($package);
+
+    return preg_match(
+        '~(?:^|[/._-])(?:access[-_]?token|api[-_]?token|auth[0-9]*|authn|authz|authentication|authorization|bearer|credential|identity[-_]?provider|jose|jwe|jwk|jws|jwt|oauth2?|oidc|openid|opaque[-_]?token|paseto|pat|passport|personal[-_]?access[-_]?token|sanctum)(?:$|[/._-])~i',
+        $package,
+    ) === 1
+        || str_starts_with($normalized, 'symfony/security-');
+}
+
+function requireInstalledStatelessAuthenticationRuntimeApiBoundary(
+    string $sourceRoot,
+    string $surface,
+): void {
+    if (!is_dir($sourceRoot) || is_link($sourceRoot)) {
+        throw new RuntimeException("The stateless authentication {$surface} source boundary is unavailable.");
+    }
+
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($sourceRoot, FilesystemIterator::SKIP_DOTS),
+    );
+
+    foreach ($files as $file) {
+        if (!$file instanceof SplFileInfo || !$file->isFile()) {
+            continue;
+        }
+
+        $relativePath = substr($file->getPathname(), strlen($sourceRoot) + 1);
+
+        foreach (explode('/', $relativePath) as $segment) {
+            $name = str_ends_with(strtolower($segment), '.php')
+                ? substr($segment, 0, -4)
+                : $segment;
+
+            if (installedStatelessAuthenticationRuntimeApiIdentifierIsForbidden($name)) {
+                throw new RuntimeException(
+                    "Authentication runtime/API path must remain outside {$surface} source: {$relativePath}.",
+                );
+            }
+        }
+
+        if (strtolower($file->getExtension()) !== 'php') {
+            continue;
+        }
+
+        $contents = file_get_contents($file->getPathname());
+
+        if (!is_string($contents)) {
+            throw new RuntimeException(
+                "Cannot read {$surface} source for the stateless authentication API boundary: {$relativePath}.",
+            );
+        }
+
+        foreach (token_get_all($contents) as $token) {
+            if (
+                !is_array($token)
+                || !in_array(
+                    $token[0],
+                    [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED, T_NAME_RELATIVE],
+                    true,
+                )
+            ) {
+                continue;
+            }
+
+            $identifiers = preg_split('/\\\\/', $token[1]);
+
+            foreach (is_array($identifiers) ? $identifiers : [] as $identifier) {
+                if (installedStatelessAuthenticationRuntimeApiIdentifierIsForbidden($identifier)) {
+                    throw new RuntimeException(
+                        "Authentication runtime/API identifier {$identifier} must remain outside {$surface} source: {$relativePath}.",
+                    );
+                }
+            }
+        }
+    }
+}
+
+function installedStatelessAuthenticationRuntimeApiIdentifierIsForbidden(string $identifier): bool
+{
+    if (
+        preg_match('/claims(?:parser|validator|verifier)/i', $identifier) === 1
+        || preg_match('/(?:\A|[a-z0-9])(?:Auth|PAT|Pat)(?:[A-Z]|\z)/', $identifier) === 1
+    ) {
+        return true;
+    }
+
+    if (
+        preg_match(
+            '/auth(?:enticate|enticated|entication|enticator|orize|orization|orizer)/i',
+            $identifier,
+        ) === 1
+    ) {
+        return true;
+    }
+
+    return preg_match(
+        '/(?:accesstoken|apitoken|auth[0-9]+|auth(?:enticate|authenticated|authentication|authenticator|authorize|authorization|authorizer)|bearer|credential(?:introspector|parser|refresher|repository|revoker|service|store|validator|verifier|issuer)?|identityprovider|jose|jwe|jwk|jws|jwt|oauth|oidc|openid|opaquetoken|paseto|personalaccesstoken|token(?:introspector|parser|refresher|repository|revoker|service|store|validator|verifier|issuer))/i',
+        $identifier,
+    ) === 1;
 }
 
 function proveInstalledNativeDateTimeGuidanceDistribution(
