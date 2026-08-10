@@ -36,6 +36,33 @@ try {
         CookieSameSite::Lax,
         $directory,
     );
+    foreach (['__hOsT-insecure', '__sEcUrE-insecure', '__hTtP-insecure', '__hOsT-HtTp-insecure'] as $cookieName) {
+        try {
+            new SessionConfiguration('PHPTHISSESSION', $cookieName, false, CookieSameSite::Lax, $directory);
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Insecure mixed-case prefixed session configuration unexpectedly passed.');
+    }
+    $developmentConfiguration = new SessionConfiguration(
+        'PHPTHISDEVELOPMENT',
+        'PHPThisDevelopmentSession',
+        false,
+        CookieSameSite::Strict,
+        $directory,
+    );
+    $developmentLiveCookie = $developmentConfiguration->liveCookie(str_repeat('d', 32));
+    $developmentExpiredCookie = $developmentConfiguration->expiredCookie();
+    requireSessionTest(
+        !$developmentLiveCookie->secure
+        && $developmentLiveCookie->headerValue() === 'PHPThisDevelopmentSession=' . str_repeat('d', 32)
+            . '; Path=/; HttpOnly; SameSite=Strict'
+        && !$developmentExpiredCookie->secure
+        && $developmentExpiredCookie->headerValue() === 'PHPThisDevelopmentSession=; Path=/'
+            . '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; HttpOnly; SameSite=Strict',
+        'An unprefixed isolated-development session cookie must omit only Secure.',
+    );
     $sessions = new SessionLifecycle($configuration);
     $emptyResponse = new Response(204, [], '');
 
@@ -248,7 +275,7 @@ try {
         $sessions,
     );
     $cartResponse = $cartBoundary->handle(['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/cart'], []);
-    $cartCookie = requireLiveCookie($cartResponse);
+    $cartCookie = requireLiveCookie($cartResponse, $configuration);
     requireSessionTest(
         count(sessionFiles($directory)) === 1
         && $cartResponse->fileBody?->path === $fileResponsePath,
@@ -332,7 +359,7 @@ try {
         'REQUEST_URI' => '/login',
         'HTTP_COOKIE' => $configuration->cookieName . '=' . $cartCookie->value,
     ], []);
-    $authenticatedCookie = requireLiveCookie($loginResponse);
+    $authenticatedCookie = requireLiveCookie($loginResponse, $configuration);
     requireSessionTest(
         $authenticatedCookie->value !== $cartCookie->value,
         'Privilege elevation must change the session identifier before storing identity.',
@@ -453,7 +480,7 @@ try {
         'HTTP_COOKIE' => $configuration->cookieName . '=' . $authenticatedCookie->value,
     ], []);
     requireSessionTest(
-        isExpiredCookie($logoutResponse->cookies[0] ?? null),
+        isExpiredCookie($logoutResponse, $configuration),
         'Logout must explicitly expire the browser cookie.',
     );
 
@@ -492,7 +519,10 @@ try {
         $sequenceSessions->regenerateAndUpdate(
             static fn(SessionSnapshot $current): SessionSnapshot => new SessionSnapshot(['user_id' => 21]),
         );
-        $malformedRecoveryCookie = requireLiveCookie($sequenceSessions->finish($emptyResponse));
+        $malformedRecoveryCookie = requireLiveCookie(
+            $sequenceSessions->finish($emptyResponse),
+            $sequenceConfiguration,
+        );
 
         $sequenceSessions->begin(requestWithSessionId(
             $sequenceConfiguration,
@@ -513,7 +543,8 @@ try {
         $collectedRecoveryResponse = $sequenceSessions->finish($emptyResponse);
         requireSessionTest(
             $malformedRecoveryState->values === ['user_id' => 21]
-            && requireLiveCookie($collectedRecoveryResponse)->value !== $malformedRecoveryCookie->value
+            && requireLiveCookie($collectedRecoveryResponse, $sequenceConfiguration)->value
+                !== $malformedRecoveryCookie->value
             && count(sessionFiles($sequenceDirectory)) === 2,
             'Authenticated regeneration must recover malformed and garbage-collected cookies with fresh IDs.',
         );
@@ -535,7 +566,7 @@ try {
             ]),
         );
         $sequenceResponse = $sequenceSessions->finish($emptyResponse);
-        $sequenceCookie = requireLiveCookie($sequenceResponse);
+        $sequenceCookie = requireLiveCookie($sequenceResponse, $sequenceConfiguration);
         requireSessionTest(
             count(sessionFiles($sequenceDirectory)) === 1,
             'Anonymous update followed by regeneration must retain only the final issued session.',
@@ -561,7 +592,7 @@ try {
         $discardSequenceSessions->invalidate();
         $discardSequenceResponse = $discardSequenceSessions->finish($emptyResponse);
         requireSessionTest(
-            isExpiredCookie($discardSequenceResponse->cookies[0] ?? null)
+            isExpiredCookie($discardSequenceResponse, $sequenceConfiguration)
             && count(sessionFiles($sequenceDirectory)) === 1,
             'Invalidation must remove same-request unissued state without disturbing an issued session.',
         );
@@ -631,23 +662,53 @@ function requestWithSessionId(SessionConfiguration $configuration, string $id, s
     ]);
 }
 
-function requireLiveCookie(Response $response): ResponseCookie
+function requireLiveCookie(Response $response, SessionConfiguration $configuration): ResponseCookie
 {
     $cookie = $response->cookies[0] ?? null;
 
-    if (!$cookie instanceof ResponseCookie || $cookie->value === '' || $cookie->maximumAgeSeconds !== null) {
+    if (
+        count($response->cookies) !== 1
+        || !$cookie instanceof ResponseCookie
+        || preg_match('/^[0-9a-f]{32}$/D', $cookie->value) !== 1
+        || $cookie->name !== $configuration->cookieName
+        || $cookie->path !== '/'
+        || $cookie->secure !== $configuration->cookieSecure
+        || !$cookie->httpOnly
+        || $cookie->sameSite !== $configuration->cookieSameSite
+        || $cookie->expiresAt !== null
+        || $cookie->maximumAgeSeconds !== null
+        || $cookie->headerValue() !== $configuration->cookieName . '=' . $cookie->value
+            . '; Path=/' . sessionCookieSecurityAttributes($configuration)
+    ) {
         throw new RuntimeException('Expected one live session cookie.');
     }
 
     return $cookie;
 }
 
-function isExpiredCookie(mixed $cookie): bool
+function isExpiredCookie(Response $response, SessionConfiguration $configuration): bool
 {
-    return $cookie instanceof ResponseCookie
+    $cookie = $response->cookies[0] ?? null;
+
+    return count($response->cookies) === 1
+        && $cookie instanceof ResponseCookie
+        && $cookie->name === $configuration->cookieName
         && $cookie->value === ''
+        && $cookie->path === '/'
+        && $cookie->secure === $configuration->cookieSecure
+        && $cookie->httpOnly
+        && $cookie->sameSite === $configuration->cookieSameSite
         && $cookie->expiresAt === 1
-        && $cookie->maximumAgeSeconds === 0;
+        && $cookie->maximumAgeSeconds === 0
+        && $cookie->headerValue() === $configuration->cookieName . '=; Path=/'
+            . '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0'
+            . sessionCookieSecurityAttributes($configuration);
+}
+
+function sessionCookieSecurityAttributes(SessionConfiguration $configuration): string
+{
+    return ($configuration->cookieSecure ? '; Secure' : '')
+        . '; HttpOnly; SameSite=' . $configuration->cookieSameSite->value;
 }
 
 function requireSessionTest(bool $condition, string $message): void

@@ -1,6 +1,6 @@
 # Universal application rules
 
-These rules supplement installed PHPThis Consumer Contract v11 and Strict Profile v3. They apply to every change in this application; concern-specific contracts live in the current guide routed by `.ai/README.md`.
+These rules supplement installed PHPThis Consumer Contract v12 and Strict Profile v3. They apply to every change in this application; concern-specific contracts live in the current guide routed by `.ai/README.md`.
 
 ## Required
 

@@ -1,7 +1,7 @@
 {
     "schema_version": 1,
     "id": "change.simple-ping",
-    "revision": 2,
+    "revision": 4,
     "kind": "implementation",
     "prompt": {
         "path": "prompt.md",
@@ -13,8 +13,8 @@
     },
     "base": {
         "fixture": "source-skeleton",
-        "tree": "e95ff0071c59028c9179e2d78568aa7620b45330",
-        "fixture_sha256": "cca1e097f93584ac6cec16d81a741e2d943b38219f998deda8140cde307d8585"
+        "tree": "fd1e77584607fc459c32528a67f425a1266f03af",
+        "fixture_sha256": "0126de5a38e2fb1992a511ab88594eaf5e796574866226fd0d1914ffd1da6173"
     },
     "workspace_policy": {
         "allowed_existing_paths": [

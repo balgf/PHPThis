@@ -305,7 +305,7 @@ function contextGuardrailFailures(string $root): array
             '`045-bounded-session-cleanup-and-response-framing.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 11',
+            'Contract version: 12',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
             '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
@@ -326,8 +326,8 @@ function contextGuardrailFailures(string $root): array
             'do not log, retry, suppress, or map it inside session code.',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 11 carries Strict Profile version 3 forward unchanged.',
-            "ADR 045's response/session runtime behavior remain contract behavior; they are not part of PHT007.",
+            'Consumer Contract version 12 carries Strict Profile version 3 forward unchanged.',
+            "ADR 045's response/session runtime behavior, and ADR 049's response-cookie boundary remain contract behavior; they are not part of PHT007.",
         ],
         '.ai/testing.md' => [
             'Inject native cleanup faults only through the isolated framework test boundary',
@@ -511,7 +511,7 @@ function contextGuardrailFailures(string $root): array
             'PASS installed session cleanup and response framing distribution',
         ],
         'docs/guardrails.md' => [
-            'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. The tagged Alpha 6 framework source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. Current post-tag documentation, guardrail, and maintainer-only evaluation-tooling changes add no core',
+            'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. The tagged Alpha 6 framework source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. Accepted post-tag documentation, guardrail, and maintainer-only evaluation-tooling changes before Issue #43 add no core',
             'The ADR 045 guard pins the bounded session-cleanup failure precedence and ordinary-response framing contract.',
             'A dedicated selectable behavior also proves rejection at `199`, acceptance at `599`, explicit application-owned `HEAD`, and an exact `405` with zero GET-handler calls when only GET is declared; its subprocess must keep stderr empty.',
             'superseded-identifier restart and distinct-new-identifier cleanup',
@@ -825,7 +825,8 @@ function contextGuardrailFailures(string $root): array
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence.',
             'ADR 040 and `v0.1.0-alpha.5` remain the authority for the latest complete coordinated framework, skeleton, and public-install release.',
             'The Issue #37 evidence record classifies Alpha 6 overall as partial and unproved',
-            'Current `main` after the Alpha 6 framework tag contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not part of the immutable Alpha 6 source boundary.',
+            "Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling.",
+            'Those changes are not part of the immutable Alpha 6 source boundary, and their acceptance selects no later release identity or candidate.',
             'Release preparation, exact-candidate approval and proof, partial-publication recovery, publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
         ],
         '.ai/testing.md' => [
@@ -844,7 +845,9 @@ function contextGuardrailFailures(string $root): array
             '| Last coordinated application starter | Alpha 5 remains the latest framework/skeleton pair with complete clean public-install evidence |',
             '| Alpha 6 completion | The matching skeleton, clean public `create-project` proof, GitHub prereleases, and final announcement remain tracked in [release issue #37](https://github.com/balgf/PHPThis/issues/37) |',
             'Package availability and current release state are external facts',
-            'The Alpha 6 framework tag is immutable. This `main`-branch README is a post-tag documentation correction for stale prepublication wording in that tag; it does not rewrite the tagged artifact.',
+            '| Current unreleased source | ADR 049, Consumer Contract version 12, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |',
+            "The Alpha 6 framework tag is immutable. Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling.",
+            'Those changes are not part of Alpha 6, and their acceptance selects no later release identity or candidate.',
             'Use the Alpha 6 `create-project` path only after the exact skeleton version and clean public-install evidence are recorded; existing applications may assess the framework package independently',
             '## Key documentation',
             '[Consumer Contract](docs/consumer-contract.md)',
@@ -900,7 +903,8 @@ function contextGuardrailFailures(string $root): array
             'Alpha 6 and `v0.1.0-alpha.6` are now the latest immutable framework tag and source boundary.',
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence',
             'Partial for the coordinated release:',
-            'Current post-tag `main` contains documentation, guardrail, and maintainer-only evaluation-tooling changes.',
+            'Accepted unreleased `main` after Alpha 6 now includes ADR 049, Consumer Contract version 12, and the 2,618-line response-cookie implementation under the accepted 2,620-line ceiling.',
+            'It does not alter the immutable `v0.1.0-alpha.6` framework boundary or select a later release identity or candidate.',
         ],
         'SECURITY.md' => [
             'Any approved prerelease candidate may be announced only after its complete public-artifact gate in `RELEASING.md` passes.',
@@ -917,7 +921,9 @@ function contextGuardrailFailures(string $root): array
             '`v0.1.0-alpha.6` is the latest immutable framework tag and source boundary.',
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence',
             'Framework-side evidence therefore does not establish that an exact Alpha 6 skeleton command is available.',
-            'Current `main` after the framework tag contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not tagged Alpha 6 source.',
+            "Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling",
+            'these are not Alpha 6 source and select no later release identity or candidate.',
+            'Alpha 6 itself adopts Consumer Contract version 11 through ADR 045 while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`.',
             'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
         ],
@@ -1147,7 +1153,8 @@ function contextGuardrailFailures(string $root): array
             'The source-preparation approval above did not itself authorize any external operation.',
             'Issue #37 subsequently records the exact framework candidate, framework tag, and framework package-distribution evidence.',
             'Its coordinated-release record remains partial and unproved pending the exact dedicated-skeleton candidate and tag, clean exact `composer create-project` proof, both GitHub prereleases, and announcement',
-            'Current `main` after `v0.1.0-alpha.6` contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not part of the immutable Alpha 6 framework source.',
+            'Accepted unreleased `main` after `v0.1.0-alpha.6` now includes ADR 049, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling.',
+            'Those changes are not part of the immutable Alpha 6 framework source, and their acceptance selects no later release identity, candidate, or external operation.',
         ],
         'docs/decisions/047-bounded-alpha-6-release-scope.md' => [
             'Status: accepted',
@@ -1190,12 +1197,12 @@ function contextGuardrailFailures(string $root): array
     );
 
     $currentConsumerContractVersionMarkers = [
-        'docs/consumer-contract.md' => 'Contract version: 11',
-        'docs/getting-started.md' => 'contract-version-11 Composer scripts',
-        'skeleton/.ai/README.md' => 'Consumer Contract v11 and Strict Profile v3 remain mandatory.',
-        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v11 and Strict Profile v3',
-        'templates/application/.ai/README.md' => 'Consumer Contract v11 and Strict Profile v3 remain mandatory.',
-        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v11 and Strict Profile v3',
+        'docs/consumer-contract.md' => 'Contract version: 12',
+        'docs/getting-started.md' => 'contract-version-12 Composer scripts',
+        'skeleton/.ai/README.md' => 'Consumer Contract v12 and Strict Profile v3 remain mandatory.',
+        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v12 and Strict Profile v3',
+        'templates/application/.ai/README.md' => 'Consumer Contract v12 and Strict Profile v3 remain mandatory.',
+        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v12 and Strict Profile v3',
     ];
 
     foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {

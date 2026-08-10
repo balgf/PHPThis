@@ -8,6 +8,9 @@ use InvalidArgumentException;
 
 final readonly class Response
 {
+    private const int MAXIMUM_COOKIES = 50;
+    private const int MAXIMUM_COOKIE_HEADER_BYTES = 8_192;
+
     /** @var list<ResponseCookie> */
     public array $cookies;
 
@@ -61,22 +64,26 @@ final readonly class Response
             throw new InvalidArgumentException('Response framing is invalid or unsupported.');
         }
 
-        $cookieScopes = [];
+        if (count($cookies) > self::MAXIMUM_COOKIES) {
+            throw new InvalidArgumentException('Response cannot contain more than 50 cookies.');
+        }
+        $cookieNames = [];
         $parsedCookies = [];
-
+        $cookieHeaderBytes = 0;
         foreach ($cookies as $cookie) {
             if (!$cookie instanceof ResponseCookie) {
                 throw new InvalidArgumentException('Response cookies must be ResponseCookie values.');
             }
-
-            $scope = $cookie->name . "\0" . $cookie->path;
-            if (isset($cookieScopes[$scope])) {
-                throw new InvalidArgumentException('Response contains a duplicate cookie name and path.');
+            if (isset($cookieNames[$cookie->name])) {
+                throw new InvalidArgumentException('Response contains a duplicate cookie name.');
             }
-            $cookieScopes[$scope] = true;
+            $cookieNames[$cookie->name] = true;
+            $cookieHeaderBytes += strlen($cookie->headerValue());
+            if ($cookieHeaderBytes > self::MAXIMUM_COOKIE_HEADER_BYTES) {
+                throw new InvalidArgumentException('Response cookie headers cannot exceed 8192 bytes.');
+            }
             $parsedCookies[] = $cookie;
         }
-
         $this->cookies = $parsedCookies;
     }
 }

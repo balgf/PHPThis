@@ -1043,8 +1043,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 11$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 11.';
+            if (preg_match('/^Contract version: 12$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 12.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -1304,8 +1304,8 @@ function distributionGuardrailFailures(
                 $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
             }
 
-            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v11 and Strict Profile v3 are the minimum accepted rules')) {
-                $failures[] = 'Application AGENTS.md must identify Consumer Contract v11 and Strict Profile v3 as the minimum accepted rules.';
+            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v12 and Strict Profile v3 are the minimum accepted rules')) {
+                $failures[] = 'Application AGENTS.md must identify Consumer Contract v12 and Strict Profile v3 as the minimum accepted rules.';
             }
         }
     }
@@ -1321,9 +1321,9 @@ function distributionGuardrailFailures(
             !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
             || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
             || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
-            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v11 and Strict Profile v3 are the minimum accepted rules')
+            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v12 and Strict Profile v3 are the minimum accepted rules')
         ) {
-            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v11 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v12 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
         }
     }
 
@@ -1614,8 +1614,8 @@ function distributionGuardrailFailures(
         $coreLines += is_array($lines) ? count($lines) : 0;
     }
 
-    if ($coreLines > 2_600) {
-        $failures[] = "Core source has {$coreLines} physical lines; the accepted UUID/ULID routing limit is 2600.";
+    if ($coreLines > 2_620) {
+        $failures[] = "Core source has {$coreLines} physical lines; the accepted response-cookie profile limit is 2620.";
     }
 
     $markdownCount = count($markdownFiles);

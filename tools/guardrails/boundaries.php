@@ -26,6 +26,144 @@ function boundaryGuardrailFailures(string $root): array
         }
     }
 
+    $boundedResponseCookieProfileArtifactMarkers = [
+        'docs/decisions/049-bounded-response-cookie-profile.md' => [
+            '# ADR 049: Bounded response-cookie profile',
+            'Status: accepted',
+            'On 2026-08-11 in Asia/Manila, the accountable human approved this bounded correction',
+            '`strlen($name) + strlen($value)` is at most 4,096 bytes',
+            '`Path` is an absolute 1-to-1,024-byte ASCII producer value',
+            'One `Response` contains at most 50 cookies',
+            'The `__Secure-`, `__Host-`, `__Http-`, and `__Host-Http-` prefix comparisons are ASCII case-insensitive',
+            'The accepted core ceiling is 2,620 physical lines',
+        ],
+        'docs/consumer-contract.md' => [
+            'Contract version: 12',
+            '### Contract version 12',
+            'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
+            'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
+            '`Domain`, `Partitioned`/CHIPS, and `Priority` remain unsupported.',
+        ],
+        '.ai/README.md' => [
+            '| Change request, response, or generic response-cookie behavior |',
+        ],
+        '.ai/http.md' => [
+            'the name and cookie-safe ASCII value together occupy at most 4,096 bytes',
+            '`Path` is an absolute 1-to-1,024-byte string',
+            '`maximumAgeSeconds` is either absent or 0 through 34,560,000',
+            'Apply reserved-name requirements case-insensitively without changing the emitted case-sensitive cookie name',
+            '`Domain`, `Partitioned`/CHIPS, and `Priority` are unsupported',
+            'A `Response` accepts at most 50 cookies',
+            '8,192 aggregate bytes across the exact `ResponseCookie::headerValue()` strings',
+        ],
+        '.ai/session.md' => [
+            'A live session cookie uses the configured exact name and 32-character lowercase-hex identifier',
+            'Absence of both lifetime attributes on the live cookie is not a reliable browser-close deadline',
+            'Production authentication and session cookies normally use `Secure`',
+            '`HttpOnly` prevents ordinary script access to the cookie bytes, but it does not stop script-initiated authenticated requests',
+        ],
+        '.ai/testing.md' => [
+            'case-insensitive `__Secure-`, `__Host-`, `__Http-`, and `__Host-Http-` constraints without name rewriting',
+            'source behavior and isolated installed-consumer positive and negative controls for every public invariant',
+            "assert the live cookie's exact configured name",
+            "Assert the deletion cookie's same identity and scope",
+        ],
+        '.ai/application-context.md' => [
+            'the exact cookie name and prefix, canonical casing, host-only scope',
+            'Prefer a canonical `__Host-` name for production authentication sessions when compatible',
+        ],
+        'docs/request-handling.md' => [
+            'path scoping controls delivery and is not an authorization or security boundary',
+            'Prefix requirements are checked case-insensitively without changing the emitted case-sensitive cookie name',
+            'One response accepts at most 50 cookies and at most 8,192 bytes summed across their exact `headerValue()` strings',
+        ],
+        'docs/sessions.md' => [
+            'A live session cookie contains the configured exact name and the certified 32-character lowercase-hex identifier',
+            'The deletion cookie keeps the exact configured name',
+            'Prefix requirements are applied case-insensitively without rewriting the configured name',
+            'browser session restoration can retain the cookie',
+            'the browser still attaches the cookie to eligible script-initiated requests',
+        ],
+        'docs/security.md' => [
+            'Production authentication/session cookies normally use `Secure`',
+            'Treat `HttpOnly` as protection from ordinary script access to cookie bytes, not from script-initiated authenticated requests',
+        ],
+        'docs/guardrails.md' => [
+            'The bounded response-cookie profile guard pins the exact accepted name/value, path, expiration, maximum-age, count, aggregate-byte, duplicate-name, and case-insensitive prefix constraints',
+            'These controls enforce the accepted 2,620-line ceiling but do not prove browser behavior',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Construct, emit, or review a generic response cookie |',
+        ],
+        'templates/application/.ai/operations.md' => [
+            'Exact cookie name and prefix, canonical casing, host-only scope',
+            'limit an insecure cookie to an explicitly isolated development profile',
+        ],
+        'templates/application/.ai/testing.md' => [
+            "Assert the live cookie's exact configured name and identifier",
+            "Assert the deletion cookie's same name and scope",
+            'does not treat `Path`, `Secure`, `HttpOnly`, SameSite, or a prefix as authorization, CSRF, XSS, or transport proof',
+        ],
+        'skeleton/.ai/testing.md' => [
+            "Assert the live cookie's exact configured name and identifier",
+            "Assert the deletion cookie's same name and scope",
+            'does not treat `Path`, `Secure`, `HttpOnly`, SameSite, or a prefix as authorization, CSRF, XSS, or transport proof',
+        ],
+        'src/Http/ResponseCookie.php' => [
+            'MAXIMUM_NAME_VALUE_BYTES = 4_096',
+            'MAXIMUM_PATH_BYTES = 1_024',
+            "strlen(gmdate('Y', \$expiresAt)) !== 4",
+            'MAXIMUM_AGE_SECONDS = 34_560_000',
+            "str_starts_with(\$lowercaseName, '__http-')",
+            "str_starts_with(\$lowercaseName, '__host-http-')",
+        ],
+        'src/Http/Response.php' => [
+            'MAXIMUM_COOKIES = 50',
+            'MAXIMUM_COOKIE_HEADER_BYTES = 8_192',
+            'isset($cookieNames[$cookie->name])',
+            '$cookieHeaderBytes += strlen($cookie->headerValue())',
+        ],
+        'src/Session/SessionConfiguration.php' => [
+            '$lowercaseCookieName = strtolower($cookieName);',
+            "str_starts_with(\$lowercaseCookieName, '__http-')",
+        ],
+        'tests/http-boundary.php' => [
+            "yield 'response cookies are explicit validated values'",
+            "str_repeat('n', 4_096)",
+            "'/bad;attribute'",
+            'strlen($firstAggregateCookie->headerValue()) + strlen($secondAggregateCookie->headerValue()) !== 8_192',
+            "new ResponseCookie('__hOsT-name', 'value', '/nested'",
+            "new ResponseCookie('__hOsT-HtTp-name', 'value', '/nested'",
+            "new ResponseCookie('duplicate', 'two', '/nested'",
+        ],
+        'tests/session-lifecycle.php' => [
+            "['__hOsT-insecure', '__sEcUrE-insecure', '__hTtP-insecure', '__hOsT-HtTp-insecure']",
+            "Expected one live session cookie.",
+            'sessionCookieSecurityAttributes($configuration)',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/049-bounded-response-cookie-profile.md',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledBoundedResponseCookieProfileDistribution(',
+            "PHP_INT_SIZE >= 8 ? (int) '253402300799' : PHP_INT_MAX",
+            "new ResponseCookie('name', 'value', '/bad;attribute'",
+            "new ResponseCookie('__hOsT-name', 'value', '/nested'",
+            "new Response(200, ['set-cookie' => 'manual=value']",
+            "'__sEcUrE-insecure'",
+            "['Set-Cookie: first-emitted=one; Path=/; HttpOnly; SameSite=Lax', false]",
+            'PASS installed bounded response-cookie runtime',
+            'PASS installed bounded response-cookie profile distribution',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $boundedResponseCookieProfileArtifactMarkers,
+        'bounded response-cookie profile',
+        $failures,
+    );
+
     $cacheContractMarkers = [
         '.ai/README.md' => '`.ai/cache.md`',
         '.ai/http.md' => '`.ai/cache.md`',
@@ -140,7 +278,7 @@ function boundaryGuardrailFailures(string $root): array
             '`032-explicit-uuid-and-ulid-route-types.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 11',
+            'Contract version: 12',
             'This is the canonical contract for an application built with the installed PHPThis version.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
             '`positive-int`, `token`, `uuid`, or `ulid`',
@@ -231,7 +369,7 @@ function boundaryGuardrailFailures(string $root): array
             '`033-application-owned-request-handler-decorators.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 11',
+            'Contract version: 12',
             '## Optional application-owned request-handler decorators',
             'The decorator is composed only as the handler of an explicit `Route`.',
             'zero downstream calls or call its one downstream handler exactly once',
@@ -328,7 +466,7 @@ function boundaryGuardrailFailures(string $root): array
             'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 11',
+            'Contract version: 12',
             '## Application-owned WebSocket profile',
             'PHPThis has no WebSocket runtime or core WebSocket API.',
             'Frames never become PHPThis HTTP `Request` or `Response` values',
@@ -364,7 +502,7 @@ function boundaryGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
-            'keeps `.ai/websockets.md` optional under current Contract version 11 as well as its originating Contract version 9',
+            'keeps `.ai/websockets.md` optional under current Contract version 12 as well as its originating Contract version 9',
         ],
         'VISION.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',

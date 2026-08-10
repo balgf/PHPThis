@@ -24,14 +24,16 @@ final readonly class SessionConfiguration
         }
 
         if (
-            preg_match('/^[!#$%&\'*+\-.^_`|~0-9A-Za-z]+$/D', $cookieName) !== 1
-            || strlen($cookieName) > 128
+            strlen($cookieName) > 128
+            || preg_match('/^[!#$%&\'*+\-.^_`|~0-9A-Za-z]+$/D', $cookieName) !== 1
         ) {
             throw new InvalidArgumentException('Session cookie name must be an HTTP token.');
         }
 
+        $lowercaseCookieName = strtolower($cookieName);
         if (
-            (str_starts_with($cookieName, '__Host-') || str_starts_with($cookieName, '__Secure-'))
+            (str_starts_with($lowercaseCookieName, '__host-') || str_starts_with($lowercaseCookieName, '__secure-')
+                || str_starts_with($lowercaseCookieName, '__http-'))
             && !$cookieSecure
         ) {
             throw new InvalidArgumentException('Prefixed session cookies must be Secure.');

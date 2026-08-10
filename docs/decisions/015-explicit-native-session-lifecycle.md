@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 049](049-bounded-response-cookie-profile.md), which retains this decision's explicit typed-cookie and native-session lifecycle while replacing only its cookie validation, duplicate-name, prefix, size, expiration, and lifetime-wording subset.
+
 ## Context
 
 Applications need short-lived server-side state for capabilities such as authenticated identity and a shopping cart. Direct `$_SESSION` access looks local but starts from mutable process-global state, uses string keys without an application contract, and can hold PHP's session lock across unrelated work. A global helper, middleware chain, or session field on `Request` would hide the same lifecycle behind another spelling.

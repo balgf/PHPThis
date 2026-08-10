@@ -28,7 +28,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Add or change a qualifying simple endpoint | `.ai/routing.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
 | Explain current PHPThis behavior | `docs/knowledge-map.md` | relevant contract, source, and nearest tests |
 | Change route grammar, matching, or route composition | `.ai/routing.md` | route manifest, `src/Routing/`, request delivery, and route tests |
-| Change request or response behavior | `.ai/http.md` | `src/Http/`, `src/Application.php`, and nearest behavior tests |
+| Change request, response, or generic response-cookie behavior | `.ai/http.md` | `src/Http/`, `src/Application.php`, and nearest behavior tests |
 | Change frontend integration or application-owned HTML rendering | `.ai/http.md` | `docs/frontend-integration.md`, exact HTTP paths, and behavior evidence; add other concern guides only when entered |
 | Change email guidance or application email context | `.ai/application-context.md` | `docs/email.md`, task routes, integration context, package inventory, focused guardrails, and installed-consumer evidence |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | reader, boundary, front controller, and boundary tests |

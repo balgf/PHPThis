@@ -650,6 +650,11 @@ function decisionSuccessorRelationshipFailures(string $root): array
                 '046-canonical-executable-example-boundaries.md',
             ],
         ],
+        'docs/decisions/015-explicit-native-session-lifecycle.md' => [
+            'title' => 'ADR 015: Explicit native session lifecycle',
+            'metadata' => "Superseded in part by [ADR 049](049-bounded-response-cookie-profile.md), which retains this decision's explicit typed-cookie and native-session lifecycle while replacing only its cookie validation, duplicate-name, prefix, size, expiration, and lifetime-wording subset.",
+            'targets' => ['049-bounded-response-cookie-profile.md'],
+        ],
         'docs/decisions/017-bounded-trailing-positive-integer-routes.md' => [
             'title' => 'ADR 017: Bounded trailing positive-integer routes',
             'metadata' => "Superseded in part by [ADR 019](019-bounded-multiple-typed-routes.md), which retains this decision's positive-integer and explicit-routing constraints while replacing its one-trailing-parameter limit, prefix index, and one-value metadata.",
@@ -757,6 +762,7 @@ function decisionSuccessorRelationshipFailures(string $root): array
         '| [ADR 008](008-explicit-request-boundary.md) | Upload and response-streaming reconsideration item | [ADR 026](026-bounded-file-transfers.md) |',
         '| [ADR 012](012-pdo-transport-application-owned-dialects.md) | Shared request-wide query-budget option for terminal-summary database sources | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 013](013-optional-crud-reference-profile.md) | Earlier Create tree and handler-owned transaction description | [ADR 021](021-application-owned-typed-input-boundaries.md) |',
+        '| [ADR 015](015-explicit-native-session-lifecycle.md) | Cookie validation, duplicate-name, prefix, size, expiration, and lifetime wording | [ADR 049](049-bounded-response-cookie-profile.md) |',
         '| [ADR 017](017-bounded-trailing-positive-integer-routes.md) | One-trailing-parameter limit, prefix index, and one-value route metadata | [ADR 019](019-bounded-multiple-typed-routes.md) |',
         '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
@@ -1965,6 +1971,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
+            "'revision' => 4",
+            "'manifest_sha256' => 'a4df486ce96f24ec41d463e106611ce2fb09a4273145f891aabf5058fd50d9e0'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -1994,7 +2002,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
+            '"revision": 4',
             '"source-skeleton"',
+            '"tree": "fd1e77584607fc459c32528a67f425a1266f03af"',
+            '"fixture_sha256": "0126de5a38e2fb1992a511ab88594eaf5e796574866226fd0d1914ffd1da6173"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -2133,7 +2144,7 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 2;',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 4;',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',

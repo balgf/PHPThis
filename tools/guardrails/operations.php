@@ -753,7 +753,7 @@ function operationGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
-            'It keeps `.ai/workbench.md` optional under Consumer Contract version 11.',
+            'It keeps `.ai/workbench.md` optional under Consumer Contract version 12.',
         ],
         'VISION.md' => [
             'A human can inspect one explicitly composed development object or operation through a fresh strict process',
@@ -768,7 +768,7 @@ function operationGuardrailFailures(string $root): array
         ],
         '.ai/application-context.md' => [
             'Include `.ai/workbench.md` in the current skeleton and template with `NOT_APPLICABLE(WORKBENCH)`',
-            'Contract version 11 carries that optional file forward, and it is not a checker requirement.',
+            'Contract version 12 carries that optional file forward, and it is not a checker requirement.',
             'existing adopted business operation and transaction',
             'recorded finite tested console commands',
         ],
@@ -906,7 +906,7 @@ function operationGuardrailFailures(string $root): array
     }
 
     if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveWorkbenchContextIsRequired')) {
-        $failures[] = 'Consumer Contract version 11 must not reject an existing consumer only because .ai/workbench.md is absent.';
+        $failures[] = 'Consumer Contract version 12 must not reject an existing consumer only because .ai/workbench.md is absent.';
     }
 
     $redisCoordinationArtifactMarkers = [

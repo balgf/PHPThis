@@ -2,7 +2,7 @@
 
 This directory owns current context for the checked health-only starter. Replace only the guides entered by a task with verified project facts before adding product behavior. Keep context committed, concise, and free of secrets.
 
-Consumer Contract v11 and Strict Profile v3 remain mandatory. Application guidance may strengthen them but may not weaken them.
+Consumer Contract v12 and Strict Profile v3 remain mandatory. Application guidance may strengthen them but may not weaken them.
 
 ## Universal entrypoints
 

@@ -300,23 +300,113 @@ function httpBoundaryBehaviorTests(): Generator
         1,
         0,
     );
+    $maximumNameValue = new ResponseCookie(
+        'n',
+        str_repeat('v', 4_095),
+        '/',
+        false,
+        false,
+        CookieSameSite::Lax,
+    );
+    $maximumName = new ResponseCookie(
+        str_repeat('n', 4_096),
+        '',
+        '/',
+        false,
+        false,
+        CookieSameSite::Lax,
+    );
+    $maximumPath = new ResponseCookie(
+        'path',
+        'value',
+        '/' . str_repeat('p', 1_023),
+        false,
+        false,
+        CookieSameSite::Strict,
+    );
+    $maximumExpirationTimestamp = PHP_INT_SIZE >= 8 ? (int) '253402300799' : PHP_INT_MAX;
+    $maximumExpiration = new ResponseCookie(
+        'expiration',
+        'value',
+        '/',
+        false,
+        false,
+        CookieSameSite::Lax,
+        $maximumExpirationTimestamp,
+    );
+    $maximumAge = new ResponseCookie(
+        'maximum-age',
+        'value',
+        '/',
+        false,
+        false,
+        CookieSameSite::Lax,
+        maximumAgeSeconds: 34_560_000,
+    );
+    $casePreservedPrefix = new ResponseCookie(
+        '__hOsT-HtTp-case',
+        'value',
+        '/',
+        true,
+        true,
+        CookieSameSite::Lax,
+    );
 
     if (
         $live->headerValue() !== '__Host-PHPThisSession=' . str_repeat('a', 32)
             . '; Path=/; Secure; HttpOnly; SameSite=Lax'
         || $expired->headerValue() !== '__Host-PHPThisSession=; Path=/'
             . '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; Secure; HttpOnly; SameSite=Lax'
+        || strlen($maximumNameValue->name) + strlen($maximumNameValue->value) !== 4_096
+        || strlen($maximumName->name) !== 4_096
+        || strlen($maximumPath->path) !== 1_024
+        || !str_contains(
+            $maximumExpiration->headerValue(),
+            'Expires=' . gmdate('D, d M Y H:i:s \G\M\T', $maximumExpirationTimestamp),
+        )
+        || strlen(gmdate('Y', $maximumExpirationTimestamp)) !== 4
+        || !str_contains($maximumAge->headerValue(), 'Max-Age=34560000')
+        || !str_starts_with($casePreservedPrefix->headerValue(), '__hOsT-HtTp-case=value;')
     ) {
-        throw new RuntimeException('Expected deterministic secure cookie serialization.');
+        throw new RuntimeException('Expected exact cookie bounds and deterministic secure serialization.');
     }
 
     $invalidCookies = [
         static fn(): ResponseCookie => new ResponseCookie('bad name', 'value', '/', true, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie(str_repeat('n', 4_097), '', '/', false, false, CookieSameSite::Lax),
         static fn(): ResponseCookie => new ResponseCookie('name', "bad;value", '/', true, true, CookieSameSite::Lax),
         static fn(): ResponseCookie => new ResponseCookie('name', 'value', 'relative', true, true, CookieSameSite::Lax),
-        static fn(): ResponseCookie => new ResponseCookie('__Host-name', 'value', '/', false, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/bad;attribute', false, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/bad path', false, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', "/bad\x1F", false, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', "/bad\x7F", false, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('n', str_repeat('v', 4_096), '/', false, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/' . str_repeat('p', 1_024), false, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', "/\x80", false, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, false, CookieSameSite::Lax, 0),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, false, CookieSameSite::Lax, maximumAgeSeconds: -1),
+        static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, false, CookieSameSite::Lax, maximumAgeSeconds: 34_560_001),
+        static fn(): ResponseCookie => new ResponseCookie('__hOsT-name', 'value', '/', false, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('__hOsT-name', 'value', '/nested', true, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('__sEcUrE-name', 'value', '/', false, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('__hTtP-name', 'value', '/', true, false, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('__HtTp-name', 'value', '/', false, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('__hOsT-HtTp-name', 'value', '/nested', true, true, CookieSameSite::Lax),
+        static fn(): ResponseCookie => new ResponseCookie('__HoSt-HtTp-name', 'value', '/', true, false, CookieSameSite::Lax),
         static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, true, CookieSameSite::None),
     ];
+
+    if (PHP_INT_SIZE >= 8) {
+        $invalidCookies[] = static fn(): ResponseCookie => new ResponseCookie(
+            'name',
+            'value',
+            '/',
+            false,
+            false,
+            CookieSameSite::Lax,
+            (int) '253402300800',
+        );
+    }
 
     foreach ($invalidCookies as $invalidCookie) {
         try {
@@ -328,17 +418,62 @@ function httpBoundaryBehaviorTests(): Generator
         throw new RuntimeException('Expected an invalid response cookie to be rejected.');
     }
 
-    try {
-        new Response(200, [], '', [$live, $expired]);
-    } catch (InvalidArgumentException) {
-        try {
-            new Response(200, ['Set-Cookie' => 'manual=value'], '');
-        } catch (InvalidArgumentException) {
-            return;
-        }
+    $maximumCookies = [];
+    for ($index = 0; $index < 50; $index++) {
+        $maximumCookies[] = new ResponseCookie('cookie-' . $index, 'value', '/', false, false, CookieSameSite::Lax);
+    }
+    $maximumCookieResponse = new Response(200, [], '', $maximumCookies);
+    $caseSensitiveNames = new Response(200, [], '', [
+        new ResponseCookie('Case', 'one', '/', false, false, CookieSameSite::Lax),
+        new ResponseCookie('case', 'two', '/', false, false, CookieSameSite::Lax),
+    ]);
+    $firstAggregateCookie = new ResponseCookie('first', str_repeat('v', 4_091), '/', false, false, CookieSameSite::Lax);
+    $secondAggregateCookie = new ResponseCookie('second', str_repeat('v', 4_044), '/', false, false, CookieSameSite::Lax);
+    $maximumAggregateResponse = new Response(200, [], '', [$firstAggregateCookie, $secondAggregateCookie]);
+
+    if (
+        count($maximumCookieResponse->cookies) !== 50
+        || count($caseSensitiveNames->cookies) !== 2
+        || strlen($firstAggregateCookie->headerValue()) + strlen($secondAggregateCookie->headerValue()) !== 8_192
+        || count($maximumAggregateResponse->cookies) !== 2
+    ) {
+        throw new RuntimeException('Expected exact response-cookie collection bounds and case-sensitive names.');
     }
 
-    throw new RuntimeException('Expected duplicate or manually encoded response cookies to be rejected.');
+    $invalidResponses = [
+        static fn(): Response => new Response(200, [], '', [
+            new ResponseCookie('duplicate', 'one', '/', false, false, CookieSameSite::Lax),
+            new ResponseCookie('duplicate', 'two', '/nested', false, false, CookieSameSite::Lax),
+        ]),
+        static fn(): Response => new Response(200, [], '', [
+            new ResponseCookie('first', str_repeat('v', 4_091), '/', false, false, CookieSameSite::Lax),
+            new ResponseCookie('second', str_repeat('v', 4_045), '/', false, false, CookieSameSite::Lax),
+        ]),
+        static fn(): Response => new Response(200, [], '', [
+            ...array_map(
+                static fn(int $index): ResponseCookie => new ResponseCookie(
+                    'overflow-' . $index,
+                    'value',
+                    '/',
+                    false,
+                    false,
+                    CookieSameSite::Lax,
+                ),
+                range(0, 50),
+            ),
+        ]),
+        static fn(): Response => new Response(200, ['Set-Cookie' => 'manual=value'], ''),
+    ];
+
+    foreach ($invalidResponses as $invalidResponse) {
+        try {
+            $invalidResponse();
+        } catch (InvalidArgumentException) {
+            continue;
+        }
+
+        throw new RuntimeException('Expected an invalid response cookie collection to be rejected.');
+    }
 };
 
     yield 'ordinary response framing enforces final statuses and explicit HEAD routing' => static function (): void {

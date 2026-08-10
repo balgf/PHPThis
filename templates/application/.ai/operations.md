@@ -27,11 +27,11 @@
 - Adoption: {{SESSION_ADOPTION_OR_NOT_APPLICABLE}}
 - Native handler, exact effective save path, ownership, and application isolation: {{SESSION_NATIVE_FILE_STORAGE_POLICY_OR_NOT_APPLICABLE}}
 - Required PHP session settings and dated verification source: {{SESSION_PHP_SETTINGS_SOURCE_AND_VERIFIED_DATE_OR_NOT_APPLICABLE}}
-- Cookie name, `Secure`, SameSite, and environment policy: {{SESSION_COOKIE_POLICY_OR_NOT_APPLICABLE}}
+- Exact cookie name and prefix, canonical casing, host-only scope, production `Secure`/HTTPS policy or isolated-development exception, SameSite, live no-`Expires`/no-`Max-Age` behavior, deletion scope, and TLS/HSTS owner: {{SESSION_COOKIE_POLICY_OR_NOT_APPLICABLE}}
 - Deployment topology, concurrent-request evidence, and lock assumptions: {{SESSION_TOPOLOGY_AND_CONCURRENCY_POLICY_OR_NOT_APPLICABLE}}
 - Garbage collection and obsolete-file cleanup: {{SESSION_GARBAGE_COLLECTION_POLICY_OR_NOT_APPLICABLE}}
 
-`ext-pdo` and `ext-session` are installed-framework requirements even when database or session state is not adopted. A database adoption additionally records its actual `ext-pdo_*` driver. Session adoption additionally requires the native `files` handler, an exact save path proven isolated to this application identity, the fixed runtime settings, and cleanup retention beyond the absolute session lifetime described in installed `vendor/phpthis/framework/docs/sessions.md`. Do not copy session IDs, cookie values, CSRF tokens, or snapshots into this file.
+`ext-pdo` and `ext-session` are installed-framework requirements even when database or session state is not adopted. A database adoption additionally records its actual `ext-pdo_*` driver. Session adoption additionally requires the native `files` handler, an exact save path proven isolated to this application identity, the fixed runtime settings, and cleanup retention beyond the absolute session lifetime described in installed `vendor/phpthis/framework/docs/sessions.md`. Production authentication/session cookies normally use `Secure` through an end-to-end reviewed HTTPS deployment; limit an insecure cookie to an explicitly isolated development profile. Prefer a canonically cased `__Host-` session name when compatible, while recording that prefix behavior depends on supporting user agents and does not isolate ports. Do not copy session IDs, cookie values, CSRF tokens, or snapshots into this file.
 
 ## Request-policy runtime
 

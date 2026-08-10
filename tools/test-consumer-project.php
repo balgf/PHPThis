@@ -112,6 +112,11 @@ try {
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);
+    proveInstalledBoundedResponseCookieProfileDistribution(
+        $project,
+        $installedFramework,
+        $environment,
+    );
     proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project, $installedFramework);
     proveInstalledCrudAccessSurfaceGuidanceDistribution($project, $installedFramework);
     proveInstalledIdentifierRepresentationGuidanceDistribution($project, $installedFramework);
@@ -762,6 +767,11 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
                 '046-canonical-executable-example-boundaries.md',
             ],
         ],
+        'docs/decisions/015-explicit-native-session-lifecycle.md' => [
+            'title' => 'ADR 015: Explicit native session lifecycle',
+            'metadata' => "Superseded in part by [ADR 049](049-bounded-response-cookie-profile.md), which retains this decision's explicit typed-cookie and native-session lifecycle while replacing only its cookie validation, duplicate-name, prefix, size, expiration, and lifetime-wording subset.",
+            'targets' => ['049-bounded-response-cookie-profile.md'],
+        ],
         'docs/decisions/017-bounded-trailing-positive-integer-routes.md' => [
             'title' => 'ADR 017: Bounded trailing positive-integer routes',
             'metadata' => "Superseded in part by [ADR 019](019-bounded-multiple-typed-routes.md), which retains this decision's positive-integer and explicit-routing constraints while replacing its one-trailing-parameter limit, prefix index, and one-value metadata.",
@@ -829,6 +839,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 008](008-explicit-request-boundary.md) | Upload and response-streaming reconsideration item | [ADR 026](026-bounded-file-transfers.md) |',
         '| [ADR 012](012-pdo-transport-application-owned-dialects.md) | Shared request-wide query-budget option for terminal-summary database sources | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 013](013-optional-crud-reference-profile.md) | Earlier Create tree and handler-owned transaction description | [ADR 021](021-application-owned-typed-input-boundaries.md) |',
+        '| [ADR 015](015-explicit-native-session-lifecycle.md) | Cookie validation, duplicate-name, prefix, size, expiration, and lifetime wording | [ADR 049](049-bounded-response-cookie-profile.md) |',
         '| [ADR 017](017-bounded-trailing-positive-integer-routes.md) | One-trailing-parameter limit, prefix index, and one-value route metadata | [ADR 019](019-bounded-multiple-typed-routes.md) |',
         '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
@@ -1115,7 +1126,8 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'The source-preparation approval above did not itself authorize any external operation.',
             'Issue #37 subsequently records the exact framework candidate, framework tag, and framework package-distribution evidence.',
             'Its coordinated-release record remains partial and unproved pending the exact dedicated-skeleton candidate and tag, clean exact `composer create-project` proof, both GitHub prereleases, and announcement; those operations remain separately gated.',
-            'Current `main` after `v0.1.0-alpha.6` contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not part of the immutable Alpha 6 framework source.',
+            'Accepted unreleased `main` after `v0.1.0-alpha.6` now includes ADR 049, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling.',
+            'Those changes are not part of the immutable Alpha 6 framework source, and their acceptance selects no later release identity, candidate, or external operation.',
             'This tracked process does not replace the external evidence or establish live host availability.',
         ],
         $installedFramework . '/docs/decisions/047-bounded-alpha-6-release-scope.md' => [
@@ -1150,7 +1162,9 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             '| Alpha 6 completion | The matching skeleton, clean public `create-project` proof, GitHub prereleases, and final announcement remain tracked in [release issue #37](https://github.com/balgf/PHPThis/issues/37) |',
             'Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation.',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.5'",
-            'The Alpha 6 framework tag is immutable. This `main`-branch README is a post-tag documentation correction for stale prepublication wording in that tag; it does not rewrite the tagged artifact.',
+            '| Current unreleased source | ADR 049, Consumer Contract version 12, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |',
+            "The Alpha 6 framework tag is immutable. Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling.",
+            'Those changes are not part of Alpha 6, and their acceptance selects no later release identity or candidate.',
             'Use the Alpha 6 `create-project` path only after the exact skeleton version and clean public-install evidence are recorded; existing applications may assess the framework package independently',
             '## Key documentation',
             '[Consumer Contract](docs/consumer-contract.md)',
@@ -1174,8 +1188,9 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence, but its Alpha 6 record remains partial and unproved pending the dedicated skeleton, clean exact `create-project` proof, both GitHub prereleases, and announcement.',
             'Framework-side evidence therefore does not establish that an exact Alpha 6 skeleton command is available.',
             'Package availability is an external fact: verify the evidence record, GitHub, and Packagist before selecting a package version.',
-            'Current `main` after the framework tag contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not tagged Alpha 6 source.',
-            'Alpha 6 adopts Consumer Contract version 11 through ADR 045 while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`.',
+            "Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling",
+            'these are not Alpha 6 source and select no later release identity or candidate.',
+            'Alpha 6 itself adopts Consumer Contract version 11 through ADR 045 while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`.',
             'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
         ],
@@ -2452,7 +2467,7 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
             'Strict Profile version 3 remains unchanged',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 11',
+            'Contract version: 12',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
             'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
@@ -2523,6 +2538,390 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
     }
 
     fwrite(STDOUT, "PASS installed session cleanup and response framing distribution\n");
+}
+
+/** @param array<string, string> $environment */
+function proveInstalledBoundedResponseCookieProfileDistribution(
+    string $project,
+    string $installedFramework,
+    array $environment,
+): void {
+    $proofPath = $project . '/installed-response-cookie-proof.php';
+    writeFile(
+        $proofPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace PHPThis\Http {
+    function headers_sent(): bool
+    {
+        return false;
+    }
+
+    function header(string $header, bool $replace = true): void
+    {
+        $GLOBALS['installed_response_cookie_headers'][] = [$header, $replace];
+    }
+
+    function http_response_code(int $responseCode = 0): int
+    {
+        $GLOBALS['installed_response_cookie_status'] = $responseCode;
+
+        return $responseCode;
+    }
+}
+
+namespace {
+use PHPThis\Http\CookieSameSite;
+use PHPThis\Http\Response;
+use PHPThis\Http\ResponseCookie;
+use PHPThis\Http\ResponseEmitter;
+use PHPThis\Session\SessionConfiguration;
+
+require __DIR__ . '/vendor/autoload.php';
+
+/** @param callable(): object $operation */
+function requireInvalidCookieOperation(callable $operation): void
+{
+    try {
+        $operation();
+    } catch (InvalidArgumentException) {
+        return;
+    }
+
+    throw new RuntimeException('Installed response-cookie proof accepted a rejected value.');
+}
+
+$maximumNameValue = new ResponseCookie(
+    'n',
+    str_repeat('v', 4_095),
+    '/',
+    false,
+    false,
+    CookieSameSite::Lax,
+);
+$maximumName = new ResponseCookie(
+    str_repeat('n', 4_096),
+    '',
+    '/',
+    false,
+    false,
+    CookieSameSite::Lax,
+);
+$maximumPath = new ResponseCookie(
+    'path',
+    'value',
+    '/' . str_repeat('p', 1_023),
+    false,
+    false,
+    CookieSameSite::Strict,
+);
+$maximumExpirationTimestamp = PHP_INT_SIZE >= 8 ? (int) '253402300799' : PHP_INT_MAX;
+$maximumExpiration = new ResponseCookie(
+    'maximum-expiration',
+    'value',
+    '/',
+    false,
+    false,
+    CookieSameSite::Lax,
+    $maximumExpirationTimestamp,
+);
+$maximumAge = new ResponseCookie(
+    'maximum-age',
+    'value',
+    '/',
+    false,
+    false,
+    CookieSameSite::Lax,
+    maximumAgeSeconds: 34_560_000,
+);
+$prefixCase = new ResponseCookie(
+    '__hOsT-HtTp-case',
+    'value',
+    '/',
+    true,
+    true,
+    CookieSameSite::Lax,
+);
+$configuration = new SessionConfiguration(
+    'INSTALLEDPROOF',
+    '__Host-InstalledSession',
+    true,
+    CookieSameSite::Lax,
+    __DIR__,
+);
+$live = $configuration->liveCookie(str_repeat('a', 32));
+$expired = $configuration->expiredCookie();
+$developmentConfiguration = new SessionConfiguration(
+    'INSTALLEDDEVELOPMENT',
+    'InstalledDevelopmentSession',
+    false,
+    CookieSameSite::Strict,
+    __DIR__,
+);
+$developmentLive = $developmentConfiguration->liveCookie(str_repeat('d', 32));
+$developmentExpired = $developmentConfiguration->expiredCookie();
+
+if (
+    strlen($maximumNameValue->name) + strlen($maximumNameValue->value) !== 4_096
+    || strlen($maximumName->name) !== 4_096
+    || strlen($maximumPath->path) !== 1_024
+    || $maximumExpiration->headerValue() !== 'maximum-expiration=value; Path=/'
+        . '; Expires=' . gmdate('D, d M Y H:i:s \G\M\T', $maximumExpirationTimestamp)
+        . '; SameSite=Lax'
+    || $maximumAge->headerValue() !== 'maximum-age=value; Path=/; Max-Age=34560000; SameSite=Lax'
+    || strlen(gmdate('Y', $maximumExpirationTimestamp)) !== 4
+    || !str_starts_with($prefixCase->headerValue(), '__hOsT-HtTp-case=value;')
+    || $live->headerValue() !== '__Host-InstalledSession=' . str_repeat('a', 32)
+        . '; Path=/; Secure; HttpOnly; SameSite=Lax'
+    || $expired->headerValue() !== '__Host-InstalledSession=; Path=/'
+        . '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; Secure; HttpOnly; SameSite=Lax'
+    || $developmentLive->headerValue() !== 'InstalledDevelopmentSession=' . str_repeat('d', 32)
+        . '; Path=/; HttpOnly; SameSite=Strict'
+    || $developmentExpired->headerValue() !== 'InstalledDevelopmentSession=; Path=/'
+        . '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0; HttpOnly; SameSite=Strict'
+) {
+    throw new RuntimeException('Installed response-cookie boundary serialization changed.');
+}
+
+$maximumCookies = [];
+
+for ($index = 0; $index < 50; $index++) {
+    $maximumCookies[] = new ResponseCookie(
+        'cookie-' . $index,
+        'value',
+        '/',
+        false,
+        false,
+        CookieSameSite::Lax,
+    );
+}
+
+$caseSensitiveNames = new Response(200, [], '', [
+    new ResponseCookie('Case', 'one', '/', false, false, CookieSameSite::Lax),
+    new ResponseCookie('case', 'two', '/', false, false, CookieSameSite::Lax),
+]);
+$firstAggregate = new ResponseCookie(
+    'first',
+    str_repeat('v', 4_091),
+    '/',
+    false,
+    false,
+    CookieSameSite::Lax,
+);
+$secondAggregate = new ResponseCookie(
+    'second',
+    str_repeat('v', 4_044),
+    '/',
+    false,
+    false,
+    CookieSameSite::Lax,
+);
+
+if (
+    count((new Response(200, [], '', $maximumCookies))->cookies) !== 50
+    || count($caseSensitiveNames->cookies) !== 2
+    || strlen($firstAggregate->headerValue()) + strlen($secondAggregate->headerValue()) !== 8_192
+    || count((new Response(200, [], '', [$firstAggregate, $secondAggregate]))->cookies) !== 2
+) {
+    throw new RuntimeException('Installed response-cookie collection bounds changed.');
+}
+
+$invalidOperations = [
+    static fn(): ResponseCookie => new ResponseCookie('bad name', 'value', '/', false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie(str_repeat('n', 4_097), '', '/', false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'bad;value', '/', false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', 'relative', false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/bad;attribute', false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/bad path', false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', "/bad\x1F", false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', "/bad\x7F", false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('n', str_repeat('v', 4_096), '/', false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/' . str_repeat('p', 1_024), false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', "/\x80", false, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, false, CookieSameSite::Lax, 0),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, false, CookieSameSite::Lax, maximumAgeSeconds: -1),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, false, CookieSameSite::Lax, maximumAgeSeconds: 34_560_001),
+    static fn(): ResponseCookie => new ResponseCookie('__hOsT-name', 'value', '/', false, true, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('__sEcUrE-name', 'value', '/', false, true, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('__hTtP-name', 'value', '/', true, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('__HtTp-name', 'value', '/', false, true, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('__hOsT-name', 'value', '/nested', true, true, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('__hOsT-HtTp-name', 'value', '/nested', true, true, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('__HoSt-HtTp-name', 'value', '/', true, false, CookieSameSite::Lax),
+    static fn(): ResponseCookie => new ResponseCookie('name', 'value', '/', false, true, CookieSameSite::None),
+    static fn(): SessionConfiguration => new SessionConfiguration(
+        'INSTALLEDPROOF',
+        '__hOsT-insecure',
+        false,
+        CookieSameSite::Lax,
+        __DIR__,
+    ),
+    static fn(): SessionConfiguration => new SessionConfiguration(
+        'INSTALLEDPROOF',
+        '__hTtP-insecure',
+        false,
+        CookieSameSite::Lax,
+        __DIR__,
+    ),
+    static fn(): SessionConfiguration => new SessionConfiguration(
+        'INSTALLEDPROOF',
+        '__sEcUrE-insecure',
+        false,
+        CookieSameSite::Lax,
+        __DIR__,
+    ),
+    static fn(): SessionConfiguration => new SessionConfiguration(
+        'INSTALLEDPROOF',
+        '__hOsT-HtTp-insecure',
+        false,
+        CookieSameSite::Lax,
+        __DIR__,
+    ),
+    static fn(): Response => new Response(200, [], '', [
+        new ResponseCookie('duplicate', 'one', '/', false, false, CookieSameSite::Lax),
+        new ResponseCookie('duplicate', 'two', '/nested', false, false, CookieSameSite::Lax),
+    ]),
+    static fn(): Response => new Response(200, [], '', [
+        new ResponseCookie('first', str_repeat('v', 4_091), '/', false, false, CookieSameSite::Lax),
+        new ResponseCookie('second', str_repeat('v', 4_045), '/', false, false, CookieSameSite::Lax),
+    ]),
+    static fn(): Response => new Response(200, [], '', [
+        ...array_map(
+            static fn(int $index): ResponseCookie => new ResponseCookie(
+                'overflow-' . $index,
+                'value',
+                '/',
+                false,
+                false,
+                CookieSameSite::Lax,
+            ),
+            range(0, 50),
+        ),
+    ]),
+    static fn(): Response => new Response(200, ['set-cookie' => 'manual=value'], ''),
+];
+
+if (PHP_INT_SIZE >= 8) {
+    $invalidOperations[] = static fn(): ResponseCookie => new ResponseCookie(
+        'name',
+        'value',
+        '/',
+        false,
+        false,
+        CookieSameSite::Lax,
+        (int) '253402300800',
+    );
+}
+
+foreach ($invalidOperations as $invalidOperation) {
+    requireInvalidCookieOperation($invalidOperation);
+}
+
+$GLOBALS['installed_response_cookie_headers'] = [];
+$GLOBALS['installed_response_cookie_status'] = null;
+(new ResponseEmitter())->emit(new Response(200, ['X-Installed-Proof' => 'present'], '', [
+    new ResponseCookie('first-emitted', 'one', '/', false, true, CookieSameSite::Lax),
+    new ResponseCookie('second-emitted', 'two', '/', true, true, CookieSameSite::Strict),
+]));
+
+if (
+    $GLOBALS['installed_response_cookie_status'] !== 200
+    || $GLOBALS['installed_response_cookie_headers'] !== [
+        ['X-Installed-Proof: present', true],
+        ['Set-Cookie: first-emitted=one; Path=/; HttpOnly; SameSite=Lax', false],
+        ['Set-Cookie: second-emitted=two; Path=/; Secure; HttpOnly; SameSite=Strict', false],
+    ]
+) {
+    throw new RuntimeException('Installed response emitter did not preserve separate Set-Cookie fields.');
+}
+
+fwrite(STDOUT, "PASS installed bounded response-cookie runtime\n");
+}
+PHP,
+    );
+
+    try {
+        $result = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+        requireSuccess($result, 'The installed framework failed bounded response-cookie runtime proof.');
+        requireOutputContains($result, 'PASS installed bounded response-cookie runtime');
+    } finally {
+        if (is_file($proofPath) && !unlink($proofPath)) {
+            throw new RuntimeException('Unable to remove the installed response-cookie proof.');
+        }
+    }
+
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/testing.md' => [
+            "Assert the live cookie's exact configured name and identifier",
+            "Assert the deletion cookie's same name and scope",
+            'the limit that `HttpOnly` does not prevent script-initiated authenticated requests',
+        ],
+        $installedFramework . '/docs/decisions/049-bounded-response-cookie-profile.md' => [
+            '# ADR 049: Bounded response-cookie profile',
+            'Status: accepted',
+            'One `Response` contains at most 50 cookies',
+            'The accepted core ceiling is 2,620 physical lines for this response-cookie correction.',
+            'The final readable implementation occupies 2,618 lines',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'Contract version: 12',
+            '### Contract version 12',
+            'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
+            'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
+        ],
+        $installedFramework . '/docs/request-handling.md' => [
+            'A cookie name is a non-empty HTTP token, and its name plus cookie-safe ASCII value is at most 4,096 bytes.',
+            'Prefix requirements are checked case-insensitively without changing the emitted case-sensitive cookie name.',
+            'One response accepts at most 50 cookies and at most 8,192 bytes summed across their exact `headerValue()` strings.',
+        ],
+        $installedFramework . '/docs/sessions.md' => [
+            'A live session cookie contains the configured exact name and the certified 32-character lowercase-hex identifier',
+            'The deletion cookie keeps the exact configured name',
+            'browser session restoration can retain the cookie',
+            'the browser still attaches the cookie to eligible script-initiated requests',
+        ],
+        $installedFramework . '/docs/security.md' => [
+            'Production authentication/session cookies normally use `Secure`',
+            'Treat `HttpOnly` as protection from ordinary script access to cookie bytes, not from script-initiated authenticated requests.',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Construct, emit, or review a generic response cookie |',
+        ],
+        $installedFramework . '/templates/application/.ai/operations.md' => [
+            'Exact cookie name and prefix, canonical casing, host-only scope',
+            'limit an insecure cookie to an explicitly isolated development profile',
+        ],
+        $installedFramework . '/templates/application/.ai/testing.md' => [
+            "Assert the live cookie's exact configured name and identifier",
+            "Assert the deletion cookie's same name and scope",
+        ],
+        $installedFramework . '/src/Http/ResponseCookie.php' => [
+            'MAXIMUM_NAME_VALUE_BYTES = 4_096',
+            'MAXIMUM_PATH_BYTES = 1_024',
+            "strlen(gmdate('Y', \$expiresAt)) !== 4",
+            'MAXIMUM_AGE_SECONDS = 34_560_000',
+            "str_starts_with(\$lowercaseName, '__http-')",
+            "str_starts_with(\$lowercaseName, '__host-http-')",
+        ],
+        $installedFramework . '/src/Http/Response.php' => [
+            'MAXIMUM_COOKIES = 50',
+            'MAXIMUM_COOKIE_HEADER_BYTES = 8_192',
+            'isset($cookieNames[$cookie->name])',
+            '$cookieHeaderBytes += strlen($cookie->headerValue())',
+        ],
+        $installedFramework . '/src/Session/SessionConfiguration.php' => [
+            '$lowercaseCookieName = strtolower($cookieName);',
+            "str_starts_with(\$lowercaseCookieName, '__http-')",
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'bounded response-cookie profile');
+
+    fwrite(STDOUT, "PASS installed bounded response-cookie profile distribution\n");
 }
 
 function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
