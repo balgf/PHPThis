@@ -122,6 +122,7 @@ function distributionGuardrailFailures(
         $expectedCheckStages = [
             '@guard',
             '@analyse',
+            '@test:agent-evaluation',
             '@test:profile',
             '@test:duplication',
             '@test:consumer',

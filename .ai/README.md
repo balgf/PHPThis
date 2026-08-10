@@ -52,6 +52,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Change PHPStan or static-analysis configuration or implementation | `.ai/static-analysis.md` | affected extension, configuration, fixtures, and installed-consumer proof |
 | Add or change a Strict Profile rule | `.ai/strict-profile.md` | then inspect its enforcement owner, positive and negative fixtures, catalogue, and installed-consumer proof |
 | Change maintainer tests or evidence organization | `.ai/testing.md` | applicable concern-owned test file, behavior names, and complete gate |
+| Change the maintainer-only agent evaluation kit | `.ai/testing.md` | `docs/evaluation.md`, explicit task inventory and schemas under `tools/agent-evaluation/`, validator self-test, and complete gate; do not add a model-provider integration or execute untrusted candidate code without a separately accepted sandbox boundary |
 | Review the consumer capability profile | `.ai/consumer-profile.md` | checked-in application proof and affected current guides |
 | Prepare or publish a release | `RELEASING.md` | approved scope, exact candidate commits, CI, packages, and public-install proof |
 

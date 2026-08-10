@@ -107,6 +107,7 @@ try {
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
+    proveInstalledAgentEvaluationGuidanceDistribution($installedFramework);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);
@@ -1112,7 +1113,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'The source-preparation approval above did not itself authorize any external operation.',
             'Issue #37 subsequently records the exact framework candidate, framework tag, and framework package-distribution evidence.',
             'Its coordinated-release record remains partial and unproved pending the exact dedicated-skeleton candidate and tag, clean exact `composer create-project` proof, both GitHub prereleases, and announcement; those operations remain separately gated.',
-            'Current `main` after `v0.1.0-alpha.6` contains a documentation and guardrail coherence correction, changes no core, and is not part of the immutable Alpha 6 framework source.',
+            'Current `main` after `v0.1.0-alpha.6` contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not part of the immutable Alpha 6 framework source.',
             'This tracked process does not replace the external evidence or establish live host availability.',
         ],
         $installedFramework . '/docs/decisions/047-bounded-alpha-6-release-scope.md' => [
@@ -1171,7 +1172,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence, but its Alpha 6 record remains partial and unproved pending the dedicated skeleton, clean exact `create-project` proof, both GitHub prereleases, and announcement.',
             'Framework-side evidence therefore does not establish that an exact Alpha 6 skeleton command is available.',
             'Package availability is an external fact: verify the evidence record, GitHub, and Packagist before selecting a package version.',
-            'Current `main` after the framework tag contains a documentation and guardrail coherence correction only, changes no core, and is not tagged Alpha 6 source.',
+            'Current `main` after the framework tag contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not tagged Alpha 6 source.',
             'Alpha 6 adopts Consumer Contract version 11 through ADR 045 while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`.',
             'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
@@ -1769,6 +1770,30 @@ function requireInstalledNativeRuntimeDependencyBoundary(
             'Installed default skeleton must require only PHP and phpthis/framework.',
         );
     }
+}
+
+function proveInstalledAgentEvaluationGuidanceDistribution(string $installedFramework): void
+{
+    requireInstalledArtifactMarkers(
+        [
+            $installedFramework . '/docs/evaluation.md' => [
+                '## Agent Evaluation Kit v0.1',
+                'It is maintainer tooling and is not part of the installed framework package.',
+                'Its scorer source is visible',
+                'It cannot show that one model, skill, prompt, context strategy, or framework condition is better than another.',
+                'The scorer must not be available to the agent during generation',
+                'Human semantic review remains separate.',
+                '`AGENT_EVALUATION_EXTERNAL_HOLDOUT_AFTER_GENERATION`',
+            ],
+            $installedFramework . '/docs/guardrails.md' => [
+                'The Agent Evaluation Kit guard requires',
+                'installed-consumer evidence pins only the packaged `docs/evaluation.md` boundary',
+            ],
+        ],
+        'agent evaluation guidance',
+    );
+
+    fwrite(STDOUT, "PASS installed agent evaluation guidance distribution\n");
 }
 
 function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string $installedFramework): void

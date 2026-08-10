@@ -1,0 +1,87 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Routes;
+use PHPThis\Application;
+use PHPThis\Http\Request;
+use PHPThis\Routing\Router;
+
+$candidateArgument = $argv[1] ?? null;
+
+if (!is_string($candidateArgument) || count($argv) !== 2) {
+    fwrite(STDERR, "Usage: php holdout.php.fixture <candidate-application-path>\n");
+    exit(2);
+}
+
+$candidateRoot = realpath($candidateArgument);
+
+if (!is_string($candidateRoot) || !is_dir($candidateRoot)) {
+    fwrite(STDERR, "FAIL change.simple-ping public smoke: candidate application is unavailable.\n");
+    exit(2);
+}
+
+$autoloadPath = $candidateRoot . '/vendor/autoload.php';
+
+if (!is_file($autoloadPath)) {
+    fwrite(STDERR, "FAIL change.simple-ping public smoke: candidate autoload is unavailable.\n");
+    exit(2);
+}
+
+require $autoloadPath;
+
+$expectSame = static function (mixed $expected, mixed $actual, string $message): void {
+    if ($expected !== $actual) {
+        throw new RuntimeException($message);
+    }
+};
+
+try {
+    $application = new Application(new Router(Routes::create()));
+
+    $ping = $application->handle(new Request('GET', '/ping'));
+    $expectSame(200, $ping->status, 'GET /ping must return 200.');
+    $expectSame(
+        [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ],
+        $ping->headers,
+        'GET /ping must return only the exact JSON and no-store headers.',
+    );
+    $expectSame("{\"status\":\"pong\"}\n", $ping->body, 'GET /ping must return the exact body.');
+
+    $pingNotAllowed = $application->handle(new Request('POST', '/ping'));
+    $expectSame(405, $pingNotAllowed->status, 'POST /ping must return 405.');
+    $expectSame('GET', $pingNotAllowed->headers['Allow'] ?? null, 'POST /ping must advertise GET.');
+    $expectSame(
+        'no-store',
+        $pingNotAllowed->headers['Cache-Control'] ?? null,
+        'POST /ping must retain the routing-owned no-store policy.',
+    );
+
+    $health = $application->handle(new Request('GET', '/health'));
+    $expectSame(200, $health->status, 'GET /health must remain 200.');
+    $expectSame(
+        [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ],
+        $health->headers,
+        'GET /health headers changed.',
+    );
+    $expectSame("{\"status\":\"ok\"}\n", $health->body, 'GET /health body changed.');
+
+    $missing = $application->handle(new Request('GET', '/missing'));
+    $expectSame(404, $missing->status, 'An unknown route must return 404.');
+    $expectSame(
+        'no-store',
+        $missing->headers['Cache-Control'] ?? null,
+        'An unknown route must retain the routing-owned no-store policy.',
+    );
+} catch (Throwable $failure) {
+    fwrite(STDERR, "FAIL change.simple-ping public smoke: {$failure->getMessage()}\n");
+    exit(1);
+}
+
+fwrite(STDOUT, "PASS change.simple-ping public smoke\n");

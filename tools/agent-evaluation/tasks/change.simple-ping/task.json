@@ -1,0 +1,55 @@
+{
+    "schema_version": 1,
+    "id": "change.simple-ping",
+    "revision": 1,
+    "kind": "implementation",
+    "prompt": {
+        "path": "prompt.md",
+        "sha256": "e6f816c782311ded0c06a67ed2c95048c7d4689c32cd78ddfaa17ea52a5a9952"
+    },
+    "rubric": {
+        "path": "rubric.md",
+        "sha256": "6b8c6654fded2a48a88901c90fe4e12c1f0d5ba8c6a4afb7c5777972c66d00cf"
+    },
+    "base": {
+        "fixture": "source-skeleton",
+        "tree": "56698425d789518fc52e4ebf157e15e13227c660",
+        "fixture_sha256": "5a8f78aba62f9f7470ad51965a506b3a28a5514981c06efe9ffc82d236926986"
+    },
+    "workspace_policy": {
+        "allowed_existing_paths": [
+            "src/HealthRoutes.php",
+            "tests/run.php"
+        ],
+        "allowed_new_paths": [
+            "src/PingHandler.php"
+        ],
+        "protected_paths": [
+            ".git",
+            "AGENTS.md",
+            "bootstrap.php",
+            "composer.json",
+            "composer.lock",
+            "public",
+            "src/Routes.php",
+            "vendor"
+        ],
+        "max_changed_files": 3,
+        "max_added_lines": 160,
+        "max_deleted_lines": 20
+    },
+    "budgets": {
+        "model_tokens": 40000,
+        "wall_seconds": 1200,
+        "repair_turns": 1,
+        "command_output_bytes": 4194304
+    },
+    "checks": {
+        "application_check": "composer check",
+        "public_scorer": {
+            "path": "public/holdout.php.fixture",
+            "sha256": "8cbefd965a545c9266c1765eb394ea1a8911c58f54c68e60eb828eef9cc3f9e0"
+        }
+    },
+    "comparative_claims": false
+}

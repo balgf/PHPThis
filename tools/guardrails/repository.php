@@ -1819,6 +1819,21 @@ function repositoryGuardrailFailures(string $root): array
         'tools/guardrails/boundaries.php',
         'tools/guardrails/operations.php',
         'tools/guardrails/distribution.php',
+        'tools/agent-evaluation.php',
+        'tools/agent-evaluation/README.md',
+        'tools/agent-evaluation/support.php',
+        'tools/agent-evaluation/tasks.php',
+        'tools/agent-evaluation/run.php',
+        'tools/agent-evaluation/score.php',
+        'tools/agent-evaluation/schema/run.schema.json',
+        'tools/agent-evaluation/schema/score.schema.json',
+        'tools/agent-evaluation/schema/task.schema.json',
+        'tools/agent-evaluation/tasks.json',
+        'tools/agent-evaluation/tasks/change.simple-ping/prompt.md',
+        'tools/agent-evaluation/tasks/change.simple-ping/public/holdout.php.fixture',
+        'tools/agent-evaluation/tasks/change.simple-ping/rubric.md',
+        'tools/agent-evaluation/tasks/change.simple-ping/task.json',
+        'tools/test-agent-evaluation.php',
         'tools/test-application-duplication.php',
         'tools/setup-example.php',
         'tools/test-database-drivers.php',
@@ -1887,6 +1902,143 @@ function repositoryGuardrailFailures(string $root): array
         }
     }
 
+    $agentEvaluationArtifactMarkers = [
+        '.ai/README.md' => [
+            'Change the maintainer-only agent evaluation kit',
+            'do not add a model-provider integration or execute untrusted candidate code without a separately accepted sandbox boundary',
+        ],
+        '.ai/testing.md' => [
+            'The maintainer-only PHPThis Agent Evaluation Kit lives under `tools/agent-evaluation/`',
+            '`tools/agent-evaluation.php` is its small explicit ordered entrypoint over exactly four cohesive modules',
+            'The repository does not call a model provider or execute AI-authored candidate code as part of `composer check`.',
+        ],
+        'ROADMAP.md' => [
+            'Agent Evaluation Kit v0.1 data contract',
+            'official evaluation still requires an external post-generation holdout and repeated isolated trials',
+        ],
+        'composer.json' => [
+            '"test:agent-evaluation": "php tools/test-agent-evaluation.php"',
+            '"@test:agent-evaluation"',
+        ],
+        'docs/evaluation.md' => [
+            '## Agent Evaluation Kit v0.1',
+            '`AGENT_EVALUATION_PUBLIC_SMOKE_ONLY`',
+            '`AGENT_EVALUATION_EXTERNAL_HOLDOUT_AFTER_GENERATION`',
+            'at least ten trials per condition before reporting a rate',
+        ],
+        'docs/guardrails.md' => [
+            'The Agent Evaluation Kit guard',
+            'does not execute AI-authored candidate code',
+        ],
+        'tools/agent-evaluation.php' => [
+            "require_once __DIR__ . '/agent-evaluation/support.php';",
+            "require_once __DIR__ . '/agent-evaluation/tasks.php';",
+            "require_once __DIR__ . '/agent-evaluation/run.php';",
+            "require_once __DIR__ . '/agent-evaluation/score.php';",
+            'validate-run <task-id> <run.json>',
+            'validate-score <task-id> <run.json> <score.json>',
+        ],
+        'tools/agent-evaluation/README.md' => [
+            '`AGENT_EVALUATION_SCHEMA_VERSION(1)`',
+            '`AGENT_EVALUATION_TASK(change.simple-ping)`',
+            '`AGENT_EVALUATION_PUBLIC_SMOKE_ONLY`',
+            '`AGENT_EVALUATION_EXTERNAL_HOLDOUT_AFTER_GENERATION`',
+            'This directory remains outside the framework package.',
+            'It requires exactly `support.php`, `tasks.php`, `run.php`, and `score.php`',
+            'Version 1 treats the event and candidate-patch artifacts as opaque retained bytes',
+            'This is the one retained artifact whose internal format v0.1 validates.',
+        ],
+        'tools/agent-evaluation/support.php' => [
+            'AGENT_EVALUATION_MAX_JSON_BYTES',
+            'JSON input contains a duplicate object name.',
+        ],
+        'tools/agent-evaluation/tasks.php' => [
+            'AGENT_EVALUATION_TASK_REVISIONS',
+            'Public smoke task {$taskId} cannot authorize comparative claims.',
+        ],
+        'tools/agent-evaluation/run.php' => [
+            'Run record task revision does not match the selected task.',
+            'Prepared-dependencies manifest lines must be unique and byte-sorted.',
+        ],
+        'tools/agent-evaluation/score.php' => [
+            "['manifest_valid', 'workspace_policy', 'application_check', 'public_scorer', 'resource_bounds']",
+            'Automated status does not match the admissibility, mandatory checks, and critical dimensions.',
+        ],
+        'tools/agent-evaluation/tasks.json' => [
+            '"change.simple-ping"',
+        ],
+        'tools/agent-evaluation/schema/run.schema.json' => [
+            '"title": "PHPThis agent evaluation run v1"',
+            '"candidate_patch_path"',
+        ],
+        'tools/agent-evaluation/schema/score.schema.json' => [
+            '"title": "PHPThis agent evaluation score v1"',
+            '"manifest_valid"',
+            '"human_review"',
+        ],
+        'tools/agent-evaluation/schema/task.schema.json' => [
+            '"title": "PHPThis agent evaluation task v1"',
+            '"comparative_claims"',
+            '"const": false',
+        ],
+        'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
+            '"id": "change.simple-ping"',
+            '"source-skeleton"',
+            '"max_changed_files": 3',
+            '"comparative_claims": false',
+        ],
+        'tools/agent-evaluation/tasks/change.simple-ping/prompt.md' => [
+            'Add a dependency-free `GET /ping` endpoint',
+            'Keep the existing `GET /health` behavior unchanged.',
+        ],
+        'tools/agent-evaluation/tasks/change.simple-ping/rubric.md' => [
+            '`AGENT_EVALUATION_PUBLIC_SMOKE_ONLY`',
+            '`manifest_valid`',
+            'An official evaluation supplies a separately versioned scorer only after generation',
+        ],
+        'tools/agent-evaluation/tasks/change.simple-ping/public/holdout.php.fixture' => [
+            "new Request('GET', '/ping')",
+            "new Request('POST', '/ping')",
+            "new Request('GET', '/health')",
+            "new Request('GET', '/missing')",
+        ],
+        'tools/test-agent-evaluation.php' => [
+            'Run record task revision does not match the selected task.',
+            "['public_scorer'] = false",
+            "['weighted_score'] = 99",
+            'prompt SHA-256 does not match its recorded hash.',
+        ],
+    ];
+    requireGuardrailArtifactMarkers(
+        $root,
+        $agentEvaluationArtifactMarkers,
+        'agent-evaluation source and boundary',
+        $failures,
+    );
+
+    $candidateExecutionFunctions = [
+        'proc_open(',
+        'shell_exec(',
+        'passthru(',
+        'system(',
+        'exec(',
+        'popen(',
+        'pcntl_exec(',
+    ];
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'tools/agent-evaluation.php' => $candidateExecutionFunctions,
+            'tools/agent-evaluation/support.php' => $candidateExecutionFunctions,
+            'tools/agent-evaluation/tasks.php' => $candidateExecutionFunctions,
+            'tools/agent-evaluation/run.php' => $candidateExecutionFunctions,
+            'tools/agent-evaluation/score.php' => $candidateExecutionFunctions,
+            'tools/test-agent-evaluation.php' => $candidateExecutionFunctions,
+        ],
+        'agent-evaluation candidate-execution prohibition',
+        $failures,
+    );
+
     $duplicationAdvisoryArtifactMarkers = [
         '.ai/application-context.md' => 'report-only review signal over the same application manifest',
         '.ai/static-analysis.md' => '48-token minimum',
@@ -1941,6 +2093,26 @@ function repositoryGuardrailFailures(string $root): array
 
     if ($installedConsumerStage === false) {
         $failures[] = 'The canonical framework check must execute the installed release and consumer-distribution proof.';
+    }
+
+    $agentEvaluationStage = is_array($duplicationCheck)
+        ? array_search('@test:agent-evaluation', $duplicationCheck, true)
+        : false;
+    $analysisStage = is_array($duplicationCheck)
+        ? array_search('@analyse', $duplicationCheck, true)
+        : false;
+    $profileStage = is_array($duplicationCheck)
+        ? array_search('@test:profile', $duplicationCheck, true)
+        : false;
+
+    if (
+        $agentEvaluationStage === false
+        || $analysisStage === false
+        || $profileStage === false
+        || $agentEvaluationStage <= $analysisStage
+        || $agentEvaluationStage >= $profileStage
+    ) {
+        $failures[] = 'The canonical framework check must run the agent-evaluation self-test after analysis and before the Strict Profile suite.';
     }
 
     return $failures;

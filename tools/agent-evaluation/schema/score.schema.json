@@ -1,0 +1,145 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/score-v1.json",
+    "title": "PHPThis agent evaluation score v1",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "run_id",
+        "task_id",
+        "task_revision",
+        "run_record_sha256",
+        "prompt_sha256",
+        "scorer_sha256",
+        "candidate_patch_sha256",
+        "admissible",
+        "mandatory_checks",
+        "dimensions",
+        "weighted_score",
+        "automated_status",
+        "human_review",
+        "notes"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 1
+        },
+        "run_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "task_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "task_revision": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "run_record_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "prompt_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "scorer_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "candidate_patch_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "admissible": {
+            "type": "boolean"
+        },
+        "mandatory_checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "manifest_valid",
+                "workspace_policy",
+                "application_check",
+                "public_scorer",
+                "resource_bounds"
+            ],
+            "properties": {
+                "manifest_valid": {
+                    "type": "boolean"
+                },
+                "workspace_policy": {
+                    "type": "boolean"
+                },
+                "application_check": {
+                    "type": "boolean"
+                },
+                "public_scorer": {
+                    "type": "boolean"
+                },
+                "resource_bounds": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dimensions": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "observable_behavior",
+                "boundary_behavior",
+                "resource_bounds",
+                "application_gate",
+                "change_locality"
+            ],
+            "properties": {
+                "observable_behavior": {
+                    "$ref": "#/$defs/percentage"
+                },
+                "boundary_behavior": {
+                    "$ref": "#/$defs/percentage"
+                },
+                "resource_bounds": {
+                    "$ref": "#/$defs/percentage"
+                },
+                "application_gate": {
+                    "$ref": "#/$defs/percentage"
+                },
+                "change_locality": {
+                    "$ref": "#/$defs/percentage"
+                }
+            }
+        },
+        "weighted_score": {
+            "$ref": "#/$defs/percentage"
+        },
+        "automated_status": {
+            "enum": [
+                "pass",
+                "fail"
+            ]
+        },
+        "human_review": {
+            "enum": [
+                "pending",
+                "pass",
+                "fail"
+            ]
+        },
+        "notes": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "$defs": {
+        "percentage": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+        },
+        "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        }
+    }
+}

@@ -40,6 +40,7 @@
         "example:setup": "php tools/setup-example.php",
         "guard": "php tools/guardrails.php",
         "test": "php vendor/bin/phpunit --configuration=phpunit.xml.dist",
+        "test:agent-evaluation": "php tools/test-agent-evaluation.php",
         "test:coverage": "php vendor/bin/phpunit --configuration=phpunit.xml.dist --coverage-text --coverage-clover=.phpunit.cache/coverage.xml",
         "test:duplication": "php tools/test-application-duplication.php",
         "test:consumer": "php tools/test-consumer-project.php",
@@ -49,6 +50,7 @@
         "check": [
             "@guard",
             "@analyse",
+            "@test:agent-evaluation",
             "@test:profile",
             "@test:duplication",
             "@test:consumer",

@@ -511,7 +511,7 @@ function contextGuardrailFailures(string $root): array
             'PASS installed session cleanup and response framing distribution',
         ],
         'docs/guardrails.md' => [
-            'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. The tagged Alpha 6 framework source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. The current post-tag documentation and guardrail coherence correction changes no core',
+            'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. The tagged Alpha 6 framework source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. Current post-tag documentation, guardrail, and maintainer-only evaluation-tooling changes add no core',
             'The ADR 045 guard pins the bounded session-cleanup failure precedence and ordinary-response framing contract.',
             'A dedicated selectable behavior also proves rejection at `199`, acceptance at `599`, explicit application-owned `HEAD`, and an exact `405` with zero GET-handler calls when only GET is declared; its subprocess must keep stderr empty.',
             'superseded-identifier restart and distinct-new-identifier cleanup',
@@ -825,7 +825,7 @@ function contextGuardrailFailures(string $root): array
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence.',
             'ADR 040 and `v0.1.0-alpha.5` remain the authority for the latest complete coordinated framework, skeleton, and public-install release.',
             'The Issue #37 evidence record classifies Alpha 6 overall as partial and unproved',
-            'Current `main` after the Alpha 6 framework tag is a documentation and guardrail coherence correction, changes no core, and is not part of the immutable Alpha 6 source boundary.',
+            'Current `main` after the Alpha 6 framework tag contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not part of the immutable Alpha 6 source boundary.',
             'Release preparation, exact-candidate approval and proof, partial-publication recovery, publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
         ],
         '.ai/testing.md' => [
@@ -900,7 +900,7 @@ function contextGuardrailFailures(string $root): array
             'Alpha 6 and `v0.1.0-alpha.6` are now the latest immutable framework tag and source boundary.',
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence',
             'Partial for the coordinated release:',
-            'Current post-tag `main` is a documentation and guardrail coherence correction only.',
+            'Current post-tag `main` contains documentation, guardrail, and maintainer-only evaluation-tooling changes.',
         ],
         'SECURITY.md' => [
             'Any approved prerelease candidate may be announced only after its complete public-artifact gate in `RELEASING.md` passes.',
@@ -917,7 +917,7 @@ function contextGuardrailFailures(string $root): array
             '`v0.1.0-alpha.6` is the latest immutable framework tag and source boundary.',
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence',
             'Framework-side evidence therefore does not establish that an exact Alpha 6 skeleton command is available.',
-            'Current `main` after the framework tag contains a documentation and guardrail coherence correction only, changes no core, and is not tagged Alpha 6 source.',
+            'Current `main` after the framework tag contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not tagged Alpha 6 source.',
             'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
         ],
@@ -1147,7 +1147,7 @@ function contextGuardrailFailures(string $root): array
             'The source-preparation approval above did not itself authorize any external operation.',
             'Issue #37 subsequently records the exact framework candidate, framework tag, and framework package-distribution evidence.',
             'Its coordinated-release record remains partial and unproved pending the exact dedicated-skeleton candidate and tag, clean exact `composer create-project` proof, both GitHub prereleases, and announcement',
-            'Current `main` after `v0.1.0-alpha.6` contains a documentation and guardrail coherence correction, changes no core, and is not part of the immutable Alpha 6 framework source.',
+            'Current `main` after `v0.1.0-alpha.6` contains documentation, guardrail, and maintainer-only evaluation-tooling changes, adds no core, and is not part of the immutable Alpha 6 framework source.',
         ],
         'docs/decisions/047-bounded-alpha-6-release-scope.md' => [
             'Status: accepted',

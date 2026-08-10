@@ -1,0 +1,210 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/task-v1.json",
+    "title": "PHPThis agent evaluation task v1",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "id",
+        "revision",
+        "kind",
+        "prompt",
+        "rubric",
+        "base",
+        "workspace_policy",
+        "budgets",
+        "checks",
+        "comparative_claims"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 1
+        },
+        "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+        },
+        "revision": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "kind": {
+            "const": "implementation"
+        },
+        "prompt": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "sha256"
+            ],
+            "properties": {
+                "path": {
+                    "$ref": "#/$defs/relativePath"
+                },
+                "sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "rubric": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "sha256"
+            ],
+            "properties": {
+                "path": {
+                    "$ref": "#/$defs/relativePath"
+                },
+                "sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "base": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "fixture",
+                "tree",
+                "fixture_sha256"
+            ],
+            "properties": {
+                "fixture": {
+                    "const": "source-skeleton"
+                },
+                "tree": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{40}([a-f0-9]{24})?$"
+                },
+                "fixture_sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "workspace_policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "allowed_existing_paths",
+                "allowed_new_paths",
+                "protected_paths",
+                "max_changed_files",
+                "max_added_lines",
+                "max_deleted_lines"
+            ],
+            "properties": {
+                "allowed_existing_paths": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/relativePath"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                },
+                "allowed_new_paths": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/relativePath"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                },
+                "protected_paths": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/relativePath"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                },
+                "max_changed_files": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "max_added_lines": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "max_deleted_lines": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "budgets": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "model_tokens",
+                "wall_seconds",
+                "repair_turns",
+                "command_output_bytes"
+            ],
+            "properties": {
+                "model_tokens": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "wall_seconds": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "repair_turns": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "command_output_bytes": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "application_check",
+                "public_scorer"
+            ],
+            "properties": {
+                "application_check": {
+                    "const": "composer check"
+                },
+                "public_scorer": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "path",
+                        "sha256"
+                    ],
+                    "properties": {
+                        "path": {
+                            "$ref": "#/$defs/relativePath"
+                        },
+                        "sha256": {
+                            "$ref": "#/$defs/sha256"
+                        }
+                    }
+                }
+            }
+        },
+        "comparative_claims": {
+            "const": false
+        }
+    },
+    "$defs": {
+        "relativePath": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*[\\u0000-\\u001F\\u007F])(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$)).+$"
+        },
+        "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        }
+    }
+}
