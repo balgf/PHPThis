@@ -123,6 +123,7 @@ function distributionGuardrailFailures(
             '@guard',
             '@analyse',
             '@test:agent-evaluation',
+            '@test:agent-evaluation-controller',
             '@test:profile',
             '@test:duplication',
             '@test:consumer',

@@ -81,6 +81,7 @@ docs/decisions/044-bounded-task-routed-ai-context.md
 docs/decisions/045-bounded-session-cleanup-and-response-framing.md
 docs/decisions/046-canonical-executable-example-boundaries.md
 docs/decisions/047-bounded-alpha-6-release-scope.md
+docs/decisions/048-isolated-agent-evaluation-controller.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md

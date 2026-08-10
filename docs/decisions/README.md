@@ -55,6 +55,7 @@ Accepted records:
 - `045-bounded-session-cleanup-and-response-framing.md`
 - `046-canonical-executable-example-boundaries.md`
 - `047-bounded-alpha-6-release-scope.md`
+- `048-isolated-agent-evaluation-controller.md`
 
 ## Current and successor relationships
 

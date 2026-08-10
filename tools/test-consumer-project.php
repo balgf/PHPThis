@@ -107,7 +107,7 @@ try {
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
-    proveInstalledAgentEvaluationGuidanceDistribution($installedFramework);
+    proveInstalledAgentEvaluationGuidanceDistribution($installedFramework, $archiveFiles);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
     proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);
@@ -1772,15 +1772,30 @@ function requireInstalledNativeRuntimeDependencyBoundary(
     }
 }
 
-function proveInstalledAgentEvaluationGuidanceDistribution(string $installedFramework): void
+/** @param list<string> $archiveFiles */
+function proveInstalledAgentEvaluationGuidanceDistribution(
+    string $installedFramework,
+    array $archiveFiles,
+): void
 {
     requireInstalledArtifactMarkers(
         [
             $installedFramework . '/docs/evaluation.md' => [
-                '## Agent Evaluation Kit v0.1',
+                '## Agent Evaluation Kit v0.1 and controller v0.2',
                 'It is maintainer tooling and is not part of the installed framework package.',
                 'Its scorer source is visible',
                 'It cannot show that one model, skill, prompt, context strategy, or framework condition is better than another.',
+                'ADR 048 accepts the separately located `tools/agent-evaluation-controller.php` entrypoint',
+                '`prepare -> generate -> freeze -> score -> validate -> retain -> cleanup`',
+                'deterministic test-only `fake-codex` runner',
+                'The normal `composer check` path uses only synthetic fixtures',
+                'The sole accepted future real runner is `codex-exec`',
+                'There is no native macOS, `sandbox-exec`, direct-host, arbitrary-shell, discovered-runner, or second-runner fallback.',
+                'Version 0.2 does not yet implement or exercise that real adapter.',
+                '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
+                '`AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY`',
+                '`AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK`',
+                '`comparative_claims` to `false`',
                 'The scorer must not be available to the agent during generation',
                 'Human semantic review remains separate.',
                 '`AGENT_EVALUATION_EXTERNAL_HOLDOUT_AFTER_GENERATION`',
@@ -1792,6 +1807,36 @@ function proveInstalledAgentEvaluationGuidanceDistribution(string $installedFram
         ],
         'agent evaluation guidance',
     );
+
+    $excludedControllerPaths = [
+        'tools/agent-evaluation-controller.php',
+        'tools/test-agent-evaluation-controller.php',
+    ];
+
+    foreach ($archiveFiles as $archiveFile) {
+        if (
+            in_array($archiveFile, $excludedControllerPaths, true)
+            || str_starts_with($archiveFile, 'tools/agent-evaluation-controller/')
+        ) {
+            throw new RuntimeException(
+                "The maintainer-only agent-evaluation controller escaped into the framework archive: {$archiveFile}",
+            );
+        }
+    }
+
+    foreach (
+        [
+            $installedFramework . '/tools/agent-evaluation-controller.php',
+            $installedFramework . '/tools/agent-evaluation-controller',
+            $installedFramework . '/tools/test-agent-evaluation-controller.php',
+        ] as $excludedInstalledPath
+    ) {
+        if (file_exists($excludedInstalledPath) || is_link($excludedInstalledPath)) {
+            throw new RuntimeException(
+                "The maintainer-only agent-evaluation controller escaped into the installed package: {$excludedInstalledPath}",
+            );
+        }
+    }
 
     fwrite(STDOUT, "PASS installed agent evaluation guidance distribution\n");
 }

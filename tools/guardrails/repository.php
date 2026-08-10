@@ -1833,7 +1833,17 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation/tasks/change.simple-ping/public/holdout.php.fixture',
         'tools/agent-evaluation/tasks/change.simple-ping/rubric.md',
         'tools/agent-evaluation/tasks/change.simple-ping/task.json',
+        'tools/agent-evaluation-controller.php',
+        'tools/agent-evaluation-controller/README.md',
+        'tools/agent-evaluation-controller/contract.php',
+        'tools/agent-evaluation-controller/workspace.php',
+        'tools/agent-evaluation-controller/process.php',
+        'tools/agent-evaluation-controller/codex.php',
+        'tools/agent-evaluation-controller/scoring.php',
+        'tools/agent-evaluation-controller/controller.php',
+        'tools/agent-evaluation-controller/fixtures/fake-codex.php',
         'tools/test-agent-evaluation.php',
+        'tools/test-agent-evaluation-controller.php',
         'tools/test-application-duplication.php',
         'tools/setup-example.php',
         'tools/test-database-drivers.php',
@@ -2039,6 +2049,247 @@ function repositoryGuardrailFailures(string $root): array
         $failures,
     );
 
+    $agentEvaluationControllerArtifactMarkers = [
+        '.ai/README.md' => [
+            'Change the maintainer-only agent evaluation kit or controller',
+            '`tools/agent-evaluation-controller/`',
+            '`fake-codex`',
+            'future `codex-exec` must fail closed',
+        ],
+        '.ai/testing.md' => [
+            'ADR 048 separately accepts `tools/agent-evaluation-controller.php` as the small ordered v0.2 entrypoint.',
+            'It requires exactly `contract.php`, `workspace.php`, `process.php`, `codex.php`, `scoring.php`, and `controller.php`',
+            'only `process.php` owns process-execution primitives',
+            '`prepare -> generate -> freeze -> score -> validate -> retain -> cleanup`',
+            '`test:agent-evaluation-controller` follows `test:agent-evaluation` and precedes the profile stage',
+            'The complete gate uses only synthetic fixtures',
+            'The initial v0.2 implementation does not implement or exercise `codex-exec`.',
+        ],
+        'ROADMAP.md' => [
+            'ADR 048 accepts the isolated Agent Evaluation Controller v0.2 boundary',
+            'complete deterministic `fake-codex` lifecycle',
+            'The sole future real adapter is opt-in `codex-exec`',
+            'with no native macOS fallback',
+        ],
+        'composer.json' => [
+            '"test:agent-evaluation-controller": "php tools/test-agent-evaluation-controller.php"',
+            '"@test:agent-evaluation-controller"',
+        ],
+        'docs/decisions/048-isolated-agent-evaluation-controller.md' => [
+            'Status: accepted',
+            'It requires exactly `contract.php`, `workspace.php`, `process.php`, `codex.php`, `scoring.php`, and `controller.php`',
+            'Only `process.php` owns process-execution primitives.',
+            '`prepare -> generate -> freeze -> score -> validate -> retain -> cleanup`',
+            'There is no runner plugin system, filesystem discovery',
+            'The only accepted future real runner adapter is `codex-exec`',
+            'The initial v0.2 change does not implement or exercise that real adapter',
+            '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
+            '`AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY`',
+            '`AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK`',
+        ],
+        'docs/decisions/README.md' => [
+            '048-isolated-agent-evaluation-controller.md',
+        ],
+        'docs/evaluation.md' => [
+            '## Agent Evaluation Kit v0.1 and controller v0.2',
+            'ADR 048 accepts the separately located `tools/agent-evaluation-controller.php` entrypoint',
+            '`prepare -> generate -> freeze -> score -> validate -> retain -> cleanup`',
+            'deterministic test-only `fake-codex` runner',
+            'The sole accepted future real runner is `codex-exec`',
+            'Version 0.2 does not yet implement or exercise that real adapter.',
+            '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
+            '`AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY`',
+            '`AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK`',
+        ],
+        'docs/guardrails.md' => [
+            'The separate ADR 048 controller guard pins `tools/agent-evaluation-controller.php`',
+            'process primitives confined to `process.php`',
+            '`test:agent-evaluation-controller` stage after the v0.1 self-test and before the profile',
+            'the test-only `fake-codex` runner used by `composer check`',
+            'These source and fake-lifecycle controls do not implement or certify the future real path.',
+        ],
+        'tools/agent-evaluation-controller.php' => [
+            "require_once __DIR__ . '/agent-evaluation.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/contract.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/workspace.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/process.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/codex.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/scoring.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/controller.php';",
+            'agentEvaluationControllerMain($argv)',
+        ],
+        'tools/agent-evaluation-controller/README.md' => [
+            '# PHPThis Agent Evaluation Controller v0.2',
+            '## Fixed composition',
+            'There is no module or task discovery, runner selector',
+            '`process.php` is the only controller file that owns native process primitives.',
+            'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
+            '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
+            '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
+            '`AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY`',
+            '`AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK`',
+        ],
+        'tools/agent-evaluation-controller/contract.php' => [
+            'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
+            "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 1;',
+            'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
+            'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
+            'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
+            "const AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER = 'codex-exec';",
+            "const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER = 'fake-codex';",
+            '? AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER',
+            ': AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER;',
+            "'launcher' => 'docker-oci'",
+            "'credential_broker' => 'responses-api-run-proxy'",
+            "'network' => 'proxy-only'",
+        ],
+        'tools/agent-evaluation-controller/process.php' => [
+            'function agentEvaluationControllerRunProcess(',
+            'proc_open(',
+            "['bypass_shell' => true]",
+            'proc_terminate(',
+            'proc_get_status(',
+            'proc_close(',
+            'pcntl_exec(',
+            'pcntl_fork(',
+            'posix_setsid(',
+            'posix_kill(',
+        ],
+        'tools/agent-evaluation-controller/codex.php' => [
+            "const AGENT_EVALUATION_CONTROLLER_RUNNER_CODEX = 'codex-exec';",
+            "const AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_CODEX = 'fake-codex';",
+            "const AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE = 'AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE';",
+            "const AGENT_EVALUATION_CONTROLLER_FUTURE_CREDENTIAL_BROKER = 'responses-api-run-proxy';",
+            'if (!$fakeForTests) {',
+            'agentEvaluationControllerValidateFutureIsolationProfile($isolation, $budgets, \'generation\');',
+            "throw new RuntimeException(\n            AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE",
+            'agentEvaluationControllerRunProcess(',
+        ],
+        'tools/agent-evaluation-controller/scoring.php' => [
+            "const AGENT_EVALUATION_CONTROLLER_LIVE_SCORING_UNAVAILABLE = 'AGENT_EVALUATION_CONTROLLER_LIVE_SCORING_UNAVAILABLE';",
+            'if (!$fakeForTests) {',
+            'agentEvaluationControllerValidateFutureIsolationProfile($isolation, $budgets, \'scoring\');',
+            "throw new RuntimeException(\n            AGENT_EVALUATION_CONTROLLER_LIVE_SCORING_UNAVAILABLE",
+            'agentEvaluationControllerRunProcess(',
+        ],
+        'tools/agent-evaluation-controller/controller.php' => [
+            "const AGENT_EVALUATION_CONTROLLER_PHASES = [\n    'prepare',\n    'generate',\n    'freeze',\n    'score',\n    'validate',\n    'retain',\n    'cleanup',\n];",
+            'PASS agent evaluation controller v0.2: synthetic lifecycle installed; live execution fails closed',
+            'AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE',
+            "throw new RuntimeException(\n                AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE",
+            'function agentEvaluationControllerExecuteSynthetic(',
+            'if (!agentEvaluationControllerTestingEnabled()) {',
+        ],
+        'tools/agent-evaluation-controller/fixtures/fake-codex.php' => [
+            "const AGENT_EVALUATION_CONTROLLER_TEST_FAKE_CODEX = 'AGENT_EVALUATION_CONTROLLER_TEST_FAKE_CODEX';",
+            'if ($mode === \'process-output-limit\') {',
+            'if ($mode === \'process-wall-limit\') {',
+            'if ($mode === \'process-descendant\') {',
+        ],
+        'tools/test-agent-evaluation-controller.php' => [
+            "define('PHPTHIS_AGENT_EVALUATION_CONTROLLER_TESTING', true);",
+            'agentEvaluationControllerExecuteSynthetic(',
+            '($evidenceManifest[\'observed_phases\'] ?? null) === AGENT_EVALUATION_CONTROLLER_PHASES',
+            'AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE',
+            'AGENT_EVALUATION_CONTROLLER_LIVE_SCORING_UNAVAILABLE',
+            'PASS agent evaluation controller self-test: lifecycle, isolation contracts, evidence, and cleanup controls',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledAgentEvaluationGuidanceDistribution($installedFramework, $archiveFiles);',
+            '## Agent Evaluation Kit v0.1 and controller v0.2',
+            'The sole accepted future real runner is `codex-exec`',
+            'str_starts_with($archiveFile, \'tools/agent-evaluation-controller/\')',
+            '$installedFramework . \'/tools/agent-evaluation-controller\'',
+        ],
+    ];
+    requireGuardrailArtifactMarkers(
+        $root,
+        $agentEvaluationControllerArtifactMarkers,
+        'agent-evaluation controller v0.2 source and boundary',
+        $failures,
+    );
+
+    $controllerEntrypoint = file_get_contents($root . '/tools/agent-evaluation-controller.php');
+    $controllerRequires = [];
+
+    if (
+        !is_string($controllerEntrypoint)
+        || preg_match_all('/^require_once [^;]+;$/m', $controllerEntrypoint, $controllerRequires) === false
+        || $controllerRequires[0] !== [
+            "require_once __DIR__ . '/agent-evaluation.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/contract.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/workspace.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/process.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/codex.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/scoring.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/controller.php';",
+        ]
+    ) {
+        $failures[] = 'The agent-evaluation controller entrypoint must retain its exact v0.1 dependency and six-module require order.';
+    }
+
+    $controllerProcessPrimitives = [
+        'proc_open(',
+        'proc_terminate(',
+        'proc_get_status(',
+        'proc_close(',
+        'shell_exec(',
+        'passthru(',
+        'system(',
+        'exec(',
+        'popen(',
+        'pcntl_exec(',
+        'pcntl_fork(',
+        'pcntl_wait(',
+        'pcntl_waitpid(',
+        'posix_setsid(',
+        'posix_kill(',
+        'posix_getpid(',
+    ];
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'tools/agent-evaluation-controller.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/contract.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/workspace.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/codex.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/scoring.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/controller.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/fixtures/fake-codex.php' => $controllerProcessPrimitives,
+            'tools/test-agent-evaluation-controller.php' => $controllerProcessPrimitives,
+        ],
+        'agent-evaluation controller process-primitive ownership',
+        $failures,
+    );
+
+    $controllerFallbackMarkers = [
+        'PHP_OS',
+        'php_uname(',
+        'sandbox-exec',
+        '--runner',
+        'runner_plugin',
+        'runner-plugin',
+        'discoverRunner',
+        'discover_runner',
+    ];
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'tools/agent-evaluation-controller.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/contract.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/workspace.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/process.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/codex.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/scoring.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/controller.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/fixtures/fake-codex.php' => $controllerFallbackMarkers,
+            'tools/test-agent-evaluation-controller.php' => $controllerFallbackMarkers,
+        ],
+        'agent-evaluation controller runner-discovery and native-fallback prohibition',
+        $failures,
+    );
+
     $duplicationAdvisoryArtifactMarkers = [
         '.ai/application-context.md' => 'report-only review signal over the same application manifest',
         '.ai/static-analysis.md' => '48-token minimum',
@@ -2098,6 +2349,9 @@ function repositoryGuardrailFailures(string $root): array
     $agentEvaluationStage = is_array($duplicationCheck)
         ? array_search('@test:agent-evaluation', $duplicationCheck, true)
         : false;
+    $agentEvaluationControllerStage = is_array($duplicationCheck)
+        ? array_search('@test:agent-evaluation-controller', $duplicationCheck, true)
+        : false;
     $analysisStage = is_array($duplicationCheck)
         ? array_search('@analyse', $duplicationCheck, true)
         : false;
@@ -2107,12 +2361,14 @@ function repositoryGuardrailFailures(string $root): array
 
     if (
         $agentEvaluationStage === false
+        || $agentEvaluationControllerStage === false
         || $analysisStage === false
         || $profileStage === false
         || $agentEvaluationStage <= $analysisStage
-        || $agentEvaluationStage >= $profileStage
+        || $agentEvaluationControllerStage <= $agentEvaluationStage
+        || $agentEvaluationControllerStage >= $profileStage
     ) {
-        $failures[] = 'The canonical framework check must run the agent-evaluation self-test after analysis and before the Strict Profile suite.';
+        $failures[] = 'The canonical framework check must run the agent-evaluation data-contract and controller self-tests after analysis and before the Strict Profile suite.';
     }
 
     return $failures;
