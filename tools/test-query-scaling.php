@@ -123,18 +123,28 @@ function acceptedPageData(string $body): array
     if (
         !is_array($decoded)
         || count($decoded) !== 2
-        || !array_key_exists('users', $decoded)
-        || !array_key_exists('next_after_user_id', $decoded)
+        || !array_key_exists('data', $decoded)
+        || !array_key_exists('meta', $decoded)
     ) {
         throw new RuntimeException('Accepted page returned an invalid response shape.');
     }
 
-    $userValues = $decoded['users'];
-    $nextAfterUserId = $decoded['next_after_user_id'];
+    $userValues = $decoded['data'];
+    $meta = $decoded['meta'];
 
     if (!is_array($userValues) || !array_is_list($userValues)) {
         throw new RuntimeException('Accepted page returned an invalid users collection.');
     }
+
+    if (
+        !is_array($meta)
+        || count($meta) !== 1
+        || !array_key_exists('next_after_user_id', $meta)
+    ) {
+        throw new RuntimeException('Accepted page returned invalid operation metadata.');
+    }
+
+    $nextAfterUserId = $meta['next_after_user_id'];
 
     if ($nextAfterUserId !== null && !is_string($nextAfterUserId)) {
         throw new RuntimeException('Accepted page returned an invalid continuation value.');

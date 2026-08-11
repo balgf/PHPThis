@@ -34,7 +34,7 @@ final readonly class UploadDocumentFileHandler implements RequestHandler
 
         $pendingUpload = PendingDocumentUpload::fromUploads($request->uploads);
         $id = $this->documentFiles->store($pendingUpload);
-        $body = json_encode(['file_id' => $id->value], JSON_THROW_ON_ERROR);
+        $body = json_encode(['data' => ['file_id' => $id->value]], JSON_THROW_ON_ERROR);
 
         return new Response(
             status: 201,

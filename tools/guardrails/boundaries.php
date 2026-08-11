@@ -1169,6 +1169,370 @@ function boundaryGuardrailFailures(string $root): array
         $failures,
     );
 
+    $structuredJsonSuccessEnvelopeArtifactMarkers = [
+        '.ai/README.md' => [
+            '| Define or change a structured JSON resource success representation | `.ai/http.md` |',
+            'preserve the advisory application-owned boundary and add no generic wrapper, serializer, paginator, or generator',
+        ],
+        '.ai/http.md' => [
+            "For a new application's successful structured JSON resource representations",
+            'one resource uses a top-level `data` object',
+            'a collection uses a top-level `data` array including `[]`',
+            'optional operation-owned pagination or other non-resource information uses a top-level `meta` object',
+            'Keep every field and continuation semantic operation-specific, keep errors and non-resource representations outside this convention',
+            'do not add a framework or application-wide response wrapper, serializer, resource class, paginator, middleware, helper, discovery mechanism, or generator.',
+        ],
+        'docs/frontend-integration.md' => [
+            '## Recommended structured JSON resource success envelope',
+            'Put one resource in a top-level `data` object.',
+            'Put a resource collection in a top-level `data` array, including `[]` when the collection is empty.',
+            'Put optional pagination or other operation-owned non-resource information in a top-level `meta` object.',
+            'Pagination continuation names, grammar, ordering, bounds, filter compatibility, invalidation, snapshot behavior, and end-of-list representation remain distinct operation contracts.',
+            '`next_after_user_id` and `next_cursor` may both live under `meta` without becoming interchangeable.',
+            'A missing resource normally follows the operation\'s recorded `404` failure contract instead of returning a successful `{"data":null}`.',
+            'Errors remain separate from this success envelope and retain their explicit status, media type, and stable public error shape.',
+            'Bodyless `204`, `205`, and `304` responses, explicit `HEAD`, downloads, HTML, plain text, health responses, and other non-resource representations are not automatically wrapped.',
+            'Every adopting operation records and proves its exact `Content-Type`, status, field set, native JSON types, null-versus-absence behavior, scalar and collection bounds, identifier representation, temporal representation, collection ordering, and compatibility policy.',
+            'Frontend fixtures and decoders reject incompatible media types, malformed JSON, unknown or missing fields where the operation forbids them, wrong native types, out-of-bound values, and incompatible envelope changes as decode or contract failures.',
+            'A top-level `data` member alone is not JSON:API.',
+            'Existing published resource-named or bare responses remain valid application contracts; moving one to `data` is a breaking API change',
+            'This recommendation adds no runtime wrapper, serializer, resource class, paginator, middleware, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+        ],
+        'docs/request-handling.md' => [
+            '## Recommended structured JSON resource success envelope',
+            'An empty collection is `{"data":[]}`, not `null`.',
+            'Continuation names such as `next_after_user_id` and `next_cursor` deliberately remain distinct',
+            'their grammar, ordering, bounds, filter compatibility, invalidation, snapshot behavior, null-versus-absence policy, and end-of-list semantics do not become a framework pagination contract',
+            'Errors keep their separate explicit status, exact media type, and stable public error representation.',
+            'HTTP status remains authoritative; do not add a body-level success flag or duplicated status field.',
+            'The convention does not wrap bodyless `204`, `205`, or `304` responses, explicit `HEAD`, downloads, HTML, plain text, health responses, or other non-resource representations.',
+            'proves the exact field set, native JSON types, null-versus-absence behavior, scalar and collection bounds, identifier representation, temporal representation, collection ordering, and compatibility policy.',
+            'encodes its concrete application-owned array with `JSON_THROW_ON_ERROR`',
+            'changing one to `data` is a breaking API change requiring an explicit migration or versioning decision.',
+            'PHPThis adds no runtime wrapper, serializer, resource class, paginator, middleware, facade, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Define, change, or review a structured JSON resource success representation |',
+            'exact application response construction and `Content-Type`',
+            'preserve the advisory application-owned boundary',
+        ],
+        'skeleton/.ai/README.md' => [
+            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
+            'add no generic wrapper, serializer, paginator, or generator',
+        ],
+        'templates/application/.ai/README.md' => [
+            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
+            'add no generic wrapper, serializer, paginator, or generator',
+        ],
+        'example/src/Users/GetUser/GetUserHandler.php' => [
+            "['data' => ['id' => \$user->id->value, 'name' => \$user->name]]",
+            "'Content-Type' => 'application/json; charset=utf-8'",
+            'status: 404',
+            '{\"error\":{\"code\":\"user_not_found\",\"message\":\"User was not found.\"}}',
+        ],
+        'example/src/Users/ListUsers/ListUsersHandler.php' => [
+            "'data' => \$users",
+            "'meta' => ['next_after_user_id' => \$nextAfterUserId]",
+            "'Content-Type' => 'application/json; charset=utf-8'",
+        ],
+        'example/src/Documents/ListDocuments/ListDocumentsHandler.php' => [
+            "'data' => []",
+            "'meta' => ['next_cursor' => null]",
+            "'data' => \$documents",
+            "'meta' => ['next_cursor' => \$nextCursor]",
+            "'Content-Type' => 'application/json; charset=utf-8'",
+        ],
+        'example/src/Users/CreateUser/CreateUserHandler.php' => [
+            "'data' => [",
+            "'account_id' => \$accountId->value",
+            "'name' => \$command->name",
+            "'email' => \$command->email",
+            "'Content-Type' => 'application/json; charset=utf-8'",
+        ],
+        'example/src/Documents/GetDocument/GetDocumentHandler.php' => [
+            "'data' => [",
+            "'account_id' => \$accountId->value",
+            "'key' => \$documentKey->value",
+            "'title' => \$document->title",
+            "'Content-Type' => 'application/json; charset=utf-8'",
+        ],
+        'example/src/DocumentFiles/UploadDocumentFileHandler.php' => [
+            "json_encode(['data' => ['file_id' => \$id->value]], JSON_THROW_ON_ERROR)",
+            'status: 201',
+            "'Content-Type' => 'application/json; charset=utf-8'",
+        ],
+        'example/.ai/file-transfers.md' => [
+            '`201` JSON with a top-level `data` object containing one generated `file_id`',
+        ],
+        'tests/crud.php' => [
+            '{\"data\":{\"account_id\":42,\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n',
+            '{\"data\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n',
+            '{\"data\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"meta\":{\"next_after_user_id\":null}}\n',
+            '{\"data\":[],\"meta\":{\"next_after_user_id\":null}}\n',
+            "'meta' => ['next_after_user_id' => '50']",
+            '$lookahead[\'body\'] !== $expectedLookaheadBody',
+            'count($decoded) !== 2',
+            "!array_key_exists('data', \$decoded)",
+            "!array_key_exists('meta', \$decoded)",
+            "yield 'user item route separates missing records from malformed identifiers'",
+            '$missing->status !== 404',
+            '{\"error\":{\"code\":\"user_not_found\",\"message\":\"User was not found.\"}}\n',
+            '$missingBudget->used() !== 1',
+        ],
+        'tests/request-policy.php' => [
+            '{\"data\":{\"account_id\":42,\"key\":\"Doc_9-z\",\"title\":\"Example document\"}}\n',
+            '{\"data\":[],\"meta\":{\"next_cursor\":null}}\n',
+            '{\"data\":[{\"document_key\":\"Doc_051\",\"title\":\"Document 51\",\"category\":\"alpha\",\"sort_rank\":2}],\"meta\":{\"next_cursor\":null}}\n',
+            "'meta' => ['next_cursor' => 'v1:rank_asc:2:Doc_050']",
+            '$lookahead[\'body\'] !== $expectedLookaheadBody',
+            'count($decoded) !== 2',
+            "!array_key_exists('data', \$decoded)",
+            "!array_key_exists('meta', \$decoded)",
+        ],
+        'tests/document-files.php' => [
+            '$uploadData = is_array($decoded) && array_keys($decoded) === [\'data\']',
+            '$upload[\'body\'] !== \'{"data":{"file_id":"\' . $storedId . "\\"}}\\n"',
+            'content-type: application/json; charset=utf-8',
+        ],
+        'tests/consumer-profile.php' => [
+            '{\"data\":{\"account_id\":42,\"name\":\"Profile Name Marker\",\"email\":\"profile-secret@example.com\"}}\n',
+        ],
+        'tools/package-files.txt' => [
+            'docs/frontend-integration.md',
+            'docs/knowledge-map.md',
+            'docs/request-handling.md',
+            'templates/application/.ai/README.md',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledStructuredJsonSuccessEnvelopeDistribution(',
+            'function proveInstalledStructuredJsonSuccessEnvelopeDistribution(',
+            'decodeGetUserSuccess(Response $response)',
+            'decodeListUsersSuccess(Response $response)',
+            'decodeListDocumentsSuccess(Response $response)',
+            'json_decode($response->body, false, 8, JSON_THROW_ON_ERROR)',
+            '!$decoded instanceof stdClass',
+            '!is_array($decoded->data)',
+            'count($decoded->data) > 50',
+            'strlen($nextAfterUserId) > strlen((string) PHP_INT_MAX)',
+            "strlen('v1:rank_desc:1000000:') + 64",
+            "preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/D', \$document->document_key)",
+            'strlen($document->category) > 64',
+            "preg_match('/[\\x00-\\x1F\\x7F]/', \$document->category)",
+            '$document->sort_rank > 1_000_000',
+            'Expected a successful response before decoding.',
+            'Expected the exact structured JSON response media type.',
+            '$getUser = new Response(',
+            '{\"data\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n',
+            '$listUsersContinuation = new Response(',
+            '{\"data\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"meta\":{\"next_after_user_id\":\"50\"}}\n',
+            '$listUsersEnd = new Response(',
+            '{\"data\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"meta\":{\"next_after_user_id\":null}}\n',
+            '$listDocumentsEmpty = new Response(',
+            '{\"data\":[],\"meta\":{\"next_cursor\":null}}\n',
+            '$listDocumentsContinuation = new Response(',
+            '{\"data\":[{\"document_key\":\"Doc_001\",\"title\":\"Plan\",\"category\":\"active\",\"sort_rank\":1}],\"meta\":{\"next_cursor\":\"v1:rank_asc:1:Doc_001\"}}\n',
+            '$listDocumentsEnd = new Response(',
+            '{\"data\":[{\"document_key\":\"Doc_001\",\"title\":\"Plan\",\"category\":\"active\",\"sort_rank\":1}],\"meta\":{\"next_cursor\":null}}\n',
+            '$reorderedGetUser = new Response(',
+            '{\"data\":{\"name\":\"Ada Lovelace\",\"id\":1}}\n',
+            '$reorderedListDocuments = new Response(',
+            '{\"meta\":{\"next_cursor\":null},\"data\":[]}\n',
+            '$opaqueListUsersContinuation = new Response(',
+            '{\"data\":[],\"meta\":{\"next_after_user_id\":\"01\"}}\n',
+            '$opaqueListDocumentsContinuation = new Response(',
+            '{\"data\":[],\"meta\":{\"next_cursor\":\"50\"}}\n',
+            '$missingUser = new Response(',
+            '$missingUser->status !== 404',
+            '{\"error\":{\"code\":\"user_not_found\",\"message\":\"User was not found.\"}}\n',
+            'str_contains($missingUser->body, \'"data":null\')',
+            '{\"data\":\n',
+            '{\"user\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n',
+            "['Content-Type' => 'application/json']",
+            '{\"data\":[],\"meta\":{\"next_cursor\":\"v1:rank_asc:1:Doc_001\"}}\n',
+            '{\"data\":[],\"meta\":{\"next_after_user_id\":\"50\"}}\n',
+            '{\"data\":[],\"meta\":{\"next_after_user_id\":\"\"}}\n',
+            '{\"data\":[],\"meta\":{\"next_cursor\":\"\"}}\n',
+            '{\"data\":{},\"meta\":{\"next_after_user_id\":null}}\n',
+            '{\"data\":{},\"meta\":{\"next_cursor\":null}}\n',
+            '{\"data\":[],\"meta\":{\"next_after_user_id\":50}}\n',
+            '{\"data\":[],\"meta\":{\"next_cursor\":50}}\n',
+            '$tooManyUsersBody = json_encode(',
+            '$overlongUserContinuationBody = json_encode(',
+            '$tooManyDocumentsBody = json_encode(',
+            '$overlongDocumentCursorBody = json_encode(',
+            '$invalidDocumentScalarsBody = json_encode(',
+            "'document_key' => str_repeat('k', 65)",
+            "'category' => str_repeat('c', 65)",
+            "'sort_rank' => 1_000_001",
+            'Envelope|Wrapper|Serializer|Resource|ResourceCollection|Paginator|Pagination',
+            'Response|Json|Resource|Success|Pagination',
+            'SchemaGenerator|ClientGenerator|SdkGenerator',
+            'Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory',
+            '$installedSourceRoots = [',
+            '$project . \'/src\'',
+            'PASS installed structured JSON success-envelope runtime',
+            'PASS installed structured JSON success-envelope guidance distribution',
+        ],
+        'tools/guardrails/boundaries.php' => [
+            '$structuredJsonForbiddenRuntimePathFixtures = [',
+            "'src/Http/ResponseEnvelope.php'",
+            "'src/Http/ResponseWrapper.php'",
+            "'src/Http/JsonEnvelope.php'",
+            "'src/Http/JsonResponse.php'",
+            "'src/Http/JsonSerializer.php'",
+            "'src/Http/UserResource.php'",
+            "'src/Http/ResourceCollection.php'",
+            "'src/Http/ResourceTransformer.php'",
+            "'src/Http/Paginator.php'",
+            "'src/Http/PaginationMiddleware.php'",
+            "'src/Http/ResponseMiddleware.php'",
+            "'src/Http/ResponseBuilder.php'",
+            "'src/Http/ResponseFactory.php'",
+            "'src/Http/ResponseHelper.php'",
+            "'src/Http/JsonResponder.php'",
+            "'src/Http/ResponseFormatter.php'",
+            "'src/Http/JsonDiscovery.php'",
+            "'src/Http/Response/Builder.php'",
+            "'src/Http/Response/Factory.php'",
+            "'src/Http/Response/Helper.php'",
+            "'src/Http/Response/Middleware.php'",
+            "'src/Http/Json/Responder.php'",
+            "'src/Http/Resource/Transformer.php'",
+            "'src/Http/Json/Discovery.php'",
+            "'src/Http/SchemaGenerator.php'",
+            "'src/Http/ClientGenerator.php'",
+            '$structuredJsonAllowedRuntimePathFixtures = [',
+            "'src/Http/Request.php'",
+            "'src/Http/Response.php'",
+            "'src/Database/Connection.php'",
+            "'src/Database/QueryBudget.php'",
+            '$root . \'/skeleton/src\'',
+            '$structuredJsonSourceRoots = [',
+        ],
+        'docs/guardrails.md' => [
+            'structured JSON success-envelope guidance, task routes, exact checked example shapes, isolated installed response and decoder controls, and dependency checks preserve the advisory application-owned `data` and optional `meta` convention',
+            'without adding a framework wrapper, serializer, resource class, paginator, middleware, helper, discovery mechanism, generator, runtime dependency, checker rule, or `PHT` diagnostic',
+            'The structured JSON success-envelope guard pins the two installed public guides',
+            'The isolated installed proof constructs explicit application-owned `Response` values',
+            'Framework, default-skeleton, installed-framework, copied-project, and package-inventory path checks',
+            'This deterministic name/path evidence does not prove absence of differently named hidden behavior',
+            'It adds no framework response mechanism or consumer-checker rule and does not make the example envelope a consumer-validity rule.',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $structuredJsonSuccessEnvelopeArtifactMarkers,
+        'structured JSON success-envelope guidance and proof',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'tools/test-consumer-project.php' => [
+                'decodeListDocumentsSuccess(Response $response, string $expectedOrder)',
+                'filter_var($nextAfterUserId, FILTER_VALIDATE_INT)',
+                'ListDocuments expected order is incompatible.',
+                "preg_match(\n            '/^v1:(rank_asc|rank_desc):",
+            ],
+        ],
+        'opaque installed structured JSON continuation proof',
+        $failures,
+    );
+
+    $forbiddenStructuredJsonRuntimePathPattern = '/(?:\A|\/)(?:[A-Za-z0-9]*(?:Envelope|Wrapper|Serializer|Resource|ResourceCollection|Paginator|Pagination)|[A-Za-z0-9]*JsonResponse|(?:Response|Json|Resource|Success|Pagination)[A-Za-z0-9]*(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|(?:Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|[A-Za-z0-9]*(?:SchemaGenerator|ClientGenerator|SdkGenerator)|(?:OpenApi|JsonSchema)[A-Za-z0-9]*)(?:\.php|\/)/i';
+    $structuredJsonForbiddenRuntimePathFixtures = [
+        'src/Http/ResponseEnvelope.php',
+        'src/Http/ResponseWrapper.php',
+        'src/Http/JsonEnvelope.php',
+        'src/Http/JsonResponse.php',
+        'src/Http/JsonSerializer.php',
+        'src/Http/UserResource.php',
+        'src/Http/ResourceCollection.php',
+        'src/Http/ResourceTransformer.php',
+        'src/Http/Paginator.php',
+        'src/Http/Pagination/Page.php',
+        'src/Http/PaginationMiddleware.php',
+        'src/Http/ResponseMiddleware.php',
+        'src/Http/ResponseBuilder.php',
+        'src/Http/ResponseFactory.php',
+        'src/Http/ResponseHelper.php',
+        'src/Http/JsonResponder.php',
+        'src/Http/ResponseFormatter.php',
+        'src/Http/JsonDiscovery.php',
+        'src/Http/Response/Builder.php',
+        'src/Http/Response/Factory.php',
+        'src/Http/Response/Helper.php',
+        'src/Http/Response/Middleware.php',
+        'src/Http/Json/Responder.php',
+        'src/Http/Resource/Transformer.php',
+        'src/Http/Json/Discovery.php',
+        'src/Http/SchemaGenerator.php',
+        'src/Http/ClientGenerator.php',
+    ];
+    $structuredJsonAllowedRuntimePathFixtures = [
+        'src/Http/Request.php',
+        'src/Http/Response.php',
+        'src/Database/Connection.php',
+        'src/Database/QueryBudget.php',
+    ];
+
+    foreach ($structuredJsonForbiddenRuntimePathFixtures as $structuredJsonForbiddenRuntimePathFixture) {
+        if (preg_match($forbiddenStructuredJsonRuntimePathPattern, $structuredJsonForbiddenRuntimePathFixture) !== 1) {
+            $failures[] = "Structured JSON runtime-path detector missed forbidden fixture: {$structuredJsonForbiddenRuntimePathFixture}.";
+        }
+    }
+
+    foreach ($structuredJsonAllowedRuntimePathFixtures as $structuredJsonAllowedRuntimePathFixture) {
+        if (preg_match($forbiddenStructuredJsonRuntimePathPattern, $structuredJsonAllowedRuntimePathFixture) === 1) {
+            $failures[] = "Structured JSON runtime-path detector rejected allowed fixture: {$structuredJsonAllowedRuntimePathFixture}.";
+        }
+    }
+
+    $structuredJsonSourceRoots = [
+        $root . '/src' => 'framework source',
+        $root . '/skeleton/src' => 'default-skeleton source',
+    ];
+
+    foreach ($structuredJsonSourceRoots as $structuredJsonSourceRoot => $structuredJsonSourceOwner) {
+        $structuredJsonSourceFiles = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($structuredJsonSourceRoot, FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($structuredJsonSourceFiles as $structuredJsonSourceFile) {
+            if (!$structuredJsonSourceFile instanceof SplFileInfo || !$structuredJsonSourceFile->isFile()) {
+                continue;
+            }
+
+            $relativePath = substr($structuredJsonSourceFile->getPathname(), strlen($root) + 1);
+
+            if (preg_match($forbiddenStructuredJsonRuntimePathPattern, $relativePath) === 1) {
+                $failures[] = "Structured JSON response runtime mechanism must remain outside {$structuredJsonSourceOwner}: {$relativePath}.";
+            }
+        }
+    }
+
+    $structuredJsonPackageInventory = file_get_contents($root . '/tools/package-files.txt');
+
+    if (is_string($structuredJsonPackageInventory)) {
+        $structuredJsonPackagePaths = preg_split('/\R/', $structuredJsonPackageInventory);
+
+        if (is_array($structuredJsonPackagePaths)) {
+            foreach ($structuredJsonPackagePaths as $structuredJsonPackagePath) {
+                if (
+                    str_starts_with($structuredJsonPackagePath, 'src/')
+                    && preg_match(
+                        $forbiddenStructuredJsonRuntimePathPattern,
+                        $structuredJsonPackagePath,
+                    ) === 1
+                ) {
+                    $failures[] = "Structured JSON response runtime mechanism must remain outside the framework package API: {$structuredJsonPackagePath}.";
+                }
+            }
+        }
+    }
+
     $transactionalEmailGuidanceArtifactMarkers = [
         '.ai/README.md' => [
             '| Change email guidance or application email context | `.ai/application-context.md` | `docs/email.md`, task routes, integration context, package inventory, focused guardrails, and installed-consumer evidence |',

@@ -71,7 +71,7 @@ try {
 }
 
 $body = json_encode(
-    ['users' => $users, 'next_after_user_id' => null],
+    ['data' => $users, 'meta' => ['next_after_user_id' => null]],
     JSON_THROW_ON_ERROR,
 ) . "\n";
 

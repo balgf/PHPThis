@@ -53,7 +53,7 @@ final readonly class GetDocumentHandler implements RequestHandler
 
         $body = json_encode(
             [
-                'document' => [
+                'data' => [
                     'account_id' => $accountId->value,
                     'key' => $documentKey->value,
                     'title' => $document->title,

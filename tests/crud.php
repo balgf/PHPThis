@@ -73,16 +73,16 @@ function crudBehaviorTests(): Generator
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'private, no-store',
         ]
-        || $created->body !== "{\"user\":{\"account_id\":42,\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
+        || $created->body !== "{\"data\":{\"account_id\":42,\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
         || $got->status !== 200
         || $got->headers !== [
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'no-store',
         ]
-        || $got->body !== "{\"user\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n"
+        || $got->body !== "{\"data\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n"
         || $listed->status !== 200
         || $listed->headers !== $got->headers
-        || $listed->body !== "{\"users\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"next_after_user_id\":null}\n"
+        || $listed->body !== "{\"data\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"meta\":{\"next_after_user_id\":null}}\n"
         || $writeBudget->used() !== 4
         || $readBudget->used() !== 1
         || $getBudget->used() !== 1
@@ -135,15 +135,34 @@ function crudBehaviorTests(): Generator
         ['user_id' => 50],
     );
     $continued = runListUsersPageScenario($lookaheadPath, '50');
+    $expectedLookaheadUsers = [];
+
+    foreach (range(1, 50) as $userId) {
+        $expectedLookaheadUsers[] = [
+            'id' => $userId,
+            'name' => 'User ' . $userId,
+            'event_count' => 0,
+        ];
+    }
+
+    $expectedLookaheadBody = json_encode(
+        [
+            'data' => $expectedLookaheadUsers,
+            'meta' => ['next_after_user_id' => '50'],
+        ],
+        JSON_THROW_ON_ERROR,
+    ) . "\n";
 
     if (
         $full['ids'] !== range(1, 50)
         || $full['next_after_user_id'] !== null
         || $lookahead['ids'] !== range(1, 50)
         || $lookahead['next_after_user_id'] !== '50'
+        || $lookahead['body'] !== $expectedLookaheadBody
         || $deletedRows !== 1
         || $continued['ids'] !== [51]
         || $continued['next_after_user_id'] !== null
+        || $continued['body'] !== "{\"data\":[{\"id\":51,\"name\":\"User 51\",\"event_count\":0}],\"meta\":{\"next_after_user_id\":null}}\n"
     ) {
         throw new RuntimeException('Expected lookahead continuation to survive deletion without skipping row 51.');
     }
@@ -189,6 +208,7 @@ function crudBehaviorTests(): Generator
         || array_unique($eventCounts) !== [2]
         || $beyond['ids'] !== []
         || $beyond['next_after_user_id'] !== null
+        || $beyond['body'] !== "{\"data\":[],\"meta\":{\"next_after_user_id\":null}}\n"
     ) {
         throw new RuntimeException('Expected stable keyset continuation with no gaps or duplicates.');
     }
@@ -231,10 +251,10 @@ function crudBehaviorTests(): Generator
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'no-store',
         ]
-        || $smallResponse->body !== "{\"user\":{\"id\":2,\"name\":\"User 2\"}}\n"
+        || $smallResponse->body !== "{\"data\":{\"id\":2,\"name\":\"User 2\"}}\n"
         || $largeResponse->status !== 200
         || $largeResponse->headers !== $smallResponse->headers
-        || $largeResponse->body !== "{\"user\":{\"id\":500,\"name\":\"User 500\"}}\n"
+        || $largeResponse->body !== "{\"data\":{\"id\":500,\"name\":\"User 500\"}}\n"
         || $smallBudget->used() !== 1
         || $largeBudget->used() !== 1
         || $smallSummary['statements'] !== 1
@@ -332,7 +352,7 @@ function crudBehaviorTests(): Generator
     if (
         $empty !== $large
         || $empty['status'] !== 201
-        || $empty['body'] !== "{\"user\":{\"account_id\":42,\"name\":\"New User\",\"email\":\"new@example.com\"}}\n"
+        || $empty['body'] !== "{\"data\":{\"account_id\":42,\"name\":\"New User\",\"email\":\"new@example.com\"}}\n"
         || $empty['used'] !== 4
         || $empty['statements'] !== 4
         || $empty['repeated_fingerprints'] !== 0
@@ -560,6 +580,7 @@ function crudBehaviorTests(): Generator
 
 /**
  * @return array{
+ *     body: string,
  *     ids: list<int>,
  *     event_counts: list<int>,
  *     next_after_user_id: string|null,
@@ -592,18 +613,28 @@ function runListUsersPageScenario(string $databasePath, ?string $afterUserId): a
         ]
         || !is_array($decoded)
         || count($decoded) !== 2
-        || !array_key_exists('users', $decoded)
-        || !array_key_exists('next_after_user_id', $decoded)
+        || !array_key_exists('data', $decoded)
+        || !array_key_exists('meta', $decoded)
     ) {
         throw new RuntimeException('List users returned an invalid page response.');
     }
 
-    $userValues = $decoded['users'];
-    $nextAfterUserId = $decoded['next_after_user_id'];
+    $userValues = $decoded['data'];
+    $meta = $decoded['meta'];
 
     if (!is_array($userValues) || !array_is_list($userValues)) {
         throw new RuntimeException('List users returned an invalid users collection.');
     }
+
+    if (
+        !is_array($meta)
+        || count($meta) !== 1
+        || !array_key_exists('next_after_user_id', $meta)
+    ) {
+        throw new RuntimeException('List users returned invalid operation metadata.');
+    }
+
+    $nextAfterUserId = $meta['next_after_user_id'];
 
     if (
         $nextAfterUserId !== null
@@ -641,6 +672,7 @@ function runListUsersPageScenario(string $databasePath, ?string $afterUserId): a
     $summary = $trace->snapshot();
 
     return [
+        'body' => $response->body,
         'ids' => $ids,
         'event_counts' => $eventCounts,
         'next_after_user_id' => $nextAfterUserId,

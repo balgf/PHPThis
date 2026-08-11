@@ -332,7 +332,7 @@ function inputProjectionBehaviorTests(): Generator
 
     if (
         $continued->status !== 200
-        || $continued->body !== "{\"users\":[{\"id\":2,\"name\":\"User 2\",\"event_count\":2}],\"next_after_user_id\":null}\n"
+        || $continued->body !== "{\"data\":[{\"id\":2,\"name\":\"User 2\",\"event_count\":2}],\"meta\":{\"next_after_user_id\":null}}\n"
         || $budget->used() !== 1
         || $trace->snapshot()['statements'] !== 1
     ) {
@@ -432,7 +432,7 @@ function inputProjectionBehaviorTests(): Generator
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'private, no-store',
         ]
-        || $response->body !== "{\"user\":{\"account_id\":42,\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
+        || $response->body !== "{\"data\":{\"account_id\":42,\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\"}}\n"
         || $operation->calls !== 1
         || !$operation->received instanceof CreateUserCommand
         || $operation->received->name !== 'Ada Lovelace'

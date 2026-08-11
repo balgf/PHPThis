@@ -29,7 +29,25 @@ Before frontend implementation, record the exact backend handoff for each operat
 
 The handoff belongs to the application and frontend context. Do not infer it from framework classes, controller names, a UI component, or a database schema. `Route::segments()` exposes routing metadata from the explicit declaration, but it does not describe request bodies, response schemas, public failures, credentials, caching, or compatibility.
 
-PHPThis's example list operations deliberately use different application-owned continuations. A frontend treats each cursor as opaque, returns it only with the operation, ordering, and filters that produced it, resets it when those inputs change, and follows the recorded `null` or absent end condition. It does not decode a cursor, synthesize a next value, or assume one framework pagination envelope.
+## Recommended structured JSON resource success envelope
+
+For a new application operation that returns a successful structured JSON resource representation, PHPThis recommends one small application-owned convention. Put one resource in a top-level `data` object. Put a resource collection in a top-level `data` array, including `[]` when the collection is empty. Put optional pagination or other operation-owned non-resource information in a top-level `meta` object. For example:
+
+```json
+{"data":{"id":42,"name":"Ada"}}
+{"data":[{"id":42,"name":"Ada"}],"meta":{"next_after_user_id":"42"}}
+{"data":[],"meta":{"next_after_user_id":null}}
+```
+
+Those values illustrate only the outer shape. Each operation owns the exact fields inside `data` and `meta`. Pagination continuation names, grammar, ordering, bounds, filter compatibility, invalidation, snapshot behavior, and end-of-list representation remain distinct operation contracts. `next_after_user_id` and `next_cursor` may both live under `meta` without becoming interchangeable. A frontend treats each continuation as opaque, returns it only with the operation, ordering, and filters that produced it, resets it when those inputs change, and never assumes a framework paginator.
+
+A missing resource normally follows the operation's recorded `404` failure contract instead of returning a successful `{"data":null}`. Errors remain separate from this success envelope and retain their explicit status, media type, and stable public error shape. Bodyless `204`, `205`, and `304` responses, explicit `HEAD`, downloads, HTML, plain text, health responses, and other non-resource representations are not automatically wrapped.
+
+Every adopting operation records and proves its exact `Content-Type`, status, field set, native JSON types, null-versus-absence behavior, scalar and collection bounds, identifier representation, temporal representation, collection ordering, and compatibility policy. Frontend fixtures and decoders reject incompatible media types, malformed JSON, unknown or missing fields where the operation forbids them, wrong native types, out-of-bound values, and incompatible envelope changes as decode or contract failures.
+
+A top-level `data` member alone is not JSON:API. Formal JSON:API adoption is a separate application decision covering its media type, resource `type`/`id`/`attributes` model, relationships, errors, links, and compatibility rules. Existing published resource-named or bare responses remain valid application contracts; moving one to `data` is a breaking API change that requires an explicit migration or versioning decision.
+
+This recommendation adds no runtime wrapper, serializer, resource class, paginator, middleware, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator. The application still constructs the exact response body with `JSON_THROW_ON_ERROR` and sets the exact content type.
 
 ## Keep frontend failures distinct
 

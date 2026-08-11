@@ -39,7 +39,7 @@ final class GetUserHandler implements RequestHandler
 
         $user = UserDetails::fromDatabaseRow($row);
         $body = json_encode(
-            ['user' => ['id' => $user->id->value, 'name' => $user->name]],
+            ['data' => ['id' => $user->id->value, 'name' => $user->name]],
             JSON_THROW_ON_ERROR,
         );
 

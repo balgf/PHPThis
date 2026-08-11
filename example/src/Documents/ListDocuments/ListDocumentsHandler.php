@@ -38,13 +38,21 @@ final readonly class ListDocumentsHandler implements RequestHandler
         $pageRequest = ListDocumentsPageRequest::fromQuery($request->query);
 
         if ($pageRequest->categories === []) {
+            $body = json_encode(
+                [
+                    'data' => [],
+                    'meta' => ['next_cursor' => null],
+                ],
+                JSON_THROW_ON_ERROR,
+            );
+
             return new Response(
                 status: 200,
                 headers: [
                     'Content-Type' => 'application/json; charset=utf-8',
                     'Cache-Control' => 'private, no-store',
                 ],
-                body: "{\"documents\":[],\"next_cursor\":null}\n",
+                body: $body . "\n",
             );
         }
 
@@ -448,8 +456,8 @@ final readonly class ListDocumentsHandler implements RequestHandler
 
         $body = json_encode(
             [
-                'documents' => $documents,
-                'next_cursor' => $nextCursor,
+                'data' => $documents,
+                'meta' => ['next_cursor' => $nextCursor],
             ],
             JSON_THROW_ON_ERROR,
         );

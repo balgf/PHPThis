@@ -392,7 +392,12 @@ function proveRealDocumentFileTransfer(): void
         }
 
         $decoded = json_decode($upload['body'], true, 8, JSON_THROW_ON_ERROR);
-        $storedId = is_array($decoded) ? ($decoded['file_id'] ?? null) : null;
+        $uploadData = is_array($decoded) && array_keys($decoded) === ['data']
+            ? $decoded['data']
+            : null;
+        $storedId = is_array($uploadData) && array_keys($uploadData) === ['file_id']
+            ? $uploadData['file_id']
+            : null;
 
         if (!is_string($storedId) || preg_match('/^[0-9a-f]{32}$/D', $storedId) !== 1) {
             throw new RuntimeException('Expected a server-generated opaque document file identifier.');
@@ -405,11 +410,22 @@ function proveRealDocumentFileTransfer(): void
         $rootPermissions = fileperms($storageRoot);
         $directoryPermissions = fileperms($storedDirectory);
         $filePermissions = fileperms($storedPath);
+        $normalizedUploadHeaders = strtolower($upload['headers']);
 
         if (
             !is_string($storedHash)
             || !is_string($expectedHash)
             || $storedHash !== $expectedHash
+            || $upload['body'] !== '{"data":{"file_id":"' . $storedId . "\"}}\n"
+            || !str_contains(
+                $normalizedUploadHeaders,
+                "content-type: application/json; charset=utf-8\r\n",
+            )
+            || !str_contains($normalizedUploadHeaders, "cache-control: private, no-store\r\n")
+            || !str_contains(
+                $normalizedUploadHeaders,
+                'location: /document-files/' . $storedId . "\r\n",
+            )
             || !is_int($rootPermissions)
             || ($rootPermissions & 0777) !== 0700
             || !is_int($directoryPermissions)
@@ -430,12 +446,18 @@ function proveRealDocumentFileTransfer(): void
             'http://127.0.0.1:' . $port . '/document-files',
         );
         $emptyDecoded = json_decode($emptyUpload['body'], true, 8, JSON_THROW_ON_ERROR);
-        $emptyStoredId = is_array($emptyDecoded) ? ($emptyDecoded['file_id'] ?? null) : null;
+        $emptyData = is_array($emptyDecoded) && array_keys($emptyDecoded) === ['data']
+            ? $emptyDecoded['data']
+            : null;
+        $emptyStoredId = is_array($emptyData) && array_keys($emptyData) === ['file_id']
+            ? $emptyData['file_id']
+            : null;
 
         if (
             $emptyUpload['status'] !== 201
             || !is_string($emptyStoredId)
             || preg_match('/^[0-9a-f]{32}$/D', $emptyStoredId) !== 1
+            || $emptyUpload['body'] !== '{"data":{"file_id":"' . $emptyStoredId . "\"}}\n"
             || filesize($storageRoot . '/' . $emptyStoredId . '/content') !== 0
         ) {
             throw new RuntimeException('Expected an empty successful upload to remain an application decision.');
@@ -453,8 +475,13 @@ function proveRealDocumentFileTransfer(): void
             'http://127.0.0.1:' . $port . '/document-files',
         );
         $scalarDuplicateDecoded = json_decode($scalarDuplicate['body'], true, 8, JSON_THROW_ON_ERROR);
-        $scalarDuplicateStoredId = is_array($scalarDuplicateDecoded)
-            ? ($scalarDuplicateDecoded['file_id'] ?? null)
+        $scalarDuplicateData = is_array($scalarDuplicateDecoded)
+            && array_keys($scalarDuplicateDecoded) === ['data']
+            ? $scalarDuplicateDecoded['data']
+            : null;
+        $scalarDuplicateStoredId = is_array($scalarDuplicateData)
+            && array_keys($scalarDuplicateData) === ['file_id']
+            ? $scalarDuplicateData['file_id']
             : null;
         $normalizedScalarBytes = is_string($scalarDuplicateStoredId)
             ? file_get_contents($storageRoot . '/' . $scalarDuplicateStoredId . '/content')
@@ -464,6 +491,8 @@ function proveRealDocumentFileTransfer(): void
             $scalarDuplicate['status'] !== 201
             || !is_string($scalarDuplicateStoredId)
             || preg_match('/^[0-9a-f]{32}$/D', $scalarDuplicateStoredId) !== 1
+            || $scalarDuplicate['body']
+                !== '{"data":{"file_id":"' . $scalarDuplicateStoredId . "\"}}\n"
             || !in_array($normalizedScalarBytes, ['S', 'T'], true)
         ) {
             throw new RuntimeException('Expected PHP to expose duplicate scalar parts as one normalized upload.');

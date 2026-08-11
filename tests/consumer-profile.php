@@ -186,7 +186,7 @@ function consumerProfileTests(): Generator
                         'X-Request-ID' => $result->summary->correlationId->value,
                     ]
                     || $result->response->body
-                        !== "{\"user\":{\"account_id\":42,\"name\":\"Profile Name Marker\",\"email\":\"profile-secret@example.com\"}}\n"
+                        !== "{\"data\":{\"account_id\":42,\"name\":\"Profile Name Marker\",\"email\":\"profile-secret@example.com\"}}\n"
                     || $result->policySteps
                         !== ['authenticate', 'resolve_tenant', 'authorize_create']
                     || $result->sinkAttempts !== 1

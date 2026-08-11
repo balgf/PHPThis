@@ -79,8 +79,8 @@ final class ListUsersHandler implements RequestHandler
 
         $body = json_encode(
             [
-                'users' => $users,
-                'next_after_user_id' => $nextAfterUserId,
+                'data' => $users,
+                'meta' => ['next_after_user_id' => $nextAfterUserId],
             ],
             JSON_THROW_ON_ERROR,
         );

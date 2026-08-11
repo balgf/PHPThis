@@ -4,7 +4,7 @@
 
 | Operation | Request | Success |
 | --- | --- | --- |
-| Upload one document | `POST /document-files` with `multipart/form-data` and the sole field `document` | `201` JSON containing one generated `file_id`, `Location: /document-files/{file_id}`, and `Cache-Control: private, no-store` |
+| Upload one document | `POST /document-files` with `multipart/form-data` and the sole field `document` | `201` JSON with a top-level `data` object containing one generated `file_id`, `Location: /document-files/{file_id}`, and `Cache-Control: private, no-store` |
 | Download one document | `GET /document-files/{file_id:token}` | `200` full file response with the fixed headers recorded below |
 
 `{file_id}` in the `Location` entry is human-readable response-template shorthand for the generated token value; the exact route declaration is the typed `GET /document-files/{file_id:token}` shown above.

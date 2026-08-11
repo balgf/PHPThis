@@ -616,7 +616,7 @@ function contextGuardrailFailures(string $root): array
         'example/src/Users/GetUser/GetUserHandler.php' => [
             'UserId::fromPositiveInteger(',
             "['user_id' => \$userId->value]",
-            "['user' => ['id' => \$user->id->value, 'name' => \$user->name]]",
+            "['data' => ['id' => \$user->id->value, 'name' => \$user->name]]",
         ],
         'example/src/Users/ListUsers/ListUsersHandler.php' => [
             ': $pageRequest->afterUserId->value,',

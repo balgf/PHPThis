@@ -104,6 +104,11 @@ try {
     proveInstalledReferenceClarityDistribution($installedFramework);
     proveInstalledNativeDateTimeGuidanceDistribution($project, $installedFramework);
     proveInstalledFrontendIntegrationGuidanceDistribution($project, $installedFramework);
+    proveInstalledStructuredJsonSuccessEnvelopeDistribution(
+        $project,
+        $installedFramework,
+        $environment,
+    );
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
@@ -1867,6 +1872,538 @@ function proveInstalledFrontendIntegrationGuidanceDistribution(
     }
 
     fwrite(STDOUT, "PASS installed frontend integration guidance distribution\n");
+}
+
+/** @param array<string, string> $environment */
+function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
+    string $project,
+    string $installedFramework,
+    array $environment,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/README.md' => [
+            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
+            'operation-owned `data` and optional `meta` fields',
+            'add no generic wrapper, serializer, paginator, or generator',
+        ],
+        $installedFramework . '/docs/frontend-integration.md' => [
+            '## Recommended structured JSON resource success envelope',
+            'Put one resource in a top-level `data` object.',
+            'Put a resource collection in a top-level `data` array, including `[]` when the collection is empty.',
+            'Put optional pagination or other operation-owned non-resource information in a top-level `meta` object.',
+            'Pagination continuation names, grammar, ordering, bounds, filter compatibility, invalidation, snapshot behavior, and end-of-list representation remain distinct operation contracts.',
+            '`next_after_user_id` and `next_cursor` may both live under `meta` without becoming interchangeable.',
+            'A missing resource normally follows the operation\'s recorded `404` failure contract instead of returning a successful `{"data":null}`.',
+            'Errors remain separate from this success envelope and retain their explicit status, media type, and stable public error shape.',
+            'Bodyless `204`, `205`, and `304` responses, explicit `HEAD`, downloads, HTML, plain text, health responses, and other non-resource representations are not automatically wrapped.',
+            'Every adopting operation records and proves its exact `Content-Type`, status, field set, native JSON types, null-versus-absence behavior, scalar and collection bounds, identifier representation, temporal representation, collection ordering, and compatibility policy.',
+            'Frontend fixtures and decoders reject incompatible media types, malformed JSON, unknown or missing fields where the operation forbids them, wrong native types, out-of-bound values, and incompatible envelope changes as decode or contract failures.',
+            'A top-level `data` member alone is not JSON:API.',
+            'Existing published resource-named or bare responses remain valid application contracts; moving one to `data` is a breaking API change',
+            'This recommendation adds no runtime wrapper, serializer, resource class, paginator, middleware, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+        ],
+        $installedFramework . '/docs/request-handling.md' => [
+            '## Recommended structured JSON resource success envelope',
+            'An empty collection is `{"data":[]}`, not `null`.',
+            'Continuation names such as `next_after_user_id` and `next_cursor` deliberately remain distinct',
+            'their grammar, ordering, bounds, filter compatibility, invalidation, snapshot behavior, null-versus-absence policy, and end-of-list semantics do not become a framework pagination contract',
+            'Errors keep their separate explicit status, exact media type, and stable public error representation.',
+            'HTTP status remains authoritative; do not add a body-level success flag or duplicated status field.',
+            'The convention does not wrap bodyless `204`, `205`, or `304` responses, explicit `HEAD`, downloads, HTML, plain text, health responses, or other non-resource representations.',
+            'proves the exact field set, native JSON types, null-versus-absence behavior, scalar and collection bounds, identifier representation, temporal representation, collection ordering, and compatibility policy.',
+            'encodes its concrete application-owned array with `JSON_THROW_ON_ERROR`',
+            'changing one to `data` is a breaking API change requiring an explicit migration or versioning decision.',
+            'PHPThis adds no runtime wrapper, serializer, resource class, paginator, middleware, facade, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Define, change, or review a structured JSON resource success representation |',
+            'exact application response construction and `Content-Type`',
+            'preserve the advisory application-owned boundary',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
+            'add no generic wrapper, serializer, paginator, or generator',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'structured JSON success-envelope guidance, task routes, exact checked example shapes, isolated installed response and decoder controls, and dependency checks preserve the advisory application-owned `data` and optional `meta` convention',
+            'without adding a framework wrapper, serializer, resource class, paginator, middleware, helper, discovery mechanism, generator, runtime dependency, checker rule, or `PHT` diagnostic',
+            'The structured JSON success-envelope guard pins the two installed public guides',
+            'The isolated installed proof constructs explicit application-owned `Response` values',
+            'Framework, default-skeleton, installed-framework, copied-project, and package-inventory path checks',
+            'This deterministic name/path evidence does not prove absence of differently named hidden behavior',
+            'It adds no framework response mechanism or consumer-checker rule and does not make the example envelope a consumer-validity rule.',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'structured JSON success-envelope guidance');
+
+    $installedComposer = jsonFile($installedFramework . '/composer.json');
+    $installedRuntimeRequirements = $installedComposer['require'] ?? null;
+
+    if (!is_array($installedRuntimeRequirements)) {
+        throw new RuntimeException('Installed framework runtime requirements must be an explicit Composer map.');
+    }
+
+    foreach (array_keys($installedRuntimeRequirements) as $runtimePackage) {
+        if (
+            !is_string($runtimePackage)
+            || (
+                $runtimePackage !== 'php'
+                && !str_starts_with($runtimePackage, 'ext-')
+            )
+        ) {
+            throw new RuntimeException(
+                'Installed structured JSON guidance must not add a framework runtime dependency.',
+            );
+        }
+    }
+
+    $consumerComposer = jsonFile($project . '/composer.json');
+    $consumerRuntimeRequirements = $consumerComposer['require'] ?? null;
+
+    if (!is_array($consumerRuntimeRequirements)) {
+        throw new RuntimeException('Installed skeleton runtime requirements must be an explicit Composer map.');
+    }
+
+    $consumerRuntimePackages = array_keys($consumerRuntimeRequirements);
+
+    foreach ($consumerRuntimePackages as $consumerRuntimePackage) {
+        if (!is_string($consumerRuntimePackage)) {
+            throw new RuntimeException('Installed skeleton runtime requirement names must be strings.');
+        }
+    }
+
+    sort($consumerRuntimePackages, SORT_STRING);
+
+    if ($consumerRuntimePackages !== ['php', 'phpthis/framework']) {
+        throw new RuntimeException(
+            'Installed structured JSON guidance must not add a default-skeleton runtime dependency.',
+        );
+    }
+
+    $forbiddenRuntimePathPattern = '/(?:\A|\/)(?:[A-Za-z0-9]*(?:Envelope|Wrapper|Serializer|Resource|ResourceCollection|Paginator|Pagination)|[A-Za-z0-9]*JsonResponse|(?:Response|Json|Resource|Success|Pagination)[A-Za-z0-9]*(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|(?:Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|[A-Za-z0-9]*(?:SchemaGenerator|ClientGenerator|SdkGenerator)|(?:OpenApi|JsonSchema)[A-Za-z0-9]*)(?:\.php|\/)/i';
+    $installedSourceRoots = [
+        $installedFramework . '/src' => 'installed framework',
+        $project . '/src' => 'installed default skeleton',
+    ];
+
+    foreach ($installedSourceRoots as $installedSourceRoot => $installedSourceOwner) {
+        $installedSourceFiles = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($installedSourceRoot, FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($installedSourceFiles as $installedSourceFile) {
+            if (!$installedSourceFile instanceof SplFileInfo || !$installedSourceFile->isFile()) {
+                continue;
+            }
+
+            $relativePath = substr($installedSourceFile->getPathname(), strlen(dirname($installedSourceRoot)) + 1);
+
+            if (preg_match($forbiddenRuntimePathPattern, $relativePath) === 1) {
+                throw new RuntimeException(
+                    "Structured JSON response runtime mechanism must remain outside the {$installedSourceOwner}: {$relativePath}.",
+                );
+            }
+        }
+    }
+
+    $proofPath = $project . '/installed-structured-json-success-envelope-proof.php';
+    writeFile(
+        $proofPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Http\Response;
+
+require __DIR__ . '/vendor/autoload.php';
+
+/** @return array{id: int, name: string} */
+function decodeGetUserSuccess(Response $response): array
+{
+    requireStructuredJsonSuccessResponse($response);
+    $decoded = json_decode($response->body, false, 8, JSON_THROW_ON_ERROR);
+
+    if (
+        !$decoded instanceof stdClass
+        || count(get_object_vars($decoded)) !== 1
+        || !property_exists($decoded, 'data')
+        || !$decoded->data instanceof stdClass
+        || count(get_object_vars($decoded->data)) !== 2
+        || !property_exists($decoded->data, 'id')
+        || !property_exists($decoded->data, 'name')
+        || !is_int($decoded->data->id)
+        || $decoded->data->id < 1
+        || !is_string($decoded->data->name)
+        || $decoded->data->name === ''
+        || preg_match('//u', $decoded->data->name) !== 1
+    ) {
+        throw new UnexpectedValueException('GetUser success representation is incompatible.');
+    }
+
+    return ['id' => $decoded->data->id, 'name' => $decoded->data->name];
+}
+
+/** @return array{data: list<array{id: int, name: string, event_count: int}>, meta: array{next_after_user_id: string|null}} */
+function decodeListUsersSuccess(Response $response): array
+{
+    requireStructuredJsonSuccessResponse($response);
+    $decoded = json_decode($response->body, false, 16, JSON_THROW_ON_ERROR);
+
+    if (
+        !$decoded instanceof stdClass
+        || count(get_object_vars($decoded)) !== 2
+        || !property_exists($decoded, 'data')
+        || !property_exists($decoded, 'meta')
+        || !is_array($decoded->data)
+        || !array_is_list($decoded->data)
+        || count($decoded->data) > 50
+        || !$decoded->meta instanceof stdClass
+        || count(get_object_vars($decoded->meta)) !== 1
+        || !property_exists($decoded->meta, 'next_after_user_id')
+        || (!is_string($decoded->meta->next_after_user_id) && $decoded->meta->next_after_user_id !== null)
+    ) {
+        throw new UnexpectedValueException('ListUsers success representation is incompatible.');
+    }
+
+    $nextAfterUserId = $decoded->meta->next_after_user_id;
+
+    if ($nextAfterUserId !== null) {
+        if (
+            $nextAfterUserId === ''
+            || strlen($nextAfterUserId) > strlen((string) PHP_INT_MAX)
+        ) {
+            throw new UnexpectedValueException('ListUsers continuation is incompatible.');
+        }
+    }
+
+    $users = [];
+
+    foreach ($decoded->data as $user) {
+        if (
+            !$user instanceof stdClass
+            || count(get_object_vars($user)) !== 3
+            || !property_exists($user, 'id')
+            || !property_exists($user, 'name')
+            || !property_exists($user, 'event_count')
+            || !is_int($user->id)
+            || $user->id < 1
+            || !is_string($user->name)
+            || $user->name === ''
+            || preg_match('//u', $user->name) !== 1
+            || !is_int($user->event_count)
+            || $user->event_count < 0
+        ) {
+            throw new UnexpectedValueException('ListUsers data item is incompatible.');
+        }
+
+        $users[] = ['id' => $user->id, 'name' => $user->name, 'event_count' => $user->event_count];
+    }
+
+    return ['data' => $users, 'meta' => ['next_after_user_id' => $nextAfterUserId]];
+}
+
+/** @return array{data: list<array{document_key: string, title: string, category: string, sort_rank: int}>, meta: array{next_cursor: string|null}} */
+function decodeListDocumentsSuccess(Response $response): array
+{
+    requireStructuredJsonSuccessResponse($response);
+    $decoded = json_decode($response->body, false, 16, JSON_THROW_ON_ERROR);
+
+    if (
+        !$decoded instanceof stdClass
+        || count(get_object_vars($decoded)) !== 2
+        || !property_exists($decoded, 'data')
+        || !property_exists($decoded, 'meta')
+        || !is_array($decoded->data)
+        || !array_is_list($decoded->data)
+        || count($decoded->data) > 50
+        || !$decoded->meta instanceof stdClass
+        || count(get_object_vars($decoded->meta)) !== 1
+        || !property_exists($decoded->meta, 'next_cursor')
+        || (!is_string($decoded->meta->next_cursor) && $decoded->meta->next_cursor !== null)
+    ) {
+        throw new UnexpectedValueException('ListDocuments success representation is incompatible.');
+    }
+
+    $nextCursor = $decoded->meta->next_cursor;
+
+    if ($nextCursor !== null) {
+        $maximumCursorBytes = strlen('v1:rank_desc:1000000:') + 64;
+
+        if ($nextCursor === '' || strlen($nextCursor) > $maximumCursorBytes) {
+            throw new UnexpectedValueException('ListDocuments continuation is incompatible.');
+        }
+    }
+
+    $documents = [];
+
+    foreach ($decoded->data as $document) {
+        if (
+            !$document instanceof stdClass
+            || count(get_object_vars($document)) !== 4
+            || !property_exists($document, 'document_key')
+            || !property_exists($document, 'title')
+            || !property_exists($document, 'category')
+            || !property_exists($document, 'sort_rank')
+            || !is_string($document->document_key)
+            || preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/D', $document->document_key) !== 1
+            || !is_string($document->title)
+            || $document->title === ''
+            || preg_match('//u', $document->title) !== 1
+            || !is_string($document->category)
+            || $document->category === ''
+            || strlen($document->category) > 64
+            || preg_match('//u', $document->category) !== 1
+            || preg_match('/[\x00-\x1F\x7F]/', $document->category) === 1
+            || !is_int($document->sort_rank)
+            || $document->sort_rank < 0
+            || $document->sort_rank > 1_000_000
+        ) {
+            throw new UnexpectedValueException('ListDocuments data item is incompatible.');
+        }
+
+        $documents[] = [
+            'document_key' => $document->document_key,
+            'title' => $document->title,
+            'category' => $document->category,
+            'sort_rank' => $document->sort_rank,
+        ];
+    }
+
+    return ['data' => $documents, 'meta' => ['next_cursor' => $nextCursor]];
+}
+
+function requireStructuredJsonSuccessResponse(Response $response): void
+{
+    if ($response->status !== 200) {
+        throw new UnexpectedValueException('Expected a successful response before decoding.');
+    }
+
+    if (($response->headers['Content-Type'] ?? null) !== 'application/json; charset=utf-8') {
+        throw new UnexpectedValueException('Expected the exact structured JSON response media type.');
+    }
+}
+
+/** @param callable(): mixed $operation */
+function requireDecoderRejection(callable $operation): void
+{
+    try {
+        $operation();
+    } catch (JsonException|UnexpectedValueException) {
+        return;
+    }
+
+    throw new RuntimeException('An incompatible structured JSON success response was accepted.');
+}
+
+$getUser = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store'],
+    "{\"data\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n",
+);
+$listUsersContinuation = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store'],
+    "{\"data\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"meta\":{\"next_after_user_id\":\"50\"}}\n",
+);
+$listUsersEnd = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store'],
+    "{\"data\":[{\"id\":1,\"name\":\"Ada Lovelace\",\"event_count\":1}],\"meta\":{\"next_after_user_id\":null}}\n",
+);
+$listDocumentsEmpty = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
+    "{\"data\":[],\"meta\":{\"next_cursor\":null}}\n",
+);
+$listDocumentsContinuation = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
+    "{\"data\":[{\"document_key\":\"Doc_001\",\"title\":\"Plan\",\"category\":\"active\",\"sort_rank\":1}],\"meta\":{\"next_cursor\":\"v1:rank_asc:1:Doc_001\"}}\n",
+);
+$listDocumentsEnd = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
+    "{\"data\":[{\"document_key\":\"Doc_001\",\"title\":\"Plan\",\"category\":\"active\",\"sort_rank\":1}],\"meta\":{\"next_cursor\":null}}\n",
+);
+$missingUser = new Response(
+    404,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store'],
+    "{\"error\":{\"code\":\"user_not_found\",\"message\":\"User was not found.\"}}\n",
+);
+$reorderedGetUser = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":{\"name\":\"Ada Lovelace\",\"id\":1}}\n",
+);
+$reorderedListDocuments = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"meta\":{\"next_cursor\":null},\"data\":[]}\n",
+);
+$opaqueListUsersContinuation = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_after_user_id\":\"01\"}}\n",
+);
+$opaqueListDocumentsContinuation = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_cursor\":\"50\"}}\n",
+);
+
+if (
+    $getUser->body !== "{\"data\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n"
+    || decodeGetUserSuccess($getUser) !== ['id' => 1, 'name' => 'Ada Lovelace']
+    || decodeGetUserSuccess($reorderedGetUser) !== ['id' => 1, 'name' => 'Ada Lovelace']
+    || decodeListUsersSuccess($listUsersContinuation)['meta']['next_after_user_id'] !== '50'
+    || decodeListUsersSuccess($listUsersEnd)['meta']['next_after_user_id'] !== null
+    || decodeListDocumentsSuccess($listDocumentsEmpty) !== ['data' => [], 'meta' => ['next_cursor' => null]]
+    || decodeListDocumentsSuccess($listDocumentsContinuation)['meta']['next_cursor'] !== 'v1:rank_asc:1:Doc_001'
+    || decodeListDocumentsSuccess($listDocumentsEnd)['meta']['next_cursor'] !== null
+    || decodeListDocumentsSuccess($reorderedListDocuments) !== ['data' => [], 'meta' => ['next_cursor' => null]]
+    || decodeListUsersSuccess($opaqueListUsersContinuation)['meta']['next_after_user_id'] !== '01'
+    || decodeListDocumentsSuccess($opaqueListDocumentsContinuation)['meta']['next_cursor'] !== '50'
+    || $missingUser->status !== 404
+    || str_contains($missingUser->body, '"data":null')
+) {
+    throw new RuntimeException('Installed structured JSON success-envelope positive control failed.');
+}
+
+requireDecoderRejection(static fn (): array => decodeGetUserSuccess($missingUser));
+requireDecoderRejection(static fn (): array => decodeGetUserSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":\n",
+)));
+requireDecoderRejection(static fn (): array => decodeGetUserSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"user\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeGetUserSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json'],
+    "{\"data\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListUsersSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_cursor\":\"v1:rank_asc:1:Doc_001\"}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListUsersSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_after_user_id\":\"\"}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListDocumentsSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_after_user_id\":\"50\"}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListDocumentsSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_cursor\":\"\"}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListUsersSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":{},\"meta\":{\"next_after_user_id\":null}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListDocumentsSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":{},\"meta\":{\"next_cursor\":null}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListUsersSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_after_user_id\":50}}\n",
+)));
+requireDecoderRejection(static fn (): array => decodeListDocumentsSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[],\"meta\":{\"next_cursor\":50}}\n",
+)));
+$tooManyUsersBody = json_encode(
+    [
+        'data' => array_fill(0, 51, ['id' => 1, 'name' => 'Ada Lovelace', 'event_count' => 0]),
+        'meta' => ['next_after_user_id' => null],
+    ],
+    JSON_THROW_ON_ERROR,
+) . "\n";
+$overlongUserContinuationBody = json_encode(
+    [
+        'data' => [],
+        'meta' => ['next_after_user_id' => str_repeat('9', strlen((string) PHP_INT_MAX) + 1)],
+    ],
+    JSON_THROW_ON_ERROR,
+) . "\n";
+$tooManyDocumentsBody = json_encode(
+    [
+        'data' => array_fill(
+            0,
+            51,
+            ['document_key' => 'Doc_001', 'title' => 'Plan', 'category' => 'active', 'sort_rank' => 1],
+        ),
+        'meta' => ['next_cursor' => null],
+    ],
+    JSON_THROW_ON_ERROR,
+) . "\n";
+$overlongDocumentCursorBody = json_encode(
+    ['data' => [], 'meta' => ['next_cursor' => str_repeat('c', 86)]],
+    JSON_THROW_ON_ERROR,
+) . "\n";
+$invalidDocumentScalarsBody = json_encode(
+    [
+        'data' => [[
+            'document_key' => str_repeat('k', 65),
+            'title' => 'Plan',
+            'category' => str_repeat('c', 65),
+            'sort_rank' => 1_000_001,
+        ]],
+        'meta' => ['next_cursor' => null],
+    ],
+    JSON_THROW_ON_ERROR,
+) . "\n";
+
+foreach (
+    [
+        [decodeListUsersSuccess(...), $tooManyUsersBody],
+        [decodeListUsersSuccess(...), $overlongUserContinuationBody],
+        [decodeListDocumentsSuccess(...), $tooManyDocumentsBody],
+        [decodeListDocumentsSuccess(...), $overlongDocumentCursorBody],
+        [decodeListDocumentsSuccess(...), $invalidDocumentScalarsBody],
+    ] as [$decoder, $body]
+) {
+    requireDecoderRejection(static fn (): array => $decoder(new Response(
+        200,
+        ['Content-Type' => 'application/json; charset=utf-8'],
+        $body,
+    )));
+}
+
+fwrite(STDOUT, "PASS installed structured JSON success-envelope runtime\n");
+PHP,
+    );
+
+    try {
+        $proofResult = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+        requireExactProcessResult(
+            $proofResult,
+            0,
+            "PASS installed structured JSON success-envelope runtime\n",
+            '',
+            'Installed structured JSON success-envelope runtime proof failed.',
+        );
+    } finally {
+        unlink($proofPath);
+    }
+
+    fwrite(STDOUT, "PASS installed structured JSON success-envelope guidance distribution\n");
 }
 
 function proveInstalledTransactionalEmailGuidanceDistribution(

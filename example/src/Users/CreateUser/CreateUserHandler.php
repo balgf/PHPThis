@@ -48,7 +48,7 @@ final readonly class CreateUserHandler implements RequestHandler
         $command = CreateUserCommand::fromJson($request->body);
         $responseBody = json_encode(
             [
-                'user' => [
+                'data' => [
                     'account_id' => $accountId->value,
                     'name' => $command->name,
                     'email' => $command->email,

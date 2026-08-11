@@ -118,6 +118,18 @@ This pattern does not alter `RequestBoundary`, `Application`, `Request`, `PathPa
 
 The generic reader does not guess which representation a route accepts. `CreateUserHandler` explicitly requires `application/json`, allowing parameters such as `charset=utf-8`, before it parses the command or performs database work. Missing or incompatible media types cross the boundary as `UnsupportedMediaType`.
 
+## Recommended structured JSON resource success envelope
+
+For a new application operation returning a successful structured JSON resource representation, PHPThis recommends an application-owned `{"data":{...}}` outer shape for one resource and `{"data":[...]}` for a resource collection. An empty collection is `{"data":[]}`, not `null`. Optional operation-owned pagination or other non-resource information belongs in a top-level `meta` object, for example `{"data":[...],"meta":{"next_cursor":"..."}}`.
+
+The operation still owns every field inside `data` and `meta`. Continuation names such as `next_after_user_id` and `next_cursor` deliberately remain distinct, and their grammar, ordering, bounds, filter compatibility, invalidation, snapshot behavior, null-versus-absence policy, and end-of-list semantics do not become a framework pagination contract merely because they share the `meta` location.
+
+A missing resource normally follows that operation's recorded `404` failure mapping rather than returning successful `{"data":null}`. Errors keep their separate explicit status, exact media type, and stable public error representation. HTTP status remains authoritative; do not add a body-level success flag or duplicated status field. The convention does not wrap bodyless `204`, `205`, or `304` responses, explicit `HEAD`, downloads, HTML, plain text, health responses, or other non-resource representations.
+
+For every adopting operation, the handler explicitly sets the status and exact `Content-Type`, encodes its concrete application-owned array with `JSON_THROW_ON_ERROR`, and proves the exact field set, native JSON types, null-versus-absence behavior, scalar and collection bounds, identifier representation, temporal representation, collection ordering, and compatibility policy. A top-level `data` member alone is not JSON:API; adopting JSON:API requires a separate application decision for its media type, resource `type`/`id`/`attributes` model, relationships, errors, links, and compatibility rules.
+
+This greenfield recommendation is advisory. Existing published resource-named or bare success representations remain valid application contracts, and changing one to `data` is a breaking API change requiring an explicit migration or versioning decision. PHPThis adds no runtime wrapper, serializer, resource class, paginator, middleware, facade, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.
+
 ## Multipart file input
 
 ADR 026 adds one narrow parsed multipart path. The composition root configures a separate total multipart request limit; `null` leaves multipart disabled. `RequestReader` accepts multipart only for `POST`, one syntactically valid non-empty boundary parameter, canonical `Content-Length`, no `Transfer-Encoding`, no parsed text fields, and zero or one normalized flat top-level file entry. It rejects nested or multiple normalized files, unknown or wrongly typed metadata, controls, an unreasonable temporary path, contradictory no-file metadata, and reported bytes greater than the total request. PHP may already have collapsed repeated raw scalar fields, which this path records as a proof limit rather than a rejection claim.

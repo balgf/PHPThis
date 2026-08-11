@@ -404,6 +404,7 @@ function requestPolicyTests(): Generator
                     if (
                         $empty['document_keys'] !== []
                         || $empty['next_cursor'] !== null
+                        || $empty['body'] !== "{\"data\":[],\"meta\":{\"next_cursor\":null}}\n"
                         || $empty['used'] !== 0
                         || $empty['statements'] !== 0
                         || $empty['tracked_fingerprints'] !== 0
@@ -460,7 +461,7 @@ function requestPolicyTests(): Generator
                 );
 
                 if (
-                    $page['body'] !== "{\"documents\":[],\"next_cursor\":null}\n"
+                    $page['body'] !== "{\"data\":[],\"meta\":{\"next_cursor\":null}}\n"
                     || $page['document_keys'] !== []
                     || $page['steps'] !== ['authenticate', 'resolve_tenant', 'authorize_list']
                     || $page['principal_id'] !== $principalId
@@ -534,14 +535,38 @@ function requestPolicyTests(): Generator
                 $lookaheadPath,
                 ['cursor' => $lookahead['next_cursor']],
             );
+            $expectedLookaheadDocuments = [];
+
+            foreach (range(1, 50) as $documentNumber) {
+                $expectedLookaheadDocuments[] = [
+                    'document_key' => sprintf('Doc_%03d', $documentNumber),
+                    'title' => 'Document ' . $documentNumber,
+                    'category' => match ($documentNumber % 3) {
+                        0 => 'alpha',
+                        1 => 'beta',
+                        default => 'gamma',
+                    },
+                    'sort_rank' => intdiv($documentNumber - 1, 17),
+                ];
+            }
+
+            $expectedLookaheadBody = json_encode(
+                [
+                    'data' => $expectedLookaheadDocuments,
+                    'meta' => ['next_cursor' => 'v1:rank_asc:2:Doc_050'],
+                ],
+                JSON_THROW_ON_ERROR,
+            ) . "\n";
 
             if (
                 count($exact['document_keys']) !== 50
                 || $exact['next_cursor'] !== null
                 || count($lookahead['document_keys']) !== 50
                 || $lookahead['next_cursor'] !== 'v1:rank_asc:2:Doc_050'
+                || $lookahead['body'] !== $expectedLookaheadBody
                 || $lookaheadFinal['document_keys'] !== ['Doc_051']
                 || $lookaheadFinal['next_cursor'] !== null
+                || $lookaheadFinal['body'] !== "{\"data\":[{\"document_key\":\"Doc_051\",\"title\":\"Document 51\",\"category\":\"alpha\",\"sort_rank\":2}],\"meta\":{\"next_cursor\":null}}\n"
             ) {
                 throw new RuntimeException('Expected exact and lookahead page boundaries to remain explicit.');
             }
@@ -1090,7 +1115,7 @@ function requestPolicyTests(): Generator
     yield 'consumer replaces every document policy and passes explicit authority values' => static function (): void {
             $small = runPermittedDocumentPolicyScenario('policy-permitted-small', 0);
             $large = runPermittedDocumentPolicyScenario('policy-permitted-large', 500);
-            $expectedBody = "{\"document\":{\"account_id\":42,\"key\":\"Doc_9-z\",\"title\":\"Example document\"}}\n";
+            $expectedBody = "{\"data\":{\"account_id\":42,\"key\":\"Doc_9-z\",\"title\":\"Example document\"}}\n";
 
             if (
                 $small['status'] !== 200
@@ -1525,18 +1550,28 @@ function runDocumentListPageScenario(
         || $response->headers !== requestPolicyJsonHeaders()
         || !is_array($decoded)
         || count($decoded) !== 2
-        || !array_key_exists('documents', $decoded)
-        || !array_key_exists('next_cursor', $decoded)
+        || !array_key_exists('data', $decoded)
+        || !array_key_exists('meta', $decoded)
     ) {
         throw new RuntimeException('Document listing returned an invalid page response.');
     }
 
-    $documentValues = $decoded['documents'];
-    $nextCursor = $decoded['next_cursor'];
+    $documentValues = $decoded['data'];
+    $meta = $decoded['meta'];
 
     if (!is_array($documentValues) || !array_is_list($documentValues)) {
         throw new RuntimeException('Document listing returned a non-list documents value.');
     }
+
+    if (
+        !is_array($meta)
+        || count($meta) !== 1
+        || !array_key_exists('next_cursor', $meta)
+    ) {
+        throw new RuntimeException('Document listing returned invalid operation metadata.');
+    }
+
+    $nextCursor = $meta['next_cursor'];
 
     if (
         $nextCursor !== null
