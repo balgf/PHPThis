@@ -156,7 +156,7 @@ The parser distinguishes missing keys from explicit `null`, rejects unknown fiel
 
 For an ADR 020 protected route, its action-specific adapter retains `authenticate -> resolve tenant -> authorize -> protected handler` order. A body command parsed inside that protected handler is therefore validated before protected operation behavior but after any separately bounded policy work. Input rejection prevents the protected operation and its I/O; it does not claim that earlier authentication, tenant, authorization, or policy reads never occurred. Validation never grants access, and the typed command never installs an implicit tenant or database scope.
 
-See [Type safety](type-safety.md) and [ADR 021](decisions/021-application-owned-typed-input-boundaries.md) for canonical scalar, enum, date, list, normalization, and error rules.
+See [Type safety](type-safety.md) and [ADR 021](decisions/021-application-owned-typed-input-boundaries.md) for canonical scalar, enum, date, list, normalization, and error rules. The generic `400`/`422` contract remains valid; an operation with a proved client need may explicitly adopt the bounded, operation-owned profile in [Optional application-owned field issues](errors.md#optional-application-owned-field-issues) without adding a validator, error bag, response wrapper, or dynamic error renderer.
 
 ## Cookies and optional sessions
 

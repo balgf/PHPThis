@@ -89,7 +89,7 @@ A frontend operation has at least three failure classes:
 
 Do not call a JSON decoder before checking the response status and media type. Application-mapped failures and the generic unknown-failure response use explicit JSON in the current reference paths, while framework-owned route misses and method rejections are `text/plain`. A `204`, `205`, or `304` has no ordinary body, and an explicit `HEAD` route has an empty body under the current safe subset. Frontend code and fixtures must preserve those distinctions rather than converting every non-success into one guessed object.
 
-The default structured-body contract keeps `400 invalid_request` and `422 unprocessable_content` generic and redacted. Field-addressable issue codes, localization, or another public error vocabulary require a separately recorded application compatibility decision; the frontend must not extract internal rules from generic messages.
+The default structured-body contract keeps `400 invalid_request` and `422 unprocessable_content` generic and redacted. [Optional application-owned field issues](errors.md#optional-application-owned-field-issues) defines the sole detailed reference profile and its decoder, localization, migration, bounds, and fixture obligations. Adoption is an explicit operation-level compatibility decision; a frontend must not extract internal rules from generic messages or guess between response shapes.
 
 ## Treat cross-origin access as a complete policy
 

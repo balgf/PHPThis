@@ -945,6 +945,388 @@ function boundaryGuardrailFailures(string $root): array
 
     requireGuardrailArtifactMarkers($root, $typedInputBoundaryArtifactMarkers, 'typed-input-boundary', $failures);
 
+    $fieldValidationErrorArtifactMarkers = [
+        '.ai/errors.md' => [
+            'Keep that generic `400`/`422` contract unless an accountable application decision records a concrete client need',
+            'adopts `docs/errors.md#optional-application-owned-field-issues` for one operation',
+            'does not make `ErrorResponseRegistry` dynamic or create a validator, error bag, response wrapper, renderer, generator, core API, dependency, diagnostic, or universal schema',
+        ],
+        '.ai/types.md' => [
+            'When an operation deliberately adopts field-addressable value issues, follow the exact advisory profile and two-phase precedence in `docs/errors.md#optional-application-owned-field-issues`',
+            'do not create another parsing style or derive paths or codes from input',
+        ],
+        '.ai/http.md' => [
+            'Keep generic redacted `400 invalid_request` and `422 unprocessable_content` responses as the default.',
+            'A recorded operation may adopt `docs/errors.md#optional-application-owned-field-issues`',
+            'Do not add a generic response wrapper, validation renderer, middleware, or generated schema or client.',
+        ],
+        '.ai/application-context.md' => [
+            'When an operation adopts the optional field-issue profile, route to installed `vendor/phpthis/framework/docs/errors.md#optional-application-owned-field-issues`',
+            'record its exact operation, code-owned path templates and code allowlists, cross-field choice, client and localization owners, compatibility rollout, and evidence',
+            'without copying the profile into a second normative context owner',
+        ],
+        '.ai/testing.md' => [
+            'When an application adopts `docs/errors.md#optional-application-owned-field-issues`',
+            'absent per-issue message, `null` and unknown-member rejection, code-owned path grammar and code allowlists',
+            'mixed structural/value failures that remain generic `400`',
+            'tests do not introduce a reusable validator, error bag, response wrapper, renderer, generator, or client library',
+        ],
+        'docs/errors.md' => [
+            '## Optional application-owned field issues',
+            "The generic `400` and `422` responses above remain PHPThis's recommended default and require no field details.",
+            'This documentation-only advisory adds no PHPThis runtime or core API, dependency, Consumer Contract requirement, Strict Profile or `PHT` rule, checker diagnostic, generated code, or mandatory response schema.',
+            'No member accepts `null`; no member is optional; unknown members and a per-issue `message` member are absent from this profile.',
+            'The outer `code` and `message` are exactly `validation_failed` and `One or more fields are invalid.`',
+            'The reference response uses `Content-Type: application/json; charset=utf-8` and `Cache-Control: no-store`; a protected or personalized operation uses `Cache-Control: private, no-store`.',
+            'The `issues` array contains from 1 through 20 entries and at most one entry for each field path.',
+            'The complete UTF-8 JSON representation is at most 16,384 bytes',
+            'The exact envelope fixes the semantic nesting; a decoder with a configurable depth uses a maximum of 8',
+            'field   := segment ("." segment | "[" index "]")*',
+            'index   := 0 | [1-9][0-9]{0,5}',
+            'Each segment and list index is one path component. A path has at most eight components and 256 bytes.',
+            '`code` is a 1-to-64-byte lowercase ASCII identifier matching `[a-z][a-z0-9_]{0,63}` and selected from a finite operation-owned allowlist.',
+            'It orders paths by the parser\'s fixed schema order, orders list items by ascending index, and places the whole-request `$` issue last.',
+            'A cross-field rule either assigns one fixed issue to each participating code-owned path or assigns one issue to `$`',
+            'Mixed structural and unacceptable-value inputs remain `400` regardless of submitted property order.',
+            'Do not put data-dependent issue rendering in `ErrorResponseRegistry`, add a catch-all validation exception, or introduce a validator, error bag, string-rule language, response wrapper, reflection hydrator, middleware, discovery mechanism, or generated consumer code.',
+            'Never include submitted values, unknown submitted keys, free-form exception or database text, credentials, tokens, principal or tenant details, resource identifiers, or authorization reasons.',
+            'Per-issue human messages are deliberately absent.',
+            'Rejecting an unknown code as a decode or contract failure is the safe reference behavior; a fallback or ignore policy must be explicit and tested.',
+            'changing issue priority or array order can break clients',
+            'this reference decoder does not claim rejection of duplicate object-member names',
+        ],
+        'docs/type-safety.md' => [
+            '[Error responses](errors.md#optional-application-owned-field-issues) is the sole detailed owner of an optional finite reference profile',
+            'preserves the complete structural `400` phase and keeps its value-issue `422` branch literal, bounded, code-owned, and before operation-owned I/O',
+        ],
+        'docs/frontend-integration.md' => [
+            '[Optional application-owned field issues](errors.md#optional-application-owned-field-issues) defines the sole detailed reference profile',
+            'a frontend must not extract internal rules from generic messages or guess between response shapes',
+        ],
+        'docs/request-handling.md' => [
+            'The generic `400`/`422` contract remains valid',
+            '[Optional application-owned field issues](errors.md#optional-application-owned-field-issues)',
+            'without adding a validator, error bag, response wrapper, or dynamic error renderer',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Adopt, change, or review field-addressable value issues |',
+            'exact finite code-owned path templates and code allowlists, literal bounded response construction before operation-owned I/O',
+            'preserve the generic `400`/`422` default and verify that no validator, error bag, response wrapper, renderer, generator, core API, dependency, checker diagnostic, or universal schema was introduced',
+        ],
+        'docs/guardrails.md' => [
+            'application-owned field-validation error guidance',
+            'installed decoder fixture',
+            'adds no framework validator, error bag, response wrapper, renderer, generated consumer code, runtime dependency, checker rule, or `PHT` diagnostic',
+        ],
+        'templates/application/.ai/architecture.md' => [
+            '{{INPUT_BOUNDARY_ADOPTION_OR_NOT_APPLICABLE}}',
+            'Unless this table records another explicit finite API contract',
+            'correctly shaped and typed body content with an unacceptable grammar, range, length, enum, date, canonical representation, or cross-field value maps through an exact application-owned failure to generic `422`',
+        ],
+        'skeleton/.ai/architecture.md' => [
+            '`NOT_APPLICABLE(INPUT)`',
+            'The default public contract maps the first phase to generic `400 invalid_request`',
+            'an exact application-owned exception registered as generic `422 unprocessable_content`',
+        ],
+        'tools/package-files.txt' => [
+            'docs/errors.md',
+            'docs/frontend-integration.md',
+            'docs/guardrails.md',
+            'docs/knowledge-map.md',
+            'docs/request-handling.md',
+            'docs/type-safety.md',
+        ],
+        'tools/test-consumer-project.php' => [
+            '$installedFieldValidationProofCompletion =',
+            'proveInstalledFieldValidationErrorGuidanceDistribution(',
+            'function proveInstalledFieldValidationErrorGuidanceDistribution(',
+            "!== 'installed-field-validation-error-guidance-proof-complete'",
+            "return 'installed-field-validation-error-guidance-proof-complete';",
+            'decodeAdoptedFieldValidationFailure(Response $response)',
+            'matchesReferenceFieldPathGrammar(string $field)',
+            'items[999999].field_name',
+            'items[20].field_name',
+            'PASS installed application-owned field-validation error decoder',
+            'PASS installed field-validation error guidance distribution',
+        ],
+        'tools/guardrails/boundaries.php' => [
+            '$fieldValidationForbiddenRuntimePathPattern =',
+            "'src/Validator.php'",
+            "'verification/FieldValidationRule.php'",
+            "'skeleton/src/Http/RequestValidationErrorBag.php'",
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $fieldValidationErrorArtifactMarkers,
+        'application-owned field-validation error guidance and proof',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'templates/application/.ai/architecture.md' => [
+                '`validation_failed`',
+                '{{FIELD_VALIDATION',
+            ],
+            'skeleton/.ai/architecture.md' => [
+                '`validation_failed`',
+                'FIELD_VALIDATION',
+            ],
+        ],
+        'automatic field-validation error adoption',
+        $failures,
+    );
+
+    $installedFieldValidationProofSource = file_get_contents(
+        $root . '/tools/test-consumer-project.php',
+    );
+    $installedFieldValidationProofWiring = <<<'PHP'
+    $installedFieldValidationProofCompletion =
+        proveInstalledFieldValidationErrorGuidanceDistribution(
+            $project,
+            $installedFramework,
+            $environment,
+        );
+
+    if (
+        $installedFieldValidationProofCompletion
+            !== 'installed-field-validation-error-guidance-proof-complete'
+    ) {
+        throw new RuntimeException('Installed field-validation error guidance proof did not complete.');
+    }
+PHP;
+    $installedFieldValidationProofWiringIsCanonical = static function (
+        string $source,
+    ) use ($installedFieldValidationProofWiring): bool {
+        if (
+            substr_count($source, $installedFieldValidationProofWiring) !== 1
+            || substr_count($source, '$installedFieldValidationProofCompletion') !== 2
+            || substr_count(
+                $source,
+                "'installed-field-validation-error-guidance-proof-complete'",
+            ) !== 2
+            || substr_count(
+                $source,
+                "    return 'installed-field-validation-error-guidance-proof-complete';",
+            ) !== 1
+        ) {
+            return false;
+        }
+
+        $wiringOffset = strpos($source, $installedFieldValidationProofWiring);
+
+        if ($wiringOffset === false) {
+            return false;
+        }
+
+        $prefixTokens = token_get_all(substr($source, 0, $wiringOffset));
+        $braceDepth = 0;
+        $functionDeclarationSeen = false;
+        $previousSignificantToken = null;
+
+        foreach ($prefixTokens as $prefixToken) {
+            if (is_array($prefixToken)) {
+                if ($prefixToken[0] === T_FUNCTION) {
+                    $functionDeclarationSeen = true;
+                }
+
+                if (in_array($prefixToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                $previousSignificantToken = $prefixToken;
+                continue;
+            }
+
+            if ($prefixToken === '{') {
+                $braceDepth++;
+            } elseif ($prefixToken === '}') {
+                $braceDepth--;
+            }
+
+            $previousSignificantToken = $prefixToken;
+        }
+
+        if (
+            $braceDepth !== 1
+            || $functionDeclarationSeen
+            || !in_array($previousSignificantToken, ['{', '}', ';'], true)
+        ) {
+            return false;
+        }
+
+        $proofCallCount = 0;
+        $tokens = token_get_all($source);
+
+        foreach ($tokens as $tokenIndex => $token) {
+            if (
+                !is_array($token)
+                || $token[0] !== T_STRING
+                || $token[1] !== 'proveInstalledFieldValidationErrorGuidanceDistribution'
+            ) {
+                continue;
+            }
+
+            $previousToken = null;
+
+            for ($previousTokenIndex = $tokenIndex - 1; $previousTokenIndex >= 0; $previousTokenIndex--) {
+                $candidateToken = $tokens[$previousTokenIndex];
+
+                if (
+                    is_array($candidateToken)
+                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+                ) {
+                    continue;
+                }
+
+                $previousToken = $candidateToken;
+                break;
+            }
+
+            if (is_array($previousToken) && $previousToken[0] === T_FUNCTION) {
+                continue;
+            }
+
+            $nextToken = null;
+
+            for ($nextTokenIndex = $tokenIndex + 1; $nextTokenIndex < count($tokens); $nextTokenIndex++) {
+                $candidateToken = $tokens[$nextTokenIndex];
+
+                if (
+                    is_array($candidateToken)
+                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+                ) {
+                    continue;
+                }
+
+                $nextToken = $candidateToken;
+                break;
+            }
+
+            if ($nextToken === '(') {
+                $proofCallCount++;
+            }
+        }
+
+        return $proofCallCount === 1;
+    };
+
+    if (!is_string($installedFieldValidationProofSource)) {
+        $failures[] = 'Cannot read the installed field-validation error proof harness.';
+    } else {
+        $mutatedFieldValidationProofSources = [
+            str_replace(
+                $installedFieldValidationProofWiring,
+                '',
+                $installedFieldValidationProofSource,
+            ),
+            str_replace(
+                $installedFieldValidationProofWiring,
+                "    if (false) {\n{$installedFieldValidationProofWiring}\n    }",
+                $installedFieldValidationProofSource,
+            ),
+            str_replace(
+                $installedFieldValidationProofWiring,
+                "    if (false)\n{$installedFieldValidationProofWiring}",
+                $installedFieldValidationProofSource,
+            ),
+        ];
+        $mutationWasAccepted = false;
+
+        foreach ($mutatedFieldValidationProofSources as $mutatedFieldValidationProofSource) {
+            if ($installedFieldValidationProofWiringIsCanonical($mutatedFieldValidationProofSource)) {
+                $mutationWasAccepted = true;
+                break;
+            }
+        }
+
+        if (
+            !$installedFieldValidationProofWiringIsCanonical($installedFieldValidationProofSource)
+            || $mutationWasAccepted
+        ) {
+            $failures[] = 'The installed field-validation error proof must complete exactly once in the unconditional top-level consumer proof before function declarations.';
+        }
+    }
+
+    $fieldValidationForbiddenRuntimePathPattern = '/(?:\A|\/)(?:Validation|[A-Za-z0-9]*Validator|(?:Field|Request)?Validation(?:Error|Errors|Issue|Issues|Failure|Failures|Result|Results|Response|Exception|Validator|Rule|Rules|RuleSet|StringRule|ErrorBag|Renderer|Middleware|Helper|Factory|Builder|Hydrator|Discovery)|Field(?:Error|Errors|Issue|Issues)(?:Bag|List|Response|Renderer|Helper)?|ErrorBag|Validation\/(?:Validator|Rule|Rules|RuleSet|StringRule|ErrorBag|Renderer|Middleware|Hydrator|Discovery))(?:\.php|\/)/i';
+    $fieldValidationForbiddenRuntimePathFixtures = [
+        'src/Http/ValidationError.php',
+        'src/Http/ValidationErrors.php',
+        'src/Http/FieldValidationIssue.php',
+        'src/Http/ValidationResponse.php',
+        'src/Http/ValidationException.php',
+        'src/Http/ValidationRenderer.php',
+        'src/Http/ValidationMiddleware.php',
+        'src/Http/ValidationHelper.php',
+        'src/Validator.php',
+        'src/Http/Validator.php',
+        'src/RequestValidator.php',
+        'src/InputValidator.php',
+        'src/Validation/Validator.php',
+        'src/Validation/Rule.php',
+        'src/Validation/StringRule.php',
+        'src/Validation/ErrorBag.php',
+        'src/Validation/Hydrator.php',
+        'verification/FieldValidationRule.php',
+        'skeleton/src/Http/RequestValidationErrorBag.php',
+    ];
+    $fieldValidationAllowedRuntimePathFixtures = [
+        'src/Http/InvalidRequest.php',
+        'src/Http/ErrorResponseRegistry.php',
+        'src/Routing/PathParameters.php',
+        'verification/SyntaxProfile.php',
+        'skeleton/src/HealthHandler.php',
+    ];
+
+    foreach ($fieldValidationForbiddenRuntimePathFixtures as $fieldValidationForbiddenRuntimePathFixture) {
+        if (
+            preg_match(
+                $fieldValidationForbiddenRuntimePathPattern,
+                $fieldValidationForbiddenRuntimePathFixture,
+            ) !== 1
+        ) {
+            $failures[] = "Field-validation runtime-path detector missed forbidden fixture: {$fieldValidationForbiddenRuntimePathFixture}.";
+        }
+    }
+
+    foreach ($fieldValidationAllowedRuntimePathFixtures as $fieldValidationAllowedRuntimePathFixture) {
+        if (
+            preg_match(
+                $fieldValidationForbiddenRuntimePathPattern,
+                $fieldValidationAllowedRuntimePathFixture,
+            ) === 1
+        ) {
+            $failures[] = "Field-validation runtime-path detector rejected allowed fixture: {$fieldValidationAllowedRuntimePathFixture}.";
+        }
+    }
+
+    $fieldValidationSourceRoots = [
+        $root . '/src' => 'framework',
+        $root . '/verification' => 'checker',
+        $root . '/skeleton/src' => 'default skeleton',
+    ];
+
+    foreach ($fieldValidationSourceRoots as $fieldValidationSourceRoot => $fieldValidationSourceOwner) {
+        $fieldValidationSourceFiles = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($fieldValidationSourceRoot, FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($fieldValidationSourceFiles as $fieldValidationSourceFile) {
+            if (!$fieldValidationSourceFile instanceof SplFileInfo || !$fieldValidationSourceFile->isFile()) {
+                continue;
+            }
+
+            $relativePath = substr($fieldValidationSourceFile->getPathname(), strlen($root) + 1);
+
+            if (preg_match($fieldValidationForbiddenRuntimePathPattern, $relativePath) === 1) {
+                $failures[] = "Field-validation runtime mechanism must remain outside {$fieldValidationSourceOwner} source: {$relativePath}.";
+            }
+        }
+    }
+
     $nativeDateTimeGuidanceArtifactMarkers = [
         '.ai/README.md' => [
             '| Change date, time, timezone, duration, or clock behavior | `.ai/types.md` | `docs/date-time.md`',

@@ -117,6 +117,19 @@ try {
     ) {
         throw new RuntimeException('Installed structured JSON and nested-resource proof did not complete.');
     }
+    $installedFieldValidationProofCompletion =
+        proveInstalledFieldValidationErrorGuidanceDistribution(
+            $project,
+            $installedFramework,
+            $environment,
+        );
+
+    if (
+        $installedFieldValidationProofCompletion
+            !== 'installed-field-validation-error-guidance-proof-complete'
+    ) {
+        throw new RuntimeException('Installed field-validation error guidance proof did not complete.');
+    }
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
@@ -2722,6 +2735,780 @@ PHP,
     fwrite(STDOUT, "PASS installed structured JSON success-envelope and nested-resource guidance distribution\n");
 
     return 'installed-structured-json-and-nested-resource-proof-complete';
+}
+
+/** @param array<string, string> $environment */
+function proveInstalledFieldValidationErrorGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+    array $environment,
+): string {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $installedFramework . '/docs/errors.md' => [
+            '## Optional application-owned field issues',
+            "The generic `400` and `422` responses above remain PHPThis's recommended default and require no field details.",
+            'This documentation-only advisory adds no PHPThis runtime or core API, dependency, Consumer Contract requirement, Strict Profile or `PHT` rule, checker diagnostic, generated code, or mandatory response schema.',
+            'No member accepts `null`; no member is optional; unknown members and a per-issue `message` member are absent from this profile.',
+            'The outer `code` and `message` are exactly `validation_failed` and `One or more fields are invalid.`',
+            'The reference response uses `Content-Type: application/json; charset=utf-8` and `Cache-Control: no-store`; a protected or personalized operation uses `Cache-Control: private, no-store`.',
+            'The `issues` array contains from 1 through 20 entries and at most one entry for each field path.',
+            'The complete UTF-8 JSON representation is at most 16,384 bytes',
+            'The exact envelope fixes the semantic nesting; a decoder with a configurable depth uses a maximum of 8',
+            'Each segment and list index is one path component. A path has at most eight components and 256 bytes.',
+            '`code` is a 1-to-64-byte lowercase ASCII identifier matching `[a-z][a-z0-9_]{0,63}` and selected from a finite operation-owned allowlist.',
+            'It orders paths by the parser\'s fixed schema order, orders list items by ascending index, and places the whole-request `$` issue last.',
+            'A cross-field rule either assigns one fixed issue to each participating code-owned path or assigns one issue to `$`',
+            'Mixed structural and unacceptable-value inputs remain `400` regardless of submitted property order.',
+            'Do not put data-dependent issue rendering in `ErrorResponseRegistry`, add a catch-all validation exception, or introduce a validator, error bag, string-rule language, response wrapper, reflection hydrator, middleware, discovery mechanism, or generated consumer code.',
+            'Never include submitted values, unknown submitted keys, free-form exception or database text, credentials, tokens, principal or tenant details, resource identifiers, or authorization reasons.',
+            'Per-issue human messages are deliberately absent.',
+            'Rejecting an unknown code as a decode or contract failure is the safe reference behavior; a fallback or ignore policy must be explicit and tested.',
+            'changing issue priority or array order can break clients',
+            'this reference decoder does not claim rejection of duplicate object-member names',
+        ],
+        $installedFramework . '/docs/type-safety.md' => [
+            '[Error responses](errors.md#optional-application-owned-field-issues) is the sole detailed owner of an optional finite reference profile',
+            'preserves the complete structural `400` phase and keeps its value-issue `422` branch literal, bounded, code-owned, and before operation-owned I/O',
+        ],
+        $installedFramework . '/docs/frontend-integration.md' => [
+            '[Optional application-owned field issues](errors.md#optional-application-owned-field-issues) defines the sole detailed reference profile',
+            'a frontend must not extract internal rules from generic messages or guess between response shapes',
+        ],
+        $installedFramework . '/docs/request-handling.md' => [
+            'The generic `400`/`422` contract remains valid',
+            '[Optional application-owned field issues](errors.md#optional-application-owned-field-issues)',
+            'without adding a validator, error bag, response wrapper, or dynamic error renderer',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Adopt, change, or review field-addressable value issues |',
+            'exact finite code-owned path templates and code allowlists, literal bounded response construction before operation-owned I/O',
+            'preserve the generic `400`/`422` default and verify that no validator, error bag, response wrapper, renderer, generator, core API, dependency, checker diagnostic, or universal schema was introduced',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'application-owned field-validation error guidance',
+            'installed decoder fixture',
+            'adds no framework validator, error bag, response wrapper, renderer, generated consumer code, runtime dependency, checker rule, or `PHT` diagnostic',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers($artifactMarkers, 'field-validation error guidance');
+
+    $installedComposer = jsonFile($installedFramework . '/composer.json');
+    $installedRuntimeRequirements = $installedComposer['require'] ?? null;
+
+    if (!is_array($installedRuntimeRequirements)) {
+        throw new RuntimeException('Installed framework runtime requirements must be an explicit Composer map.');
+    }
+
+    foreach (array_keys($installedRuntimeRequirements) as $runtimePackage) {
+        if (
+            !is_string($runtimePackage)
+            || (
+                $runtimePackage !== 'php'
+                && !str_starts_with($runtimePackage, 'ext-')
+            )
+        ) {
+            throw new RuntimeException(
+                'Installed field-validation error guidance must not add a framework runtime dependency.',
+            );
+        }
+    }
+
+    $consumerComposer = jsonFile($project . '/composer.json');
+    $consumerRuntimeRequirements = $consumerComposer['require'] ?? null;
+
+    if (!is_array($consumerRuntimeRequirements)) {
+        throw new RuntimeException('Installed skeleton runtime requirements must be an explicit Composer map.');
+    }
+
+    $consumerRuntimePackages = array_keys($consumerRuntimeRequirements);
+
+    foreach ($consumerRuntimePackages as $consumerRuntimePackage) {
+        if (!is_string($consumerRuntimePackage)) {
+            throw new RuntimeException('Installed skeleton runtime requirement names must be strings.');
+        }
+    }
+
+    sort($consumerRuntimePackages, SORT_STRING);
+
+    if ($consumerRuntimePackages !== ['php', 'phpthis/framework']) {
+        throw new RuntimeException(
+            'Installed field-validation error guidance must not add a default-skeleton runtime dependency.',
+        );
+    }
+
+    $forbiddenRuntimePathPattern = '/(?:\A|\/)(?:Validation|[A-Za-z0-9]*Validator|(?:Field|Request)?Validation(?:Error|Errors|Issue|Issues|Failure|Failures|Result|Results|Response|Exception|Validator|Rule|Rules|RuleSet|StringRule|ErrorBag|Renderer|Middleware|Helper|Factory|Builder|Hydrator|Discovery)|Field(?:Error|Errors|Issue|Issues)(?:Bag|List|Response|Renderer|Helper)?|ErrorBag|Validation\/(?:Validator|Rule|Rules|RuleSet|StringRule|ErrorBag|Renderer|Middleware|Hydrator|Discovery))(?:\.php|\/)/i';
+    $installedSourceRoots = [
+        $installedFramework . '/src' => 'installed framework',
+        $installedFramework . '/verification' => 'installed checker',
+        $project . '/src' => 'installed default skeleton',
+    ];
+
+    foreach ($installedSourceRoots as $installedSourceRoot => $installedSourceOwner) {
+        $installedSourceFiles = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($installedSourceRoot, FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($installedSourceFiles as $installedSourceFile) {
+            if (!$installedSourceFile instanceof SplFileInfo || !$installedSourceFile->isFile()) {
+                continue;
+            }
+
+            $relativePath = substr(
+                $installedSourceFile->getPathname(),
+                strlen(dirname($installedSourceRoot)) + 1,
+            );
+
+            if (preg_match($forbiddenRuntimePathPattern, $relativePath) === 1) {
+                throw new RuntimeException(
+                    "Field-validation runtime mechanism must remain outside the {$installedSourceOwner}: {$relativePath}.",
+                );
+            }
+        }
+    }
+
+    $proofPath = $project . '/installed-field-validation-error-advisory-proof.php';
+    writeFile(
+        $proofPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Http\Response;
+
+require __DIR__ . '/vendor/autoload.php';
+
+function matchesReferenceFieldPathGrammar(string $field): bool
+{
+    if ($field === '$') {
+        return true;
+    }
+
+    return strlen($field) <= 256
+        && preg_match(
+            '/\A[a-z][a-z0-9_]{0,63}(?:(?:\.[a-z][a-z0-9_]{0,63})|(?:\[(?:0|[1-9][0-9]{0,5})\]))*\z/D',
+            $field,
+        ) === 1
+        && substr_count($field, '.') + substr_count($field, '[') + 1 <= 8;
+}
+
+/**
+ * @return array{
+ *   code: string,
+ *   message: string,
+ *   issues: non-empty-list<array{field: string, code: string}>
+ * }
+ */
+function decodeAdoptedFieldValidationFailure(Response $response): array
+{
+    if ($response->status !== 422) {
+        throw new UnexpectedValueException('Expected the adopted field-validation failure status.');
+    }
+
+    if (($response->headers['Content-Type'] ?? null) !== 'application/json; charset=utf-8') {
+        throw new UnexpectedValueException('Expected the exact field-validation failure media type.');
+    }
+
+    if (($response->headers['Cache-Control'] ?? null) !== 'private, no-store') {
+        throw new UnexpectedValueException('Expected the adopted field-validation failure cache policy.');
+    }
+
+    if (strlen($response->body) > 16_384) {
+        throw new UnexpectedValueException('Field-validation failure body exceeds its adopted bound.');
+    }
+
+    $decoded = json_decode($response->body, false, 8, JSON_THROW_ON_ERROR);
+
+    if (
+        !$decoded instanceof stdClass
+        || count(get_object_vars($decoded)) !== 1
+        || !property_exists($decoded, 'error')
+        || !$decoded->error instanceof stdClass
+        || count(get_object_vars($decoded->error)) !== 3
+        || !property_exists($decoded->error, 'code')
+        || !property_exists($decoded->error, 'message')
+        || !property_exists($decoded->error, 'issues')
+        || $decoded->error->code !== 'validation_failed'
+        || $decoded->error->message !== 'One or more fields are invalid.'
+        || !is_array($decoded->error->issues)
+        || !array_is_list($decoded->error->issues)
+        || $decoded->error->issues === []
+        || count($decoded->error->issues) > 20
+    ) {
+        throw new UnexpectedValueException('Field-validation failure envelope is incompatible.');
+    }
+
+    $priorityByFieldAndCode = [
+        'parent.child|invalid_format' => 0,
+        'items[0].field_name|out_of_range' => 1,
+        'items[1].field_name|out_of_range' => 2,
+        'items[2].field_name|out_of_range' => 3,
+        'items[3].field_name|out_of_range' => 4,
+        'items[4].field_name|out_of_range' => 5,
+        'items[5].field_name|out_of_range' => 6,
+        'items[6].field_name|out_of_range' => 7,
+        'items[7].field_name|out_of_range' => 8,
+        'items[8].field_name|out_of_range' => 9,
+        'items[9].field_name|out_of_range' => 10,
+        'items[10].field_name|out_of_range' => 11,
+        'items[11].field_name|out_of_range' => 12,
+        'items[12].field_name|out_of_range' => 13,
+        'items[13].field_name|out_of_range' => 14,
+        'items[14].field_name|out_of_range' => 15,
+        'items[15].field_name|out_of_range' => 16,
+        'items[16].field_name|out_of_range' => 17,
+        'items[17].field_name|out_of_range' => 18,
+        'items[18].field_name|out_of_range' => 19,
+        'items[19].field_name|out_of_range' => 20,
+        'ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss|zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' => 21,
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd|at_limit' => 22,
+        'a.b.c.d.e.f.g.h|at_limit' => 23,
+        '$|inconsistent_values' => 24,
+    ];
+    $previousPriority = -1;
+    $issues = [];
+
+    foreach ($decoded->error->issues as $issue) {
+        if (!$issue instanceof stdClass) {
+            throw new UnexpectedValueException('Field-validation issue must be an object.');
+        }
+
+        $issueKeys = array_keys(get_object_vars($issue));
+        sort($issueKeys, SORT_STRING);
+
+        if (
+            $issueKeys !== ['code', 'field']
+            || !is_string($issue->field)
+            || !is_string($issue->code)
+            || $issue->code === ''
+            || strlen($issue->code) > 64
+            || preg_match('/\A[a-z][a-z0-9_]{0,63}\z/D', $issue->code) !== 1
+        ) {
+            throw new UnexpectedValueException('Field-validation issue shape is incompatible.');
+        }
+
+        if (!matchesReferenceFieldPathGrammar($issue->field)) {
+            throw new UnexpectedValueException('Field-validation issue path is incompatible.');
+        }
+
+        $priority = $priorityByFieldAndCode[$issue->field . '|' . $issue->code] ?? null;
+
+        if (!is_int($priority) || $priority <= $previousPriority) {
+            throw new UnexpectedValueException('Field-validation issue identity or order is incompatible.');
+        }
+
+        $issues[] = ['field' => $issue->field, 'code' => $issue->code];
+        $previousPriority = $priority;
+    }
+
+    return [
+        'code' => $decoded->error->code,
+        'message' => $decoded->error->message,
+        'issues' => $issues,
+    ];
+}
+
+function requireFieldValidationDecoderRejection(Response $response, string $sensitiveSentinel = ''): void
+{
+    try {
+        decodeAdoptedFieldValidationFailure($response);
+    } catch (JsonException|UnexpectedValueException $failure) {
+        if ($sensitiveSentinel !== '' && str_contains($failure->getMessage(), $sensitiveSentinel)) {
+            throw new RuntimeException('Field-validation decoder disclosed submitted or internal data.');
+        }
+
+        return;
+    }
+
+    throw new RuntimeException('An incompatible field-validation failure was accepted.');
+}
+
+/** @param array<mixed> $body */
+function fieldValidationResponse(array $body): Response
+{
+    return new Response(
+        422,
+        ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
+        json_encode($body, JSON_THROW_ON_ERROR) . "\n",
+    );
+}
+
+if (
+    !matchesReferenceFieldPathGrammar('$')
+    || !matchesReferenceFieldPathGrammar('items[999999].field_name')
+    || matchesReferenceFieldPathGrammar('items[1000000].field_name')
+    || matchesReferenceFieldPathGrammar('items[00].field_name')
+) {
+    throw new RuntimeException(
+        'Reference path grammar boundaries changed; they do not select an application list bound.',
+    );
+}
+
+$singleIssue = fieldValidationResponse([
+    'error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'parent.child',
+            'code' => 'invalid_format',
+        ]],
+    ],
+]);
+$multipleIssues = fieldValidationResponse([
+    'error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [
+            ['field' => 'parent.child', 'code' => 'invalid_format'],
+            ['field' => 'items[0].field_name', 'code' => 'out_of_range'],
+            ['field' => '$', 'code' => 'inconsistent_values'],
+        ],
+    ],
+]);
+$maximumIssueList = [
+    ['field' => 'items[0].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[1].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[2].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[3].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[4].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[5].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[6].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[7].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[8].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[9].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[10].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[11].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[12].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[13].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[14].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[15].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[16].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[17].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[18].field_name', 'code' => 'out_of_range'],
+    ['field' => 'items[19].field_name', 'code' => 'out_of_range'],
+];
+$boundaryIssueList = [
+    [
+        'field' => 'ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss',
+        'code' => 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+    ],
+    [
+        'field' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+        'code' => 'at_limit',
+    ],
+    ['field' => 'a.b.c.d.e.f.g.h', 'code' => 'at_limit'],
+];
+$maximumIssues = fieldValidationResponse([
+    'error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => $maximumIssueList,
+    ],
+]);
+$boundaryIssues = fieldValidationResponse([
+    'error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => $boundaryIssueList,
+    ],
+]);
+$reorderedObjectMembers = fieldValidationResponse([
+    'error' => [
+        'issues' => [[
+            'code' => 'invalid_format',
+            'field' => 'parent.child',
+        ]],
+        'message' => 'One or more fields are invalid.',
+        'code' => 'validation_failed',
+    ],
+]);
+$genericStructuralFailure = new Response(
+    400,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
+    "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+);
+$genericUnacceptableFailure = new Response(
+    422,
+    ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
+    "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n",
+);
+
+$decodedSingle = decodeAdoptedFieldValidationFailure($singleIssue);
+$decodedMultiple = decodeAdoptedFieldValidationFailure($multipleIssues);
+$decodedMaximum = decodeAdoptedFieldValidationFailure($maximumIssues);
+$decodedBoundaries = decodeAdoptedFieldValidationFailure($boundaryIssues);
+$localizedTextByCode = [
+    'invalid_format' => 'Use the accepted format.',
+    'out_of_range' => 'Use a value in the accepted range.',
+    'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' => 'Use a supported boundary value.',
+    'at_limit' => 'Use a value within the documented limit.',
+    'inconsistent_values' => 'Use a consistent set of values.',
+];
+$localizedCodes = [];
+
+foreach (
+    [
+        ...$decodedSingle['issues'],
+        ...$decodedMaximum['issues'],
+        ...$decodedBoundaries['issues'],
+        ...$decodedMultiple['issues'],
+    ] as $decodedIssue
+) {
+    $localizedText = $localizedTextByCode[$decodedIssue['code']] ?? null;
+
+    if (!is_string($localizedText) || $localizedText === '') {
+        throw new RuntimeException('Installed field-validation localization fixture is incomplete.');
+    }
+
+    $localizedCodes[$decodedIssue['code']] = true;
+}
+
+if (
+    $decodedSingle['issues'] !== [[
+        'field' => 'parent.child',
+        'code' => 'invalid_format',
+    ]]
+    || $decodedMultiple['issues'][1] !== [
+        'field' => 'items[0].field_name',
+        'code' => 'out_of_range',
+    ]
+    || $decodedMultiple['issues'][2] !== [
+        'field' => '$',
+        'code' => 'inconsistent_values',
+    ]
+    || count($decodedMaximum['issues']) !== 20
+    || $decodedMaximum['issues'][0]['field'] !== 'items[0].field_name'
+    || $decodedMaximum['issues'][19]['field'] !== 'items[19].field_name'
+    || strlen($decodedBoundaries['issues'][0]['field']) !== 64
+    || strlen($decodedBoundaries['issues'][0]['code']) !== 64
+    || strlen($decodedBoundaries['issues'][1]['field']) !== 256
+    || substr_count($decodedBoundaries['issues'][2]['field'], '.') + 1 !== 8
+    || array_keys($localizedCodes) !== [
+        'invalid_format',
+        'out_of_range',
+        'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+        'at_limit',
+        'inconsistent_values',
+    ]
+    || decodeAdoptedFieldValidationFailure($reorderedObjectMembers) !== $decodedSingle
+    || $genericStructuralFailure->status !== 400
+    || $genericStructuralFailure->body
+        !== "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n"
+    || $genericUnacceptableFailure->status !== 422
+    || $genericUnacceptableFailure->body
+        !== "{\"error\":{\"code\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}}\n"
+) {
+    throw new RuntimeException('Installed field-validation error positive control failed.');
+}
+
+requireFieldValidationDecoderRejection($genericStructuralFailure);
+requireFieldValidationDecoderRejection($genericUnacceptableFailure);
+requireFieldValidationDecoderRejection(new Response(
+    422,
+    [
+        'Content-Type' => 'application/json; charset=utf-8',
+        'Cache-Control' => 'private, no-store',
+    ],
+    "{\"error\":\n",
+));
+requireFieldValidationDecoderRejection(new Response(
+    422,
+    [
+        'Content-Type' => 'application/json',
+        'Cache-Control' => 'private, no-store',
+    ],
+    $singleIssue->body,
+));
+requireFieldValidationDecoderRejection(new Response(
+    422,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    $singleIssue->body,
+));
+requireFieldValidationDecoderRejection(new Response(
+    422,
+    [
+        'Content-Type' => 'application/json; charset=utf-8',
+        'Cache-Control' => 'no-store',
+    ],
+    $singleIssue->body,
+));
+$separateFailures = [
+    [401, 'unauthenticated'],
+    [403, 'forbidden'],
+    [404, 'resource_not_found'],
+    [409, 'conflict'],
+    [412, 'precondition_failed'],
+    [413, 'request_body_too_large'],
+    [415, 'unsupported_media_type'],
+    [429, 'rate_limited'],
+    [500, 'internal_error'],
+];
+
+foreach ($separateFailures as [$status, $code]) {
+    requireFieldValidationDecoderRejection(new Response(
+        $status,
+        [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'private, no-store',
+        ],
+        json_encode(
+            ['error' => ['code' => $code, 'message' => 'This failure remains separate.']],
+            JSON_THROW_ON_ERROR,
+        ) . "\n",
+    ));
+}
+
+$sensitiveSentinel = 'submitted-secret-do-not-disclose';
+$invalidBodies = [
+    [],
+    ['error' => null],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => 'invalid',
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => ['issue' => ['field' => 'parent.child', 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => ['invalid'],
+    ]],
+    [
+        'error' => [
+            'code' => 'validation_failed',
+            'message' => 'One or more fields are invalid.',
+            'issues' => [['field' => 'parent.child', 'code' => 'invalid_format']],
+        ],
+        'meta' => [],
+    ],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 'parent.child', 'code' => 'invalid_format']],
+        'debug' => 'fixed-debug-member',
+    ]],
+    ['error' => [
+        'code' => 'unprocessable_content',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 'parent.child', 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'A submitted value is invalid.',
+        'issues' => [['field' => 'parent.child', 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => null,
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 'parent.child', 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => false,
+        'issues' => [['field' => 'parent.child', 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [
+            ['field' => 'parent.child', 'code' => 'invalid_format'],
+            ['field' => 'parent.child', 'code' => 'invalid_format'],
+        ],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 'parent.child']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 1, 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => null, 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 'submitted_unknown', 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 'parent.child', 'code' => 'unknown_rule']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => '$', 'code' => 'invalid_format']],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'parent.child',
+            'code' => 'invalid_format',
+            'message' => null,
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'parent.child',
+            'code' => 'invalid_format',
+            'value' => $sensitiveSentinel,
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [
+            ['field' => 'items[0].field_name', 'code' => 'out_of_range'],
+            ['field' => 'parent.child', 'code' => 'invalid_format'],
+        ],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [
+            ...$maximumIssueList,
+            ['field' => '$', 'code' => 'inconsistent_values'],
+        ],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => str_repeat('f', 257),
+            'code' => 'invalid_format',
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'parent.' . str_repeat('s', 65),
+            'code' => 'invalid_format',
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'items[20].field_name',
+            'code' => 'out_of_range',
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'items[00].field_name',
+            'code' => 'out_of_range',
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'parent.child',
+            'code' => str_repeat('c', 65),
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [[
+            'field' => 'a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q',
+            'code' => 'invalid_format',
+        ]],
+    ]],
+    ['error' => [
+        'code' => 'validation_failed',
+        'message' => 'One or more fields are invalid.',
+        'issues' => [['field' => 'parent.child', 'code' => 'invalid_format']],
+        'debug' => str_repeat('d', 16_384),
+    ]],
+];
+
+foreach ($invalidBodies as $invalidBody) {
+    requireFieldValidationDecoderRejection(
+        fieldValidationResponse($invalidBody),
+        $sensitiveSentinel,
+    );
+}
+
+fwrite(STDOUT, "PASS installed application-owned field-validation error decoder\n");
+PHP,
+    );
+
+    try {
+        $proofSource = file_get_contents($proofPath);
+
+        if (!is_string($proofSource)) {
+            throw new RuntimeException('Unable to read the installed field-validation error proof.');
+        }
+
+        foreach (
+            [
+                'PDO',
+                'Connection',
+                'selectAllRows',
+                'selectOneRow',
+                'executeStatement',
+                'curl_',
+                'fsockopen',
+                'Redis',
+            ] as $forbiddenIoMarker
+        ) {
+            if (str_contains($proofSource, $forbiddenIoMarker)) {
+                throw new RuntimeException(
+                    "Installed field-validation decoder proof contains forbidden I/O marker: {$forbiddenIoMarker}.",
+                );
+            }
+        }
+
+        $proofResult = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+        requireExactProcessResult(
+            $proofResult,
+            0,
+            "PASS installed application-owned field-validation error decoder\n",
+            '',
+            'Installed field-validation error decoder proof failed.',
+        );
+    } finally {
+        if (is_file($proofPath) && !unlink($proofPath)) {
+            throw new RuntimeException('Unable to remove the installed field-validation error proof.');
+        }
+    }
+
+    fwrite(STDOUT, "PASS installed field-validation error guidance distribution\n");
+
+    return 'installed-field-validation-error-guidance-proof-complete';
 }
 
 function proveInstalledTransactionalEmailGuidanceDistribution(
