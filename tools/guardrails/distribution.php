@@ -119,6 +119,13 @@ function distributionGuardrailFailures(
             $failures[] = 'composer test:coverage must produce report-only text and Clover coverage.';
         }
 
+        if (
+            !is_array($scripts)
+            || ($scripts['test:query-scaling'] ?? null) !== 'php tools/test-query-scaling.php'
+        ) {
+            $failures[] = 'composer test:query-scaling must execute the canonical query-scaling harness.';
+        }
+
         $expectedCheckStages = [
             '@guard',
             '@analyse',

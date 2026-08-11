@@ -104,11 +104,19 @@ try {
     proveInstalledReferenceClarityDistribution($installedFramework);
     proveInstalledNativeDateTimeGuidanceDistribution($project, $installedFramework);
     proveInstalledFrontendIntegrationGuidanceDistribution($project, $installedFramework);
-    proveInstalledStructuredJsonSuccessEnvelopeDistribution(
-        $project,
-        $installedFramework,
-        $environment,
-    );
+    $installedStructuredJsonProofCompletion =
+        proveInstalledStructuredJsonSuccessEnvelopeDistribution(
+            $project,
+            $installedFramework,
+            $environment,
+        );
+
+    if (
+        $installedStructuredJsonProofCompletion
+            !== 'installed-structured-json-and-nested-resource-proof-complete'
+    ) {
+        throw new RuntimeException('Installed structured JSON and nested-resource proof did not complete.');
+    }
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
@@ -1879,13 +1887,14 @@ function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
     string $project,
     string $installedFramework,
     array $environment,
-): void {
+): string {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
         $project . '/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
+            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
             'operation-owned `data` and optional `meta` fields',
-            'add no generic wrapper, serializer, paginator, or generator',
+            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
+            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
         ],
         $installedFramework . '/docs/frontend-integration.md' => [
             '## Recommended structured JSON resource success envelope',
@@ -1902,6 +1911,14 @@ function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
             'A top-level `data` member alone is not JSON:API.',
             'Existing published resource-named or bare responses remain valid application contracts; moving one to `data` is a breaking API change',
             'This recommendation adds no runtime wrapper, serializer, resource class, paginator, middleware, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+            '## Embed nested resources without N+1 I/O',
+            'Name the relationship for its meaning in that operation: `creator` communicates more than an ambiguous `user`.',
+            'The complete I/O plan remains fixed and bounded independently of parent-page cardinality.',
+            'Perform all database, cache, and external-service operations before resource mapping and JSON encoding;',
+            '`PHT003` catches direct lexical database calls inside loops, but it does not prove that an indirectly called mapper, cache client, or integration performs no I/O.',
+            'Parent pagination remains the controlling contract.',
+            'The frontend decoder owns the same exactness.',
+            'Nested representations add no PHPThis relationship loader, ORM, lazy loading, resource class, serializer, generic batcher, expansion syntax, or JSON:API relationship support.',
         ],
         $installedFramework . '/docs/request-handling.md' => [
             '## Recommended structured JSON resource success envelope',
@@ -1915,15 +1932,34 @@ function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
             'encodes its concrete application-owned array with `JSON_THROW_ON_ERROR`',
             'changing one to `data` is a breaking API change requiring an explicit migration or versioning decision.',
             'PHPThis adds no runtime wrapper, serializer, resource class, paginator, middleware, facade, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+            '### Nested child data',
+            'Prefer a semantic relationship name such as `creator` instead of an ambiguous `user`.',
+            'Mapping, serialization, callbacks, and recursive traversal perform no database, cache, or external-service I/O.',
+            'Never query one child per parent.',
+            '`PHT003` rejects direct lexical database calls inside loops but cannot prove that an indirect mapper, cache client, or integration is I/O-free',
+            'Join fan-out must not alter the parent limit, stable order, continuation, or duplicate-parent behavior.',
+            'PHPThis adds no relationship mechanism, loader, serializer, generic batcher, or expansion API.',
+        ],
+        $installedFramework . '/docs/database.md' => [
+            '## N+1-safe nested resource plans',
+            'The number of database statements, cache operations, and external calls remains fixed as the bounded parent page grows.',
+            'For an ordinary to-one relationship such as `workspace.creator`, prefer one explicit bounded join',
+            'A finite batch plan may instead use a fixed number of reviewed statements when one join is inappropriate',
+            'Never execute one child query per parent, hide repeated I/O behind a mapper, or introduce a repository, relationship loader, generic batcher, or generated placeholder list.',
+            '`PHT003` catches direct lexical calls to `selectAllRows`, `selectOneRow`, or `executeStatement` inside a loop.',
+            'The existing isolated N+1 negative control in `tools/test-query-scaling.php` demonstrates both query growth and budget containment',
+            'This guidance adds no PHPThis runtime relationship mechanism, ORM, lazy loading, resource serializer, paginator, or new Strict Profile diagnostic.',
         ],
         $installedFramework . '/docs/knowledge-map.md' => [
-            '| Define, change, or review a structured JSON resource success representation |',
+            '| Define, change, or review a structured JSON resource success representation, including nested child objects or collections |',
             'exact application response construction and `Content-Type`',
+            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
             'preserve the advisory application-owned boundary',
         ],
         $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
-            'add no generic wrapper, serializer, paginator, or generator',
+            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
+            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
+            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
         ],
         $installedFramework . '/docs/guardrails.md' => [
             'structured JSON success-envelope guidance, task routes, exact checked example shapes, isolated installed response and decoder controls, and dependency checks preserve the advisory application-owned `data` and optional `meta` convention',
@@ -1933,6 +1969,15 @@ function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
             'Framework, default-skeleton, installed-framework, copied-project, and package-inventory path checks',
             'This deterministic name/path evidence does not prove absence of differently named hidden behavior',
             'It adds no framework response mechanism or consumer-checker rule and does not make the example envelope a consumer-validity rule.',
+            'N+1-safe nested-resource guidance, a focused checked `workspace.creator` fixture, query-scaling and `PHT003` controls, installed nested decoder evidence',
+            'The N+1-safe nested-resource extension pins the maintainer, public, knowledge-map, skeleton, and application-template routes',
+            'a deny-before-connection control uses zero statements;',
+            'Retained phase snapshots stay `[1, 1, 1]` after load, mapping, and encoding for every accepted page and `[0, 0, 0]` for denial',
+            'exposes `[1, 2, 2]` and `[1, 51, 51]` phase counts',
+            'The intentionally invalid `.php.fixture` performs one creator query inside the parent loop',
+            'The isolated installed proof accepts present and null creators plus reordered object members',
+            'Those deterministic source/name checks do not prove the absence of indirect or differently named database, cache, or integration I/O;',
+            'This adds no framework relationship mechanism, response mechanism, consumer-checker rule, Contract or Strict Profile change, or new `PHT` diagnostic.',
         ],
     ];
 
@@ -1982,7 +2027,7 @@ function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
         );
     }
 
-    $forbiddenRuntimePathPattern = '/(?:\A|\/)(?:[A-Za-z0-9]*(?:Envelope|Wrapper|Serializer|Resource|ResourceCollection|Paginator|Pagination)|[A-Za-z0-9]*JsonResponse|(?:Response|Json|Resource|Success|Pagination)[A-Za-z0-9]*(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|(?:Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|[A-Za-z0-9]*(?:SchemaGenerator|ClientGenerator|SdkGenerator)|(?:OpenApi|JsonSchema)[A-Za-z0-9]*)(?:\.php|\/)/i';
+    $forbiddenRuntimePathPattern = '/(?:\A|\/)(?:[A-Za-z0-9]*(?:Envelope|Wrapper|Serializer|Resource|ResourceCollection|Paginator|Pagination)|[A-Za-z0-9]*JsonResponse|(?:Response|Json|Resource|Success|Pagination)[A-Za-z0-9]*(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|(?:Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|[A-Za-z0-9]*(?:RelationshipLoader|RelationLoader|LazyRelationship|LazyRelation|EagerRelationship|EagerRelation|BatchLoader|DataLoader)|(?:Relationships?|Relations?)\/(?:Loader|Resolver|Mapper|Batcher)|[A-Za-z0-9]*(?:SchemaGenerator|ClientGenerator|SdkGenerator)|(?:OpenApi|JsonSchema)[A-Za-z0-9]*)(?:\.php|\/)/i';
     $installedSourceRoots = [
         $installedFramework . '/src' => 'installed framework',
         $project . '/src' => 'installed default skeleton',
@@ -2175,6 +2220,108 @@ function decodeListDocumentsSuccess(Response $response): array
     return ['data' => $documents, 'meta' => ['next_cursor' => $nextCursor]];
 }
 
+/**
+ * @return array{
+ *   data: list<array{
+ *     id: string,
+ *     name: string,
+ *     created_by_user_id: string,
+ *     creator: array{id: string, display_name: string, avatar_url: string|null}|null
+ *   }>
+ * }
+ */
+function decodeListWorkspacesSuccess(Response $response): array
+{
+    requireStructuredJsonSuccessResponse($response);
+    $decoded = json_decode($response->body, false, 16, JSON_THROW_ON_ERROR);
+
+    if (
+        !$decoded instanceof stdClass
+        || count(get_object_vars($decoded)) !== 1
+        || !property_exists($decoded, 'data')
+        || !is_array($decoded->data)
+        || !array_is_list($decoded->data)
+        || count($decoded->data) > 50
+    ) {
+        throw new UnexpectedValueException('ListWorkspaces success representation is incompatible.');
+    }
+
+    $workspaces = [];
+
+    foreach ($decoded->data as $workspace) {
+        if (
+            !$workspace instanceof stdClass
+            || count(get_object_vars($workspace)) !== 4
+            || !property_exists($workspace, 'id')
+            || !property_exists($workspace, 'name')
+            || !property_exists($workspace, 'created_by_user_id')
+            || !property_exists($workspace, 'creator')
+            || !isCanonicalUuidString($workspace->id)
+            || !is_string($workspace->name)
+            || $workspace->name === ''
+            || strlen($workspace->name) > 160
+            || preg_match('//u', $workspace->name) !== 1
+            || !isCanonicalUuidString($workspace->created_by_user_id)
+        ) {
+            throw new UnexpectedValueException('ListWorkspaces data item is incompatible.');
+        }
+
+        $creator = $workspace->creator;
+        $decodedCreator = null;
+
+        if ($creator !== null) {
+            if (
+                !$creator instanceof stdClass
+                || count(get_object_vars($creator)) !== 3
+                || !property_exists($creator, 'id')
+                || !property_exists($creator, 'display_name')
+                || !property_exists($creator, 'avatar_url')
+                || !isCanonicalUuidString($creator->id)
+                || $creator->id !== $workspace->created_by_user_id
+                || !is_string($creator->display_name)
+                || $creator->display_name === ''
+                || strlen($creator->display_name) > 160
+                || preg_match('//u', $creator->display_name) !== 1
+                || (
+                    $creator->avatar_url !== null
+                    && (
+                        !is_string($creator->avatar_url)
+                        || strlen($creator->avatar_url) > 2_048
+                        || preg_match('//u', $creator->avatar_url) !== 1
+                        || preg_match('/\Ahttps:\/\/[!-~]+\z/D', $creator->avatar_url) !== 1
+                    )
+                )
+            ) {
+                throw new UnexpectedValueException('ListWorkspaces creator is incompatible.');
+            }
+
+            $decodedCreator = [
+                'id' => $creator->id,
+                'display_name' => $creator->display_name,
+                'avatar_url' => $creator->avatar_url,
+            ];
+        }
+
+        $workspaces[] = [
+            'id' => $workspace->id,
+            'name' => $workspace->name,
+            'created_by_user_id' => $workspace->created_by_user_id,
+            'creator' => $decodedCreator,
+        ];
+    }
+
+    return ['data' => $workspaces];
+}
+
+function isCanonicalUuidString(mixed $value): bool
+{
+    return is_string($value)
+        && preg_match(
+            '/\A[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D',
+            $value,
+        ) === 1;
+}
+
 function requireStructuredJsonSuccessResponse(Response $response): void
 {
     if ($response->status !== 200) {
@@ -2253,6 +2400,43 @@ $opaqueListDocumentsContinuation = new Response(
     ['Content-Type' => 'application/json; charset=utf-8'],
     "{\"data\":[],\"meta\":{\"next_cursor\":\"50\"}}\n",
 );
+$workspaceId = 'cd7fcaf6-7b5c-4b25-a2f6-01ecad54f86b';
+$creatorId = '3f9a5f00-3509-47b0-ac2f-4d648956381a';
+$workspaceWithCreator = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[{\"id\":\"{$workspaceId}\",\"name\":\"Workspace 2\",\"created_by_user_id\":\"{$creatorId}\",\"creator\":{\"id\":\"{$creatorId}\",\"display_name\":\"Super Admin\",\"avatar_url\":null}}]}\n",
+);
+$workspaceWithoutVisibleCreator = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[{\"id\":\"{$workspaceId}\",\"name\":\"Workspace 2\",\"created_by_user_id\":\"{$creatorId}\",\"creator\":null}]}\n",
+);
+$workspaceWithAvatar = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[{\"id\":\"{$workspaceId}\",\"name\":\"Workspace 2\",\"created_by_user_id\":\"{$creatorId}\",\"creator\":{\"id\":\"{$creatorId}\",\"display_name\":\"Super Admin\",\"avatar_url\":\"https://example.com/avatar.png\"}}]}\n",
+);
+$reorderedWorkspaceWithCreator = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[{\"creator\":{\"avatar_url\":null,\"display_name\":\"Super Admin\",\"id\":\"{$creatorId}\"},\"created_by_user_id\":\"{$creatorId}\",\"name\":\"Workspace 2\",\"id\":\"{$workspaceId}\"}]}\n",
+);
+$emptyWorkspaces = new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[]}\n",
+);
+$expectedWorkspace = [
+    'id' => $workspaceId,
+    'name' => 'Workspace 2',
+    'created_by_user_id' => $creatorId,
+    'creator' => [
+        'id' => $creatorId,
+        'display_name' => 'Super Admin',
+        'avatar_url' => null,
+    ],
+];
 
 if (
     $getUser->body !== "{\"data\":{\"id\":1,\"name\":\"Ada Lovelace\"}}\n"
@@ -2266,6 +2450,11 @@ if (
     || decodeListDocumentsSuccess($reorderedListDocuments) !== ['data' => [], 'meta' => ['next_cursor' => null]]
     || decodeListUsersSuccess($opaqueListUsersContinuation)['meta']['next_after_user_id'] !== '01'
     || decodeListDocumentsSuccess($opaqueListDocumentsContinuation)['meta']['next_cursor'] !== '50'
+    || decodeListWorkspacesSuccess($workspaceWithCreator) !== ['data' => [$expectedWorkspace]]
+    || decodeListWorkspacesSuccess($reorderedWorkspaceWithCreator) !== ['data' => [$expectedWorkspace]]
+    || decodeListWorkspacesSuccess($workspaceWithoutVisibleCreator)['data'][0]['creator'] !== null
+    || decodeListWorkspacesSuccess($workspaceWithAvatar)['data'][0]['creator']['avatar_url'] !== 'https://example.com/avatar.png'
+    || decodeListWorkspacesSuccess($emptyWorkspaces) !== ['data' => []]
     || $missingUser->status !== 404
     || str_contains($missingUser->body, '"data":null')
 ) {
@@ -2328,6 +2517,104 @@ requireDecoderRejection(static fn (): array => decodeListDocumentsSuccess(new Re
     ['Content-Type' => 'application/json; charset=utf-8'],
     "{\"data\":[],\"meta\":{\"next_cursor\":50}}\n",
 )));
+requireDecoderRejection(static fn (): array => decodeListWorkspacesSuccess(new Response(
+    200,
+    ['Content-Type' => 'application/json; charset=utf-8'],
+    "{\"data\":[{\"id\":\"{$workspaceId}\",\"name\":\"Workspace 2\",\"created_by_user_id\":\"{$creatorId}\",\"creator\":\n",
+)));
+$baseWorkspace = [
+    'id' => $workspaceId,
+    'name' => 'Workspace 2',
+    'created_by_user_id' => $creatorId,
+    'creator' => [
+        'id' => $creatorId,
+        'display_name' => 'Super Admin',
+        'avatar_url' => null,
+    ],
+];
+$invalidWorkspaceBodies = [
+    json_encode(['data' => ['workspace' => $baseWorkspace]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        ...$baseWorkspace,
+        'id' => 'cd7fcaf6-7b5c-0b25-a2f6-01ecad54f86b',
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        ...$baseWorkspace,
+        'id' => 'cd7fcaf6-7b5c-4b25-72f6-01ecad54f86b',
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'user' => $baseWorkspace['creator'],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => [],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => ['id' => $creatorId, 'display_name' => 'Super Admin'],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => [
+            'id' => $creatorId,
+            'display_name' => 'Super Admin',
+            'avatar_url' => null,
+            'email' => 'admin@example.com',
+        ],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => ['id' => $workspaceId, 'display_name' => 'Super Admin', 'avatar_url' => null],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => ['id' => $creatorId, 'display_name' => 7, 'avatar_url' => null],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => ['id' => $creatorId, 'display_name' => str_repeat('n', 161), 'avatar_url' => null],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => ['id' => $creatorId, 'display_name' => 'Super Admin', 'avatar_url' => 'http://example.com/a.png'],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => [[
+        'id' => $workspaceId,
+        'name' => 'Workspace 2',
+        'created_by_user_id' => $creatorId,
+        'creator' => [
+            'id' => $creatorId,
+            'display_name' => 'Super Admin',
+            'avatar_url' => 'https://example.com/' . str_repeat('a', 2_030),
+        ],
+    ]]], JSON_THROW_ON_ERROR) . "\n",
+    json_encode(['data' => array_fill(0, 51, $baseWorkspace)], JSON_THROW_ON_ERROR) . "\n",
+];
+
+foreach ($invalidWorkspaceBodies as $invalidWorkspaceBody) {
+    requireDecoderRejection(static fn (): array => decodeListWorkspacesSuccess(new Response(
+        200,
+        ['Content-Type' => 'application/json; charset=utf-8'],
+        $invalidWorkspaceBody,
+    )));
+}
 $tooManyUsersBody = json_encode(
     [
         'data' => array_fill(0, 51, ['id' => 1, 'name' => 'Ada Lovelace', 'event_count' => 0]),
@@ -2386,7 +2673,7 @@ foreach (
     )));
 }
 
-fwrite(STDOUT, "PASS installed structured JSON success-envelope runtime\n");
+fwrite(STDOUT, "PASS installed structured JSON success-envelope and nested-resource runtime\n");
 PHP,
     );
 
@@ -2395,7 +2682,7 @@ PHP,
         requireExactProcessResult(
             $proofResult,
             0,
-            "PASS installed structured JSON success-envelope runtime\n",
+            "PASS installed structured JSON success-envelope and nested-resource runtime\n",
             '',
             'Installed structured JSON success-envelope runtime proof failed.',
         );
@@ -2403,7 +2690,9 @@ PHP,
         unlink($proofPath);
     }
 
-    fwrite(STDOUT, "PASS installed structured JSON success-envelope guidance distribution\n");
+    fwrite(STDOUT, "PASS installed structured JSON success-envelope and nested-resource guidance distribution\n");
+
+    return 'installed-structured-json-and-nested-resource-proof-complete';
 }
 
 function proveInstalledTransactionalEmailGuidanceDistribution(

@@ -49,6 +49,39 @@ A top-level `data` member alone is not JSON:API. Formal JSON:API adoption is a s
 
 This recommendation adds no runtime wrapper, serializer, resource class, paginator, middleware, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator. The application still constructs the exact response body with `JSON_THROW_ON_ERROR` and sets the exact content type.
 
+## Embed nested resources without N+1 I/O
+
+An operation may embed a child object or collection inside its application-owned `data` representation. Name the relationship for its meaning in that operation: `creator` communicates more than an ambiguous `user`. For example, an application could deliberately publish this bounded workspace summary:
+
+```json
+{
+  "data": [
+    {
+      "id": "cd7fcaf6-7b5c-4b25-a2f6-01ecad54f86b",
+      "name": "Workspace 2",
+      "created_by_user_id": "3f9a5f00-3509-47b0-ac2f-4d648956381a",
+      "creator": {
+        "id": "3f9a5f00-3509-47b0-ac2f-4d648956381a",
+        "display_name": "Super Admin",
+        "avatar_url": null
+      }
+    }
+  ]
+}
+```
+
+This is a conceptual operation contract, not a framework resource schema. The operation decides whether `creator` is required, is `null`, or is absent when no visible creator exists. If it emits both `created_by_user_id` and `creator.id`, it records and tests that they are equal. It exposes only fields required by this handoff; a column such as email, role, or status is not public merely because the data query can select it. Parent and child tenant scope and current authorization remain explicit, including the policy for a related row that exists but the principal may not see.
+
+The complete I/O plan remains fixed and bounded independently of parent-page cardinality. Perform all database, cache, and external-service operations before resource mapping and JSON encoding; those later phases perform no I/O, whether directly, through a callback, or through recursive traversal. For an ordinary to-one relationship such as `workspace.creator`, prefer one explicit bounded join. When one statement would be inappropriate, a finite batch plan is valid only when its complete I/O count is fixed; one lookup per workspace is never valid. `PHT003` catches direct lexical database calls inside loops, but it does not prove that an indirectly called mapper, cache client, or integration performs no I/O. Query budgets, operation counters, and one-parent-versus-maximum-page scale evidence close that gap.
+
+The checked application-owned `workspace.creator` fixture uses one bounded left join for a capped collection of at most 50 parent workspaces, preserves the selected parent count and order, applies explicit tenant, visibility, and fixed-principal predicates to parents and creators, emits `creator` as an exact object or `null`, proves identifier equality when present, and preserves the existing published example endpoint contracts. A separate denial control stops before connection creation and executes zero statements. This isolated proof defines no continuation and does not establish request authentication or policy composition. See [Database boundaries](database.md#n1-safe-nested-resource-plans).
+
+Parent pagination remains the controlling contract. A joined child must not change the number or order of emitted parents, continuation value, or duplicate-parent behavior. Each nested collection needs its own exact maximum cardinality, deterministic ordering, truncation behavior, continuation policy, and contribution to the response byte limit; do not let an unbounded child collection hide inside a bounded parent page.
+
+The frontend decoder owns the same exactness. It verifies the nested object's or collection's field set, native JSON types, null-versus-absence policy, bounds, identifier equality when emitted, and deterministic array ordering. It rejects malformed nested shapes but does not make JSON object-member order contractual. Adding a nested relationship, removing it, changing its optionality, or changing its fields can break an exact field-set decoder and therefore follows the operation's recorded compatibility or versioning policy.
+
+Nested representations add no PHPThis relationship loader, ORM, lazy loading, resource class, serializer, generic batcher, expansion syntax, or JSON:API relationship support. The application owns the query, concrete projections, response construction, decoder, and evidence.
+
 ## Keep frontend failures distinct
 
 A frontend operation has at least three failure classes:

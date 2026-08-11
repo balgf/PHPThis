@@ -1971,8 +1971,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 5",
-            "'manifest_sha256' => 'e0b668ec3bbaf1fbdc184483a9976213a4a02a22ccc87d06fbcb343ad43aa747'",
+            "'revision' => 6",
+            "'manifest_sha256' => '1c43747e3edd3e384dde2522a3c97aed791ae46a30daff8ee846420c8c243ff9'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -2002,10 +2002,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 5',
+            '"revision": 6',
             '"source-skeleton"',
-            '"tree": "8e8d663956a5699cd4ca5a91eca5f085a7d06c55"',
-            '"fixture_sha256": "903aaec68efe3574b2235e217a3a80b810f6e814caa9c9f62cd49a0ae24041cd"',
+            '"tree": "4b5548c0b869f6cdc0c0a5061c26f688192623f5"',
+            '"fixture_sha256": "d994fd1575bf92644c889a3e2f85da802c83db79a681c75bdf6fb7df925846fa"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -2144,7 +2144,7 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 5;',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 6;',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',

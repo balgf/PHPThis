@@ -1171,8 +1171,9 @@ function boundaryGuardrailFailures(string $root): array
 
     $structuredJsonSuccessEnvelopeArtifactMarkers = [
         '.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation | `.ai/http.md` |',
-            'preserve the advisory application-owned boundary and add no generic wrapper, serializer, paginator, or generator',
+            '| Define or change a structured JSON resource success representation, including nested child data | `.ai/http.md` |',
+            'prove one fixed bounded operation-owned I/O plan plus I/O-free mapping and encoding',
+            'preserve the advisory application-owned boundary without a generic wrapper, relationship loader, serializer, paginator, or generator',
         ],
         '.ai/http.md' => [
             "For a new application's successful structured JSON resource representations",
@@ -1181,6 +1182,25 @@ function boundaryGuardrailFailures(string $root): array
             'optional operation-owned pagination or other non-resource information uses a top-level `meta` object',
             'Keep every field and continuation semantic operation-specific, keep errors and non-resource representations outside this convention',
             'do not add a framework or application-wide response wrapper, serializer, resource class, paginator, middleware, helper, discovery mechanism, or generator.',
+            'Nested child objects and collections may appear inside `data` only as explicit operation-owned fields.',
+            'The complete I/O plan remains fixed and bounded independently of parent-page cardinality;',
+            '`PHT003` rejects direct lexical `Connection` calls inside loops, but it cannot prove that an indirectly called mapper, cache client, or integration is I/O-free',
+            'For an ordinary nested to-one relationship, prefer one explicit bounded join with concrete projections and explicit parent and child predicates.',
+        ],
+        '.ai/database.md' => [
+            'For a response that embeds child data, the handler or its one justified concrete operation owns the complete data-access plan.',
+            'Per-resource mapping, serialization, callbacks, and recursive traversal perform no database, cache, or external-service I/O.',
+            '`PHT003` catches a direct lexical database call inside a loop; it does not inspect an indirectly called mapper or prove the absence of cache or integration work',
+            'For an ordinary to-one relationship such as `workspace.creator`, prefer one explicit bounded join',
+            'A finite batch plan may instead use a fixed number of reviewed statements when one join is inappropriate',
+            'Parent pagination remains authoritative.',
+        ],
+        '.ai/testing.md' => [
+            'A nested-resource response proof covers empty, one-parent, and maximum-parent pages;',
+            'Snapshot each relevant counter immediately after data loading and again after mapping and JSON encoding to prove those phases add no I/O.',
+            'Frontend-style decoder fixtures reject missing, unknown, wrongly typed, out-of-bound, and malformed nested shapes while accepting semantically identical JSON object members in another order.',
+            'Retain or add one intentionally invalid `.php.fixture` negative control that performs one child query per parent.',
+            'This negative control does not let `PHT003` claim detection of indirect database, cache, or integration I/O.',
         ],
         'docs/frontend-integration.md' => [
             '## Recommended structured JSON resource success envelope',
@@ -1197,6 +1217,15 @@ function boundaryGuardrailFailures(string $root): array
             'A top-level `data` member alone is not JSON:API.',
             'Existing published resource-named or bare responses remain valid application contracts; moving one to `data` is a breaking API change',
             'This recommendation adds no runtime wrapper, serializer, resource class, paginator, middleware, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+            '## Embed nested resources without N+1 I/O',
+            'Name the relationship for its meaning in that operation: `creator` communicates more than an ambiguous `user`.',
+            'The complete I/O plan remains fixed and bounded independently of parent-page cardinality.',
+            'Perform all database, cache, and external-service operations before resource mapping and JSON encoding;',
+            '`PHT003` catches direct lexical database calls inside loops, but it does not prove that an indirectly called mapper, cache client, or integration performs no I/O.',
+            'Parent pagination remains the controlling contract.',
+            'The frontend decoder owns the same exactness.',
+            'Adding a nested relationship, removing it, changing its optionality, or changing its fields can break an exact field-set decoder',
+            'Nested representations add no PHPThis relationship loader, ORM, lazy loading, resource class, serializer, generic batcher, expansion syntax, or JSON:API relationship support.',
         ],
         'docs/request-handling.md' => [
             '## Recommended structured JSON resource success envelope',
@@ -1210,19 +1239,61 @@ function boundaryGuardrailFailures(string $root): array
             'encodes its concrete application-owned array with `JSON_THROW_ON_ERROR`',
             'changing one to `data` is a breaking API change requiring an explicit migration or versioning decision.',
             'PHPThis adds no runtime wrapper, serializer, resource class, paginator, middleware, facade, helper, reflection, discovery, OpenAPI or JSON Schema artifact, SDK, or client generator.',
+            '### Nested child data',
+            'Prefer a semantic relationship name such as `creator` instead of an ambiguous `user`.',
+            'Mapping, serialization, callbacks, and recursive traversal perform no database, cache, or external-service I/O.',
+            'Never query one child per parent.',
+            '`PHT003` rejects direct lexical database calls inside loops but cannot prove that an indirect mapper, cache client, or integration is I/O-free',
+            'Join fan-out must not alter the parent limit, stable order, continuation, or duplicate-parent behavior.',
+            'PHPThis adds no relationship mechanism, loader, serializer, generic batcher, or expansion API.',
+        ],
+        'docs/database.md' => [
+            '## N+1-safe nested resource plans',
+            'The number of database statements, cache operations, and external calls remains fixed as the bounded parent page grows.',
+            'For an ordinary to-one relationship such as `workspace.creator`, prefer one explicit bounded join',
+            'A finite batch plan may instead use a fixed number of reviewed statements when one join is inappropriate',
+            'Never execute one child query per parent, hide repeated I/O behind a mapper, or introduce a repository, relationship loader, generic batcher, or generated placeholder list.',
+            '`PHT003` catches direct lexical calls to `selectAllRows`, `selectOneRow`, or `executeStatement` inside a loop.',
+            'The existing isolated N+1 negative control in `tools/test-query-scaling.php` demonstrates both query growth and budget containment',
+            'This guidance adds no PHPThis runtime relationship mechanism, ORM, lazy loading, resource serializer, paginator, or new Strict Profile diagnostic.',
         ],
         'docs/knowledge-map.md' => [
-            '| Define, change, or review a structured JSON resource success representation |',
+            '| Define, change, or review a structured JSON resource success representation, including nested child objects or collections |',
             'exact application response construction and `Content-Type`',
+            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
             'preserve the advisory application-owned boundary',
         ],
+        'docs/performance.md' => [
+            'a separate checked application-owned `workspace.creator` proof without changing any published example endpoint',
+            'A separate fixture-local denial gate proves zero database statements before this work.',
+            'Hidden, cross-tenant, and fixed-principal-denied creators exercise the explicit `null` policy',
+            'The accepted nested read executes one statement for empty, one-parent, and 50-parent fixtures.',
+            'It retains statement counts after loading, after mapping, and after encoding; all three phases remain `[1, 1, 1]`, while denial remains `[0, 0, 0]`.',
+            'performs a creator query inside the parent loop, grows from 2 statements for one parent to 51 for 50',
+            'Its phase counts grow from `[1, 2, 2]` to `[1, 51, 51]`;',
+            'Each negative source uses a `.php.fixture` suffix and is never accepted application code.',
+        ],
+        'example/.ai/data.md' => [
+            '## Checked nested workspace creator fixture',
+            'This is an isolated scaling fixture, not a route and not a change to the published user or document response contracts.',
+            'All identifiers are canonical lowercase UUID strings with a supported version nibble and RFC variant nibble.',
+            'Hidden, cross-tenant, and principal-denied fixture parents remain absent;',
+            'A separate fixture-local deny input stops before connection construction and proves zero database statements.',
+            'It retains statement counts after loading, after mapping, and after encoding; every accepted shape is `[1, 1, 1]`.',
+            'Its retained denial counts are `[0, 0, 0]`.',
+            'grows from phase counts `[1, 2, 2]` for one parent to `[1, 51, 51]` for 50',
+            'queries one creator inside the parent loop.',
+            'It has no request authentication or composed request-policy path',
+        ],
         'skeleton/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
-            'add no generic wrapper, serializer, paginator, or generator',
+            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
+            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
+            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
         ],
         'templates/application/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md` |',
-            'add no generic wrapper, serializer, paginator, or generator',
+            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
+            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
+            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
         ],
         'example/src/Users/GetUser/GetUserHandler.php' => [
             "['data' => ['id' => \$user->id->value, 'name' => \$user->name]]",
@@ -1297,6 +1368,53 @@ function boundaryGuardrailFailures(string $root): array
         'tests/consumer-profile.php' => [
             '{\"data\":{\"account_id\":42,\"name\":\"Profile Name Marker\",\"email\":\"profile-secret@example.com\"}}\n',
         ],
+        'tests/fixtures/workspaces-with-creators.accepted.php' => [
+            "if (\$authorizationValue === 'deny') {",
+            'workspaces.tenant_id = :workspace_tenant_id',
+            'workspaces.authorized_principal_id = :workspace_authorized_principal_id',
+            'creators.tenant_id = :creator_tenant_id',
+            'creators.authorized_principal_id = :creator_authorized_principal_id',
+            'LIMIT :parent_limit',
+            'foreach ($rows as $row) {',
+            '$workspaces[] = acceptedNestedWorkspaceItem($row);',
+            '$afterLoadStatements = $trace->snapshot()[\'statements\'];',
+            '$afterMappingStatements = $trace->snapshot()[\'statements\'];',
+            '$afterEncodingStatements = $trace->snapshot()[\'statements\'];',
+            "'phase_statements' => [",
+            '$body = json_encode([\'data\' => $workspaces], JSON_THROW_ON_ERROR) . "\\n";',
+            '[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}',
+            "preg_match('/^https:\/\/[!-~]+\$/D', \$value)",
+        ],
+        'tests/fixtures/workspaces-with-creators.n-plus-one.php.fixture' => [
+            'workspaces.authorized_principal_id = :workspace_authorized_principal_id',
+            'foreach ($rows as $row) {',
+            '$creatorRow = $connection->selectOneRow(',
+            'users.authorized_principal_id = :creator_authorized_principal_id',
+            '$workspaces[] = rejectedNestedWorkspaceItem($row, $creatorRow);',
+            '$afterLoadStatements = $trace->snapshot()[\'statements\'];',
+            '$afterMappingStatements = $trace->snapshot()[\'statements\'];',
+            '$afterEncodingStatements = $trace->snapshot()[\'statements\'];',
+            "'phase_statements' => [",
+            '$body = json_encode([\'data\' => $workspaces], JSON_THROW_ON_ERROR) . "\\n";',
+        ],
+        'tools/test-query-scaling.php' => [
+            "'tests/fixtures/workspaces-with-creators.accepted.php'",
+            "'tests/fixtures/workspaces-with-creators.n-plus-one.php.fixture'",
+            'PHT003 tests/fixtures/workspaces-with-creators.n-plus-one.php.fixture:61 calls a database method inside a loop.',
+            'The accepted nested workspace fixture must pass the Strict Profile.',
+            'Nested workspace mapping and JSON encoding must perform zero database calls.',
+            'Nested workspace authorization denial must perform zero database work.',
+            'A creator denied by the fixed principal predicate must remain an explicit null child.',
+            'A present nested creator id must equal created_by_user_id.',
+            'Accepted JOIN and nested N+1 control outputs differ.',
+            'Each accepted nested page must execute one statement.',
+            'Accepted nested mapping or encoding added a database statement.',
+            'One-parent N+1 phase counts changed.',
+            'Maximum N+1 phase counts changed.',
+            'Budgeted N+1 phase counts changed.',
+            'Nested N+1 budget rejection must occur before statement 4 enters the trace.',
+            'workspace.creator accepted 1/page and rejected 2 -> 51; budget stopped statement 4; mapping/JSON 0 database calls',
+        ],
         'tools/package-files.txt' => [
             'docs/frontend-integration.md',
             'docs/knowledge-map.md',
@@ -1304,11 +1422,18 @@ function boundaryGuardrailFailures(string $root): array
             'templates/application/.ai/README.md',
         ],
         'tools/test-consumer-project.php' => [
+            '$installedStructuredJsonProofCompletion =',
             'proveInstalledStructuredJsonSuccessEnvelopeDistribution(',
             'function proveInstalledStructuredJsonSuccessEnvelopeDistribution(',
+            "!== 'installed-structured-json-and-nested-resource-proof-complete'",
+            "return 'installed-structured-json-and-nested-resource-proof-complete';",
+            'Installed structured JSON and nested-resource proof did not complete.',
             'decodeGetUserSuccess(Response $response)',
             'decodeListUsersSuccess(Response $response)',
             'decodeListDocumentsSuccess(Response $response)',
+            'decodeListWorkspacesSuccess(Response $response)',
+            'function isCanonicalUuidString(mixed $value): bool',
+            '[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}',
             'json_decode($response->body, false, 8, JSON_THROW_ON_ERROR)',
             '!$decoded instanceof stdClass',
             '!is_array($decoded->data)',
@@ -1341,6 +1466,19 @@ function boundaryGuardrailFailures(string $root): array
             '{\"data\":[],\"meta\":{\"next_after_user_id\":\"01\"}}\n',
             '$opaqueListDocumentsContinuation = new Response(',
             '{\"data\":[],\"meta\":{\"next_cursor\":\"50\"}}\n',
+            '$workspaceWithCreator = new Response(',
+            '$workspaceWithoutVisibleCreator = new Response(',
+            '$workspaceWithAvatar = new Response(',
+            '$reorderedWorkspaceWithCreator = new Response(',
+            "'created_by_user_id' => \$creatorId",
+            "\$creator->id !== \$workspace->created_by_user_id",
+            '$invalidWorkspaceBodies = [',
+            "'id' => 'cd7fcaf6-7b5c-0b25-a2f6-01ecad54f86b'",
+            "'id' => 'cd7fcaf6-7b5c-4b25-72f6-01ecad54f86b'",
+            "'email' => 'admin@example.com'",
+            "'display_name' => str_repeat('n', 161)",
+            "'avatar_url' => 'http://example.com/a.png'",
+            "'avatar_url' => 'https://example.com/' . str_repeat('a', 2_030)",
             '$missingUser = new Response(',
             '$missingUser->status !== 404',
             '{\"error\":{\"code\":\"user_not_found\",\"message\":\"User was not found.\"}}\n',
@@ -1368,10 +1506,11 @@ function boundaryGuardrailFailures(string $root): array
             'Response|Json|Resource|Success|Pagination',
             'SchemaGenerator|ClientGenerator|SdkGenerator',
             'Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory',
+            'RelationshipLoader|RelationLoader|LazyRelationship|LazyRelation|EagerRelationship|EagerRelation|BatchLoader|DataLoader',
             '$installedSourceRoots = [',
             '$project . \'/src\'',
-            'PASS installed structured JSON success-envelope runtime',
-            'PASS installed structured JSON success-envelope guidance distribution',
+            'PASS installed structured JSON success-envelope and nested-resource runtime',
+            'PASS installed structured JSON success-envelope and nested-resource guidance distribution',
         ],
         'tools/guardrails/boundaries.php' => [
             '$structuredJsonForbiddenRuntimePathFixtures = [',
@@ -1399,6 +1538,11 @@ function boundaryGuardrailFailures(string $root): array
             "'src/Http/Json/Responder.php'",
             "'src/Http/Resource/Transformer.php'",
             "'src/Http/Json/Discovery.php'",
+            "'src/Database/WorkspaceCreatorRelationshipLoader.php'",
+            "'src/Database/RelationLoader.php'",
+            "'src/Database/LazyRelationship.php'",
+            "'src/Database/CreatorBatchLoader.php'",
+            "'src/Database/Relationships/Loader.php'",
             "'src/Http/SchemaGenerator.php'",
             "'src/Http/ClientGenerator.php'",
             '$structuredJsonAllowedRuntimePathFixtures = [',
@@ -1417,6 +1561,15 @@ function boundaryGuardrailFailures(string $root): array
             'Framework, default-skeleton, installed-framework, copied-project, and package-inventory path checks',
             'This deterministic name/path evidence does not prove absence of differently named hidden behavior',
             'It adds no framework response mechanism or consumer-checker rule and does not make the example envelope a consumer-validity rule.',
+            'N+1-safe nested-resource guidance, a focused checked `workspace.creator` fixture, query-scaling and `PHT003` controls, installed nested decoder evidence',
+            'The N+1-safe nested-resource extension pins the maintainer, public, knowledge-map, skeleton, and application-template routes',
+            'a deny-before-connection control uses zero statements;',
+            'Retained phase snapshots stay `[1, 1, 1]` after load, mapping, and encoding for every accepted page and `[0, 0, 0]` for denial',
+            'exposes `[1, 2, 2]` and `[1, 51, 51]` phase counts',
+            'The intentionally invalid `.php.fixture` performs one creator query inside the parent loop',
+            'The isolated installed proof accepts present and null creators plus reordered object members',
+            'Those deterministic source/name checks do not prove the absence of indirect or differently named database, cache, or integration I/O;',
+            'This adds no framework relationship mechanism, response mechanism, consumer-checker rule, Contract or Strict Profile change, or new `PHT` diagnostic.',
         ],
     ];
 
@@ -1426,6 +1579,177 @@ function boundaryGuardrailFailures(string $root): array
         'structured JSON success-envelope guidance and proof',
         $failures,
     );
+
+    $installedStructuredJsonProofSource = file_get_contents(
+        $root . '/tools/test-consumer-project.php',
+    );
+    $installedStructuredJsonProofWiring = <<<'PHP'
+    $installedStructuredJsonProofCompletion =
+        proveInstalledStructuredJsonSuccessEnvelopeDistribution(
+            $project,
+            $installedFramework,
+            $environment,
+        );
+
+    if (
+        $installedStructuredJsonProofCompletion
+            !== 'installed-structured-json-and-nested-resource-proof-complete'
+    ) {
+        throw new RuntimeException('Installed structured JSON and nested-resource proof did not complete.');
+    }
+PHP;
+    $installedStructuredJsonProofWiringIsCanonical = static function (
+        string $source,
+    ) use ($installedStructuredJsonProofWiring): bool {
+        if (
+            substr_count($source, $installedStructuredJsonProofWiring) !== 1
+            || substr_count($source, '$installedStructuredJsonProofCompletion') !== 2
+            || substr_count(
+                $source,
+                "'installed-structured-json-and-nested-resource-proof-complete'",
+            ) !== 2
+            || substr_count(
+                $source,
+                "    return 'installed-structured-json-and-nested-resource-proof-complete';",
+            ) !== 1
+        ) {
+            return false;
+        }
+
+        $wiringOffset = strpos($source, $installedStructuredJsonProofWiring);
+
+        if ($wiringOffset === false) {
+            return false;
+        }
+
+        $prefixTokens = token_get_all(substr($source, 0, $wiringOffset));
+        $braceDepth = 0;
+        $functionDeclarationSeen = false;
+        $previousSignificantToken = null;
+
+        foreach ($prefixTokens as $prefixToken) {
+            if (is_array($prefixToken)) {
+                if ($prefixToken[0] === T_FUNCTION) {
+                    $functionDeclarationSeen = true;
+                }
+
+                if (in_array($prefixToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                $previousSignificantToken = $prefixToken;
+                continue;
+            }
+
+            if ($prefixToken === '{') {
+                $braceDepth++;
+            } elseif ($prefixToken === '}') {
+                $braceDepth--;
+            }
+
+            $previousSignificantToken = $prefixToken;
+        }
+
+        if (
+            $braceDepth !== 1
+            || $functionDeclarationSeen
+            || !in_array($previousSignificantToken, ['{', ';'], true)
+        ) {
+            return false;
+        }
+
+        $proofCallCount = 0;
+        $tokens = token_get_all($source);
+
+        foreach ($tokens as $tokenIndex => $token) {
+            if (
+                !is_array($token)
+                || $token[0] !== T_STRING
+                || $token[1] !== 'proveInstalledStructuredJsonSuccessEnvelopeDistribution'
+            ) {
+                continue;
+            }
+
+            $previousToken = null;
+
+            for ($previousTokenIndex = $tokenIndex - 1; $previousTokenIndex >= 0; $previousTokenIndex--) {
+                $candidateToken = $tokens[$previousTokenIndex];
+
+                if (
+                    is_array($candidateToken)
+                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+                ) {
+                    continue;
+                }
+
+                $previousToken = $candidateToken;
+                break;
+            }
+
+            if (is_array($previousToken) && $previousToken[0] === T_FUNCTION) {
+                continue;
+            }
+
+            $nextToken = null;
+
+            for ($nextTokenIndex = $tokenIndex + 1; $nextTokenIndex < count($tokens); $nextTokenIndex++) {
+                $candidateToken = $tokens[$nextTokenIndex];
+
+                if (
+                    is_array($candidateToken)
+                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+                ) {
+                    continue;
+                }
+
+                $nextToken = $candidateToken;
+                break;
+            }
+
+            if ($nextToken === '(') {
+                $proofCallCount++;
+            }
+        }
+
+        return $proofCallCount === 1;
+    };
+
+    if (!is_string($installedStructuredJsonProofSource)) {
+        $failures[] = 'Cannot read the installed structured JSON and nested-resource proof harness.';
+    } else {
+        $mutatedStructuredJsonProofSources = [
+            str_replace(
+                $installedStructuredJsonProofWiring,
+                '',
+                $installedStructuredJsonProofSource,
+            ),
+            str_replace(
+                $installedStructuredJsonProofWiring,
+                "    if (false) {\n{$installedStructuredJsonProofWiring}\n    }",
+                $installedStructuredJsonProofSource,
+            ),
+            str_replace(
+                $installedStructuredJsonProofWiring,
+                "    if (false)\n{$installedStructuredJsonProofWiring}",
+                $installedStructuredJsonProofSource,
+            ),
+        ];
+        $mutationWasAccepted = false;
+
+        foreach ($mutatedStructuredJsonProofSources as $mutatedStructuredJsonProofSource) {
+            if ($installedStructuredJsonProofWiringIsCanonical($mutatedStructuredJsonProofSource)) {
+                $mutationWasAccepted = true;
+                break;
+            }
+        }
+
+        if (
+            !$installedStructuredJsonProofWiringIsCanonical($installedStructuredJsonProofSource)
+            || $mutationWasAccepted
+        ) {
+            $failures[] = 'The installed structured JSON and nested-resource runtime proof must complete exactly once in the unconditional top-level consumer proof before function declarations.';
+        }
+    }
 
     forbidGuardrailArtifactMarkers(
         $root,
@@ -1441,7 +1765,7 @@ function boundaryGuardrailFailures(string $root): array
         $failures,
     );
 
-    $forbiddenStructuredJsonRuntimePathPattern = '/(?:\A|\/)(?:[A-Za-z0-9]*(?:Envelope|Wrapper|Serializer|Resource|ResourceCollection|Paginator|Pagination)|[A-Za-z0-9]*JsonResponse|(?:Response|Json|Resource|Success|Pagination)[A-Za-z0-9]*(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|(?:Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|[A-Za-z0-9]*(?:SchemaGenerator|ClientGenerator|SdkGenerator)|(?:OpenApi|JsonSchema)[A-Za-z0-9]*)(?:\.php|\/)/i';
+    $forbiddenStructuredJsonRuntimePathPattern = '/(?:\A|\/)(?:[A-Za-z0-9]*(?:Envelope|Wrapper|Serializer|Resource|ResourceCollection|Paginator|Pagination)|[A-Za-z0-9]*JsonResponse|(?:Response|Json|Resource|Success|Pagination)[A-Za-z0-9]*(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|(?:Response|Json|Resource|Success|Pagination)\/(?:Builder|Factory|Responder|Formatter|Transformer|Middleware|Facade|Helper|Reflection|Discovery)|[A-Za-z0-9]*(?:RelationshipLoader|RelationLoader|LazyRelationship|LazyRelation|EagerRelationship|EagerRelation|BatchLoader|DataLoader)|(?:Relationships?|Relations?)\/(?:Loader|Resolver|Mapper|Batcher)|[A-Za-z0-9]*(?:SchemaGenerator|ClientGenerator|SdkGenerator)|(?:OpenApi|JsonSchema)[A-Za-z0-9]*)(?:\.php|\/)/i';
     $structuredJsonForbiddenRuntimePathFixtures = [
         'src/Http/ResponseEnvelope.php',
         'src/Http/ResponseWrapper.php',
@@ -1468,6 +1792,11 @@ function boundaryGuardrailFailures(string $root): array
         'src/Http/Json/Responder.php',
         'src/Http/Resource/Transformer.php',
         'src/Http/Json/Discovery.php',
+        'src/Database/WorkspaceCreatorRelationshipLoader.php',
+        'src/Database/RelationLoader.php',
+        'src/Database/LazyRelationship.php',
+        'src/Database/CreatorBatchLoader.php',
+        'src/Database/Relationships/Loader.php',
         'src/Http/SchemaGenerator.php',
         'src/Http/ClientGenerator.php',
     ];
