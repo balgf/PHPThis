@@ -1211,7 +1211,8 @@ function repositoryGuardrailFailures(string $root): array
             'no unlisted engine version inherits certification',
         ],
         'docs/knowledge-map.md' => [
-            'application response headers, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md`',
+            'for an adopted server-side cache, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md`',
+            'the deliberately adopted application recipe, distinct cache and lease processes',
         ],
         'ROADMAP.md' => [
             'the final post-Issue-35 correctness sweep restricts the forbidden `eval` check to the actual language construct while accepting legal same-named identifiers',

@@ -181,7 +181,7 @@ function operationGuardrailFailures(string $root): array
         'docs/consumer-contract.md' => [
             '## Optional application-owned durable jobs',
             'Contract version 9 does not make that additional file a checker requirement',
-            'Delivery remains at least once.',
+            'Delivery under that checked recipe remains at least once.',
         ],
         'docs/decisions/README.md' => [
             '024-application-owned-sqlite-durable-jobs.md',
@@ -198,9 +198,9 @@ function operationGuardrailFailures(string $root): array
             'continued absence from framework core and package runtime APIs',
         ],
         'docs/knowledge-map.md' => [
-            '`docs/jobs.md`, `docs/security.md`, `docs/jobs/operations.md` for production supervision',
-            'externally supervised successful-exit repetition, pacing, stop, capacity, and alarm policy',
-            'verify that no framework queue mechanism exists',
+            'Decide whether durable deferred work belongs or assess an application-owned job lifecycle',
+            'verify that PHPThis provides no framework queue mechanism and do not infer the optional SQLite recipe',
+            "Adopt, change, or review ADR 024's optional SQLite durable-job recipe | `docs/jobs.md`, `docs/jobs/operations.md`, `docs/security.md`, ADR 024 | the deliberately adopted checked recipe's exact SQLite version and schema, same-connection producer transaction, bounded envelope parser, finite type/version dispatch, one-row `UPDATE ... RETURNING` claim, lease-token fencing, finite retries and dead letters, demonstrated idempotent database effect, fresh one-delivery process, crash recovery, and external supervision",
         ],
         'docs/security.md' => [
             'Treat every stored job envelope as untrusted input',

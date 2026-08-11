@@ -1,0 +1,220 @@
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryBudgetExceeded;
+use PHPThis\Database\QueryTrace;
+
+$root = $argv[1] ?? null;
+$databasePath = $argv[2] ?? null;
+$budgetValue = $argv[3] ?? null;
+
+if (!is_string($root) || !is_string($databasePath) || !is_string($budgetValue)) {
+    throw new RuntimeException('Nested parent N+1 fixture requires root, database path, and query budget arguments.');
+}
+
+if (preg_match('/^[1-9][0-9]*$/D', $budgetValue) !== 1) {
+    throw new RuntimeException('Nested parent N+1 fixture query budget must be a positive integer.');
+}
+
+$budgetLimit = filter_var($budgetValue, FILTER_VALIDATE_INT);
+
+if (!is_int($budgetLimit) || $budgetLimit < 1) {
+    throw new RuntimeException('Nested parent N+1 fixture query budget is outside the supported integer range.');
+}
+
+require $root . '/autoload.php';
+
+$trace = new QueryTrace(2);
+$connection = Connection::connect(
+    'sqlite:' . $databasePath,
+    new QueryBudget($budgetLimit),
+    $trace,
+);
+$rows = $connection->selectAllRows(
+    <<<'SQL'
+        SELECT
+            parents.id AS parent_id,
+            parents.label AS parent_label,
+            parents.child_id
+        FROM parents
+        WHERE parents.tenant_id = :parent_tenant_id
+          AND parents.is_visible = :parent_is_visible
+          AND parents.authorized_principal_id = :parent_authorized_principal_id
+        ORDER BY parents.id
+        LIMIT :parent_limit
+        SQL,
+    [
+        'parent_tenant_id' => 42,
+        'parent_is_visible' => 1,
+        'parent_authorized_principal_id' => 7,
+        'parent_limit' => 50,
+    ],
+);
+$afterLoadStatements = $trace->snapshot()['statements'];
+$parents = [];
+$budgetExceeded = false;
+try {
+    foreach ($rows as $row) {
+        $childRow = $connection->selectOneRow(
+            <<<'SQL'
+                SELECT
+                    children.id AS nested_child_id,
+                    children.label AS child_label,
+                    children.public_url AS child_public_url
+                FROM children
+                WHERE children.id = :requested_child_id
+                  AND children.tenant_id = :child_tenant_id
+                  AND children.is_visible = :child_is_visible
+                  AND children.authorized_principal_id = :child_authorized_principal_id
+                SQL,
+            [
+                'requested_child_id' => $row['child_id'] ?? null,
+                'child_tenant_id' => 42,
+                'child_is_visible' => 1,
+                'child_authorized_principal_id' => 7,
+            ],
+        );
+        $parents[] = rejectedNestedParentItem($row, $childRow);
+    }
+} catch (QueryBudgetExceeded) {
+    $budgetExceeded = true;
+}
+
+$afterMappingStatements = $trace->snapshot()['statements'];
+$body = json_encode(['data' => $parents], JSON_THROW_ON_ERROR) . "\n";
+$afterEncodingStatements = $trace->snapshot()['statements'];
+
+fwrite(STDOUT, json_encode([
+    'body' => $body,
+    'budget_exceeded' => $budgetExceeded,
+    'phase_statements' => [
+        'after_load' => $afterLoadStatements,
+        'after_mapping' => $afterMappingStatements,
+        'after_encoding' => $afterEncodingStatements,
+    ],
+    'trace' => $trace->snapshot(),
+], JSON_THROW_ON_ERROR));
+
+/**
+ * @param array<string, mixed> $parentRow
+ * @param array<string, mixed>|null $childRow
+ * @return array{
+ *     id: non-empty-string,
+ *     label: non-empty-string,
+ *     child_id: non-empty-string,
+ *     child: array{id: non-empty-string, label: non-empty-string, public_url: non-empty-string|null}|null
+ * }
+ */
+function rejectedNestedParentItem(array $parentRow, ?array $childRow): array
+{
+    if (
+        count($parentRow) !== 3
+        || !array_key_exists('parent_id', $parentRow)
+        || !array_key_exists('parent_label', $parentRow)
+        || !array_key_exists('child_id', $parentRow)
+    ) {
+        throw new UnexpectedValueException('Nested parent N+1 parent row has an incompatible shape.');
+    }
+
+    $parentId = rejectedNestedParentUuid($parentRow['parent_id'], 'parent_id');
+    $parentLabel = rejectedNestedParentText(
+        $parentRow['parent_label'],
+        'parent_label',
+        160,
+    );
+    $relatedChildId = rejectedNestedParentUuid(
+        $parentRow['child_id'],
+        'child_id',
+    );
+    $child = null;
+
+    if ($childRow !== null) {
+        if (
+            count($childRow) !== 3
+            || !array_key_exists('nested_child_id', $childRow)
+            || !array_key_exists('child_label', $childRow)
+            || !array_key_exists('child_public_url', $childRow)
+        ) {
+            throw new UnexpectedValueException('Nested parent N+1 child row has an incompatible shape.');
+        }
+
+        $childId = rejectedNestedParentUuid($childRow['nested_child_id'], 'nested_child_id');
+
+        if ($childId !== $relatedChildId) {
+            throw new UnexpectedValueException('Nested child id must match child_id.');
+        }
+
+        $childLabel = rejectedNestedParentText(
+            $childRow['child_label'],
+            'child_label',
+            160,
+        );
+        $childPublicUrlValue = $childRow['child_public_url'];
+        $childPublicUrl = $childPublicUrlValue === null
+            ? null
+            : rejectedNestedParentPublicUrl($childPublicUrlValue);
+        $child = [
+            'id' => $childId,
+            'label' => $childLabel,
+            'public_url' => $childPublicUrl,
+        ];
+    }
+
+    return [
+        'id' => $parentId,
+        'label' => $parentLabel,
+        'child_id' => $relatedChildId,
+        'child' => $child,
+    ];
+}
+
+/** @return non-empty-string */
+function rejectedNestedParentUuid(mixed $value, string $field): string
+{
+    if (
+        !is_string($value)
+        || preg_match(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/D',
+            $value,
+        ) !== 1
+    ) {
+        throw new UnexpectedValueException("Nested parent N+1 {$field} is not a canonical lowercase UUID.");
+    }
+
+    return $value;
+}
+
+/** @return non-empty-string */
+function rejectedNestedParentText(mixed $value, string $field, int $maximumBytes): string
+{
+    if (
+        !is_string($value)
+        || $value === ''
+        || strlen($value) > $maximumBytes
+        || preg_match('//u', $value) !== 1
+    ) {
+        throw new UnexpectedValueException("Nested parent N+1 {$field} is outside its UTF-8 byte bound.");
+    }
+
+    return $value;
+}
+
+/** @return non-empty-string */
+function rejectedNestedParentPublicUrl(mixed $value): string
+{
+    if (
+        !is_string($value)
+        || $value === ''
+        || strlen($value) > 2_048
+        || preg_match('/^https:\/\/[!-~]+$/D', $value) !== 1
+    ) {
+        throw new UnexpectedValueException(
+            'Nested parent N+1 child_public_url is not a bounded HTTPS URL.',
+        );
+    }
+
+    return $value;
+}

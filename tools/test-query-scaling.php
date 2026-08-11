@@ -18,9 +18,9 @@ $root = dirname(__DIR__);
 $fixtureRelativePath = 'tests/fixtures/list-users.n-plus-one.php.fixture';
 $fixturePath = $root . '/' . $fixtureRelativePath;
 $fixtureSource = file_get_contents($fixturePath);
-$nestedAcceptedRelativePath = 'tests/fixtures/workspaces-with-creators.accepted.php';
+$nestedAcceptedRelativePath = 'tests/fixtures/nested-parents-with-children.accepted.php';
 $nestedAcceptedPath = $root . '/' . $nestedAcceptedRelativePath;
-$nestedRejectedRelativePath = 'tests/fixtures/workspaces-with-creators.n-plus-one.php.fixture';
+$nestedRejectedRelativePath = 'tests/fixtures/nested-parents-with-children.n-plus-one.php.fixture';
 $nestedRejectedPath = $root . '/' . $nestedRejectedRelativePath;
 $nestedAcceptedSource = file_get_contents($nestedAcceptedPath);
 $nestedRejectedSource = file_get_contents($nestedRejectedPath);
@@ -30,7 +30,7 @@ if (!is_string($fixtureSource)) {
 }
 
 if (!is_string($nestedAcceptedSource) || !is_string($nestedRejectedSource)) {
-    throw new RuntimeException('Unable to read the nested workspace relationship fixtures.');
+    throw new RuntimeException('Unable to read the nested parent relationship fixtures.');
 }
 
 $profileFailures = SyntaxProfile::failures($fixtureSource, $fixtureRelativePath);
@@ -52,16 +52,16 @@ $nestedRejectedProfileFailures = SyntaxProfile::failures(
     $nestedRejectedRelativePath,
 );
 $expectedNestedRejectedProfileFailures = [
-    'PHT003 tests/fixtures/workspaces-with-creators.n-plus-one.php.fixture:61 calls a database method inside a loop.',
+    'PHT003 tests/fixtures/nested-parents-with-children.n-plus-one.php.fixture:61 calls a database method inside a loop.',
 ];
 
 requireScalingProof(
     $nestedAcceptedProfileFailures === [],
-    'The accepted nested workspace fixture must pass the Strict Profile.',
+    'The accepted nested parent fixture must pass the Strict Profile.',
 );
 requireScalingProof(
     $nestedRejectedProfileFailures === $expectedNestedRejectedProfileFailures,
-    'The nested workspace N+1 control must be rejected by exactly one stable PHT003 diagnostic.',
+    'The nested parent N+1 control must be rejected by exactly one stable PHT003 diagnostic.',
 );
 
 $nestedMappingOffset = strpos($nestedAcceptedSource, 'foreach ($rows as $row) {');
@@ -80,7 +80,7 @@ if (
     || $nestedAuthorizationOffset >= $nestedConnectionOffset
     || $nestedMappingOffset >= $nestedEncodingOffset
 ) {
-    throw new RuntimeException('The accepted nested workspace mapping and encoding phases changed.');
+    throw new RuntimeException('The accepted nested parent mapping and encoding phases changed.');
 }
 
 $nestedMappingAndEncodingSource = substr($nestedAcceptedSource, $nestedMappingOffset);
@@ -90,30 +90,30 @@ requireScalingProof(
     && substr_count($nestedAcceptedSource, '->selectOneRow(') === 0
     && substr_count($nestedAcceptedSource, '->executeStatement(') === 0
     && !str_contains($nestedAcceptedSource, 'SELECT *')
-    && str_contains($nestedAcceptedSource, 'workspaces.tenant_id = :workspace_tenant_id')
-    && str_contains($nestedAcceptedSource, 'workspaces.is_visible = :workspace_is_visible')
+    && str_contains($nestedAcceptedSource, 'parents.tenant_id = :parent_tenant_id')
+    && str_contains($nestedAcceptedSource, 'parents.is_visible = :parent_is_visible')
     && str_contains(
         $nestedAcceptedSource,
-        'workspaces.authorized_principal_id = :workspace_authorized_principal_id',
+        'parents.authorized_principal_id = :parent_authorized_principal_id',
     )
-    && str_contains($nestedAcceptedSource, 'creators.tenant_id = :creator_tenant_id')
-    && str_contains($nestedAcceptedSource, 'creators.is_visible = :creator_is_visible')
+    && str_contains($nestedAcceptedSource, 'children.tenant_id = :child_tenant_id')
+    && str_contains($nestedAcceptedSource, 'children.is_visible = :child_is_visible')
     && str_contains(
         $nestedAcceptedSource,
-        'creators.authorized_principal_id = :creator_authorized_principal_id',
+        'children.authorized_principal_id = :child_authorized_principal_id',
     )
     && str_contains($nestedAcceptedSource, 'LIMIT :parent_limit')
-    && !str_contains($nestedAcceptedSource, 'workspaces.slug')
-    && !str_contains($nestedAcceptedSource, 'creators.email')
-    && !str_contains($nestedAcceptedSource, 'creators.status')
-    && !str_contains($nestedAcceptedSource, 'creators.role'),
-    'The accepted nested workspace fixture must retain one minimized tenant-visible JOIN query.',
+    && !str_contains($nestedAcceptedSource, 'parents.private_value')
+    && !str_contains($nestedAcceptedSource, 'children.private_value')
+    && !str_contains($nestedAcceptedSource, 'children.internal_state')
+    && !str_contains($nestedAcceptedSource, 'children.internal_kind'),
+    'The accepted nested parent fixture must retain one minimized tenant-visible JOIN query.',
 );
 requireScalingProof(
     !str_contains($nestedMappingAndEncodingSource, '->selectAllRows(')
     && !str_contains($nestedMappingAndEncodingSource, '->selectOneRow(')
     && !str_contains($nestedMappingAndEncodingSource, '->executeStatement('),
-    'Nested workspace mapping and JSON encoding must perform zero database calls.',
+    'Nested parent mapping and JSON encoding must perform zero database calls.',
 );
 
 $smallDatabase = createScalingDatabase($root, 'small', 2);
@@ -174,73 +174,73 @@ foreach ([$firstPage, $secondPage, $thirdPage] as $page) {
     requireScalingProof(!$page['truncated'], 'An accepted page trace was truncated.');
 }
 
-$nestedEmptyDatabase = createNestedWorkspaceDatabase($root, 'nested-empty', 0);
-$nestedOneDatabase = createNestedWorkspaceDatabase($root, 'nested-one', 1);
-$nestedMaximumDatabase = createNestedWorkspaceDatabase($root, 'nested-maximum', 50);
-$nestedEmptyAccepted = runNestedWorkspaceFixture($root, $nestedAcceptedPath, $nestedEmptyDatabase, 1);
-$nestedOneAccepted = runNestedWorkspaceFixture($root, $nestedAcceptedPath, $nestedOneDatabase, 1);
-$nestedMaximumAccepted = runNestedWorkspaceFixture(
+$nestedEmptyDatabase = createNestedParentDatabase($root, 'nested-empty', 0);
+$nestedOneDatabase = createNestedParentDatabase($root, 'nested-one', 1);
+$nestedMaximumDatabase = createNestedParentDatabase($root, 'nested-maximum', 50);
+$nestedEmptyAccepted = runNestedParentFixture($root, $nestedAcceptedPath, $nestedEmptyDatabase, 1);
+$nestedOneAccepted = runNestedParentFixture($root, $nestedAcceptedPath, $nestedOneDatabase, 1);
+$nestedMaximumAccepted = runNestedParentFixture(
     $root,
     $nestedAcceptedPath,
     $nestedMaximumDatabase,
     1,
 );
-$nestedDenied = runNestedWorkspaceFixture(
+$nestedDenied = runNestedParentFixture(
     $root,
     $nestedAcceptedPath,
     $nestedMaximumDatabase,
     1,
     'deny',
 );
-$nestedEmptyRejected = runNestedWorkspaceFixture($root, $nestedRejectedPath, $nestedEmptyDatabase, 1);
-$nestedOneRejected = runNestedWorkspaceFixture($root, $nestedRejectedPath, $nestedOneDatabase, 2);
-$nestedMaximumRejected = runNestedWorkspaceFixture(
+$nestedEmptyRejected = runNestedParentFixture($root, $nestedRejectedPath, $nestedEmptyDatabase, 1);
+$nestedOneRejected = runNestedParentFixture($root, $nestedRejectedPath, $nestedOneDatabase, 2);
+$nestedMaximumRejected = runNestedParentFixture(
     $root,
     $nestedRejectedPath,
     $nestedMaximumDatabase,
     51,
 );
-$nestedBudgetRejected = runNestedWorkspaceFixture(
+$nestedBudgetRejected = runNestedParentFixture(
     $root,
     $nestedRejectedPath,
     $nestedMaximumDatabase,
     3,
 );
-$nestedEmptyData = decodeNestedWorkspacePage($nestedEmptyAccepted['body']);
-$nestedOneData = decodeNestedWorkspacePage($nestedOneAccepted['body']);
-$nestedMaximumData = decodeNestedWorkspacePage($nestedMaximumAccepted['body']);
-$workspaceOneId = nestedWorkspaceFixtureUuid('20000000', 1);
-$creatorOneId = nestedWorkspaceFixtureUuid('10000000', 1);
+$nestedEmptyData = decodeNestedParentPage($nestedEmptyAccepted['body']);
+$nestedOneData = decodeNestedParentPage($nestedOneAccepted['body']);
+$nestedMaximumData = decodeNestedParentPage($nestedMaximumAccepted['body']);
+$parentOneId = nestedParentFixtureUuid('20000000', 1);
+$childOneId = nestedParentFixtureUuid('10000000', 1);
 $expectedOneData = [[
-    'id' => $workspaceOneId,
-    'name' => 'Workspace 1',
-    'created_by_user_id' => $creatorOneId,
-    'creator' => [
-        'id' => $creatorOneId,
-        'display_name' => 'Creator 1',
-        'avatar_url' => 'https://example.com/avatars/1.png',
+    'id' => $parentOneId,
+    'label' => 'Parent 1',
+    'child_id' => $childOneId,
+    'child' => [
+        'id' => $childOneId,
+        'label' => 'Child 1',
+        'public_url' => 'https://example.com/children/1',
     ],
 ]];
 $expectedMaximumIds = [];
 
 foreach (range(1, 50) as $sequence) {
-    $expectedMaximumIds[] = nestedWorkspaceFixtureUuid('20000000', $sequence);
+    $expectedMaximumIds[] = nestedParentFixtureUuid('20000000', $sequence);
 }
 
 $actualMaximumIds = [];
 
-foreach ($nestedMaximumData as $workspace) {
-    $actualMaximumIds[] = $workspace['id'];
+foreach ($nestedMaximumData as $parent) {
+    $actualMaximumIds[] = $parent['id'];
 }
 
-$reorderedNestedData = decodeNestedWorkspacePage(
-    '{"data":[{"creator":{"avatar_url":"https://example.com/avatars/1.png",'
-    . '"display_name":"Creator 1","id":"' . $creatorOneId . '"},'
-    . '"created_by_user_id":"' . $creatorOneId . '","name":"Workspace 1",'
-    . '"id":"' . $workspaceOneId . '"}]}' . "\n",
+$reorderedNestedData = decodeNestedParentPage(
+    '{"data":[{"child":{"public_url":"https://example.com/children/1",'
+    . '"label":"Child 1","id":"' . $childOneId . '"},'
+    . '"child_id":"' . $childOneId . '","label":"Parent 1",'
+    . '"id":"' . $parentOneId . '"}]}' . "\n",
 );
 
-requireScalingProof($nestedEmptyData === [], 'The empty nested workspace page changed.');
+requireScalingProof($nestedEmptyData === [], 'The empty nested parent page changed.');
 requireScalingProof(
     $nestedDenied['body'] === ''
     && $nestedDenied['statements'] === 0
@@ -252,44 +252,44 @@ requireScalingProof(
     ]
     && !$nestedDenied['budget_exceeded']
     && !$nestedDenied['truncated'],
-    'Nested workspace authorization denial must perform zero database work.',
+    'Nested parent authorization denial must perform zero database work.',
 );
 requireScalingProof(
     $nestedEmptyAccepted['body'] === "{\"data\":[]}\n",
-    'The empty nested workspace body changed.',
+    'The empty nested parent body changed.',
 );
-requireScalingProof($nestedOneData === $expectedOneData, 'The one-parent nested workspace page changed.');
+requireScalingProof($nestedOneData === $expectedOneData, 'The one-parent nested parent page changed.');
 requireScalingProof(
     $reorderedNestedData === $expectedOneData,
-    'Nested workspace decoding must ignore JSON object-member order.',
+    'Nested parent decoding must ignore JSON object-member order.',
 );
-requireScalingProof(count($nestedMaximumData) === 50, 'The nested workspace page maximum changed.');
+requireScalingProof(count($nestedMaximumData) === 50, 'The nested parent page maximum changed.');
 requireScalingProof(
     $actualMaximumIds === $expectedMaximumIds,
     'Tenant or visibility filtering changed the bounded parent order.',
 );
 requireScalingProof(
-    ($nestedMaximumData[1]['created_by_user_id'] ?? null)
-        === nestedWorkspaceFixtureUuid('10000000', 2)
-    && $nestedMaximumData[1]['creator'] === null,
-    'A hidden creator must remain an explicit null child.',
+    ($nestedMaximumData[1]['child_id'] ?? null)
+        === nestedParentFixtureUuid('10000000', 2)
+    && $nestedMaximumData[1]['child'] === null,
+    'A hidden child must remain an explicit null child.',
 );
 requireScalingProof(
-    ($nestedMaximumData[3]['created_by_user_id'] ?? null)
-        === nestedWorkspaceFixtureUuid('10000000', 50)
-    && $nestedMaximumData[3]['creator'] === null,
-    'A cross-tenant creator must remain an explicit null child.',
+    ($nestedMaximumData[3]['child_id'] ?? null)
+        === nestedParentFixtureUuid('10000000', 50)
+    && $nestedMaximumData[3]['child'] === null,
+    'A cross-tenant child must remain an explicit null child.',
 );
 requireScalingProof(
-    ($nestedMaximumData[2]['created_by_user_id'] ?? null)
-        === nestedWorkspaceFixtureUuid('10000000', 3)
-    && $nestedMaximumData[2]['creator'] === null,
-    'A creator denied by the fixed principal predicate must remain an explicit null child.',
+    ($nestedMaximumData[2]['child_id'] ?? null)
+        === nestedParentFixtureUuid('10000000', 3)
+    && $nestedMaximumData[2]['child'] === null,
+    'A child denied by the fixed principal predicate must remain an explicit null child.',
 );
 requireScalingProof(
-    ($nestedMaximumData[4]['creator']['id'] ?? null)
-        === ($nestedMaximumData[4]['created_by_user_id'] ?? null),
-    'A present nested creator id must equal created_by_user_id.',
+    ($nestedMaximumData[4]['child']['id'] ?? null)
+        === ($nestedMaximumData[4]['child_id'] ?? null),
+    'A present nested child id must equal child_id.',
 );
 requireScalingProof(
     $nestedEmptyAccepted['body'] === $nestedEmptyRejected['body']
@@ -345,7 +345,7 @@ requireScalingProof(
 );
 requireScalingProof(
     $nestedMaximumRejected['maximum_executions'] === 50,
-    'Maximum N+1 creator lookup count changed.',
+    'Maximum N+1 child lookup count changed.',
 );
 requireScalingProof(
     !$nestedEmptyRejected['budget_exceeded']
@@ -377,57 +377,57 @@ requireScalingProof(
 
 foreach (
     [
-        '{"data":[{"id":"' . $workspaceOneId . '","name":"Workspace 1",'
-            . '"created_by_user_id":"' . $creatorOneId . '","creator_id":"'
-            . $creatorOneId . '"}]}',
-        '{"data":[{"id":"' . $workspaceOneId . '","name":"Workspace 1",'
-            . '"created_by_user_id":"' . $creatorOneId . '","creator":[]}]}',
-        '{"data":[{"id":"' . $workspaceOneId . '","name":"Workspace 1",'
-            . '"created_by_user_id":"' . $creatorOneId . '","creator":{"id":"'
-            . nestedWorkspaceFixtureUuid('10000000', 2)
-            . '","display_name":"Creator 1","avatar_url":null}}]}',
-        '{"data":[{"id":"' . $workspaceOneId . '","name":"Workspace 1",'
-            . '"created_by_user_id":"' . $creatorOneId . '","creator":{"id":"'
-            . $creatorOneId
-            . '","display_name":"Creator 1","avatar_url":"http://example.com/avatar.png"}}]}',
-        '{"data":[{"id":"' . $workspaceOneId . '","name":"Workspace 1",'
-            . '"created_by_user_id":"' . $creatorOneId . '","creator":{"id":"'
-            . $creatorOneId
-            . '","display_name":"Creator 1","avatar_url":null,"email":"private@example.com"}}]}',
+        '{"data":[{"id":"' . $parentOneId . '","label":"Parent 1",'
+            . '"child_id":"' . $childOneId . '","child_reference":"'
+            . $childOneId . '"}]}',
+        '{"data":[{"id":"' . $parentOneId . '","label":"Parent 1",'
+            . '"child_id":"' . $childOneId . '","child":[]}]}',
+        '{"data":[{"id":"' . $parentOneId . '","label":"Parent 1",'
+            . '"child_id":"' . $childOneId . '","child":{"id":"'
+            . nestedParentFixtureUuid('10000000', 2)
+            . '","label":"Child 1","public_url":null}}]}',
+        '{"data":[{"id":"' . $parentOneId . '","label":"Parent 1",'
+            . '"child_id":"' . $childOneId . '","child":{"id":"'
+            . $childOneId
+            . '","label":"Child 1","public_url":"http://example.com/child"}}]}',
+        '{"data":[{"id":"' . $parentOneId . '","label":"Parent 1",'
+            . '"child_id":"' . $childOneId . '","child":{"id":"'
+            . $childOneId
+            . '","label":"Child 1","public_url":null,"private_value":"hidden"}}]}',
     ] as $incompatibleNestedBody
 ) {
-    requireNestedWorkspaceDecoderRejection($incompatibleNestedBody . "\n");
+    requireNestedParentDecoderRejection($incompatibleNestedBody . "\n");
 }
 
-$expectedOneCreator = $expectedOneData[0]['creator'];
+$expectedOneChild = $expectedOneData[0]['child'];
 
 $oversizedNestedItemsBody = json_encode(
     ['data' => array_fill(0, 51, $expectedOneData[0])],
     JSON_THROW_ON_ERROR,
 ) . "\n";
-$oversizedNestedNameBody = json_encode(
+$oversizedNestedParentLabelBody = json_encode(
     ['data' => [[
         ...$expectedOneData[0],
-        'name' => str_repeat('w', 161),
+        'label' => str_repeat('p', 161),
     ]]],
     JSON_THROW_ON_ERROR,
 ) . "\n";
-$oversizedNestedDisplayNameBody = json_encode(
+$oversizedNestedLabelBody = json_encode(
     ['data' => [[
         ...$expectedOneData[0],
-        'creator' => [
-            ...$expectedOneCreator,
-            'display_name' => str_repeat('c', 161),
+        'child' => [
+            ...$expectedOneChild,
+            'label' => str_repeat('c', 161),
         ],
     ]]],
     JSON_THROW_ON_ERROR,
 ) . "\n";
-$oversizedNestedAvatarBody = json_encode(
+$oversizedNestedPublicUrlBody = json_encode(
     ['data' => [[
         ...$expectedOneData[0],
-        'creator' => [
-            ...$expectedOneCreator,
-            'avatar_url' => 'https://' . str_repeat('a', 2_041),
+        'child' => [
+            ...$expectedOneChild,
+            'public_url' => 'https://' . str_repeat('a', 2_041),
         ],
     ]]],
     JSON_THROW_ON_ERROR,
@@ -436,17 +436,17 @@ $oversizedNestedAvatarBody = json_encode(
 foreach (
     [
         $oversizedNestedItemsBody,
-        $oversizedNestedNameBody,
-        $oversizedNestedDisplayNameBody,
-        $oversizedNestedAvatarBody,
+        $oversizedNestedParentLabelBody,
+        $oversizedNestedLabelBody,
+        $oversizedNestedPublicUrlBody,
     ] as $incompatibleNestedBody
 ) {
-    requireNestedWorkspaceDecoderRejection($incompatibleNestedBody);
+    requireNestedParentDecoderRejection($incompatibleNestedBody);
 }
 
 fwrite(
     STDOUT,
-    "PASS query scaling: users accepted 1/page and rejected 3 -> 51; workspace.creator accepted 1/page and rejected 2 -> 51; budget stopped statement 4; mapping/JSON 0 database calls\n",
+    "PASS query scaling: users accepted 1/page and rejected 3 -> 51; parent.child accepted 1/page and rejected 2 -> 51; budget stopped statement 4; mapping/JSON 0 database calls\n",
 );
 
 /** @return array{body: string, statements: int, maximum_executions: int, truncated: bool} */
@@ -609,7 +609,7 @@ function runRejectedRead(
  *     phase_statements: array{after_load: int, after_mapping: int, after_encoding: int}
  * }
  */
-function runNestedWorkspaceFixture(
+function runNestedParentFixture(
     string $root,
     string $fixturePath,
     string $databasePath,
@@ -634,7 +634,7 @@ function runNestedWorkspaceFixture(
     );
 
     if (!is_resource($process)) {
-        throw new RuntimeException('Unable to start a nested workspace relationship fixture.');
+        throw new RuntimeException('Unable to start a nested parent relationship fixture.');
     }
 
     fclose($pipes[0]);
@@ -645,17 +645,17 @@ function runNestedWorkspaceFixture(
     $exitCode = proc_close($process);
 
     if (!is_string($stdout) || !is_string($stderr)) {
-        throw new RuntimeException('Unable to read nested workspace relationship output.');
+        throw new RuntimeException('Unable to read nested parent relationship output.');
     }
 
     if ($exitCode !== 0) {
-        throw new RuntimeException("Nested workspace relationship fixture failed.\n{$stderr}\n{$stdout}");
+        throw new RuntimeException("Nested parent relationship fixture failed.\n{$stderr}\n{$stdout}");
     }
 
     $decoded = json_decode($stdout, true, 32, JSON_THROW_ON_ERROR);
 
     if (!is_array($decoded)) {
-        throw new RuntimeException('Nested workspace relationship fixture did not return an object.');
+        throw new RuntimeException('Nested parent relationship fixture did not return an object.');
     }
 
     $body = $decoded['body'] ?? null;
@@ -676,7 +676,7 @@ function runNestedWorkspaceFixture(
         || !is_int($phaseStatements['after_encoding'])
         || !is_array($trace)
     ) {
-        throw new RuntimeException('Nested workspace relationship fixture returned an invalid result shape.');
+        throw new RuntimeException('Nested parent relationship fixture returned an invalid result shape.');
     }
 
     $statements = $trace['statements'] ?? null;
@@ -684,7 +684,7 @@ function runNestedWorkspaceFixture(
     $truncated = $trace['truncated'] ?? null;
 
     if (!is_int($statements) || !is_int($maximumExecutions) || !is_bool($truncated)) {
-        throw new RuntimeException('Nested workspace relationship fixture returned an invalid trace.');
+        throw new RuntimeException('Nested parent relationship fixture returned an invalid trace.');
     }
 
     return [
@@ -704,12 +704,12 @@ function runNestedWorkspaceFixture(
 /**
  * @return list<array{
  *     id: non-empty-string,
- *     name: non-empty-string,
- *     created_by_user_id: non-empty-string,
- *     creator: array{id: non-empty-string, display_name: non-empty-string, avatar_url: non-empty-string|null}|null
+ *     label: non-empty-string,
+ *     child_id: non-empty-string,
+ *     child: array{id: non-empty-string, label: non-empty-string, public_url: non-empty-string|null}|null
  * }>
  */
-function decodeNestedWorkspacePage(string $body): array
+function decodeNestedParentPage(string $body): array
 {
     $decoded = json_decode($body, false, 16, JSON_THROW_ON_ERROR);
 
@@ -721,94 +721,94 @@ function decodeNestedWorkspacePage(string $body): array
         || !array_is_list($decoded->data)
         || count($decoded->data) > 50
     ) {
-        throw new UnexpectedValueException('Nested workspace page is incompatible.');
+        throw new UnexpectedValueException('Nested parent page is incompatible.');
     }
 
-    $workspaces = [];
+    $parents = [];
 
-    foreach ($decoded->data as $workspace) {
-        if (!$workspace instanceof stdClass) {
-            throw new UnexpectedValueException('Nested workspace item must be an object.');
+    foreach ($decoded->data as $parent) {
+        if (!$parent instanceof stdClass) {
+            throw new UnexpectedValueException('Nested parent item must be an object.');
         }
 
-        $workspaces[] = decodeNestedWorkspaceItem($workspace);
+        $parents[] = decodeNestedParentItem($parent);
     }
 
-    return $workspaces;
+    return $parents;
 }
 
 /**
  * @return array{
  *     id: non-empty-string,
- *     name: non-empty-string,
- *     created_by_user_id: non-empty-string,
- *     creator: array{id: non-empty-string, display_name: non-empty-string, avatar_url: non-empty-string|null}|null
+ *     label: non-empty-string,
+ *     child_id: non-empty-string,
+ *     child: array{id: non-empty-string, label: non-empty-string, public_url: non-empty-string|null}|null
  * }
  */
-function decodeNestedWorkspaceItem(stdClass $workspace): array
+function decodeNestedParentItem(stdClass $parent): array
 {
     if (
-        count(get_object_vars($workspace)) !== 4
-        || !property_exists($workspace, 'id')
-        || !property_exists($workspace, 'name')
-        || !property_exists($workspace, 'created_by_user_id')
-        || !property_exists($workspace, 'creator')
+        count(get_object_vars($parent)) !== 4
+        || !property_exists($parent, 'id')
+        || !property_exists($parent, 'label')
+        || !property_exists($parent, 'child_id')
+        || !property_exists($parent, 'child')
     ) {
-        throw new UnexpectedValueException('Nested workspace item fields are incompatible.');
+        throw new UnexpectedValueException('Nested parent item fields are incompatible.');
     }
 
-    $workspaceId = decodedNestedWorkspaceUuid($workspace->id, 'id');
-    $workspaceName = decodedNestedWorkspaceText($workspace->name, 'name', 160);
-    $createdByUserId = decodedNestedWorkspaceUuid(
-        $workspace->created_by_user_id,
-        'created_by_user_id',
+    $parentId = decodedNestedParentUuid($parent->id, 'id');
+    $parentLabel = decodedNestedParentText($parent->label, 'label', 160);
+    $relatedChildId = decodedNestedParentUuid(
+        $parent->child_id,
+        'child_id',
     );
-    $creatorValue = $workspace->creator;
-    $creator = null;
+    $childValue = $parent->child;
+    $child = null;
 
-    if ($creatorValue !== null) {
+    if ($childValue !== null) {
         if (
-            !$creatorValue instanceof stdClass
-            || count(get_object_vars($creatorValue)) !== 3
-            || !property_exists($creatorValue, 'id')
-            || !property_exists($creatorValue, 'display_name')
-            || !property_exists($creatorValue, 'avatar_url')
+            !$childValue instanceof stdClass
+            || count(get_object_vars($childValue)) !== 3
+            || !property_exists($childValue, 'id')
+            || !property_exists($childValue, 'label')
+            || !property_exists($childValue, 'public_url')
         ) {
-            throw new UnexpectedValueException('Nested workspace creator fields are incompatible.');
+            throw new UnexpectedValueException('Nested parent child fields are incompatible.');
         }
 
-        $creatorId = decodedNestedWorkspaceUuid($creatorValue->id, 'creator.id');
+        $childId = decodedNestedParentUuid($childValue->id, 'child.id');
 
-        if ($creatorId !== $createdByUserId) {
-            throw new UnexpectedValueException('Nested creator id does not match created_by_user_id.');
+        if ($childId !== $relatedChildId) {
+            throw new UnexpectedValueException('Nested child id does not match child_id.');
         }
 
-        $displayName = decodedNestedWorkspaceText(
-            $creatorValue->display_name,
-            'creator.display_name',
+        $childLabel = decodedNestedParentText(
+            $childValue->label,
+            'child.label',
             160,
         );
-        $avatarUrlValue = $creatorValue->avatar_url;
-        $avatarUrl = $avatarUrlValue === null
+        $publicUrlValue = $childValue->public_url;
+        $publicUrl = $publicUrlValue === null
             ? null
-            : decodedNestedWorkspaceAvatarUrl($avatarUrlValue);
-        $creator = [
-            'id' => $creatorId,
-            'display_name' => $displayName,
-            'avatar_url' => $avatarUrl,
+            : decodedNestedParentPublicUrl($publicUrlValue);
+        $child = [
+            'id' => $childId,
+            'label' => $childLabel,
+            'public_url' => $publicUrl,
         ];
     }
 
     return [
-        'id' => $workspaceId,
-        'name' => $workspaceName,
-        'created_by_user_id' => $createdByUserId,
-        'creator' => $creator,
+        'id' => $parentId,
+        'label' => $parentLabel,
+        'child_id' => $relatedChildId,
+        'child' => $child,
     ];
 }
 
 /** @return non-empty-string */
-function decodedNestedWorkspaceUuid(mixed $value, string $field): string
+function decodedNestedParentUuid(mixed $value, string $field): string
 {
     if (
         !is_string($value)
@@ -817,14 +817,14 @@ function decodedNestedWorkspaceUuid(mixed $value, string $field): string
             $value,
         ) !== 1
     ) {
-        throw new UnexpectedValueException("Nested workspace {$field} is not a canonical lowercase UUID.");
+        throw new UnexpectedValueException("Nested parent {$field} is not a canonical lowercase UUID.");
     }
 
     return $value;
 }
 
 /** @return non-empty-string */
-function decodedNestedWorkspaceText(mixed $value, string $field, int $maximumBytes): string
+function decodedNestedParentText(mixed $value, string $field, int $maximumBytes): string
 {
     if (
         !is_string($value)
@@ -832,14 +832,14 @@ function decodedNestedWorkspaceText(mixed $value, string $field, int $maximumByt
         || strlen($value) > $maximumBytes
         || preg_match('//u', $value) !== 1
     ) {
-        throw new UnexpectedValueException("Nested workspace {$field} is outside its UTF-8 byte bound.");
+        throw new UnexpectedValueException("Nested parent {$field} is outside its UTF-8 byte bound.");
     }
 
     return $value;
 }
 
 /** @return non-empty-string */
-function decodedNestedWorkspaceAvatarUrl(mixed $value): string
+function decodedNestedParentPublicUrl(mixed $value): string
 {
     if (
         !is_string($value)
@@ -847,53 +847,53 @@ function decodedNestedWorkspaceAvatarUrl(mixed $value): string
         || strlen($value) > 2_048
         || preg_match('/^https:\/\/[!-~]+$/D', $value) !== 1
     ) {
-        throw new UnexpectedValueException('Nested workspace creator avatar is not a bounded HTTPS URL.');
+        throw new UnexpectedValueException('Nested parent child public URL is not a bounded HTTPS URL.');
     }
 
     return $value;
 }
 
-function requireNestedWorkspaceDecoderRejection(string $body): void
+function requireNestedParentDecoderRejection(string $body): void
 {
     try {
-        decodeNestedWorkspacePage($body);
+        decodeNestedParentPage($body);
     } catch (JsonException | UnexpectedValueException) {
         return;
     }
 
-    throw new RuntimeException('Expected incompatible nested workspace JSON to be rejected.');
+    throw new RuntimeException('Expected incompatible nested parent JSON to be rejected.');
 }
 
 /** @return non-empty-string */
-function nestedWorkspaceFixtureUuid(string $prefix, int $sequence): string
+function nestedParentFixtureUuid(string $prefix, int $sequence): string
 {
     if (
         !in_array($prefix, ['10000000', '20000000'], true)
         || $sequence < 1
         || $sequence > 50
     ) {
-        throw new InvalidArgumentException('Nested workspace fixture UUID input is outside its finite set.');
+        throw new InvalidArgumentException('Nested parent fixture UUID input is outside its finite set.');
     }
 
     return sprintf('%s-0000-4000-8000-%012d', $prefix, $sequence);
 }
 
-function createNestedWorkspaceDatabase(string $root, string $name, int $workspaceCount): string
+function createNestedParentDatabase(string $root, string $name, int $parentCount): string
 {
-    if (!in_array($workspaceCount, [0, 1, 50], true)) {
-        throw new InvalidArgumentException('Nested workspace fixture count must be 0, 1, or 50.');
+    if (!in_array($parentCount, [0, 1, 50], true)) {
+        throw new InvalidArgumentException('Nested parent fixture count must be 0, 1, or 50.');
     }
 
     $directory = $root . '/tmp/query-scaling';
 
     if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
-        throw new RuntimeException('Unable to create the nested workspace fixture directory.');
+        throw new RuntimeException('Unable to create the nested parent fixture directory.');
     }
 
     $databasePath = $directory . '/' . $name . '.sqlite';
 
     if (is_file($databasePath) && !unlink($databasePath)) {
-        throw new RuntimeException('Unable to reset a nested workspace fixture database.');
+        throw new RuntimeException('Unable to reset a nested parent fixture database.');
     }
 
     $connection = Connection::connect(
@@ -903,14 +903,14 @@ function createNestedWorkspaceDatabase(string $root, string $name, int $workspac
     );
     $connection->executeStatement(
         <<<'SQL'
-            CREATE TABLE users (
+            CREATE TABLE children (
                 id TEXT PRIMARY KEY,
                 tenant_id INTEGER NOT NULL,
-                display_name TEXT NOT NULL,
-                email TEXT NOT NULL,
-                avatar_url TEXT NULL,
-                status TEXT NOT NULL,
-                role TEXT NOT NULL,
+                label TEXT NOT NULL,
+                private_value TEXT NOT NULL,
+                public_url TEXT NULL,
+                internal_state TEXT NOT NULL,
+                internal_kind TEXT NOT NULL,
                 is_visible INTEGER NOT NULL,
                 authorized_principal_id INTEGER NOT NULL
             )
@@ -918,12 +918,12 @@ function createNestedWorkspaceDatabase(string $root, string $name, int $workspac
     );
     $connection->executeStatement(
         <<<'SQL'
-            CREATE TABLE workspaces (
+            CREATE TABLE parents (
                 id TEXT PRIMARY KEY,
                 tenant_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                slug TEXT NOT NULL,
-                created_by_user_id TEXT NOT NULL,
+                label TEXT NOT NULL,
+                private_value TEXT NOT NULL,
+                child_id TEXT NOT NULL,
                 is_visible INTEGER NOT NULL,
                 authorized_principal_id INTEGER NOT NULL
             )
@@ -933,67 +933,67 @@ function createNestedWorkspaceDatabase(string $root, string $name, int $workspac
         <<<'SQL'
             WITH RECURSIVE sequence(value) AS (
                 SELECT 1
-                WHERE :creator_count_start >= 1
+                WHERE :child_count_start >= 1
                 UNION ALL
                 SELECT value + 1
                 FROM sequence
-                WHERE value < :creator_count_next
+                WHERE value < :child_count_next
             )
-            INSERT INTO users (
+            INSERT INTO children (
                 id,
                 tenant_id,
-                display_name,
-                email,
-                avatar_url,
-                status,
-                role,
+                label,
+                private_value,
+                public_url,
+                internal_state,
+                internal_kind,
                 is_visible,
                 authorized_principal_id
             )
             SELECT
                 printf('10000000-0000-4000-8000-%012d', sequence.value),
                 CASE WHEN sequence.value = 50 THEN 99 ELSE 42 END,
-                'Creator ' || sequence.value,
-                'creator' || sequence.value || '@example.com',
+                'Child ' || sequence.value,
+                'child-private-' || sequence.value,
                 CASE
-                    WHEN sequence.value = 1 THEN 'https://example.com/avatars/1.png'
+                    WHEN sequence.value = 1 THEN 'https://example.com/children/1'
                     ELSE NULL
                 END,
-                'active',
-                'workspace_creator',
+                'internal-ready',
+                'nested-child',
                 CASE WHEN sequence.value = 2 THEN 0 ELSE 1 END,
                 CASE WHEN sequence.value = 3 THEN 8 ELSE 7 END
             FROM sequence
             SQL,
         [
-            'creator_count_start' => $workspaceCount,
-            'creator_count_next' => $workspaceCount,
+            'child_count_start' => $parentCount,
+            'child_count_next' => $parentCount,
         ],
     );
     $connection->executeStatement(
         <<<'SQL'
             WITH RECURSIVE sequence(value) AS (
                 SELECT 1
-                WHERE :workspace_count_start >= 1
+                WHERE :parent_count_start >= 1
                 UNION ALL
                 SELECT value + 1
                 FROM sequence
-                WHERE value < :workspace_count_next
+                WHERE value < :parent_count_next
             )
-            INSERT INTO workspaces (
+            INSERT INTO parents (
                 id,
                 tenant_id,
-                name,
-                slug,
-                created_by_user_id,
+                label,
+                private_value,
+                child_id,
                 is_visible,
                 authorized_principal_id
             )
             SELECT
                 printf('20000000-0000-4000-8000-%012d', sequence.value),
                 42,
-                'Workspace ' || sequence.value,
-                'workspace-' || sequence.value,
+                'Parent ' || sequence.value,
+                'parent-private-' || sequence.value,
                 CASE
                     WHEN sequence.value = 4 THEN '10000000-0000-4000-8000-000000000050'
                     ELSE printf('10000000-0000-4000-8000-%012d', sequence.value)
@@ -1005,8 +1005,8 @@ function createNestedWorkspaceDatabase(string $root, string $name, int $workspac
             SELECT
                 '00000000-0000-4000-8000-000000000001',
                 42,
-                'Hidden Workspace',
-                'hidden-workspace',
+                'Hidden Parent',
+                'hidden-parent-private',
                 '10000000-0000-4000-8000-000000000001',
                 0,
                 7
@@ -1014,8 +1014,8 @@ function createNestedWorkspaceDatabase(string $root, string $name, int $workspac
             SELECT
                 '00000000-0000-4000-8000-000000000002',
                 99,
-                'Other Tenant Workspace',
-                'other-tenant-workspace',
+                'Other Tenant Parent',
+                'other-tenant-parent-private',
                 '10000000-0000-4000-8000-000000000001',
                 1,
                 7
@@ -1023,15 +1023,15 @@ function createNestedWorkspaceDatabase(string $root, string $name, int $workspac
             SELECT
                 '00000000-0000-4000-8000-000000000003',
                 42,
-                'Denied Workspace',
-                'denied-workspace',
+                'Denied Parent',
+                'denied-parent-private',
                 '10000000-0000-4000-8000-000000000001',
                 1,
                 8
             SQL,
         [
-            'workspace_count_start' => $workspaceCount,
-            'workspace_count_next' => $workspaceCount,
+            'parent_count_start' => $parentCount,
+            'parent_count_next' => $parentCount,
         ],
     );
 

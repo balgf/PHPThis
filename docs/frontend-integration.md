@@ -51,30 +51,27 @@ This recommendation adds no runtime wrapper, serializer, resource class, paginat
 
 ## Embed nested resources without N+1 I/O
 
-An operation may embed a child object or collection inside its application-owned `data` representation. Name the relationship for its meaning in that operation: `creator` communicates more than an ambiguous `user`. For example, an application could deliberately publish this bounded workspace summary:
+An operation may embed a child object or collection inside its application-owned `data` representation. Give the relationship an operation-specific role name. This guide uses `parent.child` only as neutral notation; an application does not copy those words when its domain has a more precise name. A conceptual bounded to-one representation can have this shape:
 
 ```json
 {
   "data": [
     {
-      "id": "cd7fcaf6-7b5c-4b25-a2f6-01ecad54f86b",
-      "name": "Workspace 2",
-      "created_by_user_id": "3f9a5f00-3509-47b0-ac2f-4d648956381a",
-      "creator": {
-        "id": "3f9a5f00-3509-47b0-ac2f-4d648956381a",
-        "display_name": "Super Admin",
-        "avatar_url": null
+      "id": "parent-id",
+      "child_id": "child-id",
+      "child": {
+        "id": "child-id"
       }
     }
   ]
 }
 ```
 
-This is a conceptual operation contract, not a framework resource schema. The operation decides whether `creator` is required, is `null`, or is absent when no visible creator exists. If it emits both `created_by_user_id` and `creator.id`, it records and tests that they are equal. It exposes only fields required by this handoff; a column such as email, role, or status is not public merely because the data query can select it. Parent and child tenant scope and current authorization remain explicit, including the policy for a related row that exists but the principal may not see.
+This is neutral notation, not a framework resource schema or a recommendation to emit fields literally named `child` or `child_id`. The operation decides whether its relationship field is required, is `null`, or is absent when no visible related row exists. If it emits both a child relationship identifier and the nested child's identifier, it records and tests that they are equal. It exposes only fields required by this handoff; a field is not public merely because the data query can select it. The operation records whether tenant scope or authorization applies to either relationship role and, when applicable, keeps those predicates and the policy for a related row the principal may not see explicit.
 
-The complete I/O plan remains fixed and bounded independently of parent-page cardinality. Perform all database, cache, and external-service operations before resource mapping and JSON encoding; those later phases perform no I/O, whether directly, through a callback, or through recursive traversal. For an ordinary to-one relationship such as `workspace.creator`, prefer one explicit bounded join. When one statement would be inappropriate, a finite batch plan is valid only when its complete I/O count is fixed; one lookup per workspace is never valid. `PHT003` catches direct lexical database calls inside loops, but it does not prove that an indirectly called mapper, cache client, or integration performs no I/O. Query budgets, operation counters, and one-parent-versus-maximum-page scale evidence close that gap.
+The complete I/O plan remains fixed and bounded independently of parent-page cardinality. Perform all database, cache, and external-service operations before resource mapping and JSON encoding; those later phases perform no I/O, whether directly, through a callback, or through recursive traversal. For an ordinary to-one `parent.child` relationship, prefer one explicit bounded join. When one statement would be inappropriate, a finite batch plan is valid only when its complete I/O count is fixed; one child lookup per parent is never valid. `PHT003` catches direct lexical database calls inside loops, but it does not prove that an indirectly called mapper, cache client, or integration performs no I/O. Query budgets, operation counters, and one-parent-versus-maximum-page scale evidence close that gap.
 
-The checked application-owned `workspace.creator` fixture uses one bounded left join for a capped collection of at most 50 parent workspaces, preserves the selected parent count and order, applies explicit tenant, visibility, and fixed-principal predicates to parents and creators, emits `creator` as an exact object or `null`, proves identifier equality when present, and preserves the existing published example endpoint contracts. A separate denial control stops before connection creation and executes zero statements. This isolated proof defines no continuation and does not establish request authentication or policy composition. See [Database boundaries](database.md#n1-safe-nested-resource-plans).
+The checked application-owned nested-resource fixture uses one bounded left join for a capped collection of at most 50 parents, preserves the selected parent count and order, applies explicit tenant, visibility, and fixed-principal predicates to both relationship roles, emits the optional child as an exact object or `null`, proves identifier equality when present, and preserves the existing published example endpoint contracts. A separate denial control stops before connection creation and executes zero statements. This isolated proof defines no continuation and does not establish request authentication or policy composition. See [Database boundaries](database.md#n1-safe-nested-resource-plans).
 
 Parent pagination remains the controlling contract. A joined child must not change the number or order of emitted parents, continuation value, or duplicate-parent behavior. Each nested collection needs its own exact maximum cardinality, deterministic ordering, truncation behavior, continuation policy, and contribution to the response byte limit; do not let an unbounded child collection hide inside a bounded parent page.
 
