@@ -619,6 +619,1393 @@ function forbidGuardrailArtifactMarkers(
     }
 }
 
+/** @return non-empty-list<non-empty-string> */
+function consumerProjectHarnessModulePaths(): array
+{
+    return [
+        'tools/test-consumer-project/support.php',
+        'tools/test-consumer-project/guidance.php',
+        'tools/test-consumer-project/http.php',
+        'tools/test-consumer-project/application.php',
+        'tools/test-consumer-project/data.php',
+        'tools/test-consumer-project/configuration.php',
+        'tools/test-consumer-project/profile-controls.php',
+    ];
+}
+
+/** @return non-empty-list<non-empty-string> */
+function consumerProjectHarnessPaths(): array
+{
+    return [
+        'tools/test-consumer-project.php',
+        ...consumerProjectHarnessModulePaths(),
+    ];
+}
+
+/** @return array<non-empty-string, string>|null */
+function consumerProjectHarnessSources(string $root): ?array
+{
+    $sources = [];
+
+    foreach (consumerProjectHarnessPaths() as $relativePath) {
+        $source = file_get_contents($root . '/' . $relativePath);
+
+        if (!is_string($source)) {
+            return null;
+        }
+
+        $sources[$relativePath] = $source;
+    }
+
+    return $sources;
+}
+
+/**
+ * @param non-empty-list<non-empty-string> $markers
+ * @param non-empty-string $artifactLabel
+ * @param list<string> $failures
+ */
+function forbidConsumerProjectHarnessMarkers(
+    string $root,
+    array $markers,
+    string $artifactLabel,
+    array &$failures,
+): void {
+    $sources = consumerProjectHarnessSources($root);
+
+    if ($sources === null) {
+        $failures[] = "Cannot read the complete installed-consumer harness while checking {$artifactLabel}.";
+
+        return;
+    }
+
+    foreach ($sources as $relativePath => $source) {
+        foreach ($markers as $marker) {
+            if (str_contains($source, $marker)) {
+                $failures[] = "{$artifactLabel} artifact {$relativePath} contains forbidden marker: {$marker}";
+            }
+        }
+    }
+}
+
+/**
+ * @return array<non-empty-string, non-empty-list<non-empty-string>>
+ */
+function consumerProjectHarnessExpectedModuleFunctions(): array
+{
+    return [
+        'tools/test-consumer-project/support.php' => [
+            'requireInstalledArtifactMarkers',
+            'forbidInstalledArtifactMarkers',
+            'requireInstalledNativeRuntimeDependencyBoundary',
+            'installedSyntheticDatabaseContext',
+            'processEnvironment',
+            'environmentWithout',
+            'environmentWithEmptyValue',
+            'composerBinary',
+            'composerCommand',
+            'runProcess',
+            'requireExactProcessResult',
+            'requireExactFailureLines',
+            'requireSuccess',
+            'requireFailure',
+            'requireOutputContains',
+            'requireOutputNotContains',
+            'requireStdoutContains',
+            'requireStdoutNotContains',
+            'advisoryOutput',
+            'expectedArchiveFiles',
+            'verifyExportPolicies',
+            'archiveFiles',
+            'directoryFiles',
+            'inventoryDifference',
+            'configureIsolatedConsumer',
+            'verifySkeletonPublicationBoundary',
+            'jsonFile',
+            'writeJson',
+            'pathRepository',
+            'lockedVersion',
+            'writeFile',
+            'copyDirectory',
+            'removeDirectory',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
+            'proveInstalledGuidanceReferencesResolve',
+            'configuredComposerVendorDirectory',
+            'markdownFilesFromInventory',
+            'requireInstalledGuidanceReferences',
+            'installedDependencyReferences',
+            'requireInstalledGuidanceReferenceFailure',
+            'proveRoutedInstalledGuidanceOwnerFailure',
+            'proveInstalledReferenceClarityDistribution',
+            'proveInstalledReleaseGuidanceDistribution',
+            'proveInstalledTestRunnerModularizationGuidanceDistribution',
+            'proveInstalledStatelessAuthenticationGuidanceDistribution',
+            'installedStatelessAuthenticationPackageIsForbidden',
+            'requireInstalledStatelessAuthenticationRuntimeApiBoundary',
+            'installedStatelessAuthenticationRuntimeApiIdentifierIsForbidden',
+            'proveInstalledNativeDateTimeGuidanceDistribution',
+            'proveInstalledFrontendIntegrationGuidanceDistribution',
+        ],
+        'tools/test-consumer-project/http.php' => [
+            'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
+            'proveInstalledFieldValidationErrorGuidanceDistribution',
+            'proveInstalledSessionCleanupAndResponseFramingDistribution',
+            'proveInstalledBoundedResponseCookieProfileDistribution',
+        ],
+        'tools/test-consumer-project/application.php' => [
+            'proveInstalledTransactionalEmailGuidanceDistribution',
+            'proveInstalledOneShotWorkerSupervisionGuidanceDistribution',
+            'proveInstalledAgentEvaluationGuidanceDistribution',
+            'proveInstalledDatabaseSetupGuidanceDistribution',
+            'proveInstalledWorkbenchGuidanceDistribution',
+            'proveInstalledStartupProbeGuidanceDistribution',
+            'proveInstalledRequestHandlerDecorator',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            'proveInstalledBoundedTaskRoutedContextGuidanceDistribution',
+            'proveInstalledCrudAccessSurfaceGuidanceDistribution',
+            'proveInstalledIdentifierRepresentationGuidanceDistribution',
+            'proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution',
+            'proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution',
+            'proveInstalledMigrationStructureGuidanceDistribution',
+            'proveInstalledUuidAndUlidRouting',
+            'proveDatabaseContextConnectionConsistency',
+        ],
+        'tools/test-consumer-project/configuration.php' => [
+            'proveInstalledTypedConfiguration',
+            'proveInstalledConfigurationEvidenceReference',
+        ],
+        'tools/test-consumer-project/profile-controls.php' => [
+            'proveDuplicationAdvisoryIsReportOnly',
+            'proveObservabilityContextIsRequired',
+            'proveConfigurationContextIsRequired',
+            'proveEveryApplicationDirectoryIsChecked',
+            'proveValidExtensionlessExecutableIsChecked',
+            'proveMagicMethodsAreRejected',
+            'proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected',
+            'proveDependencyDirectoryIsExcluded',
+            'proveMixedCoercionIsRejected',
+            'proveDirectPdoConstructionIsRejected',
+            'proveNativeSessionAccessIsRejected',
+            'proveEnvironmentAccessIsRejected',
+            'proveDynamicSqlIsRejected',
+            'proveConfigurationCannotReplaceProfile',
+            'proveBaselinesAndInlineIgnoresAreRejected',
+            'proveComposerGateCannotDrift',
+            'proveSymlinkedSourceIsRejected',
+        ],
+    ];
+}
+
+/**
+ * @return array{valid: bool, functions: list<string>}
+ */
+function consumerProjectHarnessModuleStructure(string $source): array
+{
+    $tokens = token_get_all($source);
+    $mode = 'top-level';
+    $functionBodyDepth = 0;
+    $declareStatement = '';
+    $declareStatements = [];
+    $functions = [];
+    $valid = true;
+
+    foreach ($tokens as $index => $token) {
+        $tokenId = is_array($token) ? $token[0] : null;
+        $tokenText = routingTokenText($token);
+
+        if (in_array($tokenId, [T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE], true)) {
+            $valid = false;
+        }
+
+        if ($mode === 'function-body') {
+            if ($tokenText === '{') {
+                $functionBodyDepth++;
+            } elseif ($tokenText === '}') {
+                $functionBodyDepth--;
+
+                if ($functionBodyDepth === 0) {
+                    $mode = 'top-level';
+                }
+            }
+
+            continue;
+        }
+
+        if ($mode === 'function-signature') {
+            if ($tokenText === '{') {
+                $mode = 'function-body';
+                $functionBodyDepth = 1;
+            } elseif ($tokenText === ';') {
+                $valid = false;
+                $mode = 'top-level';
+            }
+
+            continue;
+        }
+
+        if ($mode === 'declare') {
+            if (!is_array($token) || !in_array($tokenId, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                $declareStatement .= $tokenText;
+            }
+
+            if ($tokenText === ';') {
+                $declareStatements[] = $declareStatement;
+                $declareStatement = '';
+                $mode = 'top-level';
+            }
+
+            continue;
+        }
+
+        if (
+            $tokenId === T_OPEN_TAG
+            || in_array($tokenId, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+        ) {
+            continue;
+        }
+
+        if ($tokenId === T_DECLARE) {
+            $mode = 'declare';
+            $declareStatement = $tokenText;
+
+            continue;
+        }
+
+        if ($tokenId === T_FUNCTION) {
+            $nameIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+            $nameToken = $nameIndex === null ? null : $tokens[$nameIndex];
+
+            if (!is_array($nameToken) || $nameToken[0] !== T_STRING) {
+                $valid = false;
+            } else {
+                $functions[] = $nameToken[1];
+            }
+
+            $mode = 'function-signature';
+
+            continue;
+        }
+
+        $valid = false;
+    }
+
+    if ($mode !== 'top-level' || $declareStatements !== ['declare(strict_types=1);']) {
+        $valid = false;
+    }
+
+    return ['valid' => $valid, 'functions' => $functions];
+}
+
+/** @return non-empty-list<non-empty-string> */
+function consumerProjectHarnessExpectedProofCalls(): array
+{
+    return [
+        'proveInstalledGuidanceReferencesResolve',
+        'proveInstalledReleaseGuidanceDistribution',
+        'proveInstalledReferenceClarityDistribution',
+        'proveInstalledNativeDateTimeGuidanceDistribution',
+        'proveInstalledFrontendIntegrationGuidanceDistribution',
+        'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
+        'proveInstalledFieldValidationErrorGuidanceDistribution',
+        'proveInstalledTransactionalEmailGuidanceDistribution',
+        'proveInstalledOneShotWorkerSupervisionGuidanceDistribution',
+        'proveInstalledTestRunnerModularizationGuidanceDistribution',
+        'proveInstalledStatelessAuthenticationGuidanceDistribution',
+        'proveInstalledAgentEvaluationGuidanceDistribution',
+        'proveInstalledDatabaseSetupGuidanceDistribution',
+        'proveInstalledStartupProbeGuidanceDistribution',
+        'proveInstalledSessionCleanupAndResponseFramingDistribution',
+        'proveInstalledBoundedResponseCookieProfileDistribution',
+        'proveInstalledBoundedTaskRoutedContextGuidanceDistribution',
+        'proveInstalledCrudAccessSurfaceGuidanceDistribution',
+        'proveInstalledIdentifierRepresentationGuidanceDistribution',
+        'proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution',
+        'proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution',
+        'proveInstalledMigrationStructureGuidanceDistribution',
+        'proveInstalledWorkbenchGuidanceDistribution',
+        'proveInstalledUuidAndUlidRouting',
+        'proveDatabaseContextConnectionConsistency',
+        'proveInstalledTypedConfiguration',
+        'proveInstalledConfigurationEvidenceReference',
+        'proveInstalledRequestHandlerDecorator',
+        'proveDuplicationAdvisoryIsReportOnly',
+        'proveObservabilityContextIsRequired',
+        'proveConfigurationContextIsRequired',
+        'proveEveryApplicationDirectoryIsChecked',
+        'proveValidExtensionlessExecutableIsChecked',
+        'proveMagicMethodsAreRejected',
+        'proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected',
+        'proveDependencyDirectoryIsExcluded',
+        'proveMixedCoercionIsRejected',
+        'proveDirectPdoConstructionIsRejected',
+        'proveNativeSessionAccessIsRejected',
+        'proveEnvironmentAccessIsRejected',
+        'proveDynamicSqlIsRejected',
+        'proveConfigurationCannotReplaceProfile',
+        'proveBaselinesAndInlineIgnoresAreRejected',
+        'proveComposerGateCannotDrift',
+        'proveSymlinkedSourceIsRejected',
+    ];
+}
+
+/** @return array<non-empty-string, non-empty-string> */
+function consumerProjectHarnessExpectedProofStatements(): array
+{
+    return [
+        'proveInstalledGuidanceReferencesResolve' => 'proveInstalledGuidanceReferencesResolve($root,$workspace,$archivePath,$composerBinary,$environment);',
+        'proveInstalledReleaseGuidanceDistribution' => 'proveInstalledReleaseGuidanceDistribution($installedFramework);',
+        'proveInstalledReferenceClarityDistribution' => 'proveInstalledReferenceClarityDistribution($installedFramework);',
+        'proveInstalledNativeDateTimeGuidanceDistribution' => 'proveInstalledNativeDateTimeGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledFrontendIntegrationGuidanceDistribution' => 'proveInstalledFrontendIntegrationGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledStructuredJsonSuccessEnvelopeDistribution' => '$installedStructuredJsonProofCompletion=proveInstalledStructuredJsonSuccessEnvelopeDistribution($project,$installedFramework,$environment);',
+        'proveInstalledFieldValidationErrorGuidanceDistribution' => '$installedFieldValidationProofCompletion=proveInstalledFieldValidationErrorGuidanceDistribution($project,$installedFramework,$environment);',
+        'proveInstalledTransactionalEmailGuidanceDistribution' => 'proveInstalledTransactionalEmailGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledOneShotWorkerSupervisionGuidanceDistribution' => 'proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledTestRunnerModularizationGuidanceDistribution' => 'proveInstalledTestRunnerModularizationGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledStatelessAuthenticationGuidanceDistribution' => 'proveInstalledStatelessAuthenticationGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledAgentEvaluationGuidanceDistribution' => 'proveInstalledAgentEvaluationGuidanceDistribution($installedFramework,$archiveFiles);',
+        'proveInstalledDatabaseSetupGuidanceDistribution' => 'proveInstalledDatabaseSetupGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledStartupProbeGuidanceDistribution' => 'proveInstalledStartupProbeGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledSessionCleanupAndResponseFramingDistribution' => 'proveInstalledSessionCleanupAndResponseFramingDistribution($project,$installedFramework);',
+        'proveInstalledBoundedResponseCookieProfileDistribution' => 'proveInstalledBoundedResponseCookieProfileDistribution($project,$installedFramework,$environment);',
+        'proveInstalledBoundedTaskRoutedContextGuidanceDistribution' => 'proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledCrudAccessSurfaceGuidanceDistribution' => 'proveInstalledCrudAccessSurfaceGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledIdentifierRepresentationGuidanceDistribution' => 'proveInstalledIdentifierRepresentationGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution' => 'proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution' => 'proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledMigrationStructureGuidanceDistribution' => 'proveInstalledMigrationStructureGuidanceDistribution($project,$installedFramework,$profileCommand,$environment);',
+        'proveInstalledWorkbenchGuidanceDistribution' => '$installedWorkbenchGuidanceProof=proveInstalledWorkbenchGuidanceDistribution($project,$installedFramework,$profileCommand,$environment);',
+        'proveInstalledUuidAndUlidRouting' => 'proveInstalledUuidAndUlidRouting($project,$environment);',
+        'proveDatabaseContextConnectionConsistency' => 'proveDatabaseContextConnectionConsistency($project,$profileCommand,$environment);',
+        'proveInstalledTypedConfiguration' => 'proveInstalledTypedConfiguration($project,$profileCommand,$environment);',
+        'proveInstalledConfigurationEvidenceReference' => 'proveInstalledConfigurationEvidenceReference($project,$installedFramework,$profileCommand,$environment);',
+        'proveInstalledRequestHandlerDecorator' => '$requestHandlerDecoratorProofPath=proveInstalledRequestHandlerDecorator($project,$environment);',
+        'proveDuplicationAdvisoryIsReportOnly' => 'proveDuplicationAdvisoryIsReportOnly($project,$composerBinary,$profileCommand,$environment);',
+        'proveObservabilityContextIsRequired' => 'proveObservabilityContextIsRequired($project,$profileCommand,$environment);',
+        'proveConfigurationContextIsRequired' => 'proveConfigurationContextIsRequired($project,$profileCommand,$environment);',
+        'proveEveryApplicationDirectoryIsChecked' => 'proveEveryApplicationDirectoryIsChecked($project,$profileCommand,$environment);',
+        'proveValidExtensionlessExecutableIsChecked' => 'proveValidExtensionlessExecutableIsChecked($project,$profileCommand,$environment);',
+        'proveMagicMethodsAreRejected' => 'proveMagicMethodsAreRejected($project,$profileCommand,$environment);',
+        'proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected' => 'proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected($project,$profileCommand,$environment);',
+        'proveDependencyDirectoryIsExcluded' => 'proveDependencyDirectoryIsExcluded($project,$profileCommand,$environment);',
+        'proveMixedCoercionIsRejected' => 'proveMixedCoercionIsRejected($project,$profileCommand,$environment);',
+        'proveDirectPdoConstructionIsRejected' => 'proveDirectPdoConstructionIsRejected($project,$profileCommand,$environment);',
+        'proveNativeSessionAccessIsRejected' => 'proveNativeSessionAccessIsRejected($project,$profileCommand,$environment);',
+        'proveEnvironmentAccessIsRejected' => 'proveEnvironmentAccessIsRejected($project,$profileCommand,$environment);',
+        'proveDynamicSqlIsRejected' => 'proveDynamicSqlIsRejected($project,$profileCommand,$environment);',
+        'proveConfigurationCannotReplaceProfile' => 'proveConfigurationCannotReplaceProfile($project,$profileCommand,$environment);',
+        'proveBaselinesAndInlineIgnoresAreRejected' => 'proveBaselinesAndInlineIgnoresAreRejected($project,$profileCommand,$environment);',
+        'proveComposerGateCannotDrift' => 'proveComposerGateCannotDrift($project,$composerBinary,$profileCommand,$environment);',
+        'proveSymlinkedSourceIsRejected' => 'proveSymlinkedSourceIsRejected($workspace,$project,$profileCommand,$environment);',
+    ];
+}
+
+/** @param list<array{0: int, 1: string, 2: int}|string> $tokens */
+function consumerProjectHarnessNormalizedStatement(array $tokens, int $callIndex): string
+{
+    $startIndex = 0;
+
+    for ($index = $callIndex - 1; $index >= 0; $index--) {
+        $tokenText = routingTokenText($tokens[$index]);
+
+        if (in_array($tokenText, [';', '{', '}'], true)) {
+            $startIndex = $index + 1;
+            break;
+        }
+    }
+
+    $statement = '';
+
+    for ($index = $startIndex, $count = count($tokens); $index < $count; $index++) {
+        $token = $tokens[$index];
+
+        if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+
+        $statement .= routingTokenText($token);
+
+        if (routingTokenText($token) === ';') {
+            break;
+        }
+    }
+
+    return str_replace(',)', ')', $statement);
+}
+
+function consumerProjectHarnessTokenNormalizedFingerprint(string $source): string
+{
+    $normalized = '';
+
+    foreach (token_get_all($source) as $token) {
+        if (
+            is_array($token)
+            && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+        ) {
+            continue;
+        }
+
+        if (is_array($token)) {
+            $kind = token_name($token[0]);
+            $text = $token[0] === T_OPEN_TAG ? '<?php' : $token[1];
+        } else {
+            $kind = 'CHAR';
+            $text = $token;
+        }
+
+        $normalized .= strlen($kind) . ':' . $kind . ':' . strlen($text) . ':' . $text . ';';
+    }
+
+    return hash('sha256', $normalized);
+}
+
+function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source): bool
+{
+    $tokens = token_get_all($source);
+    $expectedCalls = consumerProjectHarnessExpectedProofCalls();
+    $expectedStatements = consumerProjectHarnessExpectedProofStatements();
+    $actualCalls = [];
+    $braceDepth = 0;
+    $outerTryDepth = null;
+    $outerTryPending = false;
+    $insideOuterTry = false;
+    $outerTryBodyClosed = false;
+    $alternativeSyntaxTokens = [
+        T_ENDDECLARE,
+        T_ENDFOR,
+        T_ENDFOREACH,
+        T_ENDIF,
+        T_ENDSWITCH,
+        T_ENDWHILE,
+    ];
+    $dynamicDispatchFunctions = [
+        'call_user_func',
+        'call_user_func_array',
+        'forward_static_call',
+        'forward_static_call_array',
+        'fromcallable',
+    ];
+    $allowedDirectCalls = array_fill_keys(
+        [
+            ...$expectedCalls,
+            'RuntimeException',
+            'archiveFiles',
+            'bin2hex',
+            'composerBinary',
+            'composerCommand',
+            'configureIsolatedConsumer',
+            'copyDirectory',
+            'count',
+            'directoryFiles',
+            'dirname',
+            'expectedArchiveFiles',
+            'fwrite',
+            'inventoryDifference',
+            'is_dir',
+            'is_executable',
+            'is_file',
+            'is_link',
+            'mkdir',
+            'processEnvironment',
+            'random_bytes',
+            'removeDirectory',
+            'requireOutputContains',
+            'requireOutputNotContains',
+            'requireStdoutContains',
+            'requireStdoutNotContains',
+            'requireSuccess',
+            'runProcess',
+            'sprintf',
+            'sys_get_temp_dir',
+            'unlink',
+            'verifyExportPolicies',
+            'verifySkeletonPublicationBoundary',
+        ],
+        true,
+    );
+
+    foreach ($expectedCalls as $expectedCall) {
+        if (substr_count($source, $expectedCall) !== 1) {
+            return false;
+        }
+    }
+
+    foreach ($tokens as $index => $token) {
+        $tokenText = routingTokenText($token);
+
+        if (
+            is_array($token)
+            && in_array(
+                $token[0],
+                [T_RETURN, T_EXIT, T_GOTO, T_HALT_COMPILER, T_YIELD, T_YIELD_FROM],
+                true,
+            )
+        ) {
+            return false;
+        }
+
+        if (is_array($token) && in_array($token[0], $alternativeSyntaxTokens, true)) {
+            return false;
+        }
+
+        if (
+            is_array($token)
+            && in_array(
+                $token[0],
+                [
+                    T_DOUBLE_COLON,
+                    T_EVAL,
+                    T_NAME_FULLY_QUALIFIED,
+                    T_NAME_QUALIFIED,
+                    T_NAME_RELATIVE,
+                    T_NULLSAFE_OBJECT_OPERATOR,
+                    T_OBJECT_OPERATOR,
+                ],
+                true,
+            )
+        ) {
+            return false;
+        }
+
+        if (is_array($token) && $token[0] === T_TRY && $braceDepth === 0 && $outerTryDepth === null) {
+            $outerTryPending = true;
+        }
+
+        if (
+            is_array($token)
+            && $token[0] === T_THROW
+            && (
+                $braceDepth === 0
+                || ($outerTryDepth !== null && $braceDepth === $outerTryDepth)
+            )
+        ) {
+            return false;
+        }
+
+        if (is_array($token) && $token[0] === T_CATCH) {
+            return false;
+        }
+
+        if ($tokenText === '{') {
+            $braceDepth++;
+
+            if ($outerTryPending) {
+                $outerTryDepth = $braceDepth;
+                $outerTryPending = false;
+                $insideOuterTry = true;
+            }
+
+            continue;
+        }
+
+        if ($tokenText === '}') {
+            if ($insideOuterTry && $outerTryDepth === $braceDepth) {
+                $insideOuterTry = false;
+                $outerTryBodyClosed = true;
+            }
+
+            $braceDepth--;
+            continue;
+        }
+
+        $nextIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+
+        if (
+            $nextIndex !== null
+            && routingTokenText($tokens[$nextIndex]) === '('
+            && (
+                (is_array($token) && in_array($token[0], [T_VARIABLE, T_CONSTANT_ENCAPSED_STRING], true))
+                || in_array($tokenText, [')', ']'], true)
+            )
+        ) {
+            return false;
+        }
+
+        if (
+            !is_array($token)
+            || $token[0] !== T_STRING
+        ) {
+            continue;
+        }
+
+        if (
+            $nextIndex !== null
+            && routingTokenText($tokens[$nextIndex]) === '('
+            && in_array(strtolower($token[1]), $dynamicDispatchFunctions, true)
+        ) {
+            return false;
+        }
+
+        if (
+            $nextIndex !== null
+            && routingTokenText($tokens[$nextIndex]) === '('
+            && !isset($allowedDirectCalls[$token[1]])
+        ) {
+            return false;
+        }
+
+        if ($nextIndex !== null && routingTokenText($tokens[$nextIndex]) === ':') {
+            $previousIndex = null;
+
+            for ($candidateIndex = $index - 1; $candidateIndex >= 0; $candidateIndex--) {
+                $candidate = $tokens[$candidateIndex];
+
+                if (is_array($candidate) && in_array($candidate[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                $previousIndex = $candidateIndex;
+                break;
+            }
+
+            if (
+                $previousIndex === null
+                || in_array(routingTokenText($tokens[$previousIndex]), [';', '{', '}'], true)
+            ) {
+                return false;
+            }
+        }
+
+        if (!str_starts_with($token[1], 'prove')) {
+            continue;
+        }
+
+        if ($nextIndex === null || routingTokenText($tokens[$nextIndex]) !== '(') {
+            continue;
+        }
+
+        $name = $token[1];
+
+        if (
+            $braceDepth !== 1
+            || !$insideOuterTry
+            || !isset($expectedStatements[$name])
+            || consumerProjectHarnessNormalizedStatement($tokens, $index) !== $expectedStatements[$name]
+        ) {
+            return false;
+        }
+
+        $actualCalls[] = $name;
+    }
+
+    return $outerTryDepth === 1
+        && !$outerTryPending
+        && !$insideOuterTry
+        && $outerTryBodyClosed
+        && $actualCalls === $expectedCalls
+        && consumerProjectHarnessTokenNormalizedFingerprint($source)
+            === '85447665921f2e714666754907417c7e26aae24e0c400db28864c98ab182a1a3';
+}
+
+function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
+{
+    if (substr_count($source, $block) !== 1) {
+        return false;
+    }
+
+    foreach (token_get_all($source) as $token) {
+        if (
+            is_array($token)
+            && in_array(
+                $token[0],
+                [T_ENDDECLARE, T_ENDFOR, T_ENDFOREACH, T_ENDIF, T_ENDSWITCH, T_ENDWHILE],
+                true,
+            )
+        ) {
+            return false;
+        }
+    }
+
+    $offset = strpos($source, $block);
+
+    if ($offset === false) {
+        return false;
+    }
+
+    $prefixTokens = token_get_all(substr($source, 0, $offset));
+    $braceDepth = 0;
+    $previousSignificantToken = null;
+    $outerTryDepth = null;
+    $outerTryPending = false;
+    $insideOuterTry = false;
+
+    foreach ($prefixTokens as $prefixToken) {
+        if (is_array($prefixToken)) {
+            if (
+                $prefixToken[0] === T_TRY
+                && $braceDepth === 0
+                && $outerTryDepth === null
+            ) {
+                $outerTryPending = true;
+            }
+
+            if (in_array($prefixToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            $previousSignificantToken = $prefixToken;
+            continue;
+        }
+
+        if ($prefixToken === '{') {
+            $braceDepth++;
+
+            if ($outerTryPending) {
+                $outerTryDepth = $braceDepth;
+                $outerTryPending = false;
+                $insideOuterTry = true;
+            }
+        } elseif ($prefixToken === '}') {
+            if ($insideOuterTry && $outerTryDepth === $braceDepth) {
+                $insideOuterTry = false;
+            }
+
+            $braceDepth--;
+        }
+
+        $previousSignificantToken = $prefixToken;
+    }
+
+    return $outerTryDepth === 1
+        && $insideOuterTry
+        && $braceDepth === 1
+        && in_array(routingTokenText($previousSignificantToken ?? ''), ['{', '}', ';'], true);
+}
+
+function consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical(string $source): bool
+{
+    $terminalLifecycle = <<<'PHP'
+    fwrite(
+        STDOUT,
+        sprintf(
+            "PASS isolated consumer: %d release files, clean install, complete check, and adversarial controls\n",
+            count($archiveFiles),
+        ),
+    );
+} finally {
+    removeDirectory($workspace);
+}
+PHP;
+
+    return substr_count($source, $terminalLifecycle) === 1
+        && str_ends_with(rtrim($source), $terminalLifecycle);
+}
+
+function consumerProjectHarnessWithFunctionBodyPrefix(
+    string $source,
+    string $functionName,
+    string $prefix,
+): ?string {
+    $tokens = token_get_all($source);
+
+    foreach ($tokens as $index => $token) {
+        if (!is_array($token) || $token[0] !== T_FUNCTION) {
+            continue;
+        }
+
+        $nameIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+
+        if ($nameIndex === null || routingTokenText($tokens[$nameIndex]) !== $functionName) {
+            continue;
+        }
+
+        for ($bodyIndex = $nameIndex + 1, $count = count($tokens); $bodyIndex < $count; $bodyIndex++) {
+            if (routingTokenText($tokens[$bodyIndex]) !== '{') {
+                continue;
+            }
+
+            $bodyOffset = 0;
+
+            for ($offsetIndex = 0; $offsetIndex <= $bodyIndex; $offsetIndex++) {
+                $bodyOffset += strlen(routingTokenText($tokens[$offsetIndex]));
+            }
+
+            return substr($source, 0, $bodyOffset) . $prefix . substr($source, $bodyOffset);
+        }
+    }
+
+    return null;
+}
+
+function consumerProjectHarnessFunctionReturnsSentinel(
+    string $source,
+    string $functionName,
+    string $sentinel,
+): bool {
+    $tokens = token_get_all($source);
+    $functionIndex = null;
+    $functionCount = 0;
+
+    foreach ($tokens as $index => $token) {
+        if (!is_array($token) || $token[0] !== T_FUNCTION) {
+            continue;
+        }
+
+        $nameIndex = routingNextSignificantTokenIndex($tokens, $index + 1);
+
+        if ($nameIndex !== null && routingTokenText($tokens[$nameIndex]) === $functionName) {
+            $functionIndex = $index;
+            $functionCount++;
+        }
+    }
+
+    if ($functionCount !== 1 || $functionIndex === null) {
+        return false;
+    }
+
+    $bodyOpenIndex = null;
+
+    for ($index = $functionIndex + 1, $count = count($tokens); $index < $count; $index++) {
+        if (routingTokenText($tokens[$index]) === '{') {
+            $bodyOpenIndex = $index;
+            break;
+        }
+    }
+
+    if ($bodyOpenIndex === null) {
+        return false;
+    }
+
+    $bodyDepth = 1;
+    /** @var list<array{depth: int, statement: string}> $returnStatements */
+    $returnStatements = [];
+    $bodyCloseIndex = null;
+
+    for ($index = $bodyOpenIndex + 1, $count = count($tokens); $index < $count; $index++) {
+        $token = $tokens[$index];
+        $tokenText = routingTokenText($token);
+
+        if (
+            is_array($token)
+            && in_array(
+                $token[0],
+                [T_EXIT, T_GOTO, T_HALT_COMPILER, T_YIELD, T_YIELD_FROM],
+                true,
+            )
+        ) {
+            return false;
+        }
+
+        if ($tokenText === '{') {
+            $bodyDepth++;
+            continue;
+        }
+
+        if ($tokenText === '}') {
+            $bodyDepth--;
+
+            if ($bodyDepth === 0) {
+                $bodyCloseIndex = $index;
+                break;
+            }
+
+            continue;
+        }
+
+        if (is_array($token) && $token[0] === T_RETURN) {
+            $returnStatements[] = [
+                'depth' => $bodyDepth,
+                'statement' => consumerProjectHarnessNormalizedStatement($tokens, $index),
+            ];
+        }
+    }
+
+    if (
+        $bodyCloseIndex === null
+        || $returnStatements !== [[
+            'depth' => 1,
+            'statement' => "return'{$sentinel}';",
+        ]]
+    ) {
+        return false;
+    }
+
+    $returnIndex = null;
+
+    for ($index = $bodyCloseIndex - 1; $index > $bodyOpenIndex; $index--) {
+        $token = $tokens[$index];
+
+        if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+
+        if (routingTokenText($token) === ';') {
+            for ($candidateIndex = $index - 1; $candidateIndex > $bodyOpenIndex; $candidateIndex--) {
+                $candidate = $tokens[$candidateIndex];
+
+                if (is_array($candidate) && in_array($candidate[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                if (is_array($candidate) && $candidate[0] === T_CONSTANT_ENCAPSED_STRING) {
+                    continue;
+                }
+
+                if (is_array($candidate) && $candidate[0] === T_RETURN) {
+                    $returnIndex = $candidateIndex;
+                }
+
+                break;
+            }
+        }
+
+        break;
+    }
+
+    return $returnIndex !== null;
+}
+
+/** @return list<string> */
+function consumerProjectHarnessStructureFailures(string $root): array
+{
+    $failures = [];
+    $expectedModulePaths = consumerProjectHarnessModulePaths();
+    $expectedModuleNames = array_map(
+        static fn (string $path): string => basename($path),
+        $expectedModulePaths,
+    );
+    sort($expectedModuleNames, SORT_STRING);
+    $moduleDirectory = $root . '/tools/test-consumer-project';
+    $actualModuleNames = [];
+
+    if (!is_dir($moduleDirectory) || is_link($moduleDirectory)) {
+        $failures[] = 'The installed-consumer harness module directory must be one real directory.';
+    } else {
+        $iterator = new FilesystemIterator($moduleDirectory, FilesystemIterator::SKIP_DOTS);
+
+        foreach ($iterator as $entry) {
+            if (!$entry instanceof SplFileInfo) {
+                $failures[] = 'Cannot inspect one installed-consumer harness module entry.';
+                continue;
+            }
+
+            $actualModuleNames[] = $entry->getFilename();
+
+            if (!$entry->isFile() || $entry->isLink()) {
+                $failures[] = "Installed-consumer harness module must be a regular non-symlink file: {$entry->getFilename()}.";
+            }
+        }
+
+        sort($actualModuleNames, SORT_STRING);
+
+        if ($actualModuleNames !== $expectedModuleNames) {
+            $failures[] = 'The installed-consumer harness must retain exactly its seven reviewed modules.';
+        }
+    }
+
+    $sources = consumerProjectHarnessSources($root);
+
+    if ($sources === null) {
+        $failures[] = 'Cannot read the complete installed-consumer harness source set.';
+
+        return $failures;
+    }
+
+    $entrypointPath = 'tools/test-consumer-project.php';
+
+    if (!is_file($root . '/' . $entrypointPath) || is_link($root . '/' . $entrypointPath)) {
+        $failures[] = 'The installed-consumer harness entrypoint must remain one regular non-symlink file.';
+    }
+
+    $entrypoint = $sources[$entrypointPath];
+    $entrypointTokens = token_get_all($entrypoint);
+    $expectedIncludeStatements = array_map(
+        static fn (string $path): string => "require_once__DIR__.'/" . substr($path, strlen('tools/')) . "';",
+        $expectedModulePaths,
+    );
+    $actualIncludeStatements = [];
+    $braceDepth = 0;
+    $functionCount = 0;
+
+    foreach ($entrypointTokens as $index => $token) {
+        $tokenText = routingTokenText($token);
+
+        if ($tokenText === '{') {
+            $braceDepth++;
+        } elseif ($tokenText === '}') {
+            $braceDepth--;
+        }
+
+        if (is_array($token) && $token[0] === T_FUNCTION) {
+            $functionCount++;
+        }
+
+        if (
+            !is_array($token)
+            || !in_array($token[0], [T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE], true)
+        ) {
+            continue;
+        }
+
+        $statement = '';
+
+        for ($statementIndex = $index, $count = count($entrypointTokens); $statementIndex < $count; $statementIndex++) {
+            $statementToken = $entrypointTokens[$statementIndex];
+
+            if (
+                is_array($statementToken)
+                && in_array($statementToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+            ) {
+                continue;
+            }
+
+            $statement .= routingTokenText($statementToken);
+
+            if (routingTokenText($statementToken) === ';') {
+                break;
+            }
+        }
+
+        if ($braceDepth !== 0 || $token[0] !== T_REQUIRE_ONCE) {
+            $statement = 'invalid:' . $statement;
+        }
+
+        $actualIncludeStatements[] = $statement;
+    }
+
+    $expectedPreamble = 'declare(strict_types=1);' . implode('', $expectedIncludeStatements);
+    $actualPreamble = '';
+    $declareSeen = false;
+
+    foreach ($entrypointTokens as $token) {
+        if (is_array($token) && $token[0] === T_VARIABLE && $token[1] === '$root') {
+            break;
+        }
+
+        if (is_array($token) && $token[0] === T_DECLARE) {
+            $declareSeen = true;
+        }
+
+        if (
+            is_array($token)
+            && in_array($token[0], [T_OPEN_TAG, T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+        ) {
+            continue;
+        }
+
+        $actualPreamble .= routingTokenText($token);
+    }
+
+    if (
+        !$declareSeen
+        || $actualPreamble !== $expectedPreamble
+        || $actualIncludeStatements !== $expectedIncludeStatements
+        || $functionCount !== 0
+    ) {
+        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level seven-module require_once preamble and contain no function declarations.';
+    }
+
+    if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 45 proof functions once, unconditionally, and in the reviewed order.';
+    }
+
+    if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
+        $failures[] = 'The installed-consumer entrypoint must retain its terminal final PASS and exact outer finally workspace cleanup.';
+    }
+
+    $terminalPassStatement = <<<'PHP'
+    fwrite(
+        STDOUT,
+        sprintf(
+            "PASS isolated consumer: %d release files, clean install, complete check, and adversarial controls\n",
+            count($archiveFiles),
+        ),
+    );
+PHP;
+    $workspaceCleanupStatement = '    removeDirectory($workspace);';
+    $entrypointWithoutCleanup = str_replace($workspaceCleanupStatement, '', $entrypoint);
+    $entrypointWithoutTerminalPass = str_replace($terminalPassStatement, '', $entrypoint);
+    $terminalLifecycleMutations = [
+        $entrypointWithoutCleanup,
+        $entrypointWithoutTerminalPass,
+        str_replace(
+            $terminalPassStatement,
+            $workspaceCleanupStatement . "\n" . $terminalPassStatement,
+            $entrypointWithoutCleanup,
+        ),
+        str_replace(
+            '    $restoredResult = runProcess($profileCommand, $project, $environment);',
+            $terminalPassStatement
+                . "\n    \$restoredResult = runProcess(\$profileCommand, \$project, \$environment);",
+            $entrypointWithoutTerminalPass,
+        ),
+    ];
+
+    foreach ($terminalLifecycleMutations as $terminalLifecycleMutation) {
+        if (consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($terminalLifecycleMutation)) {
+            $failures[] = 'The installed-consumer terminal lifecycle control accepted deleted or relocated final PASS or workspace cleanup.';
+            break;
+        }
+    }
+
+    $entrypointReachabilityMarker = '$root = dirname(__DIR__);';
+    $earlyProofStatement = '    proveInstalledReleaseGuidanceDistribution($installedFramework);';
+    $lastProofStatement = '    proveSymlinkedSourceIsRejected($workspace, $project, $profileCommand, $environment);';
+    $entrypointWithoutLastProof = str_replace($lastProofStatement . "\n", '', $entrypoint);
+    $outerFinally = <<<'PHP'
+} finally {
+    removeDirectory($workspace);
+}
+PHP;
+    $childProcessSecondProofStatement = <<<'PHP'
+    runProcess([PHP_BINARY, '-r', 'require "tools/test-consumer-project/support.php"; require "tools/test-consumer-project/guidance.php"; $proof = "proveInstalledReleaseGuidance" . "Distribution"; $proof($argv[1]);', $installedFramework], $root, $environment);
+PHP;
+    $entrypointReachabilityMutations = [
+        str_replace(
+            $entrypointReachabilityMarker,
+            $entrypointReachabilityMarker . "\nreturn;",
+            $entrypoint,
+        ),
+        str_replace(
+            $entrypointReachabilityMarker,
+            $entrypointReachabilityMarker . "\nexit;",
+            $entrypoint,
+        ),
+        str_replace(
+            $entrypointReachabilityMarker,
+            $entrypointReachabilityMarker . "\ngoto installed_consumer_done;",
+            $entrypoint,
+        ),
+        str_replace(
+            $entrypointReachabilityMarker,
+            $entrypointReachabilityMarker . "\ninstalled_consumer_done:",
+            $entrypoint,
+        ),
+        str_replace(
+            $entrypointReachabilityMarker,
+            $entrypointReachabilityMarker . "\nthrow new RuntimeException('stop');",
+            $entrypoint,
+        ),
+        str_replace(
+            $entrypointReachabilityMarker,
+            $entrypointReachabilityMarker . "\nyield null;",
+            $entrypoint,
+        ),
+        str_replace(
+            $earlyProofStatement,
+            "    if (false):;\n{$earlyProofStatement}\n    endif;",
+            $entrypoint,
+        ),
+        str_replace(
+            $earlyProofStatement,
+            $earlyProofStatement
+                . "\n    \$secondProofPath = 'proveInstalledReleaseGuidance' . 'Distribution';"
+                . "\n    \$secondProofPath(\$installedFramework);",
+            $entrypoint,
+        ),
+        str_replace(
+            $earlyProofStatement,
+            $earlyProofStatement
+                . "\n    call_user_func("
+                . "'proveInstalledReleaseGuidance' . 'Distribution', \$installedFramework);",
+            $entrypoint,
+        ),
+        str_replace(
+            $earlyProofStatement,
+            $earlyProofStatement
+                . "\n    array_map("
+                . "'proveInstalledReleaseGuidance' . 'Distribution', [\$installedFramework]);",
+            $entrypoint,
+        ),
+        str_replace(
+            $earlyProofStatement,
+            $earlyProofStatement . "\n" . $childProcessSecondProofStatement,
+            $entrypoint,
+        ),
+        str_replace(
+            $outerFinally,
+            "} catch (Throwable \$failure) {\n{$lastProofStatement}\n} finally {"
+                . "\n    removeDirectory(\$workspace);\n}",
+            $entrypointWithoutLastProof,
+        ),
+        str_replace(
+            $outerFinally,
+            "} finally {\n{$lastProofStatement}\n    removeDirectory(\$workspace);\n}",
+            $entrypointWithoutLastProof,
+        ),
+    ];
+
+    foreach ($entrypointReachabilityMutations as $entrypointReachabilityMutation) {
+        if (consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypointReachabilityMutation)) {
+            $failures[] = 'The installed-consumer entrypoint reachability control accepted termination, alternative-syntax, dynamic-dispatch, catch, or finally mutation.';
+            break;
+        }
+    }
+
+    foreach (consumerProjectHarnessExpectedModuleFunctions() as $relativePath => $expectedFunctions) {
+        $structure = consumerProjectHarnessModuleStructure($sources[$relativePath]);
+
+        if (!$structure['valid'] || $structure['functions'] !== $expectedFunctions) {
+            $failures[] = "Installed-consumer harness module {$relativePath} must remain declaration-only with its exact ordered function inventory.";
+        }
+    }
+
+    $structuredJsonCompletionCheck = <<<'PHP'
+    if (
+        $installedStructuredJsonProofCompletion
+            !== 'installed-structured-json-and-nested-resource-proof-complete'
+    ) {
+        throw new RuntimeException('Installed structured JSON and nested-resource proof did not complete.');
+    }
+PHP;
+    $fieldValidationCompletionCheck = <<<'PHP'
+    if (
+        $installedFieldValidationProofCompletion
+            !== 'installed-field-validation-error-guidance-proof-complete'
+    ) {
+        throw new RuntimeException('Installed field-validation error guidance proof did not complete.');
+    }
+PHP;
+    $workbenchCompletionCheck = <<<'PHP'
+    if ($installedWorkbenchGuidanceProof !== 'installed-workbench-guidance-proved') {
+        throw new RuntimeException('The installed Workbench guidance proof did not return its success sentinel.');
+    }
+PHP;
+    $sentinelSpecifications = [
+        [
+            'module' => 'tools/test-consumer-project/http.php',
+            'function' => 'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
+            'sentinel' => 'installed-structured-json-and-nested-resource-proof-complete',
+            'variable' => '$installedStructuredJsonProofCompletion',
+            'check' => $structuredJsonCompletionCheck,
+        ],
+        [
+            'module' => 'tools/test-consumer-project/http.php',
+            'function' => 'proveInstalledFieldValidationErrorGuidanceDistribution',
+            'sentinel' => 'installed-field-validation-error-guidance-proof-complete',
+            'variable' => '$installedFieldValidationProofCompletion',
+            'check' => $fieldValidationCompletionCheck,
+        ],
+        [
+            'module' => 'tools/test-consumer-project/application.php',
+            'function' => 'proveInstalledWorkbenchGuidanceDistribution',
+            'sentinel' => 'installed-workbench-guidance-proved',
+            'variable' => '$installedWorkbenchGuidanceProof',
+            'check' => $workbenchCompletionCheck,
+        ],
+    ];
+
+    foreach ($sentinelSpecifications as $sentinelSpecification) {
+        $modulePath = $sentinelSpecification['module'];
+        $functionName = $sentinelSpecification['function'];
+        $sentinel = $sentinelSpecification['sentinel'];
+        $variable = $sentinelSpecification['variable'];
+        $completionCheck = $sentinelSpecification['check'];
+
+        if (
+            substr_count($entrypoint, $sentinel) !== 1
+            || substr_count($entrypoint, $variable) !== 2
+            || !consumerProjectHarnessOuterTryBlockIsCanonical($entrypoint, $completionCheck)
+            || !consumerProjectHarnessFunctionReturnsSentinel(
+                $sources[$modulePath],
+                $functionName,
+                $sentinel,
+            )
+        ) {
+            $failures[] = "Installed-consumer proof {$functionName} must retain one entrypoint completion check and one unconditional terminal module sentinel.";
+        }
+
+        $completionCheckMutations = [
+            str_replace($completionCheck, '', $entrypoint),
+            str_replace(
+                $completionCheck,
+                "    if (false) {\n{$completionCheck}\n    }",
+                $entrypoint,
+            ),
+            str_replace(
+                $completionCheck,
+                "    if (false)\n{$completionCheck}",
+                $entrypoint,
+            ),
+            str_replace(
+                $completionCheck,
+                "    if (false):;\n{$completionCheck}\n    endif;",
+                $entrypoint,
+            ),
+            str_replace(
+                $outerFinally,
+                "} catch (Throwable \$failure) {\n{$completionCheck}\n} finally {"
+                    . "\n    removeDirectory(\$workspace);\n}",
+                str_replace($completionCheck, '', $entrypoint),
+            ),
+            str_replace(
+                $outerFinally,
+                "} finally {\n{$completionCheck}\n    removeDirectory(\$workspace);\n}",
+                str_replace($completionCheck, '', $entrypoint),
+            ),
+        ];
+
+        foreach ($completionCheckMutations as $completionCheckMutation) {
+            if (consumerProjectHarnessOuterTryBlockIsCanonical($completionCheckMutation, $completionCheck)) {
+                $failures[] = "Installed-consumer proof {$functionName} completion-check mutation was accepted.";
+                break;
+            }
+        }
+
+        $returnStatement = "    return '{$sentinel}';";
+        $sentinelSplitOffset = intdiv(strlen($sentinel), 2);
+        $computedSentinelReturnPrefix = sprintf(
+            "\n    if (true) {\n        return '%s' . '%s';\n    }",
+            substr($sentinel, 0, $sentinelSplitOffset),
+            substr($sentinel, $sentinelSplitOffset),
+        );
+        $functionBodyPrefixMutations = [
+            $computedSentinelReturnPrefix,
+            "\n    exit;",
+            "\n    goto installed_consumer_sentinel_end;",
+            "\n    yield null;",
+        ];
+        $sentinelReturnMutations = [
+            str_replace($returnStatement, '', $sources[$modulePath]),
+            str_replace(
+                $returnStatement,
+                "    if (false) {\n{$returnStatement}\n    }",
+                $sources[$modulePath],
+            ),
+            str_replace(
+                $returnStatement,
+                "    if (false)\n{$returnStatement}",
+                $sources[$modulePath],
+            ),
+        ];
+
+        foreach ($functionBodyPrefixMutations as $functionBodyPrefixMutation) {
+            $mutatedModule = consumerProjectHarnessWithFunctionBodyPrefix(
+                $sources[$modulePath],
+                $functionName,
+                $functionBodyPrefixMutation,
+            );
+
+            if ($mutatedModule === null) {
+                $failures[] = "Cannot create installed-consumer proof {$functionName} function-body mutation.";
+                break;
+            }
+
+            $sentinelReturnMutations[] = $mutatedModule;
+        }
+
+        foreach ($sentinelReturnMutations as $sentinelReturnMutation) {
+            if (consumerProjectHarnessFunctionReturnsSentinel($sentinelReturnMutation, $functionName, $sentinel)) {
+                $failures[] = "Installed-consumer proof {$functionName} terminal-sentinel mutation was accepted.";
+                break;
+            }
+        }
+
+        foreach ($sources as $relativePath => $source) {
+            $expectedCount = $relativePath === $entrypointPath || $relativePath === $modulePath ? 1 : 0;
+
+            if (substr_count($source, $sentinel) !== $expectedCount) {
+                $failures[] = "Installed-consumer proof sentinel {$sentinel} must remain confined to its entrypoint check and owning module return.";
+                break;
+            }
+        }
+    }
+
+    return $failures;
+}
+
 /** @return list<string> */
 function decisionSuccessorRelationshipFailures(string $root): array
 {
@@ -1192,6 +2579,10 @@ function repositoryGuardrailFailures(string $root): array
         $failures[] = $routeCompatibilityFailure;
     }
 
+    foreach (consumerProjectHarnessStructureFailures($root) as $consumerProjectHarnessFailure) {
+        $failures[] = $consumerProjectHarnessFailure;
+    }
+
     $proofMaintainabilityArtifactMarkers = [
         'docs/guardrails.md' => [
             'Repeated documentation-marker checks use explicit shared repository-module helpers rather than duplicated loops',
@@ -1231,14 +2622,11 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledReferenceClarityDistribution($installedFramework);',
+            'proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected($project, $profileCommand, $environment);',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
             'function proveInstalledReferenceClarityDistribution(string $installedFramework): void',
             'PASS installed historical and reference clarity distribution',
-            'proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected($project, $profileCommand, $environment);',
-            'function proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected(',
-            'final class EvalConstantControl',
-            'enum EvalCaseControl: string',
-            'original as eval;',
-            "#[EvalNamedAttributeControl(eval: 'attribute')]",
             "'parent' => 'vendor/../composer.json'",
             "'empty' => 'vendor//phpthis/framework/docs/jobs.md'",
             "'dot' => 'vendor/./phpthis/framework/docs/jobs.md'",
@@ -1246,6 +2634,13 @@ function repositoryGuardrailFailures(string $root): array
             "symlink(\$project . '/composer.json', \$symlinkReference)",
             'escapes the configured Composer vendor directory',
             'does not resolve through the configured Composer vendor directory',
+        ],
+        'tools/test-consumer-project/profile-controls.php' => [
+            'function proveEvalIdentifiersAreAllowedAndLanguageConstructIsRejected(',
+            'final class EvalConstantControl',
+            'enum EvalCaseControl: string',
+            'original as eval;',
+            "#[EvalNamedAttributeControl(eval: 'attribute')]",
         ],
     ];
 
@@ -1274,6 +2669,10 @@ function repositoryGuardrailFailures(string $root): array
             'function repositoryGuardrailFailures(string $root): array',
             'function requireGuardrailArtifactMarkers(',
             'function forbidGuardrailArtifactMarkers(',
+            'function consumerProjectHarnessModulePaths(): array',
+            'function forbidConsumerProjectHarnessMarkers(',
+            'function consumerProjectHarnessStructureFailures(string $root): array',
+            'foreach (consumerProjectHarnessStructureFailures($root) as $consumerProjectHarnessFailure)',
         ],
         'tools/guardrails/context.php' => [
             'function contextGuardrailFailures(string $root): array',
@@ -1344,6 +2743,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
             'function proveInstalledTestRunnerModularizationGuidanceDistribution(',
             'PASS installed test-runner modularization guidance distribution',
         ],
@@ -2210,6 +3611,9 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledAgentEvaluationGuidanceDistribution($installedFramework, $archiveFiles);',
+        ],
+        'tools/test-consumer-project/application.php' => [
+            'function proveInstalledAgentEvaluationGuidanceDistribution(',
             '## Agent Evaluation Kit v0.1 and controller v0.2',
             'The sole accepted future real runner is `codex-exec`',
             'str_starts_with($archiveFile, \'tools/agent-evaluation-controller/\')',

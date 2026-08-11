@@ -333,6 +333,8 @@ function operationGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/application.php' => [
             'function proveInstalledOneShotWorkerSupervisionGuidanceDistribution(',
             'PASS installed one-shot worker supervision guidance distribution',
         ],
@@ -364,11 +366,12 @@ function operationGuardrailFailures(string $root): array
         $failures[] = 'Contract version 9 must not checker-require the optional durable-job context file.';
     }
 
-    $consumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
-
-    if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveJobsContextIsRequired')) {
-        $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/jobs.md is absent.';
-    }
+    forbidConsumerProjectHarnessMarkers(
+        $root,
+        ['proveJobsContextIsRequired'],
+        'optional durable-job context consumer proof',
+        $failures,
+    );
 
     $durableJobPackageInventory = file_get_contents($root . '/tools/package-files.txt');
 
@@ -634,9 +637,12 @@ function operationGuardrailFailures(string $root): array
         $failures[] = 'Contract version 9 must not checker-require the optional application CLI context file.';
     }
 
-    if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveCliContextIsRequired')) {
-        $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/cli.md is absent.';
-    }
+    forbidConsumerProjectHarnessMarkers(
+        $root,
+        ['proveCliContextIsRequired'],
+        'optional CLI context consumer proof',
+        $failures,
+    );
 
     $applicationCliSourceFiles = [
         'example/bin/console.php',
@@ -816,6 +822,9 @@ function operationGuardrailFailures(string $root): array
         'tools/test-consumer-project.php' => [
             '$installedWorkbenchGuidanceProof = proveInstalledWorkbenchGuidanceDistribution(',
             "if (\$installedWorkbenchGuidanceProof !== 'installed-workbench-guidance-proved')",
+        ],
+        'tools/test-consumer-project/application.php' => [
+            'function proveInstalledWorkbenchGuidanceDistribution(',
             "return 'installed-workbench-guidance-proved';",
             'The installed checker rejected a consumer only because .ai/workbench.md was absent.',
             'PASS installed Workbench guidance distribution',
@@ -905,9 +914,12 @@ function operationGuardrailFailures(string $root): array
         $failures[] = 'The check-only framework entrypoint must not host Workbench.';
     }
 
-    if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveWorkbenchContextIsRequired')) {
-        $failures[] = 'Consumer Contract version 12 must not reject an existing consumer only because .ai/workbench.md is absent.';
-    }
+    forbidConsumerProjectHarnessMarkers(
+        $root,
+        ['proveWorkbenchContextIsRequired'],
+        'optional Workbench context consumer proof',
+        $failures,
+    );
 
     $redisCoordinationArtifactMarkers = [
         '.ai/cache.md' => [
@@ -1336,6 +1348,9 @@ function operationGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            'function proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(',
             'PASS installed engine-specific migration-invariant guidance distribution',
             'PASS installed migration alternative structure',
         ],
@@ -1672,6 +1687,9 @@ function operationGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledMigrationStructureGuidanceDistribution(',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            'function proveInstalledMigrationStructureGuidanceDistribution(',
             "\$project . '/src/Infrastructure/ChangeHistory'",
             "\$alternativeDirectory . '/ApplicationMigrations.php'",
             'The consumer-selected migration path and namespace are not Composer-autoload coherent.',
@@ -1800,9 +1818,12 @@ function operationGuardrailFailures(string $root): array
         $failures[] = 'The consumer checker must not enforce a migration source directory.';
     }
 
-    if (is_string($consumerProjectProof) && str_contains($consumerProjectProof, 'proveMigrationsContextIsRequired')) {
-        $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/migrations.md is absent.';
-    }
+    forbidConsumerProjectHarnessMarkers(
+        $root,
+        ['proveMigrationsContextIsRequired'],
+        'optional migrations context consumer proof',
+        $failures,
+    );
 
     foreach (['skeleton/src/Database/Migrations', 'skeleton/src/Migrations'] as $emptySkeletonMigrationPath) {
         if (is_dir($root . '/' . $emptySkeletonMigrationPath)) {

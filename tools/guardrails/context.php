@@ -217,6 +217,8 @@ function contextGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/data.php' => [
             'function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(',
             'PASS installed bounded task-routed context guidance distribution',
         ],
@@ -507,6 +509,8 @@ function contextGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/http.php' => [
             'function proveInstalledSessionCleanupAndResponseFramingDistribution(',
             'PASS installed session cleanup and response framing distribution',
         ],
@@ -960,6 +964,8 @@ function contextGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledReleaseGuidanceDistribution($installedFramework);',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
             'function proveInstalledReleaseGuidanceDistribution(string $installedFramework): void',
             '$orderedReleaseMarkers = [',
             'Installed release guidance is missing or misorders marker:',
@@ -1303,18 +1309,26 @@ function contextGuardrailFailures(string $root): array
             'proveInstalledConfigurationEvidenceReference(',
             'proveConfigurationContextIsRequired($project, $profileCommand, $environment);',
             'proveEnvironmentAccessIsRejected($project, $profileCommand, $environment);',
+        ],
+        'tools/test-consumer-project/configuration.php' => [
             "selectOneRow('SELECT 1 AS configured')",
-            'requireExactProcessResult(',
-            'requireExactFailureLines(',
             'PASS installed runtime typed configuration delivery',
             'PASS installed migration typed configuration delivery',
             'The installed configuration evidence reference is missing.',
             'PASS child-process configuration evidence',
             'PASS installed empty configuration delivery',
-            'environmentWithEmptyValue(',
             'final class ReferenceEmptyRuntimeMode extends InvalidArgumentException',
             'catch (ReferenceEmptyRuntimeMode)',
             'The installed missing runtime mode was misclassified as empty.',
+        ],
+        'tools/test-consumer-project/support.php' => [
+            'function requireExactProcessResult(',
+            'function requireExactFailureLines(',
+            'function environmentWithEmptyValue(',
+        ],
+        'tools/test-consumer-project/profile-controls.php' => [
+            'function proveConfigurationContextIsRequired(',
+            'function proveEnvironmentAccessIsRejected(',
         ],
         'docs/guardrails.md' => [
             'extracts the exact application-owned child-process reference from installed `docs/configuration.md`',
@@ -1404,6 +1418,8 @@ function contextGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/application.php' => [
             'function proveInstalledStartupProbeGuidanceDistribution(string $project, string $installedFramework): void',
             'PASS installed startup and probe guidance distribution',
         ],
@@ -1529,6 +1545,9 @@ function contextGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/application.php' => [
+            'function proveInstalledDatabaseSetupGuidanceDistribution(',
             'PASS installed database setup guidance distribution',
         ],
         'tools/package-files.txt' => [
@@ -1683,6 +1702,10 @@ function contextGuardrailFailures(string $root): array
         'tools/test-consumer-project.php' => [
             'proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution($project, $installedFramework);',
             'proveDatabaseContextConnectionConsistency($project, $profileCommand, $environment);',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            'function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(',
+            'function proveDatabaseContextConnectionConsistency(',
             'DatabaseContextOrdinaryControl',
             'DatabaseContextAliasControl',
             'DatabaseContextGroupedControl',
@@ -1700,10 +1723,13 @@ function contextGuardrailFailures(string $root): array
             'A comment or string mentioning Connection::connect was mistaken for executable database use.',
             'private const CONNECTION_TYPE = Connection::class;',
             'installedSyntheticDatabaseContext()',
-            'Structural namespace/control model: SQLite\'s default `main` attachment namespace exists only inside each in-memory proof connection;',
-            'no live authority probe runs.',
             'PASS installed database-context connection consistency',
             'PASS installed database authority lifecycle guidance distribution',
+        ],
+        'tools/test-consumer-project/support.php' => [
+            'function installedSyntheticDatabaseContext(): string',
+            'Structural namespace/control model: SQLite\'s default `main` attachment namespace exists only inside each in-memory proof connection;',
+            'no live authority probe runs.',
         ],
         'tools/package-files.txt' => [
             'docs/decisions/038-application-owned-database-authority-lifecycle.md',

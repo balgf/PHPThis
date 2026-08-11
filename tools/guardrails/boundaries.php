@@ -146,6 +146,9 @@ function boundaryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledBoundedResponseCookieProfileDistribution(',
+        ],
+        'tools/test-consumer-project/http.php' => [
+            'function proveInstalledBoundedResponseCookieProfileDistribution(',
             "PHP_INT_SIZE >= 8 ? (int) '253402300799' : PHP_INT_MAX",
             "new ResponseCookie('name', 'value', '/bad;attribute'",
             "new ResponseCookie('__hOsT-name', 'value', '/nested'",
@@ -317,6 +320,9 @@ function boundaryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledUuidAndUlidRouting($project, $environment);',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            'function proveInstalledUuidAndUlidRouting(',
             'PASS installed UUID and ULID routing',
             '/accounts/{account_id:uuid}',
             '/events/{event_id:ulid}',
@@ -425,13 +431,16 @@ function boundaryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledRequestHandlerDecorator($project, $environment);',
+            'The clean skeleton and request-handler decorator proof failed the installed profile check.',
+            'is_file($requestHandlerDecoratorProofPath)',
+        ],
+        'tools/test-consumer-project/application.php' => [
+            'function proveInstalledRequestHandlerDecorator(',
             'new InstalledHeaderDecorator(',
             'new InstalledRejectingDecorator(',
             'function assertInstalledDecoratorIsolation(InstalledDecoratorTrace $trace): void',
             'assertInstalledDecoratorIsolation($trace);',
             'PASS installed request-handler decorator composition',
-            'The clean skeleton and request-handler decorator proof failed the installed profile check.',
-            'is_file($requestHandlerDecoratorProofPath)',
         ],
         'tools/package-files.txt' => [
             'docs/decisions/033-application-owned-request-handler-decorators.md',
@@ -670,14 +679,12 @@ function boundaryGuardrailFailures(string $root): array
         $failures[] = 'Contract version 9 must not checker-require the optional application WebSocket context file.';
     }
 
-    $websocketConsumerProjectProof = file_get_contents($root . '/tools/test-consumer-project.php');
-
-    if (
-        is_string($websocketConsumerProjectProof)
-        && str_contains($websocketConsumerProjectProof, 'proveWebSocketContextIsRequired')
-    ) {
-        $failures[] = 'Contract version 9 must not reject an existing consumer only because .ai/websockets.md is absent.';
-    }
+    forbidConsumerProjectHarnessMarkers(
+        $root,
+        ['proveWebSocketContextIsRequired'],
+        'optional WebSocket context consumer proof',
+        $failures,
+    );
 
     $requestPolicyArtifactMarkers = [
         '.ai/README.md' => [
@@ -1039,8 +1046,10 @@ function boundaryGuardrailFailures(string $root): array
         'tools/test-consumer-project.php' => [
             '$installedFieldValidationProofCompletion =',
             'proveInstalledFieldValidationErrorGuidanceDistribution(',
-            'function proveInstalledFieldValidationErrorGuidanceDistribution(',
             "!== 'installed-field-validation-error-guidance-proof-complete'",
+        ],
+        'tools/test-consumer-project/http.php' => [
+            'function proveInstalledFieldValidationErrorGuidanceDistribution(',
             "return 'installed-field-validation-error-guidance-proof-complete';",
             'decodeAdoptedFieldValidationFailure(Response $response)',
             'matchesReferenceFieldPathGrammar(string $field)',
@@ -1080,9 +1089,7 @@ function boundaryGuardrailFailures(string $root): array
         $failures,
     );
 
-    $installedFieldValidationProofSource = file_get_contents(
-        $root . '/tools/test-consumer-project.php',
-    );
+    $installedFieldValidationProofSources = consumerProjectHarnessSources($root);
     $installedFieldValidationProofWiring = <<<'PHP'
     $installedFieldValidationProofCompletion =
         proveInstalledFieldValidationErrorGuidanceDistribution(
@@ -1099,155 +1106,96 @@ function boundaryGuardrailFailures(string $root): array
     }
 PHP;
     $installedFieldValidationProofWiringIsCanonical = static function (
-        string $source,
+        string $entrypoint,
+        string $module,
     ) use ($installedFieldValidationProofWiring): bool {
-        if (
-            substr_count($source, $installedFieldValidationProofWiring) !== 1
-            || substr_count($source, '$installedFieldValidationProofCompletion') !== 2
-            || substr_count(
-                $source,
-                "'installed-field-validation-error-guidance-proof-complete'",
-            ) !== 2
-            || substr_count(
-                $source,
-                "    return 'installed-field-validation-error-guidance-proof-complete';",
-            ) !== 1
-        ) {
-            return false;
-        }
-
-        $wiringOffset = strpos($source, $installedFieldValidationProofWiring);
-
-        if ($wiringOffset === false) {
-            return false;
-        }
-
-        $prefixTokens = token_get_all(substr($source, 0, $wiringOffset));
-        $braceDepth = 0;
-        $functionDeclarationSeen = false;
-        $previousSignificantToken = null;
-
-        foreach ($prefixTokens as $prefixToken) {
-            if (is_array($prefixToken)) {
-                if ($prefixToken[0] === T_FUNCTION) {
-                    $functionDeclarationSeen = true;
-                }
-
-                if (in_array($prefixToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
-                    continue;
-                }
-
-                $previousSignificantToken = $prefixToken;
-                continue;
-            }
-
-            if ($prefixToken === '{') {
-                $braceDepth++;
-            } elseif ($prefixToken === '}') {
-                $braceDepth--;
-            }
-
-            $previousSignificantToken = $prefixToken;
-        }
-
-        if (
-            $braceDepth !== 1
-            || $functionDeclarationSeen
-            || !in_array($previousSignificantToken, ['{', '}', ';'], true)
-        ) {
-            return false;
-        }
-
-        $proofCallCount = 0;
-        $tokens = token_get_all($source);
-
-        foreach ($tokens as $tokenIndex => $token) {
-            if (
-                !is_array($token)
-                || $token[0] !== T_STRING
-                || $token[1] !== 'proveInstalledFieldValidationErrorGuidanceDistribution'
-            ) {
-                continue;
-            }
-
-            $previousToken = null;
-
-            for ($previousTokenIndex = $tokenIndex - 1; $previousTokenIndex >= 0; $previousTokenIndex--) {
-                $candidateToken = $tokens[$previousTokenIndex];
-
-                if (
-                    is_array($candidateToken)
-                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
-                ) {
-                    continue;
-                }
-
-                $previousToken = $candidateToken;
-                break;
-            }
-
-            if (is_array($previousToken) && $previousToken[0] === T_FUNCTION) {
-                continue;
-            }
-
-            $nextToken = null;
-
-            for ($nextTokenIndex = $tokenIndex + 1; $nextTokenIndex < count($tokens); $nextTokenIndex++) {
-                $candidateToken = $tokens[$nextTokenIndex];
-
-                if (
-                    is_array($candidateToken)
-                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
-                ) {
-                    continue;
-                }
-
-                $nextToken = $candidateToken;
-                break;
-            }
-
-            if ($nextToken === '(') {
-                $proofCallCount++;
-            }
-        }
-
-        return $proofCallCount === 1;
+        return substr_count($entrypoint, $installedFieldValidationProofWiring) === 1
+            && consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)
+            && consumerProjectHarnessFunctionReturnsSentinel(
+                $module,
+                'proveInstalledFieldValidationErrorGuidanceDistribution',
+                'installed-field-validation-error-guidance-proof-complete',
+            );
     };
 
-    if (!is_string($installedFieldValidationProofSource)) {
+    if ($installedFieldValidationProofSources === null) {
         $failures[] = 'Cannot read the installed field-validation error proof harness.';
     } else {
-        $mutatedFieldValidationProofSources = [
+        $installedFieldValidationProofEntrypoint =
+            $installedFieldValidationProofSources['tools/test-consumer-project.php'];
+        $installedFieldValidationProofModule =
+            $installedFieldValidationProofSources['tools/test-consumer-project/http.php'];
+        $fieldValidationReturn =
+            "    return 'installed-field-validation-error-guidance-proof-complete';";
+        $mutatedFieldValidationEntrypoints = [
             str_replace(
                 $installedFieldValidationProofWiring,
                 '',
-                $installedFieldValidationProofSource,
+                $installedFieldValidationProofEntrypoint,
             ),
             str_replace(
                 $installedFieldValidationProofWiring,
                 "    if (false) {\n{$installedFieldValidationProofWiring}\n    }",
-                $installedFieldValidationProofSource,
+                $installedFieldValidationProofEntrypoint,
             ),
             str_replace(
                 $installedFieldValidationProofWiring,
                 "    if (false)\n{$installedFieldValidationProofWiring}",
-                $installedFieldValidationProofSource,
+                $installedFieldValidationProofEntrypoint,
+            ),
+            str_replace(
+                $installedFieldValidationProofWiring,
+                $installedFieldValidationProofWiring . "\n" . $installedFieldValidationProofWiring,
+                $installedFieldValidationProofEntrypoint,
+            ),
+        ];
+        $mutatedFieldValidationModules = [
+            str_replace($fieldValidationReturn, '', $installedFieldValidationProofModule),
+            str_replace(
+                $fieldValidationReturn,
+                "    if (false) {\n{$fieldValidationReturn}\n    }",
+                $installedFieldValidationProofModule,
+            ),
+            str_replace(
+                $fieldValidationReturn,
+                "    if (false)\n{$fieldValidationReturn}",
+                $installedFieldValidationProofModule,
             ),
         ];
         $mutationWasAccepted = false;
 
-        foreach ($mutatedFieldValidationProofSources as $mutatedFieldValidationProofSource) {
-            if ($installedFieldValidationProofWiringIsCanonical($mutatedFieldValidationProofSource)) {
+        foreach ($mutatedFieldValidationEntrypoints as $mutatedFieldValidationEntrypoint) {
+            if (
+                $installedFieldValidationProofWiringIsCanonical(
+                    $mutatedFieldValidationEntrypoint,
+                    $installedFieldValidationProofModule,
+                )
+            ) {
+                $mutationWasAccepted = true;
+                break;
+            }
+        }
+
+        foreach ($mutatedFieldValidationModules as $mutatedFieldValidationModule) {
+            if (
+                $installedFieldValidationProofWiringIsCanonical(
+                    $installedFieldValidationProofEntrypoint,
+                    $mutatedFieldValidationModule,
+                )
+            ) {
                 $mutationWasAccepted = true;
                 break;
             }
         }
 
         if (
-            !$installedFieldValidationProofWiringIsCanonical($installedFieldValidationProofSource)
+            !$installedFieldValidationProofWiringIsCanonical(
+                $installedFieldValidationProofEntrypoint,
+                $installedFieldValidationProofModule,
+            )
             || $mutationWasAccepted
         ) {
-            $failures[] = 'The installed field-validation error proof must complete exactly once in the unconditional top-level consumer proof before function declarations.';
+            $failures[] = 'The installed field-validation error proof must retain one unconditional entrypoint call and one terminal owning-module completion sentinel.';
         }
     }
 
@@ -1419,6 +1367,8 @@ PHP;
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledNativeDateTimeGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
             'function proveInstalledNativeDateTimeGuidanceDistribution(',
             'PASS installed native date and time guidance distribution',
         ],
@@ -1533,6 +1483,8 @@ PHP;
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledFrontendIntegrationGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
             'function proveInstalledFrontendIntegrationGuidanceDistribution(',
             'PASS installed frontend integration guidance distribution',
         ],
@@ -1822,10 +1774,12 @@ PHP;
         'tools/test-consumer-project.php' => [
             '$installedStructuredJsonProofCompletion =',
             'proveInstalledStructuredJsonSuccessEnvelopeDistribution(',
-            'function proveInstalledStructuredJsonSuccessEnvelopeDistribution(',
             "!== 'installed-structured-json-and-nested-resource-proof-complete'",
-            "return 'installed-structured-json-and-nested-resource-proof-complete';",
             'Installed structured JSON and nested-resource proof did not complete.',
+        ],
+        'tools/test-consumer-project/http.php' => [
+            'function proveInstalledStructuredJsonSuccessEnvelopeDistribution(',
+            "return 'installed-structured-json-and-nested-resource-proof-complete';",
             'decodeGetUserSuccess(Response $response)',
             'decodeListUsersSuccess(Response $response)',
             'decodeListDocumentsSuccess(Response $response)',
@@ -1995,9 +1949,7 @@ PHP;
         $failures,
     );
 
-    $installedStructuredJsonProofSource = file_get_contents(
-        $root . '/tools/test-consumer-project.php',
-    );
+    $installedStructuredJsonProofSources = consumerProjectHarnessSources($root);
     $installedStructuredJsonProofWiring = <<<'PHP'
     $installedStructuredJsonProofCompletion =
         proveInstalledStructuredJsonSuccessEnvelopeDistribution(
@@ -2014,167 +1966,106 @@ PHP;
     }
 PHP;
     $installedStructuredJsonProofWiringIsCanonical = static function (
-        string $source,
+        string $entrypoint,
+        string $module,
     ) use ($installedStructuredJsonProofWiring): bool {
-        if (
-            substr_count($source, $installedStructuredJsonProofWiring) !== 1
-            || substr_count($source, '$installedStructuredJsonProofCompletion') !== 2
-            || substr_count(
-                $source,
-                "'installed-structured-json-and-nested-resource-proof-complete'",
-            ) !== 2
-            || substr_count(
-                $source,
-                "    return 'installed-structured-json-and-nested-resource-proof-complete';",
-            ) !== 1
-        ) {
-            return false;
-        }
-
-        $wiringOffset = strpos($source, $installedStructuredJsonProofWiring);
-
-        if ($wiringOffset === false) {
-            return false;
-        }
-
-        $prefixTokens = token_get_all(substr($source, 0, $wiringOffset));
-        $braceDepth = 0;
-        $functionDeclarationSeen = false;
-        $previousSignificantToken = null;
-
-        foreach ($prefixTokens as $prefixToken) {
-            if (is_array($prefixToken)) {
-                if ($prefixToken[0] === T_FUNCTION) {
-                    $functionDeclarationSeen = true;
-                }
-
-                if (in_array($prefixToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
-                    continue;
-                }
-
-                $previousSignificantToken = $prefixToken;
-                continue;
-            }
-
-            if ($prefixToken === '{') {
-                $braceDepth++;
-            } elseif ($prefixToken === '}') {
-                $braceDepth--;
-            }
-
-            $previousSignificantToken = $prefixToken;
-        }
-
-        if (
-            $braceDepth !== 1
-            || $functionDeclarationSeen
-            || !in_array($previousSignificantToken, ['{', ';'], true)
-        ) {
-            return false;
-        }
-
-        $proofCallCount = 0;
-        $tokens = token_get_all($source);
-
-        foreach ($tokens as $tokenIndex => $token) {
-            if (
-                !is_array($token)
-                || $token[0] !== T_STRING
-                || $token[1] !== 'proveInstalledStructuredJsonSuccessEnvelopeDistribution'
-            ) {
-                continue;
-            }
-
-            $previousToken = null;
-
-            for ($previousTokenIndex = $tokenIndex - 1; $previousTokenIndex >= 0; $previousTokenIndex--) {
-                $candidateToken = $tokens[$previousTokenIndex];
-
-                if (
-                    is_array($candidateToken)
-                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
-                ) {
-                    continue;
-                }
-
-                $previousToken = $candidateToken;
-                break;
-            }
-
-            if (is_array($previousToken) && $previousToken[0] === T_FUNCTION) {
-                continue;
-            }
-
-            $nextToken = null;
-
-            for ($nextTokenIndex = $tokenIndex + 1; $nextTokenIndex < count($tokens); $nextTokenIndex++) {
-                $candidateToken = $tokens[$nextTokenIndex];
-
-                if (
-                    is_array($candidateToken)
-                    && in_array($candidateToken[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
-                ) {
-                    continue;
-                }
-
-                $nextToken = $candidateToken;
-                break;
-            }
-
-            if ($nextToken === '(') {
-                $proofCallCount++;
-            }
-        }
-
-        return $proofCallCount === 1;
+        return substr_count($entrypoint, $installedStructuredJsonProofWiring) === 1
+            && consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)
+            && consumerProjectHarnessFunctionReturnsSentinel(
+                $module,
+                'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
+                'installed-structured-json-and-nested-resource-proof-complete',
+            );
     };
 
-    if (!is_string($installedStructuredJsonProofSource)) {
+    if ($installedStructuredJsonProofSources === null) {
         $failures[] = 'Cannot read the installed structured JSON and nested-resource proof harness.';
     } else {
-        $mutatedStructuredJsonProofSources = [
+        $installedStructuredJsonProofEntrypoint =
+            $installedStructuredJsonProofSources['tools/test-consumer-project.php'];
+        $installedStructuredJsonProofModule =
+            $installedStructuredJsonProofSources['tools/test-consumer-project/http.php'];
+        $structuredJsonReturn =
+            "    return 'installed-structured-json-and-nested-resource-proof-complete';";
+        $mutatedStructuredJsonProofEntrypoints = [
             str_replace(
                 $installedStructuredJsonProofWiring,
                 '',
-                $installedStructuredJsonProofSource,
+                $installedStructuredJsonProofEntrypoint,
             ),
             str_replace(
                 $installedStructuredJsonProofWiring,
                 "    if (false) {\n{$installedStructuredJsonProofWiring}\n    }",
-                $installedStructuredJsonProofSource,
+                $installedStructuredJsonProofEntrypoint,
             ),
             str_replace(
                 $installedStructuredJsonProofWiring,
                 "    if (false)\n{$installedStructuredJsonProofWiring}",
-                $installedStructuredJsonProofSource,
+                $installedStructuredJsonProofEntrypoint,
+            ),
+            str_replace(
+                $installedStructuredJsonProofWiring,
+                $installedStructuredJsonProofWiring . "\n" . $installedStructuredJsonProofWiring,
+                $installedStructuredJsonProofEntrypoint,
+            ),
+        ];
+        $mutatedStructuredJsonProofModules = [
+            str_replace($structuredJsonReturn, '', $installedStructuredJsonProofModule),
+            str_replace(
+                $structuredJsonReturn,
+                "    if (false) {\n{$structuredJsonReturn}\n    }",
+                $installedStructuredJsonProofModule,
+            ),
+            str_replace(
+                $structuredJsonReturn,
+                "    if (false)\n{$structuredJsonReturn}",
+                $installedStructuredJsonProofModule,
             ),
         ];
         $mutationWasAccepted = false;
 
-        foreach ($mutatedStructuredJsonProofSources as $mutatedStructuredJsonProofSource) {
-            if ($installedStructuredJsonProofWiringIsCanonical($mutatedStructuredJsonProofSource)) {
+        foreach ($mutatedStructuredJsonProofEntrypoints as $mutatedStructuredJsonProofEntrypoint) {
+            if (
+                $installedStructuredJsonProofWiringIsCanonical(
+                    $mutatedStructuredJsonProofEntrypoint,
+                    $installedStructuredJsonProofModule,
+                )
+            ) {
+                $mutationWasAccepted = true;
+                break;
+            }
+        }
+
+        foreach ($mutatedStructuredJsonProofModules as $mutatedStructuredJsonProofModule) {
+            if (
+                $installedStructuredJsonProofWiringIsCanonical(
+                    $installedStructuredJsonProofEntrypoint,
+                    $mutatedStructuredJsonProofModule,
+                )
+            ) {
                 $mutationWasAccepted = true;
                 break;
             }
         }
 
         if (
-            !$installedStructuredJsonProofWiringIsCanonical($installedStructuredJsonProofSource)
+            !$installedStructuredJsonProofWiringIsCanonical(
+                $installedStructuredJsonProofEntrypoint,
+                $installedStructuredJsonProofModule,
+            )
             || $mutationWasAccepted
         ) {
-            $failures[] = 'The installed structured JSON and nested-resource runtime proof must complete exactly once in the unconditional top-level consumer proof before function declarations.';
+            $failures[] = 'The installed structured JSON and nested-resource runtime proof must retain one unconditional entrypoint call and one terminal owning-module completion sentinel.';
         }
     }
 
-    forbidGuardrailArtifactMarkers(
+    forbidConsumerProjectHarnessMarkers(
         $root,
         [
-            'tools/test-consumer-project.php' => [
-                'decodeListDocumentsSuccess(Response $response, string $expectedOrder)',
-                'filter_var($nextAfterUserId, FILTER_VALIDATE_INT)',
-                'ListDocuments expected order is incompatible.',
-                "preg_match(\n            '/^v1:(rank_asc|rank_desc):",
-            ],
+            'decodeListDocumentsSuccess(Response $response, string $expectedOrder)',
+            'filter_var($nextAfterUserId, FILTER_VALIDATE_INT)',
+            'ListDocuments expected order is incompatible.',
+            "preg_match(\n            '/^v1:(rank_asc|rank_desc):",
         ],
         'opaque installed structured JSON continuation proof',
         $failures,
@@ -2386,6 +2277,8 @@ PHP;
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/application.php' => [
             'function proveInstalledTransactionalEmailGuidanceDistribution(',
             'PASS installed application-owned transactional email guidance distribution',
         ],
@@ -2642,6 +2535,9 @@ PHP;
         ],
         'tools/test-consumer-project.php' => [
             'proveObservabilityContextIsRequired(',
+        ],
+        'tools/test-consumer-project/profile-controls.php' => [
+            'function proveObservabilityContextIsRequired(',
             'Required application context file is missing: .ai/observability.md.',
         ],
         'src/Database/QueryBudget.php' => [
@@ -2899,6 +2795,8 @@ function statelessAuthenticationGuidanceFailures(string $root): array
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledStatelessAuthenticationGuidanceDistribution($project, $installedFramework);',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
             'function proveInstalledStatelessAuthenticationGuidanceDistribution(',
             'Installed stateless authentication dependency detector fixture must fail:',
             'roave/security-advisories',
