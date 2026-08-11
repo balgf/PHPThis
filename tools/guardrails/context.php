@@ -1351,6 +1351,210 @@ function contextGuardrailFailures(string $root): array
 
     requireGuardrailArtifactMarkers($root, $configurationArtifactMarkers, 'configuration-boundary', $failures);
 
+    $localEnvironmentLauncherArtifactMarkers = [
+        'docs/decisions/050-application-owned-local-environment-launcher.md' => [
+            '# ADR 050: Application-owned local environment launcher',
+            'Status: accepted',
+            'The checked reference is invoked explicitly through PHP CLI as `php ./bin/application jobs:run-one` or `php ./bin/application database:migrate`.',
+            'The array-form `proc_open` call supplies exactly the selected application triplet as its explicit child environment.',
+            'Without that application-specific factory and evidence, the checked block remains transport proof rather than adopted application configuration.',
+            'The health-only skeleton retains `NOT_APPLICABLE(CONFIGURATION)`, `NOT_APPLICABLE(CLI)`, and `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)` and ships no launcher file.',
+        ],
+        'docs/decisions/README.md' => [
+            '- `050-application-owned-local-environment-launcher.md`',
+            'It is authoritative for the checked application-owned launcher pattern',
+        ],
+        'docs/configuration.md' => [
+            '[application-owned local environment launcher reference](configuration/local-environment-launcher.md)',
+            'it is not a dotenv API, configuration cache, `config:clear` facility, or production secret-delivery mechanism.',
+        ],
+        'docs/configuration/local-environment-launcher.md' => [
+            '# Application-owned local environment launcher',
+            '## Copyable `bin/application` reference',
+            '## Copyable `src/Configuration/ApplicationEnvironment.php` reference',
+            '## Private child handoff',
+            '!isset($argv)',
+            "fwrite(STDERR, \"{\\\"error\\\":\\\"invalid_arguments\\\"}\\n\");",
+            "fwrite(STDERR, \"{\\\"error\\\":\\\"unknown_command\\\"}\\n\");",
+            "fwrite(STDERR, \"{\\\"error\\\":\\\"local_environment_failed\\\"}\\n\");",
+            'final readonly class WorkerLauncherTransport',
+            'final readonly class MigrationLauncherTransport',
+            'public static function workerForLocalLauncher(string $root): WorkerLauncherTransport',
+            'public static function migrationsForLocalLauncher(string $root): MigrationLauncherTransport',
+            '$contents = @stream_get_contents($stream, 65_537);',
+            'strlen($contents) > 65_536',
+            'count($lines) > 256',
+            'strlen($line) > 4_225',
+            'strlen($value) > 4_096',
+            "preg_match('/\\A[A-Z][A-Z0-9_]{0,127}\\z/D', \$name)",
+            "['bypass_shell' => true]",
+            'Every selected inherited value and every represented local value receives the same transport validation',
+            'They are not final application configuration types and the private child does not call them.',
+        ],
+        'docs/cli.md' => [
+            '## Optional local environment launcher',
+            'php ./bin/application jobs:run-one',
+            'php ./bin/application database:migrate',
+            'Follow [Application-owned local environment launcher](configuration/local-environment-launcher.md) for the checked PHP reference.',
+        ],
+        'docs/cli/README.md' => [
+            '[Application-owned local environment launcher](../configuration/local-environment-launcher.md)',
+            'The checked launcher is an ordinary application-owned PHP file invoked through explicit PHP CLI, not a framework command.',
+        ],
+        'docs/cli/arguments-output.md' => [
+            '`php ./bin/application <command>`',
+            '`{"error":"local_environment_failed"}\\n`',
+        ],
+        'docs/cli/composition.md' => [
+            'array-form shell-free `proc_open` with an explicit environment containing only the selected application profile',
+        ],
+        'docs/cli/testing.md' => [
+            'execute the real PHP file separately in fresh subprocesses',
+            'Clean every file and sentinel in `finally`.',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Adopt, change, or review a local development environment launcher | `docs/configuration/local-environment-launcher.md`',
+            'verify that no framework loader, automatic bootstrap, dotenv dependency, configuration cache, `config:clear` command, Contract/Profile/PHT/checker change',
+        ],
+        '.ai/README.md' => [
+            '| Change local environment launcher guidance or its checked reference | `.ai/application-context.md` |',
+            'accepted ADR 050, checked application-owned reference',
+        ],
+        '.ai/application-context.md' => [
+            'Preserve accepted ADR 050 and its optional application-owned boundary.',
+            'Do not add a framework or skeleton launcher, automatic PHP loading, dotenv dependency, configuration cache, `config:clear`, Contract/Profile/PHT/checker change',
+        ],
+        '.ai/cli.md' => [
+            'an optional application-owned PHP launcher invoked as `php ./bin/application <command>`',
+            'array-form shell-free `proc_open` with inherited `STDIN`, `STDOUT`, and `STDERR` descriptor resources',
+        ],
+        '.ai/testing.md' => [
+            'exactly `php ./bin/application jobs:run-one` and `php ./bin/application database:migrate`',
+            'This installed proof certifies launcher transport only',
+        ],
+        'templates/application/.ai/README.md' => [
+            '| Adopt or change a local development environment launcher | installed `vendor/phpthis/framework/docs/configuration/local-environment-launcher.md`',
+        ],
+        'templates/application/.ai/configuration.md' => [
+            '{{LOCAL_ENVIRONMENT_LAUNCHER_ADOPTION_OR_NOT_APPLICABLE}}',
+            '{{LOCAL_ENVIRONMENT_LAUNCHER_FILE_CONTRACT_OR_NOT_APPLICABLE}}',
+            '{{LOCAL_ENVIRONMENT_LAUNCHER_PROFILE_PRECEDENCE_OR_NOT_APPLICABLE}}',
+            '{{LOCAL_ENVIRONMENT_LAUNCHER_CHILD_ENVIRONMENT_OR_NOT_APPLICABLE}}',
+            '{{LOCAL_ENVIRONMENT_LAUNCHER_FAILURE_RELOAD_AND_REDACTION_OR_NOT_APPLICABLE}}',
+        ],
+        'templates/application/.ai/cli.md' => [
+            '{{CLI_LOCAL_ENVIRONMENT_LAUNCHER_FORWARDING_OR_NOT_APPLICABLE}}',
+        ],
+        'templates/application/.ai/operations.md' => [
+            '{{LOCAL_ENVIRONMENT_LAUNCHER_OPERATIONS_OR_NOT_APPLICABLE}}',
+            '{{PRODUCTION_CONFIGURATION_DELIVERY_OR_NOT_APPLICABLE}}',
+        ],
+        'templates/application/.ai/testing.md' => [
+            '{{LOCAL_ENVIRONMENT_LAUNCHER_TEST_COMMAND_OR_NOT_APPLICABLE}}',
+            'no wholesale environment inheritance, no launcher-side stream interception, and no secret argument',
+        ],
+        'skeleton/.ai/README.md' => [
+            '| Adopt or change a local development environment launcher | installed `vendor/phpthis/framework/docs/configuration/local-environment-launcher.md`',
+        ],
+        'skeleton/.ai/configuration.md' => [
+            '`NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`',
+            'It therefore has no configuration reader, typed configuration value, local environment launcher, selected process profile, local configuration file, or launcher PHP file.',
+        ],
+        'skeleton/.ai/cli.md' => [
+            '`NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`: the starter has no local launcher command',
+        ],
+        'skeleton/.ai/operations.md' => [
+            'Local environment launcher: `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`',
+        ],
+        'skeleton/.ai/testing.md' => [
+            '`NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER_EVIDENCE)`',
+            'no command, `exit`, substitution, backtick, expansion, redirection, or `PATH` side effect; and cleanup in `finally`.',
+        ],
+        'tools/test-consumer-project.php' => [
+            "require_once __DIR__ . '/test-consumer-project/local-environment-launcher.php';",
+            '$installedLocalEnvironmentLauncherProof = proveInstalledLocalEnvironmentLauncherReference(',
+            "!== 'installed-local-environment-launcher-reference-proved'",
+            'The installed local environment launcher proof did not complete.',
+        ],
+        'tools/test-consumer-project/local-environment-launcher.php' => [
+            'function installedLocalEnvironmentLauncherReferences(string $installedFramework): array',
+            'function proveInstalledLocalEnvironmentLauncherReference(',
+            "'launcher' => '1696b1bb2694539588bad9a540bd4121a4a106bb3810803e742283e9f98e020a'",
+            "'environment' => '18d2dce2559fe9d276a7430c438b409848a5949174e0c3c48cf70d388a4a3fb1'",
+            "shell_exec('true')",
+            "\$childEnvironment += ['PATH' => '/usr/bin']",
+            'The local launcher exact-source mutation control failed.',
+            "[PHP_BINARY, '-d', 'register_argc_argv=0', \$launcherPath]",
+            '$environmentSourceWithoutExpectedReads = $references[\'environment\'];',
+            'The local environment boundary literal-read inventory changed.',
+            'The local environment boundary gained alternate process access.',
+            '$expectedChildEnvironmentBlocks = [',
+            "'[0 => STDIN, 1 => STDOUT, 2 => STDERR]'",
+            'The local launcher selected-environment handoff changed.',
+            "substr_count(\$references['launcher'], '\$childEnvironment = [') !== 2",
+            'The local launcher child environment is not exact.',
+            'The relative in-project launcher or selected-only child environment changed.',
+            'An invalid inherited worker profile fell back to a valid local profile.',
+            'The partial inherited {$profile} profile was merged with the local file.',
+            'The partial local {$profile} profile was accepted.',
+            "'duplicate key' =>",
+            "'invalid complete non-selected profile' =>",
+            "'final unterminated carriage return' =>",
+            'Opaque local environment metacharacters changed.',
+            'Executable local environment syntax ran.',
+            'The 65,536-byte local-file boundary was rejected.',
+            "'65,537-byte file' =>",
+            'Fresh-process local environment reload changed.',
+            'PASS installed local environment launcher propagated exit',
+            'removeDirectory($launcherProject);',
+            'The local environment launcher proof did not clean its workspace.',
+            "return 'installed-local-environment-launcher-reference-proved';",
+        ],
+        'docs/guardrails.md' => [
+            'accepted ADR 050, the packaged application-owned PHP launcher reference',
+            'The local-environment-launcher guard separately pins accepted ADR 050',
+            'Exact block hashes plus representative extra-shell-call and child-environment-mutation controls retain the complete executable reference source.',
+            'One unconditional entrypoint completion check, terminal module sentinel, early-return mutation control, and post-`finally` workspace-absence assertion retain proof reachability and cleanup.',
+            'The copied transport classes and `*ForLocalLauncher()` factories prove only atomic local source selection, transport bounds, and exact child delivery.',
+        ],
+        'tools/package-files.txt' => [
+            'docs/configuration/local-environment-launcher.md',
+            'docs/decisions/050-application-owned-local-environment-launcher.md',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $localEnvironmentLauncherArtifactMarkers,
+        'local environment launcher',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'docs/consumer-contract.md' => [
+                'LOCAL_ENVIRONMENT_LAUNCHER',
+                'local-environment-launcher.md',
+            ],
+            'docs/strict-profile.md' => [
+                'LOCAL_ENVIRONMENT_LAUNCHER',
+                'local-environment-launcher.md',
+            ],
+            'verification/ApplicationChecker.php' => [
+                'LOCAL_ENVIRONMENT_LAUNCHER',
+                'LocalEnvironmentLauncher',
+                'local-environment-launcher',
+            ],
+            'tools/test-consumer-project/configuration.php' => [
+                'proveInstalledLocalEnvironmentLauncherReference',
+                'LocalEnvironmentLauncher',
+            ],
+        ],
+        'local environment launcher boundary',
+        $failures,
+    );
+
     $startupProbeSemanticsArtifactMarkers = [
         '.ai/README.md' => [
             '| Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |',

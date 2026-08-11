@@ -7,6 +7,8 @@
 - Local start command: `php -S 127.0.0.1:8080 -t public`
 - Local stop action: stop the foreground development server.
 - Required local services: none.
+- Local environment launcher: `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`; the starter has no launcher PHP file, selected process profile, or local configuration file.
+- Production configuration delivery: `NOT_APPLICABLE(no deployment policy)`; no local launcher or file may be inferred as a production path.
 
 ## Runtime
 
@@ -21,6 +23,8 @@
 ## Configuration runtime
 
 `.ai/configuration.md` is the single writable configuration authority and currently records `NOT_APPLICABLE(CONFIGURATION)`: the starter has no deployment input, secret-delivery path, rotation, reload, or configuration-startup failure. Record any later source, factory, validation, injection, profile/input-name/credential separation, failure, rotation/restart, redaction, and configuration-test facts there rather than duplicating them in this operations guide. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
+
+If a local environment launcher is later adopted, record here only its explicit PHP CLI invocation, absolute project-root/`PHP_BINARY`/private-child resolution, working-directory behavior, owner, and explicit production non-use. The shared canonical environment reader plus file, key, profile, and precedence facts remain in `.ai/configuration.md`; command handoff remains in `.ai/cli.md`; tests remain in `.ai/testing.md`. Do not add a launcher until configuration and a real process profile are selected.
 
 ## Session runtime
 

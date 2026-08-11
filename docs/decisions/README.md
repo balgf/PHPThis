@@ -2,9 +2,7 @@
 
 Decision records capture constraints that an AI must not reinterpret from scratch. A record contains context, decision, consequences, and reconsideration triggers. AI may investigate and draft a proposed record; `Status: accepted` represents accountable human maintainer approval.
 
-Proposed records:
-
-None.
+Proposed records: none.
 
 Accepted records:
 
@@ -57,6 +55,7 @@ Accepted records:
 - `047-bounded-alpha-6-release-scope.md`
 - `048-isolated-agent-evaluation-controller.md`
 - `049-bounded-response-cookie-profile.md`
+- `050-application-owned-local-environment-launcher.md`
 
 ## Current and successor relationships
 
@@ -77,3 +76,5 @@ A partially superseded record remains accepted outside the exact scope named bel
 | [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example's same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |
 
 ADR 013's current executable-example identifier placement is additionally refined by [ADR 046](046-canonical-executable-example-boundaries.md); the canonical current tree remains in [Optional CRUD reference profile](../crud.md#reference-placement). This refinement does not additionally supersede ADR 013's optional structure decision.
+
+Accepted [ADR 050](050-application-owned-local-environment-launcher.md) adds an optional development-only environment-delivery recommendation to ADR 036 without superseding its one typed PHP configuration boundary. It is authoritative for the checked application-owned launcher pattern but adds no framework runtime, automatic loading, configuration cache, or skeleton adoption.

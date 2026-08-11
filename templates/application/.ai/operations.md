@@ -7,6 +7,8 @@
 - Local start command: `{{LOCAL_START_COMMAND}}`
 - Local stop command: `{{LOCAL_STOP_COMMAND_OR_NOT_APPLICABLE}}`
 - Required local services: {{REQUIRED_LOCAL_SERVICES}}
+- Local environment launcher PHP CLI invocation, absolute project-root/`PHP_BINARY`/private-child resolution, working-directory policy, and owner or `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`: {{LOCAL_ENVIRONMENT_LAUNCHER_OPERATIONS_OR_NOT_APPLICABLE}}
+- Production configuration delivery path and explicit non-use of the local launcher and file: {{PRODUCTION_CONFIGURATION_DELIVERY_OR_NOT_APPLICABLE}}
 
 ## Runtime
 
@@ -21,6 +23,8 @@
 ## Configuration runtime
 
 `.ai/configuration.md` is the single writable authority for the boundary source, external names, deployment injection owner, process-specific factories and final readonly types, validation, profile, input-name, and credential separation without inheritance, combined credentials, or fallback, startup failure, rotation/restart, secret redaction, and configuration evidence. Do not duplicate those facts or placeholders here. This operations guide records only the surrounding process, supervisor, topology, capacity, and incident facts. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
+
+When a local environment launcher is adopted, this guide records only its explicit PHP CLI invocation, absolute project-root/`PHP_BINARY`/private-child resolution, working-directory behavior, owner, and production non-use. `.ai/configuration.md` remains authoritative for the shared canonical reader, file/profile/key, and source-precedence facts, `.ai/cli.md` for command handoff, and `.ai/testing.md` for evidence. Every production process receives configuration from its explicitly selected supervisor, container, service manager, or other deployment path; it does not invoke the local launcher or read its ignored file.
 
 ## Session runtime
 

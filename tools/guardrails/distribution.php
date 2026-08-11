@@ -49,6 +49,38 @@ function distributionGuardrailFailures(
         $failures[] = 'The application-owned example must remain excluded from the framework release inventory.';
     }
 
+    if (is_string($packageInventory)) {
+        foreach (
+            [
+                'docs/configuration/local-environment-launcher.md',
+                'docs/decisions/050-application-owned-local-environment-launcher.md',
+            ] as $localEnvironmentLauncherPackagePath
+        ) {
+            $pathPattern = '/^' . preg_quote($localEnvironmentLauncherPackagePath, '/') . '$/m';
+
+            if (preg_match_all($pathPattern, $packageInventory) !== 1) {
+                $failures[] = "The local environment launcher package path must occur exactly once: {$localEnvironmentLauncherPackagePath}.";
+            }
+        }
+
+        foreach (
+            [
+                'bin/application',
+                'src/Configuration/ApplicationEnvironment.php',
+                'src/Configuration/LocalEnvironmentLauncher.php',
+                'verification/LocalEnvironmentLauncher.php',
+                '.env',
+                '.env.example',
+            ] as $forbiddenLocalEnvironmentLauncherPackagePath
+        ) {
+            $pathPattern = '/^' . preg_quote($forbiddenLocalEnvironmentLauncherPackagePath, '/') . '$/m';
+
+            if (preg_match($pathPattern, $packageInventory) === 1) {
+                $failures[] = "The application-owned local environment launcher path must not enter the installed framework: {$forbiddenLocalEnvironmentLauncherPackagePath}.";
+            }
+        }
+    }
+
     $composerPath = $root . '/composer.json';
     $composerContents = file_get_contents($composerPath);
 
@@ -62,6 +94,11 @@ function distributionGuardrailFailures(
         $check = is_array($scripts) ? ($scripts['check'] ?? null) : null;
         $archive = is_array($composer) ? ($composer['archive'] ?? null) : null;
         $archiveExclusions = is_array($archive) ? ($archive['exclude'] ?? null) : null;
+        $packageBinaries = is_array($composer) ? ($composer['bin'] ?? null) : null;
+
+        if ($packageBinaries !== ['bin/phpthis']) {
+            $failures[] = 'The framework package must expose only the phpthis checker binary.';
+        }
 
         if (!is_array($runtimeRequirements)) {
             $failures[] = 'Framework runtime requirements must remain an explicit Composer map.';
@@ -168,6 +205,10 @@ function distributionGuardrailFailures(
     $skeletonRuntimeRequirements = is_array($skeletonComposer) ? ($skeletonComposer['require'] ?? null) : null;
     $skeletonDevelopmentRequirements = is_array($skeletonComposer) ? ($skeletonComposer['require-dev'] ?? null) : null;
     $skeletonScripts = is_array($skeletonComposer) ? ($skeletonComposer['scripts'] ?? null) : null;
+
+    if (is_array($skeletonComposer) && array_key_exists('bin', $skeletonComposer)) {
+        $failures[] = 'The default skeleton must not publish an executable binary.';
+    }
 
     if (!is_array($skeletonRuntimeRequirements)) {
         $failures[] = 'The default skeleton runtime requirements must remain an explicit Composer map.';
@@ -942,6 +983,23 @@ function distributionGuardrailFailures(
         }
     }
 
+    foreach (
+        [
+            'bin',
+            'bin/application',
+            '.env',
+            '.env.example',
+            'src/Configuration',
+            'src/Configuration/ApplicationEnvironment.php',
+        ] as $skeletonLocalEnvironmentLauncherPath
+    ) {
+        $absoluteSkeletonPath = $root . '/skeleton/' . $skeletonLocalEnvironmentLauncherPath;
+
+        if (file_exists($absoluteSkeletonPath) || is_link($absoluteSkeletonPath)) {
+            $failures[] = "The default skeleton must not adopt local environment launcher path: {$skeletonLocalEnvironmentLauncherPath}.";
+        }
+    }
+
     if (is_string($packageInventory)) {
         $packagePaths = preg_split('/\R/', $packageInventory);
 
@@ -1443,6 +1501,40 @@ function distributionGuardrailFailures(
         if (!is_string($contents)) {
             $failures[] = "Cannot read {$relativePath}.";
             continue;
+        }
+
+        if (str_starts_with($relativePath, 'src/')) {
+            foreach (
+                [
+                    'LocalEnvironmentLauncher',
+                    'local_environment_failed',
+                    'local-environment-launcher.md',
+                    'workerForLocalLauncher',
+                    'migrationsForLocalLauncher',
+                ] as $forbiddenFrameworkLauncherMarker
+            ) {
+                if (str_contains($contents, $forbiddenFrameworkLauncherMarker)) {
+                    $failures[] = "Framework core must not implement the application-owned local environment launcher: {$relativePath}.";
+                    break;
+                }
+            }
+        }
+
+        if (str_starts_with($relativePath, 'verification/')) {
+            foreach (
+                [
+                    'LOCAL_ENVIRONMENT_LAUNCHER',
+                    'LocalEnvironmentLauncher',
+                    'local-environment-launcher',
+                    'workerForLocalLauncher',
+                    'migrationsForLocalLauncher',
+                ] as $forbiddenCheckerLauncherMarker
+            ) {
+                if (str_contains($contents, $forbiddenCheckerLauncherMarker)) {
+                    $failures[] = "The consumer checker must not adopt the optional local environment launcher: {$relativePath}.";
+                    break;
+                }
+            }
         }
 
         $strictTypesPattern = $relativePath === 'bin/phpthis'

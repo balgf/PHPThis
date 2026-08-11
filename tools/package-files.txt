@@ -29,6 +29,7 @@ docs/cli/composition.md
 docs/cli/scheduling-locking.md
 docs/cli/testing.md
 docs/configuration.md
+docs/configuration/local-environment-launcher.md
 docs/consumer-contract.md
 docs/consumer-profile.md
 docs/crud.md
@@ -83,6 +84,7 @@ docs/decisions/046-canonical-executable-example-boundaries.md
 docs/decisions/047-bounded-alpha-6-release-scope.md
 docs/decisions/048-isolated-agent-evaluation-controller.md
 docs/decisions/049-bounded-response-cookie-profile.md
+docs/decisions/050-application-owned-local-environment-launcher.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md

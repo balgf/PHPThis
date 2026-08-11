@@ -8,6 +8,7 @@ require_once __DIR__ . '/test-consumer-project/http.php';
 require_once __DIR__ . '/test-consumer-project/application.php';
 require_once __DIR__ . '/test-consumer-project/data.php';
 require_once __DIR__ . '/test-consumer-project/configuration.php';
+require_once __DIR__ . '/test-consumer-project/local-environment-launcher.php';
 require_once __DIR__ . '/test-consumer-project/profile-controls.php';
 
 $root = dirname(__DIR__);
@@ -184,6 +185,18 @@ try {
         $profileCommand,
         $environment,
     );
+    $installedLocalEnvironmentLauncherProof = proveInstalledLocalEnvironmentLauncherReference(
+        $project,
+        $installedFramework,
+        $environment,
+    );
+
+    if (
+        $installedLocalEnvironmentLauncherProof
+            !== 'installed-local-environment-launcher-reference-proved'
+    ) {
+        throw new RuntimeException('The installed local environment launcher proof did not complete.');
+    }
     $requestHandlerDecoratorProofPath = proveInstalledRequestHandlerDecorator($project, $environment);
 
     try {

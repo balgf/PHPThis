@@ -165,6 +165,8 @@ Real values come from the deployment environment or an application-owned, explic
 
 Keep `.env` and `.env.*` ignored, with only `.env.example` allowed. If present, `.env.example` lists exact names and obviously non-secret local placeholders. PHPThis does not load it; a consumer may choose a development-only loader explicitly at its outer process boundary, but the resulting application source must still preserve the single typed boundary and must not add a framework dotenv dependency.
 
+When local developers need a checked command that reads a non-shell `.env` without manually exporting every value, use the [application-owned local environment launcher reference](configuration/local-environment-launcher.md). It defines a finite command-to-profile map, literal bounded file grammar, complete-profile precedence without merging, opposite-authority removal, fixed redacted failures, out-of-directory invocation, and executable subprocess evidence. The launcher remains application source outside PHPThis runtime; it is not a dotenv API, configuration cache, `config:clear` facility, or production secret-delivery mechanism.
+
 Mark constructor or function parameters that carry passwords, tokens, or private keys with `#[\SensitiveParameter]`. This reduces accidental stack-trace exposure only. Do not log, dump, serialize, interpolate, or include the typed configuration in request summaries.
 
 ## Required evidence

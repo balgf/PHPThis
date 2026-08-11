@@ -366,7 +366,7 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
             : $segment;
 
         $exactMechanismSegment = preg_match(
-            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|middlewares?|pipelines?|decorators?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing)|configs?|configurations?|(?:application|deployment|runtime)[-_]?config(?:uration)?s?|config(?:uration)?[-_]?(?:bags?|repositories|services|helpers|facades|providers|readers)|secret[-_]?managers?|dotenv[-_]?(?:loaders?)?)\z/i',
+            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|middlewares?|pipelines?|decorators?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing)|configs?|configurations?|(?:application|deployment|runtime)[-_]?config(?:uration)?s?|config(?:uration)?[-_]?(?:bags?|repositories|services|helpers|facades|providers|readers)|local[-_]?environment[-_]?(?:launchers?|loaders?)|secret[-_]?managers?|dotenv[-_]?(?:loaders?)?)\z/i',
             $name,
         ) === 1;
         $camelCaseMechanismSuffix = preg_match(
@@ -374,7 +374,7 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
             $name,
         ) === 1;
         $explicitHiddenMechanismSuffix = preg_match(
-            '/(?:\A|(?<=[A-Za-z0-9]))(?:QueryBuilder|BindingHelper|PlaceholderHelper|AutoWire|Autowire|ConfigurationBag|ConfigBag|ConfigurationRepository|ConfigRepository|ConfigurationService|ConfigService|ConfigurationHelper|ConfigHelper|ConfigurationFacade|ConfigFacade|ConfigurationReader|ConfigReader|ApplicationEnvironment|EnvironmentReader|EnvironmentConfiguration|ApplicationConfig|ApplicationConfiguration|DeploymentConfig|DeploymentConfiguration|RuntimeConfig|RuntimeConfiguration|SecretManager|DotenvLoader)(?:Interface|Provider|Factory)?\z/',
+            '/(?:\A|(?<=[A-Za-z0-9]))(?:QueryBuilder|BindingHelper|PlaceholderHelper|AutoWire|Autowire|ConfigurationBag|ConfigBag|ConfigurationRepository|ConfigRepository|ConfigurationService|ConfigService|ConfigurationHelper|ConfigHelper|ConfigurationFacade|ConfigFacade|ConfigurationReader|ConfigReader|ApplicationEnvironment|EnvironmentReader|EnvironmentConfiguration|ApplicationConfig|ApplicationConfiguration|DeploymentConfig|DeploymentConfiguration|RuntimeConfig|RuntimeConfiguration|LocalEnvironmentLauncher|LocalEnvironmentLoader|SecretManager|DotenvLoader)(?:Interface|Provider|Factory)?\z/',
             $name,
         ) === 1;
 
@@ -629,6 +629,7 @@ function consumerProjectHarnessModulePaths(): array
         'tools/test-consumer-project/application.php',
         'tools/test-consumer-project/data.php',
         'tools/test-consumer-project/configuration.php',
+        'tools/test-consumer-project/local-environment-launcher.php',
         'tools/test-consumer-project/profile-controls.php',
     ];
 }
@@ -775,6 +776,18 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
         'tools/test-consumer-project/configuration.php' => [
             'proveInstalledTypedConfiguration',
             'proveInstalledConfigurationEvidenceReference',
+        ],
+        'tools/test-consumer-project/local-environment-launcher.php' => [
+            'installedLocalEnvironmentLauncherReferences',
+            'localEnvironmentLauncherInputNames',
+            'localEnvironmentLauncherFile',
+            'padLocalEnvironmentLauncherFile',
+            'replaceLocalEnvironmentLauncherFile',
+            'writeLocalEnvironmentLauncherExpectation',
+            'requireLocalEnvironmentLauncherFailure',
+            'requireLocalEnvironmentLauncherSuccess',
+            'localEnvironmentLauncherProofBoundary',
+            'proveInstalledLocalEnvironmentLauncherReference',
         ],
         'tools/test-consumer-project/profile-controls.php' => [
             'proveDuplicationAdvisoryIsReportOnly',
@@ -929,6 +942,7 @@ function consumerProjectHarnessExpectedProofCalls(): array
         'proveDatabaseContextConnectionConsistency',
         'proveInstalledTypedConfiguration',
         'proveInstalledConfigurationEvidenceReference',
+        'proveInstalledLocalEnvironmentLauncherReference',
         'proveInstalledRequestHandlerDecorator',
         'proveDuplicationAdvisoryIsReportOnly',
         'proveObservabilityContextIsRequired',
@@ -981,6 +995,7 @@ function consumerProjectHarnessExpectedProofStatements(): array
         'proveDatabaseContextConnectionConsistency' => 'proveDatabaseContextConnectionConsistency($project,$profileCommand,$environment);',
         'proveInstalledTypedConfiguration' => 'proveInstalledTypedConfiguration($project,$profileCommand,$environment);',
         'proveInstalledConfigurationEvidenceReference' => 'proveInstalledConfigurationEvidenceReference($project,$installedFramework,$profileCommand,$environment);',
+        'proveInstalledLocalEnvironmentLauncherReference' => '$installedLocalEnvironmentLauncherProof=proveInstalledLocalEnvironmentLauncherReference($project,$installedFramework,$environment);',
         'proveInstalledRequestHandlerDecorator' => '$requestHandlerDecoratorProofPath=proveInstalledRequestHandlerDecorator($project,$environment);',
         'proveDuplicationAdvisoryIsReportOnly' => 'proveDuplicationAdvisoryIsReportOnly($project,$composerBinary,$profileCommand,$environment);',
         'proveObservabilityContextIsRequired' => 'proveObservabilityContextIsRequired($project,$profileCommand,$environment);',
@@ -1296,7 +1311,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === '85447665921f2e714666754907417c7e26aae24e0c400db28864c98ab182a1a3';
+            === '5689ccd9cfd20cb815e4ba2faacd4d5b62f93205362059cdc5c37f43f5953404';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -1591,7 +1606,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
         sort($actualModuleNames, SORT_STRING);
 
         if ($actualModuleNames !== $expectedModuleNames) {
-            $failures[] = 'The installed-consumer harness must retain exactly its seven reviewed modules.';
+            $failures[] = 'The installed-consumer harness must retain exactly its eight reviewed modules.';
         }
     }
 
@@ -1694,11 +1709,11 @@ function consumerProjectHarnessStructureFailures(string $root): array
         || $actualIncludeStatements !== $expectedIncludeStatements
         || $functionCount !== 0
     ) {
-        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level seven-module require_once preamble and contain no function declarations.';
+        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level eight-module require_once preamble and contain no function declarations.';
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
-        $failures[] = 'The installed-consumer entrypoint must invoke its exact 45 proof functions once, unconditionally, and in the reviewed order.';
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 46 proof functions once, unconditionally, and in the reviewed order.';
     }
 
     if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
@@ -1863,6 +1878,14 @@ PHP;
         throw new RuntimeException('The installed Workbench guidance proof did not return its success sentinel.');
     }
 PHP;
+    $localEnvironmentLauncherCompletionCheck = <<<'PHP'
+    if (
+        $installedLocalEnvironmentLauncherProof
+            !== 'installed-local-environment-launcher-reference-proved'
+    ) {
+        throw new RuntimeException('The installed local environment launcher proof did not complete.');
+    }
+PHP;
     $sentinelSpecifications = [
         [
             'module' => 'tools/test-consumer-project/http.php',
@@ -1884,6 +1907,13 @@ PHP;
             'sentinel' => 'installed-workbench-guidance-proved',
             'variable' => '$installedWorkbenchGuidanceProof',
             'check' => $workbenchCompletionCheck,
+        ],
+        [
+            'module' => 'tools/test-consumer-project/local-environment-launcher.php',
+            'function' => 'proveInstalledLocalEnvironmentLauncherReference',
+            'sentinel' => 'installed-local-environment-launcher-reference-proved',
+            'variable' => '$installedLocalEnvironmentLauncherProof',
+            'check' => $localEnvironmentLauncherCompletionCheck,
         ],
     ];
 
@@ -2819,6 +2849,9 @@ function repositoryGuardrailFailures(string $root): array
         'src/Support/ConfigRepository.php',
         'src/Support/ConfigurationHelper.php',
         'src/Support/ApplicationEnvironment.php',
+        'src/Configuration/LocalEnvironmentLauncher.php',
+        'src/Support/LocalEnvironmentLoader.php',
+        'src/local-environment-launcher/Launcher.php',
         'src/Support/SecretManager.php',
         'src/Support/DotenvLoader.php',
         'src/ApplicationConfiguration.php',
@@ -2838,6 +2871,7 @@ function repositoryGuardrailFailures(string $root): array
         'src/Observability/Telescope.php',
         'example/src/Domain/UserRepository.php',
         'docs/repository-boundary.md',
+        'docs/configuration/local-environment-launcher.md',
     ];
 
     foreach ($forbiddenFrameworkMechanismFixtures as $fixture) {
@@ -2897,6 +2931,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/consumer-contract.md',
         'docs/consumer-profile.md',
         'docs/configuration.md',
+        'docs/configuration/local-environment-launcher.md',
         'docs/caching.md',
         'docs/cli.md',
         'docs/cli/README.md',
@@ -3000,6 +3035,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/decisions/045-bounded-session-cleanup-and-response-framing.md',
         'docs/decisions/046-canonical-executable-example-boundaries.md',
         'docs/decisions/047-bounded-alpha-6-release-scope.md',
+        'docs/decisions/050-application-owned-local-environment-launcher.md',
         'example/AGENTS.md',
         'example/.ai/README.md',
         'example/.ai/cache.md',
@@ -3373,8 +3409,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 6",
-            "'manifest_sha256' => '1c43747e3edd3e384dde2522a3c97aed791ae46a30daff8ee846420c8c243ff9'",
+            "'revision' => 7",
+            "'manifest_sha256' => '1f13dddb16091fa0928e69d540dec2e0468a74aed0f6db6d3c20d094d9eb13be'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -3404,10 +3440,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 6',
+            '"revision": 7',
             '"source-skeleton"',
-            '"tree": "4b5548c0b869f6cdc0c0a5061c26f688192623f5"',
-            '"fixture_sha256": "d994fd1575bf92644c889a3e2f85da802c83db79a681c75bdf6fb7df925846fa"',
+            '"tree": "73104a33ee14784528af6129090425eea0b069f3"',
+            '"fixture_sha256": "f7246d5b0034fe1b789573cd8c6cdd073a50a352f1df5c179bd6fb81e27a9c83"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -3537,6 +3573,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
+            'v0.2 accepts only `change.simple-ping` revision 7 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -3546,7 +3583,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 6;',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 7;',
+            'Controller v0.2 supports only change.simple-ping revision 7 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
