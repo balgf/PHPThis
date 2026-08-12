@@ -7,6 +7,91 @@ function boundaryGuardrailFailures(string $root): array
 {
     $failures = [];
 
+    $protectedFileTransferProofMarkers = [
+        'docs/file-transfers/security.md' => [
+            '`SameSite` and an opaque identifier are not permission.',
+            'Keep rejected metadata, paths, stored bytes, and identifiers out of public errors and terminal summaries.',
+        ],
+        'docs/file-transfers/testing.md' => [
+            'Protected application evidence proves exact `authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage` order',
+            'Content evidence names exactly `OPAQUE_BYTES` or `INSPECTED_CONTENT`.',
+        ],
+        'templates/application/.ai/file-transfers.md' => [
+            'Do not introduce generic auth, quota, scanner, upload, storage, filesystem, lifecycle, or checker APIs.',
+        ],
+        'skeleton/.ai/file-transfers.md' => [
+            'NOT_APPLICABLE(FILE_TRANSFER)',
+            'Keep movement, quota accounting, inspection, cleanup, retention, deletion, and authorization in concrete application operations.',
+        ],
+        'tools/test-consumer-project.php' => [
+            "require_once __DIR__ . '/test-consumer-project/file-transfers.php';",
+            '$installedProtectedFileTransferProof = proveInstalledProtectedFileTransferReference(',
+            "!== 'installed-protected-file-transfer-reference-proved'",
+        ],
+        'tools/test-consumer-project/file-transfers.php' => [
+            'final readonly class InstalledPendingDocumentUpload',
+            'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
+            'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
+            'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
+            'scanner_rejection=NOT_APPLICABLE',
+            'scanner_timeout=NOT_APPLICABLE',
+            'Reconciliation did not delete bytes before releasing exact accounting.',
+            'if ($this->pending !== $reservation)',
+            '} finally {' . "\n" . '            writeFile($adoptionPath, $originalAdoptionRecord);',
+            '$restoredAdoptionRecord !== $originalAdoptionRecord',
+            "return 'installed-protected-file-transfer-reference-proved';",
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $protectedFileTransferProofMarkers,
+        'installed protected file-transfer reference',
+        $failures,
+    );
+
+    $protectedFileTransferProofSources = consumerProjectHarnessSources($root);
+    $protectedFileTransferProofWiring = <<<'PHP'
+    $installedProtectedFileTransferProof = proveInstalledProtectedFileTransferReference(
+        $project,
+        $installedFramework,
+        $environment,
+    );
+
+    if (
+        $installedProtectedFileTransferProof
+            !== 'installed-protected-file-transfer-reference-proved'
+    ) {
+        throw new RuntimeException('The installed protected file-transfer proof did not complete.');
+    }
+PHP;
+
+    if ($protectedFileTransferProofSources === null) {
+        $failures[] = 'Cannot read the installed protected file-transfer proof harness.';
+    } else {
+        $protectedFileTransferProofEntrypoint =
+            $protectedFileTransferProofSources['tools/test-consumer-project.php'];
+        $protectedFileTransferProofModule =
+            $protectedFileTransferProofSources['tools/test-consumer-project/file-transfers.php'];
+
+        if (
+            substr_count(
+                $protectedFileTransferProofEntrypoint,
+                $protectedFileTransferProofWiring,
+            ) !== 1
+            || !consumerProjectHarnessEntrypointProofCallsAreCanonical(
+                $protectedFileTransferProofEntrypoint,
+            )
+            || !consumerProjectHarnessFunctionReturnsSentinel(
+                $protectedFileTransferProofModule,
+                'proveInstalledProtectedFileTransferReference',
+                'installed-protected-file-transfer-reference-proved',
+            )
+        ) {
+            $failures[] = 'Installed protected file-transfer proof wiring or completion sentinel changed.';
+        }
+    }
+
     $sessionContractMarkers = [
         '.ai/README.md' => '`.ai/session.md`',
         'docs/knowledge-map.md' => '`docs/sessions.md`',

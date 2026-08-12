@@ -48,26 +48,39 @@ function compositionBehaviorTests(): Generator
     ) {
         throw new RuntimeException('Expected the composed example health route.');
     }
-};
+    };
 
     yield 'example setup creates and reseeds a fresh database idempotently' => static function (): void {
-    $directory = __DIR__ . '/../tmp/application-tests';
+    $parentDirectory = __DIR__ . '/../tmp/application-tests';
 
-    if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
+    if (
+        !is_dir($parentDirectory)
+        && !mkdir($parentDirectory, 0777, true)
+        && !is_dir($parentDirectory)
+    ) {
         throw new RuntimeException('Unable to create the setup migration test directory.');
+    }
+
+    $resolvedParentDirectory = realpath($parentDirectory);
+
+    if (!is_string($resolvedParentDirectory)) {
+        throw new RuntimeException('Unable to resolve the setup migration test directory.');
+    }
+
+    $directory = $resolvedParentDirectory . '/setup-example-' . bin2hex(random_bytes(8));
+
+    if (!mkdir($directory, 0700)) {
+        throw new RuntimeException('Unable to create the isolated setup migration test directory.');
     }
 
     $resolvedDirectory = realpath($directory);
 
     if (!is_string($resolvedDirectory)) {
-        throw new RuntimeException('Unable to resolve the setup migration test directory.');
+        throw new RuntimeException('Unable to resolve the isolated setup migration test directory.');
     }
 
     $databasePath = $resolvedDirectory . '/setup-example-fresh.sqlite';
-
-    if (is_file($databasePath) && !unlink($databasePath)) {
-        throw new RuntimeException('Unable to reset the setup migration test database.');
-    }
+    $documentFileDirectory = $databasePath . '.files';
 
     $setupPath = __DIR__ . '/../tools/setup-example.php';
     $defaultDatabasePath = dirname(__DIR__) . '/tmp/example.sqlite';
@@ -80,23 +93,23 @@ function compositionBehaviorTests(): Generator
         throw new RuntimeException('Unable to fingerprint the default example database before setup tests.');
     }
 
-    $relativeSubmittedPath = 'tmp/application-tests/setup-example-relative-rejected.sqlite';
+    $relativeSubmittedPath = 'tmp/application-tests/'
+        . basename($resolvedDirectory)
+        . '/setup-example-relative-rejected.sqlite';
     $relativeTargetPath = dirname(__DIR__) . '/' . $relativeSubmittedPath;
     $controlSubmittedPath = $resolvedDirectory . "/setup-example-\n-rejected.sqlite";
     $extraArgumentTargetPath = $resolvedDirectory . '/setup-example-extra-argv-rejected.sqlite';
+    $relativeDocumentFileTarget = $relativeTargetPath . '.files';
+    $controlDocumentFileTarget = $controlSubmittedPath . '.files';
+    $extraArgumentDocumentFileTarget = $extraArgumentTargetPath . '.files';
+    $directoryDocumentFileTarget = $resolvedDirectory . DIRECTORY_SEPARATOR . '.files';
+    $windowsDriveSubmittedPath = 'C:\\phpthis-setup-'
+        . basename($resolvedDirectory)
+        . '-rejected.sqlite';
+    $windowsDriveTargetPath = dirname(__DIR__) . '/' . $windowsDriveSubmittedPath;
+    $windowsDriveDocumentFileTarget = $windowsDriveTargetPath . '.files';
 
-    if (is_file($relativeTargetPath) && !unlink($relativeTargetPath)) {
-        throw new RuntimeException('Unable to reset the rejected relative-path target.');
-    }
-
-    if (is_file($controlSubmittedPath) && !unlink($controlSubmittedPath)) {
-        throw new RuntimeException('Unable to reset the rejected control-path target.');
-    }
-
-    if (is_file($extraArgumentTargetPath) && !unlink($extraArgumentTargetPath)) {
-        throw new RuntimeException('Unable to reset the rejected extra-argument target.');
-    }
-
+    try {
     $emptyPath = runIsolatedPhpTest($setupPath, ['']);
     $relativePath = runIsolatedPhpTest($setupPath, [$relativeSubmittedPath]);
     $directoryPath = runIsolatedPhpTest(
@@ -111,18 +124,17 @@ function compositionBehaviorTests(): Generator
     );
 
     if (DIRECTORY_SEPARATOR === '/') {
-        $windowsDriveTargetPath = dirname(__DIR__) . '/C:\\phpthis-setup-rejected.sqlite';
-
-        if (is_file($windowsDriveTargetPath) && !unlink($windowsDriveTargetPath)) {
-            throw new RuntimeException('Unable to reset the rejected Windows-drive target.');
-        }
-
         $windowsDrivePath = runIsolatedPhpTest(
             $setupPath,
-            ['C:\\phpthis-setup-rejected.sqlite'],
+            [$windowsDriveSubmittedPath],
         );
 
-        if ($windowsDrivePath['exit_code'] === 0 || is_file($windowsDriveTargetPath)) {
+        if (
+            $windowsDrivePath['exit_code'] === 0
+            || is_file($windowsDriveTargetPath)
+            || file_exists($windowsDriveDocumentFileTarget)
+            || is_link($windowsDriveDocumentFileTarget)
+        ) {
             throw new RuntimeException('A Windows drive-letter path must remain relative on POSIX.');
         }
     }
@@ -145,6 +157,14 @@ function compositionBehaviorTests(): Generator
         || is_file($relativeTargetPath)
         || is_file($controlSubmittedPath)
         || is_file($extraArgumentTargetPath)
+        || file_exists($relativeDocumentFileTarget)
+        || is_link($relativeDocumentFileTarget)
+        || file_exists($controlDocumentFileTarget)
+        || is_link($controlDocumentFileTarget)
+        || file_exists($extraArgumentDocumentFileTarget)
+        || is_link($extraArgumentDocumentFileTarget)
+        || file_exists($directoryDocumentFileTarget)
+        || is_link($directoryDocumentFileTarget)
         || $first['exit_code'] !== 0
         || $second['exit_code'] !== 0
         || $first['stdout'] !== $expectedOutput
@@ -153,6 +173,16 @@ function compositionBehaviorTests(): Generator
         || $second['stderr'] !== ''
     ) {
         throw new RuntimeException('Expected unsafe paths to fail and explicit setup to run twice.');
+    }
+
+    $documentFileDirectoryMetadata = lstat($documentFileDirectory);
+
+    if (
+        !is_array($documentFileDirectoryMetadata)
+        || ($documentFileDirectoryMetadata['mode'] & 0170000) !== 0040000
+        || ($documentFileDirectoryMetadata['mode'] & 0777) !== 0700
+    ) {
+        throw new RuntimeException('Expected setup to provision one private document file directory.');
     }
 
     if (
@@ -269,6 +299,62 @@ function compositionBehaviorTests(): Generator
             'Expected fresh schema columns, indexes, and idempotent seed counts.',
         );
     }
+    } finally {
+        foreach ([$windowsDriveTargetPath, $windowsDriveDocumentFileTarget] as $unexpectedPath) {
+            if (is_link($unexpectedPath) || is_file($unexpectedPath)) {
+                if (!unlink($unexpectedPath)) {
+                    throw new RuntimeException('Unable to remove an unexpected setup test artifact.');
+                }
+            } elseif (is_dir($unexpectedPath)) {
+                removeCompositionTestDirectory($unexpectedPath);
+            }
+        }
+
+        removeCompositionTestDirectory($resolvedDirectory);
+    }
 };
 
+}
+
+function removeCompositionTestDirectory(string $directory): void
+{
+    if (is_link($directory)) {
+        if (!unlink($directory)) {
+            throw new RuntimeException('Unable to remove a composition test symlink.');
+        }
+
+        return;
+    }
+
+    if (!is_dir($directory)) {
+        return;
+    }
+
+    $entries = scandir($directory);
+
+    if (!is_array($entries)) {
+        throw new RuntimeException('Unable to inspect a composition test directory.');
+    }
+
+    foreach ($entries as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+
+        $path = $directory . DIRECTORY_SEPARATOR . $entry;
+
+        if (is_link($path)) {
+            if (!unlink($path)) {
+                throw new RuntimeException('Unable to remove a composition test symlink.');
+            }
+        } elseif (is_dir($path)) {
+            removeCompositionTestDirectory($path);
+        } elseif (is_file($path) && !unlink($path)) {
+            throw new RuntimeException('Unable to remove a composition test artifact.');
+        }
+    }
+
+    if (!rmdir($directory)) {
+        throw new RuntimeException('Unable to remove a composition test directory.');
+    }
 }

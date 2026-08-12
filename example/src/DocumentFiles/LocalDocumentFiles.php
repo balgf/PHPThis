@@ -30,9 +30,7 @@ final readonly class LocalDocumentFiles
     public function store(PendingDocumentUpload $upload): DocumentFileId
     {
         if (!@is_dir($this->directory)) {
-            if (!@mkdir($this->directory, 0700) && !@is_dir($this->directory)) {
-                throw new DocumentFileUnavailable('Document file directory could not be created.');
-            }
+            throw new DocumentFileUnavailable('Document file directory is unavailable.');
         }
         $this->requirePrivateDirectory($this->directory);
 
@@ -56,11 +54,18 @@ final readonly class LocalDocumentFiles
             throw new DocumentFileUnavailable('Document upload could not be moved into application storage.');
         }
 
-        $filePermissions = @chmod($destination, 0600) ? @fileperms($destination) : false;
-        if (!is_int($filePermissions) || ($filePermissions & 0777) !== 0600) {
+        $permissionsRestricted = @chmod($destination, 0600);
+        clearstatcache(true, $destination);
+        $destinationMetadata = $permissionsRestricted ? @lstat($destination) : false;
+        if (
+            !is_array($destinationMetadata)
+            || ($destinationMetadata['mode'] & 0170000) !== 0100000
+            || ($destinationMetadata['mode'] & 0777) !== 0600
+            || $destinationMetadata['size'] !== $upload->sizeBytes
+        ) {
             @unlink($destination);
             @rmdir($documentDirectory);
-            throw new DocumentFileUnavailable('Stored document permissions could not be restricted.');
+            throw new DocumentFileUnavailable('Stored document could not be verified.');
         }
 
         return $id;

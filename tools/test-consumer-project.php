@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/test-consumer-project/support.php';
 require_once __DIR__ . '/test-consumer-project/guidance.php';
 require_once __DIR__ . '/test-consumer-project/http.php';
+require_once __DIR__ . '/test-consumer-project/file-transfers.php';
 require_once __DIR__ . '/test-consumer-project/observability.php';
 require_once __DIR__ . '/test-consumer-project/application.php';
 require_once __DIR__ . '/test-consumer-project/data.php';
@@ -139,6 +140,18 @@ try {
             !== 'installed-field-validation-error-guidance-proof-complete'
     ) {
         throw new RuntimeException('Installed field-validation error guidance proof did not complete.');
+    }
+    $installedProtectedFileTransferProof = proveInstalledProtectedFileTransferReference(
+        $project,
+        $installedFramework,
+        $environment,
+    );
+
+    if (
+        $installedProtectedFileTransferProof
+            !== 'installed-protected-file-transfer-reference-proved'
+    ) {
+        throw new RuntimeException('The installed protected file-transfer proof did not complete.');
     }
     $installedDestinationRecordProof = proveInstalledRequestSummaryDestinationRecordReference(
         $project,

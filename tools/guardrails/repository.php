@@ -626,6 +626,7 @@ function consumerProjectHarnessModulePaths(): array
         'tools/test-consumer-project/support.php',
         'tools/test-consumer-project/guidance.php',
         'tools/test-consumer-project/http.php',
+        'tools/test-consumer-project/file-transfers.php',
         'tools/test-consumer-project/observability.php',
         'tools/test-consumer-project/application.php',
         'tools/test-consumer-project/data.php',
@@ -754,6 +755,10 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
             'proveInstalledFieldValidationErrorGuidanceDistribution',
             'proveInstalledSessionCleanupAndResponseFramingDistribution',
             'proveInstalledBoundedResponseCookieProfileDistribution',
+        ],
+        'tools/test-consumer-project/file-transfers.php' => [
+            'proveInstalledProtectedFileTransferReference',
+            'installedProtectedFileTransferProofProgram',
         ],
         'tools/test-consumer-project/observability.php' => [
             'installedRequestSummaryDestinationRecordSource',
@@ -930,6 +935,7 @@ function consumerProjectHarnessExpectedProofCalls(): array
         'proveInstalledFrontendIntegrationGuidanceDistribution',
         'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
         'proveInstalledFieldValidationErrorGuidanceDistribution',
+        'proveInstalledProtectedFileTransferReference',
         'proveInstalledRequestSummaryDestinationRecordReference',
         'proveInstalledTransactionalEmailGuidanceDistribution',
         'proveInstalledOneShotWorkerSupervisionGuidanceDistribution',
@@ -984,6 +990,7 @@ function consumerProjectHarnessExpectedProofStatements(): array
         'proveInstalledFrontendIntegrationGuidanceDistribution' => 'proveInstalledFrontendIntegrationGuidanceDistribution($project,$installedFramework);',
         'proveInstalledStructuredJsonSuccessEnvelopeDistribution' => '$installedStructuredJsonProofCompletion=proveInstalledStructuredJsonSuccessEnvelopeDistribution($project,$installedFramework,$environment);',
         'proveInstalledFieldValidationErrorGuidanceDistribution' => '$installedFieldValidationProofCompletion=proveInstalledFieldValidationErrorGuidanceDistribution($project,$installedFramework,$environment);',
+        'proveInstalledProtectedFileTransferReference' => '$installedProtectedFileTransferProof=proveInstalledProtectedFileTransferReference($project,$installedFramework,$environment);',
         'proveInstalledRequestSummaryDestinationRecordReference' => '$installedDestinationRecordProof=proveInstalledRequestSummaryDestinationRecordReference($project,$installedFramework,$environment);',
         'proveInstalledTransactionalEmailGuidanceDistribution' => 'proveInstalledTransactionalEmailGuidanceDistribution($project,$installedFramework);',
         'proveInstalledOneShotWorkerSupervisionGuidanceDistribution' => 'proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project,$installedFramework);',
@@ -1321,7 +1328,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === 'd8069aa8eb5f246625af35e6d31d1683c2210797c6d78fc01f98f1905411d302';
+            === '37bf75ccc12c9d5721ad40d0a8088dd003d846863a3a38739ce0b0a01faeebfb';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -1616,7 +1623,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
         sort($actualModuleNames, SORT_STRING);
 
         if ($actualModuleNames !== $expectedModuleNames) {
-            $failures[] = 'The installed-consumer harness must retain exactly its nine reviewed modules.';
+            $failures[] = 'The installed-consumer harness must retain exactly its ten reviewed modules.';
         }
     }
 
@@ -1635,6 +1642,28 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     $entrypoint = $sources[$entrypointPath];
+
+    $protectedFileTransferModule =
+        $sources['tools/test-consumer-project/file-transfers.php'];
+    $protectedFileTransferModuleFingerprint =
+        consumerProjectHarnessTokenNormalizedFingerprint($protectedFileTransferModule);
+    $mutatedProtectedFileTransferModule = str_replace(
+        'private const int MAXIMUM_TENANT_FILES = 4;',
+        'private const int MAXIMUM_TENANT_FILES = 5;',
+        $protectedFileTransferModule,
+    );
+
+    if (
+        $protectedFileTransferModuleFingerprint
+            !== 'be8fb0061f408e4b00a488dc720b011683300213ce76f4570858635a2f8206bd'
+        || $mutatedProtectedFileTransferModule === $protectedFileTransferModule
+        || consumerProjectHarnessTokenNormalizedFingerprint(
+            $mutatedProtectedFileTransferModule,
+        ) === $protectedFileTransferModuleFingerprint
+    ) {
+        $failures[] = 'The protected file-transfer proof module must retain its reviewed token-normalized identity.';
+    }
+
     $entrypointTokens = token_get_all($entrypoint);
     $expectedIncludeStatements = array_map(
         static fn (string $path): string => "require_once__DIR__.'/" . substr($path, strlen('tools/')) . "';",
@@ -1719,11 +1748,11 @@ function consumerProjectHarnessStructureFailures(string $root): array
         || $actualIncludeStatements !== $expectedIncludeStatements
         || $functionCount !== 0
     ) {
-        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level nine-module require_once preamble and contain no function declarations.';
+        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level ten-module require_once preamble and contain no function declarations.';
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
-        $failures[] = 'The installed-consumer entrypoint must invoke its exact 47 proof functions once, unconditionally, and in the reviewed order.';
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 48 proof functions once, unconditionally, and in the reviewed order.';
     }
 
     if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
@@ -1883,6 +1912,14 @@ PHP;
         throw new RuntimeException('Installed field-validation error guidance proof did not complete.');
     }
 PHP;
+    $protectedFileTransferCompletionCheck = <<<'PHP'
+    if (
+        $installedProtectedFileTransferProof
+            !== 'installed-protected-file-transfer-reference-proved'
+    ) {
+        throw new RuntimeException('The installed protected file-transfer proof did not complete.');
+    }
+PHP;
     $destinationRecordCompletionCheck = <<<'PHP'
     if (
         $installedDestinationRecordProof
@@ -1918,6 +1955,13 @@ PHP;
             'sentinel' => 'installed-field-validation-error-guidance-proof-complete',
             'variable' => '$installedFieldValidationProofCompletion',
             'check' => $fieldValidationCompletionCheck,
+        ],
+        [
+            'module' => 'tools/test-consumer-project/file-transfers.php',
+            'function' => 'proveInstalledProtectedFileTransferReference',
+            'sentinel' => 'installed-protected-file-transfer-reference-proved',
+            'variable' => '$installedProtectedFileTransferProof',
+            'check' => $protectedFileTransferCompletionCheck,
         ],
         [
             'module' => 'tools/test-consumer-project/observability.php',
@@ -3438,8 +3482,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 11",
-            "'manifest_sha256' => 'a03697a613229a0bb2d13277f67f12842ee4dbfe22217fb1f5366a65774ffb23'",
+            "'revision' => 12",
+            "'manifest_sha256' => '9f93ca2a6697ecaeb9b28a7014aefd54d48b23d0c8d7dbb0dbcef734426fde39'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -3469,10 +3513,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 11',
+            '"revision": 12',
             '"source-skeleton"',
-            '"tree": "45b4292d8bc4cee65eff350a2b1bee55e554026f"',
-            '"fixture_sha256": "e3a37d4044b026b919f27c529ae43e0f7afd687256dc136b9c8ba77fcf25d4e4"',
+            '"tree": "ee4f5311711c6679c2c4ba73a9744afaa8d1b5ec"',
+            '"fixture_sha256": "f02ea01cf5b542afa93ba99ee3a3323616f322c971fb7daa27539f2fa0ae1ea2"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -3602,7 +3646,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 11 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 12 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -3612,8 +3656,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 11;',
-            'Controller v0.2 supports only change.simple-ping revision 11 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 12;',
+            'Controller v0.2 supports only change.simple-ping revision 12 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',

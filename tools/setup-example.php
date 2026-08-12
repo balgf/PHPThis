@@ -127,5 +127,21 @@ $connection->executeStatement(
     ],
 );
 
+$documentFileDirectory = $applicationDatabasePath->value . '.files';
+
+if (!@is_dir($documentFileDirectory) && !@mkdir($documentFileDirectory, 0700)) {
+    throw new RuntimeException('Unable to create the example document file directory.');
+}
+
+$documentFileDirectoryMetadata = @lstat($documentFileDirectory);
+
+if (
+    !is_array($documentFileDirectoryMetadata)
+    || ($documentFileDirectoryMetadata['mode'] & 0170000) !== 0040000
+    || ($documentFileDirectoryMetadata['mode'] & 0777) !== 0700
+) {
+    throw new RuntimeException('Example document file directory is unavailable.');
+}
+
 $displayPath = $usesExplicitDatabasePath ? $applicationDatabasePath->value : 'tmp/example.sqlite';
 fwrite(STDOUT, "Example database ready at {$displayPath}\n");

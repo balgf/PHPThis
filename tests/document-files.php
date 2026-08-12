@@ -140,11 +140,21 @@ function documentFileTests(): Generator
         };
     yield 'document storage rejects symlinked and overly permissive roots' => static function (): void {
             $base = dirname(__DIR__) . '/tmp/document-file-tests/unsafe-roots';
+            $external = dirname(__DIR__) . '/tmp/document-file-tests/cleanup-external';
             $realRoot = $base . '/real';
             $linkedRoot = $base . '/linked';
+            $externalLink = $base . '/cleanup-linked';
+            $externalSentinel = $external . '/sentinel';
             removeDocumentFileTestDirectory($base);
+            removeDocumentFileTestDirectory($external);
 
-            if (!mkdir($realRoot, 0700, true) || !symlink($realRoot, $linkedRoot)) {
+            if (
+                !mkdir($realRoot, 0700, true)
+                || !mkdir($external, 0700)
+                || file_put_contents($externalSentinel, 'retained') !== 8
+                || !symlink($realRoot, $linkedRoot)
+                || !symlink($external, $externalLink)
+            ) {
                 throw new RuntimeException('Unable to create unsafe document-root fixtures.');
             }
 
@@ -167,13 +177,18 @@ function documentFileTests(): Generator
                 } catch (DocumentFileUnavailable) {
                 }
             } finally {
-                if (is_link($linkedRoot) && !unlink($linkedRoot)) {
-                    throw new RuntimeException('Unable to remove the linked storage-root fixture.');
-                }
                 if (is_dir($realRoot) && !chmod($realRoot, 0700)) {
                     throw new RuntimeException('Unable to restore the storage-root fixture mode.');
                 }
                 removeDocumentFileTestDirectory($base);
+            }
+
+            try {
+                if (file_get_contents($externalSentinel) !== 'retained') {
+                    throw new RuntimeException('Test cleanup followed a directory symlink outside its root.');
+                }
+            } finally {
+                removeDocumentFileTestDirectory($external);
             }
         };
     yield 'document download exposes one fixed local-file response contract' => static function (): void {
@@ -336,46 +351,82 @@ function proveRealDocumentFileTransfer(): void
     $root = dirname(__DIR__);
     $temporary = $root . '/tmp/document-file-tests/real-sapi';
     removeDocumentFileTestDirectory($temporary);
-
-    if (!mkdir($temporary . '/upload-tmp', 0700, true)) {
-        throw new RuntimeException('Unable to create the real multipart test directory.');
-    }
-
-    $databasePath = $root . '/tmp/example.sqlite';
-    $databaseExisted = is_file($databasePath);
+    $serverRoot = $temporary . '/server-root';
+    $databasePath = $serverRoot . '/tmp/example.sqlite';
     $storageRoot = $databasePath . '.files';
-    $storageExisted = is_dir($storageRoot);
-
-    if (!$databaseExisted && file_put_contents($databasePath, '') !== 0) {
-        throw new RuntimeException('Unable to create the temporary example database.');
-    }
-
-    $maximumFile = $temporary . '/maximum.bin';
-    $oversizedFile = $temporary . '/oversized.bin';
-    $smallFile = $temporary . '/small.bin';
-    $secondSmallFile = $temporary . '/second-small.bin';
-    $emptyFile = $temporary . '/empty.bin';
-    $payload = str_repeat('P', 1_048_576);
-
-    if (
-        file_put_contents($maximumFile, $payload) !== 1_048_576
-        || file_put_contents($oversizedFile, $payload . 'X') !== 1_048_577
-        || file_put_contents($smallFile, 'S') !== 1
-        || file_put_contents($secondSmallFile, 'T') !== 1
-        || file_put_contents($emptyFile, '') !== 0
-    ) {
-        throw new RuntimeException('Unable to write multipart boundary fixtures.');
-    }
-
     $server = null;
-    $storedId = null;
-    $emptyStoredId = null;
-    $scalarDuplicateStoredId = null;
-    $storageBackup = $temporary . '/displaced-storage';
-    $storageDisplaced = false;
+    $storageBackup = $temporary . '/active-storage';
 
     try {
-        [$server, $port] = startDocumentFileServer($temporary, $root);
+        if (!mkdir($temporary . '/upload-tmp', 0700, true)) {
+            throw new RuntimeException('Unable to create the real multipart test directory.');
+        }
+
+        if (
+            !mkdir($serverRoot . '/example/public', 0700, true)
+            || !mkdir($serverRoot . '/tmp', 0700)
+            || !copy($root . '/autoload.php', $serverRoot . '/autoload.php')
+            || !copy($root . '/example/bootstrap.php', $serverRoot . '/example/bootstrap.php')
+            || !copy($root . '/example/public/index.php', $serverRoot . '/example/public/index.php')
+            || !symlink($root . '/src', $serverRoot . '/src')
+            || !symlink($root . '/example/src', $serverRoot . '/example/src')
+        ) {
+            throw new RuntimeException('Unable to create the test-owned example server tree.');
+        }
+
+        if (file_put_contents($databasePath, '') !== 0) {
+            throw new RuntimeException('Unable to create the test-owned example database.');
+        }
+
+        $maximumFile = $temporary . '/maximum.bin';
+        $oversizedFile = $temporary . '/oversized.bin';
+        $smallFile = $temporary . '/small.bin';
+        $secondSmallFile = $temporary . '/second-small.bin';
+        $emptyFile = $temporary . '/empty.bin';
+        $payload = str_repeat('P', 1_048_576);
+
+        if (
+            file_put_contents($maximumFile, $payload) !== 1_048_576
+            || file_put_contents($oversizedFile, $payload . 'X') !== 1_048_577
+            || file_put_contents($smallFile, 'S') !== 1
+            || file_put_contents($secondSmallFile, 'T') !== 1
+            || file_put_contents($emptyFile, '') !== 0
+        ) {
+            throw new RuntimeException('Unable to write multipart boundary fixtures.');
+        }
+
+        [$server, $port] = startDocumentFileServer($temporary, $serverRoot);
+        $unprovisionedStorage = runDocumentFileCurl(
+            $temporary,
+            'unprovisioned-storage',
+            ['--form', 'document=@' . $smallFile . ';filename=private-path.php'],
+            'http://127.0.0.1:' . $port . '/document-files',
+        );
+
+        if (
+            $unprovisionedStorage['status'] !== 500
+            || file_exists($storageRoot)
+            || is_link($storageRoot)
+            || str_contains($unprovisionedStorage['body'], $storageRoot)
+            || str_contains($unprovisionedStorage['body'], 'private-path.php')
+        ) {
+            throw new RuntimeException('Request handling must not provision document storage.');
+        }
+
+        if (!mkdir($storageRoot, 0700)) {
+            throw new RuntimeException('Unable to provision the real-SAPI document storage root.');
+        }
+
+        $storageRootMetadata = lstat($storageRoot);
+
+        if (
+            !is_array($storageRootMetadata)
+            || ($storageRootMetadata['mode'] & 0170000) !== 0040000
+            || ($storageRootMetadata['mode'] & 0777) !== 0700
+        ) {
+            throw new RuntimeException('The real-SAPI document storage root is not private.');
+        }
+
         $upload = runDocumentFileCurl(
             $temporary,
             'upload',
@@ -569,7 +620,6 @@ function proveRealDocumentFileTransfer(): void
         if (!rename($storageRoot, $storageBackup)) {
             throw new RuntimeException('Unable to displace the document storage root.');
         }
-        $storageDisplaced = true;
 
         if (file_put_contents($storageRoot, 'not-a-directory') !== 15) {
             throw new RuntimeException('Unable to create the unavailable storage-root fixture.');
@@ -585,7 +635,6 @@ function proveRealDocumentFileTransfer(): void
         if (!unlink($storageRoot) || !rename($storageBackup, $storageRoot)) {
             throw new RuntimeException('Unable to restore the document storage root.');
         }
-        $storageDisplaced = false;
 
         if (
             $oversized['status'] !== 413
@@ -616,68 +665,12 @@ function proveRealDocumentFileTransfer(): void
             proc_close($server);
         }
 
-        if ($storageDisplaced) {
-            if (is_file($storageRoot)) {
-                unlink($storageRoot);
-            }
-            if (is_dir($storageBackup)) {
-                rename($storageBackup, $storageRoot);
-            }
-        }
-
-        if (is_string($storedId)) {
-            $storedDirectory = $storageRoot . '/' . $storedId;
-            $storedPath = $storedDirectory . '/content';
-
-            if (is_file($storedPath)) {
-                unlink($storedPath);
-            }
-
-            if (is_dir($storedDirectory)) {
-                rmdir($storedDirectory);
-            }
-        }
-
-        if (is_string($emptyStoredId)) {
-            $emptyStoredDirectory = $storageRoot . '/' . $emptyStoredId;
-            $emptyStoredPath = $emptyStoredDirectory . '/content';
-
-            if (is_file($emptyStoredPath)) {
-                unlink($emptyStoredPath);
-            }
-
-            if (is_dir($emptyStoredDirectory)) {
-                rmdir($emptyStoredDirectory);
-            }
-        }
-
-        if (is_string($scalarDuplicateStoredId)) {
-            $scalarDuplicateDirectory = $storageRoot . '/' . $scalarDuplicateStoredId;
-            $scalarDuplicatePath = $scalarDuplicateDirectory . '/content';
-
-            if (is_file($scalarDuplicatePath)) {
-                unlink($scalarDuplicatePath);
-            }
-
-            if (is_dir($scalarDuplicateDirectory)) {
-                rmdir($scalarDuplicateDirectory);
-            }
-        }
-
-        if (!$storageExisted && is_dir($storageRoot)) {
-            rmdir($storageRoot);
-        }
-
-        if (!$databaseExisted && is_file($databasePath)) {
-            unlink($databasePath);
-        }
-
         removeDocumentFileTestDirectory($temporary);
     }
 }
 
 /** @return array{0: resource, 1: int} */
-function startDocumentFileServer(string $temporary, string $root): array
+function startDocumentFileServer(string $temporary, string $serverRoot): array
 {
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errorCode, $errorMessage);
 
@@ -709,11 +702,13 @@ function startDocumentFileServer(string $temporary, string $root): array
             '-d',
             'max_file_uploads=2',
             '-d',
+            'max_multipart_body_parts=2',
+            '-d',
             'upload_tmp_dir=' . $temporary . '/upload-tmp',
             '-S',
             '127.0.0.1:' . $port,
             '-t',
-            $root . '/example/public',
+            $serverRoot . '/example/public',
         ],
         [
             0 => ['pipe', 'r'],
@@ -721,7 +716,7 @@ function startDocumentFileServer(string $temporary, string $root): array
             2 => ['file', $temporary . '/server.log', 'a'],
         ],
         $pipes,
-        $root,
+        $serverRoot,
         null,
         ['bypass_shell' => true],
     );
@@ -819,6 +814,14 @@ function runDocumentFileCurl(
 
 function removeDocumentFileTestDirectory(string $directory): void
 {
+    if (is_link($directory)) {
+        if (!unlink($directory)) {
+            throw new RuntimeException('Unable to remove a document file test symlink.');
+        }
+
+        return;
+    }
+
     if (!is_dir($directory)) {
         return;
     }
@@ -836,7 +839,11 @@ function removeDocumentFileTestDirectory(string $directory): void
 
         $path = $directory . DIRECTORY_SEPARATOR . $entry;
 
-        if (is_dir($path)) {
+        if (is_link($path)) {
+            if (!unlink($path)) {
+                throw new RuntimeException('Unable to remove a document file test symlink.');
+            }
+        } elseif (is_dir($path)) {
             removeDocumentFileTestDirectory($path);
         } elseif (is_file($path) && !unlink($path)) {
             throw new RuntimeException('Unable to remove a document file test artifact.');

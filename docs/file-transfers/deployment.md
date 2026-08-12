@@ -2,14 +2,18 @@
 
 Application limits must align with the complete ingress path. Record and verify at least:
 
-- PHP `file_uploads`, `upload_max_filesize`, `post_max_size`, `max_file_uploads`, `upload_tmp_dir`, and request execution limits;
-- web-server and reverse-proxy request limits, buffering, timeout, temporary storage, and rejection responses;
-- upload and durable-storage ownership, permissions, capacity, inode limits, cleanup, mount behavior, backups, recovery, and multi-host visibility;
+- PHP `file_uploads`, `upload_max_filesize`, `post_max_size`, `max_file_uploads`, `max_multipart_body_parts`, `upload_tmp_dir`, and request input and execution limits, with the dated effective web-SAPI values rather than only a source configuration file;
+- web-server and reverse-proxy connection, header and request bytes, method and media-type filtering, buffering, timeout, request rate and concurrency, temporary storage, first rejecting layer, and externally observable rejection response or connection behavior;
+- dedicated effective web-SAPI `upload_tmp_dir` with named non-root request identity, owner/group, exact ACL or explicit none, permissions, non-executable/non-public mount, capacity/inode monitoring, request/stale cleanup and topology; plus a separate deployment-precreated durable root before HTTP handling whose request identity cannot and need not create or repair it, with exact owner/group/ACL-or-none, permissions, local-versus-network/mount semantics, unrelated-writer exclusion, capacity/inode monitoring, backups, recovery, container lifecycle, and multi-host visibility;
 - response buffering, acceleration/offload, timeouts, client disconnect behavior, TLS termination, and maximum supported file size; and
-- authorization, rate limiting, quotas, malware/content inspection, retention, deletion, audit, privacy, and incident response.
+- authentication, tenant resolution, authorization, CSRF when cookie-authenticated mutation applies, quotas and concurrent reservation, opaque or inspected-content policy, retention, deletion, audit, privacy, and incident response.
 
-The example transport cap is 2 MiB and its file cap is 1 MiB. Its real-SAPI test sets `upload_max_filesize=2M`, `post_max_size=3M`, `max_file_uploads=2`, and an isolated upload temp directory so PHP can expose the cases the application intends to reject. These are test settings, not production guidance.
+`max_multipart_body_parts` limits total raw multipart resource use; it does not prove that PHP rejected duplicate raw scalar names before normalizing them. An operation that cannot tolerate that ambiguity needs a tested upstream duplicate-name rule or a separately accepted raw parser. Record whether the limitation is suitable rather than treating a PHP setting or `count($_FILES)` as duplicate evidence.
+
+The example transport cap is 2 MiB and it accepts 0 through 1,048,576 file bytes inclusive. Its real-SAPI fixture pins the applicable PHP settings and uses an isolated upload temp directory so PHP can expose the cases the application intends to reject. The exact fixture values are checked evidence only for that local non-production process; they are not production guidance or proof of an external server, proxy, quota, authorization, content inspection, or lifecycle policy.
 
 If PHP rejects a request before populating `$_POST` and `$_FILES`, PHPThis may see only missing upload state. Configure upstream and PHP limits so the intended generic status and observability occur at the correct owner. A local filesystem test does not prove network storage, shared-host, container, serverless, or rolling-deployment behavior.
+
+Quota and lifecycle policy names every dimension actually enforced: request, file, principal, tenant, resource, deployment, egress, count, rate, aggregate bytes, capacity, or inode use. Record how concurrent writers atomically reserve and release capacity, whether failure is fail-closed, and the generic public outcome. Record retry, idempotency, duplicate-request, and ambiguous client-response behavior. Name deterministic handling and recovery for move failure, response failure, process crash, disk full, inode exhaustion, permission failure, and partial cleanup. Name one bounded reconciliation path for abandoned reservations, orphans, partial writes and failed cleanup; the owner and schedule for temporary and expired-object deletion; deletion propagation into replicas and backups; restore interaction; legal hold; and incident response. PHPThis performs none of this automatically.
 
 References: [PHP file-upload configuration](https://www.php.net/manual/en/ini.core.php#ini.file-uploads), [PHP POST upload behavior](https://www.php.net/manual/en/features.file-upload.post-method.php).

@@ -88,6 +88,10 @@ namespace {
         throw new RuntimeException('Unable to create the local-file response fixture.');
     }
 
+    $selectedPath = $path . '.selected';
+    $symlinkTargetPath = $path . '.target';
+    $nonRegularPath = $path . '.directory';
+
     try {
         $fileContents = str_repeat('0123456789abcdef', 1_250);
         $fileBytes = strlen($fileContents);
@@ -123,6 +127,51 @@ namespace {
             ]
         ) {
             throw new RuntimeException('Expected the complete local file to be emitted in bounded chunks.');
+        }
+
+        $replacementContents = str_repeat('fedcba9876543210', 1_250);
+
+        if (
+            !rename($path, $selectedPath)
+            || file_put_contents($path, $replacementContents, LOCK_EX) !== $fileBytes
+        ) {
+            throw new RuntimeException('Unable to create the same-size replacement fixture.');
+        }
+
+        ResponseEmitterSpy::reset();
+        ob_start();
+        (new ResponseEmitter())->emit($fileResponse);
+        $replacementOutput = ob_get_clean();
+
+        if ($replacementOutput !== $replacementContents) {
+            throw new RuntimeException(
+                'Expected path-only local-file selection to emit a same-size regular replacement.',
+            );
+        }
+
+        $symlinkTargetContents = str_repeat('abcdefghijklmnop', 1_250);
+
+        if (
+            !unlink($path)
+            || file_put_contents($symlinkTargetPath, $symlinkTargetContents, LOCK_EX) !== $fileBytes
+            || !symlink($symlinkTargetPath, $path)
+        ) {
+            throw new RuntimeException('Unable to create the same-size symlink-target fixture.');
+        }
+
+        ResponseEmitterSpy::reset();
+        ob_start();
+        (new ResponseEmitter())->emit($fileResponse);
+        $symlinkTargetOutput = ob_get_clean();
+
+        if ($symlinkTargetOutput !== $symlinkTargetContents) {
+            throw new RuntimeException(
+                'Expected a symlink to a same-size regular target to remain outside emitter detection.',
+            );
+        }
+
+        if (!unlink($path) || !rename($selectedPath, $path)) {
+            throw new RuntimeException('Unable to restore the selected local-file fixture.');
         }
 
         $invalidValues = [
@@ -229,28 +278,48 @@ namespace {
         }
 
         $mismatchedBytes = $fileBytes + 1;
+        if (!mkdir($nonRegularPath, 0700)) {
+            throw new RuntimeException('Unable to create the non-regular local-file fixture.');
+        }
+
         $failedResponses = [
-            new Response(
-                200,
-                ['Content-Length' => (string) $mismatchedBytes],
-                '',
-                [],
-                new LocalFileBody($path, $mismatchedBytes),
-            ),
-            new Response(
-                200,
-                ['Content-Length' => '0'],
-                '',
-                [],
-                new LocalFileBody($path . '.missing', 0),
-            ),
+            [
+                'path' => $path,
+                'response' => new Response(
+                    200,
+                    ['Content-Length' => (string) $mismatchedBytes],
+                    '',
+                    [],
+                    new LocalFileBody($path, $mismatchedBytes),
+                ),
+            ],
+            [
+                'path' => $path . '.missing',
+                'response' => new Response(
+                    200,
+                    ['Content-Length' => '0'],
+                    '',
+                    [],
+                    new LocalFileBody($path . '.missing', 0),
+                ),
+            ],
+            [
+                'path' => $nonRegularPath,
+                'response' => new Response(
+                    200,
+                    ['Content-Length' => (string) $fileBytes],
+                    '',
+                    [],
+                    new LocalFileBody($nonRegularPath, $fileBytes),
+                ),
+            ],
         ];
 
         foreach ($failedResponses as $failedResponse) {
             ResponseEmitterSpy::reset();
 
             try {
-                (new ResponseEmitter())->emit($failedResponse);
+                (new ResponseEmitter())->emit($failedResponse['response']);
                 throw new RuntimeException('Expected local-file emission to fail.');
             } catch (ResponseEmissionFailed $failure) {
                 $failedEmission = ResponseEmitterSpy::snapshot();
@@ -259,7 +328,7 @@ namespace {
                     $failedEmission['status'] !== null
                     || $failedEmission['headers'] !== []
                     || $failure->responseStarted
-                    || str_contains($failure->getMessage(), $path)
+                    || str_contains($failure->getMessage(), $failedResponse['path'])
                 ) {
                     throw new RuntimeException(
                         'Expected local-file failure before headers without path disclosure.',
@@ -282,8 +351,20 @@ namespace {
             ResponseEmitterSpy::reset();
         }
     } finally {
+        if (is_link($path) && !unlink($path)) {
+            throw new RuntimeException('Unable to remove the local-file response symlink fixture.');
+        }
         if (is_file($path) && !unlink($path)) {
             throw new RuntimeException('Unable to remove the local-file response fixture.');
+        }
+        if (is_file($selectedPath) && !unlink($selectedPath)) {
+            throw new RuntimeException('Unable to remove the selected local-file response fixture.');
+        }
+        if (is_file($symlinkTargetPath) && !unlink($symlinkTargetPath)) {
+            throw new RuntimeException('Unable to remove the symlink-target response fixture.');
+        }
+        if (is_dir($nonRegularPath) && !rmdir($nonRegularPath)) {
+            throw new RuntimeException('Unable to remove the non-regular response fixture.');
         }
     }
 
