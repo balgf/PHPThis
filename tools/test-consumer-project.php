@@ -6,6 +6,7 @@ require_once __DIR__ . '/test-consumer-project/support.php';
 require_once __DIR__ . '/test-consumer-project/guidance.php';
 require_once __DIR__ . '/test-consumer-project/http.php';
 require_once __DIR__ . '/test-consumer-project/file-transfers.php';
+require_once __DIR__ . '/test-consumer-project/jobs.php';
 require_once __DIR__ . '/test-consumer-project/observability.php';
 require_once __DIR__ . '/test-consumer-project/application.php';
 require_once __DIR__ . '/test-consumer-project/data.php';
@@ -152,6 +153,19 @@ try {
             !== 'installed-protected-file-transfer-reference-proved'
     ) {
         throw new RuntimeException('The installed protected file-transfer proof did not complete.');
+    }
+    $installedJobsVerificationProof = proveInstalledBackendNeutralJobsVerificationReference(
+        $project,
+        $installedFramework,
+        $composerBinary,
+        $environment,
+    );
+
+    if (
+        $installedJobsVerificationProof
+            !== 'installed-backend-neutral-jobs-verification-reference-proved'
+    ) {
+        throw new RuntimeException('The installed backend-neutral jobs verification proof did not complete.');
     }
     $installedDestinationRecordProof = proveInstalledRequestSummaryDestinationRecordReference(
         $project,

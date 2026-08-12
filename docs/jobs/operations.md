@@ -1,6 +1,6 @@
 # Externally supervised one-shot durable jobs
 
-This is the focused canonical operations guide for continual consumption of the accepted application-owned SQLite durable-job recipe. [The complete durable-jobs guide](../jobs.md) remains the decision and correctness guide. PHPThis supplies no queue runtime, daemon, scheduler, supervisor abstraction, deployment unit, or process manager.
+This is the focused canonical operations guide for continual consumption of the accepted application-owned SQLite durable-job recipe. [The complete checked SQLite profile](sqlite.md) remains its decision and correctness guide. The separate accepted [backend-neutral contract](../jobs.md) supplies optional common operations requirements without importing this one-shot lifecycle. PHPThis supplies no queue runtime, daemon, scheduler, supervisor abstraction, deployment unit, or process manager.
 
 ## Production topology
 
@@ -88,4 +88,4 @@ A bounded multi-delivery process or an indefinite worker loop requires a separat
 
 External effects retain their weaker boundary under every topology. Provider idempotency, durable request and receipt state, timeout-ambiguity handling, reconciliation, and compensation remain separately designed and proved per integration. Nothing in external supervision upgrades at-least-once delivery to exactly once.
 
-See [the complete durable-jobs guide](../jobs.md), [the application CLI and scheduler guide](../cli.md), [Strict Profile](../strict-profile.md), and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md).
+See [the complete checked SQLite profile](sqlite.md), [the application CLI and scheduler guide](../cli.md), [Strict Profile](../strict-profile.md), and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md).

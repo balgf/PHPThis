@@ -1,131 +1,103 @@
-# Durable jobs
+# Backend-neutral application-owned durable jobs
 
-PHPThis has one accepted durable-job recipe and no framework queue mechanism. The recipe is intentionally application-owned and SQLite-specific: it demonstrates how a business write and the requirement for deferred work can share one durable commit without adding a queue facade, event bus, automatic discovery, or hidden transaction behavior.
+Status: current optional guidance under accepted [ADR 052](decisions/052-backend-neutral-application-owned-durable-jobs.md).
 
-This is at-least-once delivery. It is not a claim that every application needs background work, that SQLite is a universal queue backend, or that an external side effect can execute exactly once.
+PHPThis currently accepts this backend-neutral application-owned contract and one checked backend-specific profile: the application-owned [SQLite recipe](jobs/sqlite.md) recorded by ADR 024. This page defines the common contract for applications that deliberately select SQLite, Redis Streams, RabbitMQ, SQS, Kafka, or another durable transport. It does not weaken, replace, or generalize the accepted SQLite profile.
 
-For focused AI retrieval, use the [job knowledge index](jobs/README.md): envelope and dispatch, lifecycle and fencing, operations, and required testing are split into small authoritative slices. This page remains the complete decision guide; [externally supervised one-shot durable jobs](jobs/operations.md) is the focused canonical production-operations guide.
+The guidance separates three layers:
 
-## Adoption boundary
+1. this common application-owned contract;
+2. one exact application adoption record plus its executable jobs verification gate; and
+3. optional backend-specific profiles only after a pinned implementation supplies real-service evidence.
 
-Before adopting this recipe, the accountable human records:
+PHPThis still supplies no queue API, `QueueInterface`, facade, dispatcher, worker, scheduler, supervisor, event bus, transport adapter, discovery mechanism, or portability promise. If durable deferred work is absent, record exactly `NOT_APPLICABLE(JOBS)` and add no speculative mechanism.
 
-- why the work must survive request or process termination instead of running synchronously;
-- the exact SQLite version, database path and filesystem topology, locking mode, busy-timeout policy, and supported worker concurrency;
-- the producer transaction, finite job types and envelope versions, payload bounds, idempotency-key owner, and retention classification;
-- lease duration, maximum attempts, exact finite backoff schedule, diagnostic-code catalogue, clock source, and clock-skew assumptions;
-- the worker supervisor and configuration, invocation or restart delay, worker-slot count and concurrency limit, timeout and forced-termination policy, deployment identity and configuration source, shutdown and deployment-replacement behavior, restart-storm protection, and bounded capacity alarms;
-- completed-row and dead-letter retention, inspection, replay, cancellation, schema migration, backup, and recovery ownership; and
-- whether each effect is confined to the same SQLite database or reaches an external system with weaker guarantees.
+## Exact adoption record
 
-If the application does not need durable deferred work, record `NOT_APPLICABLE(JOBS)`. Do not install an abstraction in anticipation of a future need.
+Before implementation, the accountable application owner records:
 
-## Atomic publication
+- why the work must survive request or process termination;
+- the exact backend or service and version, client dependency and version, topology, durability and persistence settings, update owner, credentials boundary, TLS policy, network boundary, tenant and environment isolation, credential rotation and revocation, and authentication and authorization policy;
+- the publication boundary and recovery model, including every independently meaningful database write and every process-termination window;
+- the minimum positive durable-publication invariant: after the application reports publication success, the intent or message survives producer/request termination and remains recoverable or deliverable until acknowledgement, a terminal outcome, or an explicit finite cancellation or expiry, within one named and proved durability and fault envelope; exact restart or failover behavior only when separately exercised;
+- the finite envelope types and versions, exact JSON and payload bounds, idempotency-identity owner and grammar, compatibility policy, and retention classification;
+- payload data classification and minimization; encryption-at-rest and key ownership where applicable; region and residency; and the fact that any selected terminal or dead-letter/DLQ store, backup, replica or broker snapshot may retain the full envelope beyond ordinary queue retention, with exact access, deletion and retention ownership;
+- for each job type, the exact principals or operations allowed to publish; durable tenant, owner, principal and action binding or explicit tenantless system-owned non-applicability; and whether delivery rechecks current authorization, revocation and domain state before the effect or executes one explicitly committed system-owned obligation;
+- the backend's exact publication, claim, acknowledgement, receipt, visibility, lease, reclaim, consumer-group, offset, redelivery, ordering, and duplicate behavior that actually applies, without translating it into a stronger generic guarantee; any required ordering, partition or sequence key and concurrency scope plus stale, out-of-order and replay behavior, enforced ordering where relied on or an exact monotonic/version guard, rejection or reconciliation path, or explicit non-applicability for order-independent effects; where an ownership window applies, maximum handler duration relative to that window, the exact extension, renewal, heartbeat or session-liveness owner, cadence and bounds, renewal failure or expiry behavior, and actual stale-owner behavior; rejection or fencing only when the selected mechanism supports it, otherwise bounded overlapping stale work plus duplicate-safe recovery; explicit non-applicability only when no ownership or session-liveness mechanism applies;
+- the exact semantic effect and idempotency uniqueness scope, identity owner, durable retention/deletion owner, and protection horizon relative to retry, redrive, selected terminal retention including any adopted dead-letter/DLQ, replay, and provider-deduplication expiry; external-provider timeout ambiguity, durable receipt, reconciliation, compensation and cancellation policies; behavior after duplicate protection expires; and whether backup/restore preserves corresponding queued-message plus effect/idempotency state or explicitly reconciles their mismatch before work can resume;
+- maximum delivery attempts, finite version-controlled backoff and redrive policy with its code, broker-configuration or infrastructure-as-code owner, poison-message handling, selected terminal state or destination and retention including any adopted dead-letter/DLQ mechanism or explicit non-applicability, inspection, replay, cancellation and deletion owners;
+- process model, worker concurrency, prefetch or backpressure, capacity bounds, timeouts, reconnect behavior, shutdown, deployment replacement, supervision, and recovery behavior;
+- exact time owner for every visibility, lease, TTL, delay, retry and retention decision; service or application clock source, representation, units, rounding, precision and skew limits, without assuming one backend's clock semantics for another;
+- bounded redacted diagnostic fields and output; queue depth, capacity, lag, age and failure signals; alert thresholds; retention, backup and recovery; outage behavior; least-privilege producer, consumer, relay, inspector and administrator capabilities; privileged operation authorization and audit; and operational ownership; and
+- one exact application-owned jobs verification command, its single literal Composer-autoload/bootstrap path, and the literal route by which the project's ordinary `test` and complete `check` gates execute it.
 
-The producer uses one explicit transaction on one `Connection` to the same SQLite database:
+The record contains configuration names, data classifications and authority boundaries, never credential values, production payloads, customer data, private keys, access tokens or runtime dumps. Diagnostic redaction does not prove payload absence from the selected broker, any selected terminal or dead-letter/DLQ store, backup, replica or snapshot; configured storage access, encryption, region/residency, retention and deletion need separate evidence.
 
-1. begin the transaction;
-2. execute the business write;
-3. insert exactly one job row containing the bounded versioned envelope and scheduling metadata;
-4. commit; and
-5. roll back in `finally` whenever the transaction remains active.
+## Publication and recovery
 
-The job becomes claimable only after the commit makes the row visible. A failed business write or job insert rolls back both. This closes the gap in which a business write commits but later process termination prevents a separate enqueue call.
+Publication semantics follow the selected durable systems; they are not hidden behind `dispatch()`.
 
-The guarantee ends at that transaction boundary. Two `Connection` instances do not share one transaction merely because they use the same database file. A second database, message broker, HTTP call, email, object store, or other external system cannot join this SQLite commit. PHPThis adds no transaction callback, after-commit hook, distributed transaction, or hidden dispatcher.
+A mechanism qualifies as durable deferred work only when the application proves this minimum positive invariant: after reporting publication success, the intent or message survives producer or request termination and remains recoverable or deliverable until acknowledgement, a recorded terminal outcome, or an explicit finite cancellation or expiry under the named durability and fault envelope. Restart, replication and failover claims extend only as far as exact evidence. Ambiguous or failed publication remains a separate outcome, and catastrophic loss outside the recorded envelope remains an explicit limit. Zero handler executions can still be correct only after an explicit recorded terminal rejection/exhaustion, finite cancellation or expiry, or bounded catastrophic loss outside that named proved envelope; it is not permission to call Redis Pub/Sub, process memory, after-response work or another fire-and-forget path durable.
 
-## Versioned envelope
+When the business write and durable-job record can use one connection and transaction in the same database, the application may prove commit-visible publication and rollback exclusion exactly as the accepted SQLite profile does. That guarantee ends at the proved transaction boundary.
 
-The stored JSON envelope has four conceptual fields:
+When an independently meaningful database write precedes publication to another database or broker, the application owns a transactional outbox or another explicitly proved recovery mechanism. A usual outbox design commits the business write and one bounded publication intent together, then lets a separately supervised relay publish, record confirmation, and recover after termination. The application records ambiguous publication, relay ownership, duplicate publication, retry, ordering, backlog, retention, cleanup, schema change, and poison-intent behavior.
 
-```json
-{
-  "version": 1,
-  "type": "finite.application.type",
-  "idempotency_key": "application-generated-bounded-key",
-  "payload": {}
-}
-```
+An after-commit call or publisher confirmation alone is not atomic with an independently committed database transaction. A broker may accept a message while the producer loses the confirmation, or the producer may stop after database commit and before publication. The recovery model must make both windows visible and safe; neither static analysis nor broker terminology closes them.
 
-The application records the exact key grammar, byte and nesting bounds, supported version and type combinations, and operation-specific payload fields. The idempotency key is generated or derived from an already validated durable application identity; it is not accepted blindly from an untrusted request.
+## Envelope and finite dispatch
 
-JSON text and decoded arrays are untrusted stored input. A named factory rejects invalid JSON, unknown fields, missing fields, explicit `null` where disallowed, incorrect runtime types, excessive bytes or nesting, unknown versions, unknown types, and invalid payload shapes. It returns one concrete final readonly value. PHP object serialization, class names in storage, reflection hydration, and arbitrary arrays crossing into a handler are forbidden.
+Stored input is one bounded versioned JSON envelope with a finite code-owned type, application-generated idempotency identity, and operation-specific payload. The application records maximum bytes and nesting, exact fields and types, key grammar, supported type/version combinations, and the policy for already stored versions.
 
-Native `json_decode` retains the final value for a repeated object key. This recipe discloses that limit rather than claiming duplicate-key rejection; an application that requires duplicate-key detection needs a separately reviewed parser decision and evidence.
+One named operation-specific parser treats decoded data as untrusted. It rejects invalid JSON, missing or unknown fields, unsupported versions or types, invalid runtime types, and operation-specific bound violations before handler work. It returns a concrete final readonly value.
 
-Dispatch is a finite code-owned `match` over the parsed type and version. Adding a job type or changing a payload requires an explicit envelope-version decision, parser and handler changes, migration or compatibility policy for stored jobs, and complete behavior evidence.
+Dispatch is a finite code-owned `match` or equally explicit finite branch over accepted type/version combinations. Storage never selects a PHP class, service identifier, callback, container entry, or transport. PHP object serialization, stored class names, reflection hydration, discovery, a generic dispatcher, arbitrary arrays crossing a named boundary, and fallback handler lookup are outside this guidance.
 
-## One-delivery worker lifecycle
+Broker credentials authorize infrastructure access; they are not domain authorization. Each producer proves its job-type publication authority. The durable envelope or separately bound record carries only the bounded non-secret tenant, owner, principal and action identity needed by the adopted policy. Before the effect, a handler either rechecks current application authorization, revocation and relevant domain state, or executes one explicitly recorded previously committed system-owned obligation whose later execution does not depend on current user authority. A genuinely tenantless system obligation records that tenant, owner and principal binding is not applicable rather than inventing an identity. PHPThis adds no identity, authorization middleware or context API.
 
-Each worker process or invocation performs exactly one bounded cycle:
+## Delivery and semantic effects
 
-1. compose a fresh SQLite connection, budgets and traces, clock, envelope parser, finite dispatcher, and concrete handler;
-2. claim at most one eligible job in deterministic code-owned order;
-3. commit a finite lease containing a fresh opaque token, expiry, and bounded attempt number through one short explicit transaction;
-4. return `idle` and exit when no row is eligible;
-5. parse and dispatch the claimed envelope;
-6. finalize a successful idempotent database effect and completion together, or record one retry or dead-letter transition; and
-7. emit one bounded redacted terminal result and exit.
+The adoption record names the backend's real mechanism: acknowledgement ordering, receipt-handle validity, visibility timeout, lease expiry and reclaim, consumer-group pending state, partition and offset commits, or whatever the selected service actually provides. Common words such as "claim" or "acknowledge" do not make those mechanisms equivalent. Where an effect depends on order, record its exact ordering, partition or sequence key and concurrency scope, then prove the selected mechanism enforces that order or use an explicit monotonic/version guard, rejection or reconciliation path for stale, out-of-order and replayed work. An order-independent effect records that fact explicitly. Where delivery ownership or session liveness expires, record maximum handler duration relative to that window and the exact extension, renewal, heartbeat or session-liveness owner, cadence and finite bounds. Prove renewal failure and expiry and record the actual stale-owner behavior. Require rejection or fencing only when the selected mechanism supports it; otherwise prove bounded overlapping stale work and duplicate-safe recovery. Record explicit non-applicability only when no ownership or session-liveness mechanism applies.
 
-A supervisor creates repetition by starting another process after each finite result. Every expected example outcome—`idle`, `completed`, `retry_scheduled`, and `dead_lettered`—exits `0`, so failure-only restart behavior does not provide continual consumption. Each enabled supervisor slot requires a positive bounded idle delay or equivalent pacing so an empty queue cannot cause an uncontrolled hot restart loop. The recipe deliberately has no long-running loop, reused container or connection, mutable state carried between deliveries, signal subsystem, automatic heartbeat, implicit retry, or graceful-stop protocol. Stopping cleanly means the supervisor stops launching new invocations, then allows or finitely terminates the current child according to its recorded policy; post-termination recovery still waits for lease expiry and remains fenced by the lease token.
+Assume a delivery may occur more than once and make every semantic effect duplicate-safe. Duplicate delivery, overlapping delivery, worker termination, acknowledgement loss, retry, visibility expiry, and reconnect may execute handler code repeatedly. Separately prove the selected publication, recovery, loss, expiry and cancellation boundaries. The minimum successful-publication invariant keeps work recoverable or deliverable within its named fault envelope, but it does not guarantee handler execution after an explicit recorded terminal rejection/exhaustion, finite cancellation or expiry, or catastrophic loss outside that envelope. A backend's stronger delivery feature never upgrades handler execution or an external effect to exactly once.
 
-ADR 025 keeps this composition application-owned: the accepted example routes the one-job operation through its sole console as `jobs:run-one`. For continual consumption the external supervisor invokes that command directly. ADR 028's current `schedule:run` is instead a bounded scheduled pass that may call the same operation once under its explicit UTC cadence and Redis owner-token lease; it is not the ordinary queue-draining worker. Neither decision adds a framework command map, scheduler, process manager, or second job path. The complete stack-neutral supervisor policy, capacity signals, production evidence, and reconsideration triggers are defined in [the operations guide](jobs/operations.md).
+For an external effect, a request may succeed remotely while its response is lost. Record provider-supported idempotency, durable request and receipt state, timeout classification, reconciliation, compensation, and safe replay rather than claiming exactly-once execution or effects. A broker acknowledgement occurs only after the intended durable effect is complete, or atomically with that effect only when one exact storage mechanism proves they share the same boundary. Never infer an atomic boundary across independent systems. The exact application test proves the selected order or same-boundary mechanism.
 
-## Development exploration is not delivery
+Duplicate protection has an exact scope and lifetime. Record which operation, tenant, recipient or provider account the identity is unique within; who durably retains and deletes its effect/idempotency state; and a protection horizon that outlives every permitted retry, redrive, terminal-retention window including any adopted dead-letter/DLQ, replay delay and applicable provider-deduplication window. Define fail-closed rejection, reconciliation, a new semantic operation, or another explicit policy after that horizon rather than silently replaying an unprotected effect. Backup and restore preserve the corresponding queued-message and effect/idempotency states together, or stop consumers and reconcile every mismatch before work resumes. Restoring old queue, selected terminal-store, backup or replica state must not resurrect an effect after its duplicate-protection state was deleted or rolled back.
 
-ADR 041's optional PHPThis Workbench may expose a concrete deferred-work handler with synthetic development input so a human can inspect one direct call. That handler is the consumer of an already delivered envelope, not a publication path. When a development experiment must publish a real job, Workbench may invoke only the application's existing adopted business operation whose explicit transaction already owns the business change and job insert. It must not add a Workbench-only publisher, direct job-table insertion, second transaction path, or alternate enqueue operation. Workbench adds no `dispatch()`, queue facade, job discovery, class-name selection, run-by-ID, replay, retry, claim, or worker behavior.
+## Retry, poison input, and terminal state
 
-A direct deferred-work handler call bypasses publication, stored-envelope parsing, claim order, lease and fencing, retry and dead-letter transitions, idempotent redelivery, supervisor behavior, and operational output. It is therefore neither publication nor queued-delivery evidence. Claiming at most one real queued delivery remains the application's recorded finite tested one-delivery console command. The accepted example above spells that command `jobs:run-one`; the spelling is evidence for the example rather than a reserved consumer command. Production one-offs also stay in the finite tested application console rather than an arbitrary expression process.
+Attempts, backoff and redrive are finite, version-controlled and owner-named. The owner may be application code, reviewed broker configuration or infrastructure as code. Record which failures retry, the exact maximum, every delay or bounded algorithm, timeout handling, and whether a backend changes its own receive count or delivery metadata. Do not add recursive, implicit, unbounded or hidden retry.
 
-## Claim, lease, and fencing
+Malformed, oversized, unsupported, or otherwise poison envelopes are rejected before handler work and routed according to the recorded terminal policy. The selected terminal state or destination has explicit retention and bounded redacted inspection, including any adopted dead-letter/DLQ mechanism or explicit non-applicability. Privileged inspection, replay, cancellation and deletion use exact least-privilege identities, authorization, audit, redaction and ownership. Replay preserves or replaces the original idempotency identity only under one recorded compatibility and semantic policy, and never silently bypasses the ordinary parser, finite dispatch, authorization where applicable, idempotency or attempt policy. Cancellation records exact pending, claimed or in-flight, effect-started, acknowledged and terminal behavior; it does not imply recall of work already executing or complete.
 
-Only a pending row whose availability time has arrived, or an abandoned leased row whose lease has expired, is eligible. The SQLite-specific claim is one finite complete `UPDATE ... RETURNING` statement with explicit bindings and deterministic candidate ordering such as availability time followed by row identity. It runs inside one short explicit transaction. Claiming increments the bounded delivery attempt and writes a newly generated opaque lease token plus one finite expiry. The job table uses state-shape constraints and due-job indexes appropriate to its exact schema; application tests and production evidence verify those constraints and query plans on the deployed SQLite version.
+## Worker and deployment lifecycle
 
-Every later completion, retry, or dead-letter write is fenced by leased state, row identity, that exact lease token, and an expiry still later than the application's current time. A zero-row transition means the worker no longer owns the delivery and must not overwrite the state recorded by a later claimant. A previous worker that resumes after its lease expires therefore cannot acknowledge or reschedule the job even before a newer claimant appears.
+The application owns its exact worker entrypoint and process shape. Record finite work per process or the complete bounded long-running lifecycle; configured concurrency; prefetch, pull or backpressure; memory and resource recycling; maximum handler duration relative to any ownership window; operation and process timeouts; extension, renewal, heartbeat or session-liveness behavior where applicable; reconnect behavior; shutdown sequencing; forced termination; deployment replacement; supervisor restart and storm protection; and the recovery consequence of every termination point.
 
-The worker samples its explicit application clock again before handler work and after handler success or failure. Retry delay begins at the freshly observed failure time, and completion uses the freshly observed completion time; a claim-time snapshot is not sufficient to prove that the lease remains current after work.
+Capacity and outage behavior are backend-specific. Record queue or partition capacity, retention, lag or oldest-age signals, producer and consumer throttling, admission or load shedding, unavailable-backend behavior, backup and restore when meaningful, queued-message versus effect/idempotency restore consistency, replay and disaster recovery, and accountable alerts and runbooks. Production topology, persistence, credentials, TLS, authorization, failover, alarms, and recovery drills require deployment evidence in addition to application tests.
 
-The lease is a recovery boundary, not mutual-exclusion proof for the whole effect. If work exceeds the lease, another process may receive the same job while the first still runs. The application selects a lease longer than its measured ordinary work, bounds the process externally, and still makes the effect safe under duplicate and overlapping delivery. This recipe adds no lease-renewal helper.
+Real-service verification uses one unique run identity and exact run-ID-scoped resources. `finally` performs bounded ordinary cleanup, but hard termination can skip it. Record a finite abandoned-run lifetime plus one exact stale-run reconciliation owner and mechanism that selects only eligible resources belonging to that run identity; never scan broadly or delete another run, environment or production resource. Time-sensitive tests use only the selected service-owned or application-owned clock mechanism and prove its exact representation, units, rounding, precision and accepted skew for visibility, lease, TTL, delay, retry and retention decisions.
 
-## Idempotent database effect
+## Application-owned verification gate
 
-At-least-once delivery means a job can run again after success when the process stops before durable completion is observed. The accepted proof gives the database effect a unique application-owned idempotency key. The handler begins an explicit SQLite transaction, records or observes that unique effect, and marks the currently leased job complete in the same transaction. If the effect was already recorded by an earlier delivery, the replay performs no second effect but still completes its current valid lease. A failed fenced completion rolls the transaction back.
+The accepted [evidence matrix and copyable verification structure](jobs/verification.md) require the canonical Composer evidence script name `jobs:verify`. It is an application-owned verification script name, not a runtime worker command or checker API. It exercises the selected real service wherever broker behavior is claimed and is invoked by the project's normal application tests and complete gate. Release CI fails closed if required real-service configuration or evidence is absent; it never converts a skip or mock fallback into a pass. Mocks may shorten a development loop but cannot establish broker durability, acknowledgement, redelivery, visibility, ordering, persistence, failover, authentication, authorization, TLS, or production topology.
 
-This proves one durable database effect for duplicate deliveries in the exercised SQLite schema. It does not prove exactly-once execution, exactly-once external effects, universal concurrency safety, or correctness for another engine. An HTTP provider may process a request and lose the response; a worker may then retry. Provider-supported idempotency keys, a durable request/receipt model, reconciliation, compensation, and timeout ambiguity must be designed and tested per integration.
+The installed PHPThis checker enforces only the existing Consumer Contract and Strict Profile rules. Finite dispatch and prohibited dynamic resolution in this guidance remain application source, review and behavior evidence unless the application adds its explicitly owned optional static check inside `jobs:verify`. Any such check needs one honest mechanically decidable owner and evidence. Neither PHPThis nor an application static check may claim to prove publication atomicity, outbox recovery, publisher confirmation, acknowledgement order, visibility expiry, redelivery, idempotency, TLS, authorization, failover, throughput, retention, or production topology.
 
-## Retry and dead-letter policy
+## Optional backend profiles
 
-An ordinary handler failure schedules one next eligible time from a finite application-owned backoff table while the attempt is below the accepted maximum. There is no random, unbounded, recursive, or in-process retry. The attempt limit includes every claimed delivery according to the application's recorded policy.
+A future profile is an implementation guide, not a framework adapter or portability claim. It names exact supported backend and client versions, concrete publication and delivery mechanisms, acknowledgement, retry and selected terminal semantics including any adopted dead-letter/DLQ mechanism or explicit non-applicability, topology and security assumptions, copyable application-owned structure, real-service automated evidence, deployment evidence, and unsupported claims.
 
-Once the maximum is reached, the job becomes a dead letter. The claim path also makes an expired final-attempt lease terminal so a process crash on the last permitted delivery cannot strand the row forever. Invalid JSON, a malformed or oversized envelope, an unsupported version, and an unsupported type are poison jobs and become dead letters without dynamic class resolution or arbitrary execution. A dead letter is terminal until an explicit application-owned inspection and replay operation chooses otherwise; this recipe does not silently replay it.
+Backend notes remain decision checklists until a real consumer implementation supplies that evidence. The accepted [SQLite profile](jobs/sqlite.md) remains the first and only checked profile under its existing ADR 024 evidence; it does not retroactively certify an exact deployable SQLite version. The stricter exact service/client version and real-service bar above applies to every profile added under ADR 052. ADR 024's same-connection transaction, `UPDATE ... RETURNING` lease, one-shot worker, finite retry, dead-letter, idempotent database effect, redaction, and process evidence stay intact and do not become generic defaults.
 
-Retry and dead-letter state stores only a finite code-owned diagnostic code plus bounded scheduling metadata. Exception messages and external response bodies are untrusted and may contain credentials, personal data, payloads, SQL, filesystem paths, or other internals. They are never copied into durable job state or the terminal result. Any richer operational destination is separately application-owned, bounded, redacted, and failure-isolated.
+## Non-goals
 
-## Required evidence
+- A framework queue API, `QueueInterface`, facade, dispatcher, worker, scheduler, supervisor, event bus, transport adapter, or runtime dependency.
+- A PHPThis checker or validator for each backend or client library.
+- Automatic backend discovery, runtime backend selection, portable queue terminology, or certification of every messaging service.
+- Exactly-once execution or exactly-once external-effect claims.
+- Treating static analysis, mocks, publisher confirmations, or service marketing as production evidence.
+- Installing any durable-job mechanism in the non-adopting starter.
 
-The application uses a real file-backed SQLite fixture and proves:
-
-- a committed business transaction publishes exactly one claimable row;
-- rollback leaves neither the business change nor a job row;
-- a successful delivery records its database effect and completion atomically;
-- duplicate delivery with the same idempotency key records one durable effect;
-- a handler failure schedules the exact bounded delay and no early claim succeeds;
-- an expired lease permits redelivery with a new token, while a stale or merely expired token cannot finalize it;
-- the maximum attempt and an expired final-attempt lease become terminal dead letters;
-- invalid JSON, malformed fields, unsupported version, and unsupported type cannot reach a handler and become redacted poison dead letters;
-- a real subprocess terminated after claim is recovered by a fresh invocation only after deterministic lease expiry;
-- multiple queued rows require multiple fresh subprocesses, each claiming and finalizing at most one;
-- an empty queue returns the finite `idle` outcome;
-- the finite terminal outcomes `idle`, `completed`, `retry_scheduled`, and `dead_lettered` use the recorded exit contract and one redacted bounded JSON line;
-- output and durable diagnostics omit the envelope, payload, idempotency key, exception message, stack, SQL, bindings, DSN, credentials, and external response values; and
-- every transition has an explicit query budget and bounded trace, with constant statement counts across materially different fixture cardinalities.
-
-ADR 025 fixes the checked example's console mapping: every finite worker outcome exits `0` as one redacted `{"command":"jobs:run-one","outcome":"..."}` stdout line, while operational or unexpected failure exits `1` with only `{"error":"command_failed"}` on stderr. That is an application supervisor contract, not a framework CLI API. A production adopter also proves its actual supervisor's successful-exit repetition, fresh-process backlog draining, idle pacing, clean stop, post-expiry crash recovery, concurrency and timeout bounds, and capacity alarms as required by [the operations guide](jobs/operations.md). See [the application CLI and scheduler guide](cli.md).
-
-## Unsupported boundary
-
-PHPThis ships no job or envelope type, queue interface, dispatcher, worker loop, retry service, lease service, scheduler, process manager, command registry, event bus, transport adapter, broker integration, queue facade, ORM mapping, query builder, transaction callback, discovery convention, or exactly-once claim.
-
-The example is evaluation evidence for one SQLite schema and execution model. Production adoption must prove the deployed SQLite runtime, filesystem and locking behavior, real concurrency, query plans and indexes, disk-full and corruption response, backup and restore, clock behavior, supervisor restart policy, capacity and retention, least-privilege identity, and operational dead-letter handling.
-
-See [ADR 024](decisions/024-application-owned-sqlite-durable-jobs.md) for the accepted decision boundary.
+This accepted optional guidance leaves Consumer Contract version 12, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, framework runtime, and checker validity unchanged. [ADR 024](decisions/024-application-owned-sqlite-durable-jobs.md) and the [checked SQLite profile](jobs/sqlite.md) remain the first and only checked backend-specific durable-job profile.

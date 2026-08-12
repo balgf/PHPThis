@@ -15,4 +15,4 @@ One partial index orders available rows by `available_at`, creation time, and id
 
 Applications own DDL rollout, exact SQLite feature level, compatibility with already stored envelopes, online or offline migration policy, indexes and query-plan evidence, retention, backup, restore, and rollback. PHPThis supplies no migration runner, schema builder, ORM mapping, repository, SQL generator, or dialect translation.
 
-See [the complete durable-jobs guide](../jobs.md), [lifecycle and fencing](lifecycle.md), and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md).
+See [the complete checked SQLite profile](sqlite.md), [lifecycle and fencing](lifecycle.md), and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md). The separate accepted [common contract](../jobs.md) supplies optional backend-neutral guidance without importing this schema.

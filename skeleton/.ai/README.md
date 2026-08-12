@@ -45,7 +45,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | coordinator, sink, finite database sources, summary tests, and the starter's explicit `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)` facts |
 | Change cookie-backed session state | installed `vendor/phpthis/framework/docs/sessions.md` | architecture, operations, and testing facts only when adopted |
 | Change HTTP or server-side caching | installed `vendor/phpthis/framework/docs/caching.md` | response path or data, integration, operations, and testing facts |
-| Change durable deferred work | `.ai/jobs.md` | configuration, producer, worker, operations, and lifecycle tests |
+| Change durable deferred work | `.ai/jobs.md`, then installed `vendor/phpthis/framework/docs/jobs/README.md` | accepted ADR 052 optional common contract and exact selected adoption, or the current accepted ADR 024 checked SQLite profile; exact configuration, publication/recovery, delivery, effect, worker, operations, real-service and complete-gate evidence |
 | Change an application command or scheduled pass | `.ai/cli.md` | console, typed arguments, operations, and real-console tests |
 | Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |
 | Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, configuration, operation, and socket tests |

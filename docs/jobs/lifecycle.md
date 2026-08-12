@@ -8,4 +8,4 @@ Delivery is at least once. An expired lease can be reclaimed with a new token, w
 
 The lease is not proof that work cannot overlap. A production application bounds execution externally, selects its lease from measured behavior, and keeps effects safe under duplicate delivery. External effects need their own idempotency, receipt, reconciliation, timeout, and compensation decisions.
 
-See [the complete durable-jobs guide](../jobs.md) and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md).
+This is an accepted SQLite-profile slice; another backend does not inherit these transaction or lease mechanics. See [the complete checked SQLite profile](sqlite.md) and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md). The separate accepted [common contract](../jobs.md) supplies optional backend-neutral guidance without importing these mechanics.

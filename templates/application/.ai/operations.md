@@ -78,11 +78,11 @@ Cache availability never establishes application correctness. Record whether eac
 ## Durable-job runtime
 
 - Adoption or `NOT_APPLICABLE(JOBS)`: `.ai/jobs.md`
-- Worker supervisor and one-shot invocation policy: {{JOBS_SUPERVISOR_AND_INVOCATION_POLICY_OR_NOT_APPLICABLE}}
+- Selected worker process shape, concurrency, prefetch or backpressure, supervisor and deployment-replacement policy: {{JOBS_PROCESS_SHAPE_SUPERVISION_AND_DEPLOYMENT_POLICY_OR_NOT_APPLICABLE}}
 - Process timeout, forced termination, restart, and clean-stop policy: {{JOBS_PROCESS_LIFECYCLE_POLICY_OR_NOT_APPLICABLE}}
-- Capacity, retention, dead-letter inspection, and incident policy: {{JOBS_OPERATIONS_POLICY_OR_NOT_APPLICABLE}}
+- Capacity, retention, selected terminal inspection, and incident policy: {{JOBS_OPERATIONS_POLICY_OR_NOT_APPLICABLE}}
 
-The application supervisor creates repetition by starting fresh one-delivery processes. Do not add an in-process database polling loop, mutable worker container, hidden retry loop, or unrecorded signal behavior.
+Under accepted ADR 052, an adoption records the exact selected finite-work or bounded long-running process shape, concurrency, prefetch or backpressure, supervision, shutdown, resource recycling, deployment replacement, recovery, and every loop or signal behavior without importing another backend's lifecycle. Only an application deliberately adopting the current ADR 024 checked SQLite profile records repetition through fresh one-delivery processes and its externally supervised one-shot policy. Do not add a hidden polling or retry loop, mutable worker state, discovery, or unrecorded signal behavior.
 
 ## Application CLI and scheduler
 

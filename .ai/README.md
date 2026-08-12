@@ -42,7 +42,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Change authentication, stateless Bearer/JWT/PAT/external-IdP policy, tenant resolution, or authorization | `.ai/request-policy.md` | `docs/stateless-authentication.md`, action-specific policy path, protected work, and denial tests |
 | Change cookie-backed session state | `.ai/session.md` | typed service, lifecycle composition, transport, and policy tests |
 | Change HTTP or server-side caching | `.ai/cache.md` | response path or typed cache service, backend policy, and cache tests |
-| Change durable deferred work | `.ai/jobs.md` | producer transaction, worker path, and lifecycle tests |
+| Change durable deferred work | `.ai/jobs.md` | accepted ADR 052 optional common contract and exact selected adoption, or the current accepted ADR 024 checked SQLite profile; exact publication/recovery, delivery, effect, worker, operations, real-service and gate evidence |
 | Change an application command or scheduled pass | `.ai/cli.md` | console composition, one-pass operation, and real-console tests |
 | Change database migrations | `.ai/migrations.md` | command, configuration, authority, manifest, ledger, coordination, and exact-engine tests |
 | Change uploads or local-file responses | `.ai/file-transfers.md` | boundary, storage operation, emitter path, and transfer tests |

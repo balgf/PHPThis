@@ -53,13 +53,21 @@ function proveInstalledGuidanceReferencesResolve(
         throw new RuntimeException('The guidance proof must use the mirrored framework under the configured vendor directory.');
     }
 
-    $requiredFrameworkGuideOwners = [
+    $commonRequiredFrameworkGuideOwners = [
         'docs/file-transfers/README.md' => '.ai/file-transfers.md',
         'docs/request-policy.md' => '.ai/request-policy.md',
         'docs/stateless-authentication.md' => '.ai/request-policy.md',
-        'docs/jobs.md' => '.ai/jobs.md',
         'docs/cli.md' => '.ai/cli.md',
         'docs/migrations.md' => '.ai/migrations.md',
+    ];
+    $skeletonRequiredFrameworkGuideOwners = [
+        ...$commonRequiredFrameworkGuideOwners,
+        'docs/jobs/README.md' => '.ai/jobs.md',
+    ];
+    $templateRequiredFrameworkGuideOwners = [
+        ...$commonRequiredFrameworkGuideOwners,
+        'docs/jobs.md' => '.ai/jobs.md',
+        'docs/jobs/verification.md' => '.ai/jobs.md',
     ];
     $skeletonMarkdown = markdownFilesFromInventory($project, directoryFiles($root . '/skeleton'));
     $templateRoot = $installedFramework . '/templates/application';
@@ -70,14 +78,14 @@ function proveInstalledGuidanceReferencesResolve(
         $skeletonMarkdown,
         $project,
         $vendorDirectory,
-        $requiredFrameworkGuideOwners,
+        $skeletonRequiredFrameworkGuideOwners,
     );
     requireInstalledGuidanceReferences(
         'installed application template',
         $templateMarkdown,
         $templateRoot,
         $vendorDirectory,
-        $requiredFrameworkGuideOwners,
+        $templateRequiredFrameworkGuideOwners,
     );
 
     $missingTarget = $installedFramework . '/docs/request-policy.md';
@@ -93,7 +101,7 @@ function proveInstalledGuidanceReferencesResolve(
             $skeletonMarkdown,
             $project,
             $vendorDirectory,
-            $requiredFrameworkGuideOwners,
+            $skeletonRequiredFrameworkGuideOwners,
             'does not resolve through the configured Composer vendor directory',
         );
     } finally {
@@ -102,10 +110,10 @@ function proveInstalledGuidanceReferencesResolve(
         }
     }
 
-    $localTarget = $project . '/docs/jobs.md';
+    $localTarget = $project . '/docs/cli.md';
     $localControl = $project . '/application-local-installed-reference-control.md';
     writeFile($localTarget, "# Incorrect local framework guide target\n");
-    writeFile($localControl, "Read `docs/jobs.md` before changing durable work.\n");
+    writeFile($localControl, "Read `docs/cli.md` before changing an application command.\n");
 
     try {
         requireInstalledGuidanceReferenceFailure(
@@ -113,8 +121,8 @@ function proveInstalledGuidanceReferencesResolve(
             [...$skeletonMarkdown, $localControl],
             $project,
             $vendorDirectory,
-            $requiredFrameworkGuideOwners,
-            'uses application-local framework guide docs/jobs.md',
+            $skeletonRequiredFrameworkGuideOwners,
+            'uses application-local framework guide docs/cli.md',
         );
     } finally {
         foreach ([$localControl, $localTarget] as $controlPath) {
@@ -129,8 +137,8 @@ function proveInstalledGuidanceReferencesResolve(
         $skeletonMarkdown,
         $project,
         $vendorDirectory,
-        $requiredFrameworkGuideOwners,
-        'docs/jobs.md',
+        $skeletonRequiredFrameworkGuideOwners,
+        'docs/jobs/README.md',
         '.ai/jobs.md',
     );
     proveRoutedInstalledGuidanceOwnerFailure(
@@ -138,7 +146,7 @@ function proveInstalledGuidanceReferencesResolve(
         $templateMarkdown,
         $templateRoot,
         $vendorDirectory,
-        $requiredFrameworkGuideOwners,
+        $templateRequiredFrameworkGuideOwners,
         'docs/jobs.md',
         '.ai/jobs.md',
     );
@@ -159,7 +167,7 @@ function proveInstalledGuidanceReferencesResolve(
                 [...$skeletonMarkdown, $escapeControl],
                 $project,
                 $vendorDirectory,
-                $requiredFrameworkGuideOwners,
+                $skeletonRequiredFrameworkGuideOwners,
                 'escapes the configured Composer vendor directory',
             );
         } finally {
@@ -190,7 +198,7 @@ function proveInstalledGuidanceReferencesResolve(
             [...$skeletonMarkdown, $symlinkControl],
             $project,
             $vendorDirectory,
-            $requiredFrameworkGuideOwners,
+            $skeletonRequiredFrameworkGuideOwners,
             'does not resolve through the configured Composer vendor directory',
         );
     } finally {
@@ -428,7 +436,8 @@ function proveRoutedInstalledGuidanceOwnerFailure(
         throw new RuntimeException("Unable to read {$surface} routed-owner negative control {$routedOwner}.");
     }
 
-    $expectedReference = '`vendor/phpthis/framework/' . $requiredFrameworkGuide . '`';
+    $expectedReferencePath = 'vendor/phpthis/framework/' . $requiredFrameworkGuide;
+    $expectedReference = '`' . $expectedReferencePath . '`';
     $replacementCount = 0;
     $controlContents = str_replace(
         $expectedReference,
@@ -446,13 +455,37 @@ function proveRoutedInstalledGuidanceOwnerFailure(
     writeFile($routedOwnerPath, $controlContents);
 
     try {
+        $referenceRemainsElsewhere = false;
+
+        foreach ($markdownFiles as $markdownFile) {
+            $markdownContents = file_get_contents($markdownFile);
+
+            if (!is_string($markdownContents)) {
+                throw new RuntimeException(
+                    "Unable to read {$surface} routed-owner control guidance file {$markdownFile}.",
+                );
+            }
+
+            if (in_array(
+                $expectedReferencePath,
+                installedDependencyReferences($markdownContents, $markdownFile),
+                true,
+            )) {
+                $referenceRemainsElsewhere = true;
+                break;
+            }
+        }
+
+        $expectedDiagnostic = $referenceRemainsElsewhere
+            ? "routed owner {$routedOwner} is missing required installed framework guide {$requiredFrameworkGuide}"
+            : "{$surface} context is missing required installed framework guide {$requiredFrameworkGuide}";
         requireInstalledGuidanceReferenceFailure(
             $surface,
             $markdownFiles,
             $surfaceRoot,
             $vendorDirectory,
             $requiredFrameworkGuideOwners,
-            "routed owner {$routedOwner} is missing required installed framework guide {$requiredFrameworkGuide}",
+            $expectedDiagnostic,
         );
     } finally {
         writeFile($routedOwnerPath, $originalContents);

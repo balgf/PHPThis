@@ -8,4 +8,4 @@ Dispatch is an exhaustive finite `match` over supported version and type combina
 
 Changing an envelope requires an explicit compatibility decision for already stored rows, updated parser and dispatch code, bounds, migration or retirement policy, and tests for both accepted and rejected versions. Native `json_decode` keeps the last repeated object key; duplicate-key rejection requires a separately accepted parser and proof.
 
-See [the complete durable-jobs guide](../jobs.md) and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md).
+This is an accepted SQLite-profile slice, not backend-neutral guidance. See [the complete checked SQLite profile](sqlite.md) and [ADR 024](../decisions/024-application-owned-sqlite-durable-jobs.md). The separate accepted [common contract](../jobs.md) supplies optional backend-neutral guidance without importing this SQLite mechanism.

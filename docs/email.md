@@ -17,7 +17,7 @@ Use the existing application guides as the current owners:
 | Composition and dependencies | finite message types and templates, the pinned maintained mail or MIME package and exact version, supported contract, update policy, and visible composition |
 | External integration | one named transport boundary, exact provider or SMTP contract, timeouts, rate limits, provider identifiers, failure classes, idempotency support, and retry owner in `.ai/integrations.md` |
 | Configuration | exact input names without values, final readonly configuration, credentials, endpoint and TLS policy, sender identities, canonical application URL, rotation, and process separation in `.ai/configuration.md` |
-| Durable delivery | producer transaction, bounded intent envelope, business-event idempotency key, one-delivery worker, retries, dead letters, and replay ownership in `.ai/jobs.md` |
+| Durable delivery | selected publication/recovery boundary, bounded intent envelope, email-effect idempotency scope and horizon, exact worker/process shape, retry/redrive and terminal semantics, and replay ownership in `.ai/jobs.md`; one-delivery and SQLite dead-letter behavior apply only to ADR 024 |
 | Security and operations | domain verification, deployment identity, supervisors, reconciliation, webhooks, retention, redaction, capacity, incident response, and provider account ownership in `.ai/operations.md` and the applicable security policy |
 | Evidence | deterministic composition, semantic MIME inspection, transport contract tests, lifecycle tests, and approved integration boundary in `.ai/testing.md` |
 
@@ -95,19 +95,20 @@ Provider acceptance means only that the selected provider accepted a request und
 
 Permit synchronous sending only after the application explicitly accepts and tests its latency, timeout, provider-outage, client-disconnect, process-termination, duplicate-submission, and public-failure consequences for that request or command lifecycle. An external call does not belong inside the business database transaction. Sending before commit can escape a later rollback; sending after commit can fail after the business change is durable. Record the chosen ordering and compensation rather than describing either path as atomic.
 
-When delivery must survive request or process termination, prefer a durable deferred intent and follow [Durable jobs](jobs.md) without adding a framework queue. The producer commits the bounded intent with its business write where the selected database recipe supports that guarantee. A later application-owned worker composes and attempts delivery through the named transport boundary. The current `jobs:run-one` example remains a one-delivery application console operation; PHPThis adds no queue, worker daemon, scheduler, or process manager.
+When delivery must survive request or process termination, prefer a durable deferred intent and start with the [durable-job knowledge index](jobs/README.md) without adding a framework queue. Accepted ADR 052 supplies the optional common contract, while ADR 024 and the checked SQLite profile remain the first and only checked backend-specific path. The producer commits the bounded intent with its business write only where the deliberately selected adoption proves that boundary. The ADR 024 `jobs:run-one` example is specifically a one-delivery application console operation. Another adoption records and proves its selected backend's actual publication, delivery, acknowledgement, terminal and worker-process semantics rather than inheriting one-delivery, lease or dead-letter behavior. PHPThis adds no queue, worker daemon, scheduler, or process manager.
 
-Preserve at-least-once semantics. Record:
+For an ADR 024 SQLite adoption, preserve that profile's at-least-once delivery assumption, one-shot lifecycle and dead-letter behavior. For another selected backend under ADR 052, assume delivery may occur more than once, make the email effect duplicate-safe, prove the positive durable-publication and loss envelope, and record the selected backend's actual terminal mechanism. Neither path promises that every publication reaches handler work after an explicit recorded terminal rejection/exhaustion, finite cancellation or expiry, or bounded catastrophic loss outside its proved envelope. Record:
 
 - one bounded business-event idempotency key distinct from recipient-controlled input;
 - provider idempotency support and key scope, retention window, collision policy, and unsupported cases;
 - durable internal request identity and any provider request, message, and receipt identifiers;
 - ambiguous-timeout behavior when the provider may have accepted a request but the application received no conclusive response;
-- finite attempt count and code-owned backoff, with retryable and terminal classifications;
-- redacted dead-letter inspection and retention;
+- finite attempt count and version-controlled backoff/redrive with its exact application-code, broker-configuration or infrastructure-as-code owner, plus retryable and terminal classifications;
+- the selected terminal destination or state, privileged redacted inspection and retention; use ADR 024's SQLite dead-letter terminology only when that profile is selected;
 - authoritative reconciliation inputs, cadence, timeout, and unavailable-provider behavior;
 - compensation policy when the external effect cannot be reversed; and
-- the identity authorized to perform an operator replay and the checks that preserve idempotency and audit evidence.
+- the identity authorized to perform an operator replay and the checks that preserve idempotency and audit evidence; and
+- the email effect/idempotency uniqueness scope, durable retention/deletion owner and protection horizon beyond every retry, redrive, terminal retention, replay and provider-deduplication window, explicit post-horizon behavior, and backup/restore consistency or reconciliation so restored work cannot resurrect an unprotected send.
 
 A blind retry after an ambiguous timeout may duplicate delivery. Use the provider's proved idempotency contract when available; otherwise retain an ambiguous state for reconciliation or an explicit operator decision. Persisting a provider receipt after the network call cannot make that call atomic with SQLite. Do not claim exactly-once execution or delivery.
 
@@ -131,7 +132,7 @@ Composition tests cover address and header injection, finite template selection,
 
 Inspect composed messages semantically through the selected mail or MIME package. Assert decoded addresses, headers, media types, charset, multipart relationship, body values, and attachments; do not snapshot random MIME boundaries, generated dates, provider-generated message identifiers, or other unstable serialization.
 
-Transport tests cover success, provider rejection, authentication failure, rate limiting, retryable and terminal failures, ambiguous timeout, provider-idempotent retry, redaction, reconciliation, and dead-letter behavior without contacting production. Prove that synchronous failure follows its recorded public contract and that deferred failure follows its recorded at-least-once lifecycle. Webhook tests separately cover authentication, bounds, deduplication, replay, event mapping, and redaction for every adopted event type.
+Transport tests cover success, provider rejection, authentication failure, rate limiting, retryable and terminal failures, ambiguous timeout, provider-idempotent retry, redaction, reconciliation, and the selected terminal behavior without contacting production. Prove that synchronous failure follows its recorded public contract and that deferred failure follows the deliberately selected adoption's actual delivery, acknowledgement, retry/redrive and terminal semantics. ADR 024 adopters additionally preserve its SQLite at-least-once delivery assumption and dead-letter lifecycle; another selected backend does not inherit them. Webhook tests separately cover authentication, bounds, deduplication, replay, event mapping, and redaction for every adopted event type.
 
 Use only a local fake, captured transport, or explicitly approved provider sandbox for integration evidence. Use synthetic non-production identities and never send test messages to real recipients. Record which provider and protocol claims remain unproved by the selected boundary.
 

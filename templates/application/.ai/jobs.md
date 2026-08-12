@@ -1,15 +1,36 @@
 # Application durable-job contract
 
+Status: accepted ADR 052 supplies the optional backend-neutral fields below. The installed `vendor/phpthis/framework/docs/jobs/sqlite.md` and ADR 024 remain the current first and only checked backend-specific SQLite profile.
+
 - Adoption or `NOT_APPLICABLE(JOBS)`: {{JOBS_ADOPTION_OR_NOT_APPLICABLE}}
-- Backend, exact version, database and filesystem topology: {{JOBS_BACKEND_VERSION_AND_TOPOLOGY_OR_NOT_APPLICABLE}}
-- Producer transaction and commit-visible publication path: {{JOBS_PRODUCER_TRANSACTION_OR_NOT_APPLICABLE}}
-- Finite envelope types, versions, payload bounds, and parser paths: {{JOBS_ENVELOPE_CONTRACT_OR_NOT_APPLICABLE}}
-- Idempotency-key owner, grammar, effect boundary, and retention: {{JOBS_IDEMPOTENCY_POLICY_OR_NOT_APPLICABLE}}
-- Lease duration, clock, maximum attempts, and finite backoff: {{JOBS_LEASE_RETRY_POLICY_OR_NOT_APPLICABLE}}
-- Dead-letter codes, retention, inspection, replay, and cancellation: {{JOBS_DEAD_LETTER_POLICY_OR_NOT_APPLICABLE}}
-- One-shot worker entrypoint, timeout, supervisor, and stop policy: {{JOBS_WORKER_LIFECYCLE_OR_NOT_APPLICABLE}}
-- Query budgets, bounded traces, and behavior-test command: {{JOBS_EVIDENCE_OR_NOT_APPLICABLE}}
+- Exact backend/service and version, client dependency and version, and update owner: {{JOBS_BACKEND_CLIENT_VERSION_OWNER_OR_NOT_APPLICABLE}}
+- Topology, persistence and durability settings: {{JOBS_TOPOLOGY_DURABILITY_OR_NOT_APPLICABLE}}
+- Producer, consumer, relay, inspector and administrator identities and least-privilege capabilities: {{JOBS_IDENTITIES_CAPABILITIES_OR_NOT_APPLICABLE}}
+- Credential names and boundary, TLS, network, tenant/environment isolation, rotation and revocation: {{JOBS_SECURITY_BOUNDARY_OR_NOT_APPLICABLE}}
+- Publication boundary and transactional outbox or other proved recovery mechanism: {{JOBS_PUBLICATION_RECOVERY_OR_NOT_APPLICABLE}}
+- Successful-publication durability/fault envelope proving survival after producer/request termination until acknowledgement, terminal outcome, or explicit finite cancel/expiry; exact restart/failover claims; separate ambiguous/failed publication and out-of-envelope loss: {{JOBS_DURABLE_PUBLICATION_INVARIANT_OR_NOT_APPLICABLE}}
+- Finite envelope types and versions, JSON/payload bounds, parser and compatibility paths: {{JOBS_ENVELOPE_CONTRACT_OR_NOT_APPLICABLE}}
+- Payload classification/minimization, encryption-at-rest/key ownership where applicable, region/residency, and full-envelope access, retention and deletion across any selected terminal or dead-letter/DLQ store, backup, replica and snapshot: {{JOBS_PAYLOAD_PRIVACY_OR_NOT_APPLICABLE}}
+- Finite dispatch path and prohibited dynamic resolution: {{JOBS_DISPATCH_CONTRACT_OR_NOT_APPLICABLE}}
+- Per-job-type publication authority and durable non-secret tenant, owner, principal and action binding, or explicit tenantless system-owned non-applicability: {{JOBS_DOMAIN_AUTHORITY_BINDING_OR_NOT_APPLICABLE}}
+- Current authorization, revocation and domain-state recheck before effect, or exact previously committed system-owned obligation: {{JOBS_DELIVERY_DOMAIN_POLICY_OR_NOT_APPLICABLE}}
+- Exact acknowledgement, receipt, visibility, lease, reclaim, group, partition, offset, ordering and redelivery mechanisms; required ordering/partition/sequence key and concurrency scope plus service enforcement or monotonic/version guard, rejection or reconciliation for stale/out-of-order/replayed work, or explicit order-independent non-applicability; maximum handler duration relative to any ownership window; exact extension, renewal, heartbeat or session-liveness owner, cadence and bounds; renewal failure/expiry and actual stale-owner behavior; rejection or fencing only where supported, otherwise bounded overlapping stale work and duplicate-safe recovery; explicit non-applicability only when no ownership or session-liveness mechanism applies: {{JOBS_DELIVERY_SEMANTICS_OR_NOT_APPLICABLE}}
+- Assumption that delivery may occur more than once, duplicate-safe semantic effect, exact idempotency uniqueness scope and identity grammar, durable retention/deletion owner, protection horizon beyond retry, redrive, selected terminal retention including any adopted dead-letter/DLQ, replay, and provider-deduplication expiry, post-horizon behavior, timeout ambiguity, receipts, reconciliation and compensation: {{JOBS_EFFECT_IDEMPOTENCY_OR_NOT_APPLICABLE}}
+- Backup/restore consistency for corresponding queued-message and effect/idempotency state, or fail-closed mismatch reconciliation before consumption resumes: {{JOBS_EFFECT_RESTORE_CONSISTENCY_OR_NOT_APPLICABLE}}
+- Finite version-controlled attempts, retry, backoff, redrive and poison/terminal policy with exact code, broker-configuration or infrastructure-as-code owners and counter precedence: {{JOBS_RETRY_TERMINAL_OR_NOT_APPLICABLE}}
+- Selected terminal state or destination and retention, including any adopted dead-letter/DLQ mechanism or explicit non-applicability, plus privileged inspection, replay, cancellation and deletion identity, authorization, audit, redaction and in-flight behavior: {{JOBS_PRIVILEGED_OPERATIONS_OR_NOT_APPLICABLE}}
+- Worker entrypoint/process shape, concurrency, prefetch or backpressure, maximum handler duration, applicable ownership extension/renewal/heartbeat/session-liveness behavior, timeouts, reconnect, supervision, shutdown and deployment replacement: {{JOBS_WORKER_LIFECYCLE_OR_NOT_APPLICABLE}}
+- Selected service/application time owner, representation, units, rounding, precision and skew limits for visibility, lease, ownership renewal or heartbeat, TTL, delay, retry and retention: {{JOBS_TIME_SEMANTICS_OR_NOT_APPLICABLE}}
+- Capacity, depth/age/lag signals, thresholds, outage, retention, backup, restore, disaster recovery and operational owners: {{JOBS_OPERATIONS_OR_NOT_APPLICABLE}}
+- Bounded diagnostics and redaction policy: {{JOBS_REDACTION_OR_NOT_APPLICABLE}}
+- Canonical application Composer evidence script `jobs:verify`: {{JOBS_VERIFY_SCRIPT_OR_NOT_APPLICABLE}}
+- Single literal application-owned Composer-autoload/bootstrap path used by `jobs:verify`: {{JOBS_VERIFY_BOOTSTRAP_OR_NOT_APPLICABLE}}
+- Literal `jobs:verify` -> `test` -> complete `check` wiring: {{JOBS_COMPLETE_GATE_WIRING_OR_NOT_APPLICABLE}}
+- Isolated real-service namespace, unique run identity, bounded ordinary cleanup, finite abandoned-run lifetime, exact run-ID-scoped stale-run reconciliation owner/mechanism, and deployment evidence: {{JOBS_REAL_SERVICE_EVIDENCE_OR_NOT_APPLICABLE}}
+- Optional application-owned backend static checker owner, pinned versions, finite diagnostics, positive/negative fixtures, mutation controls and limits: {{JOBS_STATIC_CHECKER_OR_NOT_APPLICABLE}}
 
-Before adoption, read installed `vendor/phpthis/framework/docs/jobs.md`. Read ADR 024 only when explicitly reviewing or changing its SQLite durable-job decision or deliberately adopting that exact historical proof shape. PHPThis provides no core queue or worker API. A job row may share atomicity with a business write only through the same `Connection`, transaction, and database. Record delivery as at-least-once, parse stored envelopes as untrusted input, use finite explicit dispatch, fence every transition with an unexpired opaque lease token, and make the concrete effect idempotent.
+Before adoption, read installed `vendor/phpthis/framework/docs/jobs.md` and `vendor/phpthis/framework/docs/jobs/verification.md`. If deliberately adopting the current checked SQLite profile, also follow installed `vendor/phpthis/framework/docs/jobs/sqlite.md`, its focused profile pages and ADR 024, and preserve their exact SQLite-specific guarantees and limits.
 
-Do not add an ORM, repository, generic queue facade, event bus, automatic discovery, serialized PHP objects, transaction callback, hidden retry loop, in-process polling loop, or exactly-once external-effect claim.
+`jobs:verify` is the accepted guidance's canonical application-owned Composer evidence script name, not a runtime worker command or PHPThis checker API. It uses one explicit ordered entrypoint over publication, delivery and operations modules, fails closed without required real-service configuration or evidence, has no release skip or mock fallback, and emits only fixed bounded redacted pass/fail bytes. An optional backend-specific static checker remains inside that application path, proves only mechanically decidable local invariants, and is neither hosted nor discovered by PHPThis.
+
+Broker producer or consumer credentials are not domain authorization. Do not add an ORM, repository, `QueueInterface`, queue facade, generic dispatcher, event bus, transport adapter, automatic discovery, serialized PHP objects, stored class names, identity middleware, context API, hidden retry, or exactly-once execution/effect claim. Consumer Contract version 12, Strict Profile version 3 and `PHT001` through `PHT007` remain unchanged.

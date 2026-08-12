@@ -86,6 +86,7 @@ docs/decisions/048-isolated-agent-evaluation-controller.md
 docs/decisions/049-bounded-response-cookie-profile.md
 docs/decisions/050-application-owned-local-environment-launcher.md
 docs/decisions/051-application-owned-structured-log-destinations.md
+docs/decisions/052-backend-neutral-application-owned-durable-jobs.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
@@ -113,7 +114,9 @@ docs/jobs/envelope.md
 docs/jobs/lifecycle.md
 docs/jobs/operations.md
 docs/jobs/schema.md
+docs/jobs/sqlite.md
 docs/jobs/testing.md
+docs/jobs/verification.md
 docs/knowledge-map.md
 docs/logging.md
 docs/migrations.md

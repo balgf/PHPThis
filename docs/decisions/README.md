@@ -57,6 +57,7 @@ Accepted records:
 - `049-bounded-response-cookie-profile.md`
 - `050-application-owned-local-environment-launcher.md`
 - `051-application-owned-structured-log-destinations.md`
+- `052-backend-neutral-application-owned-durable-jobs.md`
 
 ## Current and successor relationships
 
@@ -81,3 +82,5 @@ ADR 013's current executable-example identifier placement is additionally refine
 Accepted [ADR 050](050-application-owned-local-environment-launcher.md) adds an optional development-only environment-delivery recommendation to ADR 036 without superseding its one typed PHP configuration boundary. It is authoritative for the checked application-owned launcher pattern but adds no framework runtime, automatic loading, configuration cache, or skeleton adoption.
 
 Accepted [ADR 051](051-application-owned-structured-log-destinations.md) adds one optional application-owned destination envelope and operational profile around ADR 023's closed version-1 request summary and ADR 028's closed version-2 Redis proof without superseding either record. It is authoritative for the checked destination-record encoder and optional profile but leaves Consumer Contract version 12 and Strict Profile version 3 unchanged, adds no framework runtime or dependency, and changes no existing application behavior; the health-only skeleton and executable example remain explicit non-adopters.
+
+Accepted [ADR 052](052-backend-neutral-application-owned-durable-jobs.md) adds current optional backend-neutral application-owned durable-job guidance without superseding ADR 024. ADR 024 remains the first and only checked backend-specific profile under its existing SQLite evidence; the health-only skeleton remains `NOT_APPLICABLE(JOBS)` and the executable example remains `SQLITE_ADR024_REFERENCE`. ADR 052 leaves Consumer Contract version 12, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, framework runtime, dependencies, and checker validity unchanged.
