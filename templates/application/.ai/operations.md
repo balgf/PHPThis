@@ -122,6 +122,7 @@ Keep each history's engine/version decision, exact initial baseline, finite expl
 ## Logging and observability
 
 - Terminal request-summary runtime authority: `.ai/observability.md`
+- Optional operational log-record, stdout/stderr or daily-file destination, rotation/retention/disk policy, and Alloy/Loki/Grafana tenant/account, remote lifecycle, data-residency, access, and incident authority or explicit N/A: `.ai/observability.md`; do not duplicate those facts here.
 - HTTP cache status, revalidation, and intermediary observability: {{HTTP_CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
 - Cache-operation summary and hit, miss, failure, invalidation, and stampede metrics: {{CACHE_OBSERVABILITY_POLICY_OR_NOT_APPLICABLE}}
 - Adopted health, readiness, or non-HTTP probes; exact claim, entrypoint or composition root, inherited dependencies and synchronous destinations including the terminal summary sink, bounded work, failure response or process behavior, local or deployment operations owner or explicit N/A, and application-test or deployment evidence with verified environment/date: {{HEALTH_AND_READINESS_PATHS}}
@@ -129,7 +130,7 @@ Keep each history's engine/version decision, exact initial baseline, finite expl
 
 `Connection::connect()` constructs PDO eagerly and, depending on the selected driver and DSN, may perform I/O or fail during composition. A route sharing a composition root that opens a required external-service connection must not be described as external-service-independent liveness. A synchronous terminal sink also remains part of the probe path even when its failure cannot alter the selected response; record its destination and latency bound before making an independence claim. Record what the selected execution path actually proves and whether a composition failure occurs before routing, response selection, or the terminal request-summary attempt. Connection construction alone does not prove exact-statement database authority or complete readiness. PHPThis does not select a probe route, dependency set, restart policy, or deployment topology, and it does not authorize a hidden bypass or second HTTP execution path.
 
-Keep destination buffering, retention, backpressure, outage, and incident facts in `.ai/observability.md`; do not restate the installed event schema here. A sink invocation attempt is not durable delivery.
+Keep destination buffering, retention, backpressure, outage, and incident facts in `.ai/observability.md`; do not restate the installed event schema or optional record envelope here. A sink invocation attempt is not durable delivery.
 
 ## Prohibited operational actions
 

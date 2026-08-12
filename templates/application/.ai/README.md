@@ -42,7 +42,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Change file transfer | `.ai/file-transfers.md` | front controller, storage operation, response path, and transfer tests |
 | Change an external side effect | `.ai/integrations.md` | named client boundary, failure policy, and contract tests |
 | Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |
-| Change correlation or terminal summaries | `.ai/observability.md` | coordinator, sink, finite database sources, and summary tests |
+| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | coordinator, sink, finite database sources, summary tests, and `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)` or the explicitly adopted finite record, destination, lifecycle, collector, and evidence facts without changing installed request-summary v1/v2 |
 | Change cookie-backed session state | installed `vendor/phpthis/framework/docs/sessions.md` | architecture, operations, and testing facts only when adopted |
 | Change HTTP or server-side caching | installed `vendor/phpthis/framework/docs/caching.md` | response path or data, integration, operations, and testing facts |
 | Change durable deferred work | `.ai/jobs.md` | configuration, producer, worker, operations, and lifecycle tests |

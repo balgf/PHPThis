@@ -2460,13 +2460,26 @@ PHP;
 
     $observabilityArtifactMarkers = [
         '.ai/README.md' => [
-            '| Change correlation or terminal summaries | `.ai/observability.md` | front-controller coordinator, sink, finite sources, and summary tests |',
+            '| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051\'s exact optional level/envelope/destination policy without changing request-summary v1/v2 or Contract v12 |',
         ],
         '.ai/observability.md' => [
             'application.request_summary',
             'at most eight finite code-owned database sources',
             'exactly one sink invocation attempt',
             'Never claim durable delivery',
+            '`docs/observability/destination-record.md`',
+            'Keep the checked `RequestSummaryDestinationRecord` reference limited to final encoding of the existing concrete summary.',
+            'emit one `info`, `warning`, or `error` record for every valid summary',
+            'Before adoption, prove the worst-case valid record fits 65,536 bytes including LF',
+            '<project-root>/var/log/application.jsonl',
+            'the exact project-root `.gitignore` pattern `/var/log/` (not the host `/var/log` directory)',
+            '/var/log/<application>/application.jsonl',
+            'For a container, prefer the selected stdout or stderr profile over its ephemeral writable layer.',
+            'the application runtime and HTTP request path never create or repair the directory or call `mkdir`, `touch`, `chmod`, or `chown` for the destination.',
+            'Recommend POSIX directory mode `0750` and file mode `0640` only when one writer identity and one collector group match that topology',
+            'a finite static process role such as `web`, `worker`, or `scheduler` may be a measured bounded dimension',
+            'Record the selected tenant/account reference, remote retention/deletion, region/data residency, access owner, and incident owner',
+            'Absent deliberate application adoption, do not change the existing error-log sink, skeleton runtime, example runtime',
         ],
         'docs/consumer-contract.md' => [
             'ADR 023 defines the mandatory request-level observability boundary',
@@ -2478,6 +2491,9 @@ PHP;
         'docs/knowledge-map.md' => [
             '`docs/observability/README.md`',
             'ADR 023',
+            'Adopt or review log levels, destination-record encoding, daily files, stdout/stderr, or Grafana delivery',
+            '`docs/observability/destination-record.md`',
+            'ADR 051',
         ],
         'docs/logging.md' => [
             '[0-9a-f]{32}',
@@ -2487,10 +2503,17 @@ PHP;
             'make exactly one sink invocation attempt',
             'not durable delivery',
             '`phpthis.request.unhandled`',
+            '[ADR 051](decisions/051-application-owned-structured-log-destinations.md) accepts an optional application-owned profile.',
+            'Operational log levels',
+            'checked destination-record reference',
+            'Operational log destination profiles',
+            'The encoder proof performs no destination I/O and is not adopter-specific worst-case sizing, file, stream, collector, or delivery evidence.',
         ],
         'docs/observability/README.md' => [
             'ADR 023 is the mandatory request-summary decision',
             '`tests/observability.php`',
+            '[Destination-record reference](destination-record.md)',
+            'do not mistake the encoder proof for destination-I/O certification',
         ],
         'docs/observability/correlation-id.md' => [
             '[0-9a-f]{32}',
@@ -2502,19 +2525,72 @@ PHP;
             'no two sources share a `QueryBudget` or `QueryTrace`',
             'A rejected over-budget call sets exceeded state',
         ],
+        'docs/observability/destination-profiles.md' => [
+            '[ADR 051](../decisions/051-application-owned-structured-log-destinations.md) accepts this optional application-owned profile.',
+            'Each newline-delimited JSON record has exactly these top-level fields in this order:',
+            '[checked destination-record reference](destination-record.md)',
+            'certifies none of the stream, file, collector, or delivery facts below',
+            '<project-root>/var/log/application.jsonl',
+            'the exact project-root `.gitignore` entry `/var/log/`',
+            '/var/log/<application>/application.jsonl',
+            'for a container, prefer the selected stdout or stderr profile above rather than a file on its ephemeral writable layer',
+            'Only an application that adopts this local-file profile adds the directory and ignore rule.',
+            '`<application>` is one static non-sensitive deployment identifier',
+            'The application runtime and HTTP request path never create or repair the log directory or call `mkdir`, `touch`, `chmod`, or `chown` for the destination.',
+            'POSIX mode `0750` for the directory and `0640` for the file is the recommended least-privilege starting point.',
+            'tail -F var/log/application.jsonl',
+            'it proves neither that an application writer reopened its descriptor nor that a collector delivered the record.',
+            'application -> selected file or stdout/stderr -> Grafana Alloy -> Loki or Grafana Cloud Logs -> Grafana',
+            'A finite static process role such as `web`, `worker`, or `scheduler` may become a label only after measured query frequency, volume, and cardinality evidence proves it is a bounded deployment dimension.',
+            'A process identifier, PID, replica identifier, or another dynamic process value never becomes a label.',
+            'Record the selected Loki or Grafana Cloud tenant or account through a stable non-secret reference',
+            'None of that evidence expands ADR 023\'s one-attempt or delivery claim.',
+        ],
+        'docs/observability/destination-record.md' => [
+            '# Application-owned request-summary destination-record reference',
+            '[ADR 051](../decisions/051-application-owned-structured-log-destinations.md) accepts this optional application-owned reference.',
+            '<!-- phpthis-request-summary-destination-record-reference:start -->',
+            'final class RequestSummaryDestinationRecord',
+            'private const int RECORD_SCHEMA_VERSION = 1;',
+            'private const int MAXIMUM_RECORD_BYTES = 65_536;',
+            "->setTimezone(new DateTimeZone('UTC'))",
+            "\$summaryPayload['outcome'] === 'unknown_failure'",
+            "\$summaryPayload['response_status'] >= 500 => 'error'",
+            "\$summaryPayload['query_failures'] > 0",
+            "\$summaryPayload['query_budget_exceeded'] => 'warning'",
+            "'record_schema_version' => self::RECORD_SCHEMA_VERSION,\n                    'occurred_at' => \$occurredAtText,\n                    'level' => \$level,\n                    'summary' => \$summaryPayload,",
+            'JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES',
+            '$line = $encoded . "\\n";',
+            'strlen($line) > self::MAXIMUM_RECORD_BYTES',
+            '<!-- phpthis-request-summary-destination-record-reference:end -->',
+            'It deliberately performs no file or stream write',
+        ],
         'docs/observability/event-schema.md' => [
             'version-1 `application.request_summary` schema',
             'Known denials gain no denial-specific field',
             'anonymous throwable uses its nearest named parent',
         ],
+        'docs/observability/log-levels.md' => [
+            '[ADR 051](../decisions/051-application-owned-structured-log-destinations.md) accepts this optional application-owned profile.',
+            'exactly five lower-ASCII levels: `debug`, `info`, `warning`, `error`, and `critical`',
+            'The destination record derives the HTTP level mechanically, in this precedence order:',
+            'HTTP request summaries never use `debug` or `critical`.',
+            'This profile adds no framework or generic application logger, level enum, facade, helper, middleware, event bus, context bag, discovery mechanism, runtime dependency, or hidden instrumentation.',
+        ],
         'docs/observability/sink-failure.md' => [
             'exactly one synchronous sink invocation attempt',
             'An invocation attempt is not durable delivery.',
+            'ADR 051 keeps timestamp creation, encoder-owned HTTP level derivation, envelope encoding, the 65,536-byte record check',
+            'there is no configurable suppression path.',
         ],
         'docs/observability/testing.md' => [
             '`tests/observability.php`',
             'exactly one sink invocation attempt',
             'They do not prove durable storage',
+            'The installed-consumer proof executes ADR 051\'s exact copyable destination-record encoder without changing framework or application runtime behavior.',
+            'the exact 65,536-byte inclusive boundary and overflow',
+            'An adopting application still owns evidence for its selected clock source and clock-source failure, exact worst-case fit from maximum source count',
+            'The installed encoder-only proof exists solely to validate the accepted copyable reference: it changes no accepted runtime or request-summary claim, while sizing, file, stream, and collector evidence remains adopter-owned and absent until an application deliberately adopts the applicable profile.',
         ],
         'docs/decisions/023-application-owned-terminal-request-summaries.md' => [
             'Status: accepted',
@@ -2529,12 +2605,65 @@ PHP;
         ],
         'docs/decisions/README.md' => [
             '023-application-owned-terminal-request-summaries.md',
+            '051-application-owned-structured-log-destinations.md',
+            'Accepted [ADR 051](051-application-owned-structured-log-destinations.md) adds one optional application-owned destination envelope and operational profile',
+            'It is authoritative for the checked destination-record encoder and optional profile',
+        ],
+        'docs/decisions/051-application-owned-structured-log-destinations.md' => [
+            '# ADR 051: Application-owned structured log destinations',
+            'Status: accepted',
+            'That same approval covers the additive three-environment path convention recorded below; it creates no additional release authority.',
+            'Consumer Contract version 12 and Strict Profile version 3 remain current',
+            'local development after adoption: `<project-root>/var/log/application.jsonl`',
+            'host or virtual-machine production: `/var/log/<application>/application.jsonl`',
+            'containers: one explicitly selected stdout or stderr stream rather than a file on the ephemeral writable layer.',
+            'The application runtime and HTTP request path never create or repair the log directory or call `mkdir`, `touch`, `chmod`, or `chown` for this destination.',
+            '`tail -F var/log/application.jsonl`',
+            'A finite static process role such as `web`, `worker`, or `scheduler` may become a label only after measured query, volume, and cardinality evidence proves it is a bounded deployment dimension.',
+            'An adopter also records the selected Loki or Grafana Cloud tenant or account through a stable non-secret reference',
+            'The checked guidance and installed-consumer encoder proof preserve the unchanged version-1 and version-2 summary field sets',
+            'It adds no framework clock abstraction, throwing-clock fixture, generic level-threshold or destination API, and does not certify a file, stream, collector, or deployment.',
+            'Each adopting application owns evidence for its selected clock source and clock-source failure, its exact worst-case record-size calculation',
+            'The profile is not an audit log or a durable, exactly-once, complete-process, or successful-response-delivery guarantee.',
+        ],
+        'docs/guardrails.md' => [
+            'accepted ADR 051, its current routes, exact application-owned destination-record encoder, ninth installed-consumer proof module, package inventory, non-adopting skeleton and example context, and runtime-path exclusions',
+            'The destination-record guard pins accepted ADR 051',
+            'The ninth declaration-only installed-consumer module extracts and executes those exact installed bytes.',
+            'This encoder-only evidence performs no destination I/O',
+            'synthetic hard-cap fixture',
+            'The application-specific worst-case fit remains an adopter-owned calculation and proof',
+            'does not adopt or pre-reserve the optional profile in the skeleton or executable example.',
         ],
         'verification/ApplicationChecker.php' => [
             "'.ai/observability.md',",
         ],
         'tools/test-consumer-project.php' => [
+            "require_once __DIR__ . '/test-consumer-project/observability.php';",
+            'proveInstalledRequestSummaryDestinationRecordReference(',
+            'installed-request-summary-destination-record-reference-proved',
             'proveObservabilityContextIsRequired(',
+        ],
+        'tools/test-consumer-project/observability.php' => [
+            'function installedRequestSummaryDestinationRecordSource(',
+            'function requestSummaryDestinationRecordV1ProofProgram(',
+            'function requestSummaryDestinationRecordIsolatedSummarySource(',
+            'function requestSummaryDestinationRecordIsolatedProofProgram(',
+            'function proveInstalledRequestSummaryDestinationRecordReference(',
+            '31c993b68bf5e18a0d7cbb74e8439721f62ffb1f53eb9e8fb6744b48ff587a9f',
+            'The installed destination-record reference bytes do not match the reviewed encoder.',
+            'The destination-record source-hash mutation control did not fail closed.',
+            'Installed non-adopting skeleton must not pre-ignore the optional project-root /var/log/ destination.',
+            'Installed skeleton must not create or adopt the optional var/log destination.',
+            "in_array('/var/log/', explode(\"\\n\", \$projectGitIgnore), true)",
+            'file_exists($localLogDirectory)',
+            'PASS installed request-summary destination-record version-1 proof',
+            'PASS installed request-summary destination-record isolated boundary proof',
+            'The HTTP mapper must emit exactly info, warning, and error, never debug or critical.',
+            'Synthetic hard-cap fixture:',
+            'strlen($maximumLine) === 65_536',
+            'Request-summary destination record exceeds 65536 bytes.',
+            'Destination-record proof cleanup did not restore the consumer or created a var/log destination.',
         ],
         'tools/test-consumer-project/profile-controls.php' => [
             'function proveObservabilityContextIsRequired(',
@@ -2551,6 +2680,8 @@ PHP;
         'example/.ai/observability.md' => [
             '`list_users`, `get_user`, `create_user`, `get_document`, and `list_documents`',
             'one attempt is not durable delivery',
+            '`NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)`',
+            "ADR 051's accepted optional profile is not adopted or implemented by the executable example.",
         ],
         'example/bootstrap.php' => [
             'ApplicationDatabasePath::fromString(',
@@ -2599,10 +2730,23 @@ PHP;
             '{{TERMINAL_SUMMARY_DATABASE_SOURCES_OR_EMPTY}}',
             '{{TERMINAL_SUMMARY_TEST_COMMAND}}',
             'One invocation attempt never means durable delivery.',
+            'ADR 051 accepts this optional application-owned profile.',
+            '{{OPERATIONAL_LOG_SUMMARY_AND_LEVEL_MAP_OR_NOT_APPLICABLE}}',
+            '{{OPERATIONAL_LOG_WORST_CASE_RECORD_SIZE_PROOF_OR_NOT_APPLICABLE}}',
+            '{{OPERATIONAL_LOG_RECORD_ENVELOPE_AND_BOUND_OR_NOT_APPLICABLE}}',
+            '<project-root>/var/log/application.jsonl',
+            'the exact project-root `.gitignore` pattern `/var/log/` (not the host `/var/log` directory)',
+            '/var/log/<application>/application.jsonl',
+            'For a container, prefer the selected stdout or stderr profile over a file on its ephemeral writable layer.',
+            'POSIX directory mode `0750` and file mode `0640` are recommended only when one writer identity and one collector group fit the recorded topology',
         ],
         'skeleton/.ai/observability.md' => [
             '`NOT_APPLICABLE(no database)`',
             'delivery is not guaranteed',
+            '`NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)`',
+            "ADR 051's accepted optional profile is not adopted or implemented by this starter.",
+            'The skeleton creates, reserves, and ignores no log directory.',
+            'An adopter that selects the recommended local `var/log` path adds the exact project-root `/var/log/` ignore at that time.',
         ],
         'skeleton/bootstrap.php' => [
             'return new TerminalRequestCoordinator(',
@@ -2656,10 +2800,14 @@ PHP;
         ],
         'tools/package-files.txt' => [
             'docs/decisions/023-application-owned-terminal-request-summaries.md',
+            'docs/decisions/051-application-owned-structured-log-destinations.md',
             'docs/observability/README.md',
             'docs/observability/correlation-id.md',
             'docs/observability/database-evidence.md',
+            'docs/observability/destination-profiles.md',
+            'docs/observability/destination-record.md',
             'docs/observability/event-schema.md',
+            'docs/observability/log-levels.md',
             'docs/observability/sink-failure.md',
             'docs/observability/testing.md',
             'templates/application/.ai/observability.md',
@@ -2667,6 +2815,41 @@ PHP;
     ];
 
     requireGuardrailArtifactMarkers($root, $observabilityArtifactMarkers, 'observability', $failures);
+
+    $skeletonGitIgnorePath = $root . '/skeleton/.gitignore';
+
+    if (!is_file($skeletonGitIgnorePath) || is_link($skeletonGitIgnorePath)) {
+        $failures[] = 'The skeleton .gitignore must remain one regular non-symlink file.';
+    } else {
+        $skeletonGitIgnore = file_get_contents($skeletonGitIgnorePath);
+
+        if (
+            !is_string($skeletonGitIgnore)
+            || in_array('/var/log/', explode("\n", $skeletonGitIgnore), true)
+        ) {
+            $failures[] = 'The non-adopting skeleton must not pre-ignore the optional project-root /var/log/ destination.';
+        }
+    }
+
+    if (file_exists($root . '/skeleton/var/log') || is_link($root . '/skeleton/var/log')) {
+        $failures[] = 'The non-adopting skeleton must not create or adopt the optional /var/log/ destination.';
+    }
+
+    foreach (
+        [
+            'src/Observability/RequestSummaryDestinationRecord.php',
+            'skeleton/src/Observability/RequestSummaryDestinationRecord.php',
+            'example/src/Observability/RequestSummaryDestinationRecord.php',
+        ] as $forbiddenDestinationRecordRuntime
+    ) {
+        if (
+            file_exists($root . '/' . $forbiddenDestinationRecordRuntime)
+            || is_link($root . '/' . $forbiddenDestinationRecordRuntime)
+        ) {
+            $failures[] = 'The accepted destination-record reference must not become framework, skeleton, or example runtime: '
+                . $forbiddenDestinationRecordRuntime . '.';
+        }
+    }
 
     return $failures;
 }

@@ -85,6 +85,7 @@ docs/decisions/047-bounded-alpha-6-release-scope.md
 docs/decisions/048-isolated-agent-evaluation-controller.md
 docs/decisions/049-bounded-response-cookie-profile.md
 docs/decisions/050-application-owned-local-environment-launcher.md
+docs/decisions/051-application-owned-structured-log-destinations.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
@@ -119,7 +120,10 @@ docs/migrations.md
 docs/observability/README.md
 docs/observability/correlation-id.md
 docs/observability/database-evidence.md
+docs/observability/destination-profiles.md
+docs/observability/destination-record.md
 docs/observability/event-schema.md
+docs/observability/log-levels.md
 docs/observability/sink-failure.md
 docs/observability/testing.md
 docs/performance.md

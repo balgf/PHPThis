@@ -56,6 +56,7 @@ Accepted records:
 - `048-isolated-agent-evaluation-controller.md`
 - `049-bounded-response-cookie-profile.md`
 - `050-application-owned-local-environment-launcher.md`
+- `051-application-owned-structured-log-destinations.md`
 
 ## Current and successor relationships
 
@@ -78,3 +79,5 @@ A partially superseded record remains accepted outside the exact scope named bel
 ADR 013's current executable-example identifier placement is additionally refined by [ADR 046](046-canonical-executable-example-boundaries.md); the canonical current tree remains in [Optional CRUD reference profile](../crud.md#reference-placement). This refinement does not additionally supersede ADR 013's optional structure decision.
 
 Accepted [ADR 050](050-application-owned-local-environment-launcher.md) adds an optional development-only environment-delivery recommendation to ADR 036 without superseding its one typed PHP configuration boundary. It is authoritative for the checked application-owned launcher pattern but adds no framework runtime, automatic loading, configuration cache, or skeleton adoption.
+
+Accepted [ADR 051](051-application-owned-structured-log-destinations.md) adds one optional application-owned destination envelope and operational profile around ADR 023's closed version-1 request summary and ADR 028's closed version-2 Redis proof without superseding either record. It is authoritative for the checked destination-record encoder and optional profile but leaves Consumer Contract version 12 and Strict Profile version 3 unchanged, adds no framework runtime or dependency, and changes no existing application behavior; the health-only skeleton and executable example remain explicit non-adopters.

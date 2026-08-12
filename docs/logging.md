@@ -4,6 +4,18 @@ ADR 023 requires one application-owned terminal request summary for every reques
 
 ADR 033 does not move this terminal responsibility into an application-owned request-handler decorator. A route-local decorator cannot wrap the terminal coordinator, build the terminal request summary, invoke its sink, claim emission, or replace its failure isolation. A separately justified route-level business side effect still needs its own narrowly named bounded policy and evidence and is not the terminal summary.
 
+PHPThis makes only the closed terminal request summary below mandatory. ADR 051 separately accepts an optional application-owned profile for a sink-time UTC timestamp, finite level, and one selected daily-file or stdout/stderr destination, including downstream Grafana delivery; an application must deliberately adopt it. PHPThis still supplies no general operational event API or logging runtime.
+
+The starter's current `error_log()` sink is not a pure JSONL daily-file profile. PHP and its deployment may prefix the encoded summary or mix unrelated runtime diagnostics into the selected error-log destination.
+
+## Optional operational record and destinations
+
+[ADR 051](decisions/051-application-owned-structured-log-destinations.md) accepts an optional application-owned profile. It leaves Consumer Contract version 12 and the accepted request-summary versions unchanged. It frames one already-closed summary in exactly `record_schema_version`, sink-time UTC `occurred_at`, finite `level`, and `summary`; bounds the complete newline-delimited JSON record to 65,536 bytes including LF; and keeps timestamp construction inside the existing sink attempt.
+
+The accepted HTTP mapping uses `error` for an unknown failure or status at least `500`, otherwise `warning` for observed query failure or budget rejection, otherwise `info`. HTTP summaries never use `debug` or `critical`. Other processes own their own finite event and level maps rather than receiving a generic logger.
+
+See [Operational log levels](observability/log-levels.md) for the exact five-level vocabulary, the [checked destination-record reference](observability/destination-record.md) for the application-owned final encoder only, and [Operational log destination profiles](observability/destination-profiles.md) for stdout or stderr, a daily file, and Grafana Alloy to Loki or Grafana Cloud Logs to Grafana. An application must deliberately adopt the optional profile; acceptance alone changes neither its runtime behavior nor the closed request summary. The encoder proof performs no destination I/O and is not adopter-specific worst-case sizing, file, stream, collector, or delivery evidence.
+
 ## Correlation and response propagation
 
 Generate 128 random bits during request-scoped composition before bounded request ingestion and encode them as exactly 32 lowercase hexadecimal characters matching `[0-9a-f]{32}`. Do not derive the identifier from request data. Replace any case-insensitive application response spelling with that same `correlation_id` value as the single `X-Request-ID` header on success, mapped failure, and generic unknown-failure `500` paths.

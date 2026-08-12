@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/test-consumer-project/support.php';
 require_once __DIR__ . '/test-consumer-project/guidance.php';
 require_once __DIR__ . '/test-consumer-project/http.php';
+require_once __DIR__ . '/test-consumer-project/observability.php';
 require_once __DIR__ . '/test-consumer-project/application.php';
 require_once __DIR__ . '/test-consumer-project/data.php';
 require_once __DIR__ . '/test-consumer-project/configuration.php';
@@ -138,6 +139,18 @@ try {
             !== 'installed-field-validation-error-guidance-proof-complete'
     ) {
         throw new RuntimeException('Installed field-validation error guidance proof did not complete.');
+    }
+    $installedDestinationRecordProof = proveInstalledRequestSummaryDestinationRecordReference(
+        $project,
+        $installedFramework,
+        $environment,
+    );
+
+    if (
+        $installedDestinationRecordProof
+            !== 'installed-request-summary-destination-record-reference-proved'
+    ) {
+        throw new RuntimeException('The installed request-summary destination-record proof did not complete.');
     }
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);

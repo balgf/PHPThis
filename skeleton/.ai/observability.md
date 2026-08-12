@@ -9,3 +9,14 @@ The starter follows installed ADR 023 with application types under `src/Observab
 - Evidence: `composer test` exercises real composition, generated IDs, success and mapped input summaries, unknown-failure class-only capture, exactly one sink attempt, throwing-sink response isolation, request-scoped freshness, and the real front controller. The framework repository's observability proof covers the complete schema.
 
 Before database adoption, register every executable request-scoped connection in at most eight unique sources with distinct budgets and traces. Do not move terminal observability into an application-owned request-handler decorator or add an ORM, query builder, SQL/binding helper, framework logger, generic or framework logging middleware, facade, global helper, per-query event, or hidden instrumentation.
+
+## Optional operational log-record profile
+
+`NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)`: ADR 051's accepted optional profile is not adopted or implemented by this starter.
+
+- Record and levels: `ErrorLogRequestSummarySink` encodes the accepted version-1 summary directly. It adds no `record_schema_version`, `occurred_at`, `level`, or `summary` envelope and has no `debug`, `info`, `warning`, `error`, or `critical` policy.
+- Daily file: `NOT_APPLICABLE(DAILY_LOG_FILE)`. The skeleton creates, reserves, and ignores no log directory. No path, UTC filename boundary, permissions, writer topology, rotation, retention, compression, quota, disk-full, or local tail workflow is selected. An adopter that selects the recommended local `var/log` path adds the exact project-root `/var/log/` ignore at that time.
+- Stdout/stderr: `NOT_APPLICABLE(SELECTED_LOG_STREAM)`. PHP's deployment-configured `error_log` destination is not evidence that this application selected either stream or that a supervisor collects it.
+- Grafana: `NOT_APPLICABLE(GRAFANA_LOG_DELIVERY)`. No Alloy, Loki, Grafana Cloud Logs tenant/account, remote retention/deletion, region/data-residency, labels, positions, collector credentials, access owner, retry, backpressure, outage, incident owner, or alert policy is selected.
+
+Adoption requires an accountable application decision plus application-owned code and evidence. Do not infer these optional capabilities from the existing sink or change the request-summary schema, framework runtime, dependencies, or one-attempt failure boundary.

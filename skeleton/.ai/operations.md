@@ -80,10 +80,11 @@ Record here, keyed by stable history name or explicit intersecting-history set, 
 - Database sources are `NOT_APPLICABLE(no database)`; query aggregates remain zero and the source list remains empty.
 - HTTP cache storage and revalidation metrics are `NOT_APPLICABLE(no-store responses only)`; behavior tests verify the emitted policy, while production intermediary verification remains deployment-owned.
 - Cache-operation summaries and hit, miss, failure, invalidation, and stampede metrics are `NOT_APPLICABLE(CACHE)`.
+- Optional operational log record, levels, daily file, selected stdout/stderr stream, and Grafana delivery are `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)` as recorded in `.ai/observability.md`. The starter creates, reserves, and ignores no log directory and has no log rotation, retention, file permission, collector, Loki or Grafana tenant/account, remote lifecycle, region/data-residency, access, or incident operations policy.
 
 Before adopting this route as a deployment probe, record and verify every synchronous destination, including the terminal sink. Before adding a connection that requires an external service or other required external-service I/O to the shared HTTP composition root, reclassify every affected probe and update `.ai/operations.md` and `.ai/testing.md` with its exact claim, inherited dependencies, bounded work, composition or dependency failure behavior, local or deployment operations owner, and evidence. `Connection::connect()` constructs PDO eagerly and may fail during composition; whether it requires an external service depends on the selected driver and DSN. In the current front-controller shape, that failure occurs outside the terminal request-summary coordinator and receives none of its response, correlation-header, or summary guarantees. Do not preserve a liveness claim through a hidden bypass or second HTTP execution path.
 
-The sink invocation attempt does not guarantee durable delivery. `.ai/observability.md` owns the current destination and redaction facts.
+The sink invocation attempt does not guarantee durable delivery. `.ai/observability.md` owns the current destination and redaction facts and the optional profile's explicit not-applicable state.
 
 ## Prohibited operational actions
 
