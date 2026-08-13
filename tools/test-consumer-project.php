@@ -6,6 +6,7 @@ require_once __DIR__ . '/test-consumer-project/support.php';
 require_once __DIR__ . '/test-consumer-project/guidance.php';
 require_once __DIR__ . '/test-consumer-project/http.php';
 require_once __DIR__ . '/test-consumer-project/file-transfers.php';
+require_once __DIR__ . '/test-consumer-project/amazon-s3-file-transfers.php';
 require_once __DIR__ . '/test-consumer-project/jobs.php';
 require_once __DIR__ . '/test-consumer-project/observability.php';
 require_once __DIR__ . '/test-consumer-project/application.php';
@@ -153,6 +154,22 @@ try {
             !== 'installed-protected-file-transfer-reference-proved'
     ) {
         throw new RuntimeException('The installed protected file-transfer proof did not complete.');
+    }
+    $installedAmazonS3FileTransferVerificationProof =
+        proveInstalledAmazonS3FileTransferVerificationReference(
+            $project,
+            $installedFramework,
+            $composerBinary,
+            $environment,
+        );
+
+    if (
+        $installedAmazonS3FileTransferVerificationProof
+            !== 'installed-amazon-s3-file-transfer-verification-reference-proved'
+    ) {
+        throw new RuntimeException(
+            'The installed Amazon S3 file-transfer verification proof did not complete.',
+        );
     }
     $installedJobsVerificationProof = proveInstalledBackendNeutralJobsVerificationReference(
         $project,

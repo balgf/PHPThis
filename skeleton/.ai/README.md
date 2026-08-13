@@ -2,7 +2,7 @@
 
 This directory owns current context for the checked health-only starter. Replace only the guides entered by a task with verified project facts before adding product behavior. Keep context committed, concise, and free of secrets.
 
-Consumer Contract v12 and Strict Profile v3 remain mandatory. Application guidance may strengthen them but may not weaken them.
+Consumer Contract v13 and Strict Profile v3 remain mandatory. Application guidance may strengthen them but may not weaken them.
 
 ## Universal entrypoints
 
@@ -39,7 +39,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Change application data or SQL | `.ai/data.md` | direct call site, authority, exact-engine, adversarial, and scale evidence |
 | Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md` | exact operation representation; add architecture, configuration, data, CLI, operations, and testing context only when entered |
 | Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |
-| Adopt, secure, or change file transfer | `.ai/file-transfers.md` as the single authoritative policy, then installed `vendor/phpthis/framework/docs/file-transfers/README.md` | effective pre-PHP ingress, request-policy order, temporary and durable roots, concrete storage/content/quota/lifecycle operations, response path, and transfer tests |
+| Adopt, secure, or change file transfer | `.ai/file-transfers.md` as the single authoritative policy, then installed `vendor/phpthis/framework/docs/file-transfers/README.md` | common bounded multipart policy plus exactly one `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile and its complete application evidence |
 | Change an external side effect | `.ai/integrations.md` | named client boundary, failure policy, and contract tests |
 | Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |
 | Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | coordinator, sink, finite database sources, summary tests, and the starter's explicit `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)` facts |

@@ -55,3 +55,9 @@ The exact emitter guarantee is one pre-header regular-file and size check follow
 The tests deliberately prove no authentication, tenant, authorization, CSRF, quota, scanner/parser, lifecycle, production ingress, proxy, shared-storage, or production buffering behavior. Static installed-context checks can pin this public non-production record and the application template's required markers; they do not turn these omissions into safe defaults.
 
 Run `composer test` for behavior evidence and `composer check` for the complete repository gate.
+
+## Accepted Amazon S3 reference only
+
+REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_GUIDANCE)
+
+Accepted ADR 053 and its current pages do not change this example. It remains the public non-production `LOCAL_ADR026` reference with fixed `nosniff` and full local response behavior. It has no AWS dependency, configuration, credential source, S3 client, remote object, pre-signed URL, `file-transfers:s3:verify` gate, or production S3 evidence, and it cannot be cited as Amazon S3 adoption.

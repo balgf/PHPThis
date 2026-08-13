@@ -15,7 +15,7 @@ function proveInstalledProtectedFileTransferReference(
     $artifactMarkers = [
         $installedFramework . '/docs/file-transfers/security.md' => [
             'For protected upload, keep `authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage` visible and fail before every later step.',
-            '`OPAQUE_BYTES` uses fixed code-owned stored/download names and only an `application/octet-stream` attachment with `nosniff`, explicit cache, and recorded authentication/authorization; it is not content-safety certification.',
+            '`OPAQUE_BYTES` uses fixed code-owned stored/download names and only an `application/octet-stream` attachment, explicit cache, and recorded authentication/authorization; `LOCAL_ADR026` also requires `nosniff`, while accepted `AMAZON_S3_ADR053` cannot guarantee it on S3\'s response. Neither posture is content-safety certification.',
             '`INSPECTED_CONTENT` uses byte-derived classification with a finite allowlist, pinned parser or scanner, process isolation, time, memory, nesting and decompression bounds, update ownership, quarantine and failure policy, and executable malicious and malformed fixtures.',
             '`SameSite` and an opaque identifier are not permission.',
             'PHPThis supplies no generic authentication, tenant, CSRF, quota, scanner, storage, or lifecycle API.',
@@ -35,13 +35,13 @@ function proveInstalledProtectedFileTransferReference(
         $installedFramework . '/templates/application/.ai/file-transfers.md' => [
             'This is the application\'s single authoritative file-transfer policy.',
             'authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage',
-            'Deployment-precreated durable root before HTTP handling',
+            'for `LOCAL_ADR026`, the deployment-precreated durable root before HTTP handling',
             'Static context checks prove only that this authoritative record and its finite markers exist and route into the complete application gate.',
         ],
         $project . '/.ai/file-transfers.md' => [
             'NOT_APPLICABLE(FILE_TRANSFER)',
             'The starter accepts no upload and returns no file download.',
-            'Keep movement, quota accounting, inspection, cleanup, retention, deletion, and authorization in concrete application operations.',
+            'Keep selected storage, quota accounting, inspection, cleanup, retention, deletion, and authorization in concrete application operations.',
         ],
     ];
     requireInstalledArtifactMarkers($artifactMarkers, 'protected file-transfer reference');

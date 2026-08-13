@@ -81,6 +81,92 @@ function distributionGuardrailFailures(
         }
     }
 
+    if (is_string($packageInventory)) {
+        $amazonS3AcceptedPackagePaths = [
+            'docs/decisions/053-application-owned-amazon-s3-file-transfers.md',
+            'docs/file-transfers/amazon-s3.md',
+            'docs/file-transfers/amazon-s3-verification.md',
+        ];
+
+        foreach ($amazonS3AcceptedPackagePaths as $amazonS3AcceptedPackagePath) {
+            $pathPattern = '/^' . preg_quote($amazonS3AcceptedPackagePath, '/') . '$/m';
+
+            if (preg_match_all($pathPattern, $packageInventory) !== 1) {
+                $failures[] = "The accepted Amazon S3 package path must occur exactly once: {$amazonS3AcceptedPackagePath}.";
+            }
+        }
+
+        $packagePaths = preg_split('/\R/', trim($packageInventory));
+
+        if (!is_array($packagePaths) || count($packagePaths) !== 216) {
+            $failures[] = 'The release inventory must contain exactly 216 reviewed files after the three accepted Amazon S3 pages.';
+        }
+
+        foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
+            if (
+                preg_match(
+                    '~\A(?:src|verification)/(?:AmazonS3|S3|Storage)(?:/|\.php\z)~',
+                    $packagePath,
+                ) === 1
+            ) {
+                $failures[] = "Accepted Amazon S3 guidance must not package a runtime or checker path: {$packagePath}.";
+            }
+        }
+    }
+
+    foreach (['composer.json', 'skeleton/composer.json'] as $amazonS3ComposerPath) {
+        $manifestContents = file_get_contents($root . '/' . $amazonS3ComposerPath);
+        $manifest = is_string($manifestContents) ? json_decode($manifestContents, true) : null;
+
+        foreach (['require', 'require-dev'] as $dependencySection) {
+            $dependencies = is_array($manifest) ? ($manifest[$dependencySection] ?? null) : null;
+
+            if (is_array($dependencies) && array_key_exists('aws/aws-sdk-php', $dependencies)) {
+                $failures[] = "Accepted Amazon S3 guidance must not add aws/aws-sdk-php to {$amazonS3ComposerPath}.";
+            }
+        }
+    }
+
+    foreach (['src', 'verification', 'skeleton/src', 'example/src'] as $amazonS3RuntimeRoot) {
+        $absoluteAmazonS3RuntimeRoot = $root . '/' . $amazonS3RuntimeRoot;
+
+        if (!is_dir($absoluteAmazonS3RuntimeRoot) || is_link($absoluteAmazonS3RuntimeRoot)) {
+            $failures[] = "Cannot inspect the accepted Amazon S3 runtime boundary: {$amazonS3RuntimeRoot}.";
+            continue;
+        }
+
+        $runtimeFiles = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(
+                $absoluteAmazonS3RuntimeRoot,
+                FilesystemIterator::SKIP_DOTS,
+            ),
+        );
+
+        foreach ($runtimeFiles as $runtimeFile) {
+            if (
+                !$runtimeFile instanceof SplFileInfo
+                || !$runtimeFile->isFile()
+                || strtolower($runtimeFile->getExtension()) !== 'php'
+            ) {
+                continue;
+            }
+
+            $runtimeBytes = file_get_contents($runtimeFile->getPathname());
+
+            if (
+                is_string($runtimeBytes)
+                && (
+                    str_contains($runtimeBytes, 'Aws\\S3')
+                    || str_contains($runtimeBytes, 'aws/aws-sdk-php')
+                    || str_contains($runtimeBytes, 'AMAZON_S3_ADR053')
+                )
+            ) {
+                $relativeRuntimePath = substr($runtimeFile->getPathname(), strlen($root) + 1);
+                $failures[] = "Accepted Amazon S3 guidance must not add framework, skeleton, example, or checker runtime behavior: {$relativeRuntimePath}.";
+            }
+        }
+    }
+
     $composerPath = $root . '/composer.json';
     $composerContents = file_get_contents($composerPath);
 
@@ -1012,7 +1098,7 @@ function distributionGuardrailFailures(
 
     $fileTransferArtifactMarkers = [
         '.ai/README.md' => [
-            '| Change uploads or local-file responses | `.ai/file-transfers.md` | boundary, storage operation, emitter path, and transfer tests |',
+            '| Change uploads or file responses, or adopt/review Amazon S3 | `.ai/file-transfers.md` | common bounded multipart policy plus exactly one `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile and its complete application evidence |',
         ],
         '.ai/file-transfers.md' => [
             'A `null` multipart limit disables multipart input.',
@@ -1033,9 +1119,9 @@ function distributionGuardrailFailures(
             'PHPThis adds no ORM behavior, automatic or domain binding',
         ],
         'docs/file-transfers/README.md' => [
-            'This knowledge set routes an AI through PHPThis\'s one accepted file-transfer path.',
+            'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
-            'The executable example is a public non-production transport and filesystem proof, not a protected-upload recommendation.',
+            'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
         ],
         'docs/file-transfers/security.md' => [
             '`SameSite` and an opaque identifier are not permission.',
@@ -1061,12 +1147,12 @@ function distributionGuardrailFailures(
         'skeleton/.ai/file-transfers.md' => [
             'NOT_APPLICABLE(FILE_TRANSFER)',
             'multipart input remains disabled',
-            'request identity cannot and need not create/chmod/chown/repair/replace it',
+            '`LOCAL_ADR026` owns its deployment-precreated durable root, move, filesystem authority/rechecks, path/byte immutability and cleanup',
         ],
         'templates/application/.ai/file-transfers.md' => [
             '{{FILE_TRANSFER_ADOPTION_OR_NOT_APPLICABLE}}',
             '{{FILE_TRANSFER_EVIDENCE_OR_NOT_APPLICABLE}}',
-            'Deployment-precreated durable root before HTTP handling',
+            'for `LOCAL_ADR026`, the deployment-precreated durable root before HTTP handling',
             '`OPAQUE_BYTES` uses fixed code-owned stored/download names',
         ],
         'tools/test-consumer-project.php' => [
@@ -1146,8 +1232,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 12$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 12.';
+            if (preg_match('/^Contract version: 13$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 13.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -1407,8 +1493,8 @@ function distributionGuardrailFailures(
                 $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
             }
 
-            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v12 and Strict Profile v3 are the minimum accepted rules')) {
-                $failures[] = 'Application AGENTS.md must identify Consumer Contract v12 and Strict Profile v3 as the minimum accepted rules.';
+            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v13 and Strict Profile v3 are the minimum accepted rules')) {
+                $failures[] = 'Application AGENTS.md must identify Consumer Contract v13 and Strict Profile v3 as the minimum accepted rules.';
             }
         }
     }
@@ -1424,9 +1510,9 @@ function distributionGuardrailFailures(
             !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
             || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
             || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
-            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v12 and Strict Profile v3 are the minimum accepted rules')
+            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v13 and Strict Profile v3 are the minimum accepted rules')
         ) {
-            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v12 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v13 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
         }
     }
 

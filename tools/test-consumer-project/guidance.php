@@ -599,6 +599,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
+        '| [ADR 026](026-bounded-file-transfers.md) | Remote-object-store and pre-signed-delivery exclusion, only when an application explicitly selects `AMAZON_S3_ADR053`; `LOCAL_ADR026` remains unchanged | [ADR 053](053-application-owned-amazon-s3-file-transfers.md) |',
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
     ];
     $indexPath = $installedFramework . '/docs/decisions/README.md';
@@ -884,8 +885,8 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'The source-preparation approval above did not itself authorize any external operation.',
             'Issue #37 subsequently records the exact framework candidate, framework tag, and framework package-distribution evidence.',
             'Its coordinated-release record remains partial and unproved pending the exact dedicated-skeleton candidate and tag, clean exact `composer create-project` proof, both GitHub prereleases, and announcement; those operations remain separately gated.',
-            'Accepted unreleased `main` after `v0.1.0-alpha.6` now includes ADR 049, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling.',
-            'Those changes are not part of the immutable Alpha 6 framework source, and their acceptance selects no later release identity, candidate, or external operation.',
+            'Accepted unreleased `main` after `v0.1.0-alpha.6` now includes ADRs 049 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling.',
+            'Those changes are not part of the immutable Alpha 6 framework source, and their acceptance selects no later release identity, candidate, or external release operation.',
             'This tracked process does not replace the external evidence or establish live host availability.',
         ],
         $installedFramework . '/docs/decisions/047-bounded-alpha-6-release-scope.md' => [
@@ -920,8 +921,8 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             '| Alpha 6 completion | The matching skeleton, clean public `create-project` proof, GitHub prereleases, and final announcement remain tracked in [release issue #37](https://github.com/balgf/PHPThis/issues/37) |',
             'Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation.',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.5'",
-            '| Current unreleased source | ADR 049, Consumer Contract version 12, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |',
-            "The Alpha 6 framework tag is immutable. Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling.",
+            '| Current unreleased source | ADRs 049 through 053, Consumer Contract version 13, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |',
+            'The Alpha 6 framework tag is immutable. Accepted unreleased `main` after Alpha 6 now includes ADRs 049 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling.',
             'Those changes are not part of Alpha 6, and their acceptance selects no later release identity or candidate.',
             'Use the Alpha 6 `create-project` path only after the exact skeleton version and clean public-install evidence are recorded; existing applications may assess the framework package independently',
             '## Key documentation',
@@ -946,7 +947,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'Issue #37 records the exact framework candidate, tag, and package-distribution evidence, but its Alpha 6 record remains partial and unproved pending the dedicated skeleton, clean exact `create-project` proof, both GitHub prereleases, and announcement.',
             'Framework-side evidence therefore does not establish that an exact Alpha 6 skeleton command is available.',
             'Package availability is an external fact: verify the evidence record, GitHub, and Packagist before selecting a package version.',
-            "Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling",
+            'Accepted unreleased `main` after Alpha 6 now includes ADRs 049 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling',
             'these are not Alpha 6 source and select no later release identity or candidate.',
             'Alpha 6 itself adopts Consumer Contract version 11 through ADR 045 while retaining Strict Profile version 3 and diagnostics `PHT001` through `PHT007`.',
             'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',

@@ -21,7 +21,7 @@ function boundaryGuardrailFailures(string $root): array
         ],
         'skeleton/.ai/file-transfers.md' => [
             'NOT_APPLICABLE(FILE_TRANSFER)',
-            'Keep movement, quota accounting, inspection, cleanup, retention, deletion, and authorization in concrete application operations.',
+            'Keep selected storage, quota accounting, inspection, cleanup, retention, deletion, and authorization in concrete application operations.',
         ],
         'tools/test-consumer-project.php' => [
             "require_once __DIR__ . '/test-consumer-project/file-transfers.php';",
@@ -92,6 +92,155 @@ PHP;
         }
     }
 
+    $amazonS3VerificationProofMarkers = [
+        '.ai/file-transfers.md' => [
+            '## Accepted Amazon S3 profile route',
+            'Accepted ADR 053, `docs/file-transfers/amazon-s3.md`, and `docs/file-transfers/amazon-s3-verification.md` define the optional `AMAZON_S3_ADR053` profile under Consumer Contract version 13.',
+            '`NOT_APPLICABLE(FILE_TRANSFER)` plus `REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_VERIFICATION_STRUCTURE)`',
+            'cannot establish adoption',
+        ],
+        '.ai/testing.md' => [
+            'exactly twelve declaration-only modules',
+            '`amazon-s3-file-transfers.php`',
+            'exact 50-proof-call order',
+            'without installing or loading AWS code or contacting a service',
+        ],
+        'docs/decisions/053-application-owned-amazon-s3-file-transfers.md' => [
+            '# ADR 053: Application-owned Amazon S3 file transfers',
+            'Status: accepted',
+            'Accountable-human approval: accepted on 2026-08-13 (Asia/Manila).',
+            'Direct S3 delivery cannot add `X-Content-Type-Options: nosniff`',
+            'Contract version 13',
+            'PHPThis adds no S3 client',
+        ],
+        'docs/file-transfers/amazon-s3.md' => [
+            'Status: accepted optional guidance under ADR 053 and Consumer Contract version 13.',
+            '`aws/aws-sdk-php` exactly `3.392.1`',
+            '`X-Amz-SignedHeaders=host`',
+            '`ExpectedBucketOwner` is required on server-executed S3 operations',
+            'Do not put it into this browser-navigation pre-signed command.',
+            "'StorageClass' => 'STANDARD'",
+            "\$headResult->hasKey('StorageClass')",
+            'no S3 Lifecycle rule or action whose filter can cover `private-documents/v1/`',
+            '`PutObject`, `HeadObject`, `ListObjectVersions`, `GetObject`, and `DeleteObject`',
+        ],
+        'docs/file-transfers/amazon-s3-verification.md' => [
+            '## Exact reviewed-source manifest shape',
+            '## Exact application-owned checker shape',
+            '## Exact Composer gate wiring',
+            '## Framework reference proof',
+            '`NOT_APPLICABLE(FILE_TRANSFER)` and `REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_VERIFICATION_STRUCTURE)`',
+            'without loading the AWS SDK or contacting AWS',
+            'no S3 Lifecycle rule or action whose filter can cover `private-documents/v1/`',
+            '`PutObject`, `HeadObject`, `ListObjectVersions`, `GetObject`, and `DeleteObject`',
+        ],
+        'templates/application/.ai/file-transfers.md' => [
+            '## Optional accepted Amazon S3 profile fields',
+            '{{AMAZON_S3_FILE_TRANSFER_VERSION_OWNER_OR_NOT_APPLICABLE}}',
+            '{{AMAZON_S3_FILE_TRANSFER_GATE_OR_NOT_APPLICABLE}}',
+        ],
+        'skeleton/.ai/file-transfers.md' => [
+            'NOT_APPLICABLE(FILE_TRANSFER)',
+            'REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_GUIDANCE)',
+            'select exactly one `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile',
+        ],
+        'example/.ai/file-transfers.md' => [
+            'PUBLIC_NON_PRODUCTION(FILE_TRANSFER)',
+            'REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_GUIDANCE)',
+            'It has no AWS dependency, configuration, credential source, S3 client, remote object, pre-signed URL, `file-transfers:s3:verify` gate, or production S3 evidence',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/053-application-owned-amazon-s3-file-transfers.md',
+            'docs/file-transfers/amazon-s3.md',
+            'docs/file-transfers/amazon-s3-verification.md',
+        ],
+        'tools/test-consumer-project.php' => [
+            "require_once __DIR__ . '/test-consumer-project/amazon-s3-file-transfers.php';",
+            '$installedAmazonS3FileTransferVerificationProof =',
+            'proveInstalledAmazonS3FileTransferVerificationReference(',
+            "!== 'installed-amazon-s3-file-transfer-verification-reference-proved'",
+        ],
+        'tools/test-consumer-project/amazon-s3-file-transfers.php' => [
+            'function installedAmazonS3FileTransferVerificationReferences(',
+            'function installedAmazonS3FileTransferVerificationFixtureSources()',
+            'function proveInstalledAmazonS3FileTransferVerificationReference(',
+            'NOT_APPLICABLE(FILE_TRANSFER)',
+            'REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_VERIFICATION_STRUCTURE)',
+            'No AWS SDK is installed or loaded',
+            "return 'installed-amazon-s3-file-transfer-verification-reference-proved';",
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $amazonS3VerificationProofMarkers,
+        'accepted Amazon S3 file-transfer verification reference',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'docs/decisions/053-application-owned-amazon-s3-file-transfers.md' => [
+                'Status: proposed',
+                'Accountable-human approval: pending.',
+            ],
+            'skeleton/.ai/file-transfers.md' => [
+                'ADOPTED(FILE_TRANSFER',
+                'ADOPTED(AMAZON_S3',
+            ],
+            'example/.ai/file-transfers.md' => [
+                'ADOPTED(AMAZON_S3',
+            ],
+            'verification/ApplicationChecker.php' => [
+                'AMAZON_S3_ADR053',
+                'amazon-s3-file-transfer',
+            ],
+        ],
+        'accepted Amazon S3 non-adoption boundary',
+        $failures,
+    );
+
+    $amazonS3ProofSources = consumerProjectHarnessSources($root);
+    $amazonS3ProofWiring = <<<'PHP'
+    $installedAmazonS3FileTransferVerificationProof =
+        proveInstalledAmazonS3FileTransferVerificationReference(
+            $project,
+            $installedFramework,
+            $composerBinary,
+            $environment,
+        );
+
+    if (
+        $installedAmazonS3FileTransferVerificationProof
+            !== 'installed-amazon-s3-file-transfer-verification-reference-proved'
+    ) {
+        throw new RuntimeException(
+            'The installed Amazon S3 file-transfer verification proof did not complete.',
+        );
+    }
+PHP;
+
+    if ($amazonS3ProofSources === null) {
+        $failures[] = 'Cannot read the installed Amazon S3 verification proof harness.';
+    } else {
+        $amazonS3ProofEntrypoint = $amazonS3ProofSources['tools/test-consumer-project.php'];
+        $amazonS3ProofModule =
+            $amazonS3ProofSources['tools/test-consumer-project/amazon-s3-file-transfers.php'];
+
+        if (
+            substr_count($amazonS3ProofEntrypoint, $amazonS3ProofWiring) !== 1
+            || !consumerProjectHarnessEntrypointProofCallsAreCanonical($amazonS3ProofEntrypoint)
+            || !consumerProjectHarnessFunctionReturnsSentinel(
+                $amazonS3ProofModule,
+                'proveInstalledAmazonS3FileTransferVerificationReference',
+                'installed-amazon-s3-file-transfer-verification-reference-proved',
+            )
+        ) {
+            $failures[] = 'Installed Amazon S3 verification proof wiring or completion sentinel changed.';
+        }
+    }
+
     $sessionContractMarkers = [
         '.ai/README.md' => '`.ai/session.md`',
         'docs/knowledge-map.md' => '`docs/sessions.md`',
@@ -123,7 +272,7 @@ PHP;
             'The accepted core ceiling is 2,620 physical lines',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 12',
+            'Contract version: 13',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
@@ -366,7 +515,7 @@ PHP;
             '`032-explicit-uuid-and-ulid-route-types.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 12',
+            'Contract version: 13',
             'This is the canonical contract for an application built with the installed PHPThis version.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
             '`positive-int`, `token`, `uuid`, or `ulid`',
@@ -460,7 +609,7 @@ PHP;
             '`033-application-owned-request-handler-decorators.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 12',
+            'Contract version: 13',
             '## Optional application-owned request-handler decorators',
             'The decorator is composed only as the handler of an explicit `Route`.',
             'zero downstream calls or call its one downstream handler exactly once',
@@ -560,7 +709,7 @@ PHP;
             'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 12',
+            'Contract version: 13',
             '## Application-owned WebSocket profile',
             'PHPThis has no WebSocket runtime or core WebSocket API.',
             'Frames never become PHPThis HTTP `Request` or `Response` values',
@@ -596,7 +745,7 @@ PHP;
         ],
         'docs/guardrails.md' => [
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
-            'keeps `.ai/websockets.md` optional under current Contract version 12 as well as its originating Contract version 9',
+            'keeps `.ai/websockets.md` optional under current Contract version 13 as well as its originating Contract version 9',
         ],
         'VISION.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',
@@ -2545,7 +2694,7 @@ PHP;
 
     $observabilityArtifactMarkers = [
         '.ai/README.md' => [
-            '| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051\'s exact optional level/envelope/destination policy without changing request-summary v1/v2 or Contract v12 |',
+            '| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051\'s exact optional level/envelope/destination policy without changing request-summary v1/v2 or Contract v13 |',
         ],
         '.ai/observability.md' => [
             'application.request_summary',

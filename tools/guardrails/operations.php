@@ -792,7 +792,7 @@ function operationGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
-            'It keeps `.ai/workbench.md` optional under Consumer Contract version 12.',
+            'It keeps `.ai/workbench.md` optional under Consumer Contract version 13.',
         ],
         'VISION.md' => [
             'A human can inspect one explicitly composed development object or operation through a fresh strict process',
@@ -807,7 +807,7 @@ function operationGuardrailFailures(string $root): array
         ],
         '.ai/application-context.md' => [
             'Include `.ai/workbench.md` in the current skeleton and template with `NOT_APPLICABLE(WORKBENCH)`',
-            'Contract version 12 carries that optional file forward, and it is not a checker requirement.',
+            'Contract version 13 carries that optional file forward, and it is not a checker requirement.',
             'An ADR 024 SQLite adoption invokes only the existing application-owned business operation whose same-connection transaction owns the business write and job insert',
             'Another ADR 052 adoption uses its existing application-owned publication operation and recorded delivery/operational entrypoint and process shape.',
         ],

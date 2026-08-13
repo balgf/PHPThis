@@ -1,6 +1,6 @@
 # Storage ownership
 
-Storage is an application operation, not a framework backend abstraction. The example's one concrete `LocalDocumentFiles` owns this visible sequence:
+Storage is an application operation, not a framework backend abstraction. Under `LOCAL_ADR026`, the example's one concrete `LocalDocumentFiles` owns this visible sequence:
 
 1. verify upload error, operation byte limit, `is_uploaded_file`, and actual size;
 2. generate a random code-owned identifier;
@@ -19,4 +19,6 @@ When byte identity or integrity is claimed, record one exact digest algorithm an
 
 Quota checks are not a count-then-write race hidden behind a helper. Name the concrete operation that atomically reserves capacity, its consistency and concurrent-writer behavior, the exact request/principal/tenant/resource/deployment/egress dimensions it enforces, and one reconciliation path that repairs accounting after failed moves or cleanup. Record whether retries create duplicates or use a bounded application-owned idempotency key and exact replay response. When a lifecycle operation deletes or reclassifies files, give it a finite selection bound, least authority, explicit failure result, supervision, replica/backup propagation and restore policy, and tests rather than implicit request-time or destructor cleanup.
 
-Do not extract an interface merely to rename this operation as generic storage. A remote object store, pre-signed delivery, or proxy offload requires a separately accepted application path and failure contract.
+Do not extract an interface merely to rename this operation as generic storage. A remote object store, pre-signed delivery, or proxy offload requires an accepted application path and failure contract.
+
+Accepted ADR 053 and its [Amazon S3 page](amazon-s3.md) define one such direct-S3 path under `AMAZON_S3_ADR053`. They do not change the `LOCAL_ADR026` storage sequence above, authorize another remote store, or introduce a shared storage interface.

@@ -1,12 +1,12 @@
 # File-transfer contract
 
-Start ordinary multipart-upload or local-file-response work with `docs/file-transfers/README.md` and this current guide. Read ADR 026 only when reviewing or changing its typed multipart and local-file-response decision. Keep transport normalization in core and every storage decision in the application.
+Start ordinary multipart-upload, local-file-response, or accepted Amazon S3 profile work with `docs/file-transfers/README.md` and this current guide. Read ADR 026 or ADR 053 only when reviewing or changing the decision itself. Keep transport normalization in core and every storage decision in the application.
 
 ## Checked application adaptation
 
-The application's `.ai/file-transfers.md` is the one authoritative adoption record. It contains either the exact standalone marker `NOT_APPLICABLE(FILE_TRANSFER)` or one complete, verified policy for the adopted operations. Other application guides and tests reference that record; they do not create a second writable upload, storage, content, authorization, quota, lifecycle, or emission policy.
+The application's `.ai/file-transfers.md` is the one authoritative adoption record. It contains either the exact standalone marker `NOT_APPLICABLE(FILE_TRANSFER)` or exactly one selected `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile with one complete verified policy for the adopted operations. Other application guides and tests reference that record; they do not create a second writable upload, storage, content, authorization, quota, lifecycle, or emission policy.
 
-An adopted record names the exact routes and fields, the dated effective pre-PHP ingress controls, whether PHP-normalized duplicate raw scalar parts are acceptable, request-policy order, temporary and durable filesystem policies, opaque-versus-inspected content decision, quotas and lifecycle, download policy, the exact emitter guarantee below, and executable evidence. Keep all mechanisms concrete and application-owned. Do not create a generic authentication, CSRF, tenant, quota, scanner, upload, storage, filesystem, or response API.
+An adopted record names the exact profile, routes and fields, the dated effective pre-PHP ingress controls, whether PHP-normalized duplicate raw scalar parts are acceptable, request-policy order, temporary storage and selected durable-storage policies, opaque-versus-inspected content decision, quotas and lifecycle, download policy, selected delivery guarantee, and executable evidence. Keep all mechanisms concrete and application-owned. Do not create a generic authentication, CSRF, tenant, quota, scanner, upload, storage, filesystem, or response API.
 
 ## Multipart request path
 
@@ -26,7 +26,9 @@ An adopted record names the exact routes and fields, the dated effective pre-PHP
 - Decide explicitly whether that duplicate-raw-part limitation is suitable for each operation. If it is not suitable, require a tested upstream rule or a separately accepted bounded raw multipart parser before adoption; never infer raw multiplicity from `$_FILES`.
 - Align upstream, PHP, transport, and operation bounds and record which owner selects every rejection. An application response test cannot prove a proxy or PHP rejection that occurs before the front controller.
 
-## Application-owned upload policy
+## Application-owned local upload policy
+
+The move, durable-root, and local-emitter rules in this section are the unchanged `LOCAL_ADR026` profile. `AMAZON_S3_ADR053` reuses the common multipart and request-policy rules but follows the exact accepted S3 route below instead of these local-storage rules.
 
 - Require one exact field name and explicit inclusive minimum and maximum file bytes before storage, including whether zero-byte files are accepted. The example uses `document`, a 2 MiB total multipart transport limit, and accepts 0 through 1,048,576 file bytes inclusive.
 - Do not infer content from the client media type or filename. If content classification is required, add an application-owned inspected-content decision and evidence.
@@ -60,3 +62,9 @@ Prove the typed runtime shape, every `RequestUploadError`, missing, nested, norm
 For a protected operation, prove unauthenticated, forbidden, cross-tenant, permitted, unexpected-policy-failure, and applicable CSRF outcomes with no storage lookup or mutation after a denial. Prove temporary and durable root isolation, quota boundaries and concurrent reservation behavior, lifecycle and cleanup outcomes, and every claimed opaque or inspected-content path against the actual selected definition, tools, and versions. `INSPECTED_CONTENT` evidence additionally changes each recorded definition input and proves the exact retained-byte reinspection or explicit no-reinspection policy, bounded progress, availability/quarantine behavior, result transition, and recovery. Static context checks can require the application record and markers; only application-owned behavior, integration, and deployment tests prove the selected mechanisms.
 
 Do not introduce an ORM, automatic binding, discovery, generic helper, image processing, MIME or filename trust, automatic cleanup, or a range implementation while changing this path.
+
+## Accepted Amazon S3 profile route
+
+Accepted ADR 053, `docs/file-transfers/amazon-s3.md`, and `docs/file-transfers/amazon-s3-verification.md` define the optional `AMAZON_S3_ADR053` profile under Consumer Contract version 13. An application deliberately selects that exact profile in this one policy owner and completes its static, behavior, isolated real-AWS, dated deployment, and complete-gate evidence. Packaged guidance or the synthetic framework reference proof alone cannot establish adoption.
+
+The profile keeps this file as the sole application policy owner and adds no `.ai/s3.md`, framework AWS dependency, client, storage abstraction, presigner, lifecycle service, or checker rule. S3 cannot add `X-Content-Type-Options: nosniff` to its direct response; Contract version 13 accepts fixed `application/octet-stream` attachment delivery without that header only as this profile's narrow exception, while `LOCAL_ADR026` remains unchanged. The finite profile pins Put `StorageClass: STANDARD`, absent HeadObject storage/archive indicators, no S3 Lifecycle rule/action whose filter can cover `private-documents/v1/`, and CloudTrail S3 data-event coverage for `PutObject`, `HeadObject`, `ListObjectVersions`, `GetObject`, and `DeleteObject`. The framework reference remains a synthetic non-adopter marked `NOT_APPLICABLE(FILE_TRANSFER)` plus `REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_VERIFICATION_STRUCTURE)`.

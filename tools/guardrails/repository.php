@@ -627,6 +627,7 @@ function consumerProjectHarnessModulePaths(): array
         'tools/test-consumer-project/guidance.php',
         'tools/test-consumer-project/http.php',
         'tools/test-consumer-project/file-transfers.php',
+        'tools/test-consumer-project/amazon-s3-file-transfers.php',
         'tools/test-consumer-project/jobs.php',
         'tools/test-consumer-project/observability.php',
         'tools/test-consumer-project/application.php',
@@ -760,6 +761,15 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
         'tools/test-consumer-project/file-transfers.php' => [
             'proveInstalledProtectedFileTransferReference',
             'installedProtectedFileTransferProofProgram',
+        ],
+        'tools/test-consumer-project/amazon-s3-file-transfers.php' => [
+            'installedAmazonS3FileTransferVerificationReferences',
+            'installedAmazonS3FileTransferVerificationFixtureSources',
+            'writeInstalledAmazonS3FileTransferVerificationManifest',
+            'writeInstalledAmazonS3FileTransferVerificationFixtures',
+            'runInstalledAmazonS3FileTransferSourceChecker',
+            'requireInstalledAmazonS3FileTransferVerificationFailure',
+            'proveInstalledAmazonS3FileTransferVerificationReference',
         ],
         'tools/test-consumer-project/jobs.php' => [
             'installedBackendNeutralJobsVerificationReferences',
@@ -942,6 +952,7 @@ function consumerProjectHarnessExpectedProofCalls(): array
         'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
         'proveInstalledFieldValidationErrorGuidanceDistribution',
         'proveInstalledProtectedFileTransferReference',
+        'proveInstalledAmazonS3FileTransferVerificationReference',
         'proveInstalledBackendNeutralJobsVerificationReference',
         'proveInstalledRequestSummaryDestinationRecordReference',
         'proveInstalledTransactionalEmailGuidanceDistribution',
@@ -998,6 +1009,7 @@ function consumerProjectHarnessExpectedProofStatements(): array
         'proveInstalledStructuredJsonSuccessEnvelopeDistribution' => '$installedStructuredJsonProofCompletion=proveInstalledStructuredJsonSuccessEnvelopeDistribution($project,$installedFramework,$environment);',
         'proveInstalledFieldValidationErrorGuidanceDistribution' => '$installedFieldValidationProofCompletion=proveInstalledFieldValidationErrorGuidanceDistribution($project,$installedFramework,$environment);',
         'proveInstalledProtectedFileTransferReference' => '$installedProtectedFileTransferProof=proveInstalledProtectedFileTransferReference($project,$installedFramework,$environment);',
+        'proveInstalledAmazonS3FileTransferVerificationReference' => '$installedAmazonS3FileTransferVerificationProof=proveInstalledAmazonS3FileTransferVerificationReference($project,$installedFramework,$composerBinary,$environment);',
         'proveInstalledBackendNeutralJobsVerificationReference' => '$installedJobsVerificationProof=proveInstalledBackendNeutralJobsVerificationReference($project,$installedFramework,$composerBinary,$environment);',
         'proveInstalledRequestSummaryDestinationRecordReference' => '$installedDestinationRecordProof=proveInstalledRequestSummaryDestinationRecordReference($project,$installedFramework,$environment);',
         'proveInstalledTransactionalEmailGuidanceDistribution' => 'proveInstalledTransactionalEmailGuidanceDistribution($project,$installedFramework);',
@@ -1336,7 +1348,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === 'db8fd3e00736847b832e60814648f888e345c0246473c115dc1d720a894419e8';
+            === '7810f9c00c427a3be1f141e301d070159efbb47c5fa0d6cc85c448bcef87a78b';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -1631,7 +1643,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
         sort($actualModuleNames, SORT_STRING);
 
         if ($actualModuleNames !== $expectedModuleNames) {
-            $failures[] = 'The installed-consumer harness must retain exactly its eleven reviewed modules.';
+            $failures[] = 'The installed-consumer harness must retain exactly its twelve reviewed modules.';
         }
     }
 
@@ -1663,7 +1675,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
 
     if (
         $protectedFileTransferModuleFingerprint
-            !== 'be8fb0061f408e4b00a488dc720b011683300213ce76f4570858635a2f8206bd'
+            !== '98bd316e9acfb5275f081c9f87a5460660ed3d4cf565aa57a0e7d855872a3dcb'
         || $mutatedProtectedFileTransferModule === $protectedFileTransferModule
         || consumerProjectHarnessTokenNormalizedFingerprint(
             $mutatedProtectedFileTransferModule,
@@ -1682,12 +1694,31 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== '491048853522ef8706b3f573260e1c1ad8d87845c2cd5d27627edf631a688fc4'
+        $jobsVerificationModuleFingerprint !== '3f9eef62dc807f7335c66aa824d1526efbd74b1023e0b5f1db351bff7a4d7c78'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
     ) {
         $failures[] = 'The backend-neutral jobs verification proof module must retain its reviewed token-normalized identity.';
+    }
+
+    $amazonS3VerificationModule =
+        $sources['tools/test-consumer-project/amazon-s3-file-transfers.php'];
+    $amazonS3VerificationModuleFingerprint =
+        consumerProjectHarnessTokenNormalizedFingerprint($amazonS3VerificationModule);
+    $mutatedAmazonS3VerificationModule = str_replace(
+        "'ExpectedBucketOwner'",
+        "'EXPECTED_BUCKET_OWNER_REMOVED'",
+        $amazonS3VerificationModule,
+    );
+
+    if (
+        $amazonS3VerificationModuleFingerprint !== '9e0056d80472a3df1290ed122b69be7871e8bb6e7a0463f792b496ce5ad1676e'
+        || $mutatedAmazonS3VerificationModule === $amazonS3VerificationModule
+        || consumerProjectHarnessTokenNormalizedFingerprint($mutatedAmazonS3VerificationModule)
+            === $amazonS3VerificationModuleFingerprint
+    ) {
+        $failures[] = 'The Amazon S3 verification proof module must retain its reviewed token-normalized identity.';
     }
 
     $entrypointTokens = token_get_all($entrypoint);
@@ -1774,11 +1805,11 @@ function consumerProjectHarnessStructureFailures(string $root): array
         || $actualIncludeStatements !== $expectedIncludeStatements
         || $functionCount !== 0
     ) {
-        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level eleven-module require_once preamble and contain no function declarations.';
+        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level twelve-module require_once preamble and contain no function declarations.';
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
-        $failures[] = 'The installed-consumer entrypoint must invoke its exact 49 proof functions once, unconditionally, and in the reviewed order.';
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 50 proof functions once, unconditionally, and in the reviewed order.';
     }
 
     if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
@@ -1946,6 +1977,16 @@ PHP;
         throw new RuntimeException('The installed protected file-transfer proof did not complete.');
     }
 PHP;
+    $amazonS3FileTransferVerificationCompletionCheck = <<<'PHP'
+    if (
+        $installedAmazonS3FileTransferVerificationProof
+            !== 'installed-amazon-s3-file-transfer-verification-reference-proved'
+    ) {
+        throw new RuntimeException(
+            'The installed Amazon S3 file-transfer verification proof did not complete.',
+        );
+    }
+PHP;
     $jobsVerificationCompletionCheck = <<<'PHP'
     if (
         $installedJobsVerificationProof
@@ -1996,6 +2037,13 @@ PHP;
             'sentinel' => 'installed-protected-file-transfer-reference-proved',
             'variable' => '$installedProtectedFileTransferProof',
             'check' => $protectedFileTransferCompletionCheck,
+        ],
+        [
+            'module' => 'tools/test-consumer-project/amazon-s3-file-transfers.php',
+            'function' => 'proveInstalledAmazonS3FileTransferVerificationReference',
+            'sentinel' => 'installed-amazon-s3-file-transfer-verification-reference-proved',
+            'variable' => '$installedAmazonS3FileTransferVerificationProof',
+            'check' => $amazonS3FileTransferVerificationCompletionCheck,
         ],
         [
             'module' => 'tools/test-consumer-project/jobs.php',
@@ -2294,6 +2342,7 @@ function decisionSuccessorRelationshipFailures(string $root): array
         '| [ADR 019](019-bounded-multiple-typed-routes.md) | Fixed parameter-type set before UUID and ULID | [ADR 032](032-explicit-uuid-and-ulid-route-types.md) |',
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
+        '| [ADR 026](026-bounded-file-transfers.md) | Remote-object-store and pre-signed-delivery exclusion, only when an application explicitly selects `AMAZON_S3_ADR053`; `LOCAL_ADR026` remains unchanged | [ADR 053](053-application-owned-amazon-s3-file-transfers.md) |',
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
     ];
     $actualRows = [];
@@ -3053,6 +3102,8 @@ function repositoryGuardrailFailures(string $root): array
         'docs/date-time.md',
         'docs/email.md',
         'docs/file-transfers/README.md',
+        'docs/file-transfers/amazon-s3.md',
+        'docs/file-transfers/amazon-s3-verification.md',
         'docs/file-transfers/deployment.md',
         'docs/file-transfers/emission.md',
         'docs/file-transfers/exclusions.md',
@@ -3153,6 +3204,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/decisions/050-application-owned-local-environment-launcher.md',
         'docs/decisions/051-application-owned-structured-log-destinations.md',
         'docs/decisions/052-backend-neutral-application-owned-durable-jobs.md',
+        'docs/decisions/053-application-owned-amazon-s3-file-transfers.md',
         'example/AGENTS.md',
         'example/.ai/README.md',
         'example/.ai/cache.md',
@@ -3526,8 +3578,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 15",
-            "'manifest_sha256' => '355ad13513e848a2de2601230912f2103a7972a806d325aa010616d6b7e952e4'",
+            "'revision' => 17",
+            "'manifest_sha256' => '982eba05821346c09f3f5ede46992041942b2cd53ae92f5eb13cb548f56fff47'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -3557,10 +3609,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 15',
+            '"revision": 17',
             '"source-skeleton"',
-            '"tree": "326d719d34c4e6700f48a6a21244d098773ae01c"',
-            '"fixture_sha256": "fd16c78ed8d1a639c1e9684e590389d2408fdd2cbd834cd796a18a73febbb6af"',
+            '"tree": "2c7a5150f940ec3b92e7e5e2ba6735cf475459de"',
+            '"fixture_sha256": "e8e32676ca6c5daf0b2c913376a636438537eccaad2ac3d7e19477510c5a416f"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -3690,7 +3742,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 15 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 17 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -3700,8 +3752,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 15;',
-            'Controller v0.2 supports only change.simple-ping revision 15 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 17;',
+            'Controller v0.2 supports only change.simple-ping revision 17 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',

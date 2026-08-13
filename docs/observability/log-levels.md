@@ -1,6 +1,6 @@
 # Operational log levels
 
-[ADR 051](../decisions/051-application-owned-structured-log-destinations.md) accepts this optional application-owned profile. It does not change Consumer Contract version 12, Strict Profile version 3, or the accepted version-1 and version-2 request-summary schemas.
+[ADR 051](../decisions/051-application-owned-structured-log-destinations.md) accepts this optional application-owned profile. It left Consumer Contract version 12 unchanged; Contract version 13 carries Strict Profile version 3 and the accepted version-1 and version-2 request-summary schemas forward unchanged.
 
 An application that adopts this profile uses exactly five lower-ASCII levels: `debug`, `info`, `warning`, `error`, and `critical`. A code-owned event type has one fixed level or one finite code-owned mapping from its closed outcomes to those levels. Caller input, exception text, response content, stored values, and arbitrary strings never select a level.
 

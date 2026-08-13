@@ -87,11 +87,14 @@ docs/decisions/049-bounded-response-cookie-profile.md
 docs/decisions/050-application-owned-local-environment-launcher.md
 docs/decisions/051-application-owned-structured-log-destinations.md
 docs/decisions/052-backend-neutral-application-owned-durable-jobs.md
+docs/decisions/053-application-owned-amazon-s3-file-transfers.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
 docs/evaluation.md
 docs/file-transfers/README.md
+docs/file-transfers/amazon-s3-verification.md
+docs/file-transfers/amazon-s3.md
 docs/file-transfers/deployment.md
 docs/file-transfers/emission.md
 docs/file-transfers/exclusions.md

@@ -100,4 +100,4 @@ Backend notes remain decision checklists until a real consumer implementation su
 - Treating static analysis, mocks, publisher confirmations, or service marketing as production evidence.
 - Installing any durable-job mechanism in the non-adopting starter.
 
-This accepted optional guidance leaves Consumer Contract version 12, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, framework runtime, and checker validity unchanged. [ADR 024](decisions/024-application-owned-sqlite-durable-jobs.md) and the [checked SQLite profile](jobs/sqlite.md) remain the first and only checked backend-specific durable-job profile.
+This accepted optional guidance left Consumer Contract version 12 unchanged; Consumer Contract version 13 carries it, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, framework runtime, and checker validity forward unchanged. [ADR 024](decisions/024-application-owned-sqlite-durable-jobs.md) and the [checked SQLite profile](jobs/sqlite.md) remain the first and only checked backend-specific durable-job profile.

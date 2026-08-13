@@ -27,13 +27,13 @@ The framework supplies a small execution foundation and strict verification boun
 | Boundary | Recorded state |
 | --- | --- |
 | Latest framework tag | Alpha 6, [`v0.1.0-alpha.6`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.6), Consumer Contract version 11, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |
-| Current unreleased source | ADR 049, Consumer Contract version 12, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |
+| Current unreleased source | ADRs 049 through 053, Consumer Contract version 13, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |
 | Last coordinated application starter | Alpha 5 remains the latest framework/skeleton pair with complete clean public-install evidence |
 | Alpha 6 completion | The matching skeleton, clean public `create-project` proof, GitHub prereleases, and final announcement remain tracked in [release issue #37](https://github.com/balgf/PHPThis/issues/37) |
 
 Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation. The [Alpha 6 release notes](docs/releases/0.1.0-alpha.6.md) describe the framework changes and compatibility boundary.
 
-The Alpha 6 framework tag is immutable. Accepted unreleased `main` after Alpha 6 now includes ADR 049's response-cookie boundary, Consumer Contract version 12, and the 2,618-line core under the accepted 2,620-line ceiling. Those changes are not part of Alpha 6, and their acceptance selects no later release identity or candidate.
+The Alpha 6 framework tag is immutable. Accepted unreleased `main` after Alpha 6 now includes ADRs 049 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling. Those changes are not part of Alpha 6, and their acceptance selects no later release identity or candidate.
 
 ## Start a PHPThis application
 
