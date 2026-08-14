@@ -61,6 +61,7 @@ Accepted records:
 - `051-application-owned-structured-log-destinations.md`
 - `052-backend-neutral-application-owned-durable-jobs.md`
 - `053-application-owned-amazon-s3-file-transfers.md`
+- `054-bounded-alpha-7-release-scope.md`
 
 ## Current and successor relationships
 

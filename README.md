@@ -27,22 +27,22 @@ The framework supplies a small execution foundation and strict verification boun
 | Boundary | Recorded state |
 | --- | --- |
 | Latest framework tag | Alpha 6, [`v0.1.0-alpha.6`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.6), Consumer Contract version 11, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |
-| Current unreleased source | ADRs 049 through 053, Consumer Contract version 13, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |
-| Last coordinated application starter | Alpha 5 remains the latest framework/skeleton pair with complete clean public-install evidence |
-| Alpha 6 completion | The matching skeleton, clean public `create-project` proof, GitHub prereleases, and final announcement remain tracked in [release issue #37](https://github.com/balgf/PHPThis/issues/37) |
+| Current unreleased source | ADRs 048 through 054, Consumer Contract version 13, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, and 2,618 core lines under the accepted 2,620-line ceiling |
+| Last coordinated application starter | Alpha 6 is the latest framework/skeleton pair with complete clean public-install evidence |
+| Alpha 6 completion | [Release issue #37](https://github.com/balgf/PHPThis/issues/37) records the matching skeleton, clean public `create-project` proof, both GitHub prereleases, and final announcement as complete |
 
 Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation. The [Alpha 6 release notes](docs/releases/0.1.0-alpha.6.md) describe the framework changes and compatibility boundary.
 
-The Alpha 6 framework tag is immutable. Accepted unreleased `main` after Alpha 6 now includes ADRs 049 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling. Those changes are not part of Alpha 6, and their acceptance selects no later release identity or candidate.
+The Alpha 6 framework tag is immutable. Accepted post-Alpha-6 source now includes ADRs 048 through 054, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling. Those changes are not part of Alpha 6. [ADR 054](docs/decisions/054-bounded-alpha-7-release-scope.md), the [Alpha 7 source-preparation notes](docs/releases/0.1.0-alpha.7.md), and [Issue #53](https://github.com/balgf/PHPThis/issues/53) record the approved Alpha 7 identity and source-preparation scope; both exact candidate commits remain `PENDING`, and no release operation is authorized.
 
 ## Start a PHPThis application
 
 Consumers install PHPThis through Composer. Do not clone or copy the PHPThis framework repository to start an application.
 
-Until the coordinated Alpha 6 skeleton and public-installation proof are complete, create the last completely proved framework/skeleton pair explicitly:
+Create the latest completely proved framework/skeleton pair explicitly:
 
 ```bash
-composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.5'
+composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.6'
 cd my-app
 composer check
 php -S 127.0.0.1:8080 -t public
@@ -51,7 +51,7 @@ curl -i http://127.0.0.1:8080/health
 
 `phpthis/skeleton` becomes the application root and Composer installs `phpthis/framework` under `vendor/phpthis/framework`. The runtime requires PHP 8.4.x, PDO, and `ext-session`.
 
-Do not infer a matching starter release from the framework tag. Use the Alpha 6 `create-project` path only after the exact skeleton version and clean public-install evidence are recorded; existing applications may assess the framework package independently against the [Alpha 6 upgrade notes](docs/releases/0.1.0-alpha.6.md#upgrade-from-alpha-5). The [getting-started guide](docs/getting-started.md) covers the Composer path, existing-application adoption, and source evaluation.
+Do not infer a matching starter release from a framework tag alone. Issue #37 records the exact Alpha 6 skeleton and clean public-install evidence; verify the current package-host state before installation. Existing applications may assess Alpha 6 against the [upgrade notes](docs/releases/0.1.0-alpha.6.md#upgrade-from-alpha-5). The [getting-started guide](docs/getting-started.md) covers the Composer path, existing-application adoption, and source evaluation.
 
 ## Ask the project AI
 

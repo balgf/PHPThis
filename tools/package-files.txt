@@ -88,6 +88,7 @@ docs/decisions/050-application-owned-local-environment-launcher.md
 docs/decisions/051-application-owned-structured-log-destinations.md
 docs/decisions/052-backend-neutral-application-owned-durable-jobs.md
 docs/decisions/053-application-owned-amazon-s3-file-transfers.md
+docs/decisions/054-bounded-alpha-7-release-scope.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
@@ -139,6 +140,7 @@ docs/releases/0.1.0-alpha.3.md
 docs/releases/0.1.0-alpha.4.md
 docs/releases/0.1.0-alpha.5.md
 docs/releases/0.1.0-alpha.6.md
+docs/releases/0.1.0-alpha.7.md
 docs/request-handling.md
 docs/request-policy.md
 docs/security.md

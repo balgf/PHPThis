@@ -56,6 +56,6 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Change maintainer tests or evidence organization | `.ai/testing.md` | applicable concern-owned test file, behavior names, and complete gate |
 | Change the maintainer-only agent evaluation kit or controller | `.ai/testing.md` | `docs/evaluation.md`, ADR 048 when its accepted isolation boundary is entered, explicit task inventory and schemas under `tools/agent-evaluation/`, fixed controller modules under `tools/agent-evaluation-controller/`, `tools/test-agent-evaluation.php`, `tools/test-agent-evaluation-controller.php`, and complete gate; `composer check` uses only `fake-codex`, while future `codex-exec` must fail closed without the pinned OCI and `responses-api-run-proxy` boundary and has no native fallback; do not add a model-provider integration or execute untrusted candidate code without a separately accepted sandbox boundary |
 | Review the consumer capability profile | `.ai/consumer-profile.md` | checked-in application proof and affected current guides |
-| Prepare or publish a release | `RELEASING.md` | approved scope, exact candidate commits, CI, packages, and public-install proof |
+| Prepare or publish a release | `RELEASING.md` | proposal or approved scope as applicable, explicit authority, exact candidate commits only after approval, CI, packages, and public-install proof |
 
 Durable framework knowledge and rationale live in `docs/`. Current mutable authoring contracts live in the routed operational guides.

@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 216) {
-            $failures[] = 'The release inventory must contain exactly 216 reviewed files after the three accepted Amazon S3 pages.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 218) {
+            $failures[] = 'The release inventory must contain exactly 218 reviewed files after the accepted Alpha 7 source-preparation scope and notes.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
