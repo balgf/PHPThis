@@ -2466,7 +2466,7 @@ function databaseCertificationAgreementFailures(string $root): array
         'pgsql' => [
             'provision' => 'Official `postgres:17` service',
             'label' => 'PostgreSQL',
-            'version' => '17.10',
+            'version' => '17.11',
             'environment' => 'PHPTHIS_PGSQL_EXPECTED_VERSION',
             'query' => '"SELECT split_part(current_setting(\'server_version\'), \' \', 1) AS engine_version"',
             'service' => 'image: postgres:17',
@@ -2787,7 +2787,7 @@ function repositoryGuardrailFailures(string $root): array
             "ADR 028 replaces only the example's same-host schedule file lock with one Redis-specific owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
         ],
         'docs/consumer-profile.md' => [
-            'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.10`',
+            'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.11`',
             'no unlisted engine version inherits certification',
         ],
         'docs/knowledge-map.md' => [

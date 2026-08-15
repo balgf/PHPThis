@@ -42,7 +42,7 @@ ADR 029 records the selected `core` or `application pattern` exit for every row.
 
 ## Supported runtime boundary
 
-Framework and skeleton Composer metadata use `~8.4.0`, meaning supported PHP is 8.4.x and not 8.5. CI's explicit PHP matrix contains 8.4. A future PHP minor is unsupported until its own compatibility review and complete gate are added. Database transport certification remains a separate PHP 8.4 job against the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.10`. It certifies the narrow PDO transport, not every application SQL statement, and no unlisted engine version inherits certification.
+Framework and skeleton Composer metadata use `~8.4.0`, meaning supported PHP is 8.4.x and not 8.5. CI's explicit PHP matrix contains 8.4. A future PHP minor is unsupported until its own compatibility review and complete gate are added. Database transport certification remains a separate PHP 8.4 job against the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.11`. It certifies the narrow PDO transport, not every application SQL statement, and no unlisted engine version inherits certification.
 
 ## Limits
 

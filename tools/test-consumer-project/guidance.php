@@ -748,7 +748,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| --- | --- | --- |',
         '| `sqlite` | PHP 8.4 `pdo_sqlite` on the `ubuntu-24.04` runner | SQLite `3.45.1` |',
         '| `mysql` | Official `mysql:8.4` service | MySQL `8.4.11` |',
-        '| `pgsql` | Official `postgres:17` service | PostgreSQL `17.10` |',
+        '| `pgsql` | Official `postgres:17` service | PostgreSQL `17.11` |',
     ];
     $installedDatabaseRows = [];
 
@@ -799,7 +799,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
             "ADR 028 replaces only the example's same-host schedule file lock with one Redis-specific owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
         ],
         $installedFramework . '/docs/consumer-profile.md' => [
-            'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.10`',
+            'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.11`',
             'no unlisted engine version inherits certification',
         ],
         $installedFramework . '/docs/knowledge-map.md' => [

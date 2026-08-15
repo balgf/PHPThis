@@ -839,7 +839,7 @@ function contextGuardrailFailures(string $root): array
         ],
         '.github/workflows/ci.yml' => [
             'name: PHP ${{ matrix.php }} validity',
-            'name: PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.10)',
+            'name: PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.11)',
             'run: composer check',
         ],
         'README.md' => [

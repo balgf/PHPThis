@@ -24,7 +24,7 @@ This is the one maintained matrix for current framework PDO transport certificat
 | --- | --- | --- |
 | `sqlite` | PHP 8.4 `pdo_sqlite` on the `ubuntu-24.04` runner | SQLite `3.45.1` |
 | `mysql` | Official `mysql:8.4` service | MySQL `8.4.11` |
-| `pgsql` | Official `postgres:17` service | PostgreSQL `17.10` |
+| `pgsql` | Official `postgres:17` service | PostgreSQL `17.11` |
 
 The runner and service selectors may receive upstream updates. When an update changes the engine or server version reported by the connection, the expected-version assertion fails visibly rather than silently broadening the claim; maintainers then review the new exact version, update this matrix and the CI expectation together, and obtain a new green three-driver run. Rebuilds that retain the same reported version are not distinguished by this harness. A local harness run with no expected-version variable reports the exact engine it exercised but does not change this CI matrix.
 
