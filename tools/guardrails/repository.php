@@ -366,7 +366,7 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
             : $segment;
 
         $exactMechanismSegment = preg_match(
-            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|middlewares?|pipelines?|decorators?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing)|configs?|configurations?|(?:application|deployment|runtime)[-_]?config(?:uration)?s?|config(?:uration)?[-_]?(?:bags?|repositories|services|helpers|facades|providers|readers)|local[-_]?environment[-_]?(?:launchers?|loaders?)|secret[-_]?managers?|dotenv[-_]?(?:loaders?)?)\z/i',
+            '/\A(?:orm|models?|repositor(?:y|ies)|facades?|discovery|observers?|scopes?|containers?|middlewares?|pipelines?|decorators?|locks?|leases?|mutex(?:es)?|coordination|fencing[-_]?tokens?|query[-_]?builders?|binding[-_]?helpers?|placeholder[-_]?helpers?|auto[-_]?wir(?:e|ing)|configs?|configurations?|(?:application|deployment|runtime)[-_]?config(?:uration)?s?|config(?:uration)?[-_]?(?:bags?|repositories|services|helpers|facades|providers|readers)|local[-_]?environment[-_]?(?:launchers?|loaders?)|secret[-_]?managers?|dotenv[-_]?(?:loaders?)?)\z/i',
             $name,
         ) === 1;
         $camelCaseMechanismSuffix = preg_match(
@@ -374,7 +374,7 @@ function frameworkMechanismPathIsForbidden(string $relativePath): bool
             $name,
         ) === 1;
         $explicitHiddenMechanismSuffix = preg_match(
-            '/(?:\A|(?<=[A-Za-z0-9]))(?:QueryBuilder|BindingHelper|PlaceholderHelper|AutoWire|Autowire|ConfigurationBag|ConfigBag|ConfigurationRepository|ConfigRepository|ConfigurationService|ConfigService|ConfigurationHelper|ConfigHelper|ConfigurationFacade|ConfigFacade|ConfigurationReader|ConfigReader|ApplicationEnvironment|EnvironmentReader|EnvironmentConfiguration|ApplicationConfig|ApplicationConfiguration|DeploymentConfig|DeploymentConfiguration|RuntimeConfig|RuntimeConfiguration|LocalEnvironmentLauncher|LocalEnvironmentLoader|SecretManager|DotenvLoader)(?:Interface|Provider|Factory)?\z/',
+            '/(?:\A|(?<=[A-Za-z0-9]))(?:(?:AtomicLock|DistributedLock|Lock|Lease|Mutex|FencingToken|Coordination)(?:(?:Manager|Service|Facade|Driver|Registry|Helper)(?:Interface|Provider|Factory)?|Interface|Provider|Factory)?|QueryBuilder|BindingHelper|PlaceholderHelper|AutoWire|Autowire|ConfigurationBag|ConfigBag|ConfigurationRepository|ConfigRepository|ConfigurationService|ConfigService|ConfigurationHelper|ConfigHelper|ConfigurationFacade|ConfigFacade|ConfigurationReader|ConfigReader|ApplicationEnvironment|EnvironmentReader|EnvironmentConfiguration|ApplicationConfig|ApplicationConfiguration|DeploymentConfig|DeploymentConfiguration|RuntimeConfig|RuntimeConfiguration|LocalEnvironmentLauncher|LocalEnvironmentLoader|SecretManager|DotenvLoader)(?:Interface|Provider|Factory)?\z/',
             $name,
         ) === 1;
 
@@ -751,6 +751,7 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
             'installedStatelessAuthenticationRuntimeApiIdentifierIsForbidden',
             'proveInstalledNativeDateTimeGuidanceDistribution',
             'proveInstalledFrontendIntegrationGuidanceDistribution',
+            'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution',
         ],
         'tools/test-consumer-project/http.php' => [
             'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
@@ -949,6 +950,7 @@ function consumerProjectHarnessExpectedProofCalls(): array
         'proveInstalledReferenceClarityDistribution',
         'proveInstalledNativeDateTimeGuidanceDistribution',
         'proveInstalledFrontendIntegrationGuidanceDistribution',
+        'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution',
         'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
         'proveInstalledFieldValidationErrorGuidanceDistribution',
         'proveInstalledProtectedFileTransferReference',
@@ -1006,6 +1008,7 @@ function consumerProjectHarnessExpectedProofStatements(): array
         'proveInstalledReferenceClarityDistribution' => 'proveInstalledReferenceClarityDistribution($installedFramework);',
         'proveInstalledNativeDateTimeGuidanceDistribution' => 'proveInstalledNativeDateTimeGuidanceDistribution($project,$installedFramework);',
         'proveInstalledFrontendIntegrationGuidanceDistribution' => 'proveInstalledFrontendIntegrationGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution' => 'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution($project,$installedFramework);',
         'proveInstalledStructuredJsonSuccessEnvelopeDistribution' => '$installedStructuredJsonProofCompletion=proveInstalledStructuredJsonSuccessEnvelopeDistribution($project,$installedFramework,$environment);',
         'proveInstalledFieldValidationErrorGuidanceDistribution' => '$installedFieldValidationProofCompletion=proveInstalledFieldValidationErrorGuidanceDistribution($project,$installedFramework,$environment);',
         'proveInstalledProtectedFileTransferReference' => '$installedProtectedFileTransferProof=proveInstalledProtectedFileTransferReference($project,$installedFramework,$environment);',
@@ -1348,7 +1351,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === '7810f9c00c427a3be1f141e301d070159efbb47c5fa0d6cc85c448bcef87a78b';
+            === '37031bcbdf494ff76b801e8e19d4a218ab7a3c98f7de716503b73d4cfd247eda';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -1809,7 +1812,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
-        $failures[] = 'The installed-consumer entrypoint must invoke its exact 50 proof functions once, unconditionally, and in the reviewed order.';
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 51 proof functions once, unconditionally, and in the reviewed order.';
     }
 
     if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
@@ -3020,6 +3023,21 @@ function repositoryGuardrailFailures(string $root): array
         'src/Support/deployment_config.php',
         'src/RuntimeConfigs/Value.php',
         'src/Http/HttpRuntimeConfiguration.php',
+        'src/AtomicLock.php',
+        'src/Coordination/Operation.php',
+        'src/Support/DistributedLockInterface.php',
+        'src/Support/LockManager.php',
+        'src/Support/LeaseService.php',
+        'src/Support/RedisLease.php',
+        'src/Support/LeaseHelper.php',
+        'src/Support/LockDriver.php',
+        'src/Support/AtomicLockHelper.php',
+        'src/Support/CoordinationRegistry.php',
+        'src/Support/CoordinationHelper.php',
+        'src/Support/Mutex.php',
+        'src/Support/MutexRegistry.php',
+        'src/Support/FencingToken.php',
+        'src/Support/FencingTokenService.php',
     ];
     $allowedFrameworkMechanismFixtures = [
         'src/Application.php',
@@ -3044,6 +3062,75 @@ function repositoryGuardrailFailures(string $root): array
             $failures[] = "Permanent framework-boundary fixture must remain allowed: {$fixture}.";
         }
     }
+
+    $frameworkSourceRoot = $root . '/src';
+
+    if (!is_dir($frameworkSourceRoot) || is_link($frameworkSourceRoot)) {
+        $failures[] = 'Framework source must remain one real directory.';
+    } else {
+        $frameworkSourceIterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($frameworkSourceRoot, FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($frameworkSourceIterator as $frameworkSourceEntry) {
+            if (!$frameworkSourceEntry instanceof SplFileInfo || !$frameworkSourceEntry->isFile()) {
+                continue;
+            }
+
+            $frameworkSourcePath = substr(
+                $frameworkSourceEntry->getPathname(),
+                strlen($root) + 1,
+            );
+
+            if (frameworkMechanismPathIsForbidden($frameworkSourcePath)) {
+                $failures[] = "Framework source contains a forbidden generic mechanism path: {$frameworkSourcePath}.";
+            }
+        }
+    }
+
+    $defaultSkeletonSourceRoot = $root . '/skeleton/src';
+
+    if (!is_dir($defaultSkeletonSourceRoot) || is_link($defaultSkeletonSourceRoot)) {
+        $failures[] = 'Default-skeleton source must remain one real directory.';
+    } else {
+        $defaultSkeletonSourceIterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(
+                $defaultSkeletonSourceRoot,
+                FilesystemIterator::SKIP_DOTS,
+            ),
+        );
+
+        foreach ($defaultSkeletonSourceIterator as $defaultSkeletonSourceEntry) {
+            if (!$defaultSkeletonSourceEntry instanceof SplFileInfo || !$defaultSkeletonSourceEntry->isFile()) {
+                continue;
+            }
+
+            $defaultSkeletonSourcePath = 'src/' . substr(
+                $defaultSkeletonSourceEntry->getPathname(),
+                strlen($defaultSkeletonSourceRoot) + 1,
+            );
+
+            if (frameworkMechanismPathIsForbidden($defaultSkeletonSourcePath)) {
+                $failures[] = "Default-skeleton source contains a forbidden generic mechanism path: {$defaultSkeletonSourcePath}.";
+            }
+        }
+    }
+
+    $reviewedPackagePaths = file(
+        $root . '/tools/package-files.txt',
+        FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES,
+    );
+
+    if (!is_array($reviewedPackagePaths)) {
+        $failures[] = 'Cannot read the reviewed package inventory for generic-mechanism checks.';
+    } else {
+        foreach ($reviewedPackagePaths as $reviewedPackagePath) {
+            if (frameworkMechanismPathIsForbidden($reviewedPackagePath)) {
+                $failures[] = "Reviewed package inventory contains a forbidden generic mechanism path: {$reviewedPackagePath}.";
+            }
+        }
+    }
+
     $phpstanConfig = file_get_contents($root . '/phpstan.neon');
 
     if (!is_string($phpstanConfig)) {
@@ -3092,6 +3179,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/configuration.md',
         'docs/configuration/local-environment-launcher.md',
         'docs/caching.md',
+        'docs/coordination.md',
         'docs/cli.md',
         'docs/cli/README.md',
         'docs/cli/arguments-output.md',
@@ -3580,8 +3668,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 17",
-            "'manifest_sha256' => '982eba05821346c09f3f5ede46992041942b2cd53ae92f5eb13cb548f56fff47'",
+            "'revision' => 18",
+            "'manifest_sha256' => '752076aa0779f24d7e8c8ac380065bd872a4a623ad1c3b0dcc151c99d54b8706'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -3611,10 +3699,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 17',
+            '"revision": 18',
             '"source-skeleton"',
-            '"tree": "2c7a5150f940ec3b92e7e5e2ba6735cf475459de"',
-            '"fixture_sha256": "e8e32676ca6c5daf0b2c913376a636438537eccaad2ac3d7e19477510c5a416f"',
+            '"tree": "f84355cb58415b77571e87e75da4bf5bdb1f6d19"',
+            '"fixture_sha256": "1ea9fdb0df7ab8c915b712330b796c596b97dc49eccb4e28924c9223cf22ec4b"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -3744,7 +3832,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 17 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 18 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -3754,8 +3842,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 17;',
-            'Controller v0.2 supports only change.simple-ping revision 17 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 18;',
+            'Controller v0.2 supports only change.simple-ping revision 18 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',

@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 218) {
-            $failures[] = 'The release inventory must contain exactly 218 reviewed files after the accepted Alpha 7 source-preparation scope and notes.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 219) {
+            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 219 reviewed files after adding application-owned operation-coordination guidance; immutable Alpha 7 remains the historical 218-file artifact.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {

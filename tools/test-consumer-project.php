@@ -117,6 +117,10 @@ try {
     proveInstalledReferenceClarityDistribution($installedFramework);
     proveInstalledNativeDateTimeGuidanceDistribution($project, $installedFramework);
     proveInstalledFrontendIntegrationGuidanceDistribution($project, $installedFramework);
+    proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution(
+        $project,
+        $installedFramework,
+    );
     $installedStructuredJsonProofCompletion =
         proveInstalledStructuredJsonSuccessEnvelopeDistribution(
             $project,

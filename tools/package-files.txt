@@ -9,6 +9,7 @@ bin/phpthis
 composer.json
 docs/architecture.md
 docs/caching.md
+docs/coordination.md
 docs/redis-coordination.md
 docs/redis/README.md
 docs/redis/adoption.md

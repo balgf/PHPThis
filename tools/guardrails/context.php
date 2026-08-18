@@ -1691,6 +1691,137 @@ function contextGuardrailFailures(string $root): array
         $failures,
     );
 
+    $applicationOwnedOperationCoordinationArtifactMarkers = [
+        '.ai/README.md' => [
+            '| Change application-owned atomic-lock, mutex, mutual-exclusion, lease, critical-section, or coordination guidance | `.ai/application-context.md` |',
+            '`docs/coordination.md`, knowledge and application task routes, template and skeleton operations records',
+        ],
+        '.ai/application-context.md' => [
+            '`docs/coordination.md`',
+            'Use the existing `.ai/operations.md` `OPERATION_COORDINATION` section as the sole record for a standalone named operation; do not add `.ai/coordination.md`.',
+            'Keep scheduler policy in `.ai/cli.md`, migration-writer policy in `.ai/migrations.md`, durable-job ownership in `.ai/jobs.md`',
+            'Add no framework lock, mutex, lease, fencing-token, coordination helper, facade, driver, registry, discovery, runtime dependency, checker rule, Contract/Profile change, or `PHT` diagnostic.',
+        ],
+        '.ai/testing.md' => [
+            'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution(...)` after the frontend-integration proof',
+            'exact 51-proof-call order',
+        ],
+        'docs/coordination.md' => [
+            '# Application-owned operation coordination',
+            'Use this guide when a task names an atomic lock, mutex, mutual exclusion, lease, critical section, application coordination',
+            'Do not add `.ai/coordination.md`',
+            '**Critical section** names the exact interval',
+            '**Mutual exclusion or mutex** means cooperating contenders',
+            '**Lease** is expiring ownership.',
+            '**Fencing** requires a monotonically ordered token',
+            '**Idempotency or duplicate safety** bounds the effect of repeated work.',
+            '**Cross-system atomicity** requires one proved transaction or protocol',
+            '`NOT_APPLICABLE(OPERATION_COORDINATION)`',
+            'maximum admitted work duration or an explicit `UNPROVED` duration limitation',
+            'references to `.ai/testing.md` for real evidence',
+            '## Bounded Redis schedule-lease reference',
+            'one nonblocking `SET key token NX PX 30000`',
+            'no proved numeric wall-clock maximum, so duration is `UNPROVED`',
+            'Copy the reasoning fields, never the mechanism by default.',
+            'This guidance adds no framework class, interface, trait, helper, facade, service, driver, registry, discovery, configuration, runtime dependency',
+        ],
+        'docs/consumer-contract.md' => [
+            '## Optional application-owned operation coordination',
+            'An application with no standalone operation-specific coordination records `NOT_APPLICABLE(OPERATION_COORDINATION)` in `.ai/operations.md`.',
+            'Fencing requires an ordered token that every protected downstream effect validates',
+            'ADR 028 remains one bounded Redis schedule-lease example, not a portable mechanism.',
+            'This operation-coordination guidance adds no accepted PHP syntax, checker rule, Contract or Strict Profile version, diagnostic, runtime API, or dependency.',
+        ],
+        'docs/knowledge-map.md' => [
+            '| Adopt, change, explain, or review an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | `docs/coordination.md`;',
+            'verify that no framework helper, portable distributed-lock claim, or duplicate context owner was introduced',
+        ],
+        'docs/redis-coordination.md' => [
+            'start with [Application-owned operation coordination](coordination.md).',
+            'ADR 028 remains a bounded `schedule:run` reference only',
+        ],
+        'templates/application/.ai/README.md' => [
+            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
+        ],
+        'templates/application/.ai/operations.md' => [
+            '## Operation-specific coordination',
+            '{{OPERATION_COORDINATION_RECORDS_OR_NOT_APPLICABLE}}',
+            'references to the real concurrency, contention, expiry or cleanup, stale-owner, process-termination, outage, recovery and topology evidence owned by `.ai/testing.md`',
+            'do not duplicate them or infer a portable lock abstraction.',
+        ],
+        'templates/application/.ai/testing.md' => [
+            '{{OPERATION_COORDINATION_TEST_COMMAND_OR_NOT_APPLICABLE}}',
+            'Every standalone operation-coordination adoption proves the exact record in `.ai/operations.md`',
+        ],
+        'skeleton/.ai/README.md' => [
+            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
+        ],
+        'skeleton/.ai/operations.md' => [
+            '## Operation-specific coordination',
+            '`NOT_APPLICABLE(OPERATION_COORDINATION)`',
+            'commands and results remain in `.ai/testing.md`',
+            'Do not add a framework helper or `.ai/coordination.md`.',
+        ],
+        'skeleton/.ai/testing.md' => [
+            'Standalone operation-coordination evidence: `NOT_APPLICABLE(OPERATION_COORDINATION_EVIDENCE)`',
+            '`NOT_APPLICABLE(OPERATION_COORDINATION_EVIDENCE)`',
+            'a mutex, lease, fencing token, idempotency key, and cross-system transaction remain distinct claims.',
+        ],
+        'docs/guardrails.md' => [
+            'A separate installed distribution proof checks application-owned operation-coordination guidance',
+            'It does not exercise a consumer backend, prove atomicity, timing, stale-owner rejection, failover, incident response, or production behavior',
+        ],
+        'tools/package-files.txt' => [
+            'docs/coordination.md',
+        ],
+        'tools/guardrails/distribution.php' => [
+            'count($packagePaths) !== 219',
+            'current post-Alpha-7 release inventory must contain exactly 219 reviewed files',
+            'immutable Alpha 7 remains the historical 218-file artifact',
+        ],
+        'tools/guardrails/repository.php' => [
+            "'docs/coordination.md',",
+            "'src/AtomicLock.php',",
+            "'src/Support/DistributedLockInterface.php',",
+            'Framework source contains a forbidden generic mechanism path:',
+            'Default-skeleton source contains a forbidden generic mechanism path:',
+            'Reviewed package inventory contains a forbidden generic mechanism path:',
+            "'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution',",
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution(',
+        ],
+        'tools/test-consumer-project/guidance.php' => [
+            "'docs/coordination.md' => '.ai/operations.md',",
+            'function proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution(',
+            'Installed coordination runtime-path forbidden fixture was accepted:',
+            'Installed coordination guidance contains a forbidden {$runtimeOwner} runtime mechanism path:',
+            'PASS installed application-owned operation coordination guidance distribution',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $applicationOwnedOperationCoordinationArtifactMarkers,
+        'application-owned operation coordination guidance',
+        $failures,
+    );
+
+    foreach (
+        [
+            '.ai/coordination.md',
+            'templates/application/.ai/coordination.md',
+            'skeleton/.ai/coordination.md',
+        ] as $duplicateCoordinationContextPath
+    ) {
+        if (
+            file_exists($root . '/' . $duplicateCoordinationContextPath)
+            || is_link($root . '/' . $duplicateCoordinationContextPath)
+        ) {
+            $failures[] = "Application-owned operation coordination must use existing .ai/operations.md rather than {$duplicateCoordinationContextPath}.";
+        }
+    }
+
     $startupProbeSemanticsArtifactMarkers = [
         '.ai/README.md' => [
             '| Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |',

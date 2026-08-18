@@ -75,6 +75,14 @@ Do not infer intermediary behavior from local responses. Verify every production
 
 Cache availability never establishes application correctness. Record whether each operation bypasses the cache, fails closed, or returns an explicitly stale bounded result when the backend is unavailable; do not add an implicit fallback or unbounded retry.
 
+## Operation-specific coordination
+
+- Standalone operation-coordination records or `NOT_APPLICABLE(OPERATION_COORDINATION)`: {{OPERATION_COORDINATION_RECORDS_OR_NOT_APPLICABLE}}
+
+For each adopted standalone operation, repeat one finite record keyed by a stable operation name. Include its exact resource, protected interval, namespace and collision scope; every cooperating and bypassing entrypoint; backend, client or package, exact supported versions, topology, authority and security; exact atomic mechanism; blocking or nonblocking acquisition, maximum wait, timeouts, retries and contention; owner token, TTL, renewal and owner-checked release when supported, otherwise the exact descriptor, session, transaction, process or external-serialization lifecycle or explicit non-applicability; cleanup, crash and uncertain outcomes; ownership loss, stale-owner behavior, fencing or bounded `NON_FENCING` limitation; maximum work duration or explicit `UNPROVED`, idempotency and bypass policy; bounded redacted observability, operations and incident owner; and references to the real concurrency, contention, expiry or cleanup, stale-owner, process-termination, outage, recovery and topology evidence owned by `.ai/testing.md`. Follow installed `vendor/phpthis/framework/docs/coordination.md`.
+
+Keep a scheduled pass's mechanism in `.ai/cli.md`, a migration writer's mechanism in `.ai/migrations.md`, durable-job ownership in `.ai/jobs.md`, and cache, session, or file-transfer policy in its existing concern owner. Reference those records here only for surrounding deployment mapping, runbook, incident ownership, and evidence; do not duplicate them or infer a portable lock abstraction.
+
 ## Durable-job runtime
 
 - Adoption or `NOT_APPLICABLE(JOBS)`: `.ai/jobs.md`

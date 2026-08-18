@@ -90,3 +90,5 @@ The application proof covers:
 The implementation source is under `example/`; the behavior and integration evidence is under `tests/`.
 
 The evidence does not certify another Redis version, another client, Cluster or Sentinel, managed-service failover, replication durability, production latency, clock behavior, or multi-region coordination.
+
+For another atomic lock, mutex, mutual-exclusion boundary, lease, critical section, or application coordination task, start with [Application-owned operation coordination](coordination.md). ADR 028 remains a bounded `schedule:run` reference only: copy its decision fields, not its Redis mechanism or guarantees.

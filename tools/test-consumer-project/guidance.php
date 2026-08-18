@@ -58,6 +58,7 @@ function proveInstalledGuidanceReferencesResolve(
         'docs/request-policy.md' => '.ai/request-policy.md',
         'docs/stateless-authentication.md' => '.ai/request-policy.md',
         'docs/cli.md' => '.ai/cli.md',
+        'docs/coordination.md' => '.ai/operations.md',
         'docs/migrations.md' => '.ai/migrations.md',
     ];
     $skeletonRequiredFrameworkGuideOwners = [
@@ -1712,4 +1713,220 @@ function proveInstalledFrontendIntegrationGuidanceDistribution(
     }
 
     fwrite(STDOUT, "PASS installed frontend integration guidance distribution\n");
+}
+
+function proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution(
+    string $project,
+    string $installedFramework,
+): void {
+    /** @var array<string, list<string>> $artifactMarkers */
+    $artifactMarkers = [
+        $project . '/.ai/README.md' => [
+            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
+            'record exact mechanism, topology, loss/fencing/idempotency limits, operations, and evidence rather than a framework helper',
+        ],
+        $project . '/.ai/operations.md' => [
+            '## Operation-specific coordination',
+            '`NOT_APPLICABLE(OPERATION_COORDINATION)`',
+            'This marker does not replace the separate `NOT_APPLICABLE` records for CLI scheduling, migrations, durable jobs, server-side cache, sessions, or file transfers.',
+            'commands and results remain in `.ai/testing.md`',
+            'Do not add a framework helper or `.ai/coordination.md`.',
+        ],
+        $project . '/.ai/testing.md' => [
+            'Standalone operation-coordination evidence: `NOT_APPLICABLE(OPERATION_COORDINATION_EVIDENCE)`',
+            '`NOT_APPLICABLE(OPERATION_COORDINATION_EVIDENCE)`',
+            'a mutex, lease, fencing token, idempotency key, and cross-system transaction remain distinct claims.',
+        ],
+        $installedFramework . '/docs/coordination.md' => [
+            '# Application-owned operation coordination',
+            'PHPThis provides no atomic-lock helper, mutex, lease, fencing-token service, distributed-lock abstraction, coordination facade, driver, or discovery mechanism.',
+            '**Critical section** names the exact interval',
+            '**Mutual exclusion or mutex** means cooperating contenders',
+            '**Lease** is expiring ownership.',
+            '**Fencing** requires a monotonically ordered token',
+            '**Idempotency or duplicate safety** bounds the effect of repeated work.',
+            '**Cross-system atomicity** requires one proved transaction or protocol',
+            '## Record one finite operation',
+            '`NOT_APPLICABLE(OPERATION_COORDINATION)`',
+            'owner-checked release when the selected mechanism supports them',
+            'maximum admitted work duration or an explicit `UNPROVED` duration limitation',
+            '## Bounded Redis schedule-lease reference',
+            'one nonblocking `SET key token NX PX 30000`',
+            'no proved numeric wall-clock maximum, so duration is `UNPROVED`',
+            'Copy the reasoning fields, never the mechanism by default.',
+            'This guidance adds no framework class, interface, trait, helper, facade, service, driver, registry, discovery, configuration, runtime dependency',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            '## Optional application-owned operation coordination',
+            'An application with no standalone operation-specific coordination records `NOT_APPLICABLE(OPERATION_COORDINATION)` in `.ai/operations.md`.',
+            'Fencing requires an ordered token that every protected downstream effect validates',
+            'ADR 028 remains one bounded Redis schedule-lease example, not a portable mechanism.',
+            'This operation-coordination guidance adds no accepted PHP syntax, checker rule, Contract or Strict Profile version, diagnostic, runtime API, or dependency.',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => [
+            '| Adopt, change, explain, or review an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | `docs/coordination.md`;',
+            'verify that no framework helper, portable distributed-lock claim, or duplicate context owner was introduced',
+        ],
+        $installedFramework . '/docs/redis-coordination.md' => [
+            'start with [Application-owned operation coordination](coordination.md).',
+            'ADR 028 remains a bounded `schedule:run` reference only',
+        ],
+        $installedFramework . '/templates/application/.ai/README.md' => [
+            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
+        ],
+        $installedFramework . '/templates/application/.ai/operations.md' => [
+            '## Operation-specific coordination',
+            '{{OPERATION_COORDINATION_RECORDS_OR_NOT_APPLICABLE}}',
+            'references to the real concurrency, contention, expiry or cleanup, stale-owner, process-termination, outage, recovery and topology evidence owned by `.ai/testing.md`',
+            'Keep a scheduled pass\'s mechanism in `.ai/cli.md`, a migration writer\'s mechanism in `.ai/migrations.md`, durable-job ownership in `.ai/jobs.md`',
+        ],
+        $installedFramework . '/templates/application/.ai/testing.md' => [
+            '{{OPERATION_COORDINATION_TEST_COMMAND_OR_NOT_APPLICABLE}}',
+            'Every standalone operation-coordination adoption proves the exact record in `.ai/operations.md`',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'A separate installed distribution proof checks application-owned operation-coordination guidance',
+            'It does not exercise a consumer backend, prove atomicity, timing, stale-owner rejection, failover, incident response, or production behavior',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers(
+        $artifactMarkers,
+        'application-owned operation coordination guidance',
+    );
+
+    $coordinationRuntimePathPattern = '~(?:\A|/)(?:locks?|leases?|mutex(?:es)?|coordination|fencing[-_]?tokens?)(?:/|\.php\z)|(?:\A|/)[A-Za-z0-9_-]*(?:AtomicLock|DistributedLock|Lock|Lease|Mutex|FencingToken|Coordination)(?:(?:Manager|Service|Facade|Driver|Registry|Helper)(?:Interface|Provider|Factory)?|Interface|Provider|Factory)?\.php\z~';
+    $forbiddenCoordinationRuntimePathFixtures = [
+        'AtomicLock.php',
+        'Support/RedisLease.php',
+        'Support/CoordinationHelper.php',
+        'Support/FencingTokenService.php',
+    ];
+    $allowedCoordinationRuntimePathFixtures = [
+        'Application.php',
+        'Http/Request.php',
+        'Support/Clock.php',
+        'Observability/RequestCoordinator.php',
+    ];
+
+    foreach ($forbiddenCoordinationRuntimePathFixtures as $forbiddenCoordinationRuntimePathFixture) {
+        if (preg_match($coordinationRuntimePathPattern, $forbiddenCoordinationRuntimePathFixture) !== 1) {
+            throw new RuntimeException(
+                "Installed coordination runtime-path forbidden fixture was accepted: {$forbiddenCoordinationRuntimePathFixture}",
+            );
+        }
+    }
+
+    foreach ($allowedCoordinationRuntimePathFixtures as $allowedCoordinationRuntimePathFixture) {
+        if (preg_match($coordinationRuntimePathPattern, $allowedCoordinationRuntimePathFixture) === 1) {
+            throw new RuntimeException(
+                "Installed coordination runtime-path allowed fixture was rejected: {$allowedCoordinationRuntimePathFixture}",
+            );
+        }
+    }
+
+    foreach (
+        [
+            'installed framework' => $installedFramework . '/src',
+            'default skeleton' => $project . '/src',
+        ] as $runtimeOwner => $runtimeSourceRoot
+    ) {
+        if (!is_dir($runtimeSourceRoot) || is_link($runtimeSourceRoot)) {
+            throw new RuntimeException("Installed coordination proof cannot inspect {$runtimeOwner} source.");
+        }
+
+        $runtimeSourceIterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($runtimeSourceRoot, FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($runtimeSourceIterator as $runtimeSourceEntry) {
+            if (!$runtimeSourceEntry instanceof SplFileInfo || !$runtimeSourceEntry->isFile()) {
+                continue;
+            }
+
+            $runtimeSourcePath = substr(
+                $runtimeSourceEntry->getPathname(),
+                strlen($runtimeSourceRoot) + 1,
+            );
+
+            if (preg_match($coordinationRuntimePathPattern, $runtimeSourcePath) === 1) {
+                throw new RuntimeException(
+                    "Installed coordination guidance contains a forbidden {$runtimeOwner} runtime mechanism path: {$runtimeSourcePath}",
+                );
+            }
+        }
+    }
+
+    foreach (
+        [
+            $project . '/.ai/coordination.md',
+            $installedFramework . '/templates/application/.ai/coordination.md',
+            $installedFramework . '/src/AtomicLock.php',
+            $installedFramework . '/src/DistributedLock.php',
+            $installedFramework . '/src/Lock.php',
+            $installedFramework . '/src/Lease.php',
+            $installedFramework . '/src/Mutex.php',
+            $installedFramework . '/src/FencingToken.php',
+            $installedFramework . '/src/Coordination',
+            $installedFramework . '/src/Lock',
+            $installedFramework . '/src/Lease',
+        ] as $forbiddenCoordinationPath
+    ) {
+        if (file_exists($forbiddenCoordinationPath) || is_link($forbiddenCoordinationPath)) {
+            throw new RuntimeException(
+                "Application-owned coordination guidance added a duplicate context owner or framework runtime path: {$forbiddenCoordinationPath}",
+            );
+        }
+    }
+
+    $installedComposer = jsonFile($installedFramework . '/composer.json');
+    $installedRuntimeRequirements = $installedComposer['require'] ?? null;
+
+    if (!is_array($installedRuntimeRequirements)) {
+        throw new RuntimeException('Installed framework runtime requirements must be an explicit Composer map.');
+    }
+
+    $installedRuntimePackages = array_keys($installedRuntimeRequirements);
+
+    foreach ($installedRuntimePackages as $installedRuntimePackage) {
+        if (!is_string($installedRuntimePackage)) {
+            throw new RuntimeException('Installed framework runtime requirement names must be strings.');
+        }
+    }
+
+    sort($installedRuntimePackages, SORT_STRING);
+
+    if ($installedRuntimePackages !== ['ext-pdo', 'ext-session', 'php']) {
+        throw new RuntimeException(
+            'Application-owned coordination guidance must not change framework runtime packages.',
+        );
+    }
+
+    $consumerComposer = jsonFile($project . '/composer.json');
+    $consumerRuntimeRequirements = $consumerComposer['require'] ?? null;
+
+    if (!is_array($consumerRuntimeRequirements)) {
+        throw new RuntimeException('Installed skeleton runtime requirements must be an explicit Composer map.');
+    }
+
+    $consumerRuntimePackages = array_keys($consumerRuntimeRequirements);
+
+    foreach ($consumerRuntimePackages as $consumerRuntimePackage) {
+        if (!is_string($consumerRuntimePackage)) {
+            throw new RuntimeException('Installed skeleton runtime requirement names must be strings.');
+        }
+    }
+
+    sort($consumerRuntimePackages, SORT_STRING);
+
+    if ($consumerRuntimePackages !== ['php', 'phpthis/framework']) {
+        throw new RuntimeException(
+            'Application-owned coordination guidance must not add a default-skeleton runtime package.',
+        );
+    }
+
+    fwrite(
+        STDOUT,
+        "PASS installed application-owned operation coordination guidance distribution\n",
+    );
 }
