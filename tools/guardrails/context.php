@@ -1362,6 +1362,13 @@ function contextGuardrailFailures(string $root): array
             'No application or deployment configuration runtime or class enters framework `src/`, and no runtime dependency is added.',
             'Adopted migration or administrative configuration never falls back to runtime configuration.',
         ],
+        'docs/decisions/055-value-free-composer-configuration-scripts.md' => [
+            '# ADR 055: Value-free Composer configuration scripts',
+            'Status: accepted',
+            'the accountable human directed PHPThis to prevent consumers from assigning application configuration in Composer scripts',
+            'Consumer Contract version 13, Strict Profile version 3, and permanent diagnostics `PHT001` through `PHT007` remain unchanged',
+            'It never repeats the script name, command, or right-hand value.',
+        ],
         'docs/configuration.md' => [
             '# Application-owned configuration',
             'every read in the Composer project must occur in one PHP file',
@@ -1381,6 +1388,8 @@ function contextGuardrailFailures(string $root): array
             'This is pinned PHP 8.4 implementation behavior rather than a general environment-array convention',
             'absence of deliberate parent-configuration inheritance',
             'Do not grow this configuration example into a general process runner, worker, or supervisor.',
+            'Root Composer scripts are orchestration, not configuration delivery.',
+            'reports only the input name, never a script name, command, or assigned value',
         ],
         'docs/consumer-contract.md' => [
             '## Application configuration',
@@ -1388,6 +1397,8 @@ function contextGuardrailFailures(string $root): array
             'For each adopted process profile, keep its runtime, worker, migration, or administrative input names, factories, and output types separate.',
             'non-secret configuration reference',
             'A configuration-free application records `NOT_APPLICABLE(CONFIGURATION)`',
+            'keep root Composer script command text free of assignments or direct mutations',
+            'The cross-platform lexical check is case-insensitive and conservatively rejects the adopted `KEY=` spelling',
         ],
         'docs/decisions/README.md' => [
             "`035-bounded-alpha-4-release-scope.md`\n- `036-one-typed-application-configuration-boundary.md`",
@@ -1401,10 +1412,12 @@ function contextGuardrailFailures(string $root): array
             '{{CONFIGURATION_BOUNDARY_PATH_OR_NOT_APPLICABLE}}',
             '{{CONFIGURATION_PROFILE_CREDENTIAL_SEPARATION_OR_NOT_APPLICABLE}}',
             '{{CONFIGURATION_REDACTION_EVIDENCE_OR_NOT_APPLICABLE}}',
+            'their command text remains value-free for every adopted input name',
         ],
         'skeleton/.ai/configuration.md' => [
             '`NOT_APPLICABLE(CONFIGURATION)`',
             'The health-only skeleton reads no process environment',
+            'Composer aliases may invoke a recorded entrypoint but remain value-free',
         ],
         'example/.ai/configuration.md' => [
             '# Example application configuration context',
@@ -1421,11 +1434,16 @@ function contextGuardrailFailures(string $root): array
             'private static function isConstantLookupArgument(array $tokens, int $index): bool',
             'private static function isCanonicalServerTransportHandoff(',
             'PHT007',
+            'keys: list<string>',
+            'private static function validGetenvKey(',
         ],
         'verification/ApplicationChecker.php' => [
             "'.ai/configuration.md'",
             'EnvironmentAccessProfile::inspect(',
             'EnvironmentAccessProfile::boundaryFailures($environmentReads)',
+            'composerScriptConfigurationFailures($composer, $environmentKeys)',
+            'composerCommandContainsEnvironmentMutationText(',
+            'keep Composer command text value-free and supply configuration at the outer process boundary',
         ],
         'bin/phpthis' => [
             "require_once dirname(__DIR__) . '/verification/EnvironmentAccessProfile.php';",
@@ -1439,6 +1457,7 @@ function contextGuardrailFailures(string $root): array
         'tools/test-strict-profile.php' => [
             "'PHT007'",
             'PHT007 invalid-access fixture diagnostics changed.',
+            "'keys' => ['APP_RUNTIME_DATABASE_DSN', 'APP_RUNTIME_DATABASE_USERNAME']",
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledTypedConfiguration($project, $profileCommand, $environment);',
@@ -1456,6 +1475,9 @@ function contextGuardrailFailures(string $root): array
             'final class ReferenceEmptyRuntimeMode extends InvalidArgumentException',
             'catch (ReferenceEmptyRuntimeMode)',
             'The installed missing runtime mode was misclassified as empty.',
+            'function proveComposerScriptsCannotAssignApplicationConfiguration(',
+            'PHPTHIS_COMPOSER_CONFIGURATION_SECRET_SENTINEL',
+            'Value-free Composer entrypoints or an unrelated tooling assignment unexpectedly failed.',
         ],
         'tools/test-consumer-project/support.php' => [
             'function requireExactProcessResult(',
@@ -1476,10 +1498,25 @@ function contextGuardrailFailures(string $root): array
             'the application test runner or CI job owns its hard outer timeout',
             'does not claim that the host, executable, or PHP runtime adds no required environment entries',
             'does not prove application-specific validation, deployment safety, or redaction outside the captured streams',
+            'ADR 055 adds a second ordinary consistency check without changing PHT007',
+            'reports only the input name without a script name, command, or value',
+        ],
+        '.ai/application-context.md' => [
+            'Keep every application Composer alias value-free for adopted configuration.',
+            'inherited ambient authority, referenced scripts, plugins, dynamic or escaped names, profile completeness, and pre-check lifecycle execution remain explicit review limits',
+        ],
+        '.ai/static-analysis.md' => [
+            "Keep ADR 055's Composer/configuration consistency check ordinary and separate from PHT007.",
+            'reports only the input name',
+        ],
+        '.ai/testing.md' => [
+            "ADR 055's ordinary Composer/configuration consistency check also has no `PHT` identifier.",
+            'Every mutation restores the consumer manifest in `finally`.',
         ],
         'tools/package-files.txt' => [
             'docs/configuration.md',
             'docs/decisions/036-one-typed-application-configuration-boundary.md',
+            'docs/decisions/055-value-free-composer-configuration-scripts.md',
             'templates/application/.ai/configuration.md',
             'verification/EnvironmentAccessProfile.php',
         ],
@@ -1550,7 +1587,7 @@ function contextGuardrailFailures(string $root): array
         ],
         'docs/knowledge-map.md' => [
             '| Adopt, change, or review a local development environment launcher | `docs/configuration/local-environment-launcher.md`',
-            'verify that no framework loader, automatic bootstrap, dotenv dependency, configuration cache, `config:clear` command, Contract/Profile/PHT/checker change',
+            "verify that no framework loader, automatic bootstrap, dotenv dependency, configuration cache, `config:clear` command, launcher-specific Contract/Profile/PHT/checker change beyond ADR 055's separate command-text rule",
         ],
         '.ai/README.md' => [
             '| Change local environment launcher guidance or its checked reference | `.ai/application-context.md` |',
@@ -1558,7 +1595,7 @@ function contextGuardrailFailures(string $root): array
         ],
         '.ai/application-context.md' => [
             'Preserve accepted ADR 050 and its optional application-owned boundary.',
-            'Do not add a framework or skeleton launcher, automatic PHP loading, dotenv dependency, configuration cache, `config:clear`, Contract/Profile/PHT/checker change',
+            "Do not add a framework or skeleton launcher, automatic PHP loading, dotenv dependency, configuration cache, `config:clear`, any launcher-specific Contract/Profile/PHT/checker change beyond ADR 055's separate command-text consistency rule",
         ],
         '.ai/cli.md' => [
             'an optional application-owned PHP launcher invoked as `php ./bin/application <command>`',
@@ -1775,8 +1812,8 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 219',
-            'current post-Alpha-7 release inventory must contain exactly 219 reviewed files',
+            'count($packagePaths) !== 220',
+            'current post-Alpha-7 release inventory must contain exactly 220 reviewed files',
             'immutable Alpha 7 remains the historical 218-file artifact',
         ],
         'tools/guardrails/repository.php' => [

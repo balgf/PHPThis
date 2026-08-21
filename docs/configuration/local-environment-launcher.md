@@ -2,6 +2,8 @@
 
 This is a checked, copyable reference for an application that wants one local-development command without adding a dotenv dependency, framework configuration API, configuration cache, or `config:clear` command. It is application source, not PHPThis runtime source. Production and supervised processes should receive a complete process profile from their deployment environment and should not depend on a project `.env` file.
 
+A Composer alias may invoke this PHP launcher or another recorded entrypoint, but it remains value-free: do not prefix the command with adopted configuration assignments or use Composer to set or clear those inputs. A direct entrypoint alias inherits Composer's process environment and therefore proves no selected-only authority; the outer caller must exclude unrelated or elevated inputs. This launcher instead supplies its exact selected child environment. Configuration selection and delivery remain inside this application-owned launcher or the deployment-owned outer boundary.
+
 Run the application-owned launcher from any directory with an absolute or relative launcher path:
 
 ```bash

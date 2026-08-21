@@ -90,6 +90,7 @@ docs/decisions/051-application-owned-structured-log-destinations.md
 docs/decisions/052-backend-neutral-application-owned-durable-jobs.md
 docs/decisions/053-application-owned-amazon-s3-file-transfers.md
 docs/decisions/054-bounded-alpha-7-release-scope.md
+docs/decisions/055-value-free-composer-configuration-scripts.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md

@@ -66,7 +66,7 @@ final class EnvironmentAccessProfile
     ];
 
     /**
-     * @return array{reads: list<int>, failures: list<string>}
+     * @return array{reads: list<int>, keys: list<string>, failures: list<string>}
      */
     public static function inspect(string $contents, string $relativePath): array
     {
@@ -75,6 +75,7 @@ final class EnvironmentAccessProfile
         $variableOccurrences = self::variableOccurrences($tokens);
         $inputEnvBindings = self::inputEnvBindings($tokens);
         $reads = [];
+        $keys = [];
         $failures = [];
         $line = 1;
         $attributeBracketDepth = 0;
@@ -242,14 +243,21 @@ final class EnvironmentAccessProfile
                 continue;
             }
 
-            if (!self::hasValidGetenvArgument($tokens, $index)) {
+            $key = self::validGetenvKey($tokens, $index);
+
+            if ($key === null) {
                 $failures[] = "PHT007 {$relativePath}:{$tokenLine} must call \\getenv with exactly one non-empty uppercase literal key of at most 128 bytes.";
+            } else {
+                $keys[] = $key;
             }
 
             $line += substr_count($tokenText, "\n");
         }
 
-        return ['reads' => $reads, 'failures' => $failures];
+        $keys = array_values(array_unique($keys));
+        sort($keys, SORT_STRING);
+
+        return ['reads' => $reads, 'keys' => $keys, 'failures' => $failures];
     }
 
     /**
@@ -285,12 +293,12 @@ final class EnvironmentAccessProfile
     /**
      * @param array<int, array{int, string, int}|string> $tokens
      */
-    private static function hasValidGetenvArgument(array $tokens, int $functionIndex): bool
+    private static function validGetenvKey(array $tokens, int $functionIndex): ?string
     {
         $openIndex = self::nextSignificantTokenIndex($tokens, $functionIndex + 1);
 
         if ($openIndex === null || self::tokenText($tokens[$openIndex]) !== '(') {
-            return false;
+            return null;
         }
 
         $arguments = [];
@@ -319,14 +327,20 @@ final class EnvironmentAccessProfile
         }
 
         if ($parenthesisDepth !== 0 || count($arguments) !== 1) {
-            return false;
+            return null;
         }
 
         $argument = $arguments[0];
 
-        return is_array($argument)
-            && $argument[0] === T_CONSTANT_ENCAPSED_STRING
-            && preg_match('/\A([\'"])[A-Z][A-Z0-9_]{0,127}\1\z/D', $argument[1]) === 1;
+        if (
+            !is_array($argument)
+            || $argument[0] !== T_CONSTANT_ENCAPSED_STRING
+            || preg_match('/\A([\'"])[A-Z][A-Z0-9_]{0,127}\1\z/D', $argument[1]) !== 1
+        ) {
+            return null;
+        }
+
+        return self::decodedLiteral($argument[1]);
     }
 
     /**

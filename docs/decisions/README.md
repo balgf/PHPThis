@@ -62,6 +62,7 @@ Accepted records:
 - `052-backend-neutral-application-owned-durable-jobs.md`
 - `053-application-owned-amazon-s3-file-transfers.md`
 - `054-bounded-alpha-7-release-scope.md`
+- `055-value-free-composer-configuration-scripts.md`
 
 ## Current and successor relationships
 
@@ -91,3 +92,5 @@ Accepted [ADR 051](051-application-owned-structured-log-destinations.md) adds on
 Accepted [ADR 052](052-backend-neutral-application-owned-durable-jobs.md) adds current optional backend-neutral application-owned durable-job guidance without superseding ADR 024. ADR 024 remains the first and only checked backend-specific profile under its existing SQLite evidence; the health-only skeleton remains `NOT_APPLICABLE(JOBS)` and the executable example remains `SQLITE_ADR024_REFERENCE`. ADR 052 left Consumer Contract version 12 unchanged, and Contract version 13 carries its guidance, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, framework runtime, dependencies, and checker validity forward unchanged.
 
 Accepted [ADR 053](053-application-owned-amazon-s3-file-transfers.md) adds the optional `AMAZON_S3_ADR053` application-owned direct-S3 profile and coordinates Consumer Contract version 13. It partially supersedes ADR 026 only for the remote-object-store and pre-signed-delivery exclusion when that profile is explicitly selected. `LOCAL_ADR026`, the health-only skeleton's `NOT_APPLICABLE(FILE_TRANSFER)`, and the executable example's local public reference remain unchanged. The accepted direct-S3 response is a fixed `application/octet-stream` attachment without a guaranteed `nosniff` header; that narrow exception adds no framework AWS dependency, storage abstraction, Strict Profile rule, or checker diagnostic.
+
+Accepted [ADR 055](055-value-free-composer-configuration-scripts.md) adds one ordinary installed-checker consistency rule for the existing outer-boundary configuration policy. It correlates canonical PHT007 input names with fail-conservative assignment and bounded mutation spellings in Composer command text, keeps diagnostics value-free, and leaves Consumer Contract version 13, Strict Profile version 3, diagnostics `PHT001` through `PHT007`, framework runtime, and dependencies unchanged.

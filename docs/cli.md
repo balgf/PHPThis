@@ -6,7 +6,7 @@ ADR 025 records the initial job and scheduler proof through the executable examp
 
 ## Adoption boundary
 
-An application with no operational command or scheduler records `NOT_APPLICABLE(CLI)`. Composer development scripts, `vendor/bin/phpthis check`, and an optional `composer workbench` script do not by themselves mean that an application CLI has been adopted.
+An application with no operational command or scheduler records `NOT_APPLICABLE(CLI)`. Composer development scripts, `vendor/bin/phpthis check`, and an optional `composer workbench` script do not by themselves mean that an application CLI has been adopted. A Composer alias may invoke one recorded entrypoint, but its command text must remain free of assignment and recognized mutation spellings for that process's adopted configuration inputs. The alias inherits Composer's process environment; the outer caller still owns a complete least-authority profile.
 
 Before adoption, the accountable human records:
 

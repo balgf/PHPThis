@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 219) {
-            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 219 reviewed files after adding application-owned operation-coordination guidance; immutable Alpha 7 remains the historical 218-file artifact.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 220) {
+            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 220 reviewed files after adding application-owned operation-coordination guidance and the value-free Composer configuration decision; immutable Alpha 7 remains the historical 218-file artifact.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {

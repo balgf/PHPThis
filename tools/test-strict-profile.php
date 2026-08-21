@@ -89,7 +89,11 @@ $validEnvironmentResult = EnvironmentAccessProfile::inspect(
     'src/ApplicationEnvironment.php',
 );
 requireProfile(
-    $validEnvironmentResult === ['reads' => [7, 8], 'failures' => []],
+    $validEnvironmentResult === [
+        'reads' => [7, 8],
+        'keys' => ['APP_RUNTIME_DATABASE_DSN', 'APP_RUNTIME_DATABASE_USERNAME'],
+        'failures' => [],
+    ],
     'PHT007 rejected canonical literal reads in one application configuration boundary.',
 );
 
@@ -111,7 +115,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $groupedAttributeFixture,
         'src/GroupedEnvironmentNames.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 treated names, calls, or literal arguments inside a grouped PHP attribute declaration as executable environment access.',
 );
 
@@ -170,7 +174,11 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $acceptedKeyBoundaryFixture,
         'src/AcceptedEnvironmentKeyBoundaries.php',
-    ) === ['reads' => [5, 6], 'failures' => []],
+    ) === [
+        'reads' => [5, 6],
+        'keys' => ['A', str_repeat('A', 128)],
+        'failures' => [],
+    ],
     'PHT007 rejected an accepted one-byte or 128-byte uppercase literal environment key.',
 );
 
@@ -215,7 +223,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $unpackedCallableLimitationFixture,
         'src/UnpackedCallableLimitation.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 argument-unpack limitation changed without a profile decision.',
 );
 
@@ -238,7 +246,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $aliasedCallbackLimitationFixture,
         'src/AliasedCallbackLimitation.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 native-callback alias limitation changed without a profile decision.',
 );
 
@@ -298,7 +306,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $separateCallableScopeFixture,
         'src/SeparateCallableScopes.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 confused identical variable names in separate PHP function scopes.',
 );
 
@@ -321,7 +329,7 @@ $largeHarmlessLiteralResult = EnvironmentAccessProfile::inspect(
 );
 $largeInspectionNanoseconds = hrtime(true) - $largeInspectionStarted;
 requireProfile(
-    $largeHarmlessLiteralResult === ['reads' => [], 'failures' => []],
+    $largeHarmlessLiteralResult === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 confused repeated harmless literal assignments with indirect environment calls.',
 );
 requireProfile(
@@ -386,7 +394,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $validInputEnvDeclarationFixture,
         'src/InputEnvDeclarations.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 rejected a declaration, type, class alias, safe constant alias, or lowercase application constant named INPUT_ENV.',
 );
 
@@ -406,7 +414,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $validLocalInputEnvConstantFixture,
         'src/LocalInputEnvConstant.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 treated a declared namespaced INPUT_ENV constant as PHP\'s global input source.',
 );
 
@@ -490,7 +498,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $subsequentConstantInputEnvUseFixture,
         'src/SubsequentConstantInputEnvUse.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 failed to activate a local INPUT_ENV binding after its declarator ended.',
 );
 
@@ -511,7 +519,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $validUnaliasedInputEnvImportFixture,
         'src/ImportedInputEnvConstant.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 treated an imported namespaced INPUT_ENV constant as PHP\'s global input source.',
 );
 
@@ -557,7 +565,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $validInputEnvFunctionFixture,
         'src/InputEnvFunction.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 treated a function invocation named INPUT_ENV as a global constant reference.',
 );
 
@@ -602,7 +610,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $validInputEnvNamespaceFixture,
         'src/InputEnvNamespace.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 rejected INPUT_ENV when it was a namespace declaration.',
 );
 
@@ -621,7 +629,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $validGroupedConstImportFixture,
         'src/GroupedConstImport.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 treated a namespaced grouped constant import as a global INPUT_ENV import.',
 );
 
@@ -834,7 +842,7 @@ requireProfile(
     EnvironmentAccessProfile::inspect(
         $shadowedArrowParameterFixture,
         'src/ShadowedArrowParameters.php',
-    ) === ['reads' => [], 'failures' => []],
+    ) === ['reads' => [], 'keys' => [], 'failures' => []],
     'PHT007 mistook a keyed-array parameter default or by-reference arrow declaration for captured environment-reader use.',
 );
 
@@ -999,6 +1007,7 @@ requireParseable($canonicalServerHandoffFixture);
 requireProfile(
     EnvironmentAccessProfile::inspect($canonicalServerHandoffFixture, 'public/index.php') === [
         'reads' => [],
+        'keys' => [],
         'failures' => [],
     ],
     'PHT007 rejected the canonical front-controller transport handoff.',

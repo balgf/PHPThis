@@ -683,6 +683,11 @@ MD,
 
         $profileResult = runProcess($profileCommand, $project, $environment);
         requireSuccess($profileResult, 'Canonical one-file configuration failed the installed profile.');
+        proveComposerScriptsCannotAssignApplicationConfiguration(
+            $project,
+            $profileCommand,
+            $environment,
+        );
     } finally {
         writeFile($contextPath, $originalContext);
         writeFile($dataContextPath, $originalDataContext);
@@ -691,6 +696,213 @@ MD,
             if (is_file($proofPath) && !unlink($proofPath)) {
                 throw new RuntimeException("Unable to remove installed configuration proof {$proofPath}.");
             }
+        }
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
+function proveComposerScriptsCannotAssignApplicationConfiguration(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $composerPath = $project . '/composer.json';
+    $original = file_get_contents($composerPath);
+
+    if (!is_string($original)) {
+        throw new RuntimeException('Unable to read the installed Composer configuration boundary.');
+    }
+
+    $secretSentinel = 'PHPTHIS_COMPOSER_CONFIGURATION_SECRET_SENTINEL';
+    $rejectedScripts = [
+        'string assignment' => [
+            'realtime',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN="' . $secretSentinel . '" @php bin/websocket-server.php',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'list assignment' => [
+            'realtime',
+            [
+                'Composer\\Config::disableProcessTimeout',
+                'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME=$PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME @php bin/websocket-server.php',
+            ],
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+        ],
+        'case-folded assignment text' => [
+            'realtime',
+            'phpthis_proof_runtime_database_dsn=' . $secretSentinel . ' @php bin/websocket-server.php',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'Composer environment clear' => [
+            'realtime',
+            '@putenv PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        ],
+        'POSIX environment clear' => [
+            'realtime',
+            'env -i -u PHPTHIS_PROOF_RUNTIME_DATABASE_DSN @php bin/websocket-server.php',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'POSIX unset with option' => [
+            'realtime',
+            'unset -v PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+        ],
+        'POSIX unset with option terminator' => [
+            'realtime',
+            'unset -- PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+        ],
+        'POSIX environment clear with joined option' => [
+            'realtime',
+            'env -uPHPTHIS_PROOF_RUNTIME_DATABASE_DSN @php bin/websocket-server.php',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'POSIX export without value' => [
+            'realtime',
+            'export PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        ],
+        'Windows persistent assignment' => [
+            'realtime',
+            'setx.exe /M PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME ' . $secretSentinel,
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+        ],
+        'Windows remote persistent assignment' => [
+            'realtime',
+            'setx /s computer1 /u domain\\user /p ' . $secretSentinel . ' PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME value',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+        ],
+        'case-insensitive PowerShell assignment' => [
+            'realtime',
+            '$env:phpthis_proof_runtime_database_username=' . "'{$secretSentinel}'",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_USERNAME',
+        ],
+        'braced PowerShell assignment' => [
+            'realtime',
+            '${env:PHPTHIS_PROOF_RUNTIME_DATABASE_DSN} += ' . "'{$secretSentinel}'",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'PowerShell environment clear' => [
+            'realtime',
+            'Remove-Item -LiteralPath Env:\\PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'PowerShell environment set' => [
+            'realtime',
+            'Set-Item Env:PHPTHIS_PROOF_RUNTIME_DATABASE_DSN ' . $secretSentinel,
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'PowerShell environment provider create' => [
+            'realtime',
+            'New-Item -Path Env: -Name PHPTHIS_PROOF_RUNTIME_DATABASE_DSN -Value ' . $secretSentinel,
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'PowerShell environment provider copy' => [
+            'realtime',
+            'Copy-Item -Path Env:OTHER -Destination Env:\\PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'PowerShell environment provider rename' => [
+            'realtime',
+            'Rename-Item -Path Env:OTHER -NewName PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'runtime environment mutation' => [
+            'realtime',
+            '[System.Environment]::SetEnvironmentVariable(' . "'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD', '" . $secretSentinel . "')",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        ],
+        'inline PHP environment clear' => [
+            'realtime',
+            '@php -r ' . "'putenv(\"PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD\");'",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        ],
+        'inline PHP named-argument environment clear' => [
+            'realtime',
+            '@php -r ' . "'putenv(assignment:\n\"PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD\");'",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        ],
+        'inline PHP environment assignment' => [
+            'realtime',
+            '@php -r ' . "'\$_ENV[\n\"PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD\"\n]\n=\"{$secretSentinel}\";'",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        ],
+        'multiline runtime environment mutation' => [
+            'realtime',
+            '[System.Environment]::SetEnvironmentVariable(' . "\n'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD', '" . $secretSentinel . "')",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_PASSWORD',
+        ],
+        'assignment-looking argument text' => [
+            'realtime',
+            '@php tests/run.php --filter=PHPTHIS_PROOF_RUNTIME_DATABASE_DSN=' . $secretSentinel,
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+        'script-name redaction' => [
+            "realtime\n{$secretSentinel}",
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN=value @php bin/websocket-server.php',
+            'PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ],
+    ];
+
+    try {
+        foreach ($rejectedScripts as $label => [$scriptName, $script, $key]) {
+            $composer = jsonFile($composerPath);
+            $scripts = $composer['scripts'] ?? null;
+
+            if (!is_array($scripts)) {
+                throw new RuntimeException('The installed Composer scripts are missing.');
+            }
+
+            $scripts[$scriptName] = $script;
+            $composer['scripts'] = $scripts;
+            writeJson($composerPath, $composer);
+
+            $result = runProcess($profileCommand, $project, $environment);
+            requireFailure($result, "{$label} unexpectedly passed the installed Composer configuration boundary.");
+            requireOutputContains(
+                $result,
+                "composer.json scripts must not contain assignment or mutation text for application configuration input {$key}",
+            );
+
+            if (str_contains($result['stdout'] . $result['stderr'], $secretSentinel)) {
+                throw new RuntimeException("{$label} disclosed an assigned Composer configuration value.");
+            }
+
+            if (file_put_contents($composerPath, $original, LOCK_EX) !== strlen($original)) {
+                throw new RuntimeException('Unable to restore the installed Composer configuration boundary.');
+            }
+        }
+
+        $composer = jsonFile($composerPath);
+        $scripts = $composer['scripts'] ?? null;
+
+        if (!is_array($scripts)) {
+            throw new RuntimeException('The restored installed Composer scripts are missing.');
+        }
+
+        $scripts['realtime'] = [
+            'Composer\\Config::disableProcessTimeout',
+            '@php bin/websocket-server.php',
+        ];
+        $scripts['tooling'] = [
+            'XDEBUG_MODE=off @php tests/run.php --filter=PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+            'setx UNRELATED PHPTHIS_PROOF_RUNTIME_DATABASE_DSN',
+        ];
+        $composer['scripts'] = $scripts;
+        writeJson($composerPath, $composer);
+
+        $safeResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $safeResult,
+            'Value-free Composer entrypoints or an unrelated tooling assignment unexpectedly failed.',
+        );
+    } finally {
+        if (file_put_contents($composerPath, $original, LOCK_EX) !== strlen($original)) {
+            throw new RuntimeException('Unable to restore the installed Composer configuration boundary.');
         }
     }
 }

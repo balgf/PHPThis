@@ -90,8 +90,9 @@ final class ApplicationChecker
         }
 
         $vendorDirectory = $vendorResult['directory'];
+        $composer = $vendorResult['composer'];
 
-        if ($vendorDirectory === null) {
+        if ($vendorDirectory === null || $composer === null) {
             return $this->reportFailures(['Cannot resolve the Composer vendor directory.']);
         }
 
@@ -100,6 +101,8 @@ final class ApplicationChecker
         $duplicationScanner = new ApplicationDuplicationScanner();
         /** @var array<string, list<int>> $environmentReads */
         $environmentReads = [];
+        /** @var list<string> $environmentKeys */
+        $environmentKeys = [];
         $hasConnectionCall = false;
         $failures = [
             ...$discovery['failures'],
@@ -118,6 +121,7 @@ final class ApplicationChecker
             $hasConnectionCall = $hasConnectionCall || $this->hasCanonicalConnectionCall($contents);
             $environmentAccess = EnvironmentAccessProfile::inspect($contents, $relativePath);
             $environmentReads[$relativePath] = $environmentAccess['reads'];
+            $environmentKeys = [...$environmentKeys, ...$environmentAccess['keys']];
 
             foreach ($environmentAccess['failures'] as $failure) {
                 $failures[] = $failure;
@@ -133,6 +137,13 @@ final class ApplicationChecker
         }
 
         foreach ($this->configurationContextEnvironmentFailures($root, $environmentReads) as $failure) {
+            $failures[] = $failure;
+        }
+
+        $environmentKeys = array_values(array_unique($environmentKeys));
+        sort($environmentKeys, SORT_STRING);
+
+        foreach ($this->composerScriptConfigurationFailures($composer, $environmentKeys) as $failure) {
             $failures[] = $failure;
         }
 
@@ -162,7 +173,7 @@ final class ApplicationChecker
         return $this->runPhpStan($root, $vendorDirectory, array_values($phpFiles), $debug);
     }
 
-    /** @return array{directory: ?string, failures: list<string>} */
+    /** @return array{directory: ?string, composer: array<array-key, mixed>|null, failures: list<string>} */
     private function resolveVendorDirectory(string $projectRoot): array
     {
         $composerPath = $projectRoot . '/composer.json';
@@ -171,6 +182,7 @@ final class ApplicationChecker
         if (!is_string($contents)) {
             return [
                 'directory' => null,
+                'composer' => null,
                 'failures' => ['Run `phpthis check` from a Composer project root containing composer.json.'],
             ];
         }
@@ -180,6 +192,7 @@ final class ApplicationChecker
         } catch (JsonException) {
             return [
                 'directory' => null,
+                'composer' => null,
                 'failures' => ['composer.json is not valid JSON.'],
             ];
         }
@@ -187,6 +200,7 @@ final class ApplicationChecker
         if (!is_array($composer)) {
             return [
                 'directory' => null,
+                'composer' => null,
                 'failures' => ['composer.json must contain a JSON object.'],
             ];
         }
@@ -194,7 +208,7 @@ final class ApplicationChecker
         $scriptFailures = $this->composerContractFailures($composer);
 
         if ($scriptFailures !== []) {
-            return ['directory' => null, 'failures' => $scriptFailures];
+            return ['directory' => null, 'composer' => null, 'failures' => $scriptFailures];
         }
 
         $configuredDirectory = 'vendor';
@@ -204,6 +218,7 @@ final class ApplicationChecker
             if (!is_string($config['vendor-dir']) || $config['vendor-dir'] === '') {
                 return [
                     'directory' => null,
+                    'composer' => null,
                     'failures' => ['composer.json config.vendor-dir must be a non-empty string.'],
                 ];
             }
@@ -219,6 +234,7 @@ final class ApplicationChecker
         if (!is_string($resolved) || !is_dir($resolved)) {
             return [
                 'directory' => null,
+                'composer' => null,
                 'failures' => ['Install Composer dependencies before running `phpthis check`.'],
             ];
         }
@@ -226,11 +242,12 @@ final class ApplicationChecker
         if ($resolved === $projectRoot) {
             return [
                 'directory' => null,
+                'composer' => null,
                 'failures' => ['The Composer vendor directory must not be the project root.'],
             ];
         }
 
-        return ['directory' => $resolved, 'failures' => []];
+        return ['directory' => $resolved, 'composer' => $composer, 'failures' => []];
     }
 
     /**
@@ -274,6 +291,96 @@ final class ApplicationChecker
         }
 
         return $failures;
+    }
+
+    /**
+     * @param array<array-key, mixed> $composer
+     * @param list<string> $environmentKeys
+     * @return list<string>
+     */
+    private function composerScriptConfigurationFailures(array $composer, array $environmentKeys): array
+    {
+        $scripts = $composer['scripts'] ?? null;
+
+        if (!is_array($scripts) || $environmentKeys === []) {
+            return [];
+        }
+
+        $failures = [];
+
+        foreach ($scripts as $script) {
+            $commands = is_string($script) ? [$script] : $script;
+
+            if (!is_array($commands)) {
+                continue;
+            }
+
+            foreach ($commands as $command) {
+                if (!is_string($command)) {
+                    continue;
+                }
+
+                foreach ($environmentKeys as $environmentKey) {
+                    if (!$this->composerCommandContainsEnvironmentMutationText($command, $environmentKey)) {
+                        continue;
+                    }
+
+                    $failures[] = sprintf(
+                        'composer.json scripts must not contain assignment or mutation text for application configuration input %s; keep Composer command text value-free and supply configuration at the outer process boundary.',
+                        $environmentKey,
+                    );
+                }
+            }
+        }
+
+        return array_values(array_unique($failures));
+    }
+
+    private function composerCommandContainsEnvironmentMutationText(
+        string $command,
+        string $environmentKey,
+    ): bool
+    {
+        $key = preg_quote($environmentKey, '/');
+        $keyArgument = '(?:["\']?)' . $key . '(?:["\']?)(?![A-Za-z0-9_])';
+        $setxArgument = '(?:"[^"\r\n]*"|\'[^\'\r\n]*\'|[^\s;&|]+)';
+        $setxPrefix = '(?:(?:\/[sup][ \t]+' . $setxArgument . '|\/m)[ \t]+)*';
+        $patterns = [
+            '/(?<![A-Za-z0-9_])' . $key . '[ \t]*(?:\+?=)/i',
+            '/\$\{[ \t]*env:' . $key . '[ \t]*\}[ \t]*(?:\+?=)/i',
+            '/(?<![A-Za-z0-9_])@putenv[ \t]+' . $keyArgument . '/i',
+            '/(?<![A-Za-z0-9_])(?:export|unset)(?:[ \t]+(?:-[A-Za-z]+|--))*[ \t]+' . $keyArgument . '/i',
+            '/(?<![A-Za-z0-9_])setx(?:\.exe)?\b[ \t]+' . $setxPrefix . $keyArgument . '(?=[ \t]|$)/i',
+            '/(?<![A-Za-z0-9_])env\b[^\r\n;&|]{0,128}(?:-u[ \t]*|--unset(?:[ \t]+|=))' . $keyArgument . '/i',
+            '/\[(?:System\.)?Environment\]::SetEnvironmentVariable\(\s*(?:["\'])' . $key . '(?:["\'])/i',
+            '/(?<![A-Za-z0-9_\\\\])\\\\?putenv\s*\(\s*(?:assignment\s*:\s*)?(?:["\'])' . $key . '(?:=|["\'])/i',
+            '/\$_(?:ENV|SERVER)\s*\[\s*(?:["\'])' . $key . '(?:["\'])\s*\]\s*=/i',
+        ];
+
+        foreach (['Remove-Item', 'Clear-Item', 'Set-Item', 'Set-Content', 'New-Item', 'Move-Item', 'Rename-Item'] as $commandName) {
+            $patterns[] = '/(?<![A-Za-z0-9_])' . preg_quote($commandName, '/')
+                . '\b[^\r\n;&|]{0,256}Env:\\\\?' . $key . '(?![A-Za-z0-9_])/i';
+        }
+
+        foreach (['New-Item' => 'Name', 'Rename-Item' => 'NewName'] as $commandName => $parameterName) {
+            $patterns[] = '/(?<![A-Za-z0-9_])' . preg_quote($commandName, '/')
+                . '\b(?=[^\r\n;&|]{0,256}Env:)(?=[^\r\n;&|]{0,256}-'
+                . $parameterName . '[ \t]+' . $keyArgument . ')[^\r\n;&|]{0,256}/i';
+        }
+
+        foreach (['Copy-Item', 'Move-Item'] as $commandName) {
+            $patterns[] = '/(?<![A-Za-z0-9_])' . preg_quote($commandName, '/')
+                . '\b(?=[^\r\n;&|]{0,256}Env:)(?=[^\r\n;&|]{0,256}-Destination[ \t]+'
+                . '(?:["\']?)Env:\\\\?' . $key . '(?:["\']?)(?![A-Za-z0-9_]))[^\r\n;&|]{0,256}/i';
+        }
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $command) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isNonEmptyComposerScript(mixed $script): bool

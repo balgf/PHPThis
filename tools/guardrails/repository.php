@@ -805,6 +805,7 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
         ],
         'tools/test-consumer-project/configuration.php' => [
             'proveInstalledTypedConfiguration',
+            'proveComposerScriptsCannotAssignApplicationConfiguration',
             'proveInstalledConfigurationEvidenceReference',
         ],
         'tools/test-consumer-project/local-environment-launcher.php' => [
@@ -3295,6 +3296,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/decisions/052-backend-neutral-application-owned-durable-jobs.md',
         'docs/decisions/053-application-owned-amazon-s3-file-transfers.md',
         'docs/decisions/054-bounded-alpha-7-release-scope.md',
+        'docs/decisions/055-value-free-composer-configuration-scripts.md',
         'example/AGENTS.md',
         'example/.ai/README.md',
         'example/.ai/cache.md',
@@ -3668,8 +3670,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 18",
-            "'manifest_sha256' => '752076aa0779f24d7e8c8ac380065bd872a4a623ad1c3b0dcc151c99d54b8706'",
+            "'revision' => 19",
+            "'manifest_sha256' => '9903a40a751055e059d25d10e7bf3350ee1cf9a118bab65f10462f758b145e5d'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -3699,10 +3701,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 18',
+            '"revision": 19',
             '"source-skeleton"',
-            '"tree": "f84355cb58415b77571e87e75da4bf5bdb1f6d19"',
-            '"fixture_sha256": "1ea9fdb0df7ab8c915b712330b796c596b97dc49eccb4e28924c9223cf22ec4b"',
+            '"tree": "285381a0b7c36796b41f11d51b372471194746ed"',
+            '"fixture_sha256": "48b535d2ca61c9b9feb0c37516ec559ed053244853a357df2f91385bd8be13d7"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -3832,7 +3834,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 18 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 19 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -3842,8 +3844,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 18;',
-            'Controller v0.2 supports only change.simple-ping revision 18 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 19;',
+            'Controller v0.2 supports only change.simple-ping revision 19 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
