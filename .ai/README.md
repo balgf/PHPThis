@@ -47,7 +47,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Change an application command or scheduled pass | `.ai/cli.md` | console composition, one-pass operation, and real-console tests |
 | Change database migrations | `.ai/migrations.md` | command, configuration, authority, manifest, ledger, coordination, and exact-engine tests |
 | Change uploads or file responses, or adopt/review Amazon S3 | `.ai/file-transfers.md` | common bounded multipart policy plus exactly one `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile and its complete application evidence |
-| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051's exact optional level/envelope/destination policy without changing request-summary v1/v2 or Contract v13 |
+| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051's exact optional level/envelope/destination policy without changing request-summary v1/v2 or Contract v14 |
 | Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, typed operation, and real socket tests |
 | Change the optional development Workbench | `.ai/workbench.md` | separate package, checked bootstrap, explicit workspace, and retained tests |
 | Change CRUD-shaped reference structure | `.ai/crud.md` | canonical current tree, implemented operations, routes, and behavior tests |

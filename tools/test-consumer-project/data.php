@@ -826,8 +826,10 @@ function proveInstalledUuidAndUlidRouting(string $project, array $environment): 
 
 declare(strict_types=1);
 
+use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestHandler;
+use PHPThis\Http\RequestReader;
 use PHPThis\Http\Response;
 use PHPThis\Routing\Route;
 use PHPThis\Routing\Router;
@@ -840,9 +842,12 @@ $handler = new class implements RequestHandler {
         return new Response(204, [], '');
     }
 };
+$encodedPath = '/raw/%00/%20/%7F/%2F/%3F/%23';
+$encodedRoute = new Route('GET', $encodedPath, $handler);
 $router = new Router([
     new Route('GET', '/accounts/{account_id:uuid}', $handler),
     new Route('POST', '/events/{event_id:ulid}', $handler),
+    $encodedRoute,
 ]);
 $validUuids = [
     '123e4567-e89b-12d3-8456-426614174000',
@@ -869,6 +874,11 @@ $invalidUuids = [
 ];
 $ulid = '01arz3ndektsv4rrffq69g5fav';
 $ulidMatch = $router->match(new Request('POST', '/events/' . $ulid));
+$encodedRequest = (new RequestReader(1, 'php://memory'))->read(
+    ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $encodedPath . '?value=%0A?tail'],
+    ['value' => "\n"],
+);
+$encodedMatch = $router->match($encodedRequest);
 
 foreach ($validUuids as $uuid) {
     $uuidMatch = $router->match(new Request('GET', '/accounts/' . $uuid));
@@ -889,10 +899,79 @@ foreach ($invalidUuids as $uuid) {
     }
 }
 
+$reader = new RequestReader(1, 'php://memory');
+
+foreach ([...range(0x00, 0x20), 0x7F] as $byte) {
+    foreach ([
+        '/safe' . chr($byte) . 'PrivateMarker',
+        '/safe?value=' . chr($byte) . 'PrivateMarker',
+    ] as $requestTarget) {
+        try {
+            $reader->read(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $requestTarget], []);
+        } catch (InvalidRequest $failure) {
+            if (
+                $failure->getMessage()
+                    !== 'REQUEST_URI has an invalid or oversized request-target representation.'
+                || str_contains($failure->getMessage(), 'PrivateMarker')
+            ) {
+                throw new RuntimeException('Installed RequestReader returned an unsafe diagnostic.');
+            }
+
+            continue;
+        }
+
+        throw new RuntimeException('Installed RequestReader accepted a prohibited raw target byte.');
+    }
+
+    $requestRejected = false;
+
+    try {
+        new Request('GET', '/safe' . chr($byte) . 'PrivateMarker');
+    } catch (InvalidArgumentException $failure) {
+        if (
+            $failure->getMessage()
+                !== 'Request path must be absolute and contain no query, fragment, raw space, control, or DEL byte.'
+            || str_contains($failure->getMessage(), 'PrivateMarker')
+        ) {
+            throw new RuntimeException('Installed Request returned an unsafe path diagnostic.');
+        }
+
+        $requestRejected = true;
+    }
+
+    if (!$requestRejected) {
+        throw new RuntimeException('Installed Request accepted a prohibited raw path byte.');
+    }
+
+    foreach ([
+        '/literal' . chr($byte) . 'PrivateMarker',
+        '/accounts/{account_id:uuid}/documents' . chr($byte) . 'PrivateMarker',
+    ] as $routePath) {
+        try {
+            new Route('GET', $routePath, $handler);
+        } catch (InvalidArgumentException $failure) {
+            if (
+                $failure->getMessage()
+                    !== 'Route path must be absolute and contain no query, fragment, raw space, control, or DEL byte.'
+                || str_contains($failure->getMessage(), 'PrivateMarker')
+            ) {
+                throw new RuntimeException('Installed Route returned an unsafe path diagnostic.');
+            }
+
+            continue;
+        }
+
+        throw new RuntimeException('Installed Route accepted a prohibited raw path byte.');
+    }
+}
+
 if (
     $ulidMatch?->pathParameters->ulid('event_id') !== $ulid
     || $router->match(new Request('POST', '/events/' . strtoupper($ulid))) !== null
     || $router->allowedMethodsForPath('/events/' . $ulid) !== ['POST']
+    || $encodedRequest->path !== $encodedPath
+    || $encodedRequest->query !== ['value' => "\n"]
+    || $encodedMatch?->route !== $encodedRoute
 ) {
     throw new RuntimeException('Installed UUID and ULID routing did not preserve the canonical contract.');
 }

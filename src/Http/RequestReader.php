@@ -70,9 +70,9 @@ final readonly class RequestReader
         }
         if (
             strlen($requestTargetValue) > self::MAXIMUM_REQUEST_TARGET_BYTES
-            || str_contains($requestTargetValue, '#')
+            || str_contains($requestTargetValue, '#') || preg_match('/[\x00-\x20\x7F]/', $requestTargetValue) === 1
         ) {
-            throw new InvalidRequest('REQUEST_URI exceeds the accepted path representation.');
+            throw new InvalidRequest('REQUEST_URI has an invalid or oversized request-target representation.');
         }
         $queryPosition = strpos($requestTargetValue, '?');
         $path = $queryPosition === false

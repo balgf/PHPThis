@@ -81,6 +81,16 @@ function httpBoundaryBehaviorTests(): Generator
         ],
         ['page' => '1', 'filter' => ['active' => '1']],
     );
+    $retainedPath = "/a//../raw\\\x80/%00/%20/%7F/%2F/%3F/%23";
+    $retainedRequest = requestReaderForBody('', 8)->read(
+        ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $retainedPath . '?value=%0A?tail'],
+        ['value' => "\n"],
+    );
+    $maximumTarget = '/' . str_repeat('a', 8_191);
+    $maximumTargetRequest = requestReaderForBody('', 8)->read(
+        ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $maximumTarget],
+        [],
+    );
 
     if (
         $request->method !== 'POST'
@@ -93,6 +103,9 @@ function httpBoundaryBehaviorTests(): Generator
             'accept' => 'application/json',
             'x-request-source' => 'test-suite',
         ]
+        || $retainedRequest->path !== $retainedPath
+        || $retainedRequest->query !== ['value' => "\n"]
+        || $maximumTargetRequest->path !== $maximumTarget
     ) {
         throw new RuntimeException('Expected one normalized immutable request from PHP runtime values.');
     }
@@ -152,6 +165,47 @@ function httpBoundaryBehaviorTests(): Generator
         }
 
         throw new RuntimeException('Expected malformed PHP runtime metadata to be rejected.');
+    }
+
+    $invalidPathBytes = [...range(0x00, 0x20), 0x7F];
+
+    foreach ($invalidPathBytes as $byte) {
+        foreach ([
+            '/safe' . chr($byte) . 'PrivateMarker',
+            '/safe?value=' . chr($byte) . 'PrivateMarker',
+        ] as $requestTarget) {
+            try {
+                $reader->read(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $requestTarget], []);
+            } catch (InvalidRequest $failure) {
+                if (
+                    $failure->getMessage()
+                        !== 'REQUEST_URI has an invalid or oversized request-target representation.'
+                    || str_contains($failure->getMessage(), 'PrivateMarker')
+                ) {
+                    throw new RuntimeException('Expected one fixed redacted request-target diagnostic.');
+                }
+
+                continue;
+            }
+
+            throw new RuntimeException('Expected every prohibited raw request-target byte to be rejected.');
+        }
+
+        try {
+            new Request('GET', '/safe' . chr($byte) . 'PrivateMarker');
+        } catch (InvalidArgumentException $failure) {
+            if (
+                $failure->getMessage()
+                    !== 'Request path must be absolute and contain no query, fragment, raw space, control, or DEL byte.'
+                || str_contains($failure->getMessage(), 'PrivateMarker')
+            ) {
+                throw new RuntimeException('Expected one fixed redacted request-path diagnostic.');
+            }
+
+            continue;
+        }
+
+        throw new RuntimeException('Expected every prohibited direct request-path byte to be rejected.');
     }
 };
 
@@ -246,13 +300,24 @@ function httpBoundaryBehaviorTests(): Generator
         }
     };
     $knownBoundary = new RequestBoundary(requestReaderForBody('', 8), $handler, $registry);
-    $mapped = $knownBoundary->handle(['REQUEST_METHOD' => [], 'REQUEST_URI' => '/'], []);
+    $mappedResponses = [
+        $knownBoundary->handle(['REQUEST_METHOD' => [], 'REQUEST_URI' => '/'], []),
+        $knownBoundary->handle(
+            ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => "/safe\nPrivateMarker"],
+            [],
+        ),
+        $knownBoundary->handle(
+            ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => "/safe?value=\x7FPrivateMarker"],
+            [],
+        ),
+    ];
 
     if (
-        $mapped !== $knownResponse
+        $mappedResponses !== [$knownResponse, $knownResponse, $knownResponse]
         || $handler->called
         || $registry->responseFor(new UnexpectedValueException('internal projection failure')) !== null
         || $registry->responseFor(new QueryBudgetExceeded('internal query limit')) !== null
+        || str_contains($knownResponse->body, 'PrivateMarker')
     ) {
         throw new RuntimeException('Expected exact known-error mapping without broad exception matches.');
     }

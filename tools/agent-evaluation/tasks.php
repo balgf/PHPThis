@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 const AGENT_EVALUATION_TASK_REVISIONS = [
     'change.simple-ping' => [
-        'revision' => 19,
-        'manifest_sha256' => '9903a40a751055e059d25d10e7bf3350ee1cf9a118bab65f10462f758b145e5d',
+        'revision' => 20,
+        'manifest_sha256' => 'aab0113c0987b68803792aafa5ebbaaab7f5bfd2606b0a916ae11959959aa326',
     ],
 ];
 

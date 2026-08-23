@@ -272,7 +272,7 @@ PHP;
             'The accepted core ceiling is 2,620 physical lines',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 13',
+            'Contract version: 14',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
@@ -515,7 +515,7 @@ PHP;
             '`032-explicit-uuid-and-ulid-route-types.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 13',
+            'Contract version: 14',
             'This is the canonical contract for an application built with the installed PHPThis version.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
             '`positive-int`, `token`, `uuid`, or `ulid`',
@@ -593,6 +593,101 @@ PHP;
 
     requireGuardrailArtifactMarkers($root, $routingArtifactMarkers, 'typed routing', $failures);
 
+    $requestTargetAndPathArtifactMarkers = [
+        'docs/decisions/056-bounded-request-target-and-path-bytes.md' => [
+            '# ADR 056: Bounded request-target and path bytes',
+            'Status: accepted',
+            'bytes `0x00` through `0x20`, inclusive, and byte `0x7F` are invalid',
+            'REQUEST_URI has an invalid or oversized request-target representation.',
+            'Request path must be absolute and contain no query, fragment, raw space, control, or DEL byte.',
+            'Route path must be absolute and contain no query, fragment, raw space, control, or DEL byte.',
+            'Consumer Contract version 14 carries version 13 forward with this compatibility change.',
+            '2,618-line core under the accepted 2,620-line ceiling unchanged',
+        ],
+        'docs/decisions/README.md' => [
+            '`056-bounded-request-target-and-path-bytes.md`',
+            'Accepted [ADR 056](056-bounded-request-target-and-path-bytes.md) coordinates Consumer Contract version 14',
+        ],
+        'docs/consumer-contract.md' => [
+            'Contract version: 14',
+            '### Contract version 14',
+            'The complete target, including its query suffix, is at most 8,192 bytes',
+            'A directly constructed `Request` or `Route` receives a path-only value',
+            'percent spellings, slashes, repeated slashes, dot segments, backslashes, and bytes `0x80` through `0xFF` remain raw',
+        ],
+        '.ai/request-boundary.md' => [
+            'Validate the complete raw `REQUEST_URI`, including its query suffix, before splitting at the first `?`.',
+            'reject exactly raw bytes `0x00` through `0x20` and `0x7F`',
+        ],
+        '.ai/routing.md' => [
+            'contains no `?`, `#`, raw byte from `0x00` through `0x20`, or raw `0x7F`',
+            'Direct `Request` paths apply the same path-only byte exclusions',
+        ],
+        '.ai/strict-profile.md' => [
+            "Version 14's raw request-target and path byte rejection",
+            'they are not part of PHT007.',
+        ],
+        '.ai/static-analysis.md' => [
+            "Treat Consumer Contract v14's raw request-target/path byte rejection",
+            'rejection before routing or handler work',
+        ],
+        'docs/request-handling.md' => [
+            'validate the complete raw `REQUEST_URI`, including its query suffix',
+            'Percent spellings remain raw.',
+        ],
+        'docs/architecture.md' => [
+            'It validates the complete raw `REQUEST_URI`, including its query suffix',
+            'Direct `Route` declarations and direct `Request` construction require path-only values',
+        ],
+        'docs/security.md' => [
+            'validate the complete raw `REQUEST_URI` before its first-`?` split',
+            'Do not depend on a server or proxy to reject these bytes',
+        ],
+        'docs/getting-started.md' => [
+            'contract-version-14 Composer scripts',
+            'remove raw bytes `0x00` through `0x20` and `0x7F` from request targets and paths',
+        ],
+        'src/Http/RequestReader.php' => [
+            "preg_match('/[\\x00-\\x20\\x7F]/', \$requestTargetValue) === 1",
+            'REQUEST_URI has an invalid or oversized request-target representation.',
+        ],
+        'src/Http/Request.php' => [
+            "preg_match('/[\\x00-\\x20\\x7F]/', \$path) === 1",
+            'Request path must be absolute and contain no query, fragment, raw space, control, or DEL byte.',
+        ],
+        'src/Routing/Route.php' => [
+            "preg_match('/[\\x00-\\x20\\x7F]/', \$path) === 1",
+            'Route path must be absolute and contain no query, fragment, raw space, control, or DEL byte.',
+        ],
+        'tests/http-boundary.php' => [
+            '$invalidPathBytes = [...range(0x00, 0x20), 0x7F];',
+            "'?value=%0A?tail'",
+            'Expected every prohibited direct request-path byte to be rejected.',
+        ],
+        'tests/routing.php' => [
+            '/raw/%00/%20/%7F/%2F/%3F/%23',
+            "'/accounts/{account_id:positive-int}/documents' . chr(\$byte)",
+            'Expected every prohibited route-path byte to be rejected.',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            '$encodedPath = \'/raw/%00/%20/%7F/%2F/%3F/%23\';',
+            "'/accounts/{account_id:uuid}/documents' . chr(\$byte)",
+            'Installed RequestReader accepted a prohibited raw target byte.',
+            'Installed Request accepted a prohibited raw path byte.',
+            'Installed Route accepted a prohibited raw path byte.',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/056-bounded-request-target-and-path-bytes.md',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $requestTargetAndPathArtifactMarkers,
+        'request-target and path bytes',
+        $failures,
+    );
+
     $requestHandlerDecoratorArtifactMarkers = [
         'docs/decisions/033-application-owned-request-handler-decorators.md' => [
             'Status: accepted',
@@ -609,7 +704,7 @@ PHP;
             '`033-application-owned-request-handler-decorators.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 13',
+            'Contract version: 14',
             '## Optional application-owned request-handler decorators',
             'The decorator is composed only as the handler of an explicit `Route`.',
             'zero downstream calls or call its one downstream handler exactly once',
@@ -709,7 +804,7 @@ PHP;
             'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 13',
+            'Contract version: 14',
             '## Application-owned WebSocket profile',
             'PHPThis has no WebSocket runtime or core WebSocket API.',
             'Frames never become PHPThis HTTP `Request` or `Response` values',
@@ -745,7 +840,7 @@ PHP;
         ],
         'docs/guardrails.md' => [
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
-            'keeps `.ai/websockets.md` optional under current Contract version 13 as well as its originating Contract version 9',
+            'keeps `.ai/websockets.md` optional under current Contract version 14 as well as its originating Contract version 9',
         ],
         'VISION.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',
@@ -2694,7 +2789,7 @@ PHP;
 
     $observabilityArtifactMarkers = [
         '.ai/README.md' => [
-            '| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051\'s exact optional level/envelope/destination policy without changing request-summary v1/v2 or Contract v13 |',
+            '| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051\'s exact optional level/envelope/destination policy without changing request-summary v1/v2 or Contract v14 |',
         ],
         '.ai/observability.md' => [
             'application.request_summary',
@@ -2728,6 +2823,7 @@ PHP;
             'Adopt or review log levels, destination-record encoding, daily files, stdout/stderr, or Grafana delivery',
             '`docs/observability/destination-record.md`',
             'ADR 051',
+            'preserve request-summary v1/v2 and Contract v14',
         ],
         'docs/logging.md' => [
             '[0-9a-f]{32}',
@@ -2748,6 +2844,7 @@ PHP;
             '`tests/observability.php`',
             '[Destination-record reference](destination-record.md)',
             'do not mistake the encoder proof for destination-I/O certification',
+            'preserve request-summary v1/v2 and Contract v14',
         ],
         'docs/observability/correlation-id.md' => [
             '[0-9a-f]{32}',

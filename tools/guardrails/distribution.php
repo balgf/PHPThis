@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 220) {
-            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 220 reviewed files after adding application-owned operation-coordination guidance and the value-free Composer configuration decision; immutable Alpha 7 remains the historical 218-file artifact.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 221) {
+            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 221 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, and the bounded request-target/path correction; immutable Alpha 7 remains the historical 218-file artifact.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -1232,8 +1232,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 13$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 13.';
+            if (preg_match('/^Contract version: 14$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 14.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -1493,8 +1493,8 @@ function distributionGuardrailFailures(
                 $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
             }
 
-            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v13 and Strict Profile v3 are the minimum accepted rules')) {
-                $failures[] = 'Application AGENTS.md must identify Consumer Contract v13 and Strict Profile v3 as the minimum accepted rules.';
+            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v14 and Strict Profile v3 are the minimum accepted rules')) {
+                $failures[] = 'Application AGENTS.md must identify Consumer Contract v14 and Strict Profile v3 as the minimum accepted rules.';
             }
         }
     }
@@ -1510,9 +1510,9 @@ function distributionGuardrailFailures(
             !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
             || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
             || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
-            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v13 and Strict Profile v3 are the minimum accepted rules')
+            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v14 and Strict Profile v3 are the minimum accepted rules')
         ) {
-            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v13 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v14 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
         }
     }
 

@@ -27,9 +27,9 @@ final readonly class Route
             $path === ''
             || $path[0] !== '/'
             || str_contains($path, '?')
-            || str_contains($path, '#')
+            || str_contains($path, '#') || preg_match('/[\x00-\x20\x7F]/', $path) === 1
         ) {
-            throw new InvalidArgumentException('Route path must be an absolute path without query or fragment.');
+            throw new InvalidArgumentException('Route path must be absolute and contain no query, fragment, raw space, control, or DEL byte.');
         }
 
         $segments = [];

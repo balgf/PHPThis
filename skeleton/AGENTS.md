@@ -29,7 +29,7 @@ Ordinary implementation starts with one current operational guide. Read an ADR o
 
 ## Authority and safety
 
-- Consumer Contract v13 and Strict Profile v3 are the minimum accepted rules.
+- Consumer Contract v14 and Strict Profile v3 are the minimum accepted rules.
 - Application `.ai/` guides add verified project facts and may strengthen but never weaken the installed contract.
 - Preserve the installed contract when project guidance conflicts, report the conflict, and distinguish installed behavior, application policy, and proposals.
 - Never invent product intent, human approval, external-system facts, or unsupported PHPThis behavior.

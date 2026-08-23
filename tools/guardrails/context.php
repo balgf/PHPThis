@@ -307,7 +307,7 @@ function contextGuardrailFailures(string $root): array
             '`045-bounded-session-cleanup-and-response-framing.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 13',
+            'Contract version: 14',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
             '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
@@ -328,7 +328,7 @@ function contextGuardrailFailures(string $root): array
             'do not log, retry, suppress, or map it inside session code.',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 13 carries Strict Profile version 3 forward unchanged.',
+            'Consumer Contract version 14 carries version 13 forward and retains Strict Profile version 3 unchanged.',
             "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, and ADR 053's application-owned optional S3 profile remain contract behavior; they are not part of PHT007.",
         ],
         '.ai/testing.md' => [
@@ -1339,12 +1339,12 @@ function contextGuardrailFailures(string $root): array
     );
 
     $currentConsumerContractVersionMarkers = [
-        'docs/consumer-contract.md' => 'Contract version: 13',
-        'docs/getting-started.md' => 'contract-version-13 Composer scripts',
-        'skeleton/.ai/README.md' => 'Consumer Contract v13 and Strict Profile v3 remain mandatory.',
-        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v13 and Strict Profile v3',
-        'templates/application/.ai/README.md' => 'Consumer Contract v13 and Strict Profile v3 remain mandatory.',
-        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v13 and Strict Profile v3',
+        'docs/consumer-contract.md' => 'Contract version: 14',
+        'docs/getting-started.md' => 'contract-version-14 Composer scripts',
+        'skeleton/.ai/README.md' => 'Consumer Contract v14 and Strict Profile v3 remain mandatory.',
+        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v14 and Strict Profile v3',
+        'templates/application/.ai/README.md' => 'Consumer Contract v14 and Strict Profile v3 remain mandatory.',
+        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v14 and Strict Profile v3',
     ];
 
     foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1812,8 +1812,8 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 220',
-            'current post-Alpha-7 release inventory must contain exactly 220 reviewed files',
+            'count($packagePaths) !== 221',
+            'current post-Alpha-7 release inventory must contain exactly 221 reviewed files',
             'immutable Alpha 7 remains the historical 218-file artifact',
         ],
         'tools/guardrails/repository.php' => [

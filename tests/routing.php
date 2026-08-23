@@ -54,6 +54,10 @@ function routingBehaviorTests(): Generator
     );
     $retainedRoute = new Route('GET', '/users//{user_id:positive-int}', $handler);
     $retainedMatch = (new Router([$retainedRoute]))->match(new Request('GET', '/users//7'));
+    $percentRoute = new Route('GET', '/raw/%00/%20/%7F/%2F/%3F/%23', $handler);
+    $percentMatch = (new Router([$percentRoute]))->match(
+        new Request('GET', '/raw/%00/%20/%7F/%2F/%3F/%23'),
+    );
     $segments = $nestedRoute->segments();
 
     if (
@@ -69,6 +73,7 @@ function routingBehaviorTests(): Generator
         || $segments[4]->parameterType !== RouteParameterType::Token
         || $retainedMatch?->route !== $retainedRoute
         || $retainedMatch->pathParameters->positiveInteger('user_id') !== 7
+        || $percentMatch?->route !== $percentRoute
     ) {
         throw new RuntimeException('Expected explicit typed route declarations to remain inspectable.');
     }
@@ -92,6 +97,29 @@ function routingBehaviorTests(): Generator
         }
 
         throw new RuntimeException("Expected invalid typed route declaration to fail: {$path}");
+    }
+
+    foreach ([...range(0x00, 0x20), 0x7F] as $byte) {
+        foreach ([
+            '/literal' . chr($byte) . 'PrivateMarker',
+            '/accounts/{account_id:positive-int}/documents' . chr($byte) . 'PrivateMarker',
+        ] as $path) {
+            try {
+                new Route('GET', $path, $handler);
+            } catch (InvalidArgumentException $failure) {
+                if (
+                    $failure->getMessage()
+                        !== 'Route path must be absolute and contain no query, fragment, raw space, control, or DEL byte.'
+                    || str_contains($failure->getMessage(), 'PrivateMarker')
+                ) {
+                    throw new RuntimeException('Expected one fixed redacted route-path diagnostic.');
+                }
+
+                continue;
+            }
+
+            throw new RuntimeException('Expected every prohibited route-path byte to be rejected.');
+        }
     }
 };
 
@@ -123,8 +151,6 @@ function routingBehaviorTests(): Generator
         '-1',
         '+1',
         '01',
-        ' 1',
-        '1 ',
         '1e2',
         (string) PHP_INT_MAX . '0',
         str_repeat('9', strlen((string) PHP_INT_MAX)),
@@ -187,8 +213,6 @@ function routingBehaviorTests(): Generator
         'contains.dot',
         'contains~tilde',
         'contains:colon',
-        'contains space',
-        "contains\tcontrol",
         'unicode-é',
         '%41',
         'abc%2Fdef',
