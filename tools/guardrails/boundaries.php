@@ -102,7 +102,7 @@ PHP;
         '.ai/testing.md' => [
             'exactly twelve declaration-only modules',
             '`amazon-s3-file-transfers.php`',
-            'exact 51-proof-call order',
+            'exact 52-proof-call order',
             'without installing or loading AWS code or contacting a service',
         ],
         'docs/decisions/053-application-owned-amazon-s3-file-transfers.md' => [

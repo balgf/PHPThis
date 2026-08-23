@@ -720,6 +720,10 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
             'requireStdoutNotContains',
             'advisoryOutput',
             'expectedArchiveFiles',
+            'gitExportParityResultLine',
+            'gitExportParityFixtureEnvironment',
+            'createGitExportParityFixture',
+            'proveGitExportParityStates',
             'verifyExportPolicies',
             'archiveFiles',
             'directoryFiles',
@@ -946,6 +950,7 @@ function consumerProjectHarnessModuleStructure(string $source): array
 function consumerProjectHarnessExpectedProofCalls(): array
 {
     return [
+        'proveGitExportParityStates',
         'proveInstalledGuidanceReferencesResolve',
         'proveInstalledReleaseGuidanceDistribution',
         'proveInstalledReferenceClarityDistribution',
@@ -1004,6 +1009,7 @@ function consumerProjectHarnessExpectedProofCalls(): array
 function consumerProjectHarnessExpectedProofStatements(): array
 {
     return [
+        'proveGitExportParityStates' => 'proveGitExportParityStates($workspace,$environment);',
         'proveInstalledGuidanceReferencesResolve' => 'proveInstalledGuidanceReferencesResolve($root,$workspace,$archivePath,$composerBinary,$environment);',
         'proveInstalledReleaseGuidanceDistribution' => 'proveInstalledReleaseGuidanceDistribution($installedFramework);',
         'proveInstalledReferenceClarityDistribution' => 'proveInstalledReferenceClarityDistribution($installedFramework);',
@@ -1158,6 +1164,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
             'dirname',
             'expectedArchiveFiles',
             'fwrite',
+            'gitExportParityResultLine',
             'inventoryDifference',
             'is_dir',
             'is_executable',
@@ -1352,7 +1359,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === '37031bcbdf494ff76b801e8e19d4a218ab7a3c98f7de716503b73d4cfd247eda';
+            === '7f03c05bc63b5f6d581c414831bc0179afbed0a59dbe0c309317074131c6af0f';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -1433,13 +1440,7 @@ function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $
 function consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical(string $source): bool
 {
     $terminalLifecycle = <<<'PHP'
-    fwrite(
-        STDOUT,
-        sprintf(
-            "PASS isolated consumer: %d release files, clean install, complete check, and adversarial controls\n",
-            count($archiveFiles),
-        ),
-    );
+    fwrite(STDOUT, gitExportParityResultLine(count($archiveFiles), $gitExportParity));
 } finally {
     removeDirectory($workspace);
 }
@@ -1666,6 +1667,126 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     $entrypoint = $sources[$entrypointPath];
+    $gitExportParitySupport = $sources['tools/test-consumer-project/support.php'];
+    $gitExportParitySupportMarkers = [
+        "@param 'verified'|'skipped-dirty' \$state",
+        'function gitExportParityResultLine(int $releaseFiles, string $state): string',
+        'git-export-parity=verified\\n',
+        'git-export-parity=skipped-dirty; not release evidence\\n',
+        'function gitExportParityFixtureEnvironment(',
+        'function createGitExportParityFixture(',
+        'function proveGitExportParityStates(string $workspace, array $environment): void',
+        "'GIT_ATTR_NOSYSTEM'",
+        "'GIT_CONFIG_COUNT'",
+        "'GIT_CONFIG_GLOBAL'",
+        "'GIT_CONFIG_NOSYSTEM'",
+        "'GIT_CONFIG_PARAMETERS'",
+        "'GIT_CONFIG_SYSTEM'",
+        "'GIT_TEMPLATE_DIR'",
+        "'XDG_CONFIG_HOME'",
+        "str_starts_with(\$name, 'GIT_CONFIG_KEY_')",
+        "str_starts_with(\$name, 'GIT_CONFIG_VALUE_')",
+        "\$hostileEnvironment['GIT_CONFIG_KEY_0'] = 'commit.gpgSign';",
+        "\$hostileEnvironment['GIT_CONFIG_VALUE_1'] = '/definitely/missing-gpg';",
+        "\$hostileEnvironment['GIT_CONFIG_KEY_2'] = 'core.excludesFile';",
+        "\$hostileEnvironment['GIT_CONFIG_KEY_3'] = 'core.hooksPath';",
+        "\$hostileEnvironment['GIT_CONFIG_KEY_4'] = 'init.templateDir';",
+        "\$hostileEnvironment['GIT_CONFIG_KEY_5'] = 'core.attributesFile';",
+        "['git', 'add', '--force', '--all']",
+        "['git', 'add', '--force', 'included.txt']",
+        "'core.hooksPath=' . \$emptyHooks",
+        "'--no-gpg-sign'",
+        "'--no-verify'",
+        'A clean temporary repository must verify Git-export parity.',
+        'A tracked dirty temporary repository must skip Git-export parity.',
+        'A staged dirty temporary repository must skip Git-export parity.',
+        'An untracked dirty temporary repository must skip Git-export parity.',
+        'file_exists($trackedArchiveWorkspace . \'/git-export.tar\')',
+        'file_exists($stagedArchiveWorkspace . \'/git-export.tar\')',
+        'file_exists($untrackedArchiveWorkspace . \'/git-export.tar\')',
+        'str_contains($skippedLine, $workspace)',
+        'str_contains($skippedLine, $untrackedFilename)',
+        "str_contains(\$skippedLine, 'PrivateUntrackedSourceMarker')",
+        "@return 'verified'|'skipped-dirty'",
+        "['git', 'status', '--porcelain', '--untracked-files=all']",
+        "'--worktree-attributes',",
+        'Unable to determine whether the Git export can be verified.',
+        'Git release-archive creation failed.',
+        'Git release-archive inspection failed.',
+        "return 'skipped-dirty';",
+        "return 'verified';",
+    ];
+
+    foreach ($gitExportParitySupportMarkers as $gitExportParitySupportMarker) {
+        if (!str_contains($gitExportParitySupport, $gitExportParitySupportMarker)) {
+            $failures[] = "The Git-export parity proof is missing marker: {$gitExportParitySupportMarker}";
+        }
+    }
+
+    if (
+        substr_count($gitExportParitySupport, "\$status['stdout']") !== 1
+        || !str_contains($gitExportParitySupport, "trim(\$status['stdout'])")
+        || str_contains($gitExportParitySupport, "\$status['stderr']")
+        || str_contains($gitExportParitySupport, 'requireSuccess($status')
+        || str_contains($gitExportParitySupport, 'requireSuccess($gitArchive')
+    ) {
+        $failures[] = 'Git-export status and archive failures must remain fixed and private without emitting subprocess bytes.';
+    }
+
+    $gitExportParityProofOffset = strpos(
+        $entrypoint,
+        '    proveGitExportParityStates($workspace, $environment);',
+    );
+    $gitExportParityVerificationOffset = strpos(
+        $entrypoint,
+        '    $gitExportParity = verifyExportPolicies(',
+    );
+    $skeletonPublicationBoundaryOffset = strpos(
+        $entrypoint,
+        '    verifySkeletonPublicationBoundary($root);',
+    );
+    $composerInventoryComparisonOffset = strpos(
+        $entrypoint,
+        '    if ($archiveFiles !== $expectedArchiveFiles) {',
+    );
+    $firstInstalledProofOffset = strpos(
+        $entrypoint,
+        '    proveInstalledGuidanceReferencesResolve(',
+    );
+    $lastInstalledProofOffset = strpos(
+        $entrypoint,
+        '    proveSymlinkedSourceIsRejected($workspace, $project, $profileCommand, $environment);',
+    );
+    $gitExportParityResultOffset = strpos(
+        $entrypoint,
+        '    fwrite(STDOUT, gitExportParityResultLine(count($archiveFiles), $gitExportParity));',
+    );
+
+    if (
+        $gitExportParityProofOffset === false
+        || $gitExportParityVerificationOffset === false
+        || $skeletonPublicationBoundaryOffset === false
+        || $composerInventoryComparisonOffset === false
+        || $firstInstalledProofOffset === false
+        || $lastInstalledProofOffset === false
+        || $gitExportParityResultOffset === false
+    ) {
+        $failures[] = 'The installed-consumer entrypoint is missing its Git-export parity or downstream-proof path.';
+    } elseif (
+        !(
+            $gitExportParityProofOffset < $gitExportParityVerificationOffset
+            && $gitExportParityVerificationOffset < $skeletonPublicationBoundaryOffset
+            && $skeletonPublicationBoundaryOffset < $composerInventoryComparisonOffset
+            && $composerInventoryComparisonOffset < $firstInstalledProofOffset
+            && $firstInstalledProofOffset < $lastInstalledProofOffset
+            && $lastInstalledProofOffset < $gitExportParityResultOffset
+        )
+        || substr_count($entrypoint, '$gitExportParity') !== 2
+        || substr_count($entrypoint, 'verifyExportPolicies(') !== 1
+        || substr_count($entrypoint, 'gitExportParityResultLine(') !== 1
+    ) {
+        $failures[] = 'A skipped-dirty Git-export result must continue through every independent installed-consumer check before the exact terminal result.';
+    }
 
     $protectedFileTransferModule =
         $sources['tools/test-consumer-project/file-transfers.php'];
@@ -1813,7 +1934,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
-        $failures[] = 'The installed-consumer entrypoint must invoke its exact 51 proof functions once, unconditionally, and in the reviewed order.';
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 52 proof functions once, unconditionally, and in the reviewed order.';
     }
 
     if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
@@ -1821,13 +1942,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     $terminalPassStatement = <<<'PHP'
-    fwrite(
-        STDOUT,
-        sprintf(
-            "PASS isolated consumer: %d release files, clean install, complete check, and adversarial controls\n",
-            count($archiveFiles),
-        ),
-    );
+    fwrite(STDOUT, gitExportParityResultLine(count($archiveFiles), $gitExportParity));
 PHP;
     $workspaceCleanupStatement = '    removeDirectory($workspace);';
     $entrypointWithoutCleanup = str_replace($workspaceCleanupStatement, '', $entrypoint);

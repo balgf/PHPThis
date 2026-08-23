@@ -354,16 +354,464 @@ function expectedArchiveFiles(string $root): array
     return $files;
 }
 
+/** @param 'verified'|'skipped-dirty' $state */
+function gitExportParityResultLine(int $releaseFiles, string $state): string
+{
+    if ($state === 'verified') {
+        return sprintf(
+            "PASS isolated consumer: %d release files, clean install, complete check, and adversarial controls; git-export-parity=verified\n",
+            $releaseFiles,
+        );
+    }
+
+    return sprintf(
+        "PASS isolated consumer development checks: %d release files, clean install, complete check, and adversarial controls; git-export-parity=skipped-dirty; not release evidence\n",
+        $releaseFiles,
+    );
+}
+
+/**
+ * @param array<string, string> $environment
+ * @return array{environment: array<string, string>, empty_hooks: non-empty-string}
+ */
+function gitExportParityFixtureEnvironment(
+    string $workspace,
+    array $environment,
+): array {
+    $emptyGlobalConfig = $workspace . '/git-export-empty-global-config';
+    $emptyXdgConfig = $workspace . '/git-export-empty-xdg';
+    $emptyTemplate = $workspace . '/git-export-empty-template';
+    $emptyHooks = $workspace . '/git-export-empty-hooks';
+    writeFile($emptyGlobalConfig, '');
+
+    foreach ([$emptyXdgConfig, $emptyTemplate, $emptyHooks] as $emptyDirectory) {
+        if (!mkdir($emptyDirectory, 0700) && !is_dir($emptyDirectory)) {
+            throw new RuntimeException('Unable to create the isolated Git-export configuration boundary.');
+        }
+    }
+
+    foreach (array_keys($environment) as $name) {
+        if (
+            in_array(
+                $name,
+                [
+                    'GIT_ATTR_NOSYSTEM',
+                    'GIT_CONFIG',
+                    'GIT_CONFIG_COUNT',
+                    'GIT_CONFIG_GLOBAL',
+                    'GIT_CONFIG_NOSYSTEM',
+                    'GIT_CONFIG_PARAMETERS',
+                    'GIT_CONFIG_SYSTEM',
+                    'GIT_DIR',
+                    'GIT_INDEX_FILE',
+                    'GIT_TEMPLATE_DIR',
+                    'GIT_WORK_TREE',
+                    'XDG_CONFIG_HOME',
+                ],
+                true,
+            )
+            || str_starts_with($name, 'GIT_CONFIG_KEY_')
+            || str_starts_with($name, 'GIT_CONFIG_VALUE_')
+        ) {
+            unset($environment[$name]);
+        }
+    }
+
+    $environment['GIT_ATTR_NOSYSTEM'] = '1';
+    $environment['GIT_CONFIG_GLOBAL'] = $emptyGlobalConfig;
+    $environment['GIT_CONFIG_NOSYSTEM'] = '1';
+    $environment['GIT_CONFIG_SYSTEM'] = $emptyGlobalConfig;
+    $environment['GIT_TEMPLATE_DIR'] = $emptyTemplate;
+    $environment['XDG_CONFIG_HOME'] = $emptyXdgConfig;
+
+    return ['environment' => $environment, 'empty_hooks' => $emptyHooks];
+}
+
+/**
+ * @param array<string, string> $environment
+ * @return list<string>
+ */
+function createGitExportParityFixture(
+    string $root,
+    string $emptyHooks,
+    array $environment,
+): array {
+    if (!mkdir($root, 0700, true) && !is_dir($root)) {
+        throw new RuntimeException('Unable to create the Git-export parity fixture.');
+    }
+
+    writeJson($root . '/composer.json', ['archive' => ['exclude' => ['/excluded.txt']]]);
+    writeFile($root . '/.gitattributes', "/excluded.txt export-ignore\n");
+    writeFile($root . '/included.txt', "included\n");
+    writeFile($root . '/excluded.txt', "excluded\n");
+
+    foreach ([
+        ['git', 'init', '--quiet'],
+        ['git', 'config', 'user.email', 'proof@example.invalid'],
+        ['git', 'config', 'user.name', 'PHPThis proof'],
+        ['git', 'add', '--force', '--all'],
+        [
+            'git',
+            '-c',
+            'core.hooksPath=' . $emptyHooks,
+            'commit',
+            '--quiet',
+            '--no-gpg-sign',
+            '--no-verify',
+            '-m',
+            'fixture',
+        ],
+    ] as $command) {
+        if (runProcess($command, $root, $environment)['exit_code'] !== 0) {
+            throw new RuntimeException('Unable to prepare the Git-export parity fixture.');
+        }
+    }
+
+    return ['.gitattributes', 'composer.json', 'included.txt'];
+}
+
+/** @param array<string, string> $environment */
+function proveGitExportParityStates(string $workspace, array $environment): void
+{
+    $hostileGlobalConfig = $workspace . '/git-export-hostile-global-config';
+    $hostileSystemConfig = $workspace . '/git-export-hostile-system-config';
+    $hostileXdgConfig = $workspace . '/git-export-hostile-xdg';
+    $hostileTemplate = $workspace . '/git-export-hostile-template';
+    $hostileHooks = $workspace . '/git-export-hostile-hooks';
+    $hostileExcludes = $workspace . '/git-export-hostile-excludes';
+    $hostileAttributes = $workspace . '/git-export-hostile-attributes';
+    $hostileHook = $hostileHooks . '/pre-commit';
+    $hostileConfiguration = <<<CFG
+[commit]
+    gpgSign = true
+[gpg]
+    program = /definitely/missing-gpg
+[core]
+    excludesFile = {$hostileExcludes}
+    hooksPath = {$hostileHooks}
+    attributesFile = {$hostileAttributes}
+[init]
+    templateDir = {$hostileTemplate}
+CFG;
+    writeFile($hostileGlobalConfig, $hostileConfiguration);
+    writeFile($hostileSystemConfig, $hostileConfiguration);
+    writeFile($hostileXdgConfig . '/git/config', $hostileConfiguration);
+    writeFile($hostileXdgConfig . '/git/ignore', "PrivateUntrackedFilename.marker\n");
+    writeFile($hostileXdgConfig . '/git/attributes', "included.txt export-ignore\n");
+    writeFile($hostileTemplate . '/info/exclude', "PrivateUntrackedFilename.marker\n");
+    writeFile($hostileTemplate . '/hooks/pre-commit', "#!/bin/sh\nexit 91\n");
+    writeFile($hostileExcludes, "PrivateUntrackedFilename.marker\n");
+    writeFile($hostileAttributes, "included.txt export-ignore\n");
+    writeFile($hostileHook, "#!/bin/sh\nexit 92\n");
+
+    if (
+        !chmod($hostileTemplate . '/hooks/pre-commit', 0700)
+        || !chmod($hostileHook, 0700)
+    ) {
+        throw new RuntimeException('Unable to prepare hostile Git-export fixture controls.');
+    }
+
+    $hostileEnvironment = $environment;
+    $hostileEnvironment['GIT_CONFIG'] = $hostileGlobalConfig;
+    $hostileEnvironment['GIT_CONFIG_COUNT'] = '6';
+    $hostileEnvironment['GIT_CONFIG_GLOBAL'] = $hostileGlobalConfig;
+    $hostileEnvironment['GIT_CONFIG_KEY_0'] = 'commit.gpgSign';
+    $hostileEnvironment['GIT_CONFIG_KEY_1'] = 'gpg.program';
+    $hostileEnvironment['GIT_CONFIG_KEY_2'] = 'core.excludesFile';
+    $hostileEnvironment['GIT_CONFIG_KEY_3'] = 'core.hooksPath';
+    $hostileEnvironment['GIT_CONFIG_KEY_4'] = 'init.templateDir';
+    $hostileEnvironment['GIT_CONFIG_KEY_5'] = 'core.attributesFile';
+    $hostileEnvironment['GIT_CONFIG_PARAMETERS'] =
+        "'commit.gpgSign'='true' 'gpg.program'='/definitely/missing-gpg'";
+    $hostileEnvironment['GIT_CONFIG_SYSTEM'] = $hostileSystemConfig;
+    $hostileEnvironment['GIT_CONFIG_VALUE_0'] = 'true';
+    $hostileEnvironment['GIT_CONFIG_VALUE_1'] = '/definitely/missing-gpg';
+    $hostileEnvironment['GIT_CONFIG_VALUE_2'] = $hostileExcludes;
+    $hostileEnvironment['GIT_CONFIG_VALUE_3'] = $hostileHooks;
+    $hostileEnvironment['GIT_CONFIG_VALUE_4'] = $hostileTemplate;
+    $hostileEnvironment['GIT_CONFIG_VALUE_5'] = $hostileAttributes;
+    $hostileEnvironment['GIT_TEMPLATE_DIR'] = $hostileTemplate;
+    $hostileEnvironment['XDG_CONFIG_HOME'] = $hostileXdgConfig;
+    $isolatedGit = gitExportParityFixtureEnvironment(
+        $workspace,
+        $hostileEnvironment,
+    );
+    $gitEnvironment = $isolatedGit['environment'];
+    $emptyHooks = $isolatedGit['empty_hooks'];
+
+    foreach (array_keys($gitEnvironment) as $name) {
+        if (
+            str_starts_with($name, 'GIT_CONFIG_KEY_')
+            || str_starts_with($name, 'GIT_CONFIG_VALUE_')
+        ) {
+            throw new RuntimeException(
+                'The Git-export fixture environment retained command-scope configuration.',
+            );
+        }
+    }
+
+    if (
+        isset($gitEnvironment['GIT_CONFIG'])
+        || isset($gitEnvironment['GIT_CONFIG_COUNT'])
+        || isset($gitEnvironment['GIT_CONFIG_PARAMETERS'])
+        || ($gitEnvironment['GIT_ATTR_NOSYSTEM'] ?? null) !== '1'
+        || ($gitEnvironment['GIT_CONFIG_GLOBAL'] ?? null)
+            !== $workspace . '/git-export-empty-global-config'
+        || ($gitEnvironment['GIT_CONFIG_NOSYSTEM'] ?? null) !== '1'
+        || ($gitEnvironment['GIT_CONFIG_SYSTEM'] ?? null)
+            !== $workspace . '/git-export-empty-global-config'
+        || ($gitEnvironment['GIT_TEMPLATE_DIR'] ?? null)
+            !== $workspace . '/git-export-empty-template'
+        || ($gitEnvironment['XDG_CONFIG_HOME'] ?? null)
+            !== $workspace . '/git-export-empty-xdg'
+    ) {
+        throw new RuntimeException('The Git-export fixture environment retained ambient configuration.');
+    }
+
+    $cleanRoot = $workspace . '/git-export-clean';
+    $cleanArchiveWorkspace = $workspace . '/git-export-clean-archive';
+    $expectedFiles = createGitExportParityFixture($cleanRoot, $emptyHooks, $gitEnvironment);
+
+    if (!mkdir($cleanArchiveWorkspace, 0700)) {
+        throw new RuntimeException('Unable to create the clean Git-export proof workspace.');
+    }
+
+    if (
+        verifyExportPolicies(
+            $cleanRoot,
+            $cleanArchiveWorkspace,
+            $expectedFiles,
+            $gitEnvironment,
+        ) !== 'verified'
+        || !is_file($cleanArchiveWorkspace . '/git-export.tar')
+    ) {
+        throw new RuntimeException('A clean temporary repository must verify Git-export parity.');
+    }
+
+    $trackedRoot = $workspace . '/git-export-tracked-dirty';
+    $trackedArchiveWorkspace = $workspace . '/git-export-tracked-dirty-archive';
+    $trackedExpectedFiles = createGitExportParityFixture(
+        $trackedRoot,
+        $emptyHooks,
+        $gitEnvironment,
+    );
+    writeFile($trackedRoot . '/included.txt', "PrivateTrackedSourceMarker\n");
+
+    if (
+        !mkdir($trackedArchiveWorkspace, 0700)
+        || verifyExportPolicies(
+            $trackedRoot,
+            $trackedArchiveWorkspace,
+            $trackedExpectedFiles,
+            $gitEnvironment,
+        ) !== 'skipped-dirty'
+        || file_exists($trackedArchiveWorkspace . '/git-export.tar')
+    ) {
+        throw new RuntimeException('A tracked dirty temporary repository must skip Git-export parity.');
+    }
+
+    $stagedRoot = $workspace . '/git-export-staged-dirty';
+    $stagedArchiveWorkspace = $workspace . '/git-export-staged-dirty-archive';
+    $stagedExpectedFiles = createGitExportParityFixture(
+        $stagedRoot,
+        $emptyHooks,
+        $gitEnvironment,
+    );
+    writeFile($stagedRoot . '/included.txt', "PrivateStagedSourceMarker\n");
+    $stageResult = runProcess(
+        ['git', 'add', '--force', 'included.txt'],
+        $stagedRoot,
+        $gitEnvironment,
+    );
+
+    if (
+        $stageResult['exit_code'] !== 0
+        || !mkdir($stagedArchiveWorkspace, 0700)
+        || verifyExportPolicies(
+            $stagedRoot,
+            $stagedArchiveWorkspace,
+            $stagedExpectedFiles,
+            $gitEnvironment,
+        ) !== 'skipped-dirty'
+        || file_exists($stagedArchiveWorkspace . '/git-export.tar')
+    ) {
+        throw new RuntimeException('A staged dirty temporary repository must skip Git-export parity.');
+    }
+
+    $untrackedRoot = $workspace . '/git-export-untracked-dirty';
+    $untrackedArchiveWorkspace = $workspace . '/git-export-untracked-dirty-archive';
+    $untrackedExpectedFiles = createGitExportParityFixture(
+        $untrackedRoot,
+        $emptyHooks,
+        $gitEnvironment,
+    );
+    $untrackedFilename = 'PrivateUntrackedFilename.marker';
+    writeFile($untrackedRoot . '/' . $untrackedFilename, "PrivateUntrackedSourceMarker\n");
+
+    if (
+        !mkdir($untrackedArchiveWorkspace, 0700)
+        || verifyExportPolicies(
+            $untrackedRoot,
+            $untrackedArchiveWorkspace,
+            $untrackedExpectedFiles,
+            $gitEnvironment,
+        ) !== 'skipped-dirty'
+        || file_exists($untrackedArchiveWorkspace . '/git-export.tar')
+    ) {
+        throw new RuntimeException('An untracked dirty temporary repository must skip Git-export parity.');
+    }
+
+    $verifiedLine = gitExportParityResultLine(count($expectedFiles), 'verified');
+    $skippedLine = gitExportParityResultLine(count($expectedFiles), 'skipped-dirty');
+
+    if (
+        $verifiedLine
+            !== "PASS isolated consumer: 3 release files, clean install, complete check, and adversarial controls; git-export-parity=verified\n"
+        || $skippedLine
+            !== "PASS isolated consumer development checks: 3 release files, clean install, complete check, and adversarial controls; git-export-parity=skipped-dirty; not release evidence\n"
+        || str_contains($skippedLine, $workspace)
+        || str_contains($skippedLine, $untrackedFilename)
+        || str_contains($skippedLine, 'PrivateUntrackedSourceMarker')
+    ) {
+        throw new RuntimeException('Git-export parity result lines must be exact, bounded, and non-disclosing.');
+    }
+
+    $statusFailureRoot = $workspace . '/git-export-status-failure';
+    $statusFailureWorkspace = $workspace . '/git-export-status-failure-archive';
+    $statusExpectedFiles = createGitExportParityFixture(
+        $statusFailureRoot,
+        $emptyHooks,
+        $gitEnvironment,
+    );
+    $statusFailureEnvironment = $gitEnvironment;
+    $statusFailureEnvironment['GIT_DIR'] = $workspace . '/PrivateMissingGitDirectory';
+
+    if (!mkdir($statusFailureWorkspace, 0700)) {
+        throw new RuntimeException('Unable to create the Git-status failure workspace.');
+    }
+
+    try {
+        verifyExportPolicies(
+            $statusFailureRoot,
+            $statusFailureWorkspace,
+            $statusExpectedFiles,
+            $statusFailureEnvironment,
+        );
+    } catch (RuntimeException $failure) {
+        if ($failure->getMessage() === 'Unable to determine whether the Git export can be verified.') {
+            $statusFailure = true;
+        }
+    }
+
+    if (!isset($statusFailure)) {
+        throw new RuntimeException('Git status inspection failure must remain fixed and non-disclosing.');
+    }
+
+    $creationFailureRoot = $workspace . '/git-export-creation-failure';
+    $creationFailureWorkspace = $workspace . '/git-export-creation-failure-archive';
+    $creationExpectedFiles = createGitExportParityFixture(
+        $creationFailureRoot,
+        $emptyHooks,
+        $gitEnvironment,
+    );
+
+    if (
+        !mkdir($creationFailureWorkspace, 0700)
+        || !mkdir($creationFailureWorkspace . '/git-export.tar', 0700)
+    ) {
+        throw new RuntimeException('Unable to create the Git-archive failure workspace.');
+    }
+
+    try {
+        verifyExportPolicies(
+            $creationFailureRoot,
+            $creationFailureWorkspace,
+            $creationExpectedFiles,
+            $gitEnvironment,
+        );
+    } catch (RuntimeException $failure) {
+        if ($failure->getMessage() === 'Git release-archive creation failed.') {
+            $creationFailure = true;
+        }
+    }
+
+    if (!isset($creationFailure)) {
+        throw new RuntimeException('Git archive creation failure must remain fixed and non-disclosing.');
+    }
+
+    $readFailureRoot = $workspace . '/git-export-read-failure';
+    $readFailureWorkspace = $workspace . '/git-export-read-failure-archive';
+    $readExpectedFiles = createGitExportParityFixture(
+        $readFailureRoot,
+        $emptyHooks,
+        $gitEnvironment,
+    );
+
+    if (
+        !mkdir($readFailureWorkspace, 0700)
+        || !symlink('/dev/null', $readFailureWorkspace . '/git-export.tar')
+    ) {
+        throw new RuntimeException('Unable to create the Git-archive read-failure workspace.');
+    }
+
+    try {
+        verifyExportPolicies(
+            $readFailureRoot,
+            $readFailureWorkspace,
+            $readExpectedFiles,
+            $gitEnvironment,
+        );
+    } catch (RuntimeException $failure) {
+        if ($failure->getMessage() === 'Git release-archive inspection failed.') {
+            $readFailure = true;
+        }
+    }
+
+    if (!isset($readFailure)) {
+        throw new RuntimeException('Git archive inspection failure must remain fixed and non-disclosing.');
+    }
+
+    $comparisonFailureRoot = $workspace . '/git-export-comparison-failure';
+    $comparisonFailureWorkspace = $workspace . '/git-export-comparison-failure-archive';
+    $comparisonExpectedFiles = createGitExportParityFixture(
+        $comparisonFailureRoot,
+        $emptyHooks,
+        $gitEnvironment,
+    );
+
+    if (!mkdir($comparisonFailureWorkspace, 0700)) {
+        throw new RuntimeException('Unable to create the Git-archive comparison-failure workspace.');
+    }
+
+    try {
+        verifyExportPolicies(
+            $comparisonFailureRoot,
+            $comparisonFailureWorkspace,
+            [...$comparisonExpectedFiles, 'missing.txt'],
+            $gitEnvironment,
+        );
+    } catch (RuntimeException $failure) {
+        if (str_starts_with($failure->getMessage(), 'Framework archive inventory changed.')) {
+            $comparisonFailure = true;
+        }
+    }
+
+    if (!isset($comparisonFailure)) {
+        throw new RuntimeException('Git archive comparison failure must remain a hard failure.');
+    }
+}
+
 /**
  * @param list<string> $expectedFiles
  * @param array<string, string> $environment
+ * @return 'verified'|'skipped-dirty'
  */
 function verifyExportPolicies(
     string $root,
     string $workspace,
     array $expectedFiles,
     array $environment,
-): void {
+): string {
     $composer = jsonFile($root . '/composer.json');
     $archive = $composer['archive'] ?? null;
     $composerExclusions = is_array($archive) ? ($archive['exclude'] ?? null) : null;
@@ -408,10 +856,13 @@ function verifyExportPolicies(
         $root,
         $environment,
     );
-    requireSuccess($status, 'Unable to determine whether the Git export can be verified.');
+
+    if ($status['exit_code'] !== 0) {
+        throw new RuntimeException('Unable to determine whether the Git export can be verified.');
+    }
 
     if (trim($status['stdout']) !== '') {
-        return;
+        return 'skipped-dirty';
     }
 
     $gitArchivePath = $workspace . '/git-export.tar';
@@ -427,13 +878,22 @@ function verifyExportPolicies(
         $root,
         $environment,
     );
-    requireSuccess($gitArchive, 'Git release-archive creation failed.');
 
-    $gitFiles = archiveFiles($gitArchivePath);
+    if ($gitArchive['exit_code'] !== 0) {
+        throw new RuntimeException('Git release-archive creation failed.');
+    }
+
+    try {
+        $gitFiles = archiveFiles($gitArchivePath);
+    } catch (Throwable) {
+        throw new RuntimeException('Git release-archive inspection failed.');
+    }
 
     if ($gitFiles !== $expectedFiles) {
         throw new RuntimeException(inventoryDifference($expectedFiles, $gitFiles));
     }
+
+    return 'verified';
 }
 
 /** @return list<string> */

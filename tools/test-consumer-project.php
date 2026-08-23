@@ -55,7 +55,13 @@ try {
 
     $expectedArchiveFiles = expectedArchiveFiles($root);
     $archiveFiles = archiveFiles($archivePath);
-    verifyExportPolicies($root, $workspace, $expectedArchiveFiles, $environment);
+    proveGitExportParityStates($workspace, $environment);
+    $gitExportParity = verifyExportPolicies(
+        $root,
+        $workspace,
+        $expectedArchiveFiles,
+        $environment,
+    );
     verifySkeletonPublicationBoundary($root);
 
     if ($archiveFiles !== $expectedArchiveFiles) {
@@ -327,13 +333,7 @@ try {
     $restoredResult = runProcess($profileCommand, $project, $environment);
     requireSuccess($restoredResult, 'The skeleton did not return to a valid state after negative controls.');
 
-    fwrite(
-        STDOUT,
-        sprintf(
-            "PASS isolated consumer: %d release files, clean install, complete check, and adversarial controls\n",
-            count($archiveFiles),
-        ),
-    );
+    fwrite(STDOUT, gitExportParityResultLine(count($archiveFiles), $gitExportParity));
 } finally {
     removeDirectory($workspace);
 }

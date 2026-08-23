@@ -136,7 +136,8 @@ composer check
 ```
 
 - [ ] The complete local gate passes without a baseline, suppression, skipped required driver, or modified dependency source.
-- [ ] `composer test:consumer` builds the release archive, matches the complete Composer and Git export inventory, installs a mirrored package into a clean skeleton, and passes its adversarial controls.
+- [ ] `composer test:consumer` builds the release archive, matches the complete Composer and Git export inventory, installs a mirrored package into a clean skeleton, passes its adversarial controls, and finishes with `git-export-parity=verified` for this exact clean candidate.
+- [ ] Treat `git-export-parity=skipped-dirty` only as a successful development run of the independent Composer archive, isolated installation, installed checker, application behavior, and adversarial controls. It does not satisfy this candidate gate, approve the candidate, or authorize push, tag, package, release, or any later operation. Failure to inspect Git status or to create, read, or compare the clean Git archive remains a hard failure rather than a third proof state; the fixed terminal output must expose no Git status bytes, source bytes, absolute paths, or untracked filenames.
 - [ ] The framework archive contains exactly `tools/package-files.txt`; `bin/phpthis` remains executable.
 - [ ] Release notes name the supported surface, exclusions, known limitations, and any breaking change without claiming evidence the candidate does not have.
 - [ ] After the complete local gate passes, confirm the authorization record permits pushing the exact framework candidate commit, push it without modification, and record the pushed commit.
@@ -220,6 +221,7 @@ Candidate CI URLs:
 Observed external operation timestamps and results:
 Public-proof date and environment:
 Inventory result:
+Local Git-export parity state (`verified` required):
 Generated application check result:
 Loopback health result:
 Candidate-specific announcement reference:
