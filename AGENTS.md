@@ -34,7 +34,7 @@ Ordinary implementation starts with one current operational guide. Read an ADR o
 
 - Use PHP 8.4, `declare(strict_types=1);`, final named classes, interface extension points, and visible manual composition.
 - Keep routes explicit and handlers on `RequestHandler::handle(Request): Response`.
-- Keep I/O visible and bounded. Execute application SQL only through direct `Connection` calls with finite compile-time-constant SQL and distinct named bindings.
+- Keep I/O visible and bounded. Execute application SQL only through direct `Connection` calls with finite compile-time-constant SQL and one distinct exact named binding per placeholder occurrence.
 - Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.
 - Do not add runtime discovery, reflection wiring, a service container, ORM, Active Record, lazy loading, query builder, repository layer, facade, global helper, macro system, dynamic proxy, hidden fallback, or a second execution pattern.
 - Do not use magic methods other than `__construct`, weaken maximum-level analysis, or suppress a Strict Profile finding with a baseline, ignore, exclusion, or comment exemption.

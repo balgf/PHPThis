@@ -167,15 +167,15 @@ function certifyDatabaseDriver(
         }
 
         $row = $connection->selectOneRow(
-            "SELECT id, label FROM {$table} WHERE id = :id AND enabled = :enabled AND note IS NULL",
-            ['id' => 1, 'enabled' => true],
+            "SELECT id, label FROM {$table} WHERE id = :selected_id AND id = :same_selected_id AND enabled = :enabled AND note IS NULL",
+            [':selected_id' => 1, 'same_selected_id' => 1, 'enabled' => true],
         );
         $identifier = $row['id'] ?? null;
         $label = $row['label'] ?? null;
 
         requireDatabaseCertification(
             ($identifier === 1 || $identifier === '1') && $label === $boundProbe,
-            "{$driver} named bindings or associative fetch behavior changed.",
+            "{$driver} distinct named bindings, optional leading-colon normalization, or associative fetch behavior changed.",
         );
 
         $connection->beginTransaction();

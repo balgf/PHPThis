@@ -2,7 +2,7 @@
 
 Use `PHPThis\Database\Connection`. It is an instrumented PDO boundary, not a query builder.
 
-Read `docs/decisions/012-pdo-transport-application-owned-dialects.md` before changing connection behavior or driver certification, ADR 038 before changing application database-authority guidance, and ADR 039 before changing migration ownership or placement guidance. Preserve native PDO DSNs and application-owned SQL; do not add a driver enum, connection registry, dialect interface, SQL rewriting, portability helper, role registry, permission helper, or runtime authority introspection.
+Read `docs/decisions/012-pdo-transport-application-owned-dialects.md` before changing connection behavior or driver certification, ADR 057 before changing distinct-placeholder enforcement, ADR 038 before changing application database-authority guidance, and ADR 039 before changing migration ownership or placement guidance. Preserve native PDO DSNs and application-owned SQL; do not add a driver enum, connection registry, dialect interface, SQL rewriting, portability helper, role registry, permission helper, or runtime authority introspection.
 
 Read ADR 022 before changing the protected document-list proof. That application path deliberately keeps complete raw SQLite SQL and explicit named parameter arrays together at direct `Connection` calls. Do not replace them with an ORM, query builder, repository, generic paginator, SQL/binding/placeholder helper, generated or dynamic SQL, transaction callback, or dialect abstraction.
 
@@ -20,7 +20,7 @@ Rules:
 - Keep every statement visibly specific to the application's recorded engine and version.
 - Name every selected column; never use `SELECT *`.
 - Give every selected expression a unique name or alias.
-- Bind every SQL data value. Use one distinct named parameter such as `:user_id` for each placeholder occurrence; never interpolate values, repeat a placeholder name, or pass both `user_id` and `:user_id` as input keys.
+- Bind every SQL data value. PHT008 requires one distinct exact case-sensitive named parameter such as `:first_user_id` for each occurrence in every PHT006-finite alternative; bind repeated values separately, never interpolate values, repeat a placeholder name, generate or rewrite SQL, or pass both `user_id` and `:user_id` as input keys.
 - Do not create an SQL sanitizer. Escaping, filtering dangerous characters, or validating an identifier does not replace bound data and compile-time-constant structure.
 - Call `selectOneRow` only when zero or one row is valid.
 - Call `selectAllRows` only with an explicit bound in the SQL or a documented bounded result.

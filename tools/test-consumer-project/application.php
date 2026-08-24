@@ -415,7 +415,7 @@ function proveInstalledWorkbenchGuidanceDistribution(
         $installedFramework . '/docs/consumer-contract.md' => [
             '## Optional development Workbench',
             'Existing applications need not add `.ai/workbench.md`',
-            'This changes neither the carried-forward Workbench contract nor Strict Profile version 3',
+            'ADR 041 left the then-current Strict Profile version 3 unchanged; Consumer Contract version 15 carries the Workbench contract forward under Strict Profile version 4',
         ],
         $installedFramework . '/docs/security.md' => [
             '## Workbench limits',

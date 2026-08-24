@@ -307,7 +307,7 @@ function contextGuardrailFailures(string $root): array
             '`045-bounded-session-cleanup-and-response-framing.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 14',
+            'Contract version: 15',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
             '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
@@ -328,8 +328,8 @@ function contextGuardrailFailures(string $root): array
             'do not log, retry, suppress, or map it inside session code.',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 14 carries version 13 forward and retains Strict Profile version 3 unchanged.',
-            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, and ADR 053's application-owned optional S3 profile remain contract behavior; they are not part of PHT007.",
+            'Consumer Contract version 15 carries version 14 forward and adopts Strict Profile version 4 with permanent diagnostic `PHT008`.',
+            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, and ADR 053's application-owned optional S3 profile remain contract behavior; they are not part of PHT008.",
         ],
         '.ai/testing.md' => [
             'Inject native cleanup faults only through the isolated framework test boundary',
@@ -829,7 +829,7 @@ function contextGuardrailFailures(string $root): array
             'records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
             'Alpha 7 remains an unannounced partial coordinated release until both GitHub prereleases and the final announcement are separately authorized and recorded',
             'The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection in `RELEASING.md` are preserved acceptance-time history, not current publication state.',
-            'The post-tag `main` change is mutable release-state documentation and its guardrail mirrors only',
+            'The current post-tag `main` source is unreleased development work adopting ADR 056 and ADR 057, Consumer Contract version 15, Strict Profile version 4, and PHT008.',
             'Release preparation, exact-candidate approval and proof, partial-publication recovery, publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
         ],
         '.ai/testing.md' => [
@@ -853,12 +853,12 @@ function contextGuardrailFailures(string $root): array
             '| Latest framework tag | Alpha 7, [`v0.1.0-alpha.7`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.7), Consumer Contract version 13, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |',
             '| Latest proved application starter | Alpha 7 is the latest matching framework/skeleton pair with complete clean Packagist-only public-distribution evidence in [Issue #53](https://github.com/balgf/PHPThis/issues/53) |',
             '| Coordinated release status | Alpha 7 remains partial pending both GitHub prereleases and the final announcement; Alpha 6 remains the latest fully completed and announced coordinated release |',
-            '| Current post-tag `main` | Mutable Alpha 7 release-state documentation and guardrail coherence only',
+            '| Current post-tag `main` | Unreleased development source adopting ADR 056 and ADR 057, Consumer Contract version 15, Strict Profile version 4, and PHT008',
             'Package availability and current release state are external facts',
             'The Alpha 7 framework tag is immutable.',
             'records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
             'preserve their acceptance-time `PENDING` values and non-authority statements as historical evidence.',
-            'The post-tag `main` change is mutable release-state documentation and its guardrail mirrors only',
+            'The post-tag `main` source is unreleased development work adopting ADR 056 and ADR 057, Consumer Contract version 15, Strict Profile version 4, and PHT008.',
             'Create the latest proved public framework/skeleton pair explicitly:',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'",
             'Issue #53 records the exact Alpha 7 skeleton and clean public-install evidence',
@@ -884,7 +884,7 @@ function contextGuardrailFailures(string $root): array
             'only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation.',
             'The skeleton candidate commit may remain explicitly `PENDING`',
             'Keep the planned release date distinct from the observed timestamp of every external publication operation.',
-            'The post-tag `main` change described here is mutable release-state documentation and its guardrail mirrors only',
+            'At this source revision, post-tag `main` adopts ADR 056 and ADR 057, Consumer Contract version 15, Strict Profile version 4, and PHT008.',
             'Neither completed public-distribution evidence nor checklist position authorizes a repository write, either GitHub prerelease, the final announcement, Issue #53 closure, production use, or any other later operation.',
             'Authorization is enumerable, not implied by reaching a checklist step.',
             'source preparation; exact-candidate freeze and approval; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement.',
@@ -1359,12 +1359,12 @@ function contextGuardrailFailures(string $root): array
     );
 
     $currentConsumerContractVersionMarkers = [
-        'docs/consumer-contract.md' => 'Contract version: 14',
-        'docs/getting-started.md' => 'contract-version-14 Composer scripts',
-        'skeleton/.ai/README.md' => 'Consumer Contract v14 and Strict Profile v3 remain mandatory.',
-        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v14 and Strict Profile v3',
-        'templates/application/.ai/README.md' => 'Consumer Contract v14 and Strict Profile v3 remain mandatory.',
-        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v14 and Strict Profile v3',
+        'docs/consumer-contract.md' => 'Contract version: 15',
+        'docs/getting-started.md' => 'contract-version-15 Composer scripts',
+        'skeleton/.ai/README.md' => 'Consumer Contract v15 and Strict Profile v4 remain mandatory.',
+        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v15 and Strict Profile v4',
+        'templates/application/.ai/README.md' => 'Consumer Contract v15 and Strict Profile v4 remain mandatory.',
+        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v15 and Strict Profile v4',
     ];
 
     foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1374,6 +1374,168 @@ function contextGuardrailFailures(string $root): array
             $failures[] = "The current Consumer Contract version marker is missing from {$relativePath}.";
         }
     }
+
+    $distinctNamedSqlPlaceholderArtifactMarkers = [
+        'docs/decisions/057-distinct-named-sql-placeholder-occurrences.md' => [
+            '# ADR 057: Distinct named SQL placeholder occurrences',
+            'Status: accepted',
+            'the accountable human approved a separate check-time rule',
+            'Strict Profile version 4 carries `PHT001` through `PHT007` forward unchanged and adds permanent diagnostic `PHT008`.',
+            'This is a fail-closed common lexical subset, not a dialect parser.',
+            'every backtick and `#` spelling',
+            'MySQL executable or optimizer-hint block comments',
+            'the rest of that SQL alternative is scanned without further lexical exclusions',
+            'this decision does not claim per-call runtime rejection.',
+        ],
+        'docs/decisions/README.md' => [
+            '`057-distinct-named-sql-placeholder-occurrences.md`',
+        ],
+        'docs/consumer-contract.md' => [
+            'Contract version: 15',
+            '### Contract version 15',
+            '`PHT008` rejects a repeated name and requires each occurrence to have its own explicit binding',
+            'Version 15 adds no runtime SQL parser, binding-array comparison, positional-placeholder support, SQL rewrite, placeholder helper, query builder, dialect abstraction',
+        ],
+        'docs/strict-profile.md' => [
+            'Profile version: 4',
+            '| `PHT008` |',
+            'Non-ignorable PHPStan rule `phpthis.pht008`',
+            'Ambiguous SQLite bracket text',
+            'PostgreSQL dollar-quote-looking text',
+        ],
+        '.ai/strict-profile.md' => [
+            'Strict Profile v4 carries `PHT001` through `PHT007` forward and adds:',
+            '`PHT008`:',
+            'PHT006 retains finite SQL-shape ownership; PHT008 alone owns distinct named-placeholder occurrences',
+        ],
+        '.ai/static-analysis.md' => [
+            'Enforce `PHT008` after PHT006 at the same direct `Connection` call sites',
+            'Scan ambiguous SQLite brackets',
+            'MySQL executable or optimizer-hint block comments',
+            'Do not compare SQL with bindings',
+        ],
+        '.ai/database.md' => [
+            'ADR 057 before changing distinct-placeholder enforcement',
+            'PHT008 requires one distinct exact case-sensitive named parameter',
+        ],
+        '.ai/testing.md' => [
+            'exact 53-proof-call order',
+            '`PHT008` fixtures must reject a repeated exact case-sensitive named placeholder',
+            'one such opener disables lexical exclusions for the rest of that alternative',
+            'proveRepeatedSqlPlaceholderIsRejected(...)',
+        ],
+        'docs/database.md' => [
+            'PHT008 then checks every PHT006-finite SQL alternative independently.',
+            '`Connection` performs no corresponding SQL-text parse or runtime PHT008 rejection.',
+        ],
+        'docs/security.md' => [
+            'Keep every exact case-sensitive named placeholder occurrence distinct within each PHT006-finite SQL alternative',
+            'PHT008 does not validate SQL syntax, choose a dialect',
+        ],
+        'docs/static-analysis.md' => [
+            '`PHT008` owns non-ignorable detection',
+            'It scans ambiguous SQLite bracket text',
+        ],
+        'templates/application/AGENTS.md' => [
+            'Consumer Contract v15 and Strict Profile v4 are the minimum accepted rules.',
+        ],
+        'templates/application/.ai/data.md' => [
+            'Every data value is bound with a distinct exact case-sensitive named placeholder and separate binding for each occurrence',
+        ],
+        'templates/application/.ai/testing.md' => [
+            'PHT006, PHT008, explicit tenant predicates',
+            'PHT008 is static and does not imply runtime SQL-text rejection.',
+        ],
+        'skeleton/AGENTS.md' => [
+            'Consumer Contract v15 and Strict Profile v4 are the minimum accepted rules.',
+        ],
+        'skeleton/.ai/data.md' => [
+            'Every SQL data value must use a distinct exact case-sensitive named placeholder and binding for each occurrence',
+        ],
+        'skeleton/.ai/testing.md' => [
+            'distinct names and bindings for every placeholder occurrence including repeated logical values',
+            'PHT008 is static and does not imply runtime SQL-text rejection',
+        ],
+        'verification/phpstan/DistinctNamedSqlPlaceholderRule.php' => [
+            'final class DistinctNamedSqlPlaceholderRule implements Rule',
+            'ConnectionSqlRuleSupport::isFiniteNonBlankConstantString',
+            'ConnectionSqlRuleSupport::hasRepeatedNamedPlaceholder',
+            'ConnectionSqlRuleSupport::repeatedNamedPlaceholderError()',
+        ],
+        'verification/phpstan/ConnectionSqlRuleSupport.php' => [
+            'public static function hasRepeatedNamedPlaceholder(string $sql): bool',
+            '$lexicalExclusionsAllowed = false;',
+            'private static function isPostgreSqlEscapeString',
+            'private static function isPortableDashLineComment',
+            'private static function afterLineComment',
+            "->identifier('phpthis.pht008')",
+        ],
+        'verification/phpstan/extension.php' => [
+            "require_once __DIR__ . '/DistinctNamedSqlPlaceholderRule.php';",
+            'PHPThis\\Verification\\PHPStan\\DistinctNamedSqlPlaceholderRule::class',
+        ],
+        'tools/test-strict-profile.php' => [
+            "'phpthis.pht008'",
+            'SELECT ARRAY[:same::integer, :same::integer]',
+            'SELECT (1 # :same::integer), :same::integer',
+            'SELECT COALESCE($tag$, 0) + :same + :same',
+            'SELECT 1 /*! + :same + :same */ AS total',
+            'SELECT 1 /*+ :same :same */ AS total',
+            'SELECT 1 ` :same ` :same',
+            'SELECT 1--:same AS first_value, :same AS second_value',
+            'SELECT [:same], :same',
+            "SELECT ` ':same :same' `",
+            'SELECT $tag$ /* :same :same */ $tag$',
+            "SELECT #':same :same'",
+            "SELECT 1--':same :same'",
+            "SELECT [':same :same']",
+            'PASS strict profile: PHT001 through PHT008',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveRepeatedSqlPlaceholderIsRejected($project, $profileCommand, $environment);',
+        ],
+        'tools/test-consumer-project/profile-controls.php' => [
+            'function proveRepeatedSqlPlaceholderIsRejected(',
+            'Expected repeated Connection SQL placeholder to emit exactly one PHT008 finding.',
+            'Installed PHT008 direct-call diagnostic changed.',
+            'Distinct Connection SQL placeholder occurrences failed PHT008.',
+        ],
+        'tests/database-boundary.php' => [
+            'SELECT :first_value AS first_value, :second_value AS second_value',
+            'optional leading-colon normalization, and one counted and traced statement',
+        ],
+        'tools/test-database-drivers.php' => [
+            ':selected_id AND id = :same_selected_id',
+            'distinct named bindings, optional leading-colon normalization',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/057-distinct-named-sql-placeholder-occurrences.md',
+            'verification/phpstan/DistinctNamedSqlPlaceholderRule.php',
+        ],
+        'ROADMAP.md' => [
+            'Complete: ADR 057, Consumer Contract version 15, Strict Profile version 4, and PHT008',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $distinctNamedSqlPlaceholderArtifactMarkers,
+        'distinct named SQL placeholder',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'src/Database/Connection.php' => [
+                'PHT008',
+                'hasRepeatedNamedPlaceholder',
+                'DistinctNamedSqlPlaceholder',
+            ],
+        ],
+        'runtime SQL placeholder parser',
+        $failures,
+    );
 
     $configurationArtifactMarkers = [
         'docs/decisions/036-one-typed-application-configuration-boundary.md' => [
@@ -1424,7 +1586,7 @@ function contextGuardrailFailures(string $root): array
             "`035-bounded-alpha-4-release-scope.md`\n- `036-one-typed-application-configuration-boundary.md`",
         ],
         'docs/strict-profile.md' => [
-            'Profile version: 3',
+            'Profile version: 4',
             '`PHT007`',
             'one application-owned PHP file',
         ],
@@ -1761,7 +1923,7 @@ function contextGuardrailFailures(string $root): array
         ],
         '.ai/testing.md' => [
             'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution(...)` after the frontend-integration proof',
-            'exact 52-proof-call order',
+            'exact 53-proof-call order',
         ],
         'docs/coordination.md' => [
             '# Application-owned operation coordination',
@@ -1832,8 +1994,8 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 221',
-            'current post-Alpha-7 release inventory must contain exactly 221 reviewed files',
+            'count($packagePaths) !== 223',
+            'current post-Alpha-7 release inventory must contain exactly 223 reviewed files',
             'immutable Alpha 7 remains the historical 218-file artifact',
         ],
         'tools/guardrails/repository.php' => [
@@ -2217,7 +2379,7 @@ function contextGuardrailFailures(string $root): array
             'elevated configuration remains unavailable to HTTP',
             'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
             'each adopted authority activation and deactivation has one visible non-HTTP owner and path, record `GRANT` and `REVOKE` only where supported',
-            'Configuration, connectivity, target existence, migration success, PHT006, tenant predicates, and adversarial bindings are not universal authority',
+            'Configuration, connectivity, target existence, migration success, PHT006, PHT008, tenant predicates, and adversarial bindings are not universal authority',
         ],
         'verification/ApplicationChecker.php' => [
             'private function databaseContextConnectionFailures(',

@@ -344,7 +344,7 @@ function proveInstalledDatabaseAuthorityLifecycleGuidanceDistribution(
             'direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority',
             'each adopted authority activation and deactivation has one visible non-HTTP owner and path, record `GRANT` and `REVOKE` only where supported',
             'elevated configuration remains unavailable to HTTP',
-            'Configuration, connectivity, target existence, migration success, PHT006, tenant predicates, and adversarial bindings are not universal authority',
+            'Configuration, connectivity, target existence, migration success, PHT006, PHT008, tenant predicates, and adversarial bindings are not universal authority',
         ],
         $installedFramework . '/docs/decisions/038-application-owned-database-authority-lifecycle.md' => [
             'Status: accepted',

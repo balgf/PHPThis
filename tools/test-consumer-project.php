@@ -325,6 +325,7 @@ try {
     proveNativeSessionAccessIsRejected($project, $profileCommand, $environment);
     proveEnvironmentAccessIsRejected($project, $profileCommand, $environment);
     proveDynamicSqlIsRejected($project, $profileCommand, $environment);
+    proveRepeatedSqlPlaceholderIsRejected($project, $profileCommand, $environment);
     proveConfigurationCannotReplaceProfile($project, $profileCommand, $environment);
     proveBaselinesAndInlineIgnoresAreRejected($project, $profileCommand, $environment);
     proveComposerGateCannotDrift($project, $composerBinary, $profileCommand, $environment);

@@ -11,7 +11,7 @@ These rules apply to every framework-maintainer change. Concern-specific contrac
 - Keep routes in explicit finite lists and use only the documented exact literal or typed full-segment declarations.
 - Parse external `mixed` once into one bounded concrete final readonly boundary value before downstream behavior.
 - An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.
-- Execute application SQL only through direct `Connection` calls. Keep SQL engine-specific, finite, non-blank, and PHPStan-resolvable to compile-time constants; bind every data value with a distinct named placeholder per occurrence.
+- Execute application SQL only through direct `Connection` calls. Keep SQL engine-specific, finite, non-blank, and PHPStan-resolvable to compile-time constants; PHT008 requires one distinct exact case-sensitive named placeholder and explicit binding per occurrence.
 - Map every external structural selector to finite reviewed code-owned choices and reject unknown choices before I/O.
 - Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.
 - Preserve one canonical execution pattern for each framework task and one stable term for each concept.

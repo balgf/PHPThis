@@ -92,6 +92,7 @@ docs/decisions/053-application-owned-amazon-s3-file-transfers.md
 docs/decisions/054-bounded-alpha-7-release-scope.md
 docs/decisions/055-value-free-composer-configuration-scripts.md
 docs/decisions/056-bounded-request-target-and-path-bytes.md
+docs/decisions/057-distinct-named-sql-placeholder-occurrences.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
@@ -216,6 +217,7 @@ verification/phpstan/ConnectionCallableArrayRule.php
 verification/phpstan/ConnectionMethodCallableRule.php
 verification/phpstan/ConnectionSqlRuleSupport.php
 verification/phpstan/ConstantSqlStringRule.php
+verification/phpstan/DistinctNamedSqlPlaceholderRule.php
 verification/phpstan/DirectPdoConstructionRule.php
 verification/phpstan/MixedScalarCoercionRule.php
 verification/phpstan/extension.php

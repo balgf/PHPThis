@@ -154,11 +154,28 @@ function databaseBoundaryBehaviorTests(): Generator
         throw new RuntimeException('Invalid and duplicate parameter names must fail before database work is counted or traced.');
     }
 
-    $row = $connection->selectOneRow('SELECT :value AS value', [':value' => 7]);
-    $value = $row['value'] ?? null;
+    $portableBudget = new QueryBudget(1);
+    $portableTrace = new QueryTrace(1);
+    $portableConnection = Connection::connect('sqlite::memory:', $portableBudget, $portableTrace);
+    $row = $portableConnection->selectOneRow(
+        'SELECT :first_value AS first_value, :second_value AS second_value',
+        [':first_value' => 7, 'second_value' => 7],
+    );
+    $firstValue = $row['first_value'] ?? null;
+    $secondValue = $row['second_value'] ?? null;
+    $snapshot = $portableTrace->snapshot();
 
-    if ($value !== 7 && $value !== '7') {
-        throw new RuntimeException('Expected an optional leading colon and portable parameter identifier.');
+    if (
+        ($firstValue !== 7 && $firstValue !== '7')
+        || ($secondValue !== 7 && $secondValue !== '7')
+        || $portableBudget->used() !== 1
+        || $portableBudget->exceeded()
+        || $snapshot['statements'] !== 1
+        || $snapshot['failures'] !== 0
+    ) {
+        throw new RuntimeException(
+            'Expected distinct portable placeholders for one value, optional leading-colon normalization, and one counted and traced statement.',
+        );
     }
 };
 

@@ -758,7 +758,7 @@ function operationGuardrailFailures(string $root): array
         'docs/consumer-contract.md' => [
             '## Optional development Workbench',
             'Existing applications need not add `.ai/workbench.md` when they do not adopt the package',
-            'This changes neither the carried-forward Workbench contract nor Strict Profile version 3',
+            'ADR 041 left the then-current Strict Profile version 3 unchanged; Consumer Contract version 15 carries the Workbench contract forward under Strict Profile version 4',
         ],
         'docs/knowledge-map.md' => [
             '| Adopt, use, or review PHPThis Workbench |',
@@ -792,7 +792,7 @@ function operationGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
-            'It keeps `.ai/workbench.md` optional under Consumer Contract version 14.',
+            'It keeps `.ai/workbench.md` optional under Consumer Contract version 15.',
         ],
         'VISION.md' => [
             'A human can inspect one explicitly composed development object or operation through a fresh strict process',
@@ -807,7 +807,7 @@ function operationGuardrailFailures(string $root): array
         ],
         '.ai/application-context.md' => [
             'Include `.ai/workbench.md` in the current skeleton and template with `NOT_APPLICABLE(WORKBENCH)`',
-            'Contract version 14 carries version 13 and that optional file forward, and it is not a checker requirement.',
+            'Contract version 15 carries version 14 and that optional file forward, and it is not a checker requirement.',
             'An ADR 024 SQLite adoption invokes only the existing application-owned business operation whose same-connection transaction owns the business write and job insert',
             'Another ADR 052 adoption uses its existing application-owned publication operation and recorded delivery/operational entrypoint and process shape.',
         ],

@@ -15,7 +15,7 @@ if (!is_string($catalogue)) {
     throw new RuntimeException('Unable to read the Strict Profile catalogue.');
 }
 
-foreach (['PHT001', 'PHT002', 'PHT003', 'PHT004', 'PHT005', 'PHT006', 'PHT007'] as $profileId) {
+foreach (['PHT001', 'PHT002', 'PHT003', 'PHT004', 'PHT005', 'PHT006', 'PHT007', 'PHT008'] as $profileId) {
     requireProfile(str_contains($catalogue, "`{$profileId}`"), "Strict Profile catalogue omitted {$profileId}.");
 }
 
@@ -1465,6 +1465,8 @@ $invalidPdoPath = $fixtureDirectory . '/pht005-invalid.php';
 $validPdoPath = $fixtureDirectory . '/pht005-valid.php';
 $invalidSqlPath = $fixtureDirectory . '/pht006-invalid.php';
 $validSqlPath = $fixtureDirectory . '/pht006-valid.php';
+$invalidPlaceholderSqlPath = $fixtureDirectory . '/pht008-invalid.php';
+$validPlaceholderSqlPath = $fixtureDirectory . '/pht008-valid.php';
 $invalidSource = <<<'PHP'
 <?php
 
@@ -1724,6 +1726,198 @@ final class SafeSql
     }
 }
 PHP;
+$invalidPlaceholderSqlSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace ProfilePlaceholderInvalid;
+
+use PHPThis\Database\Connection;
+
+final class RepeatedNamedPlaceholders
+{
+    public function run(Connection $connection, bool $postgres): void
+    {
+        $connection->selectOneRow('SELECT :same AS first_value, :same AS second_value');
+
+        $connection->selectAllRows(
+            <<<'SQL'
+                SELECT ':ignored' AS literal_value,
+                       :same AS first_value,
+                       :same AS second_value
+                SQL,
+        );
+
+        $variant = $postgres
+            ? 'SELECT :same AS first_value, :same AS second_value'
+            : 'SELECT :first_value AS first_value, :second_value AS second_value';
+        $connection->executeStatement($variant);
+
+        $connection->selectOneRow('SELECT ARRAY[:same::integer, :same::integer]');
+        $connection->selectOneRow('SELECT (1 # :same::integer), :same::integer');
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT 1
+                # :same::integer,
+                :same::integer
+                SQL,
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT COALESCE($tag$, 0) + :same + :same + COALESCE($tag$, 0) AS total
+                SQL,
+        );
+
+        $connection->selectOneRow('SELECT 1 /*! + :same + :same */ AS total');
+        $connection->selectOneRow('SELECT 1 /*+ :same :same */ AS total');
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT 1 ` :same ` :same
+                SQL,
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT ` ':same :same' `
+                SQL,
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT $tag$ /* :same :same */ $tag$
+                SQL,
+        );
+
+        $connection->selectOneRow("SELECT #':same :same'");
+        $connection->selectOneRow("SELECT 1--':same :same'");
+        $connection->selectOneRow("SELECT [':same :same']");
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT 'x\' AS literal_value, :same AS first_value, :same AS second_value
+                SQL,
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT ':same, :same \' still quoted '
+                SQL,
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT ":same, :same \" still quoted"
+                SQL,
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT `:same, :same \` still quoted`
+                SQL,
+        );
+
+        $connection->selectOneRow('SELECT 1--:same AS first_value, :same AS second_value');
+        $connection->selectOneRow('SELECT /* outer /* inner */ :same, :same');
+        $connection->selectOneRow('SELECT /* outer /* :same, :same */ still outer */');
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT a$tag$ + :same, b$tag$ + :same FROM records
+                SQL,
+        );
+
+        $connection->selectOneRow('SELECT [:same], :same');
+        $connection->selectOneRow("SELECT ':same, :same");
+        $connection->selectOneRow('SELECT /* :same, :same');
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT $tag$ :same, :same
+                SQL,
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT /* outer :ignored /* nested :ignored */ still :ignored */
+                       :same::text AS first_value,
+                       :same::text AS second_value
+                SQL,
+        );
+    }
+}
+PHP;
+$validPlaceholderSqlSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace ProfilePlaceholderValid;
+
+use PHPThis\Database\Connection;
+
+final class DistinctNamedPlaceholders
+{
+    public function run(Connection $connection, bool $postgres): void
+    {
+        $connection->selectOneRow(
+            'SELECT :first_value AS first_value, :second_value AS second_value',
+            ['first_value' => 7, 'second_value' => 7],
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT ':same '' remains quoted' AS single_quoted,
+                       ":same "" remains quoted" AS double_quoted,
+                       `mysql_identifier` AS mysql_quoted,
+                       [:sqlite_name remains ambiguous] AS sqlite_quoted,
+                       :same AS actual_value
+                SQL,
+            ['same' => 7],
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT :same AS actual_value -- :same remains a comment
+                /* :same remains a comment, and so does :same */
+                SQL,
+            ['same' => 7],
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT E':same \':same' AS escaped_literal, :same AS actual_value
+                SQL,
+            ['same' => 7],
+        );
+
+        $connection->selectOneRow(
+            <<<'SQL'
+                SELECT :same::text AS actual_value
+                SQL,
+            ['same' => 7],
+        );
+
+        $connection->selectOneRow(
+            'SELECT :same AS lower_value, :SAME AS upper_value',
+            ['same' => 7, 'SAME' => 8],
+        );
+
+        $connection->selectOneRow(
+            'SELECT :first::integer AS first_value, :second::integer AS second_value',
+            ['first' => 7, 'second' => 8],
+        );
+
+        $variant = $postgres
+            ? 'SELECT :value::text AS selected_value'
+            : 'SELECT CAST(:value AS TEXT) AS selected_value';
+        $connection->selectOneRow($variant, ['value' => 7]);
+    }
+}
+PHP;
 
 writeFixture($invalidPath, $invalidSource);
 writeFixture($validPath, $validSource);
@@ -1731,6 +1925,8 @@ writeFixture($invalidPdoPath, $invalidPdoSource);
 writeFixture($validPdoPath, $validPdoSource);
 writeFixture($invalidSqlPath, $invalidSqlSource);
 writeFixture($validSqlPath, $validSqlSource);
+writeFixture($invalidPlaceholderSqlPath, $invalidPlaceholderSqlSource);
+writeFixture($validPlaceholderSqlPath, $validPlaceholderSqlSource);
 
 $invalidResult = runProfileAnalysis($root, $invalidPath);
 requireProfile($invalidResult['exit_code'] === 1, 'PHT001 invalid fixture unexpectedly passed.');
@@ -1790,7 +1986,39 @@ requireProfile(
         . $validSqlResult['stdout'],
 );
 
-fwrite(STDOUT, "PASS strict profile: PHT001 through PHT007\n");
+$invalidPlaceholderSqlResult = runProfileAnalysis($root, $invalidPlaceholderSqlPath);
+requireProfile(
+    $invalidPlaceholderSqlResult['exit_code'] === 1,
+    'PHT008 repeated-placeholder fixture unexpectedly passed.',
+);
+requireProfile(
+    profileDiagnosticLines(
+        $invalidPlaceholderSqlResult,
+        $invalidPlaceholderSqlPath,
+        'phpthis.pht008',
+        'PHT008',
+    ) === [13, 15, 26, 28, 29, 31, 39, 45, 46, 48, 54, 60, 66, 67, 68, 70, 76, 82, 88, 94, 95, 96, 98, 104, 105, 106, 108, 114],
+    'PHT008 did not reject each repeated exact named placeholder across finite SQL variants.',
+);
+$pht008Message = '[PHT008] Connection SQL must use a distinct named placeholder for each occurrence; '
+    . 'rename repeated placeholders and bind each value separately.';
+requireProfile(
+    substr_count(
+        $invalidPlaceholderSqlResult['stdout'] . $invalidPlaceholderSqlResult['stderr'],
+        $pht008Message,
+    ) === 28,
+    'PHT008 did not emit exactly one fixed diagnostic for each invalid Connection call.',
+);
+
+$validPlaceholderSqlResult = runProfileAnalysis($root, $validPlaceholderSqlPath);
+requireProfile(
+    $validPlaceholderSqlResult['exit_code'] === 0,
+    "PHT008 rejected distinct placeholders or a reviewed quoted, comment, cast, or dialect construct.\n"
+        . $validPlaceholderSqlResult['stderr']
+        . $validPlaceholderSqlResult['stdout'],
+);
+
+fwrite(STDOUT, "PASS strict profile: PHT001 through PHT008\n");
 
 function requireProfile(bool $condition, string $message): void
 {

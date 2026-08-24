@@ -1105,6 +1105,78 @@ PHP;
  * @param list<string> $profileCommand
  * @param array<string, string> $environment
  */
+function proveRepeatedSqlPlaceholderIsRejected(
+    string $project,
+    array $profileCommand,
+    array $environment,
+): void {
+    $path = $project . '/src/RepeatedSqlPlaceholder.php';
+    $repeatedSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use PHPThis\Database\Connection;
+
+final class RepeatedSqlPlaceholder
+{
+    public function run(Connection $connection, int $value): void
+    {
+        $connection->selectOneRow(
+            'SELECT :value AS first_value, :value AS second_value',
+            ['value' => $value],
+        );
+    }
+}
+PHP;
+    writeFile($path, $repeatedSource . "\n");
+
+    try {
+        $result = runProcess($profileCommand, $project, $environment);
+        requireFailure($result, 'PHT008 repeated Connection SQL placeholder unexpectedly passed.');
+        $output = $result['stdout'] . $result['stderr'];
+        $normalizedOutput = preg_replace('/\s+/', ' ', $output);
+
+        if (substr_count($output, 'phpthis.pht008') !== 1) {
+            throw new RuntimeException('Expected repeated Connection SQL placeholder to emit exactly one PHT008 finding.');
+        }
+
+        if (
+            !is_string($normalizedOutput)
+            || substr_count(
+                $normalizedOutput,
+                '[PHT008] Connection SQL must use a distinct named placeholder for each occurrence; '
+                    . 'rename repeated placeholders and bind each value separately.',
+            ) !== 1
+            || substr_count($output, 'src/RepeatedSqlPlaceholder.php') !== 1
+            || preg_match('/(?:\A|\R)\s*13\s+\[PHT008\]/', $output) !== 1
+        ) {
+            throw new RuntimeException('Installed PHT008 direct-call diagnostic changed.');
+        }
+
+        if (str_contains($output, 'phpthis.pht006')) {
+            throw new RuntimeException('Finite repeated Connection SQL unexpectedly emitted PHT006.');
+        }
+
+        $distinctSource = str_replace(
+            [':value AS first_value, :value AS second_value', "['value' => \$value]"],
+            [':first_value AS first_value, :second_value AS second_value', "['first_value' => \$value, 'second_value' => \$value]"],
+            $repeatedSource,
+        );
+        writeFile($path, $distinctSource . "\n");
+        $distinctResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess($distinctResult, 'Distinct Connection SQL placeholder occurrences failed PHT008.');
+    } finally {
+        unlink($path);
+    }
+}
+
+/**
+ * @param list<string> $profileCommand
+ * @param array<string, string> $environment
+ */
 function proveConfigurationCannotReplaceProfile(string $project, array $profileCommand, array $environment): void
 {
     $path = $project . '/phpstan.neon';

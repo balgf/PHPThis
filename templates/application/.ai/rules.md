@@ -1,6 +1,6 @@
 # Universal application rules
 
-These rules supplement installed PHPThis Consumer Contract v14 and Strict Profile v3. They apply to every change in this application; concern-specific contracts live in the current guide routed by `.ai/README.md`.
+These rules supplement installed PHPThis Consumer Contract v15 and Strict Profile v4. They apply to every change in this application; concern-specific contracts live in the current guide routed by `.ai/README.md`.
 
 ## Required
 
@@ -11,7 +11,7 @@ These rules supplement installed PHPThis Consumer Contract v14 and Strict Profil
 - Keep routes explicit and handlers on `RequestHandler::handle(Request): Response`.
 - Parse external `mixed` once into one bounded concrete final readonly boundary value before downstream behavior.
 - An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.
-- Execute application SQL only through direct `Connection` calls with finite compile-time-constant engine-specific SQL and distinct named bindings.
+- Execute application SQL only through direct `Connection` calls with PHT006-finite compile-time-constant engine-specific SQL and one distinct exact case-sensitive PHT008 named placeholder and binding per occurrence. Repeated logical values still use separate names and bindings.
 - Map structural choices to finite code-owned values and reject unknown choices before I/O.
 - Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.
 - Keep every external side effect, failure path, and resource bound named in current application context.

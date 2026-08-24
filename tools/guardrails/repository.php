@@ -838,6 +838,7 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
             'proveNativeSessionAccessIsRejected',
             'proveEnvironmentAccessIsRejected',
             'proveDynamicSqlIsRejected',
+            'proveRepeatedSqlPlaceholderIsRejected',
             'proveConfigurationCannotReplaceProfile',
             'proveBaselinesAndInlineIgnoresAreRejected',
             'proveComposerGateCannotDrift',
@@ -998,6 +999,7 @@ function consumerProjectHarnessExpectedProofCalls(): array
         'proveNativeSessionAccessIsRejected',
         'proveEnvironmentAccessIsRejected',
         'proveDynamicSqlIsRejected',
+        'proveRepeatedSqlPlaceholderIsRejected',
         'proveConfigurationCannotReplaceProfile',
         'proveBaselinesAndInlineIgnoresAreRejected',
         'proveComposerGateCannotDrift',
@@ -1057,6 +1059,7 @@ function consumerProjectHarnessExpectedProofStatements(): array
         'proveNativeSessionAccessIsRejected' => 'proveNativeSessionAccessIsRejected($project,$profileCommand,$environment);',
         'proveEnvironmentAccessIsRejected' => 'proveEnvironmentAccessIsRejected($project,$profileCommand,$environment);',
         'proveDynamicSqlIsRejected' => 'proveDynamicSqlIsRejected($project,$profileCommand,$environment);',
+        'proveRepeatedSqlPlaceholderIsRejected' => 'proveRepeatedSqlPlaceholderIsRejected($project,$profileCommand,$environment);',
         'proveConfigurationCannotReplaceProfile' => 'proveConfigurationCannotReplaceProfile($project,$profileCommand,$environment);',
         'proveBaselinesAndInlineIgnoresAreRejected' => 'proveBaselinesAndInlineIgnoresAreRejected($project,$profileCommand,$environment);',
         'proveComposerGateCannotDrift' => 'proveComposerGateCannotDrift($project,$composerBinary,$profileCommand,$environment);',
@@ -1359,7 +1362,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === '7f03c05bc63b5f6d581c414831bc0179afbed0a59dbe0c309317074131c6af0f';
+            === 'a2c70361b42baf62712eb08ec69ff4c3588902f002fac0ec7fe4dfb7380bde4c';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -1819,7 +1822,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== '598003412dc3eab5db96f503632a5c251b01e30d601d61136868a64daf34557f'
+        $jobsVerificationModuleFingerprint !== 'd816bc70ed20a7418ffb6925cfb79af3164b33130a8f0a8080e4ecf40671e01f'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
@@ -1934,7 +1937,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
-        $failures[] = 'The installed-consumer entrypoint must invoke its exact 52 proof functions once, unconditionally, and in the reviewed order.';
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 53 proof functions once, unconditionally, and in the reviewed order.';
     }
 
     if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
@@ -3413,6 +3416,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/decisions/054-bounded-alpha-7-release-scope.md',
         'docs/decisions/055-value-free-composer-configuration-scripts.md',
         'docs/decisions/056-bounded-request-target-and-path-bytes.md',
+        'docs/decisions/057-distinct-named-sql-placeholder-occurrences.md',
         'example/AGENTS.md',
         'example/.ai/README.md',
         'example/.ai/cache.md',
@@ -3579,6 +3583,7 @@ function repositoryGuardrailFailures(string $root): array
         'verification/phpstan/ConnectionMethodCallableRule.php',
         'verification/phpstan/ConnectionSqlRuleSupport.php',
         'verification/phpstan/ConstantSqlStringRule.php',
+        'verification/phpstan/DistinctNamedSqlPlaceholderRule.php',
         'verification/phpstan/DirectPdoConstructionRule.php',
         'verification/phpstan/MixedScalarCoercionRule.php',
         'verification/phpstan/extension.php',
@@ -3786,8 +3791,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 20",
-            "'manifest_sha256' => 'aab0113c0987b68803792aafa5ebbaaab7f5bfd2606b0a916ae11959959aa326'",
+            "'revision' => 21",
+            "'manifest_sha256' => '1a862f3da8b9ad5ae23b1f868a701eb2cfb014adc9f96737930fa24841c86bce'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -3817,10 +3822,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 20',
+            '"revision": 21',
             '"source-skeleton"',
-            '"tree": "941b4f7e1c3771fb33116b0882bbb44d3f94c973"',
-            '"fixture_sha256": "be3cfef674ea75eb35a389f4e6a01009c08cd0a0a01c775fcd1b067fb63e0d94"',
+            '"tree": "b21107e0b7b06b47474b38b1a4bc450488797475"',
+            '"fixture_sha256": "31da396307ae7828446310c220d85065abb7e751f67312c25f5ec1e550e3242d"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -3950,7 +3955,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 20 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 21 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -3960,8 +3965,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 20;',
-            'Controller v0.2 supports only change.simple-ping revision 20 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 21;',
+            'Controller v0.2 supports only change.simple-ping revision 21 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
