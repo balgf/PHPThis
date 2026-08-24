@@ -1497,6 +1497,7 @@ function contextGuardrailFailures(string $root): array
         'tools/test-consumer-project/profile-controls.php' => [
             'function proveRepeatedSqlPlaceholderIsRejected(',
             'Expected repeated Connection SQL placeholder to emit exactly one PHT008 finding.',
+            '$githubAnnotationCount = preg_match_all(',
             'Installed PHT008 direct-call diagnostic changed.',
             'Distinct Connection SQL placeholder occurrences failed PHT008.',
         ],

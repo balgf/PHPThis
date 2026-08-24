@@ -1139,19 +1139,35 @@ PHP;
         $output = $result['stdout'] . $result['stderr'];
         $normalizedOutput = preg_replace('/\s+/', ' ', $output);
 
+        if (!is_string($normalizedOutput)) {
+            throw new RuntimeException('Unable to normalize the installed PHT008 diagnostic.');
+        }
+
         if (substr_count($output, 'phpthis.pht008') !== 1) {
             throw new RuntimeException('Expected repeated Connection SQL placeholder to emit exactly one PHT008 finding.');
         }
 
+        $pht008Message = '[PHT008] Connection SQL must use a distinct named placeholder for each occurrence; '
+            . 'rename repeated placeholders and bind each value separately.';
+        $diagnosticCount = substr_count($normalizedOutput, $pht008Message);
+        $pathCount = substr_count($output, 'src/RepeatedSqlPlaceholder.php');
+        $tableLineCount = preg_match_all('/(?:\A|\R)\s*13\s+\[PHT008\]/', $output);
+        $githubAnnotationCount = preg_match_all(
+            '/(?:\A|\R)::error file=(?:[^\r\n]*\/)?src\/RepeatedSqlPlaceholder\.php,line=13,col=0::'
+                . preg_quote($pht008Message, '/')
+                . '(?=\R|\z)/',
+            $output,
+        );
+        $plainRendererIsExact = $diagnosticCount === 1
+            && $pathCount === 1
+            && $githubAnnotationCount === 0;
+        $githubRendererIsExact = $diagnosticCount === 2
+            && $pathCount === 2
+            && $githubAnnotationCount === 1;
+
         if (
-            !is_string($normalizedOutput)
-            || substr_count(
-                $normalizedOutput,
-                '[PHT008] Connection SQL must use a distinct named placeholder for each occurrence; '
-                    . 'rename repeated placeholders and bind each value separately.',
-            ) !== 1
-            || substr_count($output, 'src/RepeatedSqlPlaceholder.php') !== 1
-            || preg_match('/(?:\A|\R)\s*13\s+\[PHT008\]/', $output) !== 1
+            $tableLineCount !== 1
+            || (!$plainRendererIsExact && !$githubRendererIsExact)
         ) {
             throw new RuntimeException('Installed PHT008 direct-call diagnostic changed.');
         }
