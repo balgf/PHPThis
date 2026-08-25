@@ -19,6 +19,7 @@ use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Router;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(__DIR__) . '/tests/process-support.php';
 
 $expectSame = static function (mixed $expected, mixed $actual, string $message): void {
     if ($expected !== $actual) {
@@ -266,30 +267,113 @@ if (http_response_code() !== 200 || $body !== "{\"status\":\"ok\"}\n") {
 fwrite(STDOUT, $body);
 PHP;
 
-$process = proc_open(
-    [PHP_BINARY, '-r', $frontControllerProgram, dirname(__DIR__) . '/public/index.php'],
-    [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-    $pipes,
+$frontControllerResult = runStarterPhpProcess(
+    ['-r', $frontControllerProgram, dirname(__DIR__) . '/public/index.php'],
     dirname(__DIR__),
+    5_000,
+    65_536,
+    65_536,
+);
+$expectSame(
+    0,
+    $frontControllerResult['exit_code'],
+    'The real front controller must exit successfully: ' . $frontControllerResult['stderr'],
+);
+$expectSame(
+    "{\"status\":\"ok\"}\n",
+    $frontControllerResult['stdout'],
+    'The real front controller must emit the health body.',
 );
 
-if (!is_resource($process)) {
-    throw new RuntimeException('Unable to execute the real front controller.');
+$deadlockResult = runStarterPhpProcess(
+    [
+        '-r',
+        <<<'PHP'
+$remaining = 262_144;
+while ($remaining > 0) {
+    $written = fwrite(STDERR, str_repeat('e', min(8_192, $remaining)));
+    if (!is_int($written) || $written < 1) {
+        exit(3);
+    }
+    $remaining -= $written;
 }
+fwrite(STDOUT, "STARTER_STREAMS_OK\n");
+PHP,
+    ],
+    dirname(__DIR__),
+    5_000,
+    65_536,
+    524_288,
+);
+$expectSame(0, $deadlockResult['exit_code'], 'The stderr-pressure child must exit successfully.');
+$expectSame(
+    "STARTER_STREAMS_OK\n",
+    $deadlockResult['stdout'],
+    'The starter runner must drain stdout while stderr is active.',
+);
+$expectSame(
+    str_repeat('e', 262_144),
+    $deadlockResult['stderr'],
+    'The starter runner must preserve separated bounded stderr.',
+);
 
-fclose($pipes[0]);
-$frontControllerOutput = stream_get_contents($pipes[1]);
-$frontControllerError = stream_get_contents($pipes[2]);
-fclose($pipes[1]);
-fclose($pipes[2]);
-$frontControllerExitCode = proc_close($process);
-
-if (!is_string($frontControllerOutput) || !is_string($frontControllerError)) {
-    throw new RuntimeException('Unable to read the front-controller result.');
+$timeoutFailure = starterProcessFailure(
+    static fn (): array => runStarterPhpProcess(
+        [
+            '-r',
+            <<<'PHP'
+if (function_exists('pcntl_async_signals') && function_exists('pcntl_signal')) {
+    pcntl_async_signals(true);
+    pcntl_signal(SIGTERM, static function (): void {});
 }
+while (true) {
+    usleep(20_000);
+}
+PHP,
+        ],
+        dirname(__DIR__),
+        500,
+        65_536,
+        65_536,
+    ),
+);
+$expectSame(
+    'STARTER_PROCESS_WALL_LIMIT',
+    $timeoutFailure,
+    'The starter runner must fail with its fixed wall-limit diagnostic.',
+);
 
-$expectSame(0, $frontControllerExitCode, 'The real front controller must exit successfully: ' . $frontControllerError);
-$expectSame("{\"status\":\"ok\"}\n", $frontControllerOutput, 'The real front controller must emit the health body.');
+$outputSentinel = 'starter-output-limit-sensitive-sentinel';
+$outputFailure = starterProcessFailure(
+    static fn (): array => runStarterPhpProcess(
+        [
+            '-r',
+            <<<'PHP'
+if (function_exists('pcntl_async_signals') && function_exists('pcntl_signal')) {
+    pcntl_async_signals(true);
+    pcntl_signal(SIGTERM, static function (): void {});
+}
+while (true) {
+    fwrite(STDERR, str_repeat($argv[1], 1_024));
+}
+PHP,
+            $outputSentinel,
+        ],
+        dirname(__DIR__),
+        5_000,
+        65_536,
+        32_768,
+    ),
+);
+$expectSame(
+    'STARTER_PROCESS_OUTPUT_LIMIT',
+    $outputFailure,
+    'The starter runner must fail with its fixed output-limit diagnostic.',
+);
+
+if (str_contains($outputFailure, $outputSentinel)) {
+    throw new RuntimeException('The starter output-limit failure disclosed child bytes.');
+}
 
 $frontControllerSource = file_get_contents(dirname(__DIR__) . '/public/index.php');
 

@@ -756,7 +756,7 @@ function runDocumentFileCurl(
 ): array {
     $bodyPath = $temporary . '/' . $name . '.body';
     $headerPath = $temporary . '/' . $name . '.headers';
-    $process = proc_open(
+    $result = runBoundedMaintainerProcess(
         [
             'curl',
             '--silent',
@@ -772,30 +772,20 @@ function runDocumentFileCurl(
             ...$arguments,
             $url,
         ],
-        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-        $pipes,
         dirname(__DIR__),
         null,
-        ['bypass_shell' => true],
+        20_000,
+        65_536,
+        65_536,
     );
-
-    if (!is_resource($process)) {
-        throw new RuntimeException('Unable to execute the local HTTP client.');
-    }
-
-    fclose($pipes[0]);
-    $statusOutput = stream_get_contents($pipes[1]);
-    $errorOutput = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $exitCode = proc_close($process);
+    $statusOutput = $result['stdout'];
+    $errorOutput = $result['stderr'];
+    $exitCode = $result['exit_code'];
     $body = file_get_contents($bodyPath);
     $headers = file_get_contents($headerPath);
 
     if (
         $exitCode !== 0
-        || !is_string($statusOutput)
-        || !is_string($errorOutput)
         || $errorOutput !== ''
         || !is_string($body)
         || !is_string($headers)

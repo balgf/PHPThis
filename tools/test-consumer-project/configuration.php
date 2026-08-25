@@ -955,6 +955,8 @@ function proveInstalledConfigurationEvidenceReference(
     $fixtureDirectory = $project . '/tests/fixtures';
     $entrypointPath = $fixtureDirectory . '/runtime-configuration-entrypoint.php';
     $emptyEntrypointPath = $fixtureDirectory . '/empty-configuration-entrypoint.php';
+    $timeoutPidPath = $fixtureDirectory . '/configuration-timeout.pid';
+    $outputPidPath = $fixtureDirectory . '/configuration-output.pid';
     $boundaryPath = $project . '/configuration-reference-boundary.php';
     $contextPath = $project . '/.ai/configuration.md';
     $originalContext = file_get_contents($contextPath);
@@ -1102,7 +1104,7 @@ PHP,
 - Failure: missing, empty, malformed, and oversized inputs produce exact exit `2`, empty stdout, and `CONFIGURATION_INVALID` on stderr before infrastructure or business I/O.
 - Rotation: every evidence invocation is a fresh process; no hidden reload behavior is adopted.
 - Redaction: the public reference asserts exact stream bytes and explicit absence of one supplied synthetic sentinel.
-- Evidence: the exact PHP block extracted from installed `docs/configuration.md` passes the installed maximum-level profile and executes the intentionally short-lived, tiny-fixed-output parser fixture in fresh child processes with an explicit synthetic application environment and no null inheritance; a focused probe separately invokes the matching factory and proves that the raw `NAME=` form reaches its exact empty-value validation branch, while a paired run with the mode omitted proves that missing remains distinct; a hard timeout remains caller- or CI-owned and is not established by this harness.
+- Evidence: the exact PHP block extracted from installed `docs/configuration.md` passes the installed maximum-level profile and executes the parser fixture in fresh direct-child processes with an explicit synthetic application environment and no null inheritance. It concurrently drains separated stdout and stderr under a 5,000-millisecond deadline and 65,536-byte per-stream ordinary bound, proves stderr pressure before stdout, fixed redacted timeout and output-limit failures, direct-child termination and reaping, and PID-file cleanup. A focused probe separately invokes the matching factory and proves that the raw `NAME=` form reaches its exact empty-value validation branch, while a paired run with the mode omitted proves that missing remains distinct. The entrypoint is forbidden from spawning descendants; an outer job timeout remains defense in depth.
 MD,
         );
 
@@ -1165,10 +1167,35 @@ MD,
             $referenceResult,
             'synthetic-rejected-value-must-not-appear',
         );
+
+        $limitedPosixReferenceResult = runProcess(
+            [
+                PHP_BINARY,
+                '-d',
+                'disable_functions=posix_get_last_error',
+                $referencePath,
+            ],
+            $project,
+            $cleanEnvironment,
+        );
+        requireExactProcessResult(
+            $limitedPosixReferenceResult,
+            0,
+            "PASS child-process configuration evidence\n",
+            '',
+            'The installed public configuration evidence reference required partial POSIX PID observation.',
+        );
     } finally {
         writeFile($contextPath, $originalContext);
 
-        foreach ([$referencePath, $entrypointPath, $emptyEntrypointPath, $boundaryPath] as $proofPath) {
+        foreach ([
+            $referencePath,
+            $entrypointPath,
+            $emptyEntrypointPath,
+            $timeoutPidPath,
+            $outputPidPath,
+            $boundaryPath,
+        ] as $proofPath) {
             if (is_file($proofPath) && !unlink($proofPath)) {
                 throw new RuntimeException("Unable to remove installed configuration evidence proof {$proofPath}.");
             }

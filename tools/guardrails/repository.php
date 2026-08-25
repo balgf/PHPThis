@@ -1637,7 +1637,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === 'a2c70361b42baf62712eb08ec69ff4c3588902f002fac0ec7fe4dfb7380bde4c';
+            === '2ab8fb3095acd7eb32b8f758b4ec62f9b0b8bdcace67ce9de27e51dab7483b28';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -2125,10 +2125,13 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     $entrypointTokens = token_get_all($entrypoint);
-    $expectedIncludeStatements = array_map(
-        static fn (string $path): string => "require_once__DIR__.'/" . substr($path, strlen('tools/')) . "';",
-        $expectedModulePaths,
-    );
+    $expectedIncludeStatements = [
+        "require_once__DIR__.'/process-support.php';",
+        ...array_map(
+            static fn (string $path): string => "require_once__DIR__.'/" . substr($path, strlen('tools/')) . "';",
+            $expectedModulePaths,
+        ),
+    ];
     $actualIncludeStatements = [];
     $braceDepth = 0;
     $functionCount = 0;
@@ -2208,7 +2211,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
         || $actualIncludeStatements !== $expectedIncludeStatements
         || $functionCount !== 0
     ) {
-        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level twelve-module require_once preamble and contain no function declarations.';
+        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level process-support plus twelve-module require_once preamble and contain no function declarations.';
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
@@ -3849,6 +3852,7 @@ function repositoryGuardrailFailures(string $root): array
         'skeleton/src/Observability/RequestSummarySink.php',
         'skeleton/src/Observability/TerminalRequestCoordinator.php',
         'skeleton/src/Routes.php',
+        'skeleton/tests/process-support.php',
         'skeleton/tests/run.php',
         'bin/phpthis',
         'verification/ApplicationChecker.php',
@@ -3922,6 +3926,7 @@ function repositoryGuardrailFailures(string $root): array
         'tools/guardrails/boundaries.php',
         'tools/guardrails/operations.php',
         'tools/guardrails/distribution.php',
+        'tools/process-support.php',
         'tools/agent-evaluation.php',
         'tools/agent-evaluation/README.md',
         'tools/agent-evaluation/support.php',
@@ -3948,6 +3953,7 @@ function repositoryGuardrailFailures(string $root): array
         'tools/test-agent-evaluation.php',
         'tools/test-agent-evaluation-controller.php',
         'tools/test-application-duplication.php',
+        'tools/test-process-support.php',
         'tools/setup-example.php',
         'tools/test-database-drivers.php',
     ];
@@ -4067,8 +4073,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 23",
-            "'manifest_sha256' => '57bac67a2e6797d3a27eefbca888a1c9b054cf8663720f4253aa35b9f1500ee6'",
+            "'revision' => 24",
+            "'manifest_sha256' => 'de30103acad07c0f2183c5085c2240444b06f28cfe5b72fea631f0ec9aa28324'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -4098,10 +4104,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 23',
+            '"revision": 24',
             '"source-skeleton"',
-            '"tree": "f5423b885a8838e0ba2cb460e59dc7f86c74c1a3"',
-            '"fixture_sha256": "ea985c717408735d7c3bacc8d0d79730adae4bdfbe59c3f951e91fcbca80c330"',
+            '"tree": "4b37644961a3aa879936b0e1f87419d2b947e029"',
+            '"fixture_sha256": "e235d3a8cff816f1b09b12678247dd094d637f1a4dacef02266e2bba6555d94e"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -4231,7 +4237,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 23 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 24 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -4241,8 +4247,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 23;',
-            'Controller v0.2 supports only change.simple-ping revision 23 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 24;',
+            'Controller v0.2 supports only change.simple-ping revision 24 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
@@ -4616,6 +4622,9 @@ function repositoryGuardrailFailures(string $root): array
     $analysisStage = is_array($duplicationCheck)
         ? array_search('@analyse', $duplicationCheck, true)
         : false;
+    $processStage = is_array($duplicationCheck)
+        ? array_search('@test:process', $duplicationCheck, true)
+        : false;
     $profileStage = is_array($duplicationCheck)
         ? array_search('@test:profile', $duplicationCheck, true)
         : false;
@@ -4624,12 +4633,14 @@ function repositoryGuardrailFailures(string $root): array
         $agentEvaluationStage === false
         || $agentEvaluationControllerStage === false
         || $analysisStage === false
+        || $processStage === false
         || $profileStage === false
-        || $agentEvaluationStage <= $analysisStage
+        || $processStage <= $analysisStage
+        || $agentEvaluationStage <= $processStage
         || $agentEvaluationControllerStage <= $agentEvaluationStage
         || $agentEvaluationControllerStage >= $profileStage
     ) {
-        $failures[] = 'The canonical framework check must run the agent-evaluation data-contract and controller self-tests after analysis and before the Strict Profile suite.';
+        $failures[] = 'The canonical framework check must run bounded-process, agent-evaluation data-contract, and controller self-tests after analysis and before the Strict Profile suite.';
     }
 
     return $failures;

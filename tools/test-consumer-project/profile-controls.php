@@ -664,7 +664,7 @@ PHP;
 
         $result = runProcess($profileCommand, $project, $environment);
         requireSuccess($result, 'Valid extensionless PHP executables or a Markdown example were rejected.');
-        requireOutputContains($result, 'PASS application guardrails: 14 PHP files');
+        requireOutputContains($result, 'PASS application guardrails: 15 PHP files');
         requireOutputNotContains($result, $sourceCanary);
 
         if (is_file($executionSentinelPath)) {

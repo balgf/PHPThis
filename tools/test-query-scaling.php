@@ -11,6 +11,7 @@ use PHPThis\Http\Request;
 
 require dirname(__DIR__) . '/autoload.php';
 require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+require_once __DIR__ . '/process-support.php';
 
 use PHPThis\Verification\SyntaxProfile;
 
@@ -540,31 +541,18 @@ function runRejectedRead(
     string $databasePath,
     int $budget,
 ): array {
-    $process = proc_open(
+    $result = runBoundedMaintainerProcess(
         [PHP_BINARY, $fixturePath, $root, $databasePath, (string) $budget],
-        [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ],
-        $pipes,
         $root,
+        null,
+        30_000,
+        1_048_576,
+        1_048_576,
     );
 
-    if (!is_resource($process)) {
-        throw new RuntimeException('Unable to start the N+1 negative-control fixture.');
-    }
-
-    fclose($pipes[0]);
-    $stdout = stream_get_contents($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $exitCode = proc_close($process);
-
-    if (!is_string($stdout) || !is_string($stderr)) {
-        throw new RuntimeException('Unable to read the N+1 negative-control output.');
-    }
+    $stdout = $result['stdout'];
+    $stderr = $result['stderr'];
+    $exitCode = $result['exit_code'];
 
     if ($exitCode !== 0) {
         throw new RuntimeException("N+1 negative control failed.\n{$stderr}\n{$stdout}");
@@ -622,31 +610,18 @@ function runNestedParentFixture(
         $arguments[] = $authorization;
     }
 
-    $process = proc_open(
+    $result = runBoundedMaintainerProcess(
         $arguments,
-        [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ],
-        $pipes,
         $root,
+        null,
+        30_000,
+        1_048_576,
+        1_048_576,
     );
 
-    if (!is_resource($process)) {
-        throw new RuntimeException('Unable to start a nested parent relationship fixture.');
-    }
-
-    fclose($pipes[0]);
-    $stdout = stream_get_contents($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $exitCode = proc_close($process);
-
-    if (!is_string($stdout) || !is_string($stderr)) {
-        throw new RuntimeException('Unable to read nested parent relationship output.');
-    }
+    $stdout = $result['stdout'];
+    $stderr = $result['stderr'];
+    $exitCode = $result['exit_code'];
 
     if ($exitCode !== 0) {
         throw new RuntimeException("Nested parent relationship fixture failed.\n{$stderr}\n{$stdout}");

@@ -249,9 +249,17 @@ function distributionGuardrailFailures(
             $failures[] = 'composer test:query-scaling must execute the canonical query-scaling harness.';
         }
 
+        if (
+            !is_array($scripts)
+            || ($scripts['test:process'] ?? null) !== 'php tools/test-process-support.php'
+        ) {
+            $failures[] = 'composer test:process must execute the canonical bounded-process self-test.';
+        }
+
         $expectedCheckStages = [
             '@guard',
             '@analyse',
+            '@test:process',
             '@test:agent-evaluation',
             '@test:agent-evaluation-controller',
             '@test:profile',
@@ -418,11 +426,19 @@ function distributionGuardrailFailures(
             'exactly 181 named behaviors',
             '`tests/run.php` is the explicit ordered loader',
             '`tests/composition.php`, `tests/http-boundary.php`, `tests/routing.php`, `tests/input-projection.php`, `tests/crud.php`, and `tests/database-boundary.php`',
-            '`tests/request-reader-support.php`, `tests/process-support.php`, and `tests/create-user-support.php`',
+            'Narrowly shared PHPUnit support lives in `tests/request-reader-support.php`, `tests/process-support.php`, and `tests/create-user-support.php`',
+            '`tests/process-support.php` delegates captured child execution to the maintainer-only owner at `tools/process-support.php`',
             '`tests/behavior-names.txt` locks the complete behavior order',
             "composer test -- --group routing",
             'migrated query-trace comparison slice',
             'Applications continue to own their test library, runner, organization',
+            '`tools/process-support.php` is the shared maintainer primitive for ordinary one-shot dual-pipe capture paths',
+            'supply a finite deadline plus separate stdout and stderr caps',
+            'drains both output pipes concurrently without a shell',
+            'Other platforms prove only direct-child cleanup.',
+            '`tools/test-process-support.php` is the directly runnable adversarial proof',
+            '`test:process` follows analysis and precedes the agent-evaluation stages',
+            '300,000-millisecond and 16,777,216-byte-per-stream bounds',
         ],
         'tests/run.php' => [
             "require dirname(__DIR__) . '/autoload.php';",
@@ -478,7 +494,11 @@ function distributionGuardrailFailures(
             'function requestReaderForBody(string $body, int $maximumBodyBytes): RequestReader',
         ],
         'tests/process-support.php' => [
+            "require_once dirname(__DIR__) . '/tools/process-support.php';",
             'function runIsolatedPhpTest(string $path, array $arguments = []): array',
+            'return runBoundedMaintainerProcess(',
+            '30_000,',
+            '1_048_576,',
         ],
         'tests/create-user-support.php' => [
             'final readonly class RunTestAllowCreateUserPolicy implements',
@@ -519,6 +539,8 @@ function distributionGuardrailFailures(
         ],
         'tests/document-files.php' => [
             'function documentFileTests(): Generator',
+            'runBoundedMaintainerProcess(',
+            '20_000,',
         ],
         'tests/cache.php' => [
             'function cacheTests(): Generator',
@@ -531,6 +553,60 @@ function distributionGuardrailFailures(
         ],
         'tests/handler-decorator.php' => [
             'function handlerDecoratorTests(): Generator',
+        ],
+        'tools/process-support.php' => [
+            'function runBoundedMaintainerProcess(',
+            'PHPTHIS_MAINTAINER_PROCESS_WALL_LIMIT',
+            'PHPTHIS_MAINTAINER_PROCESS_OUTPUT_LIMIT',
+            'stream_select(',
+            "'working_directory' => \$resolvedWorkingDirectory",
+            "DIRECTORY_SEPARATOR === '/'",
+            'phpthisReadMaintainerProcessGroupHandshake(',
+            'pcntl_exec(',
+            "function_exists('posix_get_last_error')",
+            'posix_kill(-$processId, $signal)',
+            'PHPTHIS_MAINTAINER_PROCESS_CLEANUP_FAILED',
+        ],
+        'tools/test-process-support.php' => [
+            "require_once __DIR__ . '/process-support.php';",
+            'The bounded process helper did not drain stdout and stderr concurrently.',
+            'The bounded process helper did not report its exact wall limit.',
+            'The bounded process helper did not report a fixed redacted output limit.',
+            'The bounded process helper changed raw empty environment delivery.',
+            'The bounded process helper did not canonicalize a relative working directory before command resolution.',
+            "'PHPTHIS_PROCESS_PROOF_CAPABILITY_VARIANT' => '1'",
+            "'disable_functions=' . \$disabledFunction",
+            "['pcntl_exec', 'posix_get_last_error']",
+            "function_exists('posix_kill')\n        && function_exists('posix_get_last_error')",
+            'The bounded process helper changed proc_open bare-executable lookup semantics.',
+            'The same-group orphan control changed its direct-child result.',
+            'PASS bounded maintainer process support: streams, limits, redaction, and cleanup',
+        ],
+        'tools/test-consumer-project.php' => [
+            "require_once __DIR__ . '/process-support.php';",
+        ],
+        'tools/test-consumer-project/support.php' => [
+            'return runBoundedMaintainerProcess(',
+            '300_000,',
+            '16_777_216,',
+        ],
+        'tools/test-strict-profile.php' => [
+            "require_once __DIR__ . '/process-support.php';",
+            'return runBoundedMaintainerProcess(',
+            '120_000,',
+            '8_388_608,',
+        ],
+        'tools/test-query-scaling.php' => [
+            "require_once __DIR__ . '/process-support.php';",
+            'runBoundedMaintainerProcess(',
+            '30_000,',
+            '1_048_576,',
+        ],
+        'tools/test-application-duplication.php' => [
+            "require_once __DIR__ . '/process-support.php';",
+            'runBoundedMaintainerProcess(',
+            '30_000,',
+            '1_048_576,',
         ],
         'ROADMAP.md' => [
             'adopt PHPUnit 13 only for the framework-maintainer suite',

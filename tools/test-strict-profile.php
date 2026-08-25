@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
 require_once dirname(__DIR__) . '/verification/EnvironmentAccessProfile.php';
+require_once __DIR__ . '/process-support.php';
 
 use PHPThis\Verification\EnvironmentAccessProfile;
 use PHPThis\Verification\SyntaxProfile;
@@ -2093,7 +2094,7 @@ function profileDiagnosticLines(
 /** @return array{exit_code: int, stdout: string, stderr: string} */
 function runProfileAnalysis(string $root, string $path): array
 {
-    $process = proc_open(
+    return runBoundedMaintainerProcess(
         [
             PHP_BINARY,
             $root . '/vendor/bin/phpstan',
@@ -2104,29 +2105,10 @@ function runProfileAnalysis(string $root, string $path): array
             '--error-format=json',
             $path,
         ],
-        [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ],
-        $pipes,
         $root,
+        null,
+        120_000,
+        8_388_608,
+        8_388_608,
     );
-
-    if (!is_resource($process)) {
-        throw new RuntimeException('Unable to start PHPStan for strict-profile tests.');
-    }
-
-    fclose($pipes[0]);
-    $stdout = stream_get_contents($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $exitCode = proc_close($process);
-
-    if (!is_string($stdout) || !is_string($stderr)) {
-        throw new RuntimeException('Unable to read PHPStan strict-profile output.');
-    }
-
-    return ['exit_code' => $exitCode, 'stdout' => $stdout, 'stderr' => $stderr];
 }

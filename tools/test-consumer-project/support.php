@@ -401,35 +401,14 @@ function composerCommand(string $binary, array $arguments): array
  */
 function runProcess(array $command, string $workingDirectory, array $environment): array
 {
-    $process = proc_open(
+    return runBoundedMaintainerProcess(
         $command,
-        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-        $pipes,
         $workingDirectory,
         $environment,
-        ['bypass_shell' => true],
+        300_000,
+        16_777_216,
+        16_777_216,
     );
-
-    if (!is_resource($process)) {
-        throw new RuntimeException('Unable to start process: ' . implode(' ', $command));
-    }
-
-    fclose($pipes[0]);
-    $stdout = stream_get_contents($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $exitCode = proc_close($process);
-
-    if (!is_string($stdout) || !is_string($stderr)) {
-        throw new RuntimeException('Unable to read process output.');
-    }
-
-    return [
-        'exit_code' => $exitCode >= 0 ? $exitCode : 1,
-        'stdout' => $stdout,
-        'stderr' => $stderr,
-    ];
 }
 
 /** @param array{exit_code: int, stdout: string, stderr: string} $result */

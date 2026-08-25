@@ -189,16 +189,265 @@ The following is application-owned test code, not a PHPThis helper or required f
 
 declare(strict_types=1);
 
-/** @param resource $stream */
-function readConfigurationProcessStream($stream): string
-{
-    $output = stream_get_contents($stream);
+const CONFIGURATION_PROCESS_READ_BYTES = 8_192;
+const CONFIGURATION_PROCESS_POLL_MICROSECONDS = 20_000;
+const CONFIGURATION_PROCESS_TERMINATION_GRACE_MICROSECONDS = 250_000;
+const CONFIGURATION_PROCESS_KILL_WAIT_MICROSECONDS = 1_000_000;
 
-    if (!is_string($output)) {
-        throw new RuntimeException('Unable to read configuration evidence process output.');
+/**
+ * @param non-empty-list<string> $command
+ * @param array<string, string> $environment
+ * @return array{exit_code: int, stdout: string, stderr: string}
+ */
+function runConfigurationCommand(
+    array $command,
+    string $workingDirectory,
+    array $environment,
+    int $wallMilliseconds,
+    int $stdoutBytes,
+    int $stderrBytes,
+): array {
+    $process = @proc_open(
+        $command,
+        [0 => ['pipe', 'rb'], 1 => ['pipe', 'wb'], 2 => ['pipe', 'wb']],
+        $pipes,
+        $workingDirectory,
+        $environment,
+        ['bypass_shell' => true],
+    );
+
+    if (!is_resource($process)) {
+        throw new RuntimeException('CONFIGURATION_PROCESS_START_FAILED');
     }
 
-    return $output;
+    if (
+        !isset($pipes[0], $pipes[1], $pipes[2])
+        || !is_resource($pipes[0])
+        || !is_resource($pipes[1])
+        || !is_resource($pipes[2])
+    ) {
+        $stopped = stopConfigurationProcess($process, $pipes);
+        throw new RuntimeException(
+            $stopped ? 'CONFIGURATION_PROCESS_PIPE_FAILED' : 'CONFIGURATION_PROCESS_CLEANUP_FAILED',
+        );
+    }
+
+    fclose($pipes[0]);
+
+    if (!@stream_set_blocking($pipes[1], false) || !@stream_set_blocking($pipes[2], false)) {
+        $stopped = stopConfigurationProcess($process, [$pipes[1], $pipes[2]]);
+        throw new RuntimeException(
+            $stopped ? 'CONFIGURATION_PROCESS_PIPE_FAILED' : 'CONFIGURATION_PROCESS_CLEANUP_FAILED',
+        );
+    }
+
+    $started = hrtime(true);
+    $deadline = $started + ($wallMilliseconds * 1_000_000);
+    $stdout = '';
+    $stderr = '';
+    $stdoutOpen = true;
+    $stderrOpen = true;
+    $running = true;
+    $exitCode = -1;
+    $failure = null;
+    $terminationStarted = null;
+    $killAttempted = false;
+
+    try {
+        while ($running || $stdoutOpen || $stderrOpen) {
+            $now = hrtime(true);
+
+            if ($failure === null && $now >= $deadline) {
+                $failure = 'CONFIGURATION_PROCESS_WALL_LIMIT';
+                $terminationStarted = $now;
+                proc_terminate($process, 15);
+            }
+
+            if (
+                $failure !== null
+                && !$killAttempted
+                && $terminationStarted !== null
+                && ($now - $terminationStarted)
+                    >= (CONFIGURATION_PROCESS_TERMINATION_GRACE_MICROSECONDS * 1_000)
+            ) {
+                proc_terminate($process, 9);
+                $killAttempted = true;
+            }
+
+            $read = [];
+
+            if ($stdoutOpen) {
+                $read[] = $pipes[1];
+            }
+
+            if ($stderrOpen) {
+                $read[] = $pipes[2];
+            }
+
+            if ($read !== []) {
+                $write = null;
+                $except = null;
+                $selected = @stream_select(
+                    $read,
+                    $write,
+                    $except,
+                    0,
+                    CONFIGURATION_PROCESS_POLL_MICROSECONDS,
+                );
+
+                if ($selected === false) {
+                    $read = [];
+                    usleep(CONFIGURATION_PROCESS_POLL_MICROSECONDS);
+                }
+            } else {
+                usleep(CONFIGURATION_PROCESS_POLL_MICROSECONDS);
+            }
+
+            foreach ($read as $stream) {
+                $chunk = @fread($stream, CONFIGURATION_PROCESS_READ_BYTES);
+
+                if (!is_string($chunk)) {
+                    if ($failure === null) {
+                        $failure = 'CONFIGURATION_PROCESS_READ_FAILED';
+                        $terminationStarted = hrtime(true);
+                        proc_terminate($process, 15);
+                    }
+
+                    $chunk = '';
+                }
+
+                if ($chunk !== '') {
+                    if ($stream === $pipes[1]) {
+                        $remaining = max(0, $stdoutBytes - strlen($stdout));
+                        $stdout .= substr($chunk, 0, $remaining);
+
+                        if ($failure === null && strlen($chunk) > $remaining) {
+                            $failure = 'CONFIGURATION_PROCESS_OUTPUT_LIMIT';
+                        }
+                    } else {
+                        $remaining = max(0, $stderrBytes - strlen($stderr));
+                        $stderr .= substr($chunk, 0, $remaining);
+
+                        if ($failure === null && strlen($chunk) > $remaining) {
+                            $failure = 'CONFIGURATION_PROCESS_OUTPUT_LIMIT';
+                        }
+                    }
+
+                    if ($failure !== null && $terminationStarted === null) {
+                        $terminationStarted = hrtime(true);
+                        proc_terminate($process, 15);
+                    }
+                }
+
+                if (feof($stream)) {
+                    fclose($stream);
+
+                    if ($stream === $pipes[1]) {
+                        $stdoutOpen = false;
+                    } else {
+                        $stderrOpen = false;
+                    }
+                }
+            }
+
+            $status = proc_get_status($process);
+            $running = $status['running'];
+
+            if (!$running && $status['exitcode'] >= 0) {
+                $exitCode = $status['exitcode'];
+            }
+
+            if (!$running && !$stdoutOpen && !$stderrOpen) {
+                break;
+            }
+
+            if (
+                $failure !== null
+                && $killAttempted
+                && $terminationStarted !== null
+                && (hrtime(true) - $terminationStarted)
+                    >= (CONFIGURATION_PROCESS_KILL_WAIT_MICROSECONDS * 1_000)
+            ) {
+                break;
+            }
+        }
+    } finally {
+        foreach ($pipes as $pipe) {
+            if (is_resource($pipe)) {
+                fclose($pipe);
+            }
+        }
+    }
+
+    if ($running) {
+        proc_terminate($process, 9);
+        $stopDeadline = hrtime(true) + (CONFIGURATION_PROCESS_KILL_WAIT_MICROSECONDS * 1_000);
+
+        while ($running && hrtime(true) < $stopDeadline) {
+            usleep(CONFIGURATION_PROCESS_POLL_MICROSECONDS);
+            $status = proc_get_status($process);
+            $running = $status['running'];
+
+            if (!$running && $status['exitcode'] >= 0) {
+                $exitCode = $status['exitcode'];
+            }
+        }
+    }
+
+    if ($running) {
+        throw new RuntimeException('CONFIGURATION_PROCESS_CLEANUP_FAILED');
+    }
+
+    $closedExitCode = proc_close($process);
+
+    if ($exitCode < 0 && $closedExitCode >= 0) {
+        $exitCode = $closedExitCode;
+    }
+
+    if ($failure !== null) {
+        throw new RuntimeException($failure);
+    }
+
+    return [
+        'exit_code' => $exitCode >= 0 ? $exitCode : 1,
+        'stdout' => $stdout,
+        'stderr' => $stderr,
+    ];
+}
+
+/**
+ * @param resource $process
+ * @param array<mixed> $pipes
+ */
+function stopConfigurationProcess(mixed $process, array $pipes): bool
+{
+    proc_terminate($process, 9);
+
+    foreach ($pipes as $pipe) {
+        if (is_resource($pipe)) {
+            fclose($pipe);
+        }
+    }
+
+    $running = true;
+    $deadline = hrtime(true) + (CONFIGURATION_PROCESS_KILL_WAIT_MICROSECONDS * 1_000);
+
+    while ($running && hrtime(true) < $deadline) {
+        $status = proc_get_status($process);
+        $running = $status['running'];
+
+        if ($running) {
+            usleep(CONFIGURATION_PROCESS_POLL_MICROSECONDS);
+        }
+    }
+
+    if ($running) {
+        return false;
+    }
+
+    proc_close($process);
+
+    return true;
 }
 
 /**
@@ -210,31 +459,14 @@ function runConfigurationProcess(
     string $workingDirectory,
     array $environment,
 ): array {
-    $process = proc_open(
+    return runConfigurationCommand(
         [PHP_BINARY, $entrypoint],
-        [0 => ['pipe', 'rb'], 1 => ['pipe', 'wb'], 2 => ['pipe', 'wb']],
-        $pipes,
         $workingDirectory,
         $environment,
-        ['bypass_shell' => true],
+        5_000,
+        65_536,
+        65_536,
     );
-
-    if (!is_resource($process)) {
-        throw new RuntimeException('Unable to start configuration evidence process.');
-    }
-
-    fclose($pipes[0]);
-
-    try {
-        $stdout = readConfigurationProcessStream($pipes[1]);
-        $stderr = readConfigurationProcessStream($pipes[2]);
-    } finally {
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $exitCode = proc_close($process);
-    }
-
-    return ['exit_code' => $exitCode, 'stdout' => $stdout, 'stderr' => $stderr];
 }
 
 /** @param array{exit_code: int, stdout: string, stderr: string} $result */
@@ -259,6 +491,62 @@ function requireConfigurationOutputExcludes(array $result, string $sentinel): vo
     if ($sentinel === '' || str_contains($result['stdout'] . $result['stderr'], $sentinel)) {
         throw new RuntimeException('Configuration rejection disclosed supplied bytes.');
     }
+}
+
+/**
+ * @param Closure(): array{exit_code: int, stdout: string, stderr: string} $operation
+ */
+function configurationProcessFailure(Closure $operation): string
+{
+    try {
+        $operation();
+    } catch (RuntimeException $failure) {
+        return $failure->getMessage();
+    }
+
+    throw new RuntimeException('Configuration process unexpectedly completed.');
+}
+
+function requireConfigurationProcessPidAbsent(string $path): void
+{
+    $source = file_get_contents($path);
+
+    if (!is_string($source) || preg_match('/\A[1-9][0-9]*\z/D', $source) !== 1) {
+        throw new RuntimeException('Configuration process did not record a valid process ID.');
+    }
+
+    $pid = filter_var($source, FILTER_VALIDATE_INT);
+
+    if (
+        !is_int($pid)
+        || !function_exists('posix_kill')
+        || !function_exists('posix_get_last_error')
+    ) {
+        return;
+    }
+
+    $deadline = hrtime(true) + 1_000_000_000;
+
+    while (configurationProcessPidExists($pid) && hrtime(true) < $deadline) {
+        usleep(CONFIGURATION_PROCESS_POLL_MICROSECONDS);
+    }
+
+    if (configurationProcessPidExists($pid)) {
+        throw new RuntimeException('Configuration process remained alive after cleanup.');
+    }
+}
+
+function configurationProcessPidExists(int $pid): bool
+{
+    if (!function_exists('posix_kill') || !function_exists('posix_get_last_error')) {
+        return false;
+    }
+
+    if (posix_kill($pid, 0)) {
+        return true;
+    }
+
+    return posix_get_last_error() !== 3;
 }
 
 /**
@@ -348,12 +636,121 @@ $malformedResult = requireRejectedConfiguration(
 );
 requireConfigurationOutputExcludes($malformedResult, $sentinel);
 
+$deadlockResult = runConfigurationCommand(
+    [
+        PHP_BINARY,
+        '-r',
+        <<<'PHP'
+$remaining = 262_144;
+while ($remaining > 0) {
+    $written = fwrite(STDERR, str_repeat('e', min(8_192, $remaining)));
+    if (!is_int($written) || $written < 1) {
+        exit(3);
+    }
+    $remaining -= $written;
+}
+fwrite(STDOUT, "CONFIGURATION_STREAMS_OK\n");
+PHP,
+    ],
+    $projectRoot,
+    [],
+    5_000,
+    65_536,
+    524_288,
+);
+requireExactConfigurationProcessResult(
+    $deadlockResult,
+    0,
+    "CONFIGURATION_STREAMS_OK\n",
+    str_repeat('e', 262_144),
+);
+
+$timeoutPidPath = __DIR__ . '/fixtures/configuration-timeout.pid';
+$outputPidPath = __DIR__ . '/fixtures/configuration-output.pid';
+
+try {
+    $timeoutFailure = configurationProcessFailure(
+        static fn (): array => runConfigurationCommand(
+            [
+                PHP_BINARY,
+                '-r',
+                <<<'PHP'
+file_put_contents($argv[1], (string) getmypid());
+if (function_exists('pcntl_async_signals') && function_exists('pcntl_signal')) {
+    pcntl_async_signals(true);
+    pcntl_signal(SIGTERM, static function (): void {});
+}
+while (true) {
+    usleep(20_000);
+}
+PHP,
+                $timeoutPidPath,
+            ],
+            $projectRoot,
+            [],
+            500,
+            65_536,
+            65_536,
+        ),
+    );
+
+    if ($timeoutFailure !== 'CONFIGURATION_PROCESS_WALL_LIMIT') {
+        throw new RuntimeException('Configuration process wall-limit behavior changed.');
+    }
+
+    requireConfigurationProcessPidAbsent($timeoutPidPath);
+
+    $outputSentinel = 'configuration-output-limit-sensitive-sentinel';
+    $outputFailure = configurationProcessFailure(
+        static fn (): array => runConfigurationCommand(
+            [
+                PHP_BINARY,
+                '-r',
+                <<<'PHP'
+file_put_contents($argv[1], (string) getmypid());
+if (function_exists('pcntl_async_signals') && function_exists('pcntl_signal')) {
+    pcntl_async_signals(true);
+    pcntl_signal(SIGTERM, static function (): void {});
+}
+while (true) {
+    fwrite(STDERR, str_repeat($argv[2], 1_024));
+}
+PHP,
+                $outputPidPath,
+                $outputSentinel,
+            ],
+            $projectRoot,
+            [],
+            5_000,
+            65_536,
+            32_768,
+        ),
+    );
+
+    if (
+        $outputFailure !== 'CONFIGURATION_PROCESS_OUTPUT_LIMIT'
+        || str_contains($outputFailure, $outputSentinel)
+    ) {
+        throw new RuntimeException('Configuration process output-limit behavior changed.');
+    }
+
+    requireConfigurationProcessPidAbsent($outputPidPath);
+} finally {
+    foreach ([$timeoutPidPath, $outputPidPath] as $pidPath) {
+        if (is_file($pidPath) && !unlink($pidPath)) {
+            throw new RuntimeException('Unable to remove a configuration process PID file.');
+        }
+    }
+}
+
 fwrite(STDOUT, "PASS child-process configuration evidence\n");
 ```
 
 The command is an array containing only code-owned executable and entrypoint paths. Its binary pipe descriptors, working directory, fifth `proc_open` environment argument, and `bypass_shell` option are explicit. That fifth argument supplies the application's explicit child environment instead of requesting null inheritance: put only the synthetic non-secret configuration values the selected fixture needs in this application-supplied map, use an absolute `PHP_BINARY`, and do not copy parent deployment credentials through `getenv`, `$_ENV`, `$_SERVER`, or configuration values in command arguments. The host, executable, or PHP runtime may still add its own required environment entries, so this proves absence of deliberate parent-configuration inheritance rather than exclusive ownership of the final operating-system environment block.
 
-This deliberately small helper uses blocking pipes sequentially. It is suitable only for a short-lived fixture whose contract permits tiny fixed output before exit, as shown here. The application test runner or CI job owns the hard outer timeout. If an adopted real entrypoint can stream, remain resident, or emit enough data to fill either pipe, the application needs its own reviewed capture and termination strategy. Do not grow this configuration example into a general process runner, worker, or supervisor.
+The reference drains nonblocking stdout and stderr concurrently, gives each ordinary configuration child 5,000 milliseconds and 65,536 captured bytes per stream, and fails with fixed redacted diagnostics when the deadline or either output bound is reached. Its adversarial controls fill stderr before opening stdout, stall while ignoring `SIGTERM` where the PHP CLI supports signal handlers, and exceed the stderr bound. Every path closes all pipes, escalates from termination to kill after 250 milliseconds, verifies that the direct child stopped before reaping it, and removes its PID evidence in `finally`. A caller- or CI-owned outer timeout remains defense in depth; it is no longer the reference's only time bound.
+
+This is application-owned test support for one fixed direct PHP child, not a general process runner, worker, or supervisor. The referenced configuration entrypoint must not spawn descendants. An adopted real command that can create descendants needs a separately reviewed platform-specific process-group, Job Object, container, or supervisor boundary and adversarial cleanup evidence; `proc_terminate()` alone does not establish process-tree cleanup. Native process start and an uninterruptible operating-system wait remain outside a PHP userspace deadline, so retain an independent job timeout. Do not infer production containment from this test helper.
 
 PHP 8.4 omits a named `proc_open` environment entry when its value is the empty string. It treats an empty-string array key as a raw environment entry, so the explicit `'' => 'APP_RUNTIME_MODE='` form above delivers a code-owned named input with an empty value instead of omitting it while retaining the `array<string, string>` shape. This is pinned PHP 8.4 implementation behavior rather than a general environment-array convention; retain an executable exact-empty-delivery probe when adapting the pattern or changing the supported PHP runtime. Keep each raw name literal and application-owned; never construct a raw environment entry from request, command, or other submitted input.
 

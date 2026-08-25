@@ -5,6 +5,7 @@ declare(strict_types=1);
 use PHPThis\Verification\ApplicationDuplicationScanner;
 
 require_once dirname(__DIR__) . '/verification/ApplicationDuplicationScanner.php';
+require_once __DIR__ . '/process-support.php';
 
 if (($argv[1] ?? null) === '--memory-probe') {
     duplicationTestMemoryProbe();
@@ -284,30 +285,20 @@ $tests = [
             __FILE__,
             '--memory-probe',
         ];
-        $pipes = [];
-        $process = proc_open(
+        $result = runBoundedMaintainerProcess(
             $command,
-            [
-                1 => ['pipe', 'w'],
-                2 => ['pipe', 'w'],
-            ],
-            $pipes,
+            dirname(__DIR__),
+            null,
+            30_000,
+            1_048_576,
+            1_048_576,
         );
 
-        if (!is_resource($process)) {
-            throw new RuntimeException('The low-memory scanner subprocess did not start.');
-        }
-
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $exitCode = proc_close($process);
-
-        duplicationTestRequire($stderr === '', 'The low-memory scanner subprocess wrote to stderr.');
+        duplicationTestRequire($result['stderr'] === '', 'The low-memory scanner subprocess wrote to stderr.');
         duplicationTestRequire(
-            $exitCode === 0,
-            'The bounded scanner exceeded its 64 MiB process budget: ' . trim($stdout . "\n" . $stderr),
+            $result['exit_code'] === 0,
+            'The bounded scanner exceeded its 64 MiB process budget: '
+                . trim($result['stdout'] . "\n" . $result['stderr']),
         );
     },
     'multiline tokens report their actual ending line' => static function (): void {

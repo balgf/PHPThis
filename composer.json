@@ -42,6 +42,7 @@
         "test": "php vendor/bin/phpunit --configuration=phpunit.xml.dist",
         "test:agent-evaluation": "php tools/test-agent-evaluation.php",
         "test:agent-evaluation-controller": "php tools/test-agent-evaluation-controller.php",
+        "test:process": "php tools/test-process-support.php",
         "test:coverage": "php vendor/bin/phpunit --configuration=phpunit.xml.dist --coverage-text --coverage-clover=.phpunit.cache/coverage.xml",
         "test:duplication": "php tools/test-application-duplication.php",
         "test:consumer": "php tools/test-consumer-project.php",
@@ -51,6 +52,7 @@
         "check": [
             "@guard",
             "@analyse",
+            "@test:process",
             "@test:agent-evaluation",
             "@test:agent-evaluation-controller",
             "@test:profile",

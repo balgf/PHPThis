@@ -3108,6 +3108,28 @@ PHP;
         'skeleton/tests/run.php' => [
             'Runtime GET /health must expose one generated correlation ID.',
             'Each terminal coordinator must expose fresh request-scoped state.',
+            "require dirname(__DIR__) . '/tests/process-support.php';",
+            'STARTER_STREAMS_OK',
+            'starter-output-limit-sensitive-sentinel',
+            'The starter runner must drain stdout while stderr is active.',
+            'The starter runner must fail with its fixed wall-limit diagnostic.',
+            'The starter runner must fail with its fixed output-limit diagnostic.',
+        ],
+        'skeleton/tests/process-support.php' => [
+            'function runStarterPhpProcess(',
+            'stream_select(',
+            'STARTER_PROCESS_WALL_LIMIT',
+            'STARTER_PROCESS_OUTPUT_LIMIT',
+            'function stopStarterProcess(',
+        ],
+        'skeleton/.ai/testing.md' => [
+            'STARTER_PROCESS_EVIDENCE(DIRECT_PHP_CHILD)',
+            '`tests/process-support.php` owns the real-front-controller test\'s narrow direct-PHP-child runner',
+            'concurrently drains separated stdout and stderr',
+            '5,000-millisecond deadline and 65,536-byte ordinary per-stream caps',
+            'fixed redacted timeout and output-limit failures',
+            'stops the direct child before reap',
+            'These fixed PHP children may not spawn descendants',
         ],
         'tests/run.php' => [
             "require __DIR__ . '/observability.php';",
