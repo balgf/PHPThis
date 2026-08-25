@@ -23,10 +23,19 @@ function mutableReleaseStateClaim(string $contents, array $markers): ?string
         . '(?:\s+(?:release|packages?|installation\s+path))?';
     $publicationPredicate = '(?:(?:is|are)\s+(?:(?:not(?:\s+yet)?|now)\s+)?(?:publicly\s+)?(?:available|published|released)|(?:has|have)\s+(?:(?:not(?:\s+yet)?|now)\s+)?been\s+(?:publicly\s+)?(?:published|released))';
 
-    $releaseClaimPattern = '/\b' . $releaseSubject . '\s+' . $publicationPredicate . '\b/';
-    $releaseClaims = [];
+    $coordinationPredicate = '(?:(?:is|are|remains?)\s+(?:(?:still|currently)\s+)?(?:an?\s+)?(?:partial|pending|unannounced))';
+    $releaseClaimPatterns = [
+        '/\b' . $releaseSubject . '\s+' . $publicationPredicate . '\b/',
+        '/\b' . $releaseSubject . '\s+' . $coordinationPredicate . '\b/',
+    ];
 
-    if (preg_match_all($releaseClaimPattern, $normalizedContents, $releaseClaims, PREG_OFFSET_CAPTURE) > 0) {
+    foreach ($releaseClaimPatterns as $releaseClaimPattern) {
+        $releaseClaims = [];
+
+        if (preg_match_all($releaseClaimPattern, $normalizedContents, $releaseClaims, PREG_OFFSET_CAPTURE) <= 0) {
+            continue;
+        }
+
         foreach ($releaseClaims[0] as $releaseClaim) {
             $claimOffset = $releaseClaim[1];
             $claimPrefix = substr($normalizedContents, 0, $claimOffset);
@@ -35,7 +44,7 @@ function mutableReleaseStateClaim(string $contents, array $markers): ?string
                 continue;
             }
 
-            return 'normalized release publication claim';
+            return 'normalized release-state claim';
         }
     }
 
@@ -921,10 +930,6 @@ function contextGuardrailFailures(string $root): array
         'docs/consumer-contract.md' => [
             'ADR 046 consolidates four executable-example application boundaries without changing framework runtime, accepted PHP syntax, consumer checker validity, or the contract or Strict Profile version.',
         ],
-        '.ai/application-context.md' => [
-            'ADR 054 and `v0.1.0-alpha.7` define the latest immutable framework tag and source boundary.',
-            'That boundary carries ADR 041 through ADR 046 and the other accepted Alpha 6 behavior forward',
-        ],
         '.ai/crud.md' => [
             'One application-owned `Users\\UserId` carries the same positive `users.id` invariant through Get and List projections and the accepted List continuation while every operation-specific projection remains separate.',
         ],
@@ -1188,12 +1193,10 @@ function contextGuardrailFailures(string $root): array
             '| Prepare or publish a release | `RELEASING.md` | proposal or approved scope as applicable, explicit authority, exact candidate commits only after approval, CI, packages, and public-install proof |',
         ],
         '.ai/application-context.md' => [
-            'ADR 054 and `v0.1.0-alpha.7` define the latest immutable framework tag and source boundary',
-            'records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
-            'Alpha 7 remains an unannounced partial coordinated release until both GitHub prereleases and the final announcement are separately authorized and recorded',
-            'The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection in `RELEASING.md` are preserved acceptance-time history, not current publication state.',
-            'The current post-tag `main` source is unreleased development work adopting ADR 056 and ADR 057, Consumer Contract version 15, Strict Profile version 4, and PHT008.',
-            'Release preparation, exact-candidate approval and proof, partial-publication recovery, publication, and exact-tag historical inspection follow their distinct routes in `RELEASING.md`.',
+            'Keep `RELEASING.md` as the detailed current mutable release-state owner.',
+            'Consumer-facing summaries may project only their audience-specific boundary and must link back instead of copying the complete evidence.',
+            'Reconcile that owner, every summary, the guard markers, and installed-consumer proof together; preserve tagged and explicitly historical source-preparation text unchanged.',
+            'Record a source and verification date for volatile scale or operational claims.',
         ],
         '.ai/testing.md' => [
             'The local package-archive proof always compares the complete Composer archive inventory with the explicit release allowlist.',
@@ -1215,13 +1218,14 @@ function contextGuardrailFailures(string $root): array
             '## Current release state',
             '| Latest framework tag | Alpha 7, [`v0.1.0-alpha.7`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.7), Consumer Contract version 13, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |',
             '| Latest proved application starter | Alpha 7 is the latest matching framework/skeleton pair with complete clean Packagist-only public-distribution evidence in [Issue #53](https://github.com/balgf/PHPThis/issues/53) |',
-            '| Coordinated release status | Alpha 7 remains partial pending both GitHub prereleases and the final announcement; Alpha 6 remains the latest fully completed and announced coordinated release |',
-            '| Current post-tag `main` | Unreleased development source adopting ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008',
+            '| Coordinated release status | Alpha 7 is the latest completed and announced coordinated release recorded by closed [Issue #53](https://github.com/balgf/PHPThis/issues/53), including both GitHub prereleases, the final announcement, and Issue closure |',
+            '| Current post-tag `main` | Unreleased development source containing ADRs 055 through 060, Consumer Contract version 17, Strict Profile version 4, PHT008, and accepted executable guard, checker, runtime, and maintainer-evidence changes',
             'Package availability and current release state are external facts',
             'The Alpha 7 framework tag is immutable.',
-            'records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
+            'records the completed and announced coordinated release: both exact candidates, required CI, both immutable tags and Packagist versions, clean Packagist-only public-distribution proof, both GitHub prereleases, the final announcement, and Issue closure.',
             'preserve their acceptance-time `PENDING` values and non-authority statements as historical evidence.',
-            'The post-tag `main` source is unreleased development work adopting ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008.',
+            'The post-tag `main` source is unreleased development work containing ADRs 055 through 060, Consumer Contract version 17, Strict Profile version 4, PHT008, and accepted executable guard, checker, runtime, and maintainer-evidence changes.',
+            'The release process owns the detailed dated external-evidence record; live host availability must still be verified.',
             'Create the latest proved public framework/skeleton pair explicitly:',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'",
             'Issue #53 records the exact Alpha 7 skeleton and clean public-install evidence',
@@ -1233,8 +1237,12 @@ function contextGuardrailFailures(string $root): array
         ],
         'RELEASING.md' => [
             'Alpha 7 and `v0.1.0-alpha.7` are the latest immutable framework identity, tag, and source boundary recorded by the repository.',
-            'Issue #53 records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
-            'Alpha 7 remains an unannounced partial coordinated release until both GitHub prereleases and the final announcement are separately authorized and recorded',
+            'Closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) records the completed and announced coordinated Alpha 7 release',
+            '[framework GitHub prerelease](https://github.com/balgf/PHPThis/releases/tag/v0.1.0-alpha.7)',
+            '[skeleton GitHub prerelease](https://github.com/balgf/PHPThis-skeleton/releases/tag/v0.1.0-alpha.7)',
+            '[final announcement](https://github.com/balgf/PHPThis/issues/53#issuecomment-5323310887)',
+            'This current record was reconciled against those external sources on 2026-08-25 (Asia/Manila).',
+            'Continuing publication and package availability remain external',
             '## Immutable release history',
             'Historical release authority means the exact bytes reachable from the approved tag.',
             'A later `main` file at the same path may contain a clarification, but it is current documentation rather than evidence of the tagged release.',
@@ -1247,8 +1255,11 @@ function contextGuardrailFailures(string $root): array
             'only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation.',
             'The skeleton candidate commit may remain explicitly `PENDING`',
             'Keep the planned release date distinct from the observed timestamp of every external publication operation.',
-            'At this source revision, post-tag `main` adopts ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008.',
-            'Neither completed public-distribution evidence nor checklist position authorizes a repository write, either GitHub prerelease, the final announcement, Issue #53 closure, production use, or any other later operation.',
+            'Closed Issue #53 records Alpha 7 as the latest completed and announced coordinated release, including both GitHub prereleases, the final announcement, and Issue closure.',
+            'At this source revision, post-tag `main` includes accepted application-owned operation-coordination and concern-routing guidance, ADRs 055 through 060, Consumer Contract version 17, Strict Profile version 4, PHT008, executable Composer-configuration and application-source checks, request/response runtime corrections, and maintainer proof hardening.',
+            'This delta is not limited to release-state documentation.',
+            'Those completed histories authorize no production use or later release operation.',
+            'For a current candidate, neither partial evidence nor checklist position authorizes the next external write',
             'Authorization is enumerable, not implied by reaching a checklist step.',
             'source preparation; exact-candidate freeze and approval; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement.',
             'Preparing a proposal or accepted source scope, proving or publishing an approved candidate, and inspecting an older release are different tasks.',
@@ -1292,7 +1303,8 @@ function contextGuardrailFailures(string $root): array
             'That completed Alpha 6 history grants no authority for a later release operation.',
             'At the completed Alpha 6 boundary, Alpha 6 and `v0.1.0-alpha.6` were the latest immutable framework tag and source boundary',
             'At the Alpha 7 source-preparation checkpoint, accepted post-Alpha-6 source included ADRs 048 through 054, Consumer Contract version 13',
-            'Issue #53 now records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof',
+            'Closed Issue #53 now records the completed coordinated Alpha 7 release',
+            'both GitHub prereleases, the final announcement, and Issue closure.',
             'Complete for Alpha 7 source-preparation evidence:',
             'Model/context token telemetry was unavailable, and the accountable human accepted `UNAVAILABLE` with no lexical-token proxy as a bounded Alpha 7 deferral only.',
             'The real WebSocket migration and temporary proposed decision 002 remain outside Alpha 7 and unapproved',
@@ -1303,14 +1315,18 @@ function contextGuardrailFailures(string $root): array
             'Complete for the exact framework candidate, tag, required CI, automatic Packagist indexing, and preferred-distribution proof',
             'Complete for the exact dedicated-skeleton export, lock, candidate, required CI, tag, and automatic Packagist indexing',
             'Complete for the clean Packagist-only public-distribution path, exact generated and installed inventories, complete application gate, and loopback `GET /health`.',
-            'Open and separately gated: the framework GitHub prerelease, the skeleton GitHub prerelease, the final candidate-specific announcement, and Issue #53 closure.',
+            'Complete for the coordinated Alpha 7 release:',
+            'Issue #53 records the framework and skeleton GitHub prereleases, the final candidate-specific announcement, and Issue closure',
+            'The [release process](RELEASING.md) owns the detailed current record.',
+            'That completed history grants no authority for a later release operation.',
         ],
         'SECURITY.md' => [
-            'Alpha 7 and `v0.1.0-alpha.7` are the latest immutable framework tag and source boundary and the current exact tagged/package and clean-public-proof boundary recorded by Issue #53.',
-            'Alpha 7 remains an unannounced partial coordinated release until both separately gated GitHub prereleases and the final announcement are completed',
-            'Any approved prerelease candidate may be announced only after its complete public-artifact gate in `RELEASING.md` passes and both GitHub prereleases receive their exact separate authorizations.',
+            'Alpha 7 and `v0.1.0-alpha.7` are the latest immutable framework tag and source boundary.',
+            'Closed Issue #53 records Alpha 7 as the latest completed and announced coordinated release, including both GitHub prereleases, the final announcement, and Issue closure.',
+            'That recorded completion is not a production-support commitment.',
+            'Any approved prerelease candidate may be announced only after its complete public-artifact gate in [the release process](RELEASING.md) passes and both GitHub prereleases receive their exact separate authorizations.',
             'A partially published framework or skeleton remains unannounced until both packages, the clean public installation path, and the required GitHub prereleases are proved.',
-            'This tracked policy does not record current publication state',
+            'This tracked policy does not prove continuing live publication state',
         ],
         'composer.json' => [
             '"test:consumer": "php tools/test-consumer-project.php"',
@@ -1319,15 +1335,18 @@ function contextGuardrailFailures(string $root): array
         'docs/getting-started.md' => [
             '## Prerelease boundary',
             '`v0.1.0-alpha.5` preserves that historical coordinated framework, skeleton, and public-install boundary.',
-            '`v0.1.0-alpha.6` preserves the latest fully completed and announced coordinated framework, skeleton, and public-install release.',
+            '`v0.1.0-alpha.6` preserves its completed and announced coordinated framework, skeleton, and public-install boundary.',
             'Issue #37 records its exact framework and skeleton candidates, both tags and packages, clean exact `create-project` proof, both GitHub prereleases, and announcement.',
             'Package availability remains an external fact',
             'ADR 054 and `v0.1.0-alpha.7` define the latest immutable framework tag and source boundary, Consumer Contract version 13',
-            'Issue #53 records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
-            'Alpha 7 remains an unannounced partial coordinated release until both GitHub prereleases and the final announcement are separately authorized and recorded',
+            'Closed Issue #53 records Alpha 7 as the latest completed and announced coordinated release',
+            'clean Packagist-only public-distribution proof, both GitHub prereleases, the final announcement, and Issue closure.',
             'The `PENDING` values in ADR 054 and the tagged Alpha 7 notes remain acceptance-time history.',
+            '[ADR 055](decisions/055-value-free-composer-configuration-scripts.md)',
+            '[ADR 058](decisions/058-concern-local-ai-context-routing.md)',
+            'The unreleased delta includes application-owned operation-coordination and concern-routing guidance, executable Composer-configuration and application-source checks, request/response runtime corrections, and maintainer proof hardening; it is not limited to release-state documentation.',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'",
-            'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
+            'Prerelease publication follows the complete version-neutral maintainer gate in [the release process](../RELEASING.md).',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
             'This tracked guide records the proved Alpha 7 command but does not establish future availability',
         ],
@@ -1343,14 +1362,17 @@ function contextGuardrailFailures(string $root): array
             'A `git-export-parity=skipped-dirty` result establishes only the independently completed development checks and is not Git-export release evidence.',
             'It also requires ADR 047 and the Alpha 6 release notes to ship together with the exact approved source-preparation identity, planned date, Contract version 11, Strict Profile version 3, and permanent diagnostics `PHT001` through `PHT007`',
             'ADR 054, the tagged Alpha 7 notes, and the approved Alpha 7 source-preparation subsection retain their acceptance-time `PENDING` and non-authority statements as historical evidence.',
-            'Current mutable guidance separately records Issue #37\'s fully completed and announced Alpha 6 evidence and Issue #53\'s exact Alpha 7 candidates, required CI, immutable tags, Packagist versions, and clean Packagist-only public-distribution proof',
-            'while keeping both GitHub prereleases, the final announcement, Issue closure, production use, and every other later operation separately gated.',
-            'The root README proof deliberately pins only the consumer landing-page contract',
-            'the exact Alpha 7 framework/starter command and public-proof boundary',
+            '`RELEASING.md` is the detailed current mutable release-state owner',
+            'Current guidance records closed Issue #53\'s completed and announced coordinated Alpha 7 evidence, including both GitHub prereleases, the final announcement, and Issue closure.',
+            'the root README is a concise consumer projection',
+            'The root README proof also pins the exact Alpha 7 framework/starter command',
+            'the current unreleased ADR 055-through-ADR 060 and Contract 17/Profile 4/PHT008 boundary',
+            'the executable guard/checker/runtime and maintainer-evidence character of that delta',
             'Concern-specific capability and evidence contracts remain in their routed guides rather than being repeated in the README.',
             'ordered local-proof-before-push, exact-CI, tag-creation-and-push',
-            'discovers every current `docs/releases/*.md` note and rejects unqualified positive or negative live-publication claims',
-            'performs no network request, tag operation, package-host write, release creation, or announcement',
+            'rejects explicit versioned present-tense `partial`, `pending`, or `unannounced` claims',
+            'This syntactic drift detector does not infer arbitrary semantic freshness.',
+            'verifies no continuing live GitHub or Packagist state',
         ],
         'docs/knowledge-map.md' => [
             'Assess or prepare a proposed PHPThis release',
@@ -1387,6 +1409,45 @@ function contextGuardrailFailures(string $root): array
     ];
 
     requireGuardrailArtifactMarkers($root, $versionNeutralReleaseContractMarkers, 'version-neutral release', $failures);
+
+    $staleCompletedAlpha7ReleaseMarkers = [
+        'README.md' => [
+            'Alpha 7 remains partial pending both GitHub prereleases and the final announcement',
+            'Alpha 6 remains the latest fully completed and announced coordinated release',
+            'unreleased development work adopting ADR 056, ADR 057, ADR 059, and ADR 060',
+        ],
+        'RELEASING.md' => [
+            'Alpha 7 remains an unannounced partial coordinated release',
+            'Alpha 6 remains the latest fully completed and announced coordinated release',
+            'post-tag `main` adopts ADR 056, ADR 057, ADR 059, and ADR 060',
+            'either GitHub prerelease, the final announcement, Issue #53 closure',
+        ],
+        'ROADMAP.md' => [
+            'both GitHub prereleases and the final announcement remain separately gated',
+            'Open and separately gated: the framework GitHub prerelease',
+        ],
+        'SECURITY.md' => [
+            'Alpha 7 remains an unannounced partial coordinated release',
+            'Alpha 6 remains the latest fully completed and announced coordinated release',
+        ],
+        'docs/getting-started.md' => [
+            '`v0.1.0-alpha.6` preserves the latest fully completed and announced coordinated framework',
+            'Alpha 7 remains an unannounced partial coordinated release',
+            'adopts [ADR 056](decisions/056-bounded-request-target-and-path-bytes.md), [ADR 057](decisions/057-distinct-named-sql-placeholder-occurrences.md), [ADR 059]',
+        ],
+        'docs/guardrails.md' => [
+            'the unannounced partial coordinated-release status',
+            'the current unreleased ADR 056/ADR 057/ADR 059/ADR 060',
+            'while keeping both GitHub prereleases, the final announcement, Issue closure',
+        ],
+    ];
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        $staleCompletedAlpha7ReleaseMarkers,
+        'completed Alpha 7 release and current post-tag source boundary',
+        $failures,
+    );
 
     $historicalAlpha1IdentityArtifactMarkers = [
         'RELEASING.md' => [
@@ -2836,6 +2897,8 @@ function contextGuardrailFailures(string $root): array
         'The public artifact and skeleton path are still unproved.',
         'no alpha has been published',
         'path is intentionally unavailable until',
+        'Alpha 6 remains the latest fully completed and announced coordinated release',
+        'v0.1.0-alpha.6 preserves the latest fully completed and announced coordinated framework, skeleton, and public-install release',
     ];
 
     $requiredReleaseRoutingAuthorityFiles = [
@@ -2909,10 +2972,19 @@ function contextGuardrailFailures(string $root): array
         'v1.0.0 is released.' => true,
         'Alpha 6 is not published.' => true,
         'v0.2.0-beta.2 has not yet been released.' => true,
+        'Alpha 7 remains partial.' => true,
+        "ALPHA 7 REMAINS\nUNANNOUNCED." => true,
+        '**Alpha 7** is still pending final coordination.' => true,
+        '[v0.1.0-alpha.7](https://example.invalid/release) remains an unannounced partial coordinated release.' => true,
         'Alpha 5 was published on an observed historical date.' => false,
         'If Alpha 6 is published, record the observed timestamp.' => false,
         'When v0.2.0-alpha.1 is available, prove the installed artifact.' => false,
         'Unless Alpha 6 is not published, stop.' => false,
+        'If Alpha 8 remains partial, record the recovery state.' => false,
+        'Alpha 7 remained partial at the source-preparation checkpoint.' => false,
+        'Both exact candidate commits remain PENDING.' => false,
+        'A partially published framework or skeleton remains unannounced until the complete gate passes.' => false,
+        'Alpha 7 is experimental prerelease software.' => false,
         'Alpha 5 publication state is external.' => false,
         'Alpha 5 is the latest immutable release identity and tag known to this checkout.' => false,
         'Alpha 5 is the latest immutable release identity and tag known to the repository source record.' => false,
@@ -2931,9 +3003,9 @@ function contextGuardrailFailures(string $root): array
 
     $externalReleaseStateMarkers = [
         'README.md' => 'Package availability and current release state are external facts',
-        'RELEASING.md' => 'Publication state is external',
+        'RELEASING.md' => 'Continuing publication and package availability remain external',
         'ROADMAP.md' => 'Live GitHub and Packagist state remains external',
-        'SECURITY.md' => 'This tracked policy does not record current publication state',
+        'SECURITY.md' => 'This tracked policy does not prove continuing live publication state',
         'docs/getting-started.md' => 'Package availability remains an external fact',
         'docs/releases/0.1.0-alpha.1.md' => 'Publication state is external',
         'docs/releases/0.1.0-alpha.2.md' => 'Publication state is external',
