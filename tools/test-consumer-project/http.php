@@ -1639,7 +1639,7 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
             'Strict Profile version 3 remains unchanged',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 15',
+            'Contract version: 16',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
             'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
@@ -2040,7 +2040,7 @@ PHP,
             'The final readable implementation occupies 2,618 lines',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 15',
+            'Contract version: 16',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',

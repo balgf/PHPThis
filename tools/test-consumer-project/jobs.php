@@ -148,7 +148,7 @@ function proveInstalledBackendNeutralJobsVerificationReference(
             'Where delivery ownership or session liveness expires, record maximum handler duration relative to that window',
             'The accepted [SQLite profile](jobs/sqlite.md) remains the first and only checked profile under its existing ADR 024 evidence;',
             'The stricter exact service/client version and real-service bar above applies to every profile added under ADR 052.',
-            'This accepted optional guidance left Consumer Contract version 12 unchanged; current Consumer Contract version 15 carries version 14 and this guidance forward under Strict Profile version 4 and diagnostics `PHT001` through `PHT008`.',
+            'This accepted optional guidance left Consumer Contract version 12 unchanged; current Consumer Contract version 16 carries version 15 and this guidance forward under Strict Profile version 4 and diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/jobs/README.md' => [
             'PHPThis currently accepts the optional [backend-neutral contract](../jobs.md) and [verification structure](verification.md) under ADR 052.',

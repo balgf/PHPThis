@@ -17,6 +17,7 @@ function proveDuplicationAdvisoryIsReportOnly(
     $frameworkPath = $project . '/vendor/phpthis/framework/duplication-negative-control.php';
     $dependencyPath = $project . '/vendor/dependency-negative-control/DuplicationProof.php';
     $vcsPath = $project . '/.git/duplication-negative-control.php';
+    $vcsPrefixedPath = $project . '/.git/prefixed-negative-control.inc';
     $largeAdvisoryPath = $project . '/unconventional/duplication/LargeAdvisory.php';
     $structuralFailurePath = $project . '/unconventional/duplication/StructuralFailure.php';
     $phpStanFailurePath = $project . '/unconventional/duplication/PhpStanFailure.php';
@@ -84,13 +85,14 @@ final class SecondDuplicationProof
 }
 PHP;
 
-    writeFile($firstPath, $plain . "\n");
-    writeFile($secondPath, $decorated . "\n");
-    writeFile($frameworkPath, $plain . "\n");
-    writeFile($dependencyPath, $decorated . "\n");
-    writeFile($vcsPath, $plain . "\n");
-
     try {
+        writeFile($firstPath, $plain . "\n");
+        writeFile($secondPath, $decorated . "\n");
+        writeFile($frameworkPath, $plain . "\n");
+        writeFile($dependencyPath, $decorated . "\n");
+        writeFile($vcsPath, $plain . "\n");
+        writeFile($vcsPrefixedPath, "\xEF\xBB\xBF \n<?PHP\n\necho 'excluded';\n");
+
         $normal = runProcess($profileCommand, $project, $environment);
         requireSuccess($normal, 'A possible duplication advisory invalidated the consumer.');
         requireStdoutContains(
@@ -175,6 +177,7 @@ PHP;
                 'vendor/phpthis/framework/duplication-negative-control.php',
                 'vendor/dependency-negative-control/DuplicationProof.php',
                 '.git/duplication-negative-control.php',
+                '.git/prefixed-negative-control.inc',
                 'DUPLICATION_PRIVATE_CANARY_7b4f',
             ] as $excludedValue
         ) {
@@ -251,6 +254,7 @@ PHP;
                 $frameworkPath,
                 $dependencyPath,
                 $vcsPath,
+                $vcsPrefixedPath,
                 $largeAdvisoryPath,
                 $structuralFailurePath,
                 $phpStanFailurePath,
@@ -462,20 +466,78 @@ function proveEveryApplicationDirectoryIsChecked(string $project, array $profile
         'tmp/OpenTemporary.php',
     ];
     $source = "<?php\n\ndeclare(strict_types=1);\n\nclass OpenClass {}\n";
-
-    foreach ($paths as $relativePath) {
-        writeFile($project . '/' . $relativePath, $source);
-    }
-
     $extensionlessPath = 'bin/OpenConsole';
-    writeFile($project . '/' . $extensionlessPath, "#!/usr/bin/env php\n" . $source);
-    $unsupportedExtensionPath = 'config/OpenInclude.inc';
-    writeFile(
-        $project . '/' . $unsupportedExtensionPath,
-        "<?php\n\ndeclare(strict_types=1);\n\nfinal class IncludeClass {}\n",
-    );
+    $diagnosticCanary = 'PHPTHIS_PREFIX_DIAGNOSTIC_PRIVATE_CANARY';
+    $executionSentinelPath = $project . '/source-prefix-discovery-executed';
+    $launcherPrefix = "#!/usr/bin/env php\n";
+    $unsupportedExtensionSources = [
+        'config/OpenInclude.inc' => "<?php\n\n// {$diagnosticCanary}\ndeclare(strict_types=1);\n",
+        'config/OpenBomInclude.inc' => "\xEF\xBB\xBF<?php\n\nfile_put_contents(dirname(__DIR__)"
+            . " . '/source-prefix-discovery-executed', '{$diagnosticCanary}');\n",
+        '.hidden/OpenBomWhitespaceInclude.inc' => "\xEF\xBB\xBF \t\r\n<?php\n\ndeclare(strict_types=1);\n",
+        'config/OpenWhitespaceInclude.inc' => " \t\r\n\v\f<?php\n\ndeclare(strict_types=1);\n",
+        'config/OpenUppercaseInclude.inc' => "<?PHP\n\ndeclare(strict_types=1);\n",
+        'config/OpenShortEchoInclude.inc' => "<?= 'executable';\n",
+        'config/OpenShebangWhitespaceInclude.inc' => $launcherPrefix
+            . "\xEF\xBB\xBF \t\r\n<?PHP\n\ndeclare(strict_types=1);\n",
+        'config/OpenBoundaryInclude.inc' => str_repeat(' ', 4091)
+            . "<?php echo 'boundary';\n",
+        'config/OpenLongPreamble.inc' => str_repeat(' ', 4096)
+            . "<?php\n\ndeclare(strict_types=1);\n",
+        'config/OpenShebangLongPreamble.inc' => $launcherPrefix
+            . str_repeat(' ', 4096 - strlen($launcherPrefix))
+            . "<?php\n\ndeclare(strict_types=1);\n",
+        'config/OpenPartialPrefix.inc' => str_repeat(' ', 4093) . '<?ph' . 'p',
+        'config/OpenWhitespaceOnlyAmbiguous.inc' => str_repeat(' ', 4097),
+        'config/OpenNonPhpLookahead.inc' => str_repeat(' ', 4091) . '<?phpx',
+    ];
+    $canonicalUnsupportedPath = 'config/OpenInclude.inc';
+    $detectedUnsupportedPaths = [
+        'config/OpenBomInclude.inc',
+        '.hidden/OpenBomWhitespaceInclude.inc',
+        'config/OpenWhitespaceInclude.inc',
+        'config/OpenUppercaseInclude.inc',
+        'config/OpenShortEchoInclude.inc',
+        'config/OpenShebangWhitespaceInclude.inc',
+        'config/OpenBoundaryInclude.inc',
+    ];
+    $nonCanonicalExtensionlessPath = 'bin/OpenWhitespaceConsole';
+    $nonCanonicalLauncherPath = 'bin/OpenWhitespaceLauncher';
+    $unreadablePath = 'config/OpenUnreadableAsset.txt';
+    $fixturePaths = [
+        ...$paths,
+        $extensionlessPath,
+        ...array_keys($unsupportedExtensionSources),
+        $nonCanonicalExtensionlessPath,
+        $nonCanonicalLauncherPath,
+        $unreadablePath,
+    ];
 
     try {
+        foreach ($paths as $relativePath) {
+            writeFile($project . '/' . $relativePath, $source);
+        }
+
+        writeFile($project . '/' . $extensionlessPath, $launcherPrefix . $source);
+
+        foreach ($unsupportedExtensionSources as $relativePath => $unsupportedSource) {
+            writeFile($project . '/' . $relativePath, $unsupportedSource);
+        }
+
+        writeFile(
+            $project . '/' . $nonCanonicalExtensionlessPath,
+            " \n<?php\n\ndeclare(strict_types=1);\n",
+        );
+        writeFile(
+            $project . '/' . $nonCanonicalLauncherPath,
+            $launcherPrefix . " \n<?php\n\ndeclare(strict_types=1);\n",
+        );
+        writeFile($project . '/' . $unreadablePath, "ordinary unreadable asset\n");
+
+        if (!chmod($project . '/' . $unreadablePath, 0000)) {
+            throw new RuntimeException('Unable to make the source-prefix control unreadable.');
+        }
+
         $result = runProcess($profileCommand, $project, $environment);
         requireFailure($result, 'PHT002 files outside conventional roots unexpectedly passed.');
 
@@ -486,18 +548,74 @@ function proveEveryApplicationDirectoryIsChecked(string $project, array $profile
         requireOutputContains($result, "PHT002 {$extensionlessPath}:6");
         requireOutputContains(
             $result,
-            "{$unsupportedExtensionPath} contains PHP source but must use the .php extension",
+            "{$canonicalUnsupportedPath} contains PHP source but must use the .php extension or no extension for an executable.",
         );
-    } finally {
-        foreach ($paths as $relativePath) {
-            unlink($project . '/' . $relativePath);
+        foreach ($detectedUnsupportedPaths as $relativePath) {
+            requireOutputContains(
+                $result,
+                "{$relativePath} contains PHP source but must use the .php extension; remove the extension only after changing to an exact canonical byte-zero prefix.",
+            );
         }
 
-        unlink($project . '/' . $extensionlessPath);
-        unlink($project . '/' . $unsupportedExtensionPath);
+        requireOutputContains(
+            $result,
+            'config/OpenLongPreamble.inc has an ambiguous PHP-source preamble at the 4096-byte inspection limit',
+        );
+        requireOutputContains(
+            $result,
+            'config/OpenShebangLongPreamble.inc has an ambiguous PHP-source preamble at the 4096-byte inspection limit',
+        );
+        requireOutputContains(
+            $result,
+            'config/OpenPartialPrefix.inc has an ambiguous PHP-source preamble at the 4096-byte inspection limit',
+        );
+        requireOutputContains(
+            $result,
+            'config/OpenWhitespaceOnlyAmbiguous.inc has an ambiguous PHP-source preamble at the 4096-byte inspection limit',
+        );
+        requireOutputNotContains($result, 'config/OpenNonPhpLookahead.inc');
+        requireOutputNotContains($result, $diagnosticCanary);
+        requireOutputContains(
+            $result,
+            "{$nonCanonicalExtensionlessPath} contains PHP source but an extensionless executable must begin exactly with <?php",
+        );
+        requireOutputContains(
+            $result,
+            "{$nonCanonicalLauncherPath} contains PHP source but an extensionless executable must begin exactly with <?php",
+        );
+        requireOutputContains(
+            $result,
+            "Cannot inspect {$unreadablePath} for an executable PHP prefix.",
+        );
+
+        if (is_file($executionSentinelPath)) {
+            throw new RuntimeException('Application source-prefix discovery executed an unsupported-suffix file.');
+        }
+    } finally {
+        $unreadableFullPath = $project . '/' . $unreadablePath;
+
+        if (is_file($unreadableFullPath) && !chmod($unreadableFullPath, 0600)) {
+            throw new RuntimeException('Unable to restore the source-prefix control permissions.');
+        }
+
+        foreach ($fixturePaths as $relativePath) {
+            $fixturePath = $project . '/' . $relativePath;
+
+            if (is_file($fixturePath) && !unlink($fixturePath)) {
+                throw new RuntimeException("Unable to remove source-prefix fixture {$relativePath}.");
+            }
+        }
+
+        if (is_file($executionSentinelPath)) {
+            unlink($executionSentinelPath);
+        }
 
         foreach (['config', 'bin', 'migrations', '.hidden', 'tmp'] as $directory) {
-            rmdir($project . '/' . $directory);
+            $fixtureDirectory = $project . '/' . $directory;
+
+            if (is_dir($fixtureDirectory) && !rmdir($fixtureDirectory)) {
+                throw new RuntimeException("Unable to remove source-prefix fixture directory {$directory}.");
+            }
         }
     }
 }
@@ -512,6 +630,11 @@ function proveValidExtensionlessExecutableIsChecked(
     array $environment,
 ): void {
     $path = $project . '/bin/HealthCommand';
+    $directPath = $project . '/bin/DirectHealthCommand';
+    $documentationPath = $project . '/docs/PHPSourceExample.md';
+    $boundaryNonSourcePath = $project . '/docs/BoundaryNonSource.txt';
+    $executionSentinelPath = $project . '/source-discovery-executed';
+    $sourceCanary = 'PHPTHIS_SOURCE_DISCOVERY_PRIVATE_CANARY';
     $source = <<<'PHP'
 #!/usr/bin/env php
 <?php
@@ -524,15 +647,43 @@ final class HealthCommand
 {
 }
 PHP;
-    writeFile($path, $source . "\n");
 
     try {
+        writeFile($path, $source . "\n");
+        writeFile(
+            $directPath,
+            "<?php\n\ndeclare(strict_types=1);\n\nnamespace App;\n\nfile_put_contents(dirname(__DIR__) . '/source-discovery-executed', '"
+                . $sourceCanary
+                . "');\n\nfinal class DirectHealthCommand {}\n",
+        );
+        writeFile(
+            $documentationPath,
+            "# PHP source example\n\n```php\n<?php\n\necho 'documentation only';\n```\n",
+        );
+        writeFile($boundaryNonSourcePath, str_repeat(' ', 4096));
+
         $result = runProcess($profileCommand, $project, $environment);
-        requireSuccess($result, 'A valid extensionless PHP executable was rejected.');
-        requireOutputContains($result, 'PASS application guardrails: 13 PHP files');
+        requireSuccess($result, 'Valid extensionless PHP executables or a Markdown example were rejected.');
+        requireOutputContains($result, 'PASS application guardrails: 14 PHP files');
+        requireOutputNotContains($result, $sourceCanary);
+
+        if (is_file($executionSentinelPath)) {
+            throw new RuntimeException('Application source discovery executed a candidate source file.');
+        }
     } finally {
-        unlink($path);
-        rmdir(dirname($path));
+        foreach ([$path, $directPath, $documentationPath, $boundaryNonSourcePath] as $fixturePath) {
+            if (is_file($fixturePath) && !unlink($fixturePath)) {
+                throw new RuntimeException('Unable to remove a valid source-discovery fixture.');
+            }
+        }
+
+        if (is_file($executionSentinelPath)) {
+            unlink($executionSentinelPath);
+        }
+
+        if (is_dir(dirname($path)) && !rmdir(dirname($path))) {
+            throw new RuntimeException('Unable to remove the valid source-discovery fixture directory.');
+        }
     }
 }
 
@@ -723,14 +874,111 @@ PHP;
 function proveDependencyDirectoryIsExcluded(string $project, array $profileCommand, array $environment): void
 {
     $path = $project . '/vendor/dependency-negative-control/OpenDependencyClass.php';
-    writeFile($path, "<?php\n\nclass OpenDependencyClass {}\n");
+    $prefixedPath = $project . '/vendor/dependency-negative-control/OpenDependencyInclude.inc';
+    $configuredEntryPath = $project . '/dependency-entry';
+    $aliasPath = $project . '/dependency-alias';
+    $composerPath = $project . '/composer.json';
+    $originalComposer = file_get_contents($composerPath);
+
+    if (!is_string($originalComposer)) {
+        throw new RuntimeException('Unable to preserve composer.json for the dependency-exclusion proof.');
+    }
 
     try {
+        writeFile($path, "<?php\n\nclass OpenDependencyClass {}\n");
+        writeFile($prefixedPath, "\xEF\xBB\xBF \n<?PHP\n\nclass OpenDependencyInclude {}\n");
+
         $result = runProcess($profileCommand, $project, $environment);
         requireSuccess($result, 'Dependency-owned PHP was incorrectly treated as application source.');
+        requireOutputNotContains($result, 'vendor/dependency-negative-control/OpenDependencyInclude.inc');
+
+        $composer = jsonFile($composerPath);
+        $config = $composer['config'] ?? [];
+
+        if (!is_array($config)) {
+            throw new RuntimeException('The dependency-exclusion proof requires object-shaped Composer config.');
+        }
+
+        $vendorStatus = @stat($project . '/vendor');
+        $caseVariantStatus = @stat($project . '/VENDOR');
+        $vendorDevice = is_array($vendorStatus) ? $vendorStatus['dev'] : null;
+        $vendorInode = is_array($vendorStatus) ? $vendorStatus['ino'] : null;
+        $caseVariantDevice = is_array($caseVariantStatus) ? $caseVariantStatus['dev'] : null;
+        $caseVariantInode = is_array($caseVariantStatus) ? $caseVariantStatus['ino'] : null;
+
+        if (
+            is_int($vendorDevice)
+            && is_int($vendorInode)
+            && $vendorDevice === $caseVariantDevice
+            && $vendorInode === $caseVariantInode
+        ) {
+            $caseVariantComposer = $composer;
+            $caseVariantConfig = $config;
+            $caseVariantConfig['vendor-dir'] = 'VENDOR';
+            $caseVariantComposer['config'] = $caseVariantConfig;
+            writeJson($composerPath, $caseVariantComposer);
+
+            $caseVariant = runProcess($profileCommand, $project, $environment);
+            requireSuccess(
+                $caseVariant,
+                'A configured dependency-directory case variant was treated as application source.',
+            );
+        }
+
+        if (!symlink($project . '/vendor', $configuredEntryPath)) {
+            throw new RuntimeException('Unable to create the configured dependency-entry symlink control.');
+        }
+
+        $config['vendor-dir'] = 'dependency-entry';
+        $composer['config'] = $config;
+        writeJson($composerPath, $composer);
+
+        $configured = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $configured,
+            'A configured dependency symlink or its physical in-tree target was treated as application source.',
+        );
+        requireOutputNotContains(
+            $configured,
+            'vendor/dependency-negative-control/OpenDependencyInclude.inc',
+        );
+
+        if (!symlink($project . '/vendor', $aliasPath)) {
+            throw new RuntimeException('Unable to create the dependency-alias symlink negative control.');
+        }
+
+        $aliased = runProcess($profileCommand, $project, $environment);
+        requireFailure($aliased, 'An application symlink alias to the dependency directory unexpectedly passed.');
+        requireOutputContains(
+            $aliased,
+            'dependency-alias is a symlink; application checks do not follow symlinks',
+        );
+        requireOutputNotContains($aliased, 'dependency-alias/dependency-negative-control/OpenDependencyClass.php');
     } finally {
-        unlink($path);
-        rmdir(dirname($path));
+        if (is_link($aliasPath) && !unlink($aliasPath)) {
+            throw new RuntimeException('Unable to remove the dependency-alias symlink negative control.');
+        }
+
+        if (is_link($configuredEntryPath) && !unlink($configuredEntryPath)) {
+            throw new RuntimeException('Unable to remove the configured dependency-entry symlink control.');
+        }
+
+        if (
+            file_get_contents($composerPath) !== $originalComposer
+            && file_put_contents($composerPath, $originalComposer, LOCK_EX) !== strlen($originalComposer)
+        ) {
+            throw new RuntimeException('Unable to restore composer.json after the dependency-exclusion proof.');
+        }
+
+        foreach ([$path, $prefixedPath] as $fixturePath) {
+            if (is_file($fixturePath) && !unlink($fixturePath)) {
+                throw new RuntimeException('Unable to remove a dependency-exclusion fixture.');
+            }
+        }
+
+        if (is_dir(dirname($path)) && !rmdir(dirname($path))) {
+            throw new RuntimeException('Unable to remove the dependency-exclusion fixture directory.');
+        }
     }
 }
 
@@ -1470,51 +1718,98 @@ function proveSymlinkedSourceIsRejected(
     array $environment,
 ): void {
     $outside = $workspace . '/outside-source';
-
-    if (!mkdir($outside, 0700)) {
-        throw new RuntimeException('Unable to create the symlink negative-control target.');
-    }
-
-    writeFile($outside . '/External.php', "<?php\n\ndeclare(strict_types=1);\n");
     $link = $project . '/linked-source';
 
-    if (!symlink($outside, $link)) {
-        throw new RuntimeException('Unable to create the symlink negative control.');
-    }
-
     try {
+        if (!mkdir($outside, 0700)) {
+            throw new RuntimeException('Unable to create the symlink negative-control target.');
+        }
+
+        writeFile(
+            $outside . '/External.php',
+            "<?php\n\ndeclare(strict_types=1);\n\nclass LinkedSourceTraversalCanary {}\n",
+        );
+
+        if (!symlink($outside, $link)) {
+            throw new RuntimeException('Unable to create the symlink negative control.');
+        }
+
         $result = runProcess($profileCommand, $project, $environment);
         requireFailure($result, 'A symlinked source directory unexpectedly passed.');
-        requireOutputContains($result, 'linked-source is a symlink directory');
+        requireOutputContains($result, 'linked-source is a symlink; application checks do not follow symlinks');
+        requireOutputNotContains($result, 'linked-source/External.php');
+        requireOutputNotContains($result, 'LinkedSourceTraversalCanary');
     } finally {
-        unlink($link);
-        removeDirectory($outside);
+        if (is_link($link)) {
+            unlink($link);
+        }
+
+        if (is_dir($outside)) {
+            removeDirectory($outside);
+        }
     }
 
     $outsideExecutable = $workspace . '/outside-command';
-    writeFile(
-        $outsideExecutable,
-        "#!/usr/bin/env php\n<?php\n\ndeclare(strict_types=1);\n\nnamespace External;\n\nfinal class Command {}\n",
-    );
+    $outsidePrefixedSource = $workspace . '/outside-prefixed-source';
+    $outsideAsset = $workspace . '/outside-asset';
     $binDirectory = $project . '/bin';
-
-    if (!mkdir($binDirectory, 0700)) {
-        throw new RuntimeException('Unable to create the executable symlink negative-control directory.');
-    }
-
     $executableLink = $binDirectory . '/linked-command';
-
-    if (!symlink($outsideExecutable, $executableLink)) {
-        throw new RuntimeException('Unable to create the executable symlink negative control.');
-    }
+    $prefixedLink = $binDirectory . '/linked-prefixed-source.inc';
+    $brokenLink = $binDirectory . '/linked-broken-source.inc';
+    $assetLink = $binDirectory . '/linked-asset.txt';
 
     try {
+        writeFile(
+            $outsideExecutable,
+            "#!/usr/bin/env php\n<?php\n\ndeclare(strict_types=1);\n\nnamespace External;\n\nfinal class Command {}\n",
+        );
+        writeFile(
+            $outsidePrefixedSource,
+            "\xEF\xBB\xBF \t\r\n<?PHP\n\ndeclare(strict_types=1);\n",
+        );
+        writeFile($outsideAsset, "ordinary non-source asset\n");
+
+        if (!mkdir($binDirectory, 0700)) {
+            throw new RuntimeException('Unable to create the executable symlink negative-control directory.');
+        }
+
+        if (!symlink($outsideExecutable, $executableLink)) {
+            throw new RuntimeException('Unable to create the executable symlink negative control.');
+        }
+
+        if (!symlink($outsidePrefixedSource, $prefixedLink)) {
+            throw new RuntimeException('Unable to create the prefixed-source symlink negative control.');
+        }
+
+        if (!symlink($workspace . '/missing-source', $brokenLink)) {
+            throw new RuntimeException('Unable to create the broken-source symlink negative control.');
+        }
+
+        if (!symlink($outsideAsset, $assetLink)) {
+            throw new RuntimeException('Unable to create the asset symlink negative control.');
+        }
+
         $result = runProcess($profileCommand, $project, $environment);
-        requireFailure($result, 'A symlinked extensionless PHP executable unexpectedly passed.');
-        requireOutputContains($result, 'bin/linked-command is a symlink file');
+        requireFailure($result, 'Application symlinks unexpectedly passed.');
+        requireOutputContains($result, 'bin/linked-command is a symlink; application checks do not follow symlinks');
+        requireOutputContains($result, 'bin/linked-prefixed-source.inc is a symlink; application checks do not follow symlinks');
+        requireOutputContains($result, 'bin/linked-broken-source.inc is a symlink; application checks do not follow symlinks');
+        requireOutputContains($result, 'bin/linked-asset.txt is a symlink; application checks do not follow symlinks');
     } finally {
-        unlink($executableLink);
-        rmdir($binDirectory);
-        unlink($outsideExecutable);
+        foreach ([$executableLink, $prefixedLink, $brokenLink, $assetLink] as $sourceLink) {
+            if (is_link($sourceLink)) {
+                unlink($sourceLink);
+            }
+        }
+
+        if (is_dir($binDirectory)) {
+            rmdir($binDirectory);
+        }
+
+        foreach ([$outsideExecutable, $outsidePrefixedSource, $outsideAsset] as $outsideSource) {
+            if (is_file($outsideSource)) {
+                unlink($outsideSource);
+            }
+        }
     }
 }

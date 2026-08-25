@@ -10,6 +10,12 @@ use Throwable;
 final class ApplicationChecker
 {
     private const CONNECTION_CLASS = 'phpthis\\database\\connection';
+    private const PHP_SOURCE_PREFIX_AMBIGUOUS = 3;
+    private const PHP_SOURCE_PREFIX_CANONICAL = 1;
+    private const PHP_SOURCE_PREFIX_FOUND = 2;
+    private const PHP_SOURCE_PREFIX_INSPECTION_LIMIT = 4096;
+    private const PHP_SOURCE_PREFIX_NONE = 0;
+    private const PHP_SOURCE_PREFIX_UNREADABLE = 4;
     private const PHPSTAN_CONSTRAINT = '^2.1';
     private const STRICT_RULES_CONSTRAINT = '^2.0';
 
@@ -90,13 +96,14 @@ final class ApplicationChecker
         }
 
         $vendorDirectory = $vendorResult['directory'];
+        $configuredVendorPath = $vendorResult['configured_path'];
         $composer = $vendorResult['composer'];
 
-        if ($vendorDirectory === null || $composer === null) {
+        if ($vendorDirectory === null || $configuredVendorPath === null || $composer === null) {
             return $this->reportFailures(['Cannot resolve the Composer vendor directory.']);
         }
 
-        $discovery = $this->discoverPhpFiles($root, $vendorDirectory);
+        $discovery = $this->discoverPhpFiles($root, $vendorDirectory, $configuredVendorPath);
         $phpFiles = $discovery['files'];
         $duplicationScanner = new ApplicationDuplicationScanner();
         /** @var array<string, list<int>> $environmentReads */
@@ -173,7 +180,14 @@ final class ApplicationChecker
         return $this->runPhpStan($root, $vendorDirectory, array_values($phpFiles), $debug);
     }
 
-    /** @return array{directory: ?string, composer: array<array-key, mixed>|null, failures: list<string>} */
+    /**
+     * @return array{
+     *     directory: ?string,
+     *     configured_path: ?string,
+     *     composer: array<array-key, mixed>|null,
+     *     failures: list<string>
+     * }
+     */
     private function resolveVendorDirectory(string $projectRoot): array
     {
         $composerPath = $projectRoot . '/composer.json';
@@ -182,6 +196,7 @@ final class ApplicationChecker
         if (!is_string($contents)) {
             return [
                 'directory' => null,
+                'configured_path' => null,
                 'composer' => null,
                 'failures' => ['Run `phpthis check` from a Composer project root containing composer.json.'],
             ];
@@ -192,6 +207,7 @@ final class ApplicationChecker
         } catch (JsonException) {
             return [
                 'directory' => null,
+                'configured_path' => null,
                 'composer' => null,
                 'failures' => ['composer.json is not valid JSON.'],
             ];
@@ -200,6 +216,7 @@ final class ApplicationChecker
         if (!is_array($composer)) {
             return [
                 'directory' => null,
+                'configured_path' => null,
                 'composer' => null,
                 'failures' => ['composer.json must contain a JSON object.'],
             ];
@@ -208,7 +225,12 @@ final class ApplicationChecker
         $scriptFailures = $this->composerContractFailures($composer);
 
         if ($scriptFailures !== []) {
-            return ['directory' => null, 'composer' => null, 'failures' => $scriptFailures];
+            return [
+                'directory' => null,
+                'configured_path' => null,
+                'composer' => null,
+                'failures' => $scriptFailures,
+            ];
         }
 
         $configuredDirectory = 'vendor';
@@ -218,6 +240,7 @@ final class ApplicationChecker
             if (!is_string($config['vendor-dir']) || $config['vendor-dir'] === '') {
                 return [
                     'directory' => null,
+                    'configured_path' => null,
                     'composer' => null,
                     'failures' => ['composer.json config.vendor-dir must be a non-empty string.'],
                 ];
@@ -230,10 +253,12 @@ final class ApplicationChecker
             ? $configuredDirectory
             : $projectRoot . '/' . $configuredDirectory;
         $resolved = realpath($candidate);
+        $configuredPath = $this->configuredVendorEntryPath($candidate);
 
-        if (!is_string($resolved) || !is_dir($resolved)) {
+        if (!is_string($resolved) || !is_dir($resolved) || $configuredPath === null) {
             return [
                 'directory' => null,
+                'configured_path' => null,
                 'composer' => null,
                 'failures' => ['Install Composer dependencies before running `phpthis check`.'],
             ];
@@ -242,12 +267,18 @@ final class ApplicationChecker
         if ($resolved === $projectRoot) {
             return [
                 'directory' => null,
+                'configured_path' => null,
                 'composer' => null,
                 'failures' => ['The Composer vendor directory must not be the project root.'],
             ];
         }
 
-        return ['directory' => $resolved, 'composer' => $composer, 'failures' => []];
+        return [
+            'directory' => $resolved,
+            'configured_path' => $configuredPath,
+            'composer' => $composer,
+            'failures' => [],
+        ];
     }
 
     /**
@@ -405,7 +436,11 @@ final class ApplicationChecker
     /**
      * @return array{files: array<string, string>, failures: list<string>}
      */
-    private function discoverPhpFiles(string $projectRoot, string $vendorDirectory): array
+    private function discoverPhpFiles(
+        string $projectRoot,
+        string $vendorDirectory,
+        string $configuredVendorPath,
+    ): array
     {
         /** @var list<string> $directories */
         $directories = [$projectRoot];
@@ -435,9 +470,14 @@ final class ApplicationChecker
 
                 $path = $directory . '/' . $entry;
                 $relativePath = $this->relativePath($projectRoot, $path);
-                $resolvedPath = realpath($path);
 
-                if (is_string($resolvedPath) && $resolvedPath === $vendorDirectory) {
+                if (
+                    $this->sameFilesystemEntry($path, $vendorDirectory, true)
+                    && (
+                        $this->sameFilesystemEntry($path, $configuredVendorPath, false)
+                        || !is_link($path)
+                    )
+                ) {
                     continue;
                 }
 
@@ -446,15 +486,7 @@ final class ApplicationChecker
                 }
 
                 if (is_link($path)) {
-                    if (is_dir($path)) {
-                        $failures[] = "{$relativePath} is a symlink directory; application checks do not follow symlinks.";
-                    } elseif (
-                        strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'php'
-                        || $this->hasPhpSourcePrefix($path)
-                        || in_array($relativePath, self::APPLICATION_CONTEXT_FILES, true)
-                    ) {
-                        $failures[] = "{$relativePath} is a symlink file; checked PHP and application context must be owned files.";
-                    }
+                    $failures[] = "{$relativePath} is a symlink; application checks do not follow symlinks.";
 
                     continue;
                 }
@@ -469,12 +501,26 @@ final class ApplicationChecker
                 }
 
                 $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                $hasPhpSourcePrefix = $this->hasPhpSourcePrefix($path);
 
-                if ($extension === 'php' || ($extension === '' && $hasPhpSourcePrefix)) {
+                if ($extension === 'php') {
                     $files[$relativePath] = $path;
-                } elseif ($hasPhpSourcePrefix) {
+                    continue;
+                }
+
+                $phpSourcePrefixState = $this->phpSourcePrefixState($path);
+
+                if ($extension === '' && $phpSourcePrefixState === self::PHP_SOURCE_PREFIX_CANONICAL) {
+                    $files[$relativePath] = $path;
+                } elseif ($phpSourcePrefixState === self::PHP_SOURCE_PREFIX_FOUND) {
+                    $failures[] = $extension === ''
+                        ? "{$relativePath} contains PHP source but an extensionless executable must begin exactly with <?php or #!/usr/bin/env php followed by <?php; use a canonical prefix or the .php extension."
+                        : "{$relativePath} contains PHP source but must use the .php extension; remove the extension only after changing to an exact canonical byte-zero prefix.";
+                } elseif ($phpSourcePrefixState === self::PHP_SOURCE_PREFIX_CANONICAL) {
                     $failures[] = "{$relativePath} contains PHP source but must use the .php extension or no extension for an executable.";
+                } elseif ($phpSourcePrefixState === self::PHP_SOURCE_PREFIX_AMBIGUOUS) {
+                    $failures[] = "{$relativePath} has an ambiguous PHP-source preamble at the 4096-byte inspection limit; use the .php extension for PHP, use an exact canonical byte-zero prefix for extensionless PHP, or put decisive non-PHP content within that limit.";
+                } elseif ($phpSourcePrefixState === self::PHP_SOURCE_PREFIX_UNREADABLE) {
+                    $failures[] = "Cannot inspect {$relativePath} for an executable PHP prefix.";
                 }
             }
         }
@@ -495,15 +541,105 @@ final class ApplicationChecker
         return preg_match('/\Aphpstan[a-z0-9._-]*baseline[a-z0-9._-]*\.php\z/', $normalized) === 1;
     }
 
-    private function hasPhpSourcePrefix(string $path): bool
+    private function phpSourcePrefixState(string $path): int
     {
-        $prefix = file_get_contents($path, false, null, 0, 128);
+        $sample = @file_get_contents(
+            $path,
+            false,
+            null,
+            0,
+            self::PHP_SOURCE_PREFIX_INSPECTION_LIMIT + 1,
+        );
 
-        if (!is_string($prefix)) {
-            return false;
+        if (!is_string($sample)) {
+            return self::PHP_SOURCE_PREFIX_UNREADABLE;
         }
 
-        return preg_match('/\A(?:#!\/usr\/bin\/env php\R)?<\?php\b/', $prefix) === 1;
+        $canonicalLength = $this->matchedPhpSourcePrefixLength(
+            '/\A(?:#!\/usr\/bin\/env php\R)?<\?php(?=[\x09\x0A\x0D\x20]|\z)/',
+            $sample,
+        );
+
+        if ($canonicalLength !== null) {
+            return self::PHP_SOURCE_PREFIX_CANONICAL;
+        }
+
+        $recognizedLength = $this->matchedPhpSourcePrefixLength(
+            '/\A(?:(?:\xEF\xBB\xBF)?[\x09-\x0D\x20]*(?:<\?(?i:php)(?=[\x09\x0A\x0D\x20]|\z)|<\?=)|#!\/usr\/bin\/env php\R(?:\xEF\xBB\xBF)?[\x09-\x0D\x20]*(?:<\?(?i:php)(?=[\x09\x0A\x0D\x20]|\z)|<\?=))/',
+            $sample,
+        );
+
+        if ($recognizedLength !== null) {
+            return $recognizedLength <= self::PHP_SOURCE_PREFIX_INSPECTION_LIMIT
+                ? self::PHP_SOURCE_PREFIX_FOUND
+                : self::PHP_SOURCE_PREFIX_AMBIGUOUS;
+        }
+
+        if (
+            strlen($sample) > self::PHP_SOURCE_PREFIX_INSPECTION_LIMIT
+            && $this->couldBeTruncatedPhpSourcePrefix($sample)
+        ) {
+            return self::PHP_SOURCE_PREFIX_AMBIGUOUS;
+        }
+
+        return self::PHP_SOURCE_PREFIX_NONE;
+    }
+
+    private function matchedPhpSourcePrefixLength(string $pattern, string $sample): ?int
+    {
+        /** @var array{0?: string} $match */
+        $match = [];
+
+        if (preg_match($pattern, $sample, $match) !== 1) {
+            return null;
+        }
+
+        return strlen($match[0]);
+    }
+
+    private function couldBeTruncatedPhpSourcePrefix(string $sample): bool
+    {
+        $shebang = '#!/usr/bin/env php';
+
+        if (str_starts_with($sample, $shebang)) {
+            $afterShebang = substr($sample, strlen($shebang));
+            /** @var array{0?: string} $lineBreak */
+            $lineBreak = [];
+
+            if (preg_match('/\A\R/', $afterShebang, $lineBreak) !== 1) {
+                return false;
+            }
+
+            $afterShebang = substr($afterShebang, strlen($lineBreak[0]));
+
+            if (str_starts_with($afterShebang, "\xEF\xBB\xBF")) {
+                $afterShebang = substr($afterShebang, 3);
+            }
+
+            $afterShebang = ltrim($afterShebang, " \t\n\r\v\f");
+
+            return $afterShebang === ''
+                || $this->isCaseInsensitivePrefix($afterShebang, '<?php')
+                || $this->isCaseInsensitivePrefix($afterShebang, '<?=');
+        }
+
+        if (str_starts_with($sample, "\xEF\xBB\xBF")) {
+            $sample = substr($sample, 3);
+        }
+
+        $sample = ltrim($sample, " \t\n\r\v\f");
+
+        return $sample === ''
+            || $this->isCaseInsensitivePrefix($sample, '<?php')
+            || $this->isCaseInsensitivePrefix($sample, '<?=');
+    }
+
+    private function isCaseInsensitivePrefix(string $value, string $candidate): bool
+    {
+        $length = strlen($value);
+
+        return $length === 0
+            || ($length <= strlen($candidate) && strncasecmp($value, $candidate, $length) === 0);
     }
 
     /** @return list<string> */
@@ -1305,6 +1441,106 @@ final class ApplicationChecker
         }
 
         return str_replace('\\', '/', substr($path, strlen($root) + 1));
+    }
+
+    private function pathsEqual(string $left, string $right): bool
+    {
+        $normalizedLeft = $this->normalizePathForComparison($left);
+        $normalizedRight = $this->normalizePathForComparison($right);
+
+        return DIRECTORY_SEPARATOR === '\\'
+            ? strcasecmp($normalizedLeft, $normalizedRight) === 0
+            : $normalizedLeft === $normalizedRight;
+    }
+
+    private function sameFilesystemEntry(string $left, string $right, bool $followLinks): bool
+    {
+        $leftStatus = $followLinks ? @stat($left) : @lstat($left);
+        $rightStatus = $followLinks ? @stat($right) : @lstat($right);
+
+        if (is_array($leftStatus) && is_array($rightStatus)) {
+            $leftDevice = $leftStatus['dev'];
+            $leftInode = $leftStatus['ino'];
+            $rightDevice = $rightStatus['dev'];
+            $rightInode = $rightStatus['ino'];
+
+            if (
+                ($leftDevice !== 0 || $leftInode !== 0)
+                && ($rightDevice !== 0 || $rightInode !== 0)
+            ) {
+                return $leftDevice === $rightDevice && $leftInode === $rightInode;
+            }
+        }
+
+        if ($followLinks) {
+            $resolvedLeft = realpath($left);
+            $resolvedRight = realpath($right);
+
+            if (is_string($resolvedLeft) && is_string($resolvedRight)) {
+                return $this->pathsEqual($resolvedLeft, $resolvedRight);
+            }
+        }
+
+        return $this->pathsEqual($left, $right);
+    }
+
+    private function configuredVendorEntryPath(string $candidate): ?string
+    {
+        $entry = rtrim($candidate, "/\\");
+
+        if ($entry === '' || preg_match('/\A[A-Za-z]:\z/', $entry) === 1) {
+            return $this->normalizePathForComparison($candidate);
+        }
+
+        while (basename($entry) === '.') {
+            $entry = rtrim(dirname($entry), "/\\");
+        }
+
+        if ($entry === '' || preg_match('/\A[A-Za-z]:\z/', $entry) === 1) {
+            return $this->normalizePathForComparison($candidate);
+        }
+
+        $parent = realpath(dirname($entry));
+
+        if (!is_string($parent)) {
+            return null;
+        }
+
+        return $this->normalizePathForComparison($parent . '/' . basename($entry));
+    }
+
+    private function normalizePathForComparison(string $path): string
+    {
+        $path = str_replace('\\', '/', $path);
+        $prefix = '';
+
+        if (preg_match('/\A([A-Za-z]:)\//', $path, $drive) === 1) {
+            $prefix = $drive[1] . '/';
+            $path = substr($path, strlen($drive[0]));
+        } elseif (str_starts_with($path, '/')) {
+            $prefix = '/';
+            $path = ltrim($path, '/');
+        }
+
+        $segments = [];
+
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+
+            if ($segment === '..') {
+                if ($segments !== []) {
+                    array_pop($segments);
+                }
+
+                continue;
+            }
+
+            $segments[] = $segment;
+        }
+
+        return $prefix . implode('/', $segments);
     }
 
     private function isAbsolutePath(string $path): bool

@@ -4,6 +4,19 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 16
+
+Contract version 16 carries Contract version 15 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`. Through [ADR 059](decisions/059-bounded-application-source-prefix-discovery.md), the installed checker retains only the exact lowercase direct and shebang forms for extensionless PHP, detects broader direct and launcher prefixes under unsupported suffixes or noncanonical extensionless names within a 4,096-byte bound plus one-byte lookahead, fails conservatively when a continuing prefix remains ambiguous or a non-`.php` regular file cannot be read, and rejects every application symlink outside dependency and VCS exclusions before target-content inspection.
+
+Before adopting version 16:
+
+1. Replace every application symlink outside the resolved Composer dependency directory and VCS directories with an application-owned regular file or real directory, or move genuinely dependency-owned material behind the resolved dependency boundary.
+2. Give every PHP file the `.php` extension unless it begins at byte zero with exact lowercase `<?php`, or exact `#!/usr/bin/env php`, one PHP-PCRE newline sequence, and immediate lowercase `<?php`; retain the documented long-tag boundary and replace unsupported suffixes or noncanonical extensionless prefixes rather than adding an ignore.
+3. Make every non-`.php` regular file readable. If its first 4,097 bytes can remain a direct or post-launcher PHP preamble at the 4,096-byte decision boundary, put decisive non-PHP content within that bound or relocate it outside the application tree under an existing ownership exclusion.
+4. Run the complete application gate on PHP 8.4.x and retain application tests for every executable entrypoint and any migrated asset or generated-file path.
+
+Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic. A later prerelease containing it must publish the all-application-symlink, ambiguous-prefix, and unreadable-prefix failures as an intentional compatibility break; accepting the contract selects no release identity or publication operation.
+
 ### Contract version 15
 
 Contract version 15 carries Contract version 14 forward and adopts Strict Profile version 4 with permanent diagnostic `PHT008`. Through [ADR 057](decisions/057-distinct-named-sql-placeholder-occurrences.md), every direct canonical `Connection` call whose SQL is accepted by PHT006 must use a distinct exact case-sensitive portable named placeholder for each occurrence in every finite statement alternative.

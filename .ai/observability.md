@@ -18,7 +18,7 @@ Tests cover success, mapped failure, known denial where applicable, unknown fail
 
 ADR 051 accepts the optional application-owned operational log-record profile in `docs/observability/log-levels.md`, `docs/observability/destination-record.md`, and `docs/observability/destination-profiles.md`. While adopting or reviewing it:
 
-- Preserve current Consumer Contract version 15 and the exact accepted request-summary version-1 and Redis-proof version-2 objects. Do not add timestamp or level fields to either summary.
+- Preserve current Consumer Contract version 16 and the exact accepted request-summary version-1 and Redis-proof version-2 objects. Do not add timestamp or level fields to either summary.
 - Keep the exact destination envelope at `record_schema_version`, `occurred_at`, `level`, then `summary`, with UTC microseconds and a complete encoded-record bound of 65,536 bytes including LF.
 - Keep the checked `RequestSummaryDestinationRecord` reference limited to final encoding of the existing concrete summary. It is not a logger, sink port, writer, clock abstraction, file or stream implementation, collector, or delivery proof.
 - Keep timestamp creation, HTTP level derivation, encoding, bound enforcement, and destination I/O inside the existing one sink attempt. Preserve no retry, fallback, duplicate record, response mutation, or durable-delivery claim.

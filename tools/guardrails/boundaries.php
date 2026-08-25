@@ -272,7 +272,7 @@ PHP;
             'The accepted core ceiling is 2,620 physical lines',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 15',
+            'Contract version: 16',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
@@ -515,7 +515,7 @@ PHP;
             '`032-explicit-uuid-and-ulid-route-types.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 15',
+            'Contract version: 16',
             'This is the canonical contract for an application built with the installed PHPThis version.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
             '`positive-int`, `token`, `uuid`, or `ulid`',
@@ -609,7 +609,7 @@ PHP;
             'Accepted [ADR 056](056-bounded-request-target-and-path-bytes.md) coordinates Consumer Contract version 14',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 15',
+            'Contract version: 16',
             '### Contract version 14',
             'The complete target, including its query suffix, is at most 8,192 bytes',
             'A directly constructed `Request` or `Route` receives a path-only value',
@@ -625,7 +625,7 @@ PHP;
         ],
         '.ai/strict-profile.md' => [
             "Version 14's raw request-target and path byte rejection",
-            'they are not part of PHT008.',
+            'they are not part of PHT008 or a new Strict Profile rule.',
         ],
         '.ai/static-analysis.md' => [
             "Treat Consumer Contract v14's raw request-target/path byte rejection",
@@ -644,7 +644,7 @@ PHP;
             'Do not depend on a server or proxy to reject these bytes',
         ],
         'docs/getting-started.md' => [
-            'contract-version-15 Composer scripts',
+            'contract-version-16 Composer scripts',
             'remove raw bytes `0x00` through `0x20` and `0x7F` from request targets and paths',
         ],
         'src/Http/RequestReader.php' => [
@@ -704,7 +704,7 @@ PHP;
             '`033-application-owned-request-handler-decorators.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 15',
+            'Contract version: 16',
             '## Optional application-owned request-handler decorators',
             'The decorator is composed only as the handler of an explicit `Route`.',
             'zero downstream calls or call its one downstream handler exactly once',
@@ -804,7 +804,7 @@ PHP;
             'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 15',
+            'Contract version: 16',
             '## Application-owned WebSocket profile',
             'PHPThis has no WebSocket runtime or core WebSocket API.',
             'Frames never become PHPThis HTTP `Request` or `Response` values',
@@ -840,7 +840,7 @@ PHP;
         ],
         'docs/guardrails.md' => [
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
-            'keeps `.ai/websockets.md` optional under current Contract version 15 as well as its originating Contract version 9',
+            'keeps `.ai/websockets.md` optional under current Contract version 16 as well as its originating Contract version 9',
         ],
         'VISION.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',
@@ -2844,7 +2844,7 @@ PHP;
             '`tests/observability.php`',
             '[Destination-record reference](destination-record.md)',
             'do not mistake the encoder proof for destination-I/O certification',
-            'preserve request-summary v1/v2 and current Contract v15',
+            'preserve request-summary v1/v2 and current Contract v16',
         ],
         'docs/observability/correlation-id.md' => [
             '[0-9a-f]{32}',

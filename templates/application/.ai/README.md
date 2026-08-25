@@ -2,7 +2,7 @@
 
 This directory owns current context for `{{PROJECT_NAME}}`. Resolve every template token before feature work. Keep context committed, concise, and free of secrets.
 
-Consumer Contract v15 and Strict Profile v4 remain mandatory. Application guidance may strengthen them but may not weaken them.
+Consumer Contract v16 and Strict Profile v4 remain mandatory. Application guidance may strengthen them but may not weaken them.
 
 ## Universal entrypoints
 
@@ -16,7 +16,7 @@ Then start with exactly one current operational guide from the table. Add anothe
 
 Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.
 
-Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` only when upgrading the accepted contract or reviewing its history.
+Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract. Read the complete installed upgrade companion only when reviewing its history.
 
 ## Simple endpoint route
 
@@ -31,7 +31,8 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Task | Start with | Inspect next; add another guide only if entered |
 | --- | --- | --- |
 | Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
-| Upgrade the installed Consumer Contract or review its history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | exact installed and target contract/profile versions, affected concern guides, application source and evidence, then the complete gate |
+| Upgrade the installed Consumer Contract to current version 16 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` | exact installed and target contract/profile versions, application symlink inventory, non-`.php` prefix controls, affected concern guides, application source and evidence, then the complete gate |
+| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | exact versions under review, their accepted decisions, affected concern guides, application source and evidence |
 | Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
 | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
 | Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`; add installed `vendor/phpthis/framework/docs/database.md` when nested data enters an I/O plan | exact application response construction and `Content-Type`, operation-owned `data` and optional `meta` fields, semantic relationship names, fixed bounded query/cache/external-call counts independent of parent-page cardinality, I/O-free mapping and encoding, parent pagination, exact nested decoder fixtures, compatibility decision, `.ai/data.md`, and `.ai/testing.md`; add no generic wrapper, relationship loader, serializer, paginator, or generator |

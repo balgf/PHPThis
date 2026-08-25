@@ -10,7 +10,7 @@ The starter's current `error_log()` sink is not a pure JSONL daily-file profile.
 
 ## Optional operational record and destinations
 
-[ADR 051](decisions/051-application-owned-structured-log-destinations.md) accepts an optional application-owned profile. It left Consumer Contract version 12 and the accepted request-summary versions unchanged; current Contract version 15 carries version 14 and both summaries forward unchanged. It frames one already-closed summary in exactly `record_schema_version`, sink-time UTC `occurred_at`, finite `level`, and `summary`; bounds the complete newline-delimited JSON record to 65,536 bytes including LF; and keeps timestamp construction inside the existing sink attempt.
+[ADR 051](decisions/051-application-owned-structured-log-destinations.md) accepts an optional application-owned profile. It left Consumer Contract version 12 and the accepted request-summary versions unchanged; current Contract version 16 carries version 15 and both summaries forward unchanged. It frames one already-closed summary in exactly `record_schema_version`, sink-time UTC `occurred_at`, finite `level`, and `summary`; bounds the complete newline-delimited JSON record to 65,536 bytes including LF; and keeps timestamp construction inside the existing sink attempt.
 
 The accepted HTTP mapping uses `error` for an unknown failure or status at least `500`, otherwise `warning` for observed query failure or budget rejection, otherwise `info`. HTTP summaries never use `debug` or `critical`. Other processes own their own finite event and level maps rather than receiving a generic logger.
 

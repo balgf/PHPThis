@@ -2097,7 +2097,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== 'd816bc70ed20a7418ffb6925cfb79af3164b33130a8f0a8080e4ecf40671e01f'
+        $jobsVerificationModuleFingerprint !== 'dbe316002ae8fb57410862391c862c667cb53b8c778b3a70fb2d2d38a49277b1'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
@@ -4067,8 +4067,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 22",
-            "'manifest_sha256' => '2bcecac55e31bf15a5aeb44811268379e1ecf9addfd64b2072462a2ae2ee854e'",
+            "'revision' => 23",
+            "'manifest_sha256' => '57bac67a2e6797d3a27eefbca888a1c9b054cf8663720f4253aa35b9f1500ee6'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -4098,10 +4098,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 22',
+            '"revision": 23',
             '"source-skeleton"',
-            '"tree": "9d631793978add928b0f748cd5e8d8e50b1f0ed4"',
-            '"fixture_sha256": "53727a333f59e0bd6f5fccca99dc8b1cd366aa39d0e818339fe077061f00344f"',
+            '"tree": "f5423b885a8838e0ba2cb460e59dc7f86c74c1a3"',
+            '"fixture_sha256": "ea985c717408735d7c3bacc8d0d79730adae4bdfbe59c3f951e91fcbca80c330"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -4231,7 +4231,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 22 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 23 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -4241,8 +4241,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 22;',
-            'Controller v0.2 supports only change.simple-ping revision 22 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 23;',
+            'Controller v0.2 supports only change.simple-ping revision 23 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
@@ -4400,6 +4400,155 @@ function repositoryGuardrailFailures(string $root): array
             'tools/test-agent-evaluation-controller.php' => $controllerFallbackMarkers,
         ],
         'agent-evaluation controller runner-discovery and native-fallback prohibition',
+        $failures,
+    );
+
+    $sourcePrefixDiscoveryArtifactMarkers = [
+        'docs/decisions/059-bounded-application-source-prefix-discovery.md' => [
+            '# ADR 059: Bounded application source-prefix discovery',
+            'Status: accepted',
+            'the accountable human approved the exact prefix grammar, the 4,096-byte bound plus one-byte lookahead',
+            'every other regular file has at most its first 4,096 bytes classified',
+            'one optional UTF-8 BOM and zero or more ASCII preamble-whitespace bytes',
+            'Every other symlink entry in the application tree fails before prefix inspection',
+            'Consumer Contract version 16 carries version 15 and Strict Profile version 4 forward.',
+            '4,096-byte whitespace EOF, 4,097-byte whitespace ambiguity',
+            'the maintainer-only `change.simple-ping` evaluation task advances from revision 22 to revision 23',
+            'This fixture maintenance records no model result and makes no comparative claim.',
+            'This decision selects no release identity and authorizes no tag, package, release, or announcement.',
+        ],
+        'docs/decisions/README.md' => [
+            "Proposed records:\n\n- None.",
+            '`059-bounded-application-source-prefix-discovery.md`',
+            'Accepted [ADR 059](059-bounded-application-source-prefix-discovery.md) coordinates Consumer Contract version 16',
+        ],
+        '.ai/static-analysis.md' => [
+            'Under Consumer Contract v16, build one application-file manifest from every file whose extension compares case-insensitively as `.php` plus only the exact lowercase byte-zero direct and shebang extensionless forms.',
+            'fail conservatively for continuing ambiguous prefixes and unreadable non-`.php` files',
+            'reject every symlink outside dependency and VCS exclusions before target-content inspection',
+            'ordinary Contract v16 checker failures with no configurable ignore, Strict Profile rule, or `PHT` diagnostic',
+        ],
+        '.ai/testing.md' => [
+            'Consumer Contract v16 source-discovery evidence invokes only the installed public checker.',
+            'distinguishes a 4,096-byte non-source EOF, an exact-boundary detected tag, a disproving lookahead byte, and a 4,097-byte or partial-prefix ambiguity',
+            'linked directories and canonical-source, detected-source, broken, and ordinary non-source file symlinks all fail before target-content inspection',
+            'every created fixture and changed permission is restored in `finally`',
+        ],
+        'docs/consumer-contract.md' => [
+            'Contract version: 16',
+            'give every application PHP file a case-insensitive `.php` extension',
+            'keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes',
+            'do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions',
+            'Version 16 changes the application source-discovery boundary without adding a Strict Profile rule or `PHT` diagnostic.',
+        ],
+        'docs/consumer-contract-upgrades.md' => [
+            '### Contract version 16',
+            'Through [ADR 059](decisions/059-bounded-application-source-prefix-discovery.md)',
+            'Replace every application symlink outside the resolved Composer dependency directory and VCS directories',
+            'Make every non-`.php` regular file readable.',
+            'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
+        ],
+        'docs/guardrails.md' => [
+            'The accepted ADR 059 source-prefix guard pins the 227-file current inventory',
+            'every other application symlink fails before target-content inspection',
+            'Consumer Contract version 16 carries Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008` forward.',
+            'Contract version 16 is current',
+            'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
+        ],
+        'docs/static-analysis.md' => [
+            '## Consumer source manifest',
+            'Every regular file whose extension compares case-insensitively as `.php` enters the manifest without a prefix read.',
+            'Every other regular file has at most its first 4,096 bytes classified plus one lookahead byte.',
+            'every other symlink entry fails before target-content inspection and a linked directory is never traversed',
+            'These source-discovery failures belong to Consumer Contract version 16, not to a new Strict Profile rule or `PHT` diagnostic.',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/059-bounded-application-source-prefix-discovery.md',
+        ],
+        'tools/test-consumer-project/profile-controls.php' => [
+            '.hidden/OpenBomWhitespaceInclude.inc',
+            'config/OpenBoundaryInclude.inc',
+            'config/OpenLongPreamble.inc',
+            'config/OpenPartialPrefix.inc',
+            'config/OpenWhitespaceOnlyAmbiguous.inc',
+            'config/OpenNonPhpLookahead.inc',
+            'config/OpenShortEchoInclude.inc',
+            'config/OpenShebangWhitespaceInclude.inc',
+            'config/OpenShebangLongPreamble.inc',
+            'bin/OpenWhitespaceConsole',
+            'bin/OpenWhitespaceLauncher',
+            'config/OpenUnreadableAsset.txt',
+            'docs/PHPSourceExample.md',
+            'docs/BoundaryNonSource.txt',
+            'vendor/dependency-negative-control/OpenDependencyInclude.inc',
+            'dependency-entry',
+            'A configured dependency symlink or its physical in-tree target was treated as application source.',
+            '$caseVariantConfig[\'vendor-dir\'] = \'VENDOR\';',
+            'A configured dependency-directory case variant was treated as application source.',
+            'dependency-alias',
+            'An application symlink alias to the dependency directory unexpectedly passed.',
+            '.git/prefixed-negative-control.inc',
+            'bin/linked-prefixed-source.inc',
+            'bin/linked-broken-source.inc',
+            'bin/linked-asset.txt',
+            'PHPTHIS_PREFIX_DIAGNOSTIC_PRIVATE_CANARY',
+            'source-prefix-discovery-executed',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            "'Contract version: 16'",
+            "'### Contract version 16'",
+            "'/docs/decisions/059-bounded-application-source-prefix-discovery.md'",
+            "'Status: accepted'",
+            "'Every other regular file has at most its first 4,096 bytes classified plus one lookahead byte.'",
+            "'These source-discovery failures belong to Consumer Contract version 16, not to a new Strict Profile rule or `PHT` diagnostic.'",
+        ],
+        'verification/ApplicationChecker.php' => [
+            'private const PHP_SOURCE_PREFIX_INSPECTION_LIMIT = 4096;',
+            'private const PHP_SOURCE_PREFIX_CANONICAL = 1;',
+            'private const PHP_SOURCE_PREFIX_FOUND = 2;',
+            'private const PHP_SOURCE_PREFIX_UNREADABLE = 4;',
+            'private function phpSourcePrefixState(string $path): int',
+            'private function matchedPhpSourcePrefixLength(string $pattern, string $sample): ?int',
+            'private function couldBeTruncatedPhpSourcePrefix(string $sample): bool',
+            'private function isCaseInsensitivePrefix(string $value, string $candidate): bool',
+            'private function configuredVendorEntryPath(string $candidate): ?string',
+            '\'configured_path\' => $configuredPath',
+            'private function pathsEqual(string $left, string $right): bool',
+            'private function sameFilesystemEntry(string $left, string $right, bool $followLinks): bool',
+            '$this->sameFilesystemEntry($path, $vendorDirectory, true)',
+            '$this->sameFilesystemEntry($path, $configuredVendorPath, false)',
+            'private function normalizePathForComparison(string $path): string',
+            'contains PHP source but an extensionless executable must begin exactly with <?php',
+            'remove the extension only after changing to an exact canonical byte-zero prefix',
+            'has an ambiguous PHP-source preamble at the 4096-byte inspection limit',
+            'Cannot inspect {$relativePath} for an executable PHP prefix.',
+            'is a symlink; application checks do not follow symlinks.',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $sourcePrefixDiscoveryArtifactMarkers,
+        'accepted bounded application source-prefix discovery',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'docs/decisions/059-bounded-application-source-prefix-discovery.md' => [
+                'Status: proposed',
+            ],
+            'docs/guardrails.md' => [
+                'The proposed ADR 059 source-prefix guard',
+                'proposed Consumer Contract version 16',
+                'Until accountable-human approval, Contract version 15 remains current',
+            ],
+            'verification/ApplicationChecker.php' => [
+                'hasPhpSourcePrefix(',
+            ],
+        ],
+        'overstated or superseded application source-prefix discovery',
         $failures,
     );
 

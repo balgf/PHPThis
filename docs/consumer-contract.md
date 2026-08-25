@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 15
+Contract version: 16
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -50,6 +50,8 @@ A PHPThis application must:
 - provide `ext-session` required by the installed framework, even when the application does not configure session state;
 - require `phpstan/phpstan` at `^2.1` and `phpstan/phpstan-strict-rules` at `^2.0` as development dependencies, then run the framework-owned analysis configuration at maximum level;
 - use the installed `phpthis check` binary to enforce Strict Profile version 4;
+- give every application PHP file a case-insensitive `.php` extension, except that an extensionless executable may begin only with byte-zero lowercase `<?php`, or byte-zero exact `#!/usr/bin/env php`, one PHP-PCRE newline sequence, and immediate lowercase `<?php`; in either form the long tag is followed by EOF or ASCII HT, LF, CR, or space;
+- keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes when its bounded start could otherwise remain a direct or post-launcher PHP preamble, and do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions;
 - expose one documented project check command that runs static analysis, profile checks, and behavior tests;
 - keep every application-owned named class final and expose an interface when an extension point is required;
 - use ordinary constructors and a visible composition root instead of runtime discovery or service location;
@@ -78,7 +80,7 @@ The `php tests/run.php` value is the skeleton's concrete example, not a required
 
 A Composer script may invoke a recorded application entrypoint, including a value-free long-running development command, but its command text must not contain assignment or recognized mutation spellings for an input name canonically read by application PHP. Supply one complete selected process profile at the outer process boundary or through the explicitly adopted application-owned local environment launcher. The cross-platform lexical check is case-insensitive and conservatively rejects the adopted `KEY=` spelling, including case variants, even when intended as inert argument or example text. `phpthis check` identifies only the input name; it never repeats a script name, command, or assigned value.
 
-Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in Contract version 15.
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in Contract version 16.
 
 ## Automated behavior evidence
 
@@ -161,4 +163,4 @@ The current guide named in the second column owns the full normative requirement
 
 A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision. After the universal entrypoints above, a simple-endpoint change has exactly four task-specific files: `docs/request-handling.md`, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test. Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.
 
-Contract version 15 and Strict Profile version 4 remain current. Reorganizing this contract into concern-owned guides and moving its evolution to a conditional upgrade companion changes neither accepted PHP nor application validity.
+Contract version 16 and Strict Profile version 4 remain current. Version 16 changes the application source-discovery boundary without adding a Strict Profile rule or `PHT` diagnostic.
