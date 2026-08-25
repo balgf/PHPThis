@@ -1306,7 +1306,7 @@ function consumerProjectHarnessExpectedProofStatements(): array
         'proveInstalledAgentEvaluationGuidanceDistribution' => 'proveInstalledAgentEvaluationGuidanceDistribution($installedFramework,$archiveFiles);',
         'proveInstalledDatabaseSetupGuidanceDistribution' => 'proveInstalledDatabaseSetupGuidanceDistribution($project,$installedFramework);',
         'proveInstalledStartupProbeGuidanceDistribution' => 'proveInstalledStartupProbeGuidanceDistribution($project,$installedFramework);',
-        'proveInstalledSessionCleanupAndResponseFramingDistribution' => 'proveInstalledSessionCleanupAndResponseFramingDistribution($project,$installedFramework);',
+        'proveInstalledSessionCleanupAndResponseFramingDistribution' => 'proveInstalledSessionCleanupAndResponseFramingDistribution($project,$installedFramework,$environment);',
         'proveInstalledBoundedResponseCookieProfileDistribution' => 'proveInstalledBoundedResponseCookieProfileDistribution($project,$installedFramework,$environment);',
         'proveInstalledBoundedTaskRoutedContextGuidanceDistribution' => 'proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project,$installedFramework);',
         'proveInstalledCrudAccessSurfaceGuidanceDistribution' => 'proveInstalledCrudAccessSurfaceGuidanceDistribution($project,$installedFramework);',
@@ -1637,7 +1637,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === '2ab8fb3095acd7eb32b8f758b4ec62f9b0b8bdcace67ce9de27e51dab7483b28';
+            === 'd25cc42e55467c74a3d5cccded32b9a8216f3eea67e819c225204b180ae991b3';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -2078,7 +2078,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
 
     if (
         $protectedFileTransferModuleFingerprint
-            !== '98bd316e9acfb5275f081c9f87a5460660ed3d4cf565aa57a0e7d855872a3dcb'
+            !== '2ff9137ae6f8e15e1a7f930b02db7eaae1bc22797abef72a5fc831b8ccc5c5ff'
         || $mutatedProtectedFileTransferModule === $protectedFileTransferModule
         || consumerProjectHarnessTokenNormalizedFingerprint(
             $mutatedProtectedFileTransferModule,
@@ -2097,7 +2097,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== 'dbe316002ae8fb57410862391c862c667cb53b8c778b3a70fb2d2d38a49277b1'
+        $jobsVerificationModuleFingerprint !== '14a86c380a8ff9a65a5101fbbbdd9426abb41a9227467b9b1a63da016ee4b9af'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
@@ -2650,6 +2650,14 @@ function decisionSuccessorRelationshipFailures(string $root): array
             'metadata' => 'Superseded in part by [ADR 042](042-application-owned-input-failure-classification.md), which replaces only the blanket-`400` authoring default for application-owned structured request-body content.',
             'targets' => ['042-application-owned-input-failure-classification.md'],
         ],
+        'docs/decisions/026-bounded-file-transfers.md' => [
+            'title' => 'ADR 026: Bounded explicit file transfers',
+            'metadata' => 'Superseded in part by [ADR 053](053-application-owned-amazon-s3-file-transfers.md), which replaces only the remote-object-store and pre-signed-delivery exclusion when an application explicitly selects `AMAZON_S3_ADR053`, and [ADR 060](060-reject-pending-output-before-response-emission.md), which replaces only the headers-only prior-output check before local-file emission.',
+            'targets' => [
+                '053-application-owned-amazon-s3-file-transfers.md',
+                '060-reject-pending-output-before-response-emission.md',
+            ],
+        ],
         'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
             'title' => 'ADR 025: Application-owned explicit CLI and scheduler',
             'metadata' => "Superseded in part by [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md), which replaces only the executable example's same-host schedule file lock with one application-owned Redis owner-token lease and extends `schedule:run` success and Redis-failure JSON with a bounded `coordination` list.",
@@ -2743,6 +2751,7 @@ function decisionSuccessorRelationshipFailures(string $root): array
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
         '| [ADR 026](026-bounded-file-transfers.md) | Remote-object-store and pre-signed-delivery exclusion, only when an application explicitly selects `AMAZON_S3_ADR053`; `LOCAL_ADR026` remains unchanged | [ADR 053](053-application-owned-amazon-s3-file-transfers.md) |',
+        '| [ADR 026](026-bounded-file-transfers.md) | Headers-only prior-output detection before local-file emission | [ADR 060](060-reject-pending-output-before-response-emission.md) |',
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
     ];
@@ -4073,8 +4082,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 24",
-            "'manifest_sha256' => 'de30103acad07c0f2183c5085c2240444b06f28cfe5b72fea631f0ec9aa28324'",
+            "'revision' => 25",
+            "'manifest_sha256' => '1e5de0cb7bfb96972bd10f1aa1b569ef62d786d639f8769600fcaa1d5b0a3ea2'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -4104,10 +4113,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 24',
+            '"revision": 25',
             '"source-skeleton"',
-            '"tree": "4b37644961a3aa879936b0e1f87419d2b947e029"',
-            '"fixture_sha256": "e235d3a8cff816f1b09b12678247dd094d637f1a4dacef02266e2bba6555d94e"',
+            '"tree": "9fbcc9f8f349929e4c6167ac6cb896cd11a08628"',
+            '"fixture_sha256": "1eb52487e01d45747846de64c63c9a08e2f3bcdd55f29c143ae369120665fc65"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -4237,7 +4246,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 24 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 25 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -4247,8 +4256,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 24;',
-            'Controller v0.2 supports only change.simple-ping revision 24 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 25;',
+            'Controller v0.2 supports only change.simple-ping revision 25 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
@@ -4441,13 +4450,15 @@ function repositoryGuardrailFailures(string $root): array
             'every created fixture and changed permission is restored in `finally`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 16',
+            'Contract version: 17',
             'give every application PHP file a case-insensitive `.php` extension',
             'keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes',
             'do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions',
-            'Version 16 changes the application source-discovery boundary without adding a Strict Profile rule or `PHT` diagnostic.',
+            'Version 17 carries version 16\'s source-discovery boundary forward and rejects response emission when headers are already sent or any active PHP-managed output-buffer level has pending bytes, without adding a Strict Profile rule or `PHT` diagnostic.',
         ],
         'docs/consumer-contract-upgrades.md' => [
+            '### Contract version 17',
+            'Through [ADR 060](decisions/060-reject-pending-output-before-response-emission.md)',
             '### Contract version 16',
             'Through [ADR 059](decisions/059-bounded-application-source-prefix-discovery.md)',
             'Replace every application symlink outside the resolved Composer dependency directory and VCS directories',
@@ -4455,10 +4466,9 @@ function repositoryGuardrailFailures(string $root): array
             'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
         ],
         'docs/guardrails.md' => [
-            'The accepted ADR 059 source-prefix guard pins the 227-file current inventory',
+            'The accepted ADR 059 source-prefix guard pins the 228-file current inventory',
             'every other application symlink fails before target-content inspection',
-            'Consumer Contract version 16 carries Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008` forward.',
-            'Contract version 16 is current',
+            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 17 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
         ],
         'docs/static-analysis.md' => [
@@ -4501,7 +4511,8 @@ function repositoryGuardrailFailures(string $root): array
             'source-prefix-discovery-executed',
         ],
         'tools/test-consumer-project/data.php' => [
-            "'Contract version: 16'",
+            "'Contract version: 17'",
+            "'### Contract version 17'",
             "'### Contract version 16'",
             "'/docs/decisions/059-bounded-application-source-prefix-discovery.md'",
             "'Status: accepted'",
@@ -4555,6 +4566,134 @@ function repositoryGuardrailFailures(string $root): array
             ],
         ],
         'overstated or superseded application source-prefix discovery',
+        $failures,
+    );
+
+    $pendingOutputEmissionArtifactMarkers = [
+        'docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+            '# ADR 060: Reject pending output before response emission',
+            'Status: accepted',
+            'the accountable human directed implementation of Issue #62\'s fail-closed pending-output policy for ordinary and local-file responses',
+            '`ob_get_status(true)` reports a non-zero `buffer_used` value for any active PHP-managed output-buffer level.',
+            'No active buffer, one empty active buffer, and nested active buffers whose every level is empty remain valid infrastructure.',
+            'The emitter only inspects the entry state. It does not clean, flush, close, reorder, rewrite, copy, or incorporate application-owned buffers or prior bytes.',
+            'The isolated framework proof uses real PHP output buffers while the namespaced `headers_sent()` control remains false.',
+            'The installed-consumer proof independently executes the packaged ordinary and local-file emitter paths through real PHP buffers',
+            'The implementation adds no public type, method, dependency, configuration switch, middleware, streaming abstraction, buffer owner, Strict Profile rule, `PHT` diagnostic, or core line.',
+            'This decision selects no release identity and authorizes no external publication operation.',
+        ],
+        'docs/decisions/README.md' => [
+            '`060-reject-pending-output-before-response-emission.md`',
+            'Accepted [ADR 060](060-reject-pending-output-before-response-emission.md) coordinates Consumer Contract version 17',
+        ],
+        '.ai/http.md' => [
+            'At emitter entry, reject ordinary and local-file responses as `ResponseEmissionFailed(true)`',
+            'ADR 060 adds the pending-output preflight; current Consumer Contract v17 carries version 16 and Strict Profile v4 forward.',
+        ],
+        '.ai/file-transfers.md' => [
+            'Before file access, `ResponseEmitter` applies the common response-output guard',
+            'all-empty active and nested buffers remain valid',
+        ],
+        '.ai/testing.md' => [
+            'Use real PHP output buffers to allow empty active and nested levels; reject pending top-level bytes and lower-level bytes hidden below an empty top level as `ResponseEmissionFailed(true)`',
+            'Ordinary emission evidence uses real empty and non-empty active buffers and proves pending bytes remain untouched',
+        ],
+        'docs/consumer-contract.md' => [
+            'Contract version: 17',
+            'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
+            'Contract version 17 and Strict Profile version 4 remain current.',
+        ],
+        'docs/consumer-contract-upgrades.md' => [
+            '### Contract version 17',
+            'Through [ADR 060](decisions/060-reject-pending-output-before-response-emission.md)',
+            'Remove unintended early output at its owner.',
+            'Keep intentional capture or infrastructure buffers empty at emitter entry',
+            'Confirm the visible front controller does not attempt a fallback for `ResponseEmissionFailed(true)`',
+            'ADR 060 introduces Contract version 17 because pending PHP-managed output now rejects an emission call that version 16 allowed to proceed.',
+        ],
+        'docs/request-handling.md' => [
+            'At emitter entry, both ordinary and local-file responses fail as `ResponseEmissionFailed(true)`',
+            'The emitter inspects every level without flushing, cleaning, rewriting, or incorporating prior bytes',
+        ],
+        'docs/file-transfers/emission.md' => [
+            'reject when headers were already sent or any active PHP-managed output-buffer level reports pending bytes',
+            'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
+        ],
+        'docs/file-transfers/testing.md' => [
+            'reject pending bytes in the top level and below an empty top level as `ResponseEmissionFailed(true)`',
+            'preserve every prior byte and the application\'s buffer ownership',
+        ],
+        'docs/guardrails.md' => [
+            'The accepted ADR 060 response-emission guard pins Consumer Contract version 17',
+            'real top-level and nested PHP-buffer evidence, empty-buffer success, `ResponseEmissionFailed(true)`, exact prior-byte and buffer-depth preservation',
+            'Acceptance authorizes no commit, push, issue closure, tag, package, release, or announcement.',
+        ],
+        'src/Http/ResponseEmitter.php' => [
+            "headers_sent() || array_sum(array_column(\\ob_get_status(true), 'buffer_used')) > 0",
+            'throw new ResponseEmissionFailed(true);',
+        ],
+        'tests/behavior-names.txt' => [
+            'response emitter rejects pending output and preserves repeated Set-Cookie fields',
+        ],
+        'tests/response-emitter.php' => [
+            'Expected prior buffered bytes to remain untouched and reject ordinary response emission.',
+            'Expected lower buffered bytes to reject local-file emission before file access.',
+            'Response emission performed forbidden local-file access.',
+            '$bufferedFileTopOutput !== \'\'',
+            '$bufferedFileLowerOutput !== \'prefix\'',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/060-reject-pending-output-before-response-emission.md',
+        ],
+        'tools/test-consumer-project/data.php' => [
+            "'Contract version: 17'",
+            "'/docs/decisions/060-reject-pending-output-before-response-emission.md'",
+            "'The proposed ADR 060 response-emission guard'",
+        ],
+        'tools/test-consumer-project/http.php' => [
+            'Installed ordinary emitter did not reject pending bytes intact.',
+            'Installed local-file emitter did not reject nested pending bytes intact.',
+            'Installed emitter rejected empty nested buffering infrastructure.',
+            'PASS installed response-emission preflight',
+        ],
+        'skeleton/.ai/README.md' => [
+            'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
+            'consumer-contract-upgrades.md#contract-version-17',
+            'Upgrade the installed Consumer Contract to current version 17',
+        ],
+        'templates/application/.ai/README.md' => [
+            'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
+            'consumer-contract-upgrades.md#contract-version-17',
+            'Upgrade the installed Consumer Contract to current version 17',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $pendingOutputEmissionArtifactMarkers,
+        'accepted pending-output response-emission preflight',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+                'Status: proposed',
+            ],
+            'docs/guardrails.md' => [
+                'The proposed ADR 060 response-emission guard',
+                'proposed Consumer Contract version 17',
+                'Until accountable-human approval, Contract version 16 remains current',
+            ],
+            'src/Http/ResponseEmitter.php' => [
+                'ob_clean(',
+                'ob_end_clean(',
+                'ob_flush(',
+                'ob_end_flush(',
+            ],
+        ],
+        'overstated, stale, or buffer-repair response-emission boundary',
         $failures,
     );
 

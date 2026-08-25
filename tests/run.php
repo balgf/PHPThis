@@ -152,7 +152,7 @@ function frameworkBehaviorInventory(): array
         $contents === ''
         || !str_ends_with($contents, "\n")
         || str_contains($contents, "\r")
-        || hash('sha256', $contents) !== '85878e382942708ea8bf43a063b7c0fede99bf42bf4e39524fa10b655f632d8c'
+        || hash('sha256', $contents) !== '37886edc1222c0121fb1dfd7bc44fd607e6751c73eb6ef40d993c3dd9a086853'
     ) {
         throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
     }

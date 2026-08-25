@@ -9,12 +9,14 @@ namespace PHPThis\Http {
         public static array $headers = [];
         public static ?int $status = null;
         public static bool $headersSent = false;
+        public static bool $sideEffectsForbidden = false;
 
         public static function reset(): void
         {
             self::$headers = [];
             self::$status = null;
             self::$headersSent = false;
+            self::$sideEffectsForbidden = false;
         }
 
         /**
@@ -27,15 +29,22 @@ namespace PHPThis\Http {
         {
             return ['status' => self::$status, 'headers' => self::$headers];
         }
+
     }
 
     function header(string $header, bool $replace = true): void
     {
+        if (ResponseEmitterSpy::$sideEffectsForbidden) {
+            throw new \RuntimeException('Response emission performed a forbidden header side effect.');
+        }
         ResponseEmitterSpy::$headers[] = ['line' => $header, 'replace' => $replace];
     }
 
     function http_response_code(int $responseCode): bool
     {
+        if (ResponseEmitterSpy::$sideEffectsForbidden) {
+            throw new \RuntimeException('Response emission performed a forbidden status side effect.');
+        }
         ResponseEmitterSpy::$status = $responseCode;
         return true;
     }
@@ -43,6 +52,14 @@ namespace PHPThis\Http {
     function headers_sent(): bool
     {
         return ResponseEmitterSpy::$headersSent;
+    }
+
+    function fopen(string $filename, string $mode): mixed
+    {
+        if (ResponseEmitterSpy::$sideEffectsForbidden) {
+            throw new \RuntimeException('Response emission performed forbidden local-file access.');
+        }
+        return \fopen($filename, $mode);
     }
 }
 
@@ -82,6 +99,45 @@ namespace {
 
     $ordinaryStatus = ResponseEmitterSpy::$status;
     $ordinaryHeaders = ResponseEmitterSpy::$headers;
+    ResponseEmitterSpy::reset();
+    ResponseEmitterSpy::$sideEffectsForbidden = true;
+    $bufferedOrdinaryFailure = null;
+    $bufferedOrdinaryOutput = null;
+    $bufferedOrdinaryBaseLevel = ob_get_level();
+    $bufferedOrdinaryEmissionLevel = null;
+    ob_start();
+
+    try {
+        echo 'prefix';
+
+        try {
+            (new ResponseEmitter())->emit(new Response(
+                200,
+                ['Content-Length' => '4'],
+                'body',
+                [new ResponseCookie('buffered', 'value', '/', true, true, CookieSameSite::Lax)],
+            ));
+        } catch (ResponseEmissionFailed $failure) {
+            $bufferedOrdinaryFailure = $failure;
+        }
+    } finally {
+        $bufferedOrdinaryEmissionLevel = ob_get_level();
+        $bufferedOrdinaryOutput = ob_get_clean();
+    }
+    ResponseEmitterSpy::$sideEffectsForbidden = false;
+
+    if (
+        !$bufferedOrdinaryFailure instanceof ResponseEmissionFailed
+        || !$bufferedOrdinaryFailure->responseStarted
+        || $bufferedOrdinaryOutput !== 'prefix'
+        || $bufferedOrdinaryEmissionLevel !== $bufferedOrdinaryBaseLevel + 1
+        || ob_get_level() !== $bufferedOrdinaryBaseLevel
+    ) {
+        throw new RuntimeException(
+            'Expected prior buffered bytes to remain untouched and reject ordinary response emission.',
+        );
+    }
+
     $path = tempnam(sys_get_temp_dir(), 'phpthis-response-');
 
     if (!is_string($path)) {
@@ -113,12 +169,56 @@ namespace {
             new LocalFileBody($path, $fileBytes),
         );
         ResponseEmitterSpy::reset();
+        ResponseEmitterSpy::$sideEffectsForbidden = true;
+        $bufferedFileFailure = null;
+        $bufferedFileTopOutput = null;
+        $bufferedFileLowerOutput = null;
+        $bufferedFileBaseLevel = ob_get_level();
+        $bufferedFileEmissionLevel = null;
+        ob_start();
+
+        try {
+            echo 'prefix';
+            ob_start();
+
+            try {
+                try {
+                    (new ResponseEmitter())->emit($fileResponse);
+                } catch (ResponseEmissionFailed $failure) {
+                    $bufferedFileFailure = $failure;
+                }
+                $bufferedFileEmissionLevel = ob_get_level();
+            } finally {
+                $bufferedFileTopOutput = ob_get_clean();
+            }
+        } finally {
+            $bufferedFileLowerOutput = ob_get_clean();
+        }
+        ResponseEmitterSpy::$sideEffectsForbidden = false;
+
+        if (
+            !$bufferedFileFailure instanceof ResponseEmissionFailed
+            || !$bufferedFileFailure->responseStarted
+            || $bufferedFileTopOutput !== ''
+            || $bufferedFileLowerOutput !== 'prefix'
+            || $bufferedFileEmissionLevel !== $bufferedFileBaseLevel + 2
+            || ob_get_level() !== $bufferedFileBaseLevel
+        ) {
+            throw new RuntimeException(
+                'Expected lower buffered bytes to reject local-file emission before file access.',
+            );
+        }
+
+        ResponseEmitterSpy::reset();
+        ob_start();
         ob_start();
         (new ResponseEmitter())->emit($fileResponse);
         $fileOutput = ob_get_clean();
+        $fileOuterOutput = ob_get_clean();
 
         if (
             $fileOutput !== $fileContents
+            || $fileOuterOutput !== ''
             || ResponseEmitterSpy::$status !== 200
             || ResponseEmitterSpy::$headers !== [
                 ['line' => 'Content-Type: application/octet-stream', 'replace' => true],
@@ -339,12 +439,15 @@ namespace {
 
         ResponseEmitterSpy::reset();
         ResponseEmitterSpy::$headersSent = true;
+        ResponseEmitterSpy::$sideEffectsForbidden = true;
 
         try {
             (new ResponseEmitter())->emit($fileResponse);
             throw new RuntimeException('Expected prior output to reject local-file emission.');
         } catch (ResponseEmissionFailed $failure) {
-            if (!$failure->responseStarted || ResponseEmitterSpy::snapshot() !== ['status' => null, 'headers' => []]) {
+            if (
+                !$failure->responseStarted
+            ) {
                 throw new RuntimeException('Expected prior output to be classified as a started response.');
             }
         } finally {

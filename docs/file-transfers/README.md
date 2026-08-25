@@ -2,7 +2,7 @@
 
 This knowledge set routes an AI through PHPThis's accepted application-owned file-transfer profiles. Load only the page needed for the task and inspect the named application source and tests. Read [ADR 026](../decisions/026-bounded-file-transfers.md) or [ADR 053](../decisions/053-application-owned-amazon-s3-file-transfers.md) only when reviewing or changing the decision itself; ordinary implementation follows this current knowledge set.
 
-Consumer Contract version 16 carries version 15 and version 13's requirement for exactly one deliberate selection: `LOCAL_ADR026` for ADR 026's unchanged local move and local response, or optional `AMAZON_S3_ADR053` for the accepted [Amazon S3 guidance](amazon-s3.md) and [verification](amazon-s3-verification.md). The S3 profile accepts fixed `application/octet-stream` attachment delivery without a guaranteed `nosniff` header as a narrow direct-S3 exception. It does not weaken the local profile or make either profile an automatic application default.
+Consumer Contract version 17 carries version 16 and version 13's requirement for exactly one deliberate selection: `LOCAL_ADR026` for ADR 026's local move and local response under ADR 060's pending-output preflight, or optional `AMAZON_S3_ADR053` for the accepted [Amazon S3 guidance](amazon-s3.md) and [verification](amazon-s3-verification.md). The S3 profile accepts fixed `application/octet-stream` attachment delivery without a guaranteed `nosniff` header as a narrow direct-S3 exception. It does not weaken the local profile or make either profile an automatic application default.
 
 | Task | Read | Inspect |
 | --- | --- | --- |

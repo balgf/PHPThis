@@ -13,6 +13,28 @@ function proveInstalledProtectedFileTransferReference(
 ): string {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'Contract version: 17',
+            'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
+            'Contract version 17 and Strict Profile version 4 remain current.',
+        ],
+        $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+            '# ADR 060: Reject pending output before response emission',
+            'Status: accepted',
+            '`ob_get_status(true)` reports a non-zero `buffer_used` value for any active PHP-managed output-buffer level.',
+            'No active buffer, one empty active buffer, and nested active buffers whose every level is empty remain valid infrastructure.',
+            'It does not clean, flush, close, reorder, rewrite, copy, or incorporate application-owned buffers or prior bytes.',
+        ],
+        $installedFramework . '/docs/file-transfers/emission.md' => [
+            'reject when headers were already sent or any active PHP-managed output-buffer level reports pending bytes',
+            'The first check inspects every active PHP output-buffer level without flushing, cleaning, rewriting, or incorporating prior bytes into the selected response.',
+            'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
+        ],
+        $installedFramework . '/docs/file-transfers/README.md' => [
+            'Consumer Contract version 17 carries version 16 and version 13\'s requirement for exactly one deliberate selection',
+            'ADR 060\'s pending-output preflight',
+            'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
+        ],
         $installedFramework . '/docs/file-transfers/security.md' => [
             'For protected upload, keep `authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage` visible and fail before every later step.',
             '`OPAQUE_BYTES` uses fixed code-owned stored/download names and only an `application/octet-stream` attachment, explicit cache, and recorded authentication/authorization; `LOCAL_ADR026` also requires `nosniff`, while accepted `AMAZON_S3_ADR053` cannot guarantee it on S3\'s response. Neither posture is content-safety certification.',
@@ -27,6 +49,8 @@ function proveInstalledProtectedFileTransferReference(
         ],
         $installedFramework . '/docs/file-transfers/testing.md' => [
             'Protected application evidence proves exact `authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage` order',
+            'Exercise real PHP output buffers: allow empty active and nested buffers; reject pending bytes in the top level and below an empty top level as `ResponseEmissionFailed(true)`',
+            'prove rejection precedes status, headers, cookies, body, and file access.',
             'The repository proof deliberately shows that an equal-size regular replacement and a symlink to a same-size regular target are emitted.',
             'Content evidence names exactly `OPAQUE_BYTES` or `INSPECTED_CONTENT`.',
             'Exercise exact-limit and maximum-plus-one requests at the owner expected to reject them.',
@@ -36,11 +60,17 @@ function proveInstalledProtectedFileTransferReference(
             'This is the application\'s single authoritative file-transfer policy.',
             'authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage',
             'for `LOCAL_ADR026`, the deployment-precreated durable root before HTTP handling',
+            'pending bytes in any active PHP-managed output-buffer level',
             'Static context checks prove only that this authoritative record and its finite markers exist and route into the complete application gate.',
+        ],
+        $installedFramework . '/src/Http/ResponseEmitter.php' => [
+            "if (headers_sent() || array_sum(array_column(\\ob_get_status(true), 'buffer_used')) > 0) {",
+            'throw new ResponseEmissionFailed(true);',
         ],
         $project . '/.ai/file-transfers.md' => [
             'NOT_APPLICABLE(FILE_TRANSFER)',
             'The starter accepts no upload and returns no file download.',
+            'pending bytes in any active PHP-managed output-buffer level',
             'Keep selected storage, quota accounting, inspection, cleanup, retention, deletion, and authorization in concrete application operations.',
         ],
     ];
@@ -67,7 +97,7 @@ ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)
 - Admission and quota: one sequential in-process state machine admits at most 2 uploads per synthetic finite window and models 1 concurrency lease; release occurs after every post-admission success/failure. Its reservation owns exact object identity, with at most 8 committed bytes, 4 retained files, and one pending reservation; minimum 1 byte is also enforced independently so zero-byte uploads cannot consume identifiers/inodes without accounting. The four-file limit is proved while four byte-capacity units remain. This models the required atomic ownership and concurrency semantics but proves no cross-request/process atomicity, clock, lock, or production topology.
 - Content posture and response: `OPAQUE_BYTES`; fixed stored representation, fixed `download.bin`, `application/octet-stream` attachment, `nosniff`, `private, no-store`, `Accept-Ranges: none`, full `200`, and no content-safety claim. Scanner rejection and scanner timeout are `NOT_APPLICABLE` and are not simulated.
 - Storage authority: the request-scoped synthetic temporary path and hostile client metadata never enter the retained record, logs, jobs, traces, response, or terminal evidence. The process-local array proof owns no actual filesystem root; dedicated effective web-SAPI temporary-root authority and deployment-precreated durable-root owner/group/ACL/modes/mount/capacity/inode/topology facts are `NOT_PROVED_HERE` and remain deployment evidence. One synthetic application-owned retained-record operation generates identity and binds it to tenant 42, principal 7, and the named upload/download actions.
-- Lifecycle and delivery: injected labels for temporary-root, disk-full, inode-exhausted, permission, native-false move, chmod, and cleanup select fail-closed in-process outcomes; they do not reproduce kernel or filesystem failures. Cleanup failure retains one process-local reconciliation identity, deletes its retained array entry idempotently, then releases exact accounting. No process crash, durable recovery, response ambiguity, retry/idempotency key, or cross-process lifecycle is simulated. Retention, expiry, ordinary deletion, replicas/backups/restores, legal hold, egress quota, and incident automation are `NOT_APPLICABLE` to the process-local transient bytes; production adopters must record their selected owners. The returned in-memory body is not `LocalFileBody` evidence and claims no path-only emission guarantee, but any adopted current path-only response must keep its selected pathname and bytes immutable under exclusive-writer authority from authorized selection through completed emission; identity-bound/open-handle/different response primitives require a separately accepted decision.
+- Lifecycle and delivery: injected labels for temporary-root, disk-full, inode-exhausted, permission, native-false move, chmod, and cleanup select fail-closed in-process outcomes; they do not reproduce kernel or filesystem failures. Cleanup failure retains one process-local reconciliation identity, deletes its retained array entry idempotently, then releases exact accounting. No process crash, durable recovery, response ambiguity, retry/idempotency key, or cross-process lifecycle is simulated. Retention, expiry, ordinary deletion, replicas/backups/restores, legal hold, egress quota, and incident automation are `NOT_APPLICABLE` to the process-local transient bytes; production adopters must record their selected owners. The returned in-memory body is not `LocalFileBody` evidence and claims no path-only emission guarantee, but any adopted current path-only response must begin with headers unsent and no pending bytes in any active PHP-managed output-buffer level and keep its selected pathname and bytes immutable under exclusive-writer authority from authorized selection through completed emission; empty active buffers remain valid, application code fixes early output at its owner, and identity-bound/open-handle/different response primitives require a separately accepted decision.
 - Failures and evidence: finite generic private/no-store 401/403/404/409/429/500 responses and one code-only reconciliation signal redact client filename/media, temporary and durable paths, retained identifier/content, cookie/CSRF values, scanner details, and internal failures. The installed checker and transient behavior program are the complete synthetic gate.
 - Explicit proof limits: repository real-SAPI example evidence separately owns PHP upload provenance, actual byte count, exact accepted/overflow SAPI requests, modes, hashes, and emission. This sequential synthetic record proves no deployed proxy/web-server settings, actual filesystem authority, production identity provider, production rate clock, cross-request/process atomicity or concurrency, durable crash recovery, response ambiguity, external scanner, backup, replica, legal-hold, or network-delivery behavior.
 

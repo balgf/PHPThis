@@ -97,6 +97,7 @@ docs/decisions/056-bounded-request-target-and-path-bytes.md
 docs/decisions/057-distinct-named-sql-placeholder-occurrences.md
 docs/decisions/058-concern-local-ai-context-routing.md
 docs/decisions/059-bounded-application-source-prefix-discovery.md
+docs/decisions/060-reject-pending-output-before-response-emission.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md

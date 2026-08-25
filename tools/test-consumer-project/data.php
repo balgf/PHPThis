@@ -40,11 +40,12 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         $project . '/.ai/README.md' => [
             $installedOrdinaryRoute,
             'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract.',
+            'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract.',
             'Read the complete installed upgrade companion only when reviewing its history.',
             $universalCostContract,
             '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
-            '| Upgrade the installed Consumer Contract to current version 16 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` |',
+            '| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` | exact installed and target contract/profile versions, response-emitter call and early-output inventory, active and nested PHP-buffer evidence, front-controller and deployed-SAPI limits, affected source, then the complete gate |',
             '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         $project . '/.ai/rules.md' => [
@@ -82,7 +83,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             'No context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate is added.',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 16',
+            'Contract version: 17',
             'Ordinary implementation starts with the current operational guide selected by those routers.',
             'Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context.',
             'Load [the contract upgrade and history companion](consumer-contract-upgrades.md) only when upgrading an application across contract versions, reviewing contract evolution, or changing that history.',
@@ -93,11 +94,13 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             'give every application PHP file a case-insensitive `.php` extension',
             'keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes',
             'do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions',
-            'Version 16 changes the application source-discovery boundary without adding a Strict Profile rule or `PHT` diagnostic.',
+            'Version 17 carries version 16\'s source-discovery boundary forward and rejects response emission when headers are already sent or any active PHP-managed output-buffer level has pending bytes, without adding a Strict Profile rule or `PHT` diagnostic.',
         ],
         $installedFramework . '/docs/consumer-contract-upgrades.md' => [
             '# PHPThis consumer contract upgrades',
             'Load it only when upgrading an application across contract versions, reviewing contract evolution, or changing the decision history.',
+            '### Contract version 17',
+            'Through [ADR 060](decisions/060-reject-pending-output-before-response-emission.md)',
             '### Contract version 16',
             'Through [ADR 059](decisions/059-bounded-application-source-prefix-discovery.md)',
             'Replace every application symlink outside the resolved Composer dependency directory and VCS directories',
@@ -127,10 +130,18 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             'Consumer Contract version 16 carries version 15 and Strict Profile version 4 forward.',
             'This decision selects no release identity and authorizes no tag, package, release, or announcement.',
         ],
+        $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+            '# ADR 060: Reject pending output before response emission',
+            'Status: accepted',
+            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward',
+            'This decision selects no release identity and authorizes no external publication operation.',
+        ],
         $installedFramework . '/docs/decisions/README.md' => [
             "Proposed records:\n\n- None.",
             '`059-bounded-application-source-prefix-discovery.md`',
+            '`060-reject-pending-output-before-response-emission.md`',
             'Accepted [ADR 059](059-bounded-application-source-prefix-discovery.md) coordinates Consumer Contract version 16',
+            'Accepted [ADR 060](060-reject-pending-output-before-response-emission.md) coordinates Consumer Contract version 17',
         ],
         $installedFramework . '/docs/ai-context-routing-review.md' => [
             '# Bounded AI-context routing review',
@@ -162,10 +173,10 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             "The bounded task-routed context guard pins ADR 044's exact simple-endpoint definition and four-file locality metric",
             'The installed proof checks the copied local skeleton plus packaged public guidance and application template, including the starter',
             'The guard adds no context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate.',
-            'The accepted ADR 059 source-prefix guard pins the 227-file current inventory',
+            'The accepted ADR 059 source-prefix guard pins the 228-file current inventory',
             'every other application symlink fails before target-content inspection',
-            'Consumer Contract version 16 carries Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008` forward.',
-            'Contract version 16 is current',
+            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 17 carries it forward.',
+            'The accepted ADR 060 response-emission guard pins Consumer Contract version 17',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
         ],
         $installedFramework . '/docs/static-analysis.md' => [
@@ -183,11 +194,12 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         $installedFramework . '/templates/application/.ai/README.md' => [
             $installedOrdinaryRoute,
             'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract.',
+            'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract.',
             'Read the complete installed upgrade companion only when reviewing its history.',
             $universalCostContract,
             '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
-            '| Upgrade the installed Consumer Contract to current version 16 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` |',
+            '| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` | exact installed and target contract/profile versions, response-emitter call and early-output inventory, active and nested PHP-buffer evidence, front-controller and deployed-SAPI limits, affected source, then the complete gate |',
             '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         $installedFramework . '/templates/application/.ai/rules.md' => [
@@ -198,6 +210,79 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
     ];
 
     requireInstalledArtifactMarkers($artifactMarkers, 'bounded task-routed context');
+
+    /** @var array<string, list<string>> $pendingOutputEmissionArtifactMarkers */
+    $pendingOutputEmissionArtifactMarkers = [
+        $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+            'At the start of every `ResponseEmitter::emit()` call, before selecting the ordinary or local-file path',
+            '`ob_get_status(true)` reports a non-zero `buffer_used` value for any active PHP-managed output-buffer level.',
+            'No active buffer, one empty active buffer, and nested active buffers whose every level is empty remain valid infrastructure.',
+            'The emitter only inspects the entry state. It does not clean, flush, close, reorder, rewrite, copy, or incorporate application-owned buffers or prior bytes.',
+            'The installed-consumer proof independently executes the packaged ordinary and local-file emitter paths through real PHP buffers',
+        ],
+        $installedFramework . '/docs/consumer-contract.md' => [
+            'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
+            'Contract version 17 and Strict Profile version 4 remain current.',
+        ],
+        $installedFramework . '/docs/consumer-contract-upgrades.md' => [
+            'Remove unintended early output at its owner.',
+            'Keep intentional capture or infrastructure buffers empty at emitter entry',
+            'Confirm the visible front controller does not attempt a fallback for `ResponseEmissionFailed(true)`',
+        ],
+        $installedFramework . '/docs/request-handling.md' => [
+            'At emitter entry, both ordinary and local-file responses fail as `ResponseEmissionFailed(true)`',
+            'The emitter inspects every level without flushing, cleaning, rewriting, or incorporating prior bytes',
+        ],
+        $installedFramework . '/docs/file-transfers/emission.md' => [
+            'reject when headers were already sent or any active PHP-managed output-buffer level reports pending bytes',
+            'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
+        ],
+        $installedFramework . '/docs/file-transfers/testing.md' => [
+            'reject pending bytes in the top level and below an empty top level as `ResponseEmissionFailed(true)`',
+            'preserve every prior byte and the application\'s buffer ownership',
+        ],
+        $installedFramework . '/docs/guardrails.md' => [
+            'real top-level and nested PHP-buffer evidence, empty-buffer success, `ResponseEmissionFailed(true)`, exact prior-byte and buffer-depth preservation',
+            'Acceptance authorizes no commit, push, issue closure, tag, package, release, or announcement.',
+        ],
+        $installedFramework . '/src/Http/ResponseEmitter.php' => [
+            "headers_sent() || array_sum(array_column(\\ob_get_status(true), 'buffer_used')) > 0",
+            'throw new ResponseEmissionFailed(true);',
+        ],
+    ];
+
+    requireInstalledArtifactMarkers(
+        $pendingOutputEmissionArtifactMarkers,
+        'pending-output response-emission',
+    );
+
+    forbidInstalledArtifactMarkers(
+        [
+            $project . '/.ai/README.md' => [
+                'Upgrade the installed Consumer Contract to current version 16',
+                'consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract',
+            ],
+            $installedFramework . '/templates/application/.ai/README.md' => [
+                'Upgrade the installed Consumer Contract to current version 16',
+                'consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract',
+            ],
+            $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+                'Status: proposed',
+            ],
+            $installedFramework . '/docs/guardrails.md' => [
+                'The proposed ADR 060 response-emission guard',
+                'proposed Consumer Contract version 17',
+                'Until accountable-human approval, Contract version 16 remains current',
+            ],
+            $installedFramework . '/src/Http/ResponseEmitter.php' => [
+                'ob_clean(',
+                'ob_end_clean(',
+                'ob_flush(',
+                'ob_end_flush(',
+            ],
+        ],
+        'overstated, stale, or buffer-repair response-emission boundary',
+    );
 
     /** @var array<string, list<string>> $forbiddenMarkers */
     $forbiddenMarkers = [

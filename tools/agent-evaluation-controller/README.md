@@ -19,7 +19,7 @@ It remains under export-excluded `tools/` and changes no framework runtime, publ
 5. `scoring.php`
 6. `controller.php`
 
-There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The unchanged v0.1 task inventory remains the sole task authority, and v0.2 accepts only `change.simple-ping` revision 24 with `comparative_claims: false`.
+There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The unchanged v0.1 task inventory remains the sole task authority, and v0.2 accepts only `change.simple-ping` revision 25 with `comparative_claims: false`.
 
 ## Executable boundary
 

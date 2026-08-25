@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 16
+Contract version: 17
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -60,6 +60,7 @@ A PHPThis application must:
 - keep root Composer script command text free of assignments or direct mutations of those adopted application configuration inputs;
 - keep each optional application-owned request-handler decorator route-local, explicitly ordered, and limited to exactly one downstream `RequestHandler`;
 - own one explicit terminal request-summary coordinator and one sink at the front-controller composition boundary, without adding framework logging types or hidden instrumentation;
+- begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level; empty active buffers remain valid, and application code fixes early output at its owner rather than cleaning or incorporating it;
 - keep one canonical spelling and execution pattern for each framework operation;
 - own every required application-context file listed below and resolve every template placeholder before feature work; and
 - fix findings at their cause rather than adding baselines, broad ignores, consumer PHPStan configuration, or comment suppressions.
@@ -80,7 +81,7 @@ The `php tests/run.php` value is the skeleton's concrete example, not a required
 
 A Composer script may invoke a recorded application entrypoint, including a value-free long-running development command, but its command text must not contain assignment or recognized mutation spellings for an input name canonically read by application PHP. Supply one complete selected process profile at the outer process boundary or through the explicitly adopted application-owned local environment launcher. The cross-platform lexical check is case-insensitive and conservatively rejects the adopted `KEY=` spelling, including case variants, even when intended as inert argument or example text. `phpthis check` identifies only the input name; it never repeats a script name, command, or assigned value.
 
-Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in Contract version 16.
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in Contract version 17.
 
 ## Automated behavior evidence
 
@@ -163,4 +164,4 @@ The current guide named in the second column owns the full normative requirement
 
 A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision. After the universal entrypoints above, a simple-endpoint change has exactly four task-specific files: `docs/request-handling.md`, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test. Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.
 
-Contract version 16 and Strict Profile version 4 remain current. Version 16 changes the application source-discovery boundary without adding a Strict Profile rule or `PHT` diagnostic.
+Contract version 17 and Strict Profile version 4 remain current. Version 17 carries version 16's source-discovery boundary forward and rejects response emission when headers are already sent or any active PHP-managed output-buffer level has pending bytes, without adding a Strict Profile rule or `PHT` diagnostic.

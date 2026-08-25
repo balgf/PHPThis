@@ -1615,9 +1615,11 @@ PHP,
     return 'installed-field-validation-error-guidance-proof-complete';
 }
 
+/** @param array<string, string> $environment */
 function proveInstalledSessionCleanupAndResponseFramingDistribution(
     string $project,
     string $installedFramework,
+    array $environment,
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
@@ -1639,15 +1641,30 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
             'Strict Profile version 3 remains unchanged',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 16',
+            'Contract version: 17',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
+            'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
             'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
+        ],
+        $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+            '# ADR 060: Reject pending output before response emission',
+            'Status: accepted',
+            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward',
+            'No active buffer, one empty active buffer, and nested active buffers whose every level is empty remain valid infrastructure.',
+            'The emitter only inspects the entry state.',
+        ],
+        $installedFramework . '/docs/consumer-contract-upgrades.md' => [
+            '### Contract version 17',
+            'Remove unintended early output at its owner.',
+            'Keep intentional capture or infrastructure buffers empty at emitter entry',
         ],
         $installedFramework . '/docs/request-handling.md' => [
             'An ordinary final response has a status from `200` through `599`, no `Transfer-Encoding`',
             'A `204`, `205`, or `304` has no ordinary body and no `Content-Length`.',
             '`ResponseEmitter` receives only a `Response`',
+            'any active PHP-managed output-buffer level reports pending bytes',
+            'without flushing, cleaning, rewriting, or incorporating prior bytes',
         ],
         $installedFramework . '/docs/sessions.md' => [
             '## Cleanup failure precedence',
@@ -1665,6 +1682,8 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
         ],
         $installedFramework . '/src/Http/ResponseEmitter.php' => [
             'public function emit(Response $response): void',
+            '\ob_get_status(true)',
+            "'buffer_used'",
             'echo $response->body;',
             'private function emitFile(Response $response, LocalFileBody $body): void',
         ],
@@ -1707,6 +1726,179 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
 
     if (is_string($installedEmitter) && str_contains($installedEmitter, 'Request $request')) {
         throw new RuntimeException('The installed ResponseEmitter gained request knowledge.');
+    }
+
+    $proofPath = $project . '/installed-response-emission-preflight-proof.php';
+    writeFile(
+        $proofPath,
+        <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace PHPThis\Http {
+    function headers_sent(): bool
+    {
+        return false;
+    }
+
+    function header(string $header, bool $replace = true): void
+    {
+        $GLOBALS['installed_preflight_headers'][] = [$header, $replace];
+    }
+
+    function http_response_code(int $responseCode): bool
+    {
+        $GLOBALS['installed_preflight_status'] = $responseCode;
+        return true;
+    }
+
+    function fopen(string $filename, string $mode): mixed
+    {
+        $GLOBALS['installed_preflight_file_opens']++;
+        return \fopen($filename, $mode);
+    }
+}
+
+namespace {
+use PHPThis\Http\CookieSameSite;
+use PHPThis\Http\LocalFileBody;
+use PHPThis\Http\Response;
+use PHPThis\Http\ResponseCookie;
+use PHPThis\Http\ResponseEmissionFailed;
+use PHPThis\Http\ResponseEmitter;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$GLOBALS['installed_preflight_headers'] = [];
+$GLOBALS['installed_preflight_status'] = null;
+$GLOBALS['installed_preflight_file_opens'] = 0;
+$ordinaryFailure = null;
+$ordinaryOutput = null;
+$ordinaryBaseLevel = ob_get_level();
+$ordinaryEmissionLevel = null;
+ob_start();
+
+try {
+    echo 'prior-ordinary';
+
+    try {
+        (new ResponseEmitter())->emit(new Response(
+            200,
+            ['Content-Length' => '4'],
+            'body',
+            [new ResponseCookie('preflight', 'value', '/', true, true, CookieSameSite::Lax)],
+        ));
+    } catch (ResponseEmissionFailed $failure) {
+        $ordinaryFailure = $failure;
+    }
+} finally {
+    $ordinaryEmissionLevel = ob_get_level();
+    $ordinaryOutput = ob_get_clean();
+}
+
+if (
+    !$ordinaryFailure instanceof ResponseEmissionFailed
+    || !$ordinaryFailure->responseStarted
+    || $ordinaryOutput !== 'prior-ordinary'
+    || $ordinaryEmissionLevel !== $ordinaryBaseLevel + 1
+    || ob_get_level() !== $ordinaryBaseLevel
+    || $GLOBALS['installed_preflight_status'] !== null
+    || $GLOBALS['installed_preflight_headers'] !== []
+) {
+    throw new RuntimeException('Installed ordinary emitter did not reject pending bytes intact.');
+}
+
+$path = tempnam(sys_get_temp_dir(), 'phpthis-installed-preflight-');
+
+if (!is_string($path) || file_put_contents($path, 'file') !== 4) {
+    throw new RuntimeException('Unable to create the installed local-file preflight fixture.');
+}
+
+try {
+    $fileFailure = null;
+    $fileTopOutput = null;
+    $fileLowerOutput = null;
+    $fileBaseLevel = ob_get_level();
+    $fileEmissionLevel = null;
+    ob_start();
+
+    try {
+        echo 'prior-file';
+        ob_start();
+
+        try {
+            try {
+                (new ResponseEmitter())->emit(new Response(
+                    200,
+                    ['Content-Length' => '4'],
+                    '',
+                    [],
+                    new LocalFileBody($path, 4),
+                ));
+            } catch (ResponseEmissionFailed $failure) {
+                $fileFailure = $failure;
+            }
+            $fileEmissionLevel = ob_get_level();
+        } finally {
+            $fileTopOutput = ob_get_clean();
+        }
+    } finally {
+        $fileLowerOutput = ob_get_clean();
+    }
+
+    if (
+        !$fileFailure instanceof ResponseEmissionFailed
+        || !$fileFailure->responseStarted
+        || $fileTopOutput !== ''
+        || $fileLowerOutput !== 'prior-file'
+        || $fileEmissionLevel !== $fileBaseLevel + 2
+        || ob_get_level() !== $fileBaseLevel
+        || $GLOBALS['installed_preflight_status'] !== null
+        || $GLOBALS['installed_preflight_headers'] !== []
+        || $GLOBALS['installed_preflight_file_opens'] !== 0
+    ) {
+        throw new RuntimeException('Installed local-file emitter did not reject nested pending bytes intact.');
+    }
+
+    ob_start();
+    ob_start();
+    (new ResponseEmitter())->emit(new Response(200, ['Content-Length' => '2'], 'ok'));
+    $emptyTopOutput = ob_get_clean();
+    $emptyLowerOutput = ob_get_clean();
+
+    if (
+        $emptyTopOutput !== 'ok'
+        || $emptyLowerOutput !== ''
+        || $GLOBALS['installed_preflight_status'] !== 200
+        || $GLOBALS['installed_preflight_headers'] !== [['Content-Length: 2', true]]
+    ) {
+        throw new RuntimeException('Installed emitter rejected empty nested buffering infrastructure.');
+    }
+} finally {
+    if (is_file($path) && !unlink($path)) {
+        throw new RuntimeException('Unable to remove the installed local-file preflight fixture.');
+    }
+}
+
+fwrite(STDOUT, "PASS installed response-emission preflight\n");
+}
+PHP,
+    );
+
+    try {
+        $result = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+        requireExactProcessResult(
+            $result,
+            0,
+            "PASS installed response-emission preflight\n",
+            '',
+            'Installed response-emission preflight proof failed.',
+        );
+    } finally {
+        if (is_file($proofPath) && !unlink($proofPath)) {
+            throw new RuntimeException('Unable to remove the installed response-emission preflight proof.');
+        }
     }
 
     fwrite(STDOUT, "PASS installed session cleanup and response framing distribution\n");
@@ -2040,7 +2232,7 @@ PHP,
             'The final readable implementation occupies 2,618 lines',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 16',
+            'Contract version: 17',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',

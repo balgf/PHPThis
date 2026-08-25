@@ -214,7 +214,11 @@ try {
     proveInstalledAgentEvaluationGuidanceDistribution($installedFramework, $archiveFiles);
     proveInstalledDatabaseSetupGuidanceDistribution($project, $installedFramework);
     proveInstalledStartupProbeGuidanceDistribution($project, $installedFramework);
-    proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);
+    proveInstalledSessionCleanupAndResponseFramingDistribution(
+        $project,
+        $installedFramework,
+        $environment,
+    );
     proveInstalledBoundedResponseCookieProfileDistribution(
         $project,
         $installedFramework,

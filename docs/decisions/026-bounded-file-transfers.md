@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Superseded in part by [ADR 053](053-application-owned-amazon-s3-file-transfers.md), which replaces only the remote-object-store and pre-signed-delivery exclusion when an application explicitly selects `AMAZON_S3_ADR053`, and [ADR 060](060-reject-pending-output-before-response-emission.md), which replaces only the headers-only prior-output check before local-file emission.
+
 ## Context
 
 An application needs to accept one uploaded document and return the stored bytes without materializing the complete download in a PHP string. PHP has already parsed `multipart/form-data` into `$_POST` and `$_FILES`; under the normal runtime configuration the raw multipart body is not the canonical application input. Passing the irregular nested `$_FILES` shape to handlers would leave repeated mixed-data parsing and easy multiple-file mistakes throughout the application.

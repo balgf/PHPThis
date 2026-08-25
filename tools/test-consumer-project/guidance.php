@@ -548,6 +548,14 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
             'metadata' => 'Superseded in part by [ADR 042](042-application-owned-input-failure-classification.md), which replaces only the blanket-`400` authoring default for application-owned structured request-body content.',
             'targets' => ['042-application-owned-input-failure-classification.md'],
         ],
+        'docs/decisions/026-bounded-file-transfers.md' => [
+            'title' => 'ADR 026: Bounded explicit file transfers',
+            'metadata' => 'Superseded in part by [ADR 053](053-application-owned-amazon-s3-file-transfers.md), which replaces only the remote-object-store and pre-signed-delivery exclusion when an application explicitly selects `AMAZON_S3_ADR053`, and [ADR 060](060-reject-pending-output-before-response-emission.md), which replaces only the headers-only prior-output check before local-file emission.',
+            'targets' => [
+                '053-application-owned-amazon-s3-file-transfers.md',
+                '060-reject-pending-output-before-response-emission.md',
+            ],
+        ],
         'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
             'title' => 'ADR 025: Application-owned explicit CLI and scheduler',
             'metadata' => "Superseded in part by [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md), which replaces only the executable example's same-host schedule file lock with one application-owned Redis owner-token lease and extends `schedule:run` success and Redis-failure JSON with a bounded `coordination` list.",
@@ -601,6 +609,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
         '| [ADR 026](026-bounded-file-transfers.md) | Remote-object-store and pre-signed-delivery exclusion, only when an application explicitly selects `AMAZON_S3_ADR053`; `LOCAL_ADR026` remains unchanged | [ADR 053](053-application-owned-amazon-s3-file-transfers.md) |',
+        '| [ADR 026](026-bounded-file-transfers.md) | Headers-only prior-output detection before local-file emission | [ADR 060](060-reject-pending-output-before-response-emission.md) |',
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
     ];
@@ -914,7 +923,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'Both exact candidate commits remain `PENDING`.',
             'This source-preparation approval does not authorize exact-candidate approval, repository commit or push, framework or skeleton tag creation or push, package-host write, dedicated-skeleton change, GitHub release, announcement, issue closure, or production-service mutation.',
             'The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection above are preserved acceptance-time history, not current publication state.',
-            'At this source revision, post-tag `main` adopts ADR 056, ADR 057, and ADR 059, Consumer Contract version 16, Strict Profile version 4, and PHT008.',
+            'At this source revision, post-tag `main` adopts ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008.',
             'Neither completed public-distribution evidence nor checklist position authorizes a repository write, either GitHub prerelease, the final announcement, Issue #53 closure, production use, or any other later operation.',
         ],
         $installedFramework . '/docs/decisions/047-bounded-alpha-6-release-scope.md' => [
@@ -985,13 +994,13 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             '| Latest framework tag | Alpha 7, [`v0.1.0-alpha.7`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.7), Consumer Contract version 13, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |',
             '| Latest proved application starter | Alpha 7 is the latest matching framework/skeleton pair with complete clean Packagist-only public-distribution evidence in [Issue #53](https://github.com/balgf/PHPThis/issues/53) |',
             '| Coordinated release status | Alpha 7 remains partial pending both GitHub prereleases and the final announcement; Alpha 6 remains the latest fully completed and announced coordinated release |',
-            '| Current post-tag `main` | Unreleased development source adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16, Strict Profile version 4, and PHT008',
+            '| Current post-tag `main` | Unreleased development source adopting ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008',
             'Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation.',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'",
             'The Alpha 7 framework tag is immutable.',
             'records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
             'preserve their acceptance-time `PENDING` values and non-authority statements as historical evidence.',
-            'The post-tag `main` source is unreleased development work adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16, Strict Profile version 4, and PHT008.',
+            'The post-tag `main` source is unreleased development work adopting ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008.',
             'Create the latest proved public framework/skeleton pair explicitly:',
             'Issue #53 records the exact Alpha 7 skeleton and clean public-install evidence',
             '## Key documentation',
@@ -1009,6 +1018,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
         ],
         $installedFramework . '/docs/getting-started.md' => [
             '## Start from a proved published skeleton',
+            'Use the contract-version-17 Composer scripts',
             'Do not use an unpinned prerelease constraint during partial publication',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'",
             'Before selecting a later prerelease, verify its exact skeleton version and clean public-install evidence in the release work item, GitHub, and Packagist.',
@@ -1024,6 +1034,8 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'Prerelease publication follows the complete version-neutral maintainer gate in `RELEASING.md`.',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
             'This tracked guide records the proved Alpha 7 command but does not establish future availability',
+            '[ADR 060](decisions/060-reject-pending-output-before-response-emission.md), Consumer Contract version 17, and Strict Profile version 4 with `PHT008`.',
+            'Audit every response-emitter path, remove unintended earlier output at its owner, keep intentional buffers empty at emitter entry, and retain no-fallback behavior for `ResponseEmissionFailed(true)`.',
         ],
         $installedFramework . '/docs/knowledge-map.md' => [
             'Assess or prepare a proposed PHPThis release',
@@ -1049,7 +1061,8 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'ADR 054, the tagged Alpha 7 notes, and the approved Alpha 7 source-preparation subsection retain their acceptance-time `PENDING` and non-authority statements as historical evidence.',
             'Current mutable guidance separately records Issue #37\'s fully completed and announced Alpha 6 evidence and Issue #53\'s exact Alpha 7 candidates, required CI, immutable tags, Packagist versions, and clean Packagist-only public-distribution proof',
             'while keeping both GitHub prereleases, the final announcement, Issue closure, production use, and every other later operation separately gated.',
-            'The root README proof deliberately pins only the consumer landing-page contract: product purpose, the exact Alpha 7 framework/starter command and public-proof boundary, the unannounced partial coordinated-release status, the current unreleased ADR 056/ADR 057/ADR 059 and Contract 16/Profile 4/PHT008 source boundary, the external-state disclaimer, and compact authority links.',
+            'The accepted ADR 059 source-prefix guard pins the 228-file current inventory',
+            'The root README proof deliberately pins only the consumer landing-page contract: product purpose, the exact Alpha 7 framework/starter command and public-proof boundary, the unannounced partial coordinated-release status, the current unreleased ADR 056/ADR 057/ADR 059/ADR 060 and Contract 17/Profile 4/PHT008 source boundary, the external-state disclaimer, and compact authority links.',
             'Concern-specific capability and evidence contracts remain in their routed guides rather than being repeated in the README.',
             'ordered local-proof-before-push, exact-CI, tag-creation-and-push',
             'discovers every current `docs/releases/*.md` note and rejects unqualified positive or negative live-publication claims',
@@ -1077,6 +1090,26 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             ],
         ],
         'accepted Alpha 7 stale proposal boundary',
+    );
+
+    forbidInstalledArtifactMarkers(
+        [
+            $installedFramework . '/RELEASING.md' => [
+                'post-tag `main` adopts ADR 056, ADR 057, and ADR 059, Consumer Contract version 16',
+            ],
+            $installedFramework . '/README.md' => [
+                'Unreleased development source adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16',
+                'unreleased development work adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16',
+            ],
+            $installedFramework . '/docs/getting-started.md' => [
+                'Use the contract-version-16 Composer scripts',
+                '[ADR 059](decisions/059-bounded-application-source-prefix-discovery.md), Consumer Contract version 16, and Strict Profile version 4 with `PHT008`.',
+            ],
+            $installedFramework . '/docs/guardrails.md' => [
+                'the current unreleased ADR 056/ADR 057/ADR 059 and Contract 16/Profile 4/PHT008 source boundary',
+            ],
+        ],
+        'current Contract 17 unreleased-source boundary',
     );
 
     $releaseGuidance = file_get_contents($installedFramework . '/RELEASING.md');

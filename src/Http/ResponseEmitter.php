@@ -10,7 +10,7 @@ final class ResponseEmitter
 
     public function emit(Response $response): void
     {
-        if (headers_sent()) {
+        if (headers_sent() || array_sum(array_column(\ob_get_status(true), 'buffer_used')) > 0) {
             throw new ResponseEmissionFailed(true);
         }
         if ($response->fileBody !== null) {

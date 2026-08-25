@@ -250,7 +250,7 @@ function contextGuardrailFailures(string $root): array
             '[ADR 058](058-concern-local-ai-context-routing.md)',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 16',
+            'Contract version: 17',
             'Load [the contract upgrade and history companion](consumer-contract-upgrades.md) only when upgrading an application across contract versions, reviewing contract evolution, or changing that history.',
             '## Universal safety and unsupported claims',
             '## Mandatory application context',
@@ -262,12 +262,13 @@ function contextGuardrailFailures(string $root): array
             '| WebSockets | `docs/websockets.md` |',
             '| Contract upgrade or historical review | `docs/consumer-contract-upgrades.md` |',
             'Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.',
-            'Contract version 16 and Strict Profile version 4 remain current. Version 16 changes the application source-discovery boundary without adding a Strict Profile rule or `PHT` diagnostic.',
+            'Contract version 17 and Strict Profile version 4 remain current. Version 17 carries version 16\'s source-discovery boundary forward and rejects response emission when headers are already sent or any active PHP-managed output-buffer level has pending bytes, without adding a Strict Profile rule or `PHT` diagnostic.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '# PHPThis consumer contract upgrades',
             'Load it only when upgrading an application across contract versions, reviewing contract evolution, or changing the decision history.',
             '## Contract evolution',
+            '### Contract version 17',
             '### Contract version 16',
             '### Contract version 15',
             '### Contract version 14',
@@ -339,17 +340,17 @@ function contextGuardrailFailures(string $root): array
             'another concern\'s guide, policy, source, or evidence is never skipped',
         ],
         'skeleton/.ai/README.md' => [
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract.',
             'Read the complete installed upgrade companion only when reviewing its history.',
             'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.',
-            '| Upgrade the installed Consumer Contract to current version 16 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` |',
+            '| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` |',
             '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         'templates/application/.ai/README.md' => [
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract.',
             'Read the complete installed upgrade companion only when reviewing its history.',
             'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.',
-            '| Upgrade the installed Consumer Contract to current version 16 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` |',
+            '| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` |',
             '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         'docs/ai-context-routing-review.md' => [
@@ -524,7 +525,7 @@ function contextGuardrailFailures(string $root): array
             '`045-bounded-session-cleanup-and-response-framing.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 16',
+            'Contract version: 17',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
             '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
@@ -545,8 +546,8 @@ function contextGuardrailFailures(string $root): array
             'do not log, retry, suppress, or map it inside session code.',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 16 carries version 15 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
-            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, ADR 053's application-owned optional S3 profile, and ADR 059's bounded fail-closed application source discovery remain contract behavior; they are not part of PHT008 or a new Strict Profile rule.",
+            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, ADR 053's application-owned optional S3 profile, ADR 059's bounded fail-closed application source discovery, and ADR 060's pending-output emission preflight remain contract behavior; they are not part of PHT008 or a new Strict Profile rule.",
         ],
         '.ai/testing.md' => [
             'Inject native cleanup faults only through the isolated framework test boundary',
@@ -725,7 +726,7 @@ function contextGuardrailFailures(string $root): array
             'src/Session/SessionCleanupFailed.php',
         ],
         'tools/test-consumer-project.php' => [
-            'proveInstalledSessionCleanupAndResponseFramingDistribution($project, $installedFramework);',
+            'proveInstalledSessionCleanupAndResponseFramingDistribution(',
         ],
         'tools/test-consumer-project/http.php' => [
             'function proveInstalledSessionCleanupAndResponseFramingDistribution(',
@@ -751,6 +752,151 @@ function contextGuardrailFailures(string $root): array
         $root,
         $sessionCleanupAndResponseFramingArtifactMarkers,
         'session-cleanup and response-framing',
+        $failures,
+    );
+
+    $pendingOutputResponseEmissionArtifactMarkers = [
+        'docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+            '# ADR 060: Reject pending output before response emission',
+            'Status: accepted',
+            'On 2026-08-25 in Asia/Manila, the accountable human directed implementation of Issue #62',
+            'At the start of every `ResponseEmitter::emit()` call',
+            '`ob_get_status(true)` reports a non-zero `buffer_used` value for any active PHP-managed output-buffer level.',
+            'No active buffer, one empty active buffer, and nested active buffers whose every level is empty remain valid infrastructure.',
+            'The emitter only inspects the entry state. It does not clean, flush, close, reorder, rewrite, copy, or incorporate application-owned buffers or prior bytes.',
+            'Rejection occurs before file access, response status, ordinary headers, separate `Set-Cookie` fields, ordinary body output, or local-file bytes.',
+            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            'The core remains 2,618 physical lines under the accepted 2,620-line ceiling',
+        ],
+        'docs/decisions/README.md' => [
+            '`060-reject-pending-output-before-response-emission.md`',
+            '| [ADR 026](026-bounded-file-transfers.md) | Headers-only prior-output detection before local-file emission | [ADR 060](060-reject-pending-output-before-response-emission.md) |',
+            'Accepted [ADR 060](060-reject-pending-output-before-response-emission.md) coordinates Consumer Contract version 17 while retaining Strict Profile version 4',
+        ],
+        'docs/consumer-contract.md' => [
+            'Contract version: 17',
+            'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
+            'empty active buffers remain valid, and application code fixes early output at its owner rather than cleaning or incorporating it',
+            'Contract version 17 and Strict Profile version 4 remain current.',
+        ],
+        'docs/consumer-contract-upgrades.md' => [
+            '### Contract version 17',
+            'both ordinary and local-file `ResponseEmitter::emit()` calls now fail as `ResponseEmissionFailed(true)` at entry',
+            'a non-zero `buffer_used` value at any active output-buffer level',
+            'Remove unintended early output at its owner.',
+            'Keep intentional capture or infrastructure buffers empty at emitter entry',
+            'ADR 060 introduces Contract version 17 because pending PHP-managed output now rejects an emission call that version 16 allowed to proceed.',
+        ],
+        '.ai/http.md' => [
+            'At emitter entry, reject ordinary and local-file responses as `ResponseEmissionFailed(true)`',
+            'Allow empty active and nested buffers.',
+            'fail before status, headers, cookies, body, or file access.',
+            'Only `ResponseEmissionFailed(false)` may receive one generic fallback',
+            'ADR 060 adds the pending-output preflight; current Consumer Contract v17 carries version 16 and Strict Profile v4 forward.',
+        ],
+        '.ai/file-transfers.md' => [
+            'Before file access, `ResponseEmitter` applies the common response-output guard',
+            'all-empty active and nested buffers remain valid.',
+            'It inspects without cleaning, flushing, rewriting, or incorporating prior bytes.',
+        ],
+        '.ai/testing.md' => [
+            'Use real PHP output buffers to allow empty active and nested levels',
+            'lower-level bytes hidden below an empty top level as `ResponseEmissionFailed(true)`',
+            'prove zero status, header, cookie, body, or file-access work.',
+            'Ordinary emission evidence uses real empty and non-empty active buffers and proves pending bytes remain untouched',
+        ],
+        '.ai/strict-profile.md' => [
+            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            "ADR 059's bounded fail-closed application source discovery, and ADR 060's pending-output emission preflight remain contract behavior",
+        ],
+        'docs/request-handling.md' => [
+            'At emitter entry, both ordinary and local-file responses fail as `ResponseEmissionFailed(true)`',
+            'An active buffer, or nested stack of buffers, remains valid when every level is empty.',
+            'rejects before status, headers, cookies, body, or local-file access.',
+            'Only `ResponseEmissionFailed(false)` may receive one generic fallback in the front controller',
+        ],
+        'docs/file-transfers/emission.md' => [
+            'reject when headers were already sent or any active PHP-managed output-buffer level reports pending bytes;',
+            'No active buffer, one empty active buffer, and a nested stack whose every level is empty are valid.',
+            'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
+            'A pre-header open, type, or length failure raises `ResponseEmissionFailed(false)`.',
+        ],
+        'docs/file-transfers/testing.md' => [
+            'Exercise real PHP output buffers: allow empty active and nested buffers',
+            'below an empty top level as `ResponseEmissionFailed(true)`',
+            'prove rejection precedes status, headers, cookies, body, and file access.',
+            'does not establish custom output-handler private state, later output',
+        ],
+        'docs/security.md' => [
+            'Before ordinary or local-file emission, ensure headers are unsent and every active PHP-managed output-buffer level is empty',
+            'fix earlier output at its owner rather than cleaning, discarding, or incorporating it.',
+            'The entry snapshot does not expose custom output-handler private state, later output',
+        ],
+        'docs/evaluation.md' => [
+            'ADR 026 adds a bounded file-transfer proof, and ADR 060 extends its preflight evidence.',
+            'use real PHP buffers to reject pending top-level and nested lower-level bytes while allowing empty active buffers',
+            'prove zero file-open or response-output work',
+        ],
+        'docs/guardrails.md' => [
+            'The accepted ADR 060 response-emission guard pins Consumer Contract version 17',
+            'real top-level and nested PHP-buffer evidence, empty-buffer success, `ResponseEmissionFailed(true)`',
+            'rejection before status, headers, cookies, body, or file access.',
+            'Acceptance authorizes no commit, push, issue closure, tag, package, release, or announcement.',
+        ],
+        'ROADMAP.md' => [
+            'Complete: ADR 060 and Consumer Contract version 17 retain Strict Profile version 4 and `PHT001` through `PHT008`',
+            'All-empty active buffers remain valid; prior bytes and buffer lifecycle remain application-owned',
+        ],
+        'example/.ai/file-transfers.md' => [
+            'The emitter first rejects already-sent headers or pending bytes in any active PHP-managed output-buffer level as `ResponseEmissionFailed(true)`',
+            'allowing all-empty active buffers and leaving application-owned buffers and prior bytes untouched.',
+        ],
+        'src/Http/ResponseEmitter.php' => [
+            "if (headers_sent() || array_sum(array_column(\\ob_get_status(true), 'buffer_used')) > 0)",
+            'throw new ResponseEmissionFailed(true);',
+            'if ($response->fileBody !== null)',
+        ],
+        'tests/response-emitter.php' => [
+            'public static bool $sideEffectsForbidden = false;',
+            "echo 'prefix';",
+            '$bufferedOrdinaryFailure->responseStarted',
+            '$bufferedOrdinaryOutput !== \'prefix\'',
+            '$bufferedFileTopOutput !== \'\'',
+            '$bufferedFileLowerOutput !== \'prefix\'',
+            'Response emission performed forbidden local-file access.',
+            'Expected lower buffered bytes to reject local-file emission before file access.',
+            '$fileOuterOutput !== \'\'',
+        ],
+        'tests/http-boundary.php' => [
+            "yield 'response emitter rejects pending output and preserves repeated Set-Cookie fields'",
+            "runIsolatedPhpTest(__DIR__ . '/response-emitter.php')",
+        ],
+        'tests/behavior-names.txt' => [
+            'response emitter rejects pending output and preserves repeated Set-Cookie fields',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/060-reject-pending-output-before-response-emission.md',
+        ],
+        'tools/test-consumer-project.php' => [
+            'proveInstalledSessionCleanupAndResponseFramingDistribution(',
+            '$environment,',
+        ],
+        'tools/test-consumer-project/http.php' => [
+            'function proveInstalledSessionCleanupAndResponseFramingDistribution(',
+            '$installedFramework . \'/docs/decisions/060-reject-pending-output-before-response-emission.md\'',
+            '$installedFramework . \'/src/Http/ResponseEmitter.php\'',
+            "'buffer_used'",
+            "throw new RuntimeException('Installed ordinary emitter did not reject pending bytes intact.');",
+            "throw new RuntimeException('Installed local-file emitter did not reject nested pending bytes intact.');",
+            "throw new RuntimeException('Installed emitter rejected empty nested buffering infrastructure.');",
+            'PASS installed response-emission preflight',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $pendingOutputResponseEmissionArtifactMarkers,
+        'pending-output response emission',
         $failures,
     );
 
@@ -1070,12 +1216,12 @@ function contextGuardrailFailures(string $root): array
             '| Latest framework tag | Alpha 7, [`v0.1.0-alpha.7`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.7), Consumer Contract version 13, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |',
             '| Latest proved application starter | Alpha 7 is the latest matching framework/skeleton pair with complete clean Packagist-only public-distribution evidence in [Issue #53](https://github.com/balgf/PHPThis/issues/53) |',
             '| Coordinated release status | Alpha 7 remains partial pending both GitHub prereleases and the final announcement; Alpha 6 remains the latest fully completed and announced coordinated release |',
-            '| Current post-tag `main` | Unreleased development source adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16, Strict Profile version 4, and PHT008',
+            '| Current post-tag `main` | Unreleased development source adopting ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008',
             'Package availability and current release state are external facts',
             'The Alpha 7 framework tag is immutable.',
             'records both exact Alpha 7 candidates, required CI, both immutable tags and Packagist versions, and the clean Packagist-only public-distribution proof.',
             'preserve their acceptance-time `PENDING` values and non-authority statements as historical evidence.',
-            'The post-tag `main` source is unreleased development work adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16, Strict Profile version 4, and PHT008.',
+            'The post-tag `main` source is unreleased development work adopting ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008.',
             'Create the latest proved public framework/skeleton pair explicitly:',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'",
             'Issue #53 records the exact Alpha 7 skeleton and clean public-install evidence',
@@ -1101,7 +1247,7 @@ function contextGuardrailFailures(string $root): array
             'only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation.',
             'The skeleton candidate commit may remain explicitly `PENDING`',
             'Keep the planned release date distinct from the observed timestamp of every external publication operation.',
-            'At this source revision, post-tag `main` adopts ADR 056, ADR 057, and ADR 059, Consumer Contract version 16, Strict Profile version 4, and PHT008.',
+            'At this source revision, post-tag `main` adopts ADR 056, ADR 057, ADR 059, and ADR 060, Consumer Contract version 17, Strict Profile version 4, and PHT008.',
             'Neither completed public-distribution evidence nor checklist position authorizes a repository write, either GitHub prerelease, the final announcement, Issue #53 closure, production use, or any other later operation.',
             'Authorization is enumerable, not implied by reaching a checklist step.',
             'source preparation; exact-candidate freeze and approval; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement.',
@@ -1530,6 +1676,7 @@ function contextGuardrailFailures(string $root): array
             'Accepted records:',
             '`054-bounded-alpha-7-release-scope.md`',
             '`059-bounded-application-source-prefix-discovery.md`',
+            '`060-reject-pending-output-before-response-emission.md`',
         ],
         'tools/package-files.txt' => [
             'docs/decisions/054-bounded-alpha-7-release-scope.md',
@@ -1577,12 +1724,12 @@ function contextGuardrailFailures(string $root): array
     );
 
     $currentConsumerContractVersionMarkers = [
-        'docs/consumer-contract.md' => 'Contract version: 16',
-        'docs/getting-started.md' => 'contract-version-16 Composer scripts',
-        'skeleton/.ai/README.md' => 'Consumer Contract v16 and Strict Profile v4 remain mandatory.',
-        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v16 and Strict Profile v4',
-        'templates/application/.ai/README.md' => 'Consumer Contract v16 and Strict Profile v4 remain mandatory.',
-        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v16 and Strict Profile v4',
+        'docs/consumer-contract.md' => 'Contract version: 17',
+        'docs/getting-started.md' => 'contract-version-17 Composer scripts',
+        'skeleton/.ai/README.md' => 'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
+        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v17 and Strict Profile v4',
+        'templates/application/.ai/README.md' => 'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
+        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v17 and Strict Profile v4',
     ];
 
     foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1609,7 +1756,7 @@ function contextGuardrailFailures(string $root): array
             '`057-distinct-named-sql-placeholder-occurrences.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 16',
+            'Contract version: 17',
             '### Contract version 15',
             '`PHT008` rejects a repeated name and requires each occurrence to have its own explicit binding',
             'Version 15 adds no runtime SQL parser, binding-array comparison, positional-placeholder support, SQL rewrite, placeholder helper, query builder, dialect abstraction',
@@ -1655,7 +1802,7 @@ function contextGuardrailFailures(string $root): array
             'It scans ambiguous SQLite bracket text',
         ],
         'templates/application/AGENTS.md' => [
-            'Consumer Contract v16 and Strict Profile v4 are the minimum accepted rules.',
+            'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules.',
         ],
         'templates/application/.ai/data.md' => [
             'Every data value is bound with a distinct exact case-sensitive named placeholder and separate binding for each occurrence',
@@ -1665,7 +1812,7 @@ function contextGuardrailFailures(string $root): array
             'PHT008 is static and does not imply runtime SQL-text rejection.',
         ],
         'skeleton/AGENTS.md' => [
-            'Consumer Contract v16 and Strict Profile v4 are the minimum accepted rules.',
+            'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules.',
         ],
         'skeleton/.ai/data.md' => [
             'Every SQL data value must use a distinct exact case-sensitive named placeholder and binding for each occurrence',
@@ -2228,10 +2375,11 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 227',
-            'current post-Alpha-7 release inventory must contain exactly 227 reviewed files',
+            'count($packagePaths) !== 228',
+            'current post-Alpha-7 release inventory must contain exactly 228 reviewed files',
             'ADR 058 concern-local context routing',
             'accepted ADR 059 bounded source-prefix discovery',
+            'accepted ADR 060 pending-output response-emission preflight',
             'immutable Alpha 7 remains the historical 218-file artifact',
         ],
         'tools/guardrails/repository.php' => [

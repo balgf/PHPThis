@@ -570,7 +570,7 @@ function httpBoundaryBehaviorTests(): Generator
     }
 };
 
-    yield 'response emitter preserves repeated Set-Cookie fields' => static function (): void {
+    yield 'response emitter rejects pending output and preserves repeated Set-Cookie fields' => static function (): void {
     $result = runIsolatedPhpTest(__DIR__ . '/response-emitter.php');
 
     if ($result['exit_code'] !== 0 || $result['stderr'] !== '') {

@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 227) {
-            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 227 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, and accepted ADR 059 bounded source-prefix discovery; immutable Alpha 7 remains the historical 218-file artifact.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 228) {
+            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 228 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, accepted ADR 059 bounded source-prefix discovery, and accepted ADR 060 pending-output response-emission preflight; immutable Alpha 7 remains the historical 218-file artifact.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -411,7 +411,7 @@ function distributionGuardrailFailures(
 
         if (
             hash('sha256', $behaviorInventory)
-            !== '85878e382942708ea8bf43a063b7c0fede99bf42bf4e39524fa10b655f632d8c'
+            !== '37886edc1222c0121fb1dfd7bc44fd607e6751c73eb6ef40d993c3dd9a086853'
         ) {
             $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
         }
@@ -466,7 +466,7 @@ function distributionGuardrailFailures(
             'function frameworkBehaviorNamesForGroup(string $group): array',
             'function frameworkBehaviorInventory(): array',
             'array_key_exists($name, $registered)',
-            '85878e382942708ea8bf43a063b7c0fede99bf42bf4e39524fa10b655f632d8c',
+            '37886edc1222c0121fb1dfd7bc44fd607e6751c73eb6ef40d993c3dd9a086853',
         ],
         'tests/composition.php' => [
             'function compositionBehaviorTests(): Generator',
@@ -1180,10 +1180,13 @@ function distributionGuardrailFailures(
             'A `null` multipart limit disables multipart input.',
             'Do not add a generic storage interface, facade, disk registry, binding helper',
             'Do not claim rejection of duplicate raw scalar parts',
+            'already-sent headers or pending bytes in any active PHP-managed output-buffer level fail as `ResponseEmissionFailed(true)`',
+            'It inspects without cleaning, flushing, rewriting, or incorporating prior bytes.',
             'After headers, do not attempt a replacement response',
             'Do not introduce an ORM',
         ],
         'docs/consumer-contract.md' => [
+            'Contract version: 17',
             '## Optional bounded file transfers',
             'Raw `$_FILES` never enters a handler.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
@@ -1194,10 +1197,25 @@ function distributionGuardrailFailures(
             'The accepted implementation occupies 2,495 physical core lines',
             'PHPThis adds no ORM behavior, automatic or domain binding',
         ],
+        'docs/decisions/060-reject-pending-output-before-response-emission.md' => [
+            '# ADR 060: Reject pending output before response emission',
+            'Status: accepted',
+            'At the start of every `ResponseEmitter::emit()` call, before selecting the ordinary or local-file path',
+            '`ob_get_status(true)` reports a non-zero `buffer_used` value for any active PHP-managed output-buffer level.',
+            'The emitter only inspects the entry state. It does not clean, flush, close, reorder, rewrite, copy, or incorporate application-owned buffers or prior bytes.',
+            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+        ],
         'docs/file-transfers/README.md' => [
             'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
+            'Consumer Contract version 17 carries version 16 and version 13\'s requirement for exactly one deliberate selection',
+            'ADR 060\'s pending-output preflight',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
+        ],
+        'docs/file-transfers/emission.md' => [
+            'reject when headers were already sent or any active PHP-managed output-buffer level reports pending bytes',
+            'The first check inspects every active PHP output-buffer level without flushing, cleaning, rewriting, or incorporating prior bytes into the selected response.',
+            'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
         ],
         'docs/file-transfers/security.md' => [
             '`SameSite` and an opaque identifier are not permission.',
@@ -1210,6 +1228,8 @@ function distributionGuardrailFailures(
         ],
         'docs/file-transfers/testing.md' => [
             'Protected application evidence proves exact `authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage` order',
+            'Exercise real PHP output buffers: allow empty active and nested buffers; reject pending bytes in the top level and below an empty top level as `ResponseEmissionFailed(true)`',
+            'prove rejection precedes status, headers, cookies, body, and file access.',
             'The repository proof deliberately shows that an equal-size regular replacement and a symlink to a same-size regular target are emitted.',
             'Static installed-context proof may require the authoritative application adoption record and its finite markers, routing, and complete project-gate link.',
         ],
@@ -1218,11 +1238,13 @@ function distributionGuardrailFailures(
             '`GET /document-files/{file_id:token}`',
             '`PUBLIC_NON_PRODUCTION(FILE_TRANSFER)`',
             '`server-root/tmp/example.sqlite.files`',
+            'pending bytes in any active PHP-managed output-buffer level as `ResponseEmissionFailed(true)`',
             'application.response_emission_failed',
         ],
         'skeleton/.ai/file-transfers.md' => [
             'NOT_APPLICABLE(FILE_TRANSFER)',
             'multipart input remains disabled',
+            'pending bytes in any active PHP-managed output-buffer level',
             '`LOCAL_ADR026` owns its deployment-precreated durable root, move, filesystem authority/rechecks, path/byte immutability and cleanup',
         ],
         'templates/application/.ai/file-transfers.md' => [
@@ -1230,6 +1252,7 @@ function distributionGuardrailFailures(
             '{{FILE_TRANSFER_EVIDENCE_OR_NOT_APPLICABLE}}',
             'for `LOCAL_ADR026`, the deployment-precreated durable root before HTTP handling',
             '`OPAQUE_BYTES` uses fixed code-owned stored/download names',
+            'pending bytes in any active PHP-managed output-buffer level',
         ],
         'tools/test-consumer-project.php' => [
             "require_once __DIR__ . '/test-consumer-project/file-transfers.php';",
@@ -1238,6 +1261,10 @@ function distributionGuardrailFailures(
         ],
         'tools/test-consumer-project/file-transfers.php' => [
             'function proveInstalledProtectedFileTransferReference(',
+            "\$installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md'",
+            "\$installedFramework . '/docs/file-transfers/emission.md'",
+            "\$installedFramework . '/src/Http/ResponseEmitter.php'",
+            "'Contract version: 17'",
             'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
             'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
             'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
@@ -1248,6 +1275,7 @@ function distributionGuardrailFailures(
             'if ($this->pending !== $reservation)',
             'writeFile($adoptionPath, $originalAdoptionRecord);',
             '$restoredAdoptionRecord !== $originalAdoptionRecord',
+            'headers unsent and no pending bytes in any active PHP-managed output-buffer level',
         ],
         'src/Http/RequestReader.php' => [
             'private ?int $maximumMultipartBytes;',
@@ -1257,7 +1285,7 @@ function distributionGuardrailFailures(
         ],
         'src/Http/ResponseEmitter.php' => [
             'private const int FILE_CHUNK_BYTES = 8_192;',
-            'if (headers_sent())',
+            "if (headers_sent() || array_sum(array_column(\\ob_get_status(true), 'buffer_used')) > 0) {",
             'throw new ResponseEmissionFailed(false);',
             'throw new ResponseEmissionFailed(true);',
         ],
@@ -1289,9 +1317,17 @@ function distributionGuardrailFailures(
         'tests/upload-request-boundary.php' => [
             'Expected multipart input to require an explicit configured cap.',
         ],
+        'tests/response-emitter.php' => [
+            'Expected prior buffered bytes to remain untouched and reject ordinary response emission.',
+            'Expected lower buffered bytes to reject local-file emission before file access.',
+            'Response emission performed forbidden local-file access.',
+        ],
         'tools/package-files.txt' => [
             'docs/decisions/026-bounded-file-transfers.md',
+            'docs/decisions/060-reject-pending-output-before-response-emission.md',
             'docs/file-transfers/README.md',
+            'docs/file-transfers/emission.md',
+            'docs/file-transfers/testing.md',
             'src/Http/RequestUpload.php',
             'src/Http/LocalFileBody.php',
             'templates/application/.ai/file-transfers.md',
@@ -1308,8 +1344,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 16$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 16.';
+            if (preg_match('/^Contract version: 17$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 17.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -1569,8 +1605,8 @@ function distributionGuardrailFailures(
                 $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
             }
 
-            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v16 and Strict Profile v4 are the minimum accepted rules')) {
-                $failures[] = 'Application AGENTS.md must identify Consumer Contract v16 and Strict Profile v4 as the minimum accepted rules.';
+            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules')) {
+                $failures[] = 'Application AGENTS.md must identify Consumer Contract v17 and Strict Profile v4 as the minimum accepted rules.';
             }
         }
     }
@@ -1586,9 +1622,9 @@ function distributionGuardrailFailures(
             !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
             || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
             || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
-            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v16 and Strict Profile v4 are the minimum accepted rules')
+            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules')
         ) {
-            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v16 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v17 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
         }
     }
 

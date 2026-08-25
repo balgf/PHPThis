@@ -2,7 +2,7 @@
 
 This directory owns current context for the checked health-only starter. Replace only the guides entered by a task with verified project facts before adding product behavior. Keep context committed, concise, and free of secrets.
 
-Consumer Contract v16 and Strict Profile v4 remain mandatory. Application guidance may strengthen them but may not weaken them.
+Consumer Contract v17 and Strict Profile v4 remain mandatory. Application guidance may strengthen them but may not weaken them.
 
 ## Universal entrypoints
 
@@ -16,7 +16,7 @@ Then start with exactly one current operational guide from the table. Add anothe
 
 Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.
 
-Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract. Read the complete installed upgrade companion only when reviewing its history.
+Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract. Read the complete installed upgrade companion only when reviewing its history.
 
 ## Simple endpoint route
 
@@ -31,7 +31,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Task | Start with | Inspect next; add another guide only if entered |
 | --- | --- | --- |
 | Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
-| Upgrade the installed Consumer Contract to current version 16 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-16` | exact installed and target contract/profile versions, application symlink inventory, non-`.php` prefix controls, affected concern guides, application source and evidence, then the complete gate |
+| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` | exact installed and target contract/profile versions, response-emitter call and early-output inventory, active and nested PHP-buffer evidence, front-controller and deployed-SAPI limits, affected source, then the complete gate |
 | Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | exact versions under review, their accepted decisions, affected concern guides, application source and evidence |
 | Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
 | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
