@@ -7,6 +7,7 @@ SECURITY.md
 VISION.md
 bin/phpthis
 composer.json
+docs/ai-context-routing-review.md
 docs/architecture.md
 docs/caching.md
 docs/coordination.md
@@ -32,6 +33,7 @@ docs/cli/testing.md
 docs/configuration.md
 docs/configuration/local-environment-launcher.md
 docs/consumer-contract.md
+docs/consumer-contract-upgrades.md
 docs/consumer-profile.md
 docs/crud.md
 docs/database.md
@@ -93,6 +95,7 @@ docs/decisions/054-bounded-alpha-7-release-scope.md
 docs/decisions/055-value-free-composer-configuration-scripts.md
 docs/decisions/056-bounded-request-target-and-path-bytes.md
 docs/decisions/057-distinct-named-sql-placeholder-occurrences.md
+docs/decisions/058-concern-local-ai-context-routing.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md

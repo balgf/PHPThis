@@ -2,7 +2,7 @@
 
 Start ordinary migration implementation with [Explicit application migrations](../docs/migrations.md) and this current guide, then enter `.ai/database.md`, `.ai/cli.md`, and `.ai/testing.md` only for the concerns the task changes. Read [ADR 043](../docs/decisions/043-engine-specific-application-migration-invariants.md), [ADR 038](../docs/decisions/038-application-owned-database-authority-lifecycle.md), or [ADR 039](../docs/decisions/039-recommended-database-migration-structure.md) only when reviewing or changing the corresponding migration-invariants, authority, or placement decision. Read [ADR 027](../docs/decisions/027-application-owned-explicit-sqlite-migrations.md) only when reviewing or changing that exact SQLite reference decision; an application deliberately adopting its exact proof shape follows the conditional rules already stated in this current guide.
 
-PHPThis provides no core migration API. ADR 043 defines engine-neutral application-owned invariants; ADR 027 remains one accepted SQLite-specific reference proof.
+PHPThis provides no core migration API. ADR 043 defines engine-neutral application-owned invariants; ADR 027 remains one accepted SQLite-specific reference proof. Keep `.ai/migrations.md` in the current skeleton and template with exactly `NOT_APPLICABLE(MIGRATIONS)` or one complete repeatable policy block per separately tracked history. Existing consumers with no migration path are not invalid merely because this optional file is absent, but an application adds it before adopting or changing migrations.
 
 Rules:
 

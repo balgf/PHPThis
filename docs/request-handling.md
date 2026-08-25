@@ -33,6 +33,10 @@ PHP has already normalized the raw query string into `$_GET` before this boundar
 
 The state index is compiled once from explicit `Route` objects. Parameterized declarations whose accepted paths overlap fail at construction rather than relying on registration order, type preference, or backtracking. One compiled state cannot contain differing parameter types or a typed transition beside a parameterized literal transition accepted by that type, even when their later segments differ. A failed `uuid` or `ulid` match never falls back to `token`. Every route sharing a typed transition also shares that transition's parameter name and type regardless of method or later branch. Request-time matching and allowed-method lookup traverse the bounded request path and compiled transitions, not the declared route list or an index collection. Invalid or oversized parameter spellings miss routing before handler or database work; a valid path registered only under another method produces the indexed 405 result.
 
+`Route::segments()` exposes immutable compiled segment metadata from the same explicit declaration. PHPThis does not generate route source, persist a route cache, or add a second report or registration API.
+
+Do not add a third path parameter, a fifth parameter type, partial-segment placeholders, regular-expression or callback routes, arbitrary catch-all strings, type fallback or match priority, route or index scanning, route discovery, or automatic input, domain, or record binding. New route syntax or matching behavior requires a separately reviewed framework decision rather than an application-local bypass.
+
 A successful match is an immutable `RouteMatch`. `Application` creates a new immutable `Request` carrying its immutable `PathParameters` and calls the unchanged `RequestHandler::handle(Request)` interface. A literal route receives empty parameters. Typed routes expose only `positiveInteger(name): int`, `token(name): string`, `uuid(name): string`, and `ulid(name): string`; route-specific code immediately converts each value to a concrete identifier before domain or database work. This metadata is not a generic context or domain-value bag, and it does not prove record existence, authorization, tenant scope, generation policy, or storage representation.
 
 ### Dependency-free simple endpoints
@@ -40,6 +44,8 @@ A successful match is an immutable `RouteMatch`. `Application` creates a new imm
 Ordinary composition constructs a handler in root `Routes::create()` and passes it into a named route-area list. One narrow locality exception applies when an unprotected exact-literal endpoint fits an existing named route-area manifest, its final handler has no constructor dependency, and it enters no application input, policy, session, cache, configuration, database, request-handler-decorator, external-I/O, or unresolved decision concern. In that exact case, the existing route-area file constructs the dependency-free handler inline in its `Route` declaration, and root `Routes::create()` remains unchanged.
 
 That exception changes only visible construction placement. The route still enters the same explicit finite list, `Router`, `Application`, and `RequestHandler::handle(Request): Response` path. It adds no closure handler, discovery, automatic wiring, alternate router, or second execution pattern. A handler with any constructor dependency and every endpoint needing a new route area or root-composition change remains non-simple and follows ordinary root construction.
+
+The nearest behavior test proves the endpoint's exact success response and each applicable routing or method failure. After universal entrypoints, the complete task-specific set remains this guide, the existing named route-area manifest, the dependency-free handler, and that nearest test; do not add a fifth task-specific file merely to restate the route.
 
 For example, an application whose account domain permits only UUID version 7 can make that narrower policy visible immediately after routing:
 
@@ -107,6 +113,8 @@ new Route(
 Those names are application-specific examples, not PHPThis classes. Do not replace the direct nesting with a middleware array, helper, factory, registry, priority, discovery rule, `$next` callable, or container. Shared leaf dependencies can be constructed elsewhere, but the route declaration retains the complete decorator order and terminal handler.
 
 A decorator never changes the request or catches, translates, suppresses, retries, or replaces an exception. It may return the downstream response unchanged. If it deliberately replaces that immutable response, it passes through every unchanged status, header, body, cookie, and local-file-body field explicitly. Decorator-owned I/O has a visible named dependency and finite resource and failure contract; short-circuit tests prove zero downstream queries, mutation, and external effects.
+
+Automated evidence covers every applicable early and downstream path, zero-or-one downstream invocation, exact request identity, unchanged exception identity, complete immutable response-field preservation, explicit nesting order, short-circuit non-entry, and every decorator-owned I/O or side-effect bound.
 
 The pattern wraps only a route handler. It cannot wrap `Application`, `RequestBoundary`, the application terminal request-summary coordinator, or `ResponseEmitter`, and it cannot relocate session finalization, error mapping, correlation, terminal summaries, sink invocation, or emission. It adds no core type or dependency. See [ADR 033](decisions/033-application-owned-request-handler-decorators.md).
 

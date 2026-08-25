@@ -16,9 +16,13 @@ Then start with exactly one current operational guide from the table. Add anothe
 
 Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.
 
+Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` only when upgrading the accepted contract or reviewing its history.
+
 ## Simple endpoint route
 
 Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.
+
+When reporting that metric, state this application's universal read cost separately with the exact revision, ordered file inventory, and word and byte method. Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.
 
 An ordinary route change starts with installed `vendor/phpthis/framework/docs/request-handling.md`; read a decision record only when reviewing or changing the decision it records.
 
@@ -27,6 +31,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Task | Start with | Inspect next; add another guide only if entered |
 | --- | --- | --- |
 | Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
+| Upgrade the installed Consumer Contract or review its history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | exact installed and target contract/profile versions, affected concern guides, application source and evidence, then the complete gate |
 | Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
 | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
 | Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`; add installed `vendor/phpthis/framework/docs/database.md` when nested data enters an I/O plan | exact application response construction and `Content-Type`, operation-owned `data` and optional `meta` fields, semantic relationship names, fixed bounded query/cache/external-call counts independent of parent-page cardinality, I/O-free mapping and encoding, parent pagination, exact nested decoder fixtures, compatibility decision, `.ai/data.md`, and `.ai/testing.md`; add no generic wrapper, relationship loader, serializer, paginator, or generator |

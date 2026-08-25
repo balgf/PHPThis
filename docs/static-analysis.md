@@ -24,6 +24,12 @@ Normal checks reuse a profile-owned PHPStan cache under the resolved Composer de
 
 The framework repository retains its reviewed `phpstan.neon` because it verifies maintainer source, proof fixtures, tooling, and the skeleton together. That maintainer configuration is not copied into applications.
 
+## Consumer source manifest
+
+`phpthis check` discovers every application-owned PHP file and gives the same deterministic manifest to structural profile checks, the report-only duplication scan, and PHPStan. Structural checks and the duplication scan reuse one captured source read. The checker excludes only the resolved Composer dependency directory and version-control metadata; source under `config/`, `bin/`, migrations, hidden directories, or `tmp/` remains application-owned and checked.
+
+PHP files use the `.php` extension. Extensionless executables beginning with `<?php` or `#!/usr/bin/env php` followed by `<?php` are also checked. A canonical PHP opening prefix under another extension is rejected rather than silently excluded. Symlinked source directories and checked source files are rejected instead of silently skipped. PHT007 uses this complete manifest to enforce one process-environment-reading file, and the ordinary redacted Composer/configuration consistency check correlates canonical literal input names from that boundary with root Composer script text.
+
 ## Report-only duplication review
 
 ADR 030 adds one lexical advisory over the same consumer manifest used by structural checks and PHPStan, reusing the source captured by the structural read. It requires 48 consecutive normalized tokens, ignoring ordinary `<?php` opening tags, comments, docblocks, and whitespace while preserving identifiers and literal bytes for exact internal comparison. Candidate SHA-256 indexes are always verified token-for-token and never appear in output. Long overlapping windows consolidate into maximal groups; one clone can carry several locations, including separated copies in the same file.

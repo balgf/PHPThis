@@ -65,6 +65,7 @@ Accepted records:
 - `055-value-free-composer-configuration-scripts.md`
 - `056-bounded-request-target-and-path-bytes.md`
 - `057-distinct-named-sql-placeholder-occurrences.md`
+- `058-concern-local-ai-context-routing.md`
 
 ## Current and successor relationships
 
@@ -84,6 +85,7 @@ A partially superseded record remains accepted outside the exact scope named bel
 | [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |
 | [ADR 026](026-bounded-file-transfers.md) | Remote-object-store and pre-signed-delivery exclusion, only when an application explicitly selects `AMAZON_S3_ADR053`; `LOCAL_ADR026` remains unchanged | [ADR 053](053-application-owned-amazon-s3-file-transfers.md) |
 | [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example's same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |
+| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |
 
 ADR 013's current executable-example identifier placement is additionally refined by [ADR 046](046-canonical-executable-example-boundaries.md); the canonical current tree remains in [Optional CRUD reference profile](../crud.md#reference-placement). This refinement does not additionally supersede ADR 013's optional structure decision.
 
@@ -100,3 +102,5 @@ Accepted [ADR 055](055-value-free-composer-configuration-scripts.md) adds one or
 Accepted [ADR 056](056-bounded-request-target-and-path-bytes.md) coordinates Consumer Contract version 14 and rejects raw bytes `0x00` through `0x20` and `0x7F` in the complete runtime request target and in direct request and route paths. It preserves raw percent spellings and the existing no-decoding and route-grammar decisions, leaves Strict Profile version 3 and diagnostics `PHT001` through `PHT007` unchanged, and keeps the 2,618-line core under the accepted 2,620-line ceiling.
 
 Accepted [ADR 057](057-distinct-named-sql-placeholder-occurrences.md) coordinates Consumer Contract version 15 and Strict Profile version 4 with permanent diagnostic `PHT008`. The installed PHPStan extension checks each PHT006-finite SQL alternative independently and rejects an exact case-sensitive named placeholder repeated within one statement. `Connection` retains its existing parameter-key grammar and normalization; the decision adds no runtime SQL parser, binding-map comparison, SQL rewrite, helper API, dependency, or core line.
+
+Accepted [ADR 058](058-concern-local-ai-context-routing.md) refines ADR 044 after its reconsideration condition was reached. Universal authority, safety, validity, red lines, and the exact four-file task-specific simple-endpoint metric remain unchanged, while current concern rules move to their routed owners, Contract upgrade history becomes conditional installed context, and locality reports state universal cost separately. The decision adds no context loader, size gate, checker rule, `PHT` diagnostic, runtime API, dependency, Contract version, or Strict Profile version.

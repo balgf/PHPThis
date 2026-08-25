@@ -6,6 +6,19 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
     string $project,
     string $installedFramework,
 ): void {
+    if (
+        !installedLegacyUmbrellaMarkerRequirementIsRetired(
+            $installedFramework . '/docs/consumer-contract.md',
+            '## Application configuration',
+        )
+        || installedLegacyUmbrellaMarkerRequirementIsRetired(
+            $installedFramework . '/docs/consumer-contract.md',
+            '## Universal safety and unsupported claims',
+        )
+    ) {
+        throw new RuntimeException('Installed legacy-marker retirement must accept only exact reviewed ADR 058 pairs.');
+    }
+
     $simpleEndpointDefinition = 'A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision.';
     $simpleEndpointLocality = 'After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.';
     $ordinaryImplementationRoute = 'Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.';
@@ -14,6 +27,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
     $finalClassContract = 'Every named class is final. Express extension points with interfaces, never non-final classes.';
     $databaseLoopContract = 'Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.';
     $privateConstructorScope = 'An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.';
+    $universalCostContract = 'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.';
 
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
@@ -26,7 +40,10 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         $project . '/.ai/README.md' => [
             $installedOrdinaryRoute,
             'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` only when upgrading the accepted contract or reviewing its history.',
+            $universalCostContract,
             '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+            '| Upgrade the installed Consumer Contract or review its history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         $project . '/.ai/rules.md' => [
             $finalClassContract,
@@ -50,6 +67,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             $simpleEndpointDefinition,
             $simpleEndpointLocality,
             $ordinaryImplementationRoute,
+            'The four files are the task-specific authoring set, not the total context read.',
         ],
         $installedFramework . '/docs/decisions/044-bounded-task-routed-ai-context.md' => [
             '# ADR 044: Bounded task-routed AI context',
@@ -64,12 +82,35 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         $installedFramework . '/docs/consumer-contract.md' => [
             'Ordinary implementation starts with the current operational guide selected by those routers.',
             'Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context.',
-            'ADR 044 defines bounded task-routed AI context',
+            'Load [the contract upgrade and history companion](consumer-contract-upgrades.md) only when upgrading an application across contract versions, reviewing contract evolution, or changing that history.',
+            '## Universal safety and unsupported claims',
+            '## Normative concern routing',
+            '| Contract upgrade or historical review | `docs/consumer-contract-upgrades.md` |',
+            'Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.',
+        ],
+        $installedFramework . '/docs/consumer-contract-upgrades.md' => [
+            '# PHPThis consumer contract upgrades',
+            'Load it only when upgrading an application across contract versions, reviewing contract evolution, or changing the decision history.',
+            '### Contract version 15',
+            'Contract version 1 replaced consumer-owned PHPStan configuration with the installed checker and added the runnable skeleton.',
         ],
         $installedFramework . '/docs/knowledge-map.md' => [
             $simpleEndpointDefinition,
             $simpleEndpointLocality,
-            '| Add a simple application endpoint | `docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged, and this is the complete four-file task-specific set after universal entrypoints |',
+            'Measure or report universal context separately; its cost is never hidden inside or used to weaken that four-file routing claim.',
+            '| Add a simple application endpoint | `docs/request-handling.md` |',
+            '| Upgrade across Consumer Contract versions or review contract history | `docs/consumer-contract-upgrades.md` |',
+        ],
+        $installedFramework . '/docs/decisions/058-concern-local-ai-context-routing.md' => [
+            '# ADR 058: Concern-local AI context routing',
+            'Status: accepted',
+            'The four task-specific files are never described as total context.',
+            'Contract version 15 and Strict Profile version 4 remain unchanged',
+        ],
+        $installedFramework . '/docs/ai-context-routing-review.md' => [
+            '# Bounded AI-context routing review',
+            'Findings: 0 unsupported claims across 10 fixed routes.',
+            'It does not measure answer quality, token use, compliance probability, or comparative model performance.',
         ],
         $installedFramework . '/docs/strict-profile.md' => [
             'Every named class in checked PHP is `final`; abstract classes also fail.',
@@ -106,7 +147,10 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         $installedFramework . '/templates/application/.ai/README.md' => [
             $installedOrdinaryRoute,
             'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` only when upgrading the accepted contract or reviewing its history.',
+            $universalCostContract,
             '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+            '| Upgrade the installed Consumer Contract or review its history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         $installedFramework . '/templates/application/.ai/rules.md' => [
             $finalClassContract,

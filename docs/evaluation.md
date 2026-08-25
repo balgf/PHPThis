@@ -4,6 +4,8 @@ PHPThis needs executable evidence, not a claim that visible SQL or AI-oriented d
 
 The current harness proves specific code and execution properties. It does not yet prove that an AI will answer every framework question correctly, use the installed version instead of model memory, or surface every decision that belongs to a human.
 
+ADR 058's [bounded AI-context routing review](ai-context-routing-review.md) separately walks ten frozen prompts through the current written routers and checks unsupported-claim boundaries. It is semantic route evidence for that revision, not a model run, context-strategy comparison, token result, or proof that an arbitrary agent follows the selected route.
+
 ## Current proof
 
 Run:

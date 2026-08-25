@@ -86,7 +86,8 @@ function operationGuardrailFailures(string $root): array
             'the canonical application-owned Composer evidence script `jobs:verify`, its single literal application-owned Composer-autoload/bootstrap path',
             'invocation by the ordinary `test` script and complete `check` gate.',
             'PHPThis provides no core queue, worker, job, dispatcher, scheduler, command map, supervisor, event bus, transport adapter, generic backend validator or backend-specific checker.',
-            'A non-adopter records exactly `NOT_APPLICABLE(JOBS)` and adds no speculative mechanism.',
+            'Keep `.ai/jobs.md` in the current skeleton and template with exactly `NOT_APPLICABLE(JOBS)` or one complete adopted backend policy.',
+            'a non-adopter adds no speculative mechanism.',
         ],
         '.ai/testing.md' => [
             'exact finite retry delays from freshly observed failure time',

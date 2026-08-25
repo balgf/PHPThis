@@ -1,6 +1,6 @@
 # Terminal event schema authority
 
-ADR 023 defines the mandatory version-1 `application.request_summary` schema. `docs/consumer-contract.md` carries its application rules. ADR 028 advances only the executable Redis proof to version `2`: it preserves every version-1 field and adds exactly one `document_cache` object containing the finite `read`, `write`, and `invalidation` outcomes defined in `docs/redis/observability.md`. It does not add an optional payload bag or a second event.
+ADR 023 defines the mandatory version-1 `application.request_summary` schema. [`docs/logging.md`](../logging.md) owns its current application rules. ADR 028 advances only the executable Redis proof to version `2`: it preserves every version-1 field and adds exactly one `document_cache` object containing the finite `read`, `write`, and `invalidation` outcomes defined in `docs/redis/observability.md`. It does not add an optional payload bag or a second event.
 
 When changing the mandatory schema, update together:
 

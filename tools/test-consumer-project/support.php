@@ -2,6 +2,207 @@
 
 declare(strict_types=1);
 
+function installedLegacyUmbrellaMarkerRequirementIsRetired(string $path, string $marker): bool
+{
+    $normalizedPath = str_replace('\\', '/', $path);
+    $legacyRelativePath = match (true) {
+        str_ends_with($normalizedPath, '/docs/consumer-contract.md') => 'docs/consumer-contract.md',
+        str_ends_with($normalizedPath, '/docs/knowledge-map.md') => 'docs/knowledge-map.md',
+        default => null,
+    };
+
+    if ($legacyRelativePath === null) {
+        return false;
+    }
+
+    $decision = file_get_contents(
+        dirname($path) . '/decisions/058-concern-local-ai-context-routing.md',
+    );
+
+    if (
+        !is_string($decision)
+        || !str_contains($decision, 'Status: accepted')
+        || !str_contains(
+            $decision,
+            'Unique requirements are transferred to the concern owner before they are removed from the universal contract',
+        )
+    ) {
+        return false;
+    }
+
+    $retiredMarkers = [
+        'docs/consumer-contract.md' => [
+            '## Application configuration',
+            '## Application-owned WebSocket profile',
+            '## Optional application-owned CLI and scheduler',
+            '## Optional application-owned database migrations',
+            '## Optional application-owned durable jobs',
+            '## Optional application-owned operation coordination',
+            '## Optional application-owned request-handler decorators',
+            '## Optional bounded file transfers',
+            '## Optional development Workbench',
+            '### Contract version 12',
+            '### Contract version 14',
+            '### Contract version 15',
+            'A coherent consumer-selected alternative remains valid',
+            'A configuration-free application records `NOT_APPLICABLE(CONFIGURATION)`',
+            'A directly constructed `Request` or `Route` receives a path-only value',
+            'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
+            'ADR 022 records one finite SQLite application data path',
+            'ADR 023 defines the mandatory request-level observability boundary',
+            'ADR 027 remains the one executable SQLite reference proof.',
+            'ADR 028 remains one bounded Redis schedule-lease example, not a portable mechanism.',
+            'ADR 028 replaces only the executable example\'s schedule file lock with one application-owned Redis owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.',
+            'ADR 034 documents one independent application-owned WebSocket proof without accepting a framework WebSocket runtime, changing application validity, or making its recipe limits universal.',
+            'ADR 037 adds the early database setup scope gate as an AI-authoring workflow clarification',
+            'ADR 039 recommends `src/Database/Migrations/`',
+            'ADR 041 left the then-current Strict Profile version 3 unchanged; Consumer Contract version 15 carries the Workbench contract forward under Strict Profile version 4',
+            'ADR 042 changes the application-owned structured request-body authoring default',
+            'ADR 043 defines universal application-owned migration invariants',
+            'ADR 044 defines bounded task-routed AI context',
+            'ADR 046 consolidates four executable-example application boundaries without changing framework runtime, accepted PHP syntax, consumer checker validity, or the contract or Strict Profile version.',
+            'Always use the narrowest route type.',
+            'An application deliberately adopting ADR 024\'s checked SQLite recipe',
+            'An application with no standalone operation-specific coordination records `NOT_APPLICABLE(OPERATION_COORDINATION)` in `.ai/operations.md`.',
+            'Configuration parsing, successful connectivity, `SELECT 1`, object existence, and migration success do not prove usable runtime authority.',
+            'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
+            'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
+            'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
+            'Contract version 9 does not make that additional file a checker requirement',
+            'Contract-version-7-compatible optional application clarification, not a new checker requirement',
+            'Delivery under that checked recipe remains at least once.',
+            'Do not add a framework WebSocket server, client, event loop, connection manager, daemon, supervisor, generic channel, broadcaster, pub/sub, event bus, middleware, context bag, service locator, discovery mechanism, hidden retry, replay, deduplication, acknowledgement, reconnect, or exactly-once behavior.',
+            'Do not add a generic or framework middleware interface, pipeline, stack, runner, registry, priority list, discovery rule, `$next` callable, request-context bag, request attributes, or framework-owned decorator.',
+            'Do not combine their credentials or invent connection subdivisions for a single-database application',
+            'Exact configuration and process identity remain authoritative in `.ai/configuration.md`',
+            'Exactly one sink invocation attempt is not durable delivery.',
+            'Existing applications need not add `.ai/workbench.md` when they do not adopt the package',
+            'Fencing requires an ordered token that every protected downstream effect validates',
+            'For application-owned structured request-body content',
+            'For each adopted process profile, keep its runtime, worker, migration, or administrative input names, factories, and output types separate.',
+            'Frames never become PHPThis HTTP `Request` or `Response` values',
+            'PHPThis has no WebSocket runtime or core WebSocket API.',
+            'PHPThis supplies no universal lock.',
+            'Query-string, header, route, and transport representations retain their separately recorded contracts.',
+            'Raw `$_FILES` never enters a handler.',
+            'SQLite- and topology-specific choices, not universal migration requirements.',
+            'The command never runs from the front controller, request composition, HTTP startup, framework `vendor/bin/phpthis`, command discovery, or dependency hooks.',
+            'The complete target, including its query suffix, is at most 8,192 bytes',
+            'The decorator is composed only as the handler of an explicit `Route`.',
+            'These are obligations of that deliberately adopted recipe, not defaults for every application-owned deferred-work design.',
+            'This operation-coordination guidance adds no accepted PHP syntax, checker rule, Contract or Strict Profile version, diagnostic, runtime API, or dependency.',
+            'Version 15 adds no runtime SQL parser, binding-array comparison, positional-placeholder support, SQL rewrite, placeholder helper, query builder, dialect abstraction',
+            'Version 9 adds no core class, framework middleware, runtime dependency, static diagnostic, request attribute, or automatic composition.',
+            '`Domain`, `Partitioned`/CHIPS, and `Priority` remain unsupported.',
+            '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
+            '`PHT008` rejects a repeated name and requires each occurrence to have its own explicit binding',
+            '`positive-int`, `token`, `uuid`, or `ulid`',
+            'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
+            'adds one ordinary context-consistency failure without a `PHT` diagnostic',
+            'application.request_summary',
+            'as described in installed `docs/jobs/sqlite.md`.',
+            'at most eight database sources',
+            'does not enforce migration placement through the checker or Strict Profile',
+            'engine-specific ledger-consistency boundary',
+            'every code-owned binding name/type/literal value or complete finite binding-derivation policy',
+            'explicit connection-owned subdivision for each adopted history',
+            'make exactly one sink invocation attempt',
+            'never normalized',
+            'no empty migration directory',
+            'non-secret configuration reference',
+            'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
+            'passes the exact same immutable `Request` instance downstream',
+            'percent spellings, slashes, repeated slashes, dot segments, backslashes, and bytes `0x80` through `0xFF` remain raw',
+            'record how effective authority resolves under the selected engine, using only applicable direct, role or inherited, public or default, database or global, ownership-chain, IAM, filesystem or process, or other engine-specific sources',
+            'record the application-owned ordering among migration, authority activation, exact-engine authority verification, application rollout, and traffic enablement',
+            'treat zero runtime object access as valid before a named application operation exists',
+            'ulid(name): string',
+            'uuid(name): string',
+            'zero downstream calls or call its one downstream handler exactly once',
+            'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
+            'All topologies that can reach one history share an exclusion domain or use explicit authority gating',
+            'Do not combine their credentials or invent connection subdivisions for a single-database application or for a connection that has no separately adopted migration history.',
+            'Existing applications need not add `.ai/workbench.md`',
+            '`GRANT` or `REVOKE` migration SQL when supported and selected',
+            'a successor cannot mutate until in-flight prior-owner work is fenced',
+            'complete exact-engine evidence in `.ai/migrations.md`',
+            'finite exact-engine ledger metadata surface',
+            'not universal migration requirements',
+        ],
+        'docs/knowledge-map.md' => [
+            'ADR 023',
+            'ADR 043, ADR 027 for the SQLite reference proof',
+            'ADR 051',
+            'Add or assess an operational application command or scheduled pass',
+            'Add, place, apply, explain, or recover a database migration',
+            'Adopt or review log levels, destination-record encoding, daily files, stdout/stderr, or Grafana delivery',
+            'Adopt, change, or review ADR 024\'s optional SQLite durable-job recipe | `docs/jobs/sqlite.md`, `docs/jobs/operations.md`, `docs/jobs/testing.md`, `docs/security.md`, ADR 024 | the deliberately adopted current checked profile\'s exact SQLite version and schema',
+            'Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract',
+            'Define, change, or review startup, liveness, dependency health, or readiness semantics',
+            '`.ai/configuration.md` for exact no-fallback process configuration and identity',
+            '`.ai/data.md` for effective database-authority facts, accountable transition ownership',
+            '`.ai/operations.md` for the application-wide release order and operational runbooks',
+            '`docs/frontend-integration.md`; add only the concern guides it routes to',
+            '`docs/migrations.md`, `docs/database.md`, `docs/security.md`',
+            '`docs/observability/destination-record.md`',
+            'authorization and tenant-scope applicability and policy',
+            'clean-tree local proof before push and exact pushed-commit CI',
+            'connection-owned subdivision only for a named connection with a separately tracked migration history',
+            'distinct exact-candidate approval and separately enumerable preparation, commit/push, tag creation/push, package, GitHub-prerelease, and announcement authorization',
+            'do not generalize its transaction, lease, query bounds, one-shot lifecycle or outcomes to another backend or a framework queue or worker API',
+            'do not infer the optional document-list recipe',
+            'do not treat those names or semantics as a generic paginator or filter contract',
+            'exact application response construction and `Content-Type`',
+            'exact finite code-owned path templates and code allowlists, literal bounded response construction before operation-owned I/O',
+            'exact framework and skeleton candidate commits recorded at their respective freeze points',
+            'exact-version clean public installation evidence',
+            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
+            'for an adopted server-side cache, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md`',
+            'load and prove only the selected slice',
+            'no framework CLI, scheduler, lock, or lease API exists',
+            'planned release date separate from observed publication timestamps',
+            'preserve request-summary v1/v2 and current Contract v15',
+            'preserve the advisory application-owned boundary',
+            'preserve the generic `400`/`422` default and verify that no validator, error bag, response wrapper, renderer, generator, core API, dependency, checker diagnostic, or universal schema was introduced',
+            'scope transaction, rollback, and lock claims to their proved engine and topology',
+            'supported database/catalog/schema/attachment namespace selection and qualification, namespace and object control-or-ownership model, per-operation runtime authority, activation and deactivation ownership, exact-engine positive and negative evidence',
+            'the deliberately adopted application recipe, distinct cache and lease processes',
+            'verify fail-closed no-skip/no-mock release behavior and that PHPThis provides no runtime, adapter, generic validator or backend checker',
+            'verify that PHPThis adds no JWT, PAT, OAuth, identity-provider, or authentication runtime/API',
+            'verify that frames never become PHPThis HTTP `Request` or `Response` values and no framework WebSocket runtime exists',
+            'verify that no container, discovery, generic dispatch, second publisher, core runtime, batch, HTTP, remote, or production shell was introduced',
+            'verify that no framework frontend runtime, CORS middleware, renderer, templating or asset engine, machine-readable API generator, or client generator was implied',
+            'verify that no framework helper, portable distributed-lock claim, or duplicate context owner was introduced',
+            'verify that no framework loader, automatic bootstrap, dotenv dependency, configuration cache, `config:clear` command, launcher-specific Contract/Profile/PHT/checker change beyond ADR 055\'s separate command-text rule',
+            'verify that no framework probe API, lazy connection, hidden bypass, or second HTTP execution path was introduced',
+            'verify that the welcome-delivery example remains a database-effect proof and that no framework mailer, renderer, queue, worker, or webhook receiver was implied',
+            'when a connection is adopted, record supported database/catalog/schema/attachment namespace selection and qualification',
+            '| Add or assess an application-owned cursor or bounded list filter |',
+            '| Add, explain, or review stateless Bearer, JWT, opaque/PAT/API-token, external-provider authentication, tenant resolution, or authorization | `docs/stateless-authentication.md`, `docs/request-policy.md`, `docs/security.md`, `docs/errors.md`, `docs/decisions/020-application-owned-request-policy.md` |',
+            '| Adopt, change, explain, or review an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | `docs/coordination.md`;',
+            '| Adopt, change, or review ADR 022\'s optional SQLite protected document-list recipe |',
+            '| Adopt, change, or review ADR 022\'s optional versioned document cursor and bounded category-filter recipe |',
+            '| Adopt, change, or review ADR 024\'s optional SQLite durable-job recipe |',
+            '| Adopt, change, or review field-addressable value issues |',
+            '| Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract |',
+            '| Adopt, change, or review the optional Redis cache and schedule-lease recipe |',
+            '| Choose or assess HTTP caching or server-side derived-data caching |',
+            '| Compose, deliver, or review transactional email | `docs/email.md`;',
+            '| Construct, emit, or review a generic response cookie |',
+            '| Define, change, or review a structured JSON resource success representation, including nested child objects or collections |',
+            '| Design, implement, or review frontend integration, a frontend/API handoff, browser CORS, static assets, or application-owned HTML rendering |',
+            '| Parse, persist, format, calculate, schedule, or test date and time behavior | `docs/date-time.md`',
+            '| Propose, add, explain, or review a WebSocket path |',
+            '`docs/jobs.md`, `docs/jobs/verification.md`, `docs/jobs/README.md`, accepted ADR 052, and `docs/security.md`',
+            '`docs/jobs/sqlite.md`, `docs/jobs/operations.md`, `docs/jobs/testing.md`, `docs/security.md`, ADR 024',
+            'application response headers and, for an adopted server-side cache',
+            'the deliberately adopted application recipe',
+        ],
+    ];
+
+    return in_array($marker, $retiredMarkers[$legacyRelativePath], true);
+}
+
 /**
  * @param array<string, list<string>> $artifactMarkers
  * @param non-empty-string $artifactLabel
@@ -20,7 +221,10 @@ function requireInstalledArtifactMarkers(array $artifactMarkers, string $artifac
         }
 
         foreach ($markers as $marker) {
-            if (!str_contains($contents, $marker)) {
+            if (
+                !str_contains($contents, $marker)
+                && !installedLegacyUmbrellaMarkerRequirementIsRetired($path, $marker)
+            ) {
                 throw new RuntimeException("Installed {$artifactLabel} artifact {$path} is missing marker: {$marker}");
             }
         }

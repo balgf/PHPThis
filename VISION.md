@@ -35,6 +35,8 @@ A simple endpoint is an unprotected route on one exact literal path that fits an
 
 After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.
 
+Any report of this metric states the universal read cost separately, using the exact framework or application revision, ordered universal-file inventory, and recorded word and byte method. The four files are the task-specific authoring set, not the total context read. Universal authority remains mandatory and another concern's guide, policy, source, or evidence is never skipped to preserve either the file count or a smaller reported context size.
+
 Query, form, or application-owned header input also makes an endpoint non-simple because it requires an additional boundary contract. External I/O in this metric means endpoint-owned work; the application's already-adopted outer request boundary and terminal request-summary path remain in force. If the task enters another concern or requires a new decision, it leaves this metric and follows the applicable routed guide instead.
 
 The existing named route-area manifest constructs the dependency-free handler inline in its exact `Route` declaration. The root `Routes::create()` already includes that route area and remains unchanged. A handler with any constructor dependency follows ordinary root composition and is not a simple endpoint under this metric.

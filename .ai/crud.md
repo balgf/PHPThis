@@ -6,6 +6,7 @@ Use this guide when adding or changing CRUD-shaped application examples, the pub
 
 - The CRUD reference profile recommends application-owned directories, names, and operation boundaries. It is not a framework runtime feature.
 - A consuming application may adopt the profile or record one coherent alternate organization in its own `.ai/architecture.md`.
+- Route consumer CRUD work through installed `vendor/phpthis/framework/docs/crud.md`, never this maintainer-only `.ai/crud.md`.
 - An organization override never weakens the installed consumer contract or Strict Profile. Explicit routes, typed boundaries, visible SQL, query budgets, authorization, and complete behavior evidence still apply.
 - Do not add a generic CRUD controller, base repository, automatic resource routing, mass assignment, route discovery, reflection-based hydration, ORM, query builder, generic paginator, SQL/binding/placeholder helper, runtime SQL generator, arbitrary SQL string, transaction callback, dialect abstraction, query abstraction, or checker rule for directories and names.
 - Keep each adopted create, get, list, update, or delete behavior as a separately named operation. Do not create an absent operation merely to complete the acronym or hide adopted operations' different input, authorization, transaction, concurrency, or lifecycle semantics behind one reusable operation.

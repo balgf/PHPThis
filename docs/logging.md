@@ -43,6 +43,8 @@ Each source label is unique, matches `[a-z][a-z0-9_]{0,31}`, and must not encode
 
 The outcome is `unknown_failure` only when the coordinator caught an unknown `Throwable`; otherwise a selected status below 400 is `success`, and a status of 400 or above is `known_failure`.
 
+Every numeric aggregate saturates at `PHP_INT_MAX` rather than wrapping or widening the closed event shape.
+
 The SQL fingerprint is SHA-256 of exact SQL text. It lets an operator identify repetition without retaining SQL, but it is a pseudonymous identifier rather than encryption or anonymity. Keep fingerprints server-side and bounded by the existing trace limit.
 
 For a known authentication or authorization denial, the terminal event carries only the generic `known_failure` outcome and selected response status. It has no denial type, class, reason, principal, tenant, resource, or credential field. For a named unknown failure, its concrete class name is the only exception-derived value. For an anonymous throwable, use its nearest named parent class because PHP's anonymous-class runtime name embeds source path and line. Never include its message, code, previous exception, file, line, or stack.

@@ -4,7 +4,7 @@ Start ordinary multipart-upload, local-file-response, or accepted Amazon S3 prof
 
 ## Checked application adaptation
 
-The application's `.ai/file-transfers.md` is the one authoritative adoption record. It contains either the exact standalone marker `NOT_APPLICABLE(FILE_TRANSFER)` or exactly one selected `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile with one complete verified policy for the adopted operations. Other application guides and tests reference that record; they do not create a second writable upload, storage, content, authorization, quota, lifecycle, or emission policy.
+Keep `.ai/file-transfers.md` in the current skeleton and template as the application's one authoritative adoption record. It contains either the exact standalone marker `NOT_APPLICABLE(FILE_TRANSFER)` or exactly one selected `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile with one complete verified policy for the adopted operations. Other application guides and tests reference that record; they do not create a second writable upload, storage, content, authorization, quota, lifecycle, or emission policy. Preserve the configuration-free starter's non-adoption and the public non-production example's local reference.
 
 An adopted record names the exact profile, routes and fields, the dated effective pre-PHP ingress controls, whether PHP-normalized duplicate raw scalar parts are acceptable, request-policy order, temporary storage and selected durable-storage policies, opaque-versus-inspected content decision, quotas and lifecycle, download policy, selected delivery guarantee, and executable evidence. Keep all mechanisms concrete and application-owned. Do not create a generic authentication, CSRF, tenant, quota, scanner, upload, storage, filesystem, or response API.
 
