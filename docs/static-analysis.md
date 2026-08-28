@@ -46,7 +46,7 @@ This first pass intentionally misses blocks below 48 tokens, renamed identifiers
 
 - PHPStan owns static type correctness and type-aware architectural rules.
 - `PHT001` owns non-ignorable detection of scalar coercion from values still typed as `mixed`.
-- `PHT005` owns non-ignorable, type- and name-aware detection of application PDO or PDO-subclass construction.
+- `PHT005` owns non-ignorable, type- and name-aware detection of application PDO or PDO-subclass instantiation, calls resolving to the native `PDO::connect` factory, and first-class references to that factory.
 - `PHT006` owns non-ignorable detection of non-finite, blank, annotation-only, unpacked, or indirectly invoked SQL at the three canonical `Connection` database methods.
 - `PHT007` owns canonical direct process-environment reads and their confinement to one application-owned PHP file. `EnvironmentAccessProfile` runs in the consumer checker's structural stage because the one-file decision needs the complete application manifest.
 - `PHT008` owns non-ignorable detection of a repeated exact case-sensitive portable named placeholder within any one PHT006-finite SQL alternative at the three canonical `Connection` database methods.

@@ -694,7 +694,7 @@ PHP;
 function proveMagicMethodsAreRejected(string $project, array $profileCommand, array $environment): void
 {
     $path = $project . '/src/MagicMethods.php';
-    $source = <<<'PHP'
+$source = <<<'PHP'
 <?php
 
 declare(strict_types=1);
@@ -1056,10 +1056,169 @@ PHP;
     try {
         $result = runProcess($profileCommand, $project, $environment);
         requireFailure($result, 'PHT005 direct PDO construction unexpectedly passed.');
+        $output = $result['stdout'] . $result['stderr'];
+        $tableLines = [];
 
-        if (substr_count($result['stdout'] . $result['stderr'], 'phpthis.pht005') !== 3) {
-            throw new RuntimeException('Expected literal, aliased, and fully qualified PDO to emit PHT005.');
+        if (
+            substr_count($output, 'phpthis.pht005') !== 3
+            || preg_match_all('/(?:\A|\R)[ \t]*(\d+)[ \t]+\[PHT005\]/', $output, $tableLines) !== 3
+            || $tableLines[1] !== ['14', '19', '24']
+        ) {
+            throw new RuntimeException(
+                'Expected one exact PHT005 finding for literal, aliased, and fully qualified PDO construction.',
+            );
         }
+
+        $factorySource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use PDO;
+use PDO as Driver;
+
+interface Marker
+{
+}
+
+final class DirectPdo
+{
+    public function connected(): PDO
+    {
+        return PDO::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughAlias(): Driver
+    {
+        return Driver::connect('sqlite::memory:');
+    }
+
+    public function connectedFullyQualified(): \PDO
+    {
+        return \PDO::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughClassString(): \PDO
+    {
+        $class = PDO::class;
+
+        return $class::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughObject(PDO $pdo): PDO
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+
+    public function firstClassThroughObject(PDO $pdo): \Closure
+    {
+        return $pdo::connect(...);
+    }
+
+    public function constructedThroughObject(PDO $pdo): PDO
+    {
+        return new $pdo('sqlite::memory:');
+    }
+
+    public function connectedThroughIntersection(PDO&Marker $pdo): PDO
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+
+    public function firstClassThroughIntersection(PDO&Marker $pdo): \Closure
+    {
+        return $pdo::connect(...);
+    }
+}
+PHP;
+        writeFile($path, $factorySource . "\n");
+        $factoryResult = runProcess($profileCommand, $project, $environment);
+        requireFailure($factoryResult, 'PHT005 direct PDO::connect calls unexpectedly passed.');
+        $factoryOutput = $factoryResult['stdout'] . $factoryResult['stderr'];
+        $factoryTableLines = [];
+
+        if (
+            substr_count($factoryOutput, 'phpthis.pht005') !== 9
+            || preg_match_all(
+                '/(?:\A|\R)[ \t]*(\d+)[ \t]+\[PHT005\]/',
+                $factoryOutput,
+                $factoryTableLines,
+            ) !== 9
+            || $factoryTableLines[1] !== ['18', '23', '28', '35', '40', '45', '50', '55', '60']
+        ) {
+            throw new RuntimeException(
+                'Expected one exact PHT005 finding for every class, class-string, object, and intersection receiver.',
+            );
+        }
+
+        $acceptedSource = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+interface Marker
+{
+}
+
+final class UnrelatedConnector
+{
+    public static function connect(): self
+    {
+        return new self();
+    }
+}
+
+final class PdoSubclassWithOwnConnect extends \PDO implements Marker
+{
+    /** @param array<array-key, mixed>|null $options */
+    public static function connect(
+        string $dsn,
+        ?string $username = null,
+        ?string $password = null,
+        ?array $options = null,
+    ): static {
+        throw new \LogicException();
+    }
+}
+
+final class AcceptedConnections
+{
+    public function unrelated(): UnrelatedConnector
+    {
+        return UnrelatedConnector::connect();
+    }
+
+    public function constructedThroughUnrelatedObject(UnrelatedConnector $connector): UnrelatedConnector
+    {
+        return new $connector();
+    }
+
+    public function pdoSubclassOverrideObject(PdoSubclassWithOwnConnect $pdo): object
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+
+    public function pdoSubclassOverrideFirstClass(PdoSubclassWithOwnConnect $pdo): \Closure
+    {
+        return $pdo::connect(...);
+    }
+
+    public function pdoSubclassOverrideIntersection(PdoSubclassWithOwnConnect&Marker $pdo): object
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+}
+PHP;
+        writeFile($path, $acceptedSource . "\n");
+        $acceptedResult = runProcess($profileCommand, $project, $environment);
+        requireSuccess(
+            $acceptedResult,
+            'PHT005 rejected an unrelated target or a PDO-subclass connect override.',
+        );
     } finally {
         unlink($path);
     }

@@ -11,7 +11,7 @@ Rules carried forward from profile v0:
 Profile v1 carries `PHT001` through `PHT003` forward and adds:
 
 - `PHT004`: consuming applications cannot supply a PHPStan configuration, baseline, or inline PHPStan suppression comment in place of the framework-owned analysis profile.
-- `PHT005`: application-owned code cannot construct `PDO` or a subclass directly, including through an imported alias, anonymous subclass, or a value known to be `class-string<PDO>`. Use `Connection::connect` at the composition root.
+- `PHT005`: application-owned code cannot create `PDO` or a subclass directly, whether through `new`, a call resolving to the native `PDO::connect` factory, or a first-class reference to that factory. This includes imported, aliased, fully qualified, anonymous-subclass, driver-subclass, statically typed object, and statically known `class-string<PDO>` forms. Use `Connection::connect` at the composition root.
 
 Strict Profile v2 carries `PHT001` through `PHT005` forward and adds:
 

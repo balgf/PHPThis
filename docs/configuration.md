@@ -138,7 +138,7 @@ $connection = Connection::connect(
 
 ### Eager composition and probe semantics
 
-`Connection::connect()` constructs native `PDO` immediately rather than returning a deferred handle. Depending on the selected driver and DSN, construction may perform database, filesystem, or network I/O and may fail during composition. When a shared HTTP composition root opens a connection that requires an external service, every route behind that root inherits that requirement. In the current starter front-controller shape, composition completes before the terminal request-summary coordinator handles a request. A composition failure therefore occurs outside that coordinator and receives none of its application `Response`, `X-Request-ID`, or terminal-summary guarantees. An application that selects another outer failure policy records and tests that exact behavior; PHPThis supplies no hidden fallback.
+`Connection::connect()` calls the native `PDO::connect()` factory immediately rather than returning a deferred handle. Depending on the selected driver and DSN, connection creation may perform database, filesystem, or network I/O and may fail during composition. When a shared HTTP composition root opens a connection that requires an external service, every route behind that root inherits that requirement. In the current starter front-controller shape, composition completes before the terminal request-summary coordinator handles a request. A composition failure therefore occurs outside that coordinator and receives none of its application `Response`, `X-Request-ID`, or terminal-summary guarantees. An application that selects another outer failure policy records and tests that exact behavior; PHPThis supplies no hidden fallback.
 
 Use precise operational claims:
 

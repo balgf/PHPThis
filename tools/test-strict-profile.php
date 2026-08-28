@@ -1534,6 +1534,14 @@ final class PdoSubclass extends \PDO
 {
 }
 
+final class SqlitePdoSubclass extends \Pdo\Sqlite
+{
+}
+
+interface PdoMarker
+{
+}
+
 final class DirectPdoFactories
 {
     public function imported(): PDO
@@ -1558,6 +1566,11 @@ final class DirectPdoFactories
         return new $class('sqlite::memory:');
     }
 
+    public function dynamicObject(PDO $pdo): PDO
+    {
+        return new $pdo('sqlite::memory:');
+    }
+
     public function namedSubclass(): PdoSubclass
     {
         return new PdoSubclass('sqlite::memory:');
@@ -1566,6 +1579,69 @@ final class DirectPdoFactories
     public function anonymousSubclass(): \PDO
     {
         return new class('sqlite::memory:') extends \PDO {};
+    }
+
+    public function connectedThroughImport(): object
+    {
+        return ImportedPdoTarget::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughAlias(): object
+    {
+        return Driver::connect('sqlite::memory:');
+    }
+
+    public function connectedFullyQualified(): object
+    {
+        return \ImportedPdoTarget::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughDriverSubclass(): object
+    {
+        return \Pdo\Sqlite::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughNamedSubclass(): object
+    {
+        return SqlitePdoSubclass::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughKnownClassString(): object
+    {
+        $class = \ImportedPdoTarget::class;
+
+        return $class::connect('sqlite::memory:');
+    }
+
+    /** @param class-string<\PDO> $class */
+    public function connectedThroughTypedClassString(string $class): object
+    {
+        return $class::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughObject(PDO $pdo): object
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+
+    public function connectedThroughIntersectionObject(PDO&PdoMarker $pdo): object
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+
+    public function firstClassNativeIntersectionObjectFactory(PDO&PdoMarker $pdo): \Closure
+    {
+        return $pdo::connect(...);
+    }
+
+    public function firstClassNativeFactory(): \Closure
+    {
+        return \ImportedPdoTarget::connect(...);
+    }
+
+    public function firstClassNativeObjectFactory(PDO $pdo): \Closure
+    {
+        return $pdo::connect(...);
     }
 }
 PHP;
@@ -1583,6 +1659,35 @@ use PHPThis\Database\QueryTrace;
 
 final class LocalPdoTarget
 {
+    public static function connect(): self
+    {
+        return new self();
+    }
+}
+
+final class UnrelatedConnector
+{
+    public static function connect(): self
+    {
+        return new self();
+    }
+}
+
+interface PdoMarker
+{
+}
+
+final class PdoSubclassWithOwnConnect extends \PDO implements PdoMarker
+{
+    /** @param array<array-key, mixed>|null $options */
+    public static function connect(
+        string $dsn,
+        ?string $username = null,
+        ?string $password = null,
+        ?array $options = null,
+    ): static {
+        throw new \LogicException();
+    }
 }
 
 final class AcceptedConnectionFactories
@@ -1592,6 +1697,11 @@ final class AcceptedConnectionFactories
         return new LocalPdoTarget();
     }
 
+    public function localObject(LocalPdoTarget $target): LocalPdoTarget
+    {
+        return new $target();
+    }
+
     public function frameworkConnection(): Connection
     {
         return Connection::connect(
@@ -1599,6 +1709,56 @@ final class AcceptedConnectionFactories
             new QueryBudget(1),
             new QueryTrace(1),
         );
+    }
+
+    public function sameShortName(): LocalPdoTarget
+    {
+        return LocalPdoTarget::connect();
+    }
+
+    public function unrelatedConnect(): UnrelatedConnector
+    {
+        return UnrelatedConnector::connect();
+    }
+
+    public function unrelatedClassString(): UnrelatedConnector
+    {
+        $class = UnrelatedConnector::class;
+
+        return $class::connect();
+    }
+
+    public function pdoSubclassOwnConnect(): object
+    {
+        return PdoSubclassWithOwnConnect::connect('sqlite::memory:');
+    }
+
+    public function pdoSubclassOwnConnectClassString(): object
+    {
+        $class = PdoSubclassWithOwnConnect::class;
+
+        return $class::connect('sqlite::memory:');
+    }
+
+    public function pdoSubclassOwnConnectObject(PdoSubclassWithOwnConnect $pdo): object
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+
+    public function pdoSubclassOwnFirstClassConnectObject(PdoSubclassWithOwnConnect $pdo): \Closure
+    {
+        return $pdo::connect(...);
+    }
+
+    public function pdoSubclassOwnConnectIntersection(PdoSubclassWithOwnConnect&PdoMarker $pdo): object
+    {
+        return $pdo::connect('sqlite::memory:');
+    }
+
+    public function pdoSubclassOwnFirstClassConnectIntersection(
+        PdoSubclassWithOwnConnect&PdoMarker $pdo,
+    ): \Closure {
+        return $pdo::connect(...);
     }
 }
 PHP;
@@ -1949,14 +2109,14 @@ $invalidPdoResult = runProfileAnalysis($root, $invalidPdoPath);
 requireProfile($invalidPdoResult['exit_code'] === 1, 'PHT005 invalid fixture unexpectedly passed.');
 requireProfile(
     profileDiagnosticLines($invalidPdoResult, $invalidPdoPath, 'phpthis.pht005', 'PHT005')
-        === [18, 23, 28, 35, 40, 45],
-    'PHT005 did not reject direct PDO and PDO-subclass construction forms.',
+        === [26, 31, 36, 43, 48, 53, 58, 63, 68, 73, 78, 83, 90, 96, 101, 106, 111, 116, 121],
+    'PHT005 did not reject direct PDO construction, native PDO connect calls, and first-class factory references.',
 );
 
 $validPdoResult = runProfileAnalysis($root, $validPdoPath);
 requireProfile(
     $validPdoResult['exit_code'] === 0,
-    "PHT005 rejected the canonical connection factory or an unrelated namespaced PDO class.\n"
+    "PHT005 rejected the canonical connection factory or an unrelated class or method named connect.\n"
         . $validPdoResult['stderr']
         . $validPdoResult['stdout'],
 );

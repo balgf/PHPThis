@@ -98,15 +98,6 @@ function certifyDatabaseDriver(
         throw new RuntimeException("Configured {$driver} DSN does not select the {$driver} PDO driver.");
     }
 
-    $budget = new QueryBudget(9);
-    $trace = new QueryTrace(7);
-    $connection = Connection::connect(
-        $configuration['dsn'],
-        $budget,
-        $trace,
-        $configuration['username'],
-        $configuration['password'],
-    );
     $table = match ($driver) {
         'sqlite' => 'phpthis_transport_sqlite',
         'mysql' => 'phpthis_transport_mysql',
@@ -123,8 +114,24 @@ function certifyDatabaseDriver(
         INSERT INTO {$table} (id, label, enabled, note)
         VALUES (:id, :label, :enabled, :note)
         SQL;
+    $connection = null;
+    $observer = null;
+    $cleanup = null;
 
     try {
+        $budget = new QueryBudget(9);
+        $trace = new QueryTrace(7);
+        $connection = Connection::connect(
+            $configuration['dsn'],
+            $budget,
+            $trace,
+            $configuration['username'],
+            $configuration['password'],
+        );
+        requireDatabaseCertification(
+            databaseConnectionPdoClass($connection) === expectedDatabasePdoClass($driver),
+            "{$driver} connection did not use its PHP 8.4 driver-specific PDO subclass.",
+        );
         $version = databaseDriverVersion($driver, $configuration);
         $expectedVersion = $expectedVersionOverride ?? expectedDatabaseVersion($driver);
 
@@ -288,32 +295,57 @@ function certifyDatabaseDriver(
 
         return $version;
     } finally {
-        if ($connection->inTransaction()) {
-            $connection->rollBack();
-        }
-
         try {
-            $cleanup = Connection::connect(
-                $configuration['dsn'],
-                new QueryBudget(1),
-                new QueryTrace(1),
-                $configuration['username'],
-                $configuration['password'],
-            );
-
-            if ($tableCreated) {
-                $cleanup->executeStatement("DROP TABLE {$table}");
+            if ($connection instanceof Connection && $connection->inTransaction()) {
+                $connection->rollBack();
             }
-
-            unset($cleanup, $observer, $connection);
         } finally {
-            $cleanupFile = $configuration['cleanup_file'];
+            try {
+                if ($tableCreated) {
+                    $cleanup = Connection::connect(
+                        $configuration['dsn'],
+                        new QueryBudget(1),
+                        new QueryTrace(1),
+                        $configuration['username'],
+                        $configuration['password'],
+                    );
+                    $cleanup->executeStatement("DROP TABLE {$table}");
+                }
+            } finally {
+                unset($cleanup, $observer, $connection);
+                $cleanupFile = $configuration['cleanup_file'];
 
-            if (is_string($cleanupFile) && is_file($cleanupFile) && !unlink($cleanupFile)) {
-                throw new RuntimeException("Unable to remove {$driver} transport fixture.");
+                if (is_string($cleanupFile) && is_file($cleanupFile) && !unlink($cleanupFile)) {
+                    throw new RuntimeException("Unable to remove {$driver} transport fixture.");
+                }
             }
         }
     }
+}
+
+/**
+ * @param 'sqlite'|'mysql'|'pgsql' $driver
+ * @return class-string<PDO>
+ */
+function expectedDatabasePdoClass(string $driver): string
+{
+    return match ($driver) {
+        'sqlite' => Pdo\Sqlite::class,
+        'mysql' => Pdo\Mysql::class,
+        'pgsql' => Pdo\Pgsql::class,
+    };
+}
+
+/** @return class-string<PDO> */
+function databaseConnectionPdoClass(Connection $connection): string
+{
+    $pdo = (new ReflectionProperty(Connection::class, 'pdo'))->getValue($connection);
+
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('Connection did not retain a native PDO instance.');
+    }
+
+    return $pdo::class;
 }
 
 /**

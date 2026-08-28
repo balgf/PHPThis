@@ -2496,12 +2496,12 @@ function contextGuardrailFailures(string $root): array
             'Do not add a framework probe API, lazy connection, hidden bypass, second HTTP execution path, universal readiness definition, or checker diagnostic for operational semantics.',
         ],
         'src/Database/Connection.php' => [
-            'new PDO($dsn, $username, $password, $defaults + $options),',
+            'PDO::connect($dsn, $username, $password, $defaults + $options),',
         ],
         'docs/configuration.md' => [
             '### Eager composition and probe semantics',
-            '`Connection::connect()` constructs native `PDO` immediately rather than returning a deferred handle.',
-            'Depending on the selected driver and DSN, construction may perform database, filesystem, or network I/O and may fail during composition.',
+            '`Connection::connect()` calls the native `PDO::connect()` factory immediately rather than returning a deferred handle.',
+            'Depending on the selected driver and DSN, connection creation may perform database, filesystem, or network I/O and may fail during composition.',
             'Successful connection construction is also not evidence of schema compatibility, migration completion, capacity, per-operation database authority, or complete application readiness.',
             'Failure isolation that preserves a selected response does not by itself bound a synchronous sink\'s latency or make that probe external-service-independent.',
             'Do not disguise a dependency bypass as the ordinary application bootstrap or add a second hidden HTTP execution path.',

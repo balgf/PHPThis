@@ -35,7 +35,7 @@ final readonly class Connection
         ];
 
         return new self(
-            new PDO($dsn, $username, $password, $defaults + $options),
+            PDO::connect($dsn, $username, $password, $defaults + $options),
             $queryBudget,
             $queryTrace,
         );
