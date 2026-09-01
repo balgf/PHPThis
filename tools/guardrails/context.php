@@ -259,7 +259,7 @@ function contextGuardrailFailures(string $root): array
             '[ADR 058](058-concern-local-ai-context-routing.md)',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             'Load [the contract upgrade and history companion](consumer-contract-upgrades.md) only when upgrading an application across contract versions, reviewing contract evolution, or changing that history.',
             '## Universal safety and unsupported claims',
             '## Mandatory application context',
@@ -271,12 +271,13 @@ function contextGuardrailFailures(string $root): array
             '| WebSockets | `docs/websockets.md` |',
             '| Contract upgrade or historical review | `docs/consumer-contract-upgrades.md` |',
             'Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.',
-            'Contract version 17 and Strict Profile version 4 remain current. Version 17 carries version 16\'s source-discovery boundary forward and rejects response emission when headers are already sent or any active PHP-managed output-buffer level has pending bytes, without adding a Strict Profile rule or `PHT` diagnostic.',
+            'Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '# PHPThis consumer contract upgrades',
             'Load it only when upgrading an application across contract versions, reviewing contract evolution, or changing the decision history.',
             '## Contract evolution',
+            '### Contract version 18',
             '### Contract version 17',
             '### Contract version 16',
             '### Contract version 15',
@@ -349,17 +350,17 @@ function contextGuardrailFailures(string $root): array
             'another concern\'s guide, policy, source, or evidence is never skipped',
         ],
         'skeleton/.ai/README.md' => [
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` when upgrading to the current accepted contract.',
             'Read the complete installed upgrade companion only when reviewing its history.',
             'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.',
-            '| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` |',
+            '| Upgrade the installed Consumer Contract to current version 18 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` |',
             '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         'templates/application/.ai/README.md' => [
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract.',
+            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` when upgrading to the current accepted contract.',
             'Read the complete installed upgrade companion only when reviewing its history.',
             'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.',
-            '| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` |',
+            '| Upgrade the installed Consumer Contract to current version 18 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` |',
             '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
         ],
         'docs/ai-context-routing-review.md' => [
@@ -534,7 +535,7 @@ function contextGuardrailFailures(string $root): array
             '`045-bounded-session-cleanup-and-response-framing.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
             '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
@@ -555,8 +556,8 @@ function contextGuardrailFailures(string $root): array
             'do not log, retry, suppress, or map it inside session code.',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
-            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, ADR 053's application-owned optional S3 profile, ADR 059's bounded fail-closed application source discovery, and ADR 060's pending-output emission preflight remain contract behavior; they are not part of PHT008 or a new Strict Profile rule.",
+            'Consumer Contract version 18 carries version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, ADR 053's application-owned optional S3 profile, ADR 059's bounded fail-closed application source discovery, ADR 060's pending-output emission preflight, and ADR 061's outer HTTP failure boundary, disclosure modes, safe-message allowlist, and real-SAPI evidence remain contract behavior; they are not part of PHT008 or a new Strict Profile rule.",
         ],
         '.ai/testing.md' => [
             'Inject native cleanup faults only through the isolated framework test boundary',
@@ -783,10 +784,10 @@ function contextGuardrailFailures(string $root): array
             'Accepted [ADR 060](060-reject-pending-output-before-response-emission.md) coordinates Consumer Contract version 17 while retaining Strict Profile version 4',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
             'empty active buffers remain valid, and application code fixes early output at its owner rather than cleaning or incorporating it',
-            'Contract version 17 and Strict Profile version 4 remain current.',
+            'Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -801,7 +802,8 @@ function contextGuardrailFailures(string $root): array
             'Allow empty active and nested buffers.',
             'fail before status, headers, cookies, body, or file access.',
             'Only `ResponseEmissionFailed(false)` may receive one generic fallback',
-            'ADR 060 adds the pending-output preflight; current Consumer Contract v17 carries version 16 and Strict Profile v4 forward.',
+            'ADR 060 adds the pending-output preflight; ADR 061 adds the generic-first outer HTTP failure boundary and optional controlled detail response.',
+            'Current Consumer Contract v18 carries version 17 and Strict Profile v4 forward.',
         ],
         '.ai/file-transfers.md' => [
             'Before file access, `ResponseEmitter` applies the common response-output guard',
@@ -815,8 +817,8 @@ function contextGuardrailFailures(string $root): array
             'Ordinary emission evidence uses real empty and non-empty active buffers and proves pending bytes remain untouched',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 17 carries version 16 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
-            "ADR 059's bounded fail-closed application source discovery, and ADR 060's pending-output emission preflight remain contract behavior",
+            'Consumer Contract version 18 carries version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, ADR 053's application-owned optional S3 profile, ADR 059's bounded fail-closed application source discovery, ADR 060's pending-output emission preflight, and ADR 061's outer HTTP failure boundary, disclosure modes, safe-message allowlist, and real-SAPI evidence remain contract behavior; they are not part of PHT008 or a new Strict Profile rule.",
         ],
         'docs/request-handling.md' => [
             'At emitter entry, both ordinary and local-file responses fail as `ResponseEmissionFailed(true)`',
@@ -1219,12 +1221,13 @@ function contextGuardrailFailures(string $root): array
             '| Latest framework tag | Alpha 7, [`v0.1.0-alpha.7`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.7), Consumer Contract version 13, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |',
             '| Latest proved application starter | Alpha 7 is the latest matching framework/skeleton pair with complete clean Packagist-only public-distribution evidence in [Issue #53](https://github.com/balgf/PHPThis/issues/53) |',
             '| Coordinated release status | Alpha 7 is the latest completed and announced coordinated release recorded by closed [Issue #53](https://github.com/balgf/PHPThis/issues/53), including both GitHub prereleases, the final announcement, and Issue closure |',
-            '| Current post-tag `main` | Unreleased development source containing ADRs 055 through 060, Consumer Contract version 17, Strict Profile version 4, PHT008, and accepted executable guard, checker, runtime, and maintainer-evidence changes',
+            '| Current post-tag `main` | Unreleased development source containing accepted ADRs 055 through 061, Consumer Contract version 18, Strict Profile version 4, PHT008',
             'Package availability and current release state are external facts',
             'The Alpha 7 framework tag is immutable.',
             'records the completed and announced coordinated release: both exact candidates, required CI, both immutable tags and Packagist versions, clean Packagist-only public-distribution proof, both GitHub prereleases, the final announcement, and Issue closure.',
             'preserve their acceptance-time `PENDING` values and non-authority statements as historical evidence.',
-            'The post-tag `main` source is unreleased development work containing ADRs 055 through 060, Consumer Contract version 17, Strict Profile version 4, PHT008, and accepted executable guard, checker, runtime, and maintainer-evidence changes.',
+            'The post-tag `main` source is unreleased development work containing accepted ADRs 055 through 061, Consumer Contract version 18, Strict Profile version 4, PHT008',
+            'runtime-boundary, and maintainer-evidence changes.',
             'The release process owns the detailed dated external-evidence record; live host availability must still be verified.',
             'Create the latest proved public framework/skeleton pair explicitly:',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'",
@@ -1256,7 +1259,8 @@ function contextGuardrailFailures(string $root): array
             'The skeleton candidate commit may remain explicitly `PENDING`',
             'Keep the planned release date distinct from the observed timestamp of every external publication operation.',
             'Closed Issue #53 records Alpha 7 as the latest completed and announced coordinated release, including both GitHub prereleases, the final announcement, and Issue closure.',
-            'At this source revision, post-tag `main` includes accepted application-owned operation-coordination and concern-routing guidance, ADRs 055 through 060, Consumer Contract version 17, Strict Profile version 4, PHT008, executable Composer-configuration and application-source checks, request/response runtime corrections, and maintainer proof hardening.',
+            'At this source revision, post-tag `main` includes accepted application-owned operation-coordination and concern-routing guidance, ADRs 055 through 061, Consumer Contract version 18, Strict Profile version 4, and PHT008.',
+            'outer HTTP failure-boundary, and maintainer-evidence changes are accepted.',
             'This delta is not limited to release-state documentation.',
             'Those completed histories authorize no production use or later release operation.',
             'For a current candidate, neither partial evidence nor checklist position authorizes the next external write',
@@ -1366,8 +1370,8 @@ function contextGuardrailFailures(string $root): array
             'Current guidance records closed Issue #53\'s completed and announced coordinated Alpha 7 evidence, including both GitHub prereleases, the final announcement, and Issue closure.',
             'the root README is a concise consumer projection',
             'The root README proof also pins the exact Alpha 7 framework/starter command',
-            'the current unreleased ADR 055-through-ADR 060 and Contract 17/Profile 4/PHT008 boundary',
-            'the executable guard/checker/runtime and maintainer-evidence character of that delta',
+            'accepted ADRs 055 through 061, current Contract 18/Profile 4/PHT008',
+            'the executable guard/checker/runtime-boundary and maintainer-evidence character of the accepted delta',
             'Concern-specific capability and evidence contracts remain in their routed guides rather than being repeated in the README.',
             'ordered local-proof-before-push, exact-CI, tag-creation-and-push',
             'rejects explicit versioned present-tense `partial`, `pending`, or `unannounced` claims',
@@ -1738,6 +1742,7 @@ function contextGuardrailFailures(string $root): array
             '`054-bounded-alpha-7-release-scope.md`',
             '`059-bounded-application-source-prefix-discovery.md`',
             '`060-reject-pending-output-before-response-emission.md`',
+            '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
         ],
         'tools/package-files.txt' => [
             'docs/decisions/054-bounded-alpha-7-release-scope.md',
@@ -1785,12 +1790,12 @@ function contextGuardrailFailures(string $root): array
     );
 
     $currentConsumerContractVersionMarkers = [
-        'docs/consumer-contract.md' => 'Contract version: 17',
-        'docs/getting-started.md' => 'contract-version-17 Composer scripts',
-        'skeleton/.ai/README.md' => 'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
-        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v17 and Strict Profile v4',
-        'templates/application/.ai/README.md' => 'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
-        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v17 and Strict Profile v4',
+        'docs/consumer-contract.md' => 'Contract version: 18',
+        'docs/getting-started.md' => 'contract-version-18 Composer scripts',
+        'skeleton/.ai/README.md' => 'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
+        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v18 and Strict Profile v4',
+        'templates/application/.ai/README.md' => 'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
+        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v18 and Strict Profile v4',
     ];
 
     foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1817,7 +1822,7 @@ function contextGuardrailFailures(string $root): array
             '`057-distinct-named-sql-placeholder-occurrences.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             '### Contract version 15',
             '`PHT008` rejects a repeated name and requires each occurrence to have its own explicit binding',
             'Version 15 adds no runtime SQL parser, binding-array comparison, positional-placeholder support, SQL rewrite, placeholder helper, query builder, dialect abstraction',
@@ -1863,7 +1868,7 @@ function contextGuardrailFailures(string $root): array
             'It scans ambiguous SQLite bracket text',
         ],
         'templates/application/AGENTS.md' => [
-            'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules.',
+            'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules.',
         ],
         'templates/application/.ai/data.md' => [
             'Every data value is bound with a distinct exact case-sensitive named placeholder and separate binding for each occurrence',
@@ -1873,7 +1878,7 @@ function contextGuardrailFailures(string $root): array
             'PHT008 is static and does not imply runtime SQL-text rejection.',
         ],
         'skeleton/AGENTS.md' => [
-            'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules.',
+            'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules.',
         ],
         'skeleton/.ai/data.md' => [
             'Every SQL data value must use a distinct exact case-sensitive named placeholder and binding for each occurrence',
@@ -2436,11 +2441,12 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 228',
-            'current post-Alpha-7 release inventory must contain exactly 228 reviewed files',
+            'count($packagePaths) !== 229',
+            'current post-Alpha-7 release inventory must contain exactly 229 reviewed files',
             'ADR 058 concern-local context routing',
             'accepted ADR 059 bounded source-prefix discovery',
             'accepted ADR 060 pending-output response-emission preflight',
+            'accepted ADR 061 outer HTTP failure disclosure',
             'immutable Alpha 7 remains the historical 218-file artifact',
         ],
         'tools/guardrails/repository.php' => [
@@ -3112,6 +3118,56 @@ function contextGuardrailFailures(string $root): array
             $failures[] = "Mutable release-state claim remains in {$relativePath}: {$releaseStateClaim}";
         }
     }
+
+    $outerHttpFailureContextMarkers = [
+        'docs/knowledge-map.md' => [
+            '| Configure or review outer HTTP failure disclosure | `docs/errors.md#outer-http-failures` |',
+            '`docs/configuration.md#http-failure-disclosure-selection`',
+            '`docs/request-handling.md#outer-http-failure-boundary`',
+            'application `.ai/operations.md` owns effective web-SAPI and isolation evidence',
+            'Native PHP display remains off in every profile.',
+        ],
+        'docs/consumer-contract-upgrades.md' => [
+            '### Contract version 18',
+            'Through [ADR 061](decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md)',
+            'Either retain deliberate code-owned `GENERIC` with no selection inputs, or define both exact application-owned disclosure and runtime-profile inputs',
+            'No request value or inferred fact may select details.',
+            'ADR 061 introduces Contract version 18',
+        ],
+        'docs/decisions/README.md' => [
+            "Proposed records:\n\n- None.",
+            '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
+            'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
+        ],
+        'skeleton/.ai/README.md' => [
+            'consumer-contract-upgrades.md#contract-version-18',
+            '| Change outer HTTP failure disclosure or web-SAPI error display | installed `vendor/phpthis/framework/docs/errors.md#outer-http-failures`, then `.ai/configuration.md` |',
+            'code-owned `GENERIC`, effective SAPI settings, and real-SAPI evidence',
+        ],
+        'templates/application/.ai/README.md' => [
+            'consumer-contract-upgrades.md#contract-version-18',
+            '| Change outer HTTP failure disclosure or web-SAPI error display | installed `vendor/phpthis/framework/docs/errors.md#outer-http-failures`, then `.ai/configuration.md` |',
+            'exact generic/detail selection, effective SAPI settings, bounded disclosure, and real-SAPI evidence',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md',
+            'docs/errors.md',
+            'docs/configuration.md',
+            'docs/request-handling.md',
+            'docs/security.md',
+            'templates/application/.ai/architecture.md',
+            'templates/application/.ai/configuration.md',
+            'templates/application/.ai/operations.md',
+            'templates/application/.ai/testing.md',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $outerHttpFailureContextMarkers,
+        'outer HTTP failure context routing',
+        $failures,
+    );
 
     return $failures;
 }

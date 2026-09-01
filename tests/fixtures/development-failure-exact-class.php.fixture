@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+// Deliberately non-profile test source: PHT002 forbids this non-final negative-control class.
+class TestOwnedAllowlistedFailure extends RuntimeException
+{
+}
+
+final class TestOwnedWouldBeSubclass extends TestOwnedAllowlistedFailure
+{
+}
+
+$safeMessageClasses = [TestOwnedAllowlistedFailure::class => true];
+$render = static function (Throwable $failure) use ($safeMessageClasses): array {
+    $allowed = array_key_exists($failure::class, $safeMessageClasses);
+
+    return [
+        'allowed' => $allowed,
+        'message' => $allowed ? $failure->getMessage() : '<omitted>',
+    ];
+};
+
+if (
+    $render(new TestOwnedAllowlistedFailure('<omitted>')) !== [
+        'allowed' => true,
+        'message' => '<omitted>',
+    ]
+    || $render(new TestOwnedWouldBeSubclass('subclass-private-sentinel')) !== [
+        'allowed' => false,
+        'message' => '<omitted>',
+    ]
+) {
+    throw new RuntimeException('The exact-class safe-message negative control failed.');
+}
+
+fwrite(STDOUT, "exact-class-negative-control=verified\n");

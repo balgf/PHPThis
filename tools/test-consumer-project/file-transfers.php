@@ -14,9 +14,9 @@ function proveInstalledProtectedFileTransferReference(
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 17 and Strict Profile version 4 remain current.',
+            'Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
             '# ADR 060: Reject pending output before response emission',
@@ -31,7 +31,7 @@ function proveInstalledProtectedFileTransferReference(
             'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
         ],
         $installedFramework . '/docs/file-transfers/README.md' => [
-            'Consumer Contract version 17 carries version 16 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 18 carries version 17 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
         ],

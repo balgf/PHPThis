@@ -4,7 +4,7 @@
 
 - Dependency install command: `composer install`
 - Complete check command: `composer check`
-- Local start command: `php -S 127.0.0.1:8080 -t public`
+- Local start command: `php -d error_reporting=-1 -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -d zend.exception_ignore_args=1 -S 127.0.0.1:8080 -t public`
 - Local stop action: stop the foreground development server.
 - Required local services: none.
 - Local environment launcher: `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`; the starter has no launcher PHP file, selected process profile, or local configuration file.
@@ -20,9 +20,15 @@
 - Database migrations: `NOT_APPLICABLE(MIGRATIONS)`; `.ai/migrations.md` owns any future adoption.
 - Required extensions: `ext-pdo` and `ext-session` through the installed framework; the starter application opens no database connection and configures no session lifecycle.
 
+## Outer HTTP failure and web-SAPI runtime
+
+The sole supported HTTP adapter is `public/index.php` under the local built-in-server command above. The command uses `-1` so every current `E_ALL` bit is enabled, disables native error and startup-error display, enables PHP error logging, and prevents trace arguments. Its inherited stderr is the local operator-controlled error destination. The starter records no production web SAPI, private error destination, deployment access policy, retention, capacity, or incident owner; those remain `NOT_APPLICABLE(no deployment policy)` and must be recorded and verified before deployment.
+
+Every future deployed HTTP profile must prove `(error_reporting() & E_ALL) === E_ALL`, `display_errors=Off`, `display_startup_errors=Off`, `log_errors=On`, and `zend.exception_ignore_args=On` from the real web SAPI. Application `ini_set()` calls and intended configuration files are not evidence. Staging and production remain `GENERIC`. `DEVELOPMENT_DETAILS` is not adopted; it requires separately recorded isolated local/development/test access, data, least-authority, topology, and dated real-SAPI evidence.
+
 ## Configuration runtime
 
-`.ai/configuration.md` is the single writable configuration authority and currently records `NOT_APPLICABLE(CONFIGURATION)`: the starter has no deployment input, secret-delivery path, rotation, reload, or configuration-startup failure. Record any later source, factory, validation, injection, profile/input-name/credential separation, failure, rotation/restart, redaction, and configuration-test facts there rather than duplicating them in this operations guide. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
+`.ai/configuration.md` is the single writable configuration authority and currently records `NOT_APPLICABLE(CONFIGURATION)` plus code-owned `GENERIC`: the starter has no deployment input, disclosure/profile input, secret-delivery path, rotation, reload, or configuration-startup failure. Record any later source, factory, validation, injection, disclosure/profile selection, profile/input-name/credential separation, failure, rotation/restart, redaction, and configuration-test facts there rather than duplicating them in this operations guide. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
 
 If a local environment launcher is later adopted, record here only its explicit PHP CLI invocation, absolute project-root/`PHP_BINARY`/private-child resolution, working-directory behavior, owner, and explicit production non-use. The shared canonical environment reader plus file, key, profile, and precedence facts remain in `.ai/configuration.md`; command handoff remains in `.ai/cli.md`; tests remain in `.ai/testing.md`. Do not add a launcher until configuration and a real process profile are selected.
 
@@ -32,7 +38,7 @@ If a local environment launcher is later adopted, record here only its explicit 
 
 ## Request-policy runtime
 
-`NOT_APPLICABLE(REQUEST_POLICY)`: the public health-only starter accepts no credential and has no identity, tenant, authorization, credential verifier, expiry, rotation, revocation, or policy-source dependency. Before protecting a route, record those runtime facts, authorization-header forwarding, fail-closed dependency behavior, status-only known-denial summaries, and class-only unexpected-failure redaction without copying secrets or sensitive identifiers.
+`NOT_APPLICABLE(REQUEST_POLICY)`: the public health-only starter accepts no credential and has no identity, tenant, authorization, credential verifier, expiry, rotation, revocation, or policy-source dependency. Before protecting a route, record those runtime facts, authorization-header forwarding, fail-closed dependency behavior, status-only known-denial summaries, and only the ADR 023 safe class for unexpected-failure redaction without copying secrets or sensitive identifiers.
 
 ## WebSocket runtime
 
@@ -86,7 +92,7 @@ Record here, keyed by stable history name or explicit intersecting-history set, 
 - Cache-operation summaries and hit, miss, failure, invalidation, and stampede metrics are `NOT_APPLICABLE(CACHE)`.
 - Optional operational log record, levels, daily file, selected stdout/stderr stream, and Grafana delivery are `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)` as recorded in `.ai/observability.md`. The starter creates, reserves, and ignores no log directory and has no log rotation, retention, file permission, collector, Loki or Grafana tenant/account, remote lifecycle, region/data-residency, access, or incident operations policy.
 
-Before adopting this route as a deployment probe, record and verify every synchronous destination, including the terminal sink. Before adding a connection that requires an external service or other required external-service I/O to the shared HTTP composition root, reclassify every affected probe and update `.ai/operations.md` and `.ai/testing.md` with its exact claim, inherited dependencies, bounded work, composition or dependency failure behavior, local or deployment operations owner, and evidence. `Connection::connect()` constructs PDO eagerly and may fail during composition; whether it requires an external service depends on the selected driver and DSN. In the current front-controller shape, that failure occurs outside the terminal request-summary coordinator and receives none of its response, correlation-header, or summary guarantees. Do not preserve a liveness claim through a hidden bypass or second HTTP execution path.
+Before adopting this route as a deployment probe, record and verify every synchronous destination, including the terminal sink. Before adding a connection that requires an external service or other required external-service I/O to the shared HTTP composition root, reclassify every affected probe and update `.ai/operations.md` and `.ai/testing.md` with its exact claim, inherited dependencies, bounded work, composition or dependency failure behavior, local or deployment operations owner, and evidence. `Connection::connect()` constructs PDO eagerly and may fail during composition; whether it requires an external service depends on the selected driver and DSN. The outer boundary maps that pre-coordinator failure to its prebuilt generic `500`, but it receives no `X-Request-ID` or terminal-summary guarantee. Do not preserve a liveness claim through a hidden bypass or second HTTP execution path.
 
 The sink invocation attempt does not guarantee durable delivery. `.ai/observability.md` owns the current destination and redaction facts and the optional profile's explicit not-applicable state.
 

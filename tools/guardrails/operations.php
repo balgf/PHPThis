@@ -793,7 +793,7 @@ function operationGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
-            'It keeps `.ai/workbench.md` optional under Consumer Contract version 17.',
+            'It keeps `.ai/workbench.md` optional under Consumer Contract version 18.',
         ],
         'VISION.md' => [
             'A human can inspect one explicitly composed development object or operation through a fresh strict process',
@@ -2319,6 +2319,73 @@ function operationGuardrailFailures(string $root): array
             }
         }
     }
+
+    $outerHttpFailureOperationsMarkers = [
+        '.ai/operations.md' => [
+            '## HTTP failure disclosure operations',
+            'Every HTTP profile configures the actual web SAPI to report every `E_ALL` bit',
+            '`display_errors=Off`, `display_startup_errors=Off`, `log_errors=On` with a private controlled destination, and `zend.exception_ignore_args=On`',
+            '(error_reporting() & E_ALL) === E_ALL',
+            'Application `ini_set()` is not a substitute',
+            'Deployment evidence reads the effective values from the real target SAPI.',
+        ],
+        'docs/security.md' => [
+            'Disable native PHP error and startup-error display in every HTTP profile.',
+            'report every `E_ALL` bit',
+            'set `zend.exception_ignore_args=On`',
+            'application `ini_set()` is not startup or front-controller protection',
+        ],
+        'skeleton/README.md' => [
+            'php -d error_reporting=-1 -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -d zend.exception_ignore_args=1 -S 127.0.0.1:8080 -t public',
+        ],
+        'skeleton/.ai/operations.md' => [
+            '## Outer HTTP failure and web-SAPI runtime',
+            'The sole supported HTTP adapter is `public/index.php`',
+            '(error_reporting() & E_ALL) === E_ALL',
+            '`display_errors=Off`, `display_startup_errors=Off`, `log_errors=On`, and `zend.exception_ignore_args=On`',
+            'Staging and production remain `GENERIC`.',
+            '`DEVELOPMENT_DETAILS` is not adopted',
+        ],
+        'templates/application/.ai/operations.md' => [
+            '## Outer HTTP failure and web-SAPI runtime',
+            '{{OUTER_HTTP_EFFECTIVE_SAPI_SETTINGS_SOURCE_AND_VERIFIED_DATE}}',
+            '{{OUTER_HTTP_PHP_ERROR_DESTINATION_AND_POLICY}}',
+            '{{OUTER_HTTP_DEVELOPMENT_DETAILS_ISOLATION_OR_NOT_APPLICABLE}}',
+            '(error_reporting() & E_ALL) === E_ALL',
+            '-d error_reporting=-1 -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -d zend.exception_ignore_args=1',
+            'Application `ini_set()` calls and intended configuration files do not prove startup, front-controller, autoload, or deployed-SAPI behavior.',
+        ],
+        'skeleton/.ai/testing.md' => [
+            'Real built-in-server evidence uses the exact documented `php -d error_reporting=-1 -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -d zend.exception_ignore_args=1 -S 127.0.0.1:8080 -t public` settings',
+            'captures inherited stderr privately',
+            'proves `(error_reporting() & E_ALL) === E_ALL`',
+            'This local evidence does not prove production SAPI',
+        ],
+        'tests/outer-http-failure.php' => [
+            "'error_reporting=-1'",
+            "'display_errors=0'",
+            "'display_startup_errors=0'",
+            "'log_errors=1'",
+            "'zend.exception_ignore_args=1'",
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $outerHttpFailureOperationsMarkers,
+        'outer HTTP failure web-SAPI operations',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'skeleton/public/index.php' => ['ini_set('],
+            'example/public/index.php' => ['ini_set('],
+        ],
+        'outer HTTP failure application-level SAPI override',
+        $failures,
+    );
 
     return $failures;
 }

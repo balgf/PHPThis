@@ -16,8 +16,6 @@ use PHPThis\Http\Response;
 use PHPThis\Http\UnknownFailureBoundary;
 use PHPThis\Routing\Router;
 
-require __DIR__ . '/vendor/autoload.php';
-
 $jsonHeaders = [
     'Content-Type' => 'application/json; charset=utf-8',
     'Cache-Control' => 'no-store',

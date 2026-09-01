@@ -285,6 +285,8 @@ $expectSame(
     'The real front controller must emit the health body.',
 );
 
+proveStarterOuterHttpFailure(dirname(__DIR__));
+
 $deadlockResult = runStarterPhpProcess(
     [
         '-r',
@@ -376,9 +378,60 @@ if (str_contains($outputFailure, $outputSentinel)) {
 }
 
 $frontControllerSource = file_get_contents(dirname(__DIR__) . '/public/index.php');
+$bootstrapSource = file_get_contents(dirname(__DIR__) . '/bootstrap.php');
+$outerSinkSource = file_get_contents(
+    dirname(__DIR__) . '/src/Observability/ErrorLogOuterFailureSink.php',
+);
+$autoloadPosition = is_string($frontControllerSource)
+    ? strpos($frontControllerSource, "require dirname(__DIR__) . '/vendor/autoload.php';")
+    : false;
+$genericPosition = is_string($frontControllerSource)
+    ? strpos($frontControllerSource, '$genericFailureResponse = (new UnknownFailureBoundary())->respond();')
+    : false;
+$applicationTryPosition = is_string($frontControllerSource)
+    ? strpos($frontControllerSource, "try {\n    /** @var TerminalRequestCoordinator")
+    : false;
+$bootstrapPosition = is_string($frontControllerSource)
+    ? strpos($frontControllerSource, "require dirname(__DIR__) . '/bootstrap.php';")
+    : false;
+$genericSelectionPosition = is_string($frontControllerSource)
+    ? strpos($frontControllerSource, '$response = $genericFailureResponse;')
+    : false;
+$outerEventPosition = is_string($frontControllerSource)
+    ? strpos($frontControllerSource, '(new ErrorLogOuterFailureSink())->emit($failure);')
+    : false;
+$emitterPosition = is_string($frontControllerSource)
+    ? strpos($frontControllerSource, '$emitter = new ResponseEmitter();')
+    : false;
 
 if (
     !is_string($frontControllerSource)
+    || !is_string($bootstrapSource)
+    || !is_string($outerSinkSource)
+    || !is_int($autoloadPosition)
+    || !is_int($genericPosition)
+    || !is_int($applicationTryPosition)
+    || !is_int($bootstrapPosition)
+    || !is_int($genericSelectionPosition)
+    || !is_int($outerEventPosition)
+    || !is_int($emitterPosition)
+    || !(
+        $autoloadPosition < $genericPosition
+        && $genericPosition < $applicationTryPosition
+        && $applicationTryPosition < $bootstrapPosition
+        && $bootstrapPosition < $genericSelectionPosition
+        && $genericSelectionPosition < $outerEventPosition
+        && $outerEventPosition < $emitterPosition
+    )
+    || str_contains($bootstrapSource, 'vendor/autoload.php')
+    || str_contains($frontControllerSource, 'DevelopmentFailureResponse')
+    || substr_count($frontControllerSource, 'catch (Throwable $failure)') !== 1
+    || substr_count($frontControllerSource, 'catch (Throwable)') !== 1
+    || substr_count($frontControllerSource, '(new ErrorLogOuterFailureSink())->emit($failure);') !== 1
+    || substr_count(
+        $outerSinkSource,
+        'application.http_outer_failure failure_class=',
+    ) !== 1
     || substr_count($frontControllerSource, "error_log('application.response_emission_failed');") !== 1
     || !str_contains($frontControllerSource, 'catch (ResponseEmissionFailed $failure)')
     || !str_contains($frontControllerSource, 'if (!$failure->responseStarted)')

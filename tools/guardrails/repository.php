@@ -2071,7 +2071,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
 
     if (
         $protectedFileTransferModuleFingerprint
-            !== '2ff9137ae6f8e15e1a7f930b02db7eaae1bc22797abef72a5fc831b8ccc5c5ff'
+            !== '4ab1bf54efb5941bda8cedd5c7b5ad5dfa72e96c76c0ca301841b63ff02aeb56'
         || $mutatedProtectedFileTransferModule === $protectedFileTransferModule
         || consumerProjectHarnessTokenNormalizedFingerprint(
             $mutatedProtectedFileTransferModule,
@@ -2090,7 +2090,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== '14a86c380a8ff9a65a5101fbbbdd9426abb41a9227467b9b1a63da016ee4b9af'
+        $jobsVerificationModuleFingerprint !== 'b9bc4cb5b409d1a184bceff3de73943038494aaaed0574beef551d30e82dc735'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
@@ -4075,8 +4075,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 25",
-            "'manifest_sha256' => '1e5de0cb7bfb96972bd10f1aa1b569ef62d786d639f8769600fcaa1d5b0a3ea2'",
+            "'revision' => 26",
+            "'manifest_sha256' => 'bd113b3645c8bc69321d41420c2a5f52e9f8d5b6971974ebe57c0646845fe543'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
         ],
         'tools/agent-evaluation/run.php' => [
@@ -4106,10 +4106,10 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 25',
+            '"revision": 26',
             '"source-skeleton"',
-            '"tree": "9fbcc9f8f349929e4c6167ac6cb896cd11a08628"',
-            '"fixture_sha256": "1eb52487e01d45747846de64c63c9a08e2f3bcdd55f29c143ae369120665fc65"',
+            '"tree": "d200322e146a1a6cf3fc023f78bbcbf895790b72"',
+            '"fixture_sha256": "f209a499647b1924a0acbb8a8005613dcdf09a66d3bb9d0979e0bec29f31f629"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -4239,7 +4239,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 25 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 26 with `comparative_claims: false`.',
             'The repository entrypoint can validate this fixed installation. A live run is intentionally unavailable in v0.2.',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -4249,8 +4249,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 25;',
-            'Controller v0.2 supports only change.simple-ping revision 25 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 26;',
+            'Controller v0.2 supports only change.simple-ping revision 26 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
@@ -4428,7 +4428,9 @@ function repositoryGuardrailFailures(string $root): array
         'docs/decisions/README.md' => [
             "Proposed records:\n\n- None.",
             '`059-bounded-application-source-prefix-discovery.md`',
+            '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
             'Accepted [ADR 059](059-bounded-application-source-prefix-discovery.md) coordinates Consumer Contract version 16',
+            'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
         ],
         '.ai/static-analysis.md' => [
             'Under Consumer Contract v16, build one application-file manifest from every file whose extension compares case-insensitively as `.php` plus only the exact lowercase byte-zero direct and shebang extensionless forms.',
@@ -4443,11 +4445,11 @@ function repositoryGuardrailFailures(string $root): array
             'every created fixture and changed permission is restored in `finally`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             'give every application PHP file a case-insensitive `.php` extension',
             'keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes',
             'do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions',
-            'Version 17 carries version 16\'s source-discovery boundary forward and rejects response emission when headers are already sent or any active PHP-managed output-buffer level has pending bytes, without adding a Strict Profile rule or `PHT` diagnostic.',
+            'Version 18 carries version 17 forward and adds the application-owned generic-first outer HTTP failure boundary and optional bounded development-details profile without adding a framework runtime, Strict Profile rule, or `PHT` diagnostic.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -4459,9 +4461,9 @@ function repositoryGuardrailFailures(string $root): array
             'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
         ],
         'docs/guardrails.md' => [
-            'The accepted ADR 059 source-prefix guard pins the 228-file current inventory',
+            'The accepted ADR 059 source-prefix guard now pins the 229-file current inventory, including packaged accepted ADR 061',
             'every other application symlink fails before target-content inspection',
-            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 17 carries it forward.',
+            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
         ],
         'docs/static-analysis.md' => [
@@ -4504,7 +4506,7 @@ function repositoryGuardrailFailures(string $root): array
             'source-prefix-discovery-executed',
         ],
         'tools/test-consumer-project/data.php' => [
-            "'Contract version: 17'",
+            "'Contract version: 18'",
             "'### Contract version 17'",
             "'### Contract version 16'",
             "'/docs/decisions/059-bounded-application-source-prefix-discovery.md'",
@@ -4562,6 +4564,147 @@ function repositoryGuardrailFailures(string $root): array
         $failures,
     );
 
+    $acceptedOuterHttpFailureDisclosureMarkers = [
+        'docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md' => [
+            '# ADR 061: Fail-closed outer HTTP failure disclosure profiles',
+            'Status: accepted',
+            'the accountable human approved this decision, including its strict safe-message allowlist',
+            'The application\'s sole HTTP front controller establishes one visible application-owned outer failure boundary',
+            'The catch first selects that already-constructed generic response.',
+            '`GENERIC`, which is the default and is mandatory for staging and production',
+            '`DEVELOPMENT_DETAILS`, which is an explicit opt-in',
+            'Any HTTP application may deliberately remain code-owned `GENERIC` without adopting external disclosure or runtime-profile selection inputs',
+            'Once an application adopts external selection, both inputs are required',
+            'The body uses ASCII LF and starts exactly with `PHPThis development failure\n`.',
+            'The renderer reserves space for exactly `[diagnostic truncated]\n`.',
+            'The fail-closed rule therefore omits the message by default.',
+            'application.http_outer_failure failure_class=<ADR023-safe-class>',
+            '(error_reporting() & E_ALL) === E_ALL',
+            'Consumer Contract version 18 carries Contract version 17 and Strict Profile version 4 forward',
+            'It adds no framework-core type or line, runtime dependency, framework configuration service, middleware, logger, discovery mechanism, global handler, Strict Profile rule, or `PHT` diagnostic.',
+            'the maintainer-only `change.simple-ping` evaluation task advances from revision 25 to revision 26',
+            'This fixture maintenance records no model result and makes no comparative claim.',
+        ],
+        'docs/decisions/README.md' => [
+            "Proposed records:\n\n- None.",
+            'Accepted records:',
+            '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
+            'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
+        ],
+        'ROADMAP.md' => [
+            'Complete: ADR 061 and Consumer Contract version 18 retain Strict Profile version 4 and `PHT001` through `PHT008`',
+            'Accepted [ADR 061](docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md)',
+            'release treatment remains separately gated.',
+        ],
+        'docs/consumer-contract.md' => [
+            'Contract version: 18',
+            '## Outer HTTP failure boundary',
+            'Contract version 18 supports one deployed HTTP entrypoint.',
+            'Any HTTP application may deliberately remain code-owned `GENERIC` without inventing external disclosure or runtime-profile selection inputs',
+            'Missing, empty, unknown, unavailable, malformed, or contradictory input fails configuration before application-controlled I/O',
+            'Every HTTP profile configures the effective web SAPI with all `E_ALL` bits reported, `display_errors=Off`, `display_startup_errors=Off`, `log_errors=On` to a private controlled destination, and `zend.exception_ignore_args=On`.',
+        ],
+        'docs/errors.md' => [
+            '## Outer HTTP failures',
+            'Messages remain exactly `<omitted>` by default.',
+            'Native, dependency, PDO, non-allowlisted, and would-be-subclass messages remain omitted.',
+            'application.http_outer_failure failure_class=<ADR023-safe-class>',
+        ],
+        'docs/configuration.md' => [
+            '## HTTP failure disclosure selection',
+            'An application that does not adopt external failure-disclosure selection adds no artificial environment input',
+            'Both are required, parsed into finite final readonly values, and validated as one pair before the outer mode can change.',
+            'No hostname, caller address, request header, cookie, query parameter, body, source-checkout path, `.env` filename, secret URL, or other request-controlled or inferred value can select details.',
+        ],
+        'docs/request-handling.md' => [
+            '## Outer HTTP failure boundary',
+            'the sole supported HTTP front controller loads `UnknownFailureBoundary` and `Response`, constructs the exact generic response, and begins with `GENERIC` selected',
+            'response emission remains outside this catch under the separate current `ResponseEmissionFailed` behavior.',
+        ],
+        '.ai/configuration.md' => [
+            'keep code-owned `GENERIC` without artificial inputs unless the application adopts external selection',
+            'No request-controlled or inferred value selects the mode.',
+        ],
+        '.ai/operations.md' => [
+            'Every HTTP profile configures the actual web SAPI to report every `E_ALL` bit',
+            '`display_errors=Off`, `display_startup_errors=Off`, `log_errors=On`',
+            '`zend.exception_ignore_args=On`',
+            '(error_reporting() & E_ALL) === E_ALL',
+        ],
+        '.ai/testing.md' => [
+            'ADR 061 evidence uses real processes and a real web SAPI.',
+            'Retain a code-owned-generic success control without disclosure inputs',
+            'query, header, cookie, caller-address, and body values cannot change mode',
+            'composer test -- --group http-boundary',
+        ],
+        'skeleton/public/index.php' => [
+            '$genericFailureResponse = (new UnknownFailureBoundary())->respond();',
+            'catch (Throwable $failure)',
+            '$response = $genericFailureResponse;',
+            '(new ErrorLogOuterFailureSink())->emit($failure);',
+        ],
+        'example/public/index.php' => [
+            '$genericFailureResponse = (new UnknownFailureBoundary())->respond();',
+            'catch (Throwable $failure)',
+            '$response = $genericFailureResponse;',
+            '(new ErrorLogOuterFailureSink())->emit($failure);',
+        ],
+        'skeleton/src/Observability/ErrorLogOuterFailureSink.php' => [
+            'final class ErrorLogOuterFailureSink',
+            "'application.http_outer_failure failure_class=' . FailureClass::fromThrowable(\$failure)",
+        ],
+        'example/src/Observability/ErrorLogOuterFailureSink.php' => [
+            'final class ErrorLogOuterFailureSink',
+            "'application.http_outer_failure failure_class=' . FailureClass::fromThrowable(\$failure)",
+        ],
+        'example/src/Http/DevelopmentFailureResponse.php' => [
+            'final class DevelopmentFailureResponse',
+            'PHPThis development failure',
+            '[diagnostic truncated]',
+            'DevelopmentDiagnosticFailure::class',
+        ],
+        'tests/outer-http-failure.php' => [
+            'function outerHttpFailureBehaviorTests(): Generator',
+            'development failure response omits every unapproved message and trace argument',
+            'configured disclosure consumer fails closed for invalid selection and request overrides',
+            'example outer HTTP boundary catches bootstrap failures under safe SAPI settings',
+        ],
+        'tools/package-files.txt' => [
+            'docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md',
+        ],
+        'tools/guardrails/boundaries.php' => [
+            '$exampleCodeOwnedGenericOuterFailureCatch =',
+            "substr_count(\$exampleFrontControllerSource, '\$genericFailureResponse') !== 2",
+            "str_contains(\$exampleFrontControllerSource, 'DevelopmentFailureResponse')",
+            'must retain one code-owned GENERIC outer-failure selection without external disclosure or runtime-profile wiring',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $acceptedOuterHttpFailureDisclosureMarkers,
+        'accepted outer HTTP failure disclosure boundary',
+        $failures,
+    );
+
+    forbidGuardrailArtifactMarkers(
+        $root,
+        [
+            'docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md' => [
+                'Status: proposed',
+                'Accountable-human approval: pending.',
+            ],
+            'docs/decisions/README.md' => [
+                "Proposed records:\n\n- `061-fail-closed-outer-http-failure-disclosure-profiles.md`",
+            ],
+            'ROADMAP.md' => [
+                'implementation, Consumer Contract version 18, and release treatment remain pending accountable-human approval.',
+            ],
+        ],
+        'stale proposed outer HTTP failure disclosure boundary',
+        $failures,
+    );
+
     $pendingOutputEmissionArtifactMarkers = [
         'docs/decisions/060-reject-pending-output-before-response-emission.md' => [
             '# ADR 060: Reject pending output before response emission',
@@ -4581,7 +4724,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         '.ai/http.md' => [
             'At emitter entry, reject ordinary and local-file responses as `ResponseEmissionFailed(true)`',
-            'ADR 060 adds the pending-output preflight; current Consumer Contract v17 carries version 16 and Strict Profile v4 forward.',
+            'ADR 060 adds the pending-output preflight; ADR 061 adds the generic-first outer HTTP failure boundary and optional controlled detail response.',
+            'Current Consumer Contract v18 carries version 17 and Strict Profile v4 forward.',
         ],
         '.ai/file-transfers.md' => [
             'Before file access, `ResponseEmitter` applies the common response-output guard',
@@ -4592,9 +4736,9 @@ function repositoryGuardrailFailures(string $root): array
             'Ordinary emission evidence uses real empty and non-empty active buffers and proves pending bytes remain untouched',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 17 and Strict Profile version 4 remain current.',
+            'Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -4639,7 +4783,7 @@ function repositoryGuardrailFailures(string $root): array
             'docs/decisions/060-reject-pending-output-before-response-emission.md',
         ],
         'tools/test-consumer-project/data.php' => [
-            "'Contract version: 17'",
+            "'Contract version: 18'",
             "'/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "'The proposed ADR 060 response-emission guard'",
         ],
@@ -4650,14 +4794,14 @@ function repositoryGuardrailFailures(string $root): array
             'PASS installed response-emission preflight',
         ],
         'skeleton/.ai/README.md' => [
-            'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
-            'consumer-contract-upgrades.md#contract-version-17',
-            'Upgrade the installed Consumer Contract to current version 17',
+            'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
+            'consumer-contract-upgrades.md#contract-version-18',
+            'Upgrade the installed Consumer Contract to current version 18',
         ],
         'templates/application/.ai/README.md' => [
-            'Consumer Contract v17 and Strict Profile v4 remain mandatory.',
-            'consumer-contract-upgrades.md#contract-version-17',
-            'Upgrade the installed Consumer Contract to current version 17',
+            'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
+            'consumer-contract-upgrades.md#contract-version-18',
+            'Upgrade the installed Consumer Contract to current version 18',
         ],
     ];
 

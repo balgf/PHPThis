@@ -14,7 +14,7 @@ Before protecting a route, read installed `vendor/phpthis/framework/docs/request
 - separately named verifier database, trusted-key source, or external-provider I/O with finite timeout, response, budget, trace, cache-staleness, and fail-closed outage policy;
 - frontend credential storage and XSS boundary, or cookie/session and CSRF policy; exact CORS and preflight behavior when cross-origin;
 - generic definitive-invalid `401`, verifier-uncertainty `5xx` with no refresh signal, ordinary forbidden, and cross-tenant disclosure policy; preserve the bare non-RFC-6750-compatible reference challenge or record the fixed non-sensitive auth-param and exact status/error evidence for an application RFC 6750 compatibility claim;
-- status-only known-denial summary, class-only unexpected-failure, redaction, and response-cache policy;
+- status-only known-denial summary, only the ADR 023 safe class for unexpected failure, redaction, and response-cache policy;
 - I/O-free policies or separately named policy connections, budgets, and traces;
 - protected connection, budget, trace, tenant/resource SQL scope, and authorization race policy;
 - denial, order, zero-protected-work, redaction, replacement, parser, lifecycle, dependency-outage, and frontend or non-browser credential tests.

@@ -2,14 +2,29 @@
 
 declare(strict_types=1);
 
+use Example\Observability\ErrorLogOuterFailureSink;
 use Example\Observability\TerminalRequestCoordinator;
 use PHPThis\Http\Response;
 use PHPThis\Http\ResponseEmissionFailed;
 use PHPThis\Http\ResponseEmitter;
+use PHPThis\Http\UnknownFailureBoundary;
 
-/** @var TerminalRequestCoordinator $coordinator */
-$coordinator = require dirname(__DIR__) . '/bootstrap.php';
-$response = $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);
+require dirname(__DIR__, 2) . '/autoload.php';
+
+$genericFailureResponse = (new UnknownFailureBoundary())->respond();
+
+try {
+    /** @var TerminalRequestCoordinator $coordinator */
+    $coordinator = require dirname(__DIR__) . '/bootstrap.php';
+    $response = $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);
+} catch (Throwable $failure) {
+    $response = $genericFailureResponse;
+
+    try {
+        (new ErrorLogOuterFailureSink())->emit($failure);
+    } catch (Throwable) {
+    }
+}
 
 $emitter = new ResponseEmitter();
 

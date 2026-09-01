@@ -6,6 +6,8 @@ PHPThis runs as ordinary PHP 8.4.x. The profile is a smaller set of accepted pro
 
 `composer check` is the compiler-like gate. In an application, it runs the installed `phpthis check` profile stage followed by application-owned behavior tests. In the framework repository, it additionally runs maintainer guardrails, permanent profile fixtures, the query-scaling proof, and framework behavior tests. A program that skips its complete gate may be valid PHP but is not verified PHPThis.
 
+Consumer Contract version 18 carries Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008` forward unchanged. ADR 061's outer HTTP failure boundary, disclosure modes, safe-message allowlist, and real-SAPI evidence are runtime, configuration, and deployment contract behavior rather than a new profile rule or `PHT` diagnostic. PHT002 still makes every compliant named application exception class final, so exact safe-message allowlisting has no compliant subclass path.
+
 ## PHPThis-owned rule catalogue
 
 | ID | Rule | Enforcement | Repair |

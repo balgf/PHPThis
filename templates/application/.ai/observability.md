@@ -11,6 +11,14 @@ Read installed `vendor/phpthis/framework/docs/observability/README.md`, `vendor/
 
 Record at most eight unique non-sensitive source names with distinct budgets and traces. One invocation attempt never means durable delivery. Do not move terminal observability into an application-owned request-handler decorator or add framework observability types, generic or framework logging middleware, facades, global helpers, per-query events, hidden instrumentation, an ORM, or an SQL/binding helper.
 
+## Outer HTTP failure event
+
+- Exact application payload: `application.http_outer_failure failure_class=<ADR023-safe-class>`
+- Safe-class normalization path, sink, and destination: {{OUTER_HTTP_FAILURE_CLASS_SINK_AND_DESTINATION}}
+- One-attempt failure isolation, buffering/latency bound, retention/access policy, and evidence: {{OUTER_HTTP_FAILURE_EVENT_POLICY_AND_EVIDENCE}}
+
+The sole front controller may make at most one best-effort outer-failure event attempt before response emission. The event contains only its fixed code-owned name and the ADR 023 safe class. It excludes anonymous source suffixes, messages, paths, lines, traces, modes, request values, configuration, SQL/bindings, credentials, and dependency text. Sink failure cannot replace or mutate the already selected generic or detailed response, and one attempt is not durable delivery. This event is separate from the terminal request summary: a failure before the coordinator exists receives no correlation or terminal-summary guarantee, and `DEVELOPMENT_DETAILS` never expands either operational channel.
+
 ## Optional operational log-record profile
 
 ADR 051 accepts this optional application-owned profile. Resolve this section to `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)` unless an accountable application decision adopts it without changing its exact record envelope or the accepted request-summary versions.

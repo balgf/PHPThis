@@ -89,7 +89,7 @@ final readonly class RequestSummary
             $durationUs,
             $response->status,
             $outcome,
-            $unknownFailure === null ? null : self::safeFailureClass($unknownFailure),
+            $unknownFailure === null ? null : FailureClass::fromThrowable($unknownFailure),
             $statements,
             $failures,
             $executeDurationUs,
@@ -126,21 +126,4 @@ final readonly class RequestSummary
         return $left + $right;
     }
 
-    /** @return class-string<Throwable> */
-    private static function safeFailureClass(Throwable $failure): string
-    {
-        $class = $failure::class;
-
-        if (!str_contains($class, '@anonymous')) {
-            return $class;
-        }
-
-        $parent = get_parent_class($failure);
-
-        if (is_string($parent) && is_a($parent, Throwable::class, true)) {
-            return $parent;
-        }
-
-        return Throwable::class;
-    }
 }

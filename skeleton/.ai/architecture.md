@@ -13,13 +13,15 @@ This diagram records construction and dependency ownership, not request-time con
 
 ```text
 public/index.php
-├── requires bootstrap.php -> TerminalRequestCoordinator
+├── loads Composer autoload and prebuilds UnknownFailureBoundary::respond()
+├── try: requires bootstrap.php -> TerminalRequestCoordinator
 │   ├── RequestBoundary -> Application -> Router
 │   │   └── Routes -> HealthRoutes -> dependency-free HealthHandler
 │   ├── UnknownFailureBoundary
 │   ├── CorrelationId
 │   └── RequestSummarySink
-└── constructs ResponseEmitter
+├── catch Throwable: retains generic and attempts one event with only the ADR 023 safe class
+└── constructs ResponseEmitter and retains the separate emission-failure boundary
 ```
 
 Dependencies may point only in the direction shown above. Record a deliberate exception in `docs/decisions/` before implementation.
@@ -28,7 +30,7 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 
 | Boundary | Path | Responsibility |
 | --- | --- | --- |
-| HTTP runtime | `public/index.php` | Load request-scoped composition, read PHP runtime globals, invoke the terminal coordinator, and emit its unchanged response. |
+| HTTP runtime | `public/index.php` | Prebuild the generic response, catch bootstrap/composition/coordinator failure, read PHP runtime globals, invoke the terminal coordinator, and emit the selected response through the separate emission boundary. |
 | Application configuration | `.ai/configuration.md` | Owns the health-only `NOT_APPLICABLE(CONFIGURATION)` marker and any later external-input-to-typed-value contract. |
 | WebSocket runtime | `NOT_APPLICABLE(WEBSOCKETS)` | The health-only starter has no WebSocket process, listener, protocol, or connection state. |
 | Application-owned request-handler decorators | `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)` | `HealthRoutes` constructs dependency-free `HealthHandler` inline for the sole route. |
@@ -39,6 +41,14 @@ Dependencies may point only in the direction shown above. Record a deliberate ex
 | Durable jobs | `NOT_APPLICABLE(JOBS)` | The starter has no deferred work or worker runtime. |
 | Database | `NOT_APPLICABLE` | The starter application has no database. |
 | External services | `NOT_APPLICABLE` | The starter application has no external integrations. |
+
+## Outer HTTP failure boundary
+
+`public/index.php` is the sole supported HTTP front controller. After ordinary Composer autoloading it loads the framework types required for generic selection and constructs `UnknownFailureBoundary::respond()` before requiring `bootstrap.php`. That immutable response remains selected unless bootstrap and coordinator handling return another response. One outer `Throwable` catch covers application configuration, bootstrap, composition, and coordinator invocation; the health starter's code-owned `GENERIC` mode always retains the prebuilt response and attempts only the separate outer event containing the ADR 023 safe class recorded in `.ai/observability.md`. Response emission stays outside that catch and retains the separate `ResponseEmissionFailed` behavior. Do not add a global exception handler, retry, middleware, hidden renderer, or second HTTP path.
+
+`NOT_APPLICABLE(DEVELOPMENT_DETAILS)`: the starter has no detailed renderer or safe-message allowlist. A future deliberate adoption follows installed `vendor/phpthis/framework/docs/errors.md#outer-http-failures`; it may expose a message only for an exact class match in a finite allowlist of final application-owned exception classes with a proved code-owned grammar. Native, dependency, PDO, non-allowlisted, and would-be-subclass messages remain omitted, as do trace arguments, request values, configuration, SQL, bindings, credentials, and arbitrary object state.
+
+This boundary does not cover process startup, a front-controller parse error, ordinary Composer-autoload failure, failure before generic-response setup completes, uncatchable termination, failure after response output starts, or SAPI/server/proxy/TLS/network/client delivery. A pre-coordinator failure has no `X-Request-ID` or terminal-summary guarantee. `.ai/configuration.md` owns the code-owned mode, `.ai/operations.md` owns the effective SAPI settings, and `.ai/testing.md` owns real-process and real-SAPI proof.
 
 ## Configuration boundary
 
@@ -81,14 +91,16 @@ Request-time control flow is separate from dependency ownership:
 
 ```text
 public/index.php
-  -> TerminalRequestCoordinator::handle(...)
-     -> RequestBoundary::handle(...) -> selected Response
-     -> RequestSummarySink::emit(...) (one failure-isolated attempt)
-     <- returns the selected Response
-  -> ResponseEmitter::emit(...) with the returned Response
+  -> prebuild generic Response
+  -> try TerminalRequestCoordinator::handle(...)
+       -> RequestBoundary::handle(...) -> selected Response
+       -> RequestSummarySink::emit(...) (one failure-isolated attempt)
+       <- returns the selected Response
+     catch Throwable -> retain generic Response; event contains only the ADR 023 safe class
+  -> ResponseEmitter::emit(...) with the selected Response
 ```
 
-The coordinator invokes the request boundary and sink, then returns the selected response. The front controller separately gives that returned response to `ResponseEmitter`; the coordinator does not own or invoke the emitter, and the sink is not downstream of `Response` in the dependency graph.
+The coordinator invokes the request boundary and sink, then returns the selected response. A failure before or outside that completed coordinator path is handled by the separate outer boundary and does not create a terminal summary. The front controller separately gives that returned response to `ResponseEmitter` after ordinary coordinator success; after an outer failure, it gives the retained generic response instead. The coordinator does not own or invoke the emitter, and the terminal sink is not downstream of `Response` in the dependency graph.
 
 ## Cache policies
 

@@ -35,13 +35,15 @@ Commit the generated `composer.lock` with the application so dependency versions
 ## Run locally
 
 ```bash
-php -S 127.0.0.1:8080 -t public
+php -d error_reporting=-1 -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -d zend.exception_ignore_args=1 -S 127.0.0.1:8080 -t public
 curl -i http://127.0.0.1:8080/health
 ```
 
+The starter's sole front controller uses code-owned `GENERIC` outer-failure disclosure: a bootstrap, composition, or coordinator exception returns the fixed generic `500`, never PHP's native exception page. The starter does not read a debug or environment toggle and does not adopt detailed exception output. The explicit local command disables native error display and trace arguments while retaining PHP error logging on the operator-controlled terminal; every deployed web SAPI must prove equivalent effective settings separately.
+
 Before adding product behavior, replace this skeleton's generic project facts in `.ai/` with facts verified for the real application.
 
-Every selected response carries an application-generated 128-bit lowercase-hex `X-Request-ID`. The visible front-controller path makes exactly one attempt to send a closed redacted terminal summary to its application-owned sink; sink failure cannot alter the response, and an invocation attempt is not a durable-delivery guarantee. Database adoption uses a finite list of distinct budget and trace sources without changing the framework into a logger or SQL abstraction.
+Every coordinator-selected response carries an application-generated 128-bit lowercase-hex `X-Request-ID`; a pre-coordinator outer failure has no correlation or terminal-summary guarantee. The visible front-controller path makes exactly one attempt to send a closed redacted terminal summary to its application-owned sink; sink failure cannot alter the response, and an invocation attempt is not a durable-delivery guarantee. Database adoption uses a finite list of distinct budget and trace sources without changing the framework into a logger or SQL abstraction.
 
 The AI may implement routine, in-scope work under human direction. It must surface consequential product, architecture, security, data, migration, deployment, and external-side-effect choices for human judgment. The human accepts those decisions and remains accountable for the result.
 

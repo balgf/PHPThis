@@ -4,7 +4,9 @@
 
 `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`
 
-This file is the starter application's single writable authority for configuration. Other `.ai/` guides link here and retain only concern-specific facts. The health-only skeleton reads no process environment, secret, database credential, migration authority, or application setting. It therefore has no configuration reader, typed configuration value, local environment launcher, selected process profile, local configuration file, or launcher PHP file. Do not add artificial configuration code or a speculative launcher.
+`OUTER_HTTP_FAILURE_DISCLOSURE(CODE_OWNED_GENERIC)`
+
+This file is the starter application's single writable authority for configuration. Other `.ai/` guides link here and retain only concern-specific facts. The health-only skeleton reads no process environment, secret, database credential, migration authority, or application setting. It therefore has no configuration reader, typed configuration value, local environment launcher, selected process profile, local configuration file, or launcher PHP file. Its sole front controller also reads no disclosure mode or runtime profile and remains code-owned `GENERIC`. Do not add artificial configuration code or a speculative launcher.
 
 Record only adopted external input contracts after the early scope gate is resolved. Database-engine selection does not authorize a connection attempt, server provisioning, or migration adoption. Unselected worker, migration, administrative, deployment, and production configuration profiles remain explicitly not applicable; do not store task scope or task history here.
 
@@ -16,6 +18,8 @@ When the application introduces an external setting, replace this marker with:
 - explicit composition injection sites for adopted infrastructure, or an explicit deferred marker when configuration-only scope stops before connection composition; each migration history records its own exact input names and never inherits, combines, or falls back to another history's, runtime's, or administrative credentials;
 - pre-I/O failure, rotation/restart, and redaction policy; and
 - automated parsing, separation, non-disclosure, and child-process parser or adopted-entrypoint evidence.
+
+If the application later adopts `DEVELOPMENT_DETAILS`, record the exact disclosure-mode and runtime-profile input names and their finite vocabularies here. Both inputs become required and must be parsed and validated as one complete typed selection before application-controlled I/O. Missing, empty, unknown, unavailable, malformed, or contradictory input fails configuration, retains the prebuilt generic `500`, and does not continue application execution; staging or production can never select details. Only a recorded and proved isolated local, development, or test profile is eligible. No request header, cookie, query, body, path, caller address, hostname, checkout path, or other request-controlled or inferred fact may toggle disclosure.
 
 Read the installed `vendor/phpthis/framework/docs/configuration.md` before adding this boundary. Do not add a framework configuration service, string-keyed bag, global helper, facade, container binding, automatic dotenv loader, secret-manager abstraction, or hidden reload.
 

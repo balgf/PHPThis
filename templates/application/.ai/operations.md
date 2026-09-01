@@ -4,7 +4,7 @@
 
 - Dependency install command: `{{DEPENDENCY_INSTALL_COMMAND}}`
 - Local bootstrap command: `{{LOCAL_BOOTSTRAP_COMMAND}}`
-- Local start command: `{{LOCAL_START_COMMAND}}`
+- Local start command with required explicit web-SAPI settings: `{{LOCAL_START_COMMAND}}`
 - Local stop command: `{{LOCAL_STOP_COMMAND_OR_NOT_APPLICABLE}}`
 - Required local services: {{REQUIRED_LOCAL_SERVICES}}
 - Local environment launcher PHP CLI invocation, absolute project-root/`PHP_BINARY`/private-child resolution, working-directory policy, and owner or `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`: {{LOCAL_ENVIRONMENT_LAUNCHER_OPERATIONS_OR_NOT_APPLICABLE}}
@@ -20,9 +20,18 @@
 - Database migrations: `.ai/migrations.md`
 - Required extensions: `ext-pdo` and `ext-session` plus {{ADDITIONAL_REQUIRED_PHP_EXTENSIONS_OR_NONE}}
 
+## Outer HTTP failure and web-SAPI runtime
+
+- Sole HTTP front-controller path and dependency authority: `.ai/architecture.md`; an alternate deployed HTTP adapter is ineligible pending a separate accepted decision.
+- Effective deployed web-SAPI settings, source, and verification date: {{OUTER_HTTP_EFFECTIVE_SAPI_SETTINGS_SOURCE_AND_VERIFIED_DATE}}
+- Private controlled PHP error destination, identity, access, retention, capacity, and incident owner: {{OUTER_HTTP_PHP_ERROR_DESTINATION_AND_POLICY}}
+- `DEVELOPMENT_DETAILS` isolated local/development/test access, data, authority, and topology proof, or `NOT_APPLICABLE(DEVELOPMENT_DETAILS)`: {{OUTER_HTTP_DEVELOPMENT_DETAILS_ISOLATION_OR_NOT_APPLICABLE}}
+
+Every HTTP runtime, including an isolated detailed-development profile, must prove `(error_reporting() & E_ALL) === E_ALL`, `display_errors=Off`, `display_startup_errors=Off`, `log_errors=On`, and `zend.exception_ignore_args=On`. A built-in-server command supplies the corresponding explicit `-d error_reporting=-1 -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -d zend.exception_ignore_args=1` settings; inherited stderr is its local operator-controlled error destination. Application `ini_set()` calls and intended configuration files do not prove startup, front-controller, autoload, or deployed-SAPI behavior. Record dated effective values from each real deployed web SAPI and keep staging and production in `GENERIC`.
+
 ## Configuration runtime
 
-`.ai/configuration.md` is the single writable authority for the boundary source, external names, deployment injection owner, process-specific factories and final readonly types, validation, profile, input-name, and credential separation without inheritance, combined credentials, or fallback, startup failure, rotation/restart, secret redaction, and configuration evidence. Do not duplicate those facts or placeholders here. This operations guide records only the surrounding process, supervisor, topology, capacity, and incident facts. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
+`.ai/configuration.md` is the single writable authority for the boundary source, external names, outer failure disclosure/profile selection, deployment injection owner, process-specific factories and final readonly types, validation, profile, input-name, and credential separation without inheritance, combined credentials, or fallback, startup failure, rotation/restart, secret redaction, and configuration evidence. Do not duplicate those facts or placeholders here. This operations guide records only the surrounding process, SAPI, supervisor, topology, capacity, and incident facts. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
 
 When a local environment launcher is adopted, this guide records only its explicit PHP CLI invocation, absolute project-root/`PHP_BINARY`/private-child resolution, working-directory behavior, owner, and production non-use. `.ai/configuration.md` remains authoritative for the shared canonical reader, file/profile/key, and source-precedence facts, `.ai/cli.md` for command handoff, and `.ai/testing.md` for evidence. Every production process receives configuration from its explicitly selected supervisor, container, service manager, or other deployment path; it does not invoke the local launcher or read its ignored file.
 
@@ -44,9 +53,9 @@ When a local environment launcher is adopted, this guide records only its explic
 - Authorization-header forwarding and trusted-proxy policy: {{AUTHORIZATION_HEADER_FORWARDING_POLICY_OR_NOT_APPLICABLE}}
 - Credential expiry, rotation, revocation, and verifier-failure behavior: {{CREDENTIAL_LIFECYCLE_AND_FAILURE_POLICY_OR_NOT_APPLICABLE}}
 - Tenant and permission source availability and failure behavior: {{TENANT_AND_AUTHORIZATION_SOURCE_FAILURE_POLICY_OR_NOT_APPLICABLE}}
-- Known-denial status-only summary and unexpected-failure class-only redaction: {{REQUEST_POLICY_LOGGING_POLICY_OR_NOT_APPLICABLE}}
+- Known-denial status-only summary and only the ADR 023 safe class for unexpected-failure redaction: {{REQUEST_POLICY_LOGGING_POLICY_OR_NOT_APPLICABLE}}
 
-ADR 023 supersedes the earlier no-denial-log wording. A known denial receives only the common terminal summary's generic known-failure outcome and response status; an unexpected failure contributes only its concrete class. Never record credentials, complete sensitive identifiers, or internal policy messages, and do not add a second policy event.
+ADR 023 supersedes the earlier no-denial-log wording. A known denial receives only the common terminal summary's generic known-failure outcome and response status; an unexpected failure contributes only the ADR 023 safe class. Never record credentials, complete sensitive identifiers, or internal policy messages, and do not add a second policy event.
 
 ## WebSocket runtime
 

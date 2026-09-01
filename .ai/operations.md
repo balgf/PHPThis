@@ -19,9 +19,17 @@ Use this guide for application-wide operation coordination, startup and probe cl
 
 - Keep startup, liveness, dependency-health, and readiness claims aligned across installed configuration guidance, application routing, application `.ai/operations.md`, `.ai/testing.md`, and the skeleton.
 - `Connection::connect()` constructs PDO eagerly and may perform driver- and DSN-specific I/O or fail during composition. Do not describe a connection-bearing composition root as dependency-free or defer its failure implicitly.
+- Under Contract version 18, HTTP composition failure occurs inside the generic-first outer catch after generic-response setup but before the terminal coordinator exists. It receives the selected generic or eligible controlled detailed response but no `X-Request-ID` or terminal-summary guarantee; do not add retry, lazy composition, or a probe-only hidden bootstrap.
 - The starter `GET /health` composes no database, cache, queue, or network dependency in its shared bootstrap, but its terminal coordinator invokes the deployment-configured `error_log` sink synchronously before returning. That destination may itself perform network or remote-filesystem I/O. Until its destination and latency are verified, describe the starter only as the current liveness route and HTTP composition proof, not as external-service-independent liveness.
 - Every adopted HTTP or non-HTTP probe records its exact claim, composition root, every synchronous dependency and destination, bounded work, failure response or process behavior, local or deployment operations owner or explicit non-applicability, and evidence.
 - Do not add a framework probe API, lazy connection, hidden bypass, second HTTP execution path, universal readiness definition, or checker diagnostic for operational semantics.
+
+## HTTP failure disclosure operations
+
+- Every HTTP profile configures the actual web SAPI to report every `E_ALL` bit, set `display_errors=Off`, `display_startup_errors=Off`, `log_errors=On` with a private controlled destination, and `zend.exception_ignore_args=On`. Application `ini_set()` is not a substitute for startup, front-controller, or ordinary Composer-autoload protection.
+- The documented built-in-server command supplies equivalent explicit `-d` settings, including `error_reporting=-1`; evidence asserts `(error_reporting() & E_ALL) === E_ALL`. Its inherited standard error is the local operator-controlled destination, and automated real-SAPI evidence captures it in a private test-owned file and proves it does not enter the response.
+- A `DEVELOPMENT_DETAILS` profile additionally records restricted access, isolation from production traffic and data, least process authority, private error-log ownership and retention, exact configuration source, and verification date. A local, development, or test label alone proves none of those facts. Staging and production remain generic.
+- Deployment evidence reads the effective values from the real target SAPI. Static source, documented commands, container configuration, or application tests alone do not certify production settings. Failures before generic-response construction, uncatchable termination, and server, proxy, TLS, network, and client behavior remain separate deployment boundaries.
 
 ## Optional local launcher operation
 
@@ -30,4 +38,4 @@ Use this guide for application-wide operation coordination, startup and probe cl
 
 ## Verification
 
-Exercise every claimed sequence and failure boundary at the level that owns it. Prove route and process startup claims against the real composition root and configured synchronous destinations. Coordination adoption requires real concurrency, contention, expiry or ownership-loss, outage, cleanup, recovery, topology, redaction, and bounded-work evidence; a happy-path lock call is not sufficient.
+Exercise every claimed sequence and failure boundary at the level that owns it. Prove route and process startup claims against the real composition root and configured synchronous destinations. Contract-version-18 HTTP evidence includes generic bootstrap/configuration failure, eligible controlled details when adopted, the exact effective web-SAPI settings, private destination isolation, and absence of native error text from responses. Coordination adoption requires real concurrency, contention, expiry or ownership-loss, outage, cleanup, recovery, topology, redaction, and bounded-work evidence; a happy-path lock call is not sufficient.

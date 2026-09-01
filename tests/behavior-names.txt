@@ -124,6 +124,13 @@ request boundary normalizes one bounded multipart upload
 session lifecycle is lazy strict scoped and fixation resistant
 session cleanup preserves primary failures and resets deterministically
 unknown failure boundary returns one generic response without logging
+development failure response renders exact bounded safe diagnostics
+development failure response omits every unapproved message and trace argument
+development failure response enforces chain frame string and body limits
+outer failure selection isolates event renderer and emission failures
+configured disclosure consumer enables details only after eligible complete selection
+configured disclosure consumer fails closed for invalid selection and request overrides
+example outer HTTP boundary catches bootstrap failures under safe SAPI settings
 router rejects duplicate method and path pairs
 route accepts at most two full-segment typed parameter declarations
 router matches bounded canonical positive integer path parameters

@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 228) {
-            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 228 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, accepted ADR 059 bounded source-prefix discovery, and accepted ADR 060 pending-output response-emission preflight; immutable Alpha 7 remains the historical 218-file artifact.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 229) {
+            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 229 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, accepted ADR 059 bounded source-prefix discovery, accepted ADR 060 pending-output response-emission preflight, and accepted ADR 061 outer HTTP failure disclosure; immutable Alpha 7 remains the historical 218-file artifact.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -405,13 +405,13 @@ function distributionGuardrailFailures(
     } else {
         $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-        if (count($behaviorNames) !== 181 || count(array_unique($behaviorNames)) !== 181) {
-            $failures[] = 'The framework suite must preserve exactly 181 unique named framework behaviors.';
+        if (count($behaviorNames) !== 188 || count(array_unique($behaviorNames)) !== 188) {
+            $failures[] = 'The framework suite must preserve exactly 188 unique named framework behaviors.';
         }
 
         if (
             hash('sha256', $behaviorInventory)
-            !== '37886edc1222c0121fb1dfd7bc44fd607e6751c73eb6ef40d993c3dd9a086853'
+            !== '37b3b5388db2c440f1c912a5446b5d13abfa19e96e9f2bfb78154693dd3242d1'
         ) {
             $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
         }
@@ -423,9 +423,10 @@ function distributionGuardrailFailures(
         ],
         '.ai/testing.md' => [
             'PHPUnit 13 as a maintainer-only development runner',
-            'exactly 181 named behaviors',
+            'exactly 188 named behaviors',
             '`tests/run.php` is the explicit ordered loader',
             '`tests/composition.php`, `tests/http-boundary.php`, `tests/routing.php`, `tests/input-projection.php`, `tests/crud.php`, and `tests/database-boundary.php`',
+            'the newly added outer HTTP failure concern lives in `tests/outer-http-failure.php`',
             'Narrowly shared PHPUnit support lives in `tests/request-reader-support.php`, `tests/process-support.php`, and `tests/create-user-support.php`',
             '`tests/process-support.php` delegates captured child execution to the maintainer-only owner at `tools/process-support.php`',
             '`tests/behavior-names.txt` locks the complete behavior order',
@@ -447,6 +448,7 @@ function distributionGuardrailFailures(
             "require __DIR__ . '/create-user-support.php';",
             "require __DIR__ . '/composition.php';",
             "require __DIR__ . '/http-boundary.php';",
+            "require __DIR__ . '/outer-http-failure.php';",
             "require __DIR__ . '/routing.php';",
             "require __DIR__ . '/input-projection.php';",
             "require __DIR__ . '/crud.php';",
@@ -455,6 +457,7 @@ function distributionGuardrailFailures(
             "frameworkBehaviorGroupDefinitions('request-policy', requestPolicyTests())",
             "frameworkBehaviorGroupDefinitions('composition', compositionBehaviorTests())",
             "frameworkBehaviorGroupDefinitions('http-boundary', httpBoundaryBehaviorTests())",
+            "frameworkBehaviorGroupDefinitions('http-boundary', outerHttpFailureBehaviorTests())",
             "frameworkBehaviorGroupDefinitions('routing', routingBehaviorTests())",
             "frameworkBehaviorGroupDefinitions('input-projection', inputProjectionBehaviorTests())",
             "frameworkBehaviorGroupDefinitions('crud', crudBehaviorTests())",
@@ -466,7 +469,7 @@ function distributionGuardrailFailures(
             'function frameworkBehaviorNamesForGroup(string $group): array',
             'function frameworkBehaviorInventory(): array',
             'array_key_exists($name, $registered)',
-            '37886edc1222c0121fb1dfd7bc44fd607e6751c73eb6ef40d993c3dd9a086853',
+            '37b3b5388db2c440f1c912a5446b5d13abfa19e96e9f2bfb78154693dd3242d1',
         ],
         'tests/composition.php' => [
             'function compositionBehaviorTests(): Generator',
@@ -756,6 +759,7 @@ function distributionGuardrailFailures(
             ['depth' => 0, 'statement' => "require__DIR__.'/handler-decorator.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/composition.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/http-boundary.php';"],
+            ['depth' => 0, 'statement' => "require__DIR__.'/outer-http-failure.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/routing.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/input-projection.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/crud.php';"],
@@ -822,6 +826,11 @@ function distributionGuardrailFailures(
                 'depth' => 1,
                 'yielded' => true,
                 'call' => "frameworkBehaviorGroupDefinitions('http-boundary',httpBoundaryBehaviorTests())",
+            ],
+            [
+                'depth' => 1,
+                'yielded' => true,
+                'call' => "frameworkBehaviorGroupDefinitions('http-boundary',outerHttpFailureBehaviorTests())",
             ],
             [
                 'depth' => 1,
@@ -1186,7 +1195,7 @@ function distributionGuardrailFailures(
             'Do not introduce an ORM',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             '## Optional bounded file transfers',
             'Raw `$_FILES` never enters a handler.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
@@ -1207,7 +1216,7 @@ function distributionGuardrailFailures(
         ],
         'docs/file-transfers/README.md' => [
             'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
-            'Consumer Contract version 17 carries version 16 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 18 carries version 17 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
@@ -1264,7 +1273,7 @@ function distributionGuardrailFailures(
             "\$installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "\$installedFramework . '/docs/file-transfers/emission.md'",
             "\$installedFramework . '/src/Http/ResponseEmitter.php'",
-            "'Contract version: 17'",
+            "'Contract version: 18'",
             'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
             'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
             'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
@@ -1344,8 +1353,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 17$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 17.';
+            if (preg_match('/^Contract version: 18$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 18.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -1605,8 +1614,8 @@ function distributionGuardrailFailures(
                 $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
             }
 
-            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules')) {
-                $failures[] = 'Application AGENTS.md must identify Consumer Contract v17 and Strict Profile v4 as the minimum accepted rules.';
+            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules')) {
+                $failures[] = 'Application AGENTS.md must identify Consumer Contract v18 and Strict Profile v4 as the minimum accepted rules.';
             }
         }
     }
@@ -1622,9 +1631,9 @@ function distributionGuardrailFailures(
             !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
             || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
             || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
-            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v17 and Strict Profile v4 are the minimum accepted rules')
+            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules')
         ) {
-            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v17 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
+            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v18 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
         }
     }
 
@@ -1951,6 +1960,79 @@ function distributionGuardrailFailures(
 
     if ($coreLines > 2_620) {
         $failures[] = "Core source has {$coreLines} physical lines; the accepted response-cookie profile limit is 2620.";
+    }
+
+    $outerHttpFailureDistributionMarkers = [
+        'tools/package-files.txt' => [
+            'docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md',
+            'docs/consumer-contract.md',
+            'docs/consumer-contract-upgrades.md',
+            'docs/errors.md',
+            'docs/configuration.md',
+            'docs/request-handling.md',
+            'docs/security.md',
+            'templates/application/.ai/architecture.md',
+            'templates/application/.ai/configuration.md',
+            'templates/application/.ai/observability.md',
+            'templates/application/.ai/operations.md',
+            'templates/application/.ai/testing.md',
+        ],
+        'skeleton/public/index.php' => [
+            '$genericFailureResponse = (new UnknownFailureBoundary())->respond();',
+            '(new ErrorLogOuterFailureSink())->emit($failure);',
+        ],
+        'skeleton/src/Observability/FailureClass.php' => [
+            'final class FailureClass',
+        ],
+        'skeleton/src/Observability/ErrorLogOuterFailureSink.php' => [
+            'final class ErrorLogOuterFailureSink',
+        ],
+        'skeleton/tests/fixtures/failing-bootstrap.php' => [
+            'StarterSafeSapiOuterFailure',
+        ],
+        'skeleton/tests/process-support.php' => [
+            'function proveStarterOuterHttpFailure(string $projectRoot): void',
+            "copy(__DIR__ . '/fixtures/failing-bootstrap.php'",
+        ],
+        'skeleton/tests/run.php' => [
+            'proveStarterOuterHttpFailure(dirname(__DIR__));',
+        ],
+        'example/src/Http/DevelopmentFailureResponse.php' => [
+            'final class DevelopmentFailureResponse',
+        ],
+        'tests/fixtures/configured-disclosure-consumer.php' => [
+            'PHPTHIS_TEST_CONFIGURED_RUNTIME_PROFILE',
+            'PHPTHIS_TEST_CONFIGURED_DISCLOSURE_MODE',
+            'DEVELOPMENT_DETAILS',
+        ],
+        'tests/outer-http-failure.php' => [
+            'function outerHttpFailureBehaviorTests(): Generator',
+            'configured disclosure consumer enables details only after eligible complete selection',
+            'configured disclosure consumer fails closed for invalid selection and request overrides',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $outerHttpFailureDistributionMarkers,
+        'outer HTTP failure package and evidence distribution',
+        $failures,
+    );
+
+    if (is_string($packageInventory)) {
+        foreach (
+            [
+                '/^src\/Http\/DevelopmentFailureResponse\.php$/m',
+                '/^src\/Observability\/FailureClass\.php$/m',
+                '/^src\/Observability\/ErrorLogOuterFailureSink\.php$/m',
+                '/^tests\/outer-http-failure\.php$/m',
+                '/^tests\/fixtures\/configured-disclosure-consumer\.php$/m',
+            ] as $forbiddenOuterHttpPackagePattern
+        ) {
+            if (preg_match($forbiddenOuterHttpPackagePattern, $packageInventory) === 1) {
+                $failures[] = 'Application-owned outer HTTP failure runtime or maintainer evidence entered the framework runtime package inventory.';
+            }
+        }
     }
 
     $markdownCount = count($markdownFiles);

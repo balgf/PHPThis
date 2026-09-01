@@ -21,6 +21,7 @@ require __DIR__ . '/handler-decorator.php';
 
 require __DIR__ . '/composition.php';
 require __DIR__ . '/http-boundary.php';
+require __DIR__ . '/outer-http-failure.php';
 require __DIR__ . '/routing.php';
 require __DIR__ . '/input-projection.php';
 require __DIR__ . '/crud.php';
@@ -43,6 +44,7 @@ function frameworkBehaviorDefinitions(): Generator
     yield from frameworkBehaviorGroupDefinitions('handler-decorator', handlerDecoratorTests());
     yield from frameworkBehaviorGroupDefinitions('composition', compositionBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('http-boundary', httpBoundaryBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('http-boundary', outerHttpFailureBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('routing', routingBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('input-projection', inputProjectionBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('crud', crudBehaviorTests());
@@ -152,7 +154,7 @@ function frameworkBehaviorInventory(): array
         $contents === ''
         || !str_ends_with($contents, "\n")
         || str_contains($contents, "\r")
-        || hash('sha256', $contents) !== '37886edc1222c0121fb1dfd7bc44fd607e6751c73eb6ef40d993c3dd9a086853'
+        || hash('sha256', $contents) !== '37b3b5388db2c440f1c912a5446b5d13abfa19e96e9f2bfb78154693dd3242d1'
     ) {
         throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
     }
@@ -160,11 +162,11 @@ function frameworkBehaviorInventory(): array
     $names = explode("\n", substr($contents, 0, -1));
 
     if (
-        count($names) !== 181
-        || count(array_unique($names)) !== 181
+        count($names) !== 188
+        || count(array_unique($names)) !== 188
         || in_array('', $names, true)
     ) {
-        throw new LogicException('Framework behavior inventory must contain 181 unique non-empty names.');
+        throw new LogicException('Framework behavior inventory must contain 188 unique non-empty names.');
     }
 
     return $names;

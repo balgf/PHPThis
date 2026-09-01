@@ -98,6 +98,7 @@ docs/decisions/057-distinct-named-sql-placeholder-occurrences.md
 docs/decisions/058-concern-local-ai-context-routing.md
 docs/decisions/059-bounded-application-source-prefix-discovery.md
 docs/decisions/060-reject-pending-output-before-response-emission.md
+docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md

@@ -119,6 +119,14 @@ HTTP calls only `forHttp()`. In the illustrated single-history case, that histor
 
 Typed separation proves only which values each entrypoint can receive. It does not create database identities, activate authority, establish a namespace or object control-or-ownership model, or prove that the runtime can execute application statements. When connection scope is selected, record engine-specific effective authority, accountable transition ownership, and verification in `.ai/data.md`; record migration-owned transition implementation and per-history constraints in `.ai/migrations.md`; and record the pre-traffic release sequence plus operational runbooks in `.ai/operations.md`. See [ADR 038](decisions/038-application-owned-database-authority-lifecycle.md).
 
+## HTTP failure disclosure selection
+
+Contract version 18 starts every supported HTTP entrypoint in code-owned `GENERIC`. An application that does not adopt external failure-disclosure selection adds no artificial environment input; the configuration-free health starter demonstrates that path. When an application adopts external selection, its existing one environment-reading file reads both the exact application-owned disclosure setting and exact application-owned runtime-profile input. Both are required, parsed into finite final readonly values, and validated as one pair before the outer mode can change.
+
+Keep the outer variable `GENERIC` until the complete pair succeeds. A missing, empty, unknown, unavailable, malformed, or contradictory input raises the fixed application configuration failure before application-controlled database, network, writable-filesystem, or business I/O. The outer HTTP boundary catches that failure and retains the already-constructed generic `500`; parsing never falls through to application execution. Staging and production permit only `GENERIC`. `DEVELOPMENT_DETAILS` is eligible only for a recorded isolated local, development, or test profile with restricted access, no production traffic or data, and least process authority.
+
+An environment name is configuration, not authorization or isolation evidence. No hostname, caller address, request header, cookie, query parameter, body, source-checkout path, `.env` filename, secret URL, or other request-controlled or inferred value can select details. Record the exact input names without values, finite profile-and-mode table, final type and injection owner, missing and malformed behavior, restart policy, safe-message allowlist ownership, redaction, isolation, access, authority, and tests in application `.ai/configuration.md` and `.ai/operations.md`. Do not add a framework configuration service, generic debug helper, request switch, hidden default, or automatic dotenv behavior.
+
 ## Explicit composition when connection scope is selected
 
 When connection scope is selected, the composition root receives the final typed value and constructs infrastructure visibly. Configuration-only scope stops after the tested typed boundary and records this connection composition as deferred:
@@ -138,7 +146,7 @@ $connection = Connection::connect(
 
 ### Eager composition and probe semantics
 
-`Connection::connect()` calls the native `PDO::connect()` factory immediately rather than returning a deferred handle. Depending on the selected driver and DSN, connection creation may perform database, filesystem, or network I/O and may fail during composition. When a shared HTTP composition root opens a connection that requires an external service, every route behind that root inherits that requirement. In the current starter front-controller shape, composition completes before the terminal request-summary coordinator handles a request. A composition failure therefore occurs outside that coordinator and receives none of its application `Response`, `X-Request-ID`, or terminal-summary guarantees. An application that selects another outer failure policy records and tests that exact behavior; PHPThis supplies no hidden fallback.
+`Connection::connect()` calls the native `PDO::connect()` factory immediately rather than returning a deferred handle. Depending on the selected driver and DSN, connection creation may perform database, filesystem, or network I/O and may fail during composition. When a shared HTTP composition root opens a connection that requires an external service, every route behind that root inherits that requirement. Under Contract version 18, HTTP composition occurs inside the application-owned outer failure catch after the generic response exists but before the terminal request-summary coordinator handles a request. A composition failure therefore receives the selected generic or eligible controlled detailed `Response`, but no `X-Request-ID` or terminal-summary guarantee. PHPThis supplies no hidden fallback, retry, lazy connection, or second bootstrap.
 
 Use precise operational claims:
 
@@ -179,6 +187,8 @@ For every implemented configuration parser or factory, application tests prove:
 - after ordinary source/autoload loading, missing, empty, malformed, and oversized values fail before application-controlled database, network, writable-filesystem, migration, or business I/O;
 - failure output is fixed and contains none of the supplied bytes;
 - child-process environment injection exercises the selected parser or factory, or the real process entrypoint when that process is in scope, without application `putenv` calls.
+
+An adopter of external HTTP failure-disclosure selection additionally proves both inputs required, every invalid pair failing generic before application-controlled I/O, staging and production details rejection, one eligible isolated detailed profile, request-input non-selection, restart behavior, and exact safe-message allowlist ownership. A code-owned generic-only application proves normal composition without disclosure inputs.
 
 ### Copyable child-process configuration evidence
 

@@ -2,7 +2,7 @@
 
 This directory owns current context for the checked health-only starter. Replace only the guides entered by a task with verified project facts before adding product behavior. Keep context committed, concise, and free of secrets.
 
-Consumer Contract v17 and Strict Profile v4 remain mandatory. Application guidance may strengthen them but may not weaken them.
+Consumer Contract v18 and Strict Profile v4 remain mandatory. Application guidance may strengthen them but may not weaken them.
 
 ## Universal entrypoints
 
@@ -16,7 +16,7 @@ Then start with exactly one current operational guide from the table. Add anothe
 
 Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.
 
-Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` when upgrading to the current accepted contract. Read the complete installed upgrade companion only when reviewing its history.
+Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` when upgrading to the current accepted contract. Read the complete installed upgrade companion only when reviewing its history.
 
 ## Simple endpoint route
 
@@ -31,7 +31,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Task | Start with | Inspect next; add another guide only if entered |
 | --- | --- | --- |
 | Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
-| Upgrade the installed Consumer Contract to current version 17 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-17` | exact installed and target contract/profile versions, response-emitter call and early-output inventory, active and nested PHP-buffer evidence, front-controller and deployed-SAPI limits, affected source, then the complete gate |
+| Upgrade the installed Consumer Contract to current version 18 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` | exact installed and target contract/profile versions, sole front controller, generic-first outer failure selection, response-emitter and early-output inventory, effective web-SAPI settings, affected source, then the complete gate |
 | Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | exact versions under review, their accepted decisions, affected concern guides, application source and evidence |
 | Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
 | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
@@ -40,6 +40,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |
 | Select or set up a database engine | `.ai/change-workflow.md` | prompt and current configuration/data facts before any external action |
 | Change deployment configuration | `.ai/configuration.md` | one environment-reading file, typed values, composition, and parser tests |
+| Change outer HTTP failure disclosure or web-SAPI error display | installed `vendor/phpthis/framework/docs/errors.md#outer-http-failures`, then `.ai/configuration.md` | sole front controller, `.ai/operations.md`, `.ai/observability.md`, `.ai/testing.md`, code-owned `GENERIC`, effective SAPI settings, and real-SAPI evidence |
 | Adopt or change a local development environment launcher | installed `vendor/phpthis/framework/docs/configuration/local-environment-launcher.md`; add installed `vendor/phpthis/framework/docs/cli.md` when an operational command is exposed | `.ai/configuration.md`, `.ai/operations.md`, `.ai/cli.md`, `.ai/testing.md`, exact PHP launcher and shared canonical `ApplicationEnvironment` reader, ignored local file and profile/key map, array-form private-child handoff with an exact environment and inherited standard streams, production non-use, and real-launcher evidence |
 | Change a non-simple route or request input | installed `vendor/phpthis/framework/docs/request-handling.md` | route manifest and only the application guides for concerns actually entered |
 | Change application data or SQL | `.ai/data.md` | direct call site, authority, exact-engine, adversarial, and scale evidence |

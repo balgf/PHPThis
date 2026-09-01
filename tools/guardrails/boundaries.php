@@ -272,7 +272,7 @@ PHP;
             'The accepted core ceiling is 2,620 physical lines',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
@@ -515,7 +515,7 @@ PHP;
             '`032-explicit-uuid-and-ulid-route-types.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             'This is the canonical contract for an application built with the installed PHPThis version.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
             '`positive-int`, `token`, `uuid`, or `ulid`',
@@ -609,7 +609,7 @@ PHP;
             'Accepted [ADR 056](056-bounded-request-target-and-path-bytes.md) coordinates Consumer Contract version 14',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             '### Contract version 14',
             'The complete target, including its query suffix, is at most 8,192 bytes',
             'A directly constructed `Request` or `Route` receives a path-only value',
@@ -644,7 +644,7 @@ PHP;
             'Do not depend on a server or proxy to reject these bytes',
         ],
         'docs/getting-started.md' => [
-            'contract-version-17 Composer scripts',
+            'contract-version-18 Composer scripts',
             'remove raw bytes `0x00` through `0x20` and `0x7F` from request targets and paths',
         ],
         'src/Http/RequestReader.php' => [
@@ -704,7 +704,7 @@ PHP;
             '`033-application-owned-request-handler-decorators.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             '## Optional application-owned request-handler decorators',
             'The decorator is composed only as the handler of an explicit `Route`.',
             'zero downstream calls or call its one downstream handler exactly once',
@@ -804,7 +804,7 @@ PHP;
             'They are not PHPThis defaults, production recommendations, capacity findings, or evidence for another package version',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 17',
+            'Contract version: 18',
             '## Application-owned WebSocket profile',
             'PHPThis has no WebSocket runtime or core WebSocket API.',
             'Frames never become PHPThis HTTP `Request` or `Response` values',
@@ -840,7 +840,7 @@ PHP;
         ],
         'docs/guardrails.md' => [
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
-            'keeps `.ai/websockets.md` optional under current Contract version 17 as well as its originating Contract version 9',
+            'keeps `.ai/websockets.md` optional under current Contract version 18 as well as its originating Contract version 9',
         ],
         'VISION.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',
@@ -2844,7 +2844,7 @@ PHP;
             '`tests/observability.php`',
             '[Destination-record reference](destination-record.md)',
             'do not mistake the encoder proof for destination-I/O certification',
-            'preserve request-summary v1/v2 and current Contract v17',
+            'preserve request-summary v1/v2 and current Contract v18',
         ],
         'docs/observability/correlation-id.md' => [
             '[0-9a-f]{32}',
@@ -3044,7 +3044,11 @@ PHP;
             "'document_cache' => \$this->documentCache,",
             "'database_sources' => \$this->querySources,",
             'private static function saturatedAdd',
-            'private static function safeFailureClass',
+            'FailureClass::fromThrowable($unknownFailure)',
+        ],
+        'example/src/Observability/FailureClass.php' => [
+            'final class FailureClass',
+            'public static function fromThrowable(Throwable $failure): string',
             "str_contains(\$class, '@anonymous')",
         ],
         'example/src/Observability/ErrorLogRequestSummarySink.php' => [
@@ -3093,7 +3097,11 @@ PHP;
         'skeleton/src/Observability/RequestSummary.php' => [
             "public const string EVENT = 'application.request_summary';",
             "'database_sources' => \$this->querySources,",
-            'private static function safeFailureClass',
+            'FailureClass::fromThrowable($unknownFailure)',
+        ],
+        'skeleton/src/Observability/FailureClass.php' => [
+            'final class FailureClass',
+            'public static function fromThrowable(Throwable $failure): string',
             "str_contains(\$class, '@anonymous')",
         ],
         'skeleton/src/Observability/ErrorLogRequestSummarySink.php' => [
@@ -3201,6 +3209,144 @@ PHP;
         ) {
             $failures[] = 'The accepted destination-record reference must not become framework, skeleton, or example runtime: '
                 . $forbiddenDestinationRecordRuntime . '.';
+        }
+    }
+
+    $outerHttpFailureBoundaryMarkers = [
+        'docs/consumer-contract.md' => [
+            '## Outer HTTP failure boundary',
+            'Contract version 18 supports one deployed HTTP entrypoint.',
+            'constructs the exact `UnknownFailureBoundary::respond()` response before application work',
+            'Response emission remains outside that catch under the separate `ResponseEmissionFailed` boundary.',
+        ],
+        'docs/errors.md' => [
+            '## Outer HTTP failures',
+            '`GENERIC` is code-owned for an application that does not adopt external disclosure selection',
+            '`DEVELOPMENT_DETAILS` returns status `500`',
+            'Messages remain exactly `<omitted>` by default.',
+            'Native, dependency, PDO, non-allowlisted, and would-be-subclass messages remain omitted.',
+        ],
+        '.ai/request-boundary.md' => [
+            'the sole supported HTTP front controller loads ordinary Composer autoloading and the generic-boundary types',
+            'Select the already-constructed generic response before protected outer-event or detailed-renderer attempts',
+            'Keep response emission outside under its separate `ResponseEmissionFailed` catch.',
+        ],
+        '.ai/errors.md' => [
+            'construct the exact generic response before application configuration or composition',
+            'application.http_outer_failure failure_class=<ADR023-safe-class>',
+            'eligible pre-coordinator outer failure under `DEVELOPMENT_DETAILS`',
+            'Native, dependency, PDO, non-allowlisted, and would-be-subclass messages remain omitted.',
+        ],
+        'templates/application/.ai/architecture.md' => [
+            '{{OUTER_HTTP_DETAILED_RENDERER_AND_SAFE_MESSAGE_ALLOWLIST_OR_NOT_APPLICABLE}}',
+            'constructs `UnknownFailureBoundary::respond()` before application configuration, bootstrap, infrastructure composition, or coordinator invocation',
+            'Response emission remains outside that catch',
+            'An additional HTTP adapter is ineligible until a separate accepted decision',
+        ],
+        'skeleton/.ai/architecture.md' => [
+            '`public/index.php` is the sole supported HTTP front controller.',
+            'constructs `UnknownFailureBoundary::respond()` before requiring `bootstrap.php`',
+            '`NOT_APPLICABLE(DEVELOPMENT_DETAILS)`',
+            'Response emission stays outside that catch',
+        ],
+        'skeleton/public/index.php' => [
+            '$genericFailureResponse = (new UnknownFailureBoundary())->respond();',
+            'catch (Throwable $failure)',
+            '$response = $genericFailureResponse;',
+            '(new ErrorLogOuterFailureSink())->emit($failure);',
+            'catch (ResponseEmissionFailed $failure)',
+        ],
+        'example/public/index.php' => [
+            '$genericFailureResponse = (new UnknownFailureBoundary())->respond();',
+            'catch (Throwable $failure)',
+            '$response = $genericFailureResponse;',
+            '(new ErrorLogOuterFailureSink())->emit($failure);',
+            'catch (ResponseEmissionFailed $failure)',
+        ],
+        'skeleton/src/Observability/FailureClass.php' => [
+            'public static function fromThrowable(Throwable $failure): string',
+            "str_contains(\$class, '@anonymous')",
+            'return Throwable::class;',
+        ],
+        'example/src/Observability/FailureClass.php' => [
+            'public static function fromThrowable(Throwable $failure): string',
+            "str_contains(\$class, '@anonymous')",
+            'return Throwable::class;',
+        ],
+        'skeleton/src/Observability/ErrorLogOuterFailureSink.php' => [
+            "'application.http_outer_failure failure_class=' . FailureClass::fromThrowable(\$failure)",
+            "throw new RuntimeException('Unable to emit the outer HTTP failure event.');",
+        ],
+        'example/src/Observability/ErrorLogOuterFailureSink.php' => [
+            "'application.http_outer_failure failure_class=' . FailureClass::fromThrowable(\$failure)",
+            "throw new RuntimeException('Unable to emit the outer HTTP failure event.');",
+        ],
+        'example/src/Http/DevelopmentFailureResponse.php' => [
+            'private const int MAXIMUM_BODY_BYTES = 65_536;',
+            'private const int MAXIMUM_CHAINED_FAILURES = 4;',
+            'private const int MAXIMUM_FRAMES = 32;',
+            'private const int MAXIMUM_STRING_BYTES = 4_096;',
+            'DevelopmentDiagnosticFailure::class => true,',
+            'JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_SLASHES',
+            "'X-Content-Type-Options' => 'nosniff'",
+        ],
+        'tests/outer-http-failure.php' => [
+            'development failure response renders exact bounded safe diagnostics',
+            'development failure response omits every unapproved message and trace argument',
+            'development failure response enforces chain frame string and body limits',
+            'outer failure selection isolates event renderer and emission failures',
+            'configured disclosure consumer enables details only after eligible complete selection',
+            'configured disclosure consumer fails closed for invalid selection and request overrides',
+            'example outer HTTP boundary catches bootstrap failures under safe SAPI settings',
+        ],
+    ];
+
+    requireGuardrailArtifactMarkers(
+        $root,
+        $outerHttpFailureBoundaryMarkers,
+        'outer HTTP failure boundary',
+        $failures,
+    );
+
+    $exampleFrontControllerSource = file_get_contents($root . '/example/public/index.php');
+    $exampleCodeOwnedGenericOuterFailureCatch = <<<'PHP'
+} catch (Throwable $failure) {
+    $response = $genericFailureResponse;
+
+    try {
+        (new ErrorLogOuterFailureSink())->emit($failure);
+    } catch (Throwable) {
+    }
+}
+PHP;
+
+    if (
+        !is_string($exampleFrontControllerSource)
+        || substr_count(
+            $exampleFrontControllerSource,
+            $exampleCodeOwnedGenericOuterFailureCatch,
+        ) !== 1
+        || substr_count($exampleFrontControllerSource, '$genericFailureResponse') !== 2
+        || substr_count($exampleFrontControllerSource, '$response = ') !== 2
+        || str_contains($exampleFrontControllerSource, 'DevelopmentFailureResponse')
+        || str_contains($exampleFrontControllerSource, 'DEVELOPMENT_DETAILS')
+    ) {
+        $failures[] = 'The executable example front controller must retain one code-owned GENERIC outer-failure selection without external disclosure or runtime-profile wiring.';
+    }
+
+    foreach (
+        [
+            'src/Http/DevelopmentFailureResponse.php',
+            'src/Observability/FailureClass.php',
+            'src/Observability/ErrorLogOuterFailureSink.php',
+        ] as $forbiddenFrameworkOuterFailureRuntime
+    ) {
+        if (
+            file_exists($root . '/' . $forbiddenFrameworkOuterFailureRuntime)
+            || is_link($root . '/' . $forbiddenFrameworkOuterFailureRuntime)
+        ) {
+            $failures[] = 'The outer HTTP failure implementation must remain application-owned outside framework core: '
+                . $forbiddenFrameworkOuterFailureRuntime . '.';
         }
     }
 
