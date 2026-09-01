@@ -67,6 +67,8 @@ A PHPThis application must:
 - own every required application-context file listed below and resolve every template placeholder before feature work; and
 - fix findings at their cause rather than adding baselines, broad ignores, consumer PHPStan configuration, or comment suppressions.
 
+Attribute syntax is not itself forbidden. Native declaration-local engine attributes and attributes required by an explicitly selected development tool remain compatible when their use preserves the visible execution path. They do not relax the existing prohibitions on runtime discovery, reflection wiring or hydration, hidden composition, or a second execution pattern.
+
 Composer does not inherit a dependency's root scripts or development dependencies. An application therefore declares `phpstan/phpstan`, `phpstan/phpstan-strict-rules`, its behavior-test command, and this canonical sequence itself:
 
 ```json

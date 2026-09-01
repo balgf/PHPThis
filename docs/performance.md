@@ -14,6 +14,8 @@ A convenience API is rejected when it can hide:
 
 Optimize after measurement, but install cheap limits early. Query budgets and explicit collection bounds are correctness constraints, not micro-optimizations.
 
+Do not treat attribute syntax as an application performance optimization. PHPThis permits declaration-local native engine behavior and explicitly selected development-tool attributes; neither permits application-runtime attribute scanning or reflection-driven application behavior. Any proposed performance claim names and measures the mechanism being replaced against the explicit implementation.
+
 ## Cache evidence
 
 A cache changes where work occurs; it does not remove the need to bound that work. Performance reports for an adopted cache name the backend and topology and report cold and warm scenarios separately. They include cache-operation count, payload size, hit/miss outcome, database statement count, request latency, and the tested fixture cardinality. A warm-cache latency result is not evidence that the cold path avoids N+1 queries.

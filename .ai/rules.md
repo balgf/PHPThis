@@ -15,6 +15,7 @@ These rules apply to every framework-maintainer change. Concern-specific contrac
 - Map every external structural selector to finite reviewed code-owned choices and reject unknown choices before I/O.
 - Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.
 - Preserve one canonical execution pattern for each framework task and one stable term for each concept.
+- Prefer native PHP attributes for declaration-local engine behavior, and use attributes required by an explicitly selected development tool. Attribute syntax does not permit runtime discovery, reflection-based wiring or hydration, hidden composition, or another execution path.
 - Add or update automated tests for observable behavior and run `composer check` before reporting completion.
 
 ## Forbidden
