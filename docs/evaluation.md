@@ -6,6 +6,8 @@ The current harness proves specific code and execution properties. It does not y
 
 ADR 058's [bounded AI-context routing review](ai-context-routing-review.md) separately walks ten frozen prompts through the current written routers and checks unsupported-claim boundaries. It is semantic route evidence for that revision, not a model run, context-strategy comparison, token result, or proof that an arbitrary agent follows the selected route.
 
+The maintainer source report `tools/restriction-review/README.md` records Issue #67's bounded review of the Markdown/PHP ratio, core-line ceiling, PHT007 application-policy conflict, and explicit SQL maintenance. Its fixed-source reproductions and outcome measures distinguish observed friction from unmeasured complete-consumer or productivity claims. The report and optional scripts are excluded from the installed package; they propose no accepted change to the current validity floor and add no consumer command or check stage.
+
 ## Current proof
 
 Run:
