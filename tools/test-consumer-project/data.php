@@ -186,7 +186,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             "The bounded task-routed context guard pins ADR 044's exact simple-endpoint definition and four-file locality metric",
             'The installed proof checks the copied local skeleton plus packaged public guidance and application template, including the starter',
             'The guard adds no context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate.',
-            'The accepted ADR 059 source-prefix guard now pins the 229-file current inventory, including packaged accepted ADR 061',
+            'The accepted ADR 059 source-prefix guard now pins the 230-file current inventory, including packaged accepted ADR 061',
             'every other application symlink fails before target-content inspection',
             'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
             'The accepted ADR 060 response-emission guard pins Consumer Contract version 17',

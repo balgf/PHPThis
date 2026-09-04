@@ -33,7 +33,7 @@ The framework supplies a small execution foundation and strict verification boun
 
 Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation. The [Alpha 7 release notes](docs/releases/0.1.0-alpha.7.md) describe the framework changes and compatibility boundary.
 
-The Alpha 7 framework tag is immutable. Closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) records the completed and announced coordinated release: both exact candidates, required CI, both immutable tags and Packagist versions, clean Packagist-only public-distribution proof, both GitHub prereleases, the final announcement, and Issue closure. [ADR 054](docs/decisions/054-bounded-alpha-7-release-scope.md), the [tagged Alpha 7 source-preparation notes](docs/releases/0.1.0-alpha.7.md), and the approved Alpha 7 source-preparation subsection in [the release process](RELEASING.md) preserve their acceptance-time `PENDING` values and non-authority statements as historical evidence. The post-tag `main` source is unreleased development work containing accepted ADRs 055 through 061, Consumer Contract version 18, Strict Profile version 4, PHT008, and accepted executable guard, checker, runtime-boundary, and maintainer-evidence changes. This source changes neither the immutable Alpha 7 tag nor any published package, establishes no later candidate or publication state, and authorizes no tag, package, release, or announcement. The release process owns the detailed dated external-evidence record; live host availability must still be verified.
+The Alpha 7 framework tag is immutable. The post-tag `main` source is unreleased and is not part of the published Alpha 7 packages. The [release process](RELEASING.md) owns the detailed dated external-evidence record and historical source-preparation boundaries. This summary establishes no later candidate or publication state and authorizes no tag, package, release, or announcement.
 
 ## Start a PHPThis application
 
@@ -72,6 +72,7 @@ The AI may author code and draft decisions. A human still supplies intent, appro
 - [Getting started](docs/getting-started.md) — installation and deliberate adoption.
 - [Consumer Contract](docs/consumer-contract.md) — the portable application validity floor.
 - [Knowledge map](docs/knowledge-map.md) — the smallest relevant guide, source, and evidence route for each task.
+- [Reviewer walkthrough](docs/reviewer-walkthrough.md) — an optional human companion tracing one request, its evidence, and a diagnostic repair at a pinned source revision.
 - [Request handling](docs/request-handling.md) and [database boundaries](docs/database.md) — the core HTTP and PDO patterns.
 - [Alpha 7 release notes](docs/releases/0.1.0-alpha.7.md) — compatibility changes and the carried-forward boundary.
 - [Architecture decisions](docs/decisions/README.md) — accepted rationale and reconsideration triggers.
