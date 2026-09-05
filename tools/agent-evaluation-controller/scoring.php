@@ -6,6 +6,111 @@ const AGENT_EVALUATION_CONTROLLER_LIVE_SCORING_UNAVAILABLE = 'AGENT_EVALUATION_C
 const AGENT_EVALUATION_CONTROLLER_RESOURCE_SOURCE_BYTES = 32_768;
 
 /**
+ * @param array<string, mixed> $resources
+ * @param array<string, bool> $checks
+ * @param array<string, mixed> $profile
+ * @return array{
+ *   admissible:bool,
+ *   mandatory_checks:array{manifest_valid:bool,workspace_policy:bool,application_check:bool,public_scorer:bool,resource_bounds:bool},
+ *   dimensions:array{observable_behavior:int,boundary_behavior:int,resource_bounds:int,application_gate:int,change_locality:int},
+ *   weighted_score:int,
+ *   automated_status:string,
+ *   evidence:array{application_check:array<string,mixed>,public_scorer:array<string,mixed>,resource_inspection:list<string>}
+ * }
+ */
+function agentEvaluationControllerScoreLiveCandidate(
+    array &$resources,
+    string $candidateDirectory,
+    string $publicScorerPath,
+    array $checks,
+    array $profile,
+    string $evidenceRoot,
+): array {
+    $budgetProfile = agentEvaluationRequireObject($profile, 'budgets', 'controller live profile');
+    $budgets = [
+        'model_tokens' => agentEvaluationRequirePositiveInteger($budgetProfile, 'model_tokens', 'live budget'),
+        'wall_seconds' => agentEvaluationRequirePositiveInteger($budgetProfile, 'wall_seconds', 'live budget'),
+        'repair_turns' => agentEvaluationRequireNonNegativeInteger($budgetProfile, 'repair_turns', 'live budget'),
+        'command_output_bytes' => agentEvaluationRequirePositiveInteger($budgetProfile, 'command_output_bytes', 'live budget'),
+    ];
+    [$candidateRoot, $scorerPath] = agentEvaluationControllerValidateScoringRequest(
+        $candidateDirectory, $publicScorerPath, $checks, $budgets,
+    );
+    $isolation = agentEvaluationRequireObject($profile, 'isolation', 'controller live profile');
+    $scoringIsolation = [
+        ...$isolation,
+        'network' => 'none',
+        'credential_broker' => 'none',
+    ];
+    agentEvaluationControllerValidateFutureIsolationProfile($scoringIsolation, $budgets, 'scoring');
+    if (($resources['generation_destroyed'] ?? false) !== true) {
+        throw new RuntimeException('Live scoring requires verified generation-container destruction after freeze.');
+    }
+    $before = agentEvaluationControllerDescribeTree($candidateRoot, 'live frozen scoring input', true);
+    $scorerHash = agentEvaluationFileHash($scorerPath, 'live public scorer');
+    $applicationCheck = agentEvaluationControllerOciRunScore($resources, $candidateRoot, $scorerPath, 'application-check');
+    agentEvaluationControllerWriteArtifact($evidenceRoot, 'application-check.json', agentEvaluationJson($applicationCheck));
+    $publicScorer = agentEvaluationControllerOciRunScore($resources, $candidateRoot, $scorerPath, 'public-scorer');
+    agentEvaluationControllerWriteArtifact($evidenceRoot, 'public-scorer.json', agentEvaluationJson($publicScorer));
+    agentEvaluationRequireFileHash($scorerPath, $scorerHash, 'live post-score public scorer');
+    $after = agentEvaluationControllerDescribeTree($candidateRoot, 'live post-score frozen input', true);
+    if ($before['manifest'] !== $after['manifest']) {
+        throw new RuntimeException('Frozen scoring input changed during real scoring.');
+    }
+    $resourceInspection = agentEvaluationControllerInspectPingResources($candidateRoot);
+    agentEvaluationControllerWriteArtifact($evidenceRoot, 'resource-inspection.json', agentEvaluationJson($resourceInspection['evidence']));
+    $applicationPassed = agentEvaluationControllerLiveCheckPassed($applicationCheck);
+    $publicScorerPassed = agentEvaluationControllerLiveCheckPassed($publicScorer)
+        && $publicScorer['stdout'] === "PASS change.simple-ping public smoke\n";
+    $scoringAdmissible = agentEvaluationControllerLiveCheckAdmissible($applicationCheck)
+        && agentEvaluationControllerLiveCheckAdmissible($publicScorer);
+    $admissible = $checks['manifest_valid']
+        && $checks['workspace_policy']
+        && $checks['frozen_before_scoring']
+        && $checks['scorer_integrity']
+        && $checks['external_actions_approved']
+        && $checks['generation_cleanup']
+        && $scoringAdmissible;
+    $derived = agentEvaluationControllerDeriveScore([
+        'admissible' => $admissible,
+        'manifest_valid' => $checks['manifest_valid'],
+        'workspace_policy' => $checks['workspace_policy'],
+        'application_check' => $applicationPassed,
+        'public_scorer' => $publicScorerPassed,
+        'resource_bounds' => $resourceInspection['passed'],
+    ]);
+    return [
+        ...$derived,
+        'evidence' => [
+            'application_check' => $applicationCheck,
+            'public_scorer' => $publicScorer,
+            'resource_inspection' => $resourceInspection['evidence'],
+        ],
+    ];
+}
+
+/** @param array<string, mixed> $result */
+function agentEvaluationControllerLiveCheckPassed(array $result): bool
+{
+    return agentEvaluationControllerLiveCheckAdmissible($result)
+        && ($result['exit_code'] ?? null) === 0
+        && ($result['termination_reason'] ?? null) === 'completed';
+}
+
+/** @param array<string, mixed> $result */
+function agentEvaluationControllerLiveCheckAdmissible(array $result): bool
+{
+    $exitCode = $result['exit_code'] ?? null;
+    return is_int($exitCode) && $exitCode >= 0 && $exitCode <= 255
+        && ($result['container_started'] ?? null) === true
+        && ($result['timed_out'] ?? null) === false
+        && ($result['output_limit_exceeded'] ?? null) === false
+        && ($result['oom_killed'] ?? null) === false
+        && ($result['container_destroyed'] ?? null) === true
+        && in_array($result['termination_reason'] ?? null, ['completed', 'process_failed'], true);
+}
+
+/**
  * @param array{
  *   manifest_valid: bool,
  *   workspace_policy: bool,

@@ -399,6 +399,12 @@ try {
         'Controller phase order changed before generate.',
     );
 
+    agentEvaluationControllerTestProxyControls();
+    agentEvaluationControllerTestLiveConfiguration($root, $temporaryRoot, $task['budgets']);
+    agentEvaluationControllerTestLiveFailureEvidence($temporaryRoot);
+    agentEvaluationControllerTestUnsettledCleanup($temporaryRoot);
+    agentEvaluationControllerTestLiveUsage();
+    agentEvaluationControllerTestArchiveControls($root);
     agentEvaluationControllerTestProcessBounds($root);
     agentEvaluationControllerTestCliGrammar($root);
     agentEvaluationControllerTestWorkspaceControls(
@@ -586,6 +592,208 @@ function agentEvaluationControllerLiveIsolationProfile(array $budgets): array
         'output_bytes' => $budgets['command_output_bytes'],
         'descendant_cleanup' => 'container-destroy',
     ];
+}
+
+function agentEvaluationControllerTestArchiveControls(string $root): void
+{
+    $archive = agentEvaluationControllerOciCandidateArchive($root . '/skeleton');
+    $entries = agentEvaluationControllerOciReadArchive($archive);
+    agentEvaluationControllerTest(
+        isset($entries['src/HealthRoutes.php'], $entries['src'])
+        && $entries['src/HealthRoutes.php']['bytes'] === file_get_contents($root . '/skeleton/src/HealthRoutes.php')
+        && $entries['src/HealthRoutes.php']['mode'] === 0644
+        && $entries['src']['directory']
+        && $entries['src']['mode'] === 0755,
+        'The stopped-container archive format must preserve exact bounded source bytes and canonical modes.',
+    );
+    $end = str_repeat("\0", 1024);
+    $file = agentEvaluationControllerOciTarHeader('src/a.php', 0644, 0, '0');
+    $controls = [
+        [substr_replace($file . $end, 'X', 0, 1), 'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_HEADER_INVALID'],
+        [substr($file . $end, 0, -1), 'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_INVALID'],
+        [$file . $file . $end, 'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_ENTRY_LIMIT'],
+        [$file . agentEvaluationControllerOciTarHeader('SRC/b.php', 0644, 0, '0') . $end,
+            'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_CASE_COLLISION'],
+        [agentEvaluationControllerOciTarHeader('src', 0644, 0, '0') . $file . $end,
+            'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_PARENT_COLLISION'],
+        [$file . $end . str_repeat('X', 512), 'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_TRAILER_INVALID'],
+        [$file . str_repeat("\0", 512), 'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_NOT_TERMINATED'],
+        [agentEvaluationControllerOciTarHeader('src/', 0644, 0, '5') . $end,
+            'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_ENTRY_INVALID'],
+        [agentEvaluationControllerOciTarHeader('src/a.php', 0644, AGENT_EVALUATION_MAX_ARTIFACT_BYTES + 1, '0') . $end,
+            'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_'],
+        [agentEvaluationControllerOciTarHeader('vendor/forged.php', 0644, 0, '0') . $end,
+            'AGENT_EVALUATION_CONTROLLER_OCI_DEPENDENCY_ESCAPE'],
+    ];
+    foreach (['1', '2', '3', '4', '6', 'x', 'g'] as $type) {
+        $controls[] = [agentEvaluationControllerOciTarHeader('src/a.php', 0644, 0, $type) . $end,
+            'AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_ENTRY_INVALID'];
+    }
+    foreach ($controls as [$invalid, $marker]) {
+        agentEvaluationControllerExpectFailureContains(
+            static function () use ($invalid): void {
+                agentEvaluationControllerOciReadArchive($invalid);
+            },
+            $marker,
+        );
+    }
+    foreach (['/absolute.php', '../outside.php', 'src/../../outside.php'] as $path) {
+        $invalid = agentEvaluationControllerOciTarHeader($path, 0644, 0, '0') . $end;
+        agentEvaluationControllerExpectFailureContains(
+            static function () use ($invalid): void {
+                agentEvaluationControllerOciReadArchive($invalid);
+            },
+            'OCI exported candidate',
+        );
+    }
+}
+
+function agentEvaluationControllerTestProxyControls(): void
+{
+    $body = '{"model":"phpthis-fixture","stream":true,"store":false,"input":"Synthetic task.",'
+        . '"reasoning":{"effort":"high"},"tools":[],"max_output_tokens":100}';
+    $metadataState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+    $metadataBody = str_replace('"tools":[]', '"tools":[],"client_metadata":{"x-codex-turn-metadata":"synthetic transport hint"}', $body);
+    $metadataRequest = agentEvaluationControllerProxyRequest($metadataBody, $metadataState);
+    agentEvaluationControllerTest(
+        !array_key_exists('client_metadata', $metadataRequest['request'])
+        && !str_contains($metadataRequest['count_json'], 'synthetic transport hint'),
+        'Codex client metadata must be discarded before quota counting and upstream creation.',
+    );
+    $count = '{"object":"response.input_tokens","input_tokens":20}';
+    $completed = "event: response.completed\ndata: "
+        . '{"type":"response.completed","response":{"model":"phpthis-fixture","status":"completed",'
+        . '"usage":{"input_tokens":20,"output_tokens":30,"total_tokens":50, '
+        . '"input_tokens_details":{"cached_tokens":5},"output_tokens_details":{"reasoning_tokens":7}},"output":[]}}'
+        . "\n\n";
+    $state = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+    $prepared = agentEvaluationControllerProxyRequest($body, $state);
+    $reserved = agentEvaluationControllerProxyJsonObject(
+        agentEvaluationControllerProxyReserve($prepared['request'], $count, $state),
+    );
+    agentEvaluationControllerTest(
+        ($reserved['max_output_tokens'] ?? null) === 100
+        && ($reserved['store'] ?? null) === false
+        && ($reserved['truncation'] ?? null) === 'disabled'
+        && ($state['reserved_input'] ?? null) === 20
+        && ($state['reserved_output'] ?? null) === 100,
+        'The host proxy must reserve counted input and cap output before a create request.',
+    );
+    $usage = agentEvaluationControllerProxyComplete($completed, $state);
+    agentEvaluationControllerTest(
+        $usage === ['input_tokens' => 20, 'output_tokens' => 30, 'cached_tokens' => 5, 'reasoning_tokens' => 7]
+        && ($state['input_tokens'] ?? null) === 20
+        && ($state['output_tokens'] ?? null) === 30
+        && ($state['reserved_output'] ?? null) === 0,
+        'A complete fixture response must settle only the provider-reported token categories.',
+    );
+    $second = agentEvaluationControllerProxyRequest($body, $state);
+    $secondReserved = agentEvaluationControllerProxyJsonObject(
+        agentEvaluationControllerProxyReserve($second['request'], $count, $state),
+    );
+    agentEvaluationControllerTest(
+        ($secondReserved['max_output_tokens'] ?? null) === 50,
+        'A second request must share the original run allowance rather than resetting quota.',
+    );
+
+    $requestControls = [
+        str_replace('"phpthis-fixture"', '"unapproved-model"', $body),
+        str_replace('"high"', '"low"', $body),
+        str_replace('"stream":true', '"stream":false', $body),
+        str_replace('"store":false', '"store":true', $body),
+        str_replace('"tools":[]', '"tools":[{"type":"web_search"}]', $body),
+        str_replace('"input":"Synthetic task."', '"input":[{"type":"message","role":"user","content":[{"type":"input_image","image_url":"https://example.invalid/image"}]}]', $body),
+        str_replace('"tools":[]', '"tools":[],"previous_response_id":"unapproved"', $body),
+        str_replace('"tools":[]', '"tools":[],"client_metadata":"invalid"', $body),
+        str_replace('"stream":true', '"stream":true,"str\\u0065am":true', $body),
+    ];
+
+    foreach ($requestControls as $invalidBody) {
+        $invalidState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+        agentEvaluationControllerExpectFailure(
+            static function () use ($invalidBody, &$invalidState): void {
+                agentEvaluationControllerProxyRequest($invalidBody, $invalidState);
+            },
+            'AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_REJECTED',
+        );
+        agentEvaluationControllerTest(
+            ($invalidState['blocked'] ?? null) === true,
+            'An unapproved model, hosted action, retained state, or ambiguous request must close the run proxy.',
+        );
+        $inventory = agentEvaluationControllerLiveExternalActions([], $invalidState);
+        agentEvaluationControllerTest(
+            $inventory['host_proxy_requests'] === 1 && !$inventory['approved']
+            && ($invalidState['request_count'] ?? null) === 0
+            && ($invalidState['last_request_sha256'] ?? null) === hash('sha256', $invalidBody)
+            && is_string($invalidState['request_rejection_stage'] ?? null),
+            'A rejected request must retain its observed attempt and hash separately from authorized reservations.',
+        );
+    }
+
+    $pendingState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+    agentEvaluationControllerProxyRequest($body, $pendingState);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($body, &$pendingState): void {
+            agentEvaluationControllerProxyRequest($body, $pendingState);
+        },
+        'AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_REJECTED',
+    );
+    $exhaustedState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 35);
+    $exhaustedRequest = agentEvaluationControllerProxyRequest($body, $exhaustedState);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($exhaustedRequest, $count, &$exhaustedState): void {
+            agentEvaluationControllerProxyReserve($exhaustedRequest['request'], $count, $exhaustedState);
+        },
+        'AGENT_EVALUATION_CONTROLLER_PROXY_RESERVATION_REJECTED',
+    );
+    agentEvaluationControllerTest(
+        ($exhaustedState['blocked'] ?? null) === true
+        && ($exhaustedState['request_count'] ?? null) === 0,
+        'Insufficient quota must fail before any create request is admitted.',
+    );
+
+    $responseControls = [
+        '',
+        str_replace('"model":"phpthis-fixture"', '"model":"unapproved"', $completed),
+        str_replace('"input_tokens":20', '"input_tokens":21', $completed),
+        str_replace('"output_tokens":30', '"output_tokens":101', $completed),
+        str_replace('"total_tokens":50', '"total_tokens":49', $completed),
+        str_replace('"reasoning_tokens":7', '"reasoning_tokens":31', $completed),
+        str_replace('"usage":', '"missing_usage":', $completed),
+        $completed . $completed,
+        $completed . "data: {\"type\":\"response.created\"}\n\n",
+    ];
+
+    foreach ($responseControls as $invalidResponse) {
+        $invalidState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+        $request = agentEvaluationControllerProxyRequest($body, $invalidState);
+        agentEvaluationControllerProxyReserve($request['request'], $count, $invalidState);
+        agentEvaluationControllerExpectFailure(
+            static function () use ($invalidResponse, &$invalidState): void {
+                agentEvaluationControllerProxyComplete($invalidResponse, $invalidState);
+            },
+            'AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_REJECTED',
+        );
+        agentEvaluationControllerTest(
+            ($invalidState['blocked'] ?? null) === true,
+            'Missing, partial, inconsistent, excessive, or post-terminal usage must close the run proxy.',
+        );
+    }
+    $unknownState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+    $unknownRequest = agentEvaluationControllerProxyRequest($body, $unknownState);
+    agentEvaluationControllerProxyReserve($unknownRequest['request'], $count, $unknownState);
+    $unknownUsage = agentEvaluationControllerProxyComplete(
+        str_replace(
+            ', "input_tokens_details":{"cached_tokens":5},"output_tokens_details":{"reasoning_tokens":7}',
+            '',
+            $completed,
+        ),
+        $unknownState,
+    );
+    agentEvaluationControllerTest(
+        $unknownUsage['cached_tokens'] === null && $unknownUsage['reasoning_tokens'] === null,
+        'Absent provider token subcategories remain unknown rather than being inferred.',
+    );
 }
 
 function agentEvaluationControllerTestProcessBounds(string $root): void
@@ -1044,6 +1252,337 @@ function agentEvaluationControllerTestWorkspaceControls(
     }
 
     agentEvaluationControllerRemoveTree($cleanupControl['run_root']);
+}
+
+/** @param array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int} $budgets */
+function agentEvaluationControllerTestLiveConfiguration(string $root, string $temporaryRoot, array $budgets): void
+{
+    $dependencies = $temporaryRoot . '/live-configuration-dependencies';
+    $lock = $temporaryRoot . '/live-configuration.lock';
+    $path = $temporaryRoot . '/live-configuration.json';
+    $autoloadBytes = "<?php\n// Inert configuration fixture; never loaded.\n";
+    $lockBytes = "{\"packages\":[]}\n";
+    if (!mkdir($dependencies, 0700)
+        || file_put_contents($dependencies . '/autoload.php', $autoloadBytes, LOCK_EX) !== strlen($autoloadBytes)
+        || !chmod($dependencies . '/autoload.php', 0644)
+        || file_put_contents($lock, $lockBytes, LOCK_EX) !== strlen($lockBytes)
+    ) {
+        throw new RuntimeException('Unable to prepare the live configuration control.');
+    }
+    $profile = agentEvaluationControllerSyntheticProfile($budgets);
+    $profile['condition'] = 'repository-only-controller-v0.2-live-fixture';
+    $profile['runner'] = ['name' => 'codex-exec', 'version' => '0.153.1'];
+    $profile['model'] = [
+        'provider' => 'openai', 'id' => 'phpthis-fixture', 'revision' => null,
+        'settings' => ['reasoning_effort' => 'high'],
+    ];
+    $profile['tools'] = [[
+        'name' => 'shell', 'version' => null,
+        'permissions' => ['workspace-read', 'workspace-write', 'process-execute'],
+    ]];
+    $isolation = agentEvaluationControllerLiveIsolationProfile($budgets);
+    $isolation['uid'] = 65534;
+    $profile['isolation'] = $isolation;
+    $toolchain = [
+        'php_version' => '8.4.19', 'composer_version' => '2.8.12', 'python_version' => '3.11.9',
+        'codex_version' => null, 'relay_sha256' => null,
+    ];
+    $configuration = [
+        'profile' => $profile,
+        'engine' => [
+            'docker_binary' => $temporaryRoot . '/absent-docker',
+            'docker_socket' => $temporaryRoot . '/absent-docker.sock',
+            'generation_image' => $isolation['image_reference'],
+            'scoring_image' => 'registry.invalid/phpthis/scoring@sha256:' . str_repeat('b', 64),
+            'generation_toolchain' => [
+                ...$toolchain, 'codex_version' => '0.153.1', 'relay_sha256' => str_repeat('c', 64),
+            ],
+            'scoring_toolchain' => $toolchain,
+        ],
+        'prepared_dependencies' => $dependencies,
+        'prepared_lock' => $lock,
+        'prepared_dependencies_sha256' => agentEvaluationControllerDescribeTree($dependencies, 'configuration fixture', true)['sha256'],
+        'prepared_lock_sha256' => hash('sha256', $lockBytes),
+        'approval' => [
+            'reference' => 'synthetic-configuration-test', 'model' => 'phpthis-fixture',
+            'runs' => 1, 'spending_ceiling_usd' => '1.00',
+        ],
+    ];
+    $writeConfiguration = static function () use ($path, &$configuration): void {
+        $bytes = agentEvaluationJson($configuration);
+        if (file_put_contents($path, $bytes, LOCK_EX) !== strlen($bytes)) {
+            throw new RuntimeException('Unable to write the live configuration control.');
+        }
+        clearstatcache(true, $path);
+    };
+    $writeConfiguration();
+    $accepted = agentEvaluationControllerReadLiveConfiguration($path);
+    agentEvaluationControllerTest(
+        $accepted['prepared_dependencies'] === $dependencies
+        && $accepted['prepared_lock_sha256'] === hash('sha256', $lockBytes),
+        'An exact live configuration must parse without starting OCI or executing prepared dependencies.',
+    );
+
+    foreach (['php_version' => '8.4.18', 'composer_version' => '2.8.11'] as $field => $mismatched) {
+        $configuration['engine']['scoring_toolchain'][$field] = $mismatched;
+        $writeConfiguration();
+        agentEvaluationControllerExpectFailure(
+            static function () use ($path): void {
+                agentEvaluationControllerReadLiveConfiguration($path);
+            },
+            'Generation and scoring must use the same exact PHP and Composer versions.',
+        );
+        $configuration['engine']['scoring_toolchain'][$field] = $toolchain[$field];
+    }
+
+    $configuration['profile']['isolation']['uid'] = 65533;
+    $writeConfiguration();
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path): void {
+            agentEvaluationControllerReadLiveConfiguration($path);
+        },
+        'The live generation profile must record its fixed OCI identity 65534.',
+    );
+    $configuration['profile']['isolation']['uid'] = 65534;
+    $writeConfiguration();
+    $oversized = fopen($lock, 'wb');
+    if ($oversized === false) {
+        throw new RuntimeException('Unable to open the oversized lock control.');
+    }
+    try {
+        if (!ftruncate($oversized, AGENT_EVALUATION_MAX_ARTIFACT_BYTES + 1)) {
+            throw new RuntimeException('Unable to size the oversized lock control.');
+        }
+    } finally {
+        fclose($oversized);
+    }
+    clearstatcache(true, $lock);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path): void {
+            agentEvaluationControllerReadLiveConfiguration($path);
+        },
+        'live prepared lock exceeds its bounded file size.',
+    );
+    if (file_put_contents($lock, $lockBytes, LOCK_EX) !== strlen($lockBytes)) {
+        throw new RuntimeException('Unable to restore the bounded lock control.');
+    }
+    clearstatcache(true, $lock);
+    $configuration['approval']['spending_ceiling_usd'] = '0.00';
+    $writeConfiguration();
+    $zeroSpend = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $root . '/tools/agent-evaluation-controller.php', 'run',
+            '00000000000000000000000000000042', $path],
+        $root,
+        agentEvaluationControllerMinimalProcessEnvironment(),
+        '',
+        5,
+        4_096,
+    );
+    agentEvaluationControllerTest(
+        $zeroSpend['exit_code'] === 1 && $zeroSpend['termination_reason'] === 'process_failed'
+        && $zeroSpend['stdout'] === ''
+        && $zeroSpend['stderr'] === "FAIL agent evaluation controller: A zero-spend integration approval cannot authorize a paid run.\n",
+        'The paid CLI must reject zero spending before credential validation, OCI, or evidence creation.',
+    );
+}
+
+function agentEvaluationControllerTestLiveFailureEvidence(string $temporaryRoot): void
+{
+    $score = [
+        'exit_code' => 0, 'timed_out' => false, 'output_limit_exceeded' => false,
+        'oom_killed' => false, 'termination_reason' => 'completed', 'container_destroyed' => true,
+    ];
+    agentEvaluationControllerTest(
+        !agentEvaluationControllerLiveCheckPassed($score)
+        && !agentEvaluationControllerLiveCheckPassed([...$score, 'container_started' => false])
+        && agentEvaluationControllerLiveCheckPassed([...$score, 'container_started' => true]),
+        'A successful and cleaned scorer result must also prove that its container actually started.',
+    );
+    $score['container_started'] = true;
+    foreach ([
+        ['timed_out' => true],
+        ['output_limit_exceeded' => true],
+        ['oom_killed' => true],
+        ['oom_killed' => null],
+        ['container_started' => false],
+        ['container_destroyed' => false],
+        ['exit_code' => -1],
+        ['exit_code' => 256],
+        ['exit_code' => '0'],
+        ['termination_reason' => null],
+        ['termination_reason' => 'unexpected'],
+        ['termination_reason' => 'cleanup_failed'],
+    ] as $invalid) {
+        $result = [...$score, ...$invalid];
+        agentEvaluationControllerTest(
+            !agentEvaluationControllerLiveCheckAdmissible($result)
+            && !agentEvaluationControllerLiveCheckPassed($result),
+            'Observed scorer exhaustion, unknown execution state, and infrastructure failures must make the run inadmissible.',
+        );
+    }
+    $failedCheck = [...$score, 'exit_code' => 7, 'termination_reason' => 'process_failed'];
+    agentEvaluationControllerTest(
+        agentEvaluationControllerLiveCheckAdmissible($score)
+        && agentEvaluationControllerLiveCheckAdmissible($failedCheck)
+        && !agentEvaluationControllerLiveCheckPassed($failedCheck),
+        'An actual nonzero scorer result within all execution bounds remains admissible while failing its mandatory check.',
+    );
+    $evidence = $temporaryRoot . '/empty-live-stream-evidence';
+    $controlRoot = $temporaryRoot . '/recovery-ledger-control';
+    if (!mkdir($evidence, 0700) || !mkdir($controlRoot, 0700)) {
+        throw new RuntimeException('Unable to create the live failure evidence controls.');
+    }
+    foreach (['events.jsonl', 'generation.stderr'] as $name) {
+        $path = agentEvaluationControllerWriteArtifact($evidence, $name, '');
+        agentEvaluationControllerTest(
+            file_get_contents($path) === '' && filesize($path) === 0
+            && agentEvaluationFileHash($path, 'empty stream control') === hash('sha256', ''),
+            'Empty observed streams must retain their exact zero bytes and SHA-256.',
+        );
+    }
+    agentEvaluationControllerExpectFailureContains(
+        static function () use ($evidence): void {
+            agentEvaluationControllerWriteArtifact($evidence, 'proxy.json', '');
+        },
+        'only observed streams may be empty',
+    );
+    $manifest = agentEvaluationControllerEvidenceManifest(
+        $evidence,
+        '00000000000000000000000000000042',
+        ['prepare', 'generate', 'cleanup'],
+        ['phase' => 'generate', 'class' => 'RuntimeException'],
+        null,
+        false,
+    );
+    $artifacts = agentEvaluationRequireObject($manifest, 'artifacts', 'empty stream manifest');
+    foreach (['events.jsonl', 'generation.stderr'] as $name) {
+        $descriptor = agentEvaluationRequireObject($artifacts, $name, 'empty stream descriptor');
+        agentEvaluationControllerTest(
+            $descriptor === ['bytes' => 0, 'sha256' => hash('sha256', '')],
+            'Failed-run evidence manifests must bind zero-byte observed streams.',
+        );
+    }
+
+    agentEvaluationControllerTest(
+        agentEvaluationControllerReadOciRecoveryLedger($controlRoot) === null,
+        'No owned resource ledger must remain distinguishable from an empty owned resource ledger.',
+    );
+    $ledger = ['owner' => 'phpthis-test-owner', 'run_id' => str_repeat('0', 32), 'containers' => [], 'volumes' => []];
+    foreach ([
+        ['containers' => [], 'volumes' => []],
+        ['containers' => ['generation' => 'phpthis-test-generation'], 'volumes' => ['candidate' => 'phpthis-test-candidate']],
+    ] as $resources) {
+        $ledger['containers'] = $resources['containers'];
+        $ledger['volumes'] = $resources['volumes'];
+        $bytes = agentEvaluationJson($ledger);
+        if (file_put_contents($controlRoot . '/owned-resources.json', $bytes, LOCK_EX) !== strlen($bytes)) {
+            throw new RuntimeException('Unable to write the recovery ledger control.');
+        }
+        clearstatcache(true, $controlRoot . '/owned-resources.json');
+        agentEvaluationControllerTest(
+            agentEvaluationControllerReadOciRecoveryLedger($controlRoot) === $ledger,
+            'Recovery parsing must preserve both empty resource maps and the exact remaining resource names.',
+        );
+    }
+
+    $command = ['id' => 'command_1', 'type' => 'command_execution', 'command' => 'sleep 30'];
+    $started = ['type' => 'item.started', 'item' => $command];
+    $completed = ['type' => 'item.completed', 'item' => $command];
+    $proxy = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 100);
+    $expected = [['item_id' => 'command_1', 'sha256' => hash('sha256', 'sleep 30'), 'bytes' => 8]];
+    foreach ([[$started], [$started, $completed]] as $events) {
+        $inventory = agentEvaluationControllerLiveExternalActions($events, $proxy);
+        agentEvaluationControllerTest(
+            $inventory['approved'] && $inventory['observed_commands'] === $expected,
+            'Known commands must survive interruption before completion and be deduplicated across item phases.',
+        );
+    }
+    $completed['item']['command'] = 'changed command';
+    $conflicting = agentEvaluationControllerLiveExternalActions([$started, $completed], $proxy);
+    agentEvaluationControllerTest(
+        !$conflicting['approved'] && $conflicting['observed_commands'] === $expected,
+        'A changed command under one item ID must fail closed while preserving the original observed command.',
+    );
+}
+
+function agentEvaluationControllerTestLiveUsage(): void
+{
+    $usage = [
+        'input_tokens' => 200, 'cached_input_tokens' => 5, 'cache_write_input_tokens' => 7,
+        'output_tokens' => 200, 'reasoning_output_tokens' => 11,
+    ];
+    $events = [
+        ['type' => 'thread.started', 'thread_id' => 'synthetic-live-usage'],
+        ['type' => 'turn.started'],
+        ['type' => 'turn.completed', 'usage' => $usage],
+    ];
+    $jsonl = implode("\n", array_map(static fn (array $event): string => json_encode($event, JSON_THROW_ON_ERROR), $events)) . "\n";
+    $parsed = agentEvaluationControllerParseCodexEvents($jsonl, 400, true);
+    agentEvaluationControllerTest(
+        $parsed['valid'] && $parsed['completed'] && $parsed['events'] === $events
+        && $parsed['usage'] === ['input_tokens' => 200, 'output_tokens' => 200, 'cached_tokens' => 5, 'reasoning_tokens' => 11],
+        'Pinned live usage must retain the distinct raw cache-write category without adding it to cached reads or total input.',
+    );
+    agentEvaluationControllerTest(
+        !agentEvaluationControllerParseCodexEvents($jsonl, 400)['valid'],
+        'Live runner usage extensions must preserve the existing strict synthetic event contract.',
+    );
+    foreach ([
+        ['cache_write_input_tokens' => -1],
+        ['cache_write_input_tokens' => 201],
+        ['cache_write_input_tokens' => '0'],
+        ['cached_input_tokens' => 201],
+        ['reasoning_output_tokens' => 201],
+        ['unexpected_tokens' => 0],
+    ] as $invalid) {
+        agentEvaluationControllerTest(
+            agentEvaluationControllerParseCodexUsage([...$usage, ...$invalid], true) === null,
+            'Live usage must reject malformed, excessive, or unknown token categories.',
+        );
+    }
+    agentEvaluationControllerTest(
+        agentEvaluationControllerParseCodexUsage(['input_tokens' => 200, 'output_tokens' => 200], true)
+            === ['input_tokens' => 200, 'output_tokens' => 200, 'cached_tokens' => null, 'reasoning_tokens' => null],
+        'Missing live usage details must remain unknown.',
+    );
+}
+
+function agentEvaluationControllerTestUnsettledCleanup(string $temporaryRoot): void
+{
+    $controlRoot = $temporaryRoot . '/pending-creation-control';
+    $binary = $controlRoot . '/engine-sentinel';
+    $sentinel = "#!/bin/sh\n: > engine-invoked\nexit 99\n";
+    if (!mkdir($controlRoot, 0700)
+        || file_put_contents($binary, $sentinel, LOCK_EX) !== strlen($sentinel)
+        || !chmod($binary, 0700)
+    ) {
+        throw new RuntimeException('Unable to prepare the unsettled-creation cleanup control.');
+    }
+    $containers = ['pending-creation-generation' => 'phpthis-test-pending-generation'];
+    $volumes = ['dependencies' => 'phpthis-test-dependencies'];
+    $resources = [
+        'engine' => [
+            'binary' => $binary, 'socket' => $controlRoot . '/absent.sock',
+            'config_root' => $controlRoot, 'control_root' => $controlRoot,
+            'configuration' => ['synthetic' => true],
+        ],
+        'owner' => 'phpthis-test-owner', 'run_id' => str_repeat('0', 32),
+        'containers' => $containers, 'volumes' => $volumes,
+        'generation' => null, 'generation_stopped' => false,
+        'generation_destroyed' => false, 'frozen' => false,
+        'candidate_target' => $controlRoot . '/candidate',
+    ];
+    agentEvaluationControllerOciWriteLedger($resources);
+    $before = agentEvaluationFileHash($controlRoot . '/owned-resources.json', 'pending creation ledger');
+    $cleanup = agentEvaluationControllerOciCleanup($resources);
+    agentEvaluationControllerTest(
+        !$cleanup['verified'] && $cleanup['status'] === 'fail'
+        && $cleanup['containers_remaining'] === 1 && $cleanup['volumes_remaining'] === 1
+        && $resources['containers'] === $containers && $resources['volumes'] === $volumes
+        && !file_exists($controlRoot . '/engine-invoked')
+        && agentEvaluationFileHash($controlRoot . '/owned-resources.json', 'pending creation ledger') === $before,
+        'An uncertain container creation must retain all dependency volumes and recovery names without invoking the engine.',
+    );
 }
 
 function agentEvaluationControllerTest(bool $condition, string $message): void

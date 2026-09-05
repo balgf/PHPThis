@@ -113,6 +113,10 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
 
     $tools = agentEvaluationRequireList($profile, 'tools', 'controller execution profile');
     agentEvaluationValidateTools($tools);
+    $tools = array_map(
+        static fn (mixed $tool): array => agentEvaluationValueObject($tool, 'controller tool profile'),
+        $tools,
+    );
     agentEvaluationControllerValidateToolsProfile($tools, $synthetic);
     $budgets = agentEvaluationRequireObject($profile, 'budgets', 'controller execution profile');
     /** @var array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int} $taskBudgets */
@@ -428,4 +432,147 @@ function agentEvaluationControllerBoundedLabel(string $value, string $owner): st
     }
 
     return $value;
+}
+
+/** @return array<string, mixed> */
+function agentEvaluationControllerReadLiveConfiguration(string $path): array
+{
+    $size = is_file($path) && !is_link($path) ? filesize($path) : false;
+
+    if (!is_int($size) || $size < 1 || $size > 65_536) {
+        throw new RuntimeException('Live configuration must be one bounded regular JSON file.');
+    }
+
+    $configuration = agentEvaluationJsonFile($path);
+    agentEvaluationRequireExactKeys(
+        $configuration,
+        [
+            'profile', 'engine', 'prepared_dependencies', 'prepared_lock',
+            'prepared_dependencies_sha256', 'prepared_lock_sha256', 'approval',
+        ],
+        'controller live configuration',
+    );
+    $task = agentEvaluationTask(dirname(__DIR__) . '/agent-evaluation', AGENT_EVALUATION_CONTROLLER_TASK_ID);
+    $profile = agentEvaluationControllerValidateProfile(
+        agentEvaluationRequireObject($configuration, 'profile', 'controller live configuration'),
+        $task,
+        false,
+    );
+    $context = agentEvaluationRequireObject($profile, 'context', 'controller live profile');
+
+    if (($context['bundle_id'] ?? null) !== null || ($context['bundle_sha256'] ?? null) !== null) {
+        throw new RuntimeException('The public smoke runner accepts repository context without an additional bundle.');
+    }
+
+    $engine = agentEvaluationRequireObject($configuration, 'engine', 'controller live configuration');
+    agentEvaluationRequireExactKeys(
+        $engine,
+        [
+            'docker_binary', 'docker_socket', 'generation_image', 'scoring_image',
+            'generation_toolchain', 'scoring_toolchain',
+        ],
+        'controller OCI configuration',
+    );
+    foreach (['docker_binary', 'docker_socket'] as $name) {
+        $value = agentEvaluationRequireNonEmptyString($engine, $name, 'controller OCI configuration');
+        if (!str_starts_with($value, '/') || strlen($value) > 1_024 || preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
+            throw new RuntimeException('Controller OCI paths must be bounded absolute paths.');
+        }
+    }
+    foreach (['generation_image', 'scoring_image'] as $name) {
+        $value = agentEvaluationRequireNonEmptyString($engine, $name, 'controller OCI configuration');
+        if (strlen($value) > 255 || preg_match('/\A[a-z0-9][a-z0-9._:\/-]*@sha256:[a-f0-9]{64}\z/D', $value) !== 1) {
+            throw new RuntimeException('Controller OCI images must use exact digest-pinned references.');
+        }
+    }
+    $isolation = agentEvaluationRequireObject($profile, 'isolation', 'controller live profile');
+    if ($isolation['uid'] !== 65534) {
+        throw new RuntimeException('The live generation profile must record its fixed OCI identity 65534.');
+    }
+    if ($engine['generation_image'] !== $isolation['image_reference'] || $engine['generation_image'] === $engine['scoring_image']) {
+        throw new RuntimeException('Generation identity must match the profile and scoring must use its separate image.');
+    }
+    foreach (['generation_toolchain', 'scoring_toolchain'] as $name) {
+        $toolchain = agentEvaluationRequireObject($engine, $name, 'controller OCI configuration');
+        agentEvaluationRequireExactKeys(
+            $toolchain,
+            ['php_version', 'composer_version', 'python_version', 'codex_version', 'relay_sha256'],
+            'controller OCI toolchain',
+        );
+        foreach (['php_version', 'composer_version', 'python_version'] as $versionName) {
+            $version = agentEvaluationRequireNonEmptyString($toolchain, $versionName, 'controller OCI toolchain');
+            if (preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\z/D', $version) !== 1) {
+                throw new RuntimeException('Controller toolchain requires exact three-part versions.');
+            }
+        }
+        if (!str_starts_with(agentEvaluationRequireString($toolchain, 'php_version', 'controller OCI toolchain'), '8.4.')) {
+            throw new RuntimeException('Controller toolchain requires the supported PHP 8.4 minor.');
+        }
+        if ($name === 'generation_toolchain') {
+            $runner = agentEvaluationRequireObject($profile, 'runner', 'controller live profile');
+            if (agentEvaluationRequireNonEmptyString($toolchain, 'codex_version', 'controller OCI toolchain') !== $runner['version']) {
+                throw new RuntimeException('Pinned Codex version must match the recorded runner version.');
+            }
+            agentEvaluationRequireHash(
+                agentEvaluationRequireString($toolchain, 'relay_sha256', 'controller OCI toolchain'),
+                'controller relay',
+            );
+        } elseif ($toolchain['codex_version'] !== null || $toolchain['relay_sha256'] !== null) {
+            throw new RuntimeException('Scoring must have neither Codex nor the generation relay.');
+        }
+        $engine[$name] = $toolchain;
+    }
+    $generationToolchain = agentEvaluationRequireObject($engine, 'generation_toolchain', 'controller OCI configuration');
+    $scoringToolchain = agentEvaluationRequireObject($engine, 'scoring_toolchain', 'controller OCI configuration');
+    foreach (['php_version', 'composer_version'] as $versionName) {
+        if ($generationToolchain[$versionName] !== $scoringToolchain[$versionName]) {
+            throw new RuntimeException('Generation and scoring must use the same exact PHP and Composer versions.');
+        }
+    }
+
+    $dependencies = agentEvaluationControllerExistingRoot(
+        agentEvaluationRequireNonEmptyString($configuration, 'prepared_dependencies', 'controller live configuration'),
+        'live prepared dependencies',
+    );
+    $lock = agentEvaluationRequireNonEmptyString($configuration, 'prepared_lock', 'controller live configuration');
+    if (!str_starts_with($lock, '/') || !is_file($lock) || is_link($lock)) {
+        throw new RuntimeException('Live preparation requires an explicit regular lock file outside the candidate.');
+    }
+    agentEvaluationRequireBoundedFile($lock, AGENT_EVALUATION_MAX_ARTIFACT_BYTES, 'live prepared lock');
+    foreach (['prepared_dependencies_sha256', 'prepared_lock_sha256'] as $name) {
+        agentEvaluationRequireHash(
+            agentEvaluationRequireString($configuration, $name, 'controller live configuration'),
+            'controller prepared input',
+        );
+    }
+    $lockHash = agentEvaluationRequireString($configuration, 'prepared_lock_sha256', 'controller live configuration');
+    $dependencyHash = agentEvaluationRequireString($configuration, 'prepared_dependencies_sha256', 'controller live configuration');
+    agentEvaluationRequireFileHash($lock, $lockHash, 'live prepared lock');
+    $tree = agentEvaluationControllerDescribeTree($dependencies, 'live prepared dependencies', true);
+    if (!hash_equals($dependencyHash, $tree['sha256']) || !is_file($dependencies . '/autoload.php')) {
+        throw new RuntimeException('Live prepared dependencies do not match their reviewed manifest identity.');
+    }
+    $approval = agentEvaluationRequireObject($configuration, 'approval', 'controller live configuration');
+    agentEvaluationRequireExactKeys(
+        $approval,
+        ['reference', 'model', 'runs', 'spending_ceiling_usd'],
+        'controller smoke approval record',
+    );
+    agentEvaluationControllerBoundedLabel(
+        agentEvaluationRequireNonEmptyString($approval, 'reference', 'controller smoke approval record'),
+        'Controller approval reference',
+    );
+    $model = agentEvaluationRequireObject($profile, 'model', 'controller live profile');
+    $ceiling = agentEvaluationRequireString($approval, 'spending_ceiling_usd', 'controller smoke approval record');
+    if ($approval['model'] !== $model['id'] || $approval['runs'] !== 1 || preg_match('/\A(?:0|[1-9][0-9]{0,3})\.[0-9]{2}\z/D', $ceiling) !== 1) {
+        throw new RuntimeException('The smoke approval must name the exact model, one run, and a bounded decimal spending ceiling.');
+    }
+
+    return [
+        ...$configuration,
+        'profile' => $profile,
+        'engine' => $engine,
+        'approval' => $approval,
+        'prepared_dependencies' => $dependencies,
+    ];
 }
