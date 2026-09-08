@@ -419,3 +419,184 @@ function agentEvaluationValidateDependencyManifest(string $path): void
         $seenPaths[$dependencyPath] = true;
     }
 }
+
+/**
+ * Version 2 records include every planned slot; absence of generated artifacts is
+ * represented explicitly rather than inventing a completed version-1 run.
+ *
+ * @param array<string, mixed> $record
+ * @param array<string, mixed> $task
+ * @param array{slot:int,round:int,task_id:string,condition:string} $slot
+ */
+function agentEvaluationValidateComparisonRunRecord(
+    array $record,
+    array $task,
+    array $slot,
+    string $campaignId,
+    string $protocolHash,
+): void {
+    $owner = 'comparison attempt';
+    agentEvaluationRequireExactKeys($record, [
+        'schema_version', 'campaign_id', 'slot', 'run_id', 'task_id', 'task_revision',
+        'condition', 'protocol_sha256', 'task_manifest_sha256', 'source_revision',
+        'base_fixture_sha256', 'prepared_dependencies_manifest_sha256', 'prepared_lock_sha256',
+        'profile_sha256', 'holdout_sha256', 'status', 'phase', 'termination_reason',
+        'usage', 'elapsed_milliseconds', 'repair_turns', 'unknown_metrics', 'artifacts',
+    ], $owner);
+    if (agentEvaluationRequireInteger($record, 'schema_version', $owner) !== 2
+        || agentEvaluationRequireString($record, 'campaign_id', $owner) !== $campaignId
+        || preg_match('/\A[a-f0-9]{32}\z/D', $campaignId) !== 1
+        || agentEvaluationRequireInteger($record, 'slot', $owner) !== $slot['slot']
+        || $slot['slot'] < 1 || $slot['slot'] > 60
+        || agentEvaluationRequireString($record, 'task_id', $owner) !== $slot['task_id']
+        || agentEvaluationRequireString($task, 'id', $owner) !== $slot['task_id']
+        || agentEvaluationRequireString($record, 'condition', $owner) !== $slot['condition']
+        || !in_array($slot['condition'], ['phpthis', 'plain-php'], true)
+        || agentEvaluationRequireInteger($record, 'task_revision', $owner) !== agentEvaluationRequireInteger($task, 'revision', $owner)
+    ) {
+        throw new RuntimeException('Comparison attempt must match its fixed campaign slot and task revision.');
+    }
+    $expectedRunId = substr(hash('sha256', $campaignId . ':' . $slot['slot']), 0, 32);
+    if (agentEvaluationRequireString($record, 'run_id', $owner) !== $expectedRunId) {
+        throw new RuntimeException('Comparison run ID must equal its deterministic campaign slot identity.');
+    }
+    foreach ([
+        'protocol_sha256', 'task_manifest_sha256', 'base_fixture_sha256',
+        'prepared_dependencies_manifest_sha256', 'prepared_lock_sha256', 'profile_sha256', 'holdout_sha256',
+    ] as $name) {
+        agentEvaluationRequireHash(agentEvaluationRequireString($record, $name, $owner), $owner . ' ' . $name);
+    }
+    if ($record['protocol_sha256'] !== $protocolHash
+        || $record['task_manifest_sha256'] !== agentEvaluationRequireString($task, 'manifest_sha256', $owner)
+    ) {
+        throw new RuntimeException('Comparison attempt protocol and task hashes must match their frozen identities.');
+    }
+    $sourceRevision = agentEvaluationRequireString($record, 'source_revision', $owner);
+    if (preg_match('/\A[a-f0-9]{40}(?:[a-f0-9]{24})?\z/D', $sourceRevision) !== 1) {
+        throw new RuntimeException('Comparison source revision must be one exact Git object ID.');
+    }
+    $conditions = agentEvaluationRequireList($task, 'conditions', $owner);
+    $matched = false;
+    foreach ($conditions as $conditionValue) {
+        $condition = agentEvaluationValueObject($conditionValue, $owner . ' condition');
+        if (($condition['id'] ?? null) !== $slot['condition']) {
+            continue;
+        }
+        $base = agentEvaluationRequireObject($condition, 'base', $owner);
+        $matched = $record['base_fixture_sha256'] === ($base['fixture_sha256'] ?? null);
+    }
+    $checks = agentEvaluationRequireObject($task, 'checks', $owner);
+    $holdout = agentEvaluationRequireObject($checks, 'holdout', $owner);
+    if (!$matched || $record['holdout_sha256'] !== ($holdout['sha256'] ?? null)) {
+        throw new RuntimeException('Comparison fixture and private holdout must match the selected condition and task.');
+    }
+    $status = agentEvaluationRequireString($record, 'status', $owner);
+    $phase = agentEvaluationRequireString($record, 'phase', $owner);
+    if (!in_array($status, ['planned', 'running', 'complete', 'failed', 'not_run'], true)
+        || !in_array($phase, ['planned', 'prepare', 'generate', 'freeze', 'score', 'validate', 'retain', 'cleanup', 'finished'], true)
+    ) {
+        throw new RuntimeException('Comparison attempt state is not one fixed lifecycle state.');
+    }
+    $termination = agentEvaluationRequireNullableString($record, 'termination_reason', $owner);
+    if ($termination !== null && (strlen($termination) > 128 || preg_match('/\A[a-zA-Z0-9_.-]+\z/D', $termination) !== 1)) {
+        throw new RuntimeException('Comparison termination must be one bounded structural code.');
+    }
+    if ((in_array($status, ['planned', 'not_run'], true) && $phase !== 'planned')
+        || ($status === 'complete' && ($phase !== 'finished' || $termination !== 'completed'))
+        || ($status === 'failed' && ($termination === null || $termination === 'completed'))
+        || ($status === 'planned' && $termination !== null)
+        || ($status === 'not_run' && $termination === null)
+        || ($status === 'running' && ($termination !== null || in_array($phase, ['planned', 'finished'], true)))
+        || ($status === 'failed' && in_array($phase, ['planned', 'finished'], true))
+    ) {
+        throw new RuntimeException('Comparison attempt state and termination are inconsistent.');
+    }
+    agentEvaluationValidateUsage(agentEvaluationRequireObject($record, 'usage', $owner), 40_000);
+    $observedUsage = agentEvaluationRequireObject($record, 'usage', $owner);
+    foreach (['cached_tokens' => 'input_tokens', 'reasoning_tokens' => 'output_tokens'] as $category => $total) {
+        if (is_int($observedUsage[$category]) && is_int($observedUsage[$total]) && $observedUsage[$category] > $observedUsage[$total]) {
+            throw new RuntimeException('Comparison token categories cannot exceed their known provider totals.');
+        }
+    }
+    if (agentEvaluationRequireInteger($record, 'repair_turns', $owner) !== 0) {
+        throw new RuntimeException('The fixed comparison permits zero post-score repair turns.');
+    }
+    $elapsed = $record['elapsed_milliseconds'];
+    if ($elapsed !== null && (!is_int($elapsed) || $elapsed < 0 || $elapsed > 86_400_000)) {
+        throw new RuntimeException('Comparison elapsed time must be an observed bounded millisecond count or null.');
+    }
+    $unknown = agentEvaluationRequireObject($record, 'unknown_metrics', $owner);
+    $usage = agentEvaluationRequireObject($record, 'usage', $owner);
+    $expectedUnknown = [];
+    foreach (['input_tokens', 'output_tokens', 'cached_tokens', 'reasoning_tokens'] as $name) {
+        if ($usage[$name] === null) {
+            $expectedUnknown[] = $name;
+        }
+    }
+    if ($elapsed === null) {
+        $expectedUnknown[] = 'elapsed_milliseconds';
+    }
+    // These require an actual observation or reviewer record; the controller's
+    // fixed zero repair-turn budget cannot manufacture their values.
+    foreach (['public_check_repairs', 'human_interventions', 'reviewer_effort'] as $name) {
+        $expectedUnknown[] = $name;
+    }
+    agentEvaluationRequireExactKeys($unknown, $expectedUnknown, $owner . ' unknown metrics');
+    foreach ($expectedUnknown as $name) {
+        $reason = agentEvaluationRequireNonEmptyString($unknown, $name, $owner);
+        if (strlen($reason) > 256 || preg_match('/[\x00-\x1F\x7F]/', $reason) === 1) {
+            throw new RuntimeException('Unknown comparison metrics require a bounded single-line reason.');
+        }
+    }
+    $artifacts = agentEvaluationRequireObject($record, 'artifacts', $owner);
+    if (count($artifacts) > 64) {
+        throw new RuntimeException('Comparison attempt artifact inventory exceeds 64 entries.');
+    }
+    foreach ($artifacts as $name => $descriptorValue) {
+        agentEvaluationRequireRelativePath($name, $owner . ' artifact');
+        if (str_contains($name, '/') || in_array($name, ['attempt.json', 'comparison-score.json'], true)) {
+            throw new RuntimeException('Comparison artifact inventory must use distinct flat inputs without self-reference.');
+        }
+        $descriptor = agentEvaluationValueObject($descriptorValue, $owner . ' artifact');
+        agentEvaluationRequireExactKeys($descriptor, ['bytes', 'sha256'], $owner . ' artifact');
+        $bytes = agentEvaluationRequireNonNegativeInteger($descriptor, 'bytes', $owner . ' artifact');
+        if ($bytes > AGENT_EVALUATION_MAX_ARTIFACT_BYTES) {
+            throw new RuntimeException('Comparison retained artifact exceeds its size bound.');
+        }
+        agentEvaluationRequireHash(agentEvaluationRequireString($descriptor, 'sha256', $owner), $owner);
+    }
+    if (in_array($status, ['planned', 'not_run'], true)
+        && ($artifacts !== [] || $elapsed !== null || array_filter($usage, static fn (mixed $value): bool => $value !== null) !== [])
+    ) {
+        throw new RuntimeException('An unstarted comparison slot cannot claim execution artifacts, timing, or usage.');
+    }
+    if ($status === 'complete') {
+        foreach (['profile.json', 'events.jsonl', 'candidate.patch', 'application-check.json', 'observation-results.json', 'cleanup.json'] as $required) {
+            if (!isset($artifacts[$required])) {
+                throw new RuntimeException('A completed comparison attempt lacks required retained evidence.');
+            }
+        }
+    }
+}
+
+/** @param array<string, mixed> $record */
+function agentEvaluationValidateComparisonRunArtifacts(array $record, string $artifactRoot): void
+{
+    $artifacts = agentEvaluationRequireObject($record, 'artifacts', 'comparison retained artifacts');
+    $paths = [];
+    foreach ($artifacts as $name => $value) {
+        $descriptor = agentEvaluationValueObject($value, 'comparison artifact descriptor');
+        $path = agentEvaluationContainedArtifactPath($artifactRoot, $name, 'comparison retained artifact');
+        agentEvaluationRequireBoundedFile($path, AGENT_EVALUATION_MAX_ARTIFACT_BYTES, 'comparison retained artifact');
+        if (filesize($path) !== agentEvaluationRequireInteger($descriptor, 'bytes', 'comparison retained artifact')) {
+            throw new RuntimeException('Comparison artifact size does not match its retained descriptor.');
+        }
+        agentEvaluationRequireFileHash($path, agentEvaluationRequireString($descriptor, 'sha256', 'comparison retained artifact'), 'comparison retained artifact');
+        $paths[] = $path;
+    }
+    agentEvaluationRequireDistinctFileIdentities($paths);
+    $profile = $artifacts['profile.json'] ?? null;
+    if ($profile !== null && agentEvaluationValueObject($profile, 'comparison profile descriptor')['sha256'] !== ($record['profile_sha256'] ?? null)) {
+        throw new RuntimeException('Comparison profile provenance must bind the retained profile bytes.');
+    }
+}

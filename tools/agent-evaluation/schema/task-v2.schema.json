@@ -1,0 +1,395 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/task-v2.json",
+    "title": "PHPThis agent evaluation comparison task v2",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "id",
+        "revision",
+        "kind",
+        "protocol",
+        "prompt",
+        "rubric",
+        "conditions",
+        "budgets",
+        "checks"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 2
+        },
+        "id": {
+            "enum": [
+                "change.protected-endpoint",
+                "repair.transaction-rollback",
+                "change.filtered-collection"
+            ]
+        },
+        "revision": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "kind": {
+            "enum": [
+                "implementation",
+                "repair"
+            ]
+        },
+        "protocol": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "revision",
+                "sha256"
+            ],
+            "properties": {
+                "id": {
+                    "const": "bounded-comparison-v1"
+                },
+                "revision": {
+                    "const": 1
+                },
+                "sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "prompt": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "sha256"
+            ],
+            "properties": {
+                "path": {
+                    "const": "prompt.md"
+                },
+                "sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "rubric": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "sha256"
+            ],
+            "properties": {
+                "path": {
+                    "const": "rubric.md"
+                },
+                "sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "conditions": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "id",
+                        "base",
+                        "context_manifest",
+                        "workspace_policy"
+                    ],
+                    "properties": {
+                        "id": {
+                            "const": "phpthis"
+                        },
+                        "base": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "path",
+                                "fixture_sha256"
+                            ],
+                            "properties": {
+                                "path": {
+                                    "const": "fixtures/phpthis"
+                                },
+                                "fixture_sha256": {
+                                    "$ref": "#/$defs/sha256"
+                                }
+                            }
+                        },
+                        "context_manifest": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "path",
+                                "sha256"
+                            ],
+                            "properties": {
+                                "path": {
+                                    "const": "context/phpthis.json"
+                                },
+                                "sha256": {
+                                    "$ref": "#/$defs/sha256"
+                                }
+                            }
+                        },
+                        "workspace_policy": {
+                            "$ref": "#/$defs/workspacePolicy"
+                        }
+                    }
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "id",
+                        "base",
+                        "context_manifest",
+                        "workspace_policy"
+                    ],
+                    "properties": {
+                        "id": {
+                            "const": "plain-php"
+                        },
+                        "base": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "path",
+                                "fixture_sha256"
+                            ],
+                            "properties": {
+                                "path": {
+                                    "const": "fixtures/plain-php"
+                                },
+                                "fixture_sha256": {
+                                    "$ref": "#/$defs/sha256"
+                                }
+                            }
+                        },
+                        "context_manifest": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "path",
+                                "sha256"
+                            ],
+                            "properties": {
+                                "path": {
+                                    "const": "context/plain-php.json"
+                                },
+                                "sha256": {
+                                    "$ref": "#/$defs/sha256"
+                                }
+                            }
+                        },
+                        "workspace_policy": {
+                            "$ref": "#/$defs/workspacePolicy"
+                        }
+                    }
+                }
+            ]
+        },
+        "budgets": {
+            "const": {
+                "model_tokens": 40000,
+                "wall_seconds": 1200,
+                "repair_turns": 0,
+                "command_output_bytes": 4194304
+            }
+        },
+        "checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "application_check",
+                "holdout"
+            ],
+            "properties": {
+                "application_check": {
+                    "const": "composer check"
+                },
+                "holdout": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "id",
+                        "revision",
+                        "sha256"
+                    ],
+                    "properties": {
+                        "id": {
+                            "type": "string",
+                            "enum": [
+                                "change.protected-endpoint.holdout",
+                                "repair.transaction-rollback.holdout",
+                                "change.filtered-collection.holdout"
+                            ]
+                        },
+                        "revision": {
+                            "const": 1
+                        },
+                        "sha256": {
+                            "$ref": "#/$defs/sha256"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "$defs": {
+        "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u0020\\u007f\\\\]+$"
+        },
+        "workspacePolicy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "allowed_existing_paths",
+                "allowed_new_paths",
+                "protected_paths",
+                "max_changed_files",
+                "max_added_lines",
+                "max_deleted_lines"
+            ],
+            "properties": {
+                "allowed_existing_paths": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/path"
+                    },
+                    "maxItems": 128,
+                    "uniqueItems": true
+                },
+                "allowed_new_paths": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/path"
+                    },
+                    "maxItems": 128,
+                    "uniqueItems": true
+                },
+                "protected_paths": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/path"
+                    },
+                    "minItems": 1,
+                    "maxItems": 128,
+                    "uniqueItems": true
+                },
+                "max_changed_files": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 128
+                },
+                "max_added_lines": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4096
+                },
+                "max_deleted_lines": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4096
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "id": {
+                        "const": "change.protected-endpoint"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "kind": {
+                        "const": "implementation"
+                    },
+                    "checks": {
+                        "properties": {
+                            "holdout": {
+                                "properties": {
+                                    "id": {
+                                        "const": "change.protected-endpoint.holdout"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "id": {
+                        "const": "repair.transaction-rollback"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "kind": {
+                        "const": "repair"
+                    },
+                    "checks": {
+                        "properties": {
+                            "holdout": {
+                                "properties": {
+                                    "id": {
+                                        "const": "repair.transaction-rollback.holdout"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "id": {
+                        "const": "change.filtered-collection"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "kind": {
+                        "const": "implementation"
+                    },
+                    "checks": {
+                        "properties": {
+                            "holdout": {
+                                "properties": {
+                                    "id": {
+                                        "const": "change.filtered-collection.holdout"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

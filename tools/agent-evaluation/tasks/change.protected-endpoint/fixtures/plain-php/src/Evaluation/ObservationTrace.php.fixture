@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+final class ObservationTrace
+{
+    /** @var list<array{fingerprint:string,failed:bool}> */
+    private array $entries = [];
+    private int $startedStatements = 0;
+
+    public function assertStatementAvailable(): void
+    {
+        if ($this->startedStatements >= 256) {
+            throw new \RuntimeException('Observation query bound exceeded.');
+        }
+    }
+
+    public function beginStatement(): void
+    {
+        $this->assertStatementAvailable();
+        $this->startedStatements++;
+    }
+
+    public function record(string $sql, bool $failed): void
+    {
+        $this->entries[] = ['fingerprint' => 'sha256:' . hash('sha256', $sql), 'failed' => $failed];
+    }
+
+    /** @return array{statements:int,failures:int,queries:list<array{fingerprint:string,executions:int,failures:int}>,truncated:bool} */
+    public function snapshot(): array
+    {
+        $queries = [];
+        $failures = 0;
+        foreach ($this->entries as $entry) {
+            $fingerprint = $entry['fingerprint'];
+            $query = $queries[$fingerprint] ?? ['fingerprint' => $fingerprint, 'executions' => 0, 'failures' => 0];
+            $query['executions']++;
+            $query['failures'] += $entry['failed'] ? 1 : 0;
+            $failures += $entry['failed'] ? 1 : 0;
+            $queries[$fingerprint] = $query;
+        }
+        return ['statements' => count($this->entries), 'failures' => $failures, 'queries' => array_values($queries), 'truncated' => false];
+    }
+}

@@ -1,0 +1,74 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/comparison-protocol-v1.json",
+    "title": "PHPThis bounded comparison protocol v1",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "id",
+        "revision",
+        "task_schema_version",
+        "conditions",
+        "trials_per_task_condition",
+        "budgets",
+        "schedule",
+        "attempt_policy",
+        "holdout_policy",
+        "reporting"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 1
+        },
+        "id": {
+            "const": "bounded-comparison-v1"
+        },
+        "revision": {
+            "const": 1
+        },
+        "task_schema_version": {
+            "const": 2
+        },
+        "conditions": {
+            "const": [
+                "phpthis",
+                "plain-php"
+            ]
+        },
+        "trials_per_task_condition": {
+            "const": 10
+        },
+        "budgets": {
+            "const": {
+                "model_tokens": 40000,
+                "wall_seconds": 1200,
+                "repair_turns": 0,
+                "command_output_bytes": 4194304
+            }
+        },
+        "schedule": {
+            "const": {
+                "kind": "balanced-rotating-v1"
+            }
+        },
+        "attempt_policy": {
+            "const": "retain-every-start-no-replacement-v1"
+        },
+        "holdout_policy": {
+            "const": "external-post-freeze-v1"
+        },
+        "reporting": {
+            "const": {
+                "primary_metric": "correct_completion_rate",
+                "denominator": "planned-trials",
+                "group_by": [
+                    "task_id",
+                    "condition"
+                ],
+                "unknown_metrics": "null-with-reason",
+                "human_review": "required-for-claims"
+            }
+        }
+    }
+}

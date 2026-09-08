@@ -27,7 +27,23 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE_PATH = ROOT / "tools/agent-evaluation-controller/oci/fixture-upstream.py"
 CREDENTIAL_SENTINEL = "phpthis-integration-ambient-sentinel"
+UPSTREAM_CASES = {
+    "input-http-failure": {"operation": "input_tokens", "category": "http_status", "http_status": 429,
+                           "curl_code": 0, "response_limit_exceeded": False},
+    "responses-http-failure": {"operation": "responses", "category": "http_status", "http_status": 503,
+                               "curl_code": 0, "response_limit_exceeded": False},
+    "input-transport-failure": {"operation": "input_tokens", "category": "curl", "http_status": None,
+                                "curl_code": 52, "response_limit_exceeded": False},
+    "responses-transport-failure": {"operation": "responses", "category": "curl", "http_status": None,
+                                    "curl_code": 52, "response_limit_exceeded": False},
+    "input-response-limit": {"operation": "input_tokens", "category": "response_limit", "http_status": 200,
+                             "curl_code": 23, "response_limit_exceeded": True},
+    "responses-response-limit": {"operation": "responses", "category": "response_limit", "http_status": 200,
+                                 "curl_code": 23, "response_limit_exceeded": True},
+}
 PHP_WORKER = r"""
+// Host export must preserve candidate modes even with a private runner umask.
+umask(0077);
 define('PHPTHIS_AGENT_EVALUATION_CONTROLLER_LIBRARY_ONLY', true);
 define('PHPTHIS_AGENT_EVALUATION_CONTROLLER_TESTING', true);
 define('AGENT_EVALUATION_CONTROLLER_OCI_TEST_UPSTREAM', true);
@@ -45,8 +61,15 @@ try {
     );
     fwrite(STDOUT, json_encode(['status' => 'completed', 'result' => $result], JSON_THROW_ON_ERROR) . "\n");
 } catch (Throwable $failure) {
-    fwrite(STDOUT, json_encode(['status' => 'failed', 'class' => $failure::class, 'message' => $failure->getMessage(),
-        'source' => basename($failure->getFile()) . ':' . $failure->getLine()], JSON_THROW_ON_ERROR) . "\n");
+    $result = ['status' => 'failed', 'class' => $failure::class, 'message' => $failure->getMessage(),
+        'source' => basename($failure->getFile()) . ':' . $failure->getLine()];
+    if (in_array($argv[5], ['input-http-failure', 'responses-http-failure', 'input-transport-failure',
+        'responses-transport-failure', 'input-response-limit', 'responses-response-limit'], true)) {
+        $proxy = agentEvaluationJsonFile($argv[3] . '/evidence/proxy.json');
+        $ledger = agentEvaluationRequireObject($proxy, 'ledger', 'upstream integration ledger');
+        $result['proxy_aggregate_usage'] = agentEvaluationControllerProxyAggregateUsage($ledger);
+    }
+    fwrite(STDOUT, json_encode($result, JSON_THROW_ON_ERROR) . "\n");
     exit(1);
 }
 """
@@ -152,16 +175,25 @@ def bounded_worker(arguments, server, interrupt=False):
                 process.wait(timeout=5)
 
 
-def verify_evidence(run_root, should_pass, expected_failure_phase=None):
+def verify_evidence(run_root, should_pass, expected_failure_phase=None, forbidden_markers=()):
     evidence = run_root / "evidence"
-    manifest = json.loads((evidence / "evidence-manifest.json").read_text())
+    manifest_bytes = (evidence / "evidence-manifest.json").read_bytes()
+    manifest = json.loads(manifest_bytes)
     assert manifest["synthetic"] is False
     assert manifest["comparative_claims"] is False
+    if forbidden_markers:
+        retained = list(evidence.iterdir())
+        assert all(path.is_file() and not path.is_symlink() for path in retained), "Upstream evidence must remain a flat regular-file inventory"
+        assert {path.name for path in retained} == set(manifest["artifacts"]) | {"evidence-manifest.json"}, "Every retained upstream artifact must be hash-bound; unlisted files are forbidden"
+        for marker in (CREDENTIAL_SENTINEL, *forbidden_markers):
+            assert marker.encode() not in manifest_bytes, "Raw synthetic content entered the retained manifest"
     for artifact, descriptor in manifest["artifacts"].items():
         path = evidence / artifact
         assert path.is_file() and not path.is_symlink()
         data = path.read_bytes()
         assert CREDENTIAL_SENTINEL.encode() not in data, "Ambient host sentinel entered retained evidence"
+        for marker in forbidden_markers:
+            assert marker.encode() not in data, "Raw synthetic upstream content entered retained evidence"
         assert len(data) == descriptor["bytes"]
         assert hashlib.sha256(data).hexdigest() == descriptor["sha256"]
     assert [path.name for path in run_root.iterdir()] == ["evidence"], "Disposable workspace survived cleanup"
@@ -184,6 +216,73 @@ def verify_evidence(run_root, should_pass, expected_failure_phase=None):
         assert manifest["primary_failure"]["phase"] == expected_failure_phase, "Control failed before reaching its intended boundary"
     return {"phases": manifest["observed_phases"], "artifacts": len(manifest["artifacts"]),
             "cleanup": "verified", "expected_run_success": should_pass, "control_status": "pass"}
+
+
+def verify_upstream_failure(run_root, case, requests, response_count, worker_result, input_tokens):
+    evidence = run_root / "evidence"
+    generation = json.loads((evidence / "generation-process.json").read_text())
+    expected = {"schema_version": 1, **UPSTREAM_CASES[case]}
+    diagnostic = generation["upstream_failure"]
+    assert type(diagnostic) is dict and diagnostic == expected, "The intended upstream operation and failure category were not retained exactly"
+    assert type(diagnostic["schema_version"]) is int and type(diagnostic["curl_code"]) is int
+    assert diagnostic["http_status"] is None or type(diagnostic["http_status"]) is int
+    assert diagnostic["response_limit_exceeded"] is expected["response_limit_exceeded"], "Diagnostic booleans must not be coerced from integers"
+    assert generation["failure_code"] == "AGENT_EVALUATION_CONTROLLER_PROXY_UPSTREAM_FAILED"
+    assert generation["termination_reason"] == "process_failed" and generation["exit_code"] == -1
+    assert generation["timed_out"] is False and generation["output_limit_exceeded"] is False
+    assert len(json.dumps(generation["upstream_failure"]).encode()) < 256, "Upstream diagnostics exceeded their fixed small shape"
+    for name in ["freeze.json", "candidate.patch", "candidate.manifest", "application-check.json", "score.json"]:
+        assert not (evidence / name).exists(), "Upstream rejection must not advance to candidate freeze or scoring"
+    events = [json.loads(line) for line in (evidence / "events.jsonl").read_text().splitlines()]
+    assert not any(event.get("item", {}).get("type") in ["command_execution", "file_change"] for event in events), "A failure before the first response must not execute a candidate command"
+    proxy = json.loads((evidence / "proxy.json").read_text())
+    assert proxy["synthetic_upstream"] is True and proxy["upstream_origin"] == "http://127.0.0.1:18765"
+    ledger = proxy["ledger"]
+    assert ledger["blocked"] is True and ledger["failure_reason"] is None
+    assert ledger["observed_request_count"] == 1, "The rejected request must not be retried"
+    assert isinstance(ledger["request_sha256"], str) and re.fullmatch(r"[a-f0-9]{64}", ledger["request_sha256"]), "Pending request identity was discarded"
+    assert {name: ledger[name] for name in ["input_tokens", "output_tokens", "cached_tokens", "reasoning_tokens"]} == {
+        "input_tokens": 0, "output_tokens": 0, "cached_tokens": 0, "reasoning_tokens": 0}, "Unvalidated response bytes became settled usage"
+    assert ledger["response_bytes"] == 0 and ledger["last_response_bytes"] is None and ledger["last_response_sha256"] is None
+    assert ledger["response_rejection_stage"] is None and ledger["response_observation"] is None
+    assert ledger["provider_error_event_seen"] is False and ledger["provider_error_observation"] is None
+    assert "spending" not in ledger, "The fixed zero-spend smoke fixture must not introduce a calibration money policy"
+    if expected["operation"] == "input_tokens":
+        assert [request["path"] for request in requests] == ["/v1/responses/input_tokens"] and response_count == 0
+        assert ledger["request_count"] == 0 and ledger["reserved_input"] == 0 and ledger["reserved_output"] == 0
+        assert worker_result["proxy_aggregate_usage"] == {"input_tokens": 0, "output_tokens": 0, "cached_tokens": 0, "reasoning_tokens": 0}
+    else:
+        assert [request["path"] for request in requests] == ["/v1/responses/input_tokens", "/v1/responses"] and response_count == 1
+        assert ledger["request_count"] == 1 and ledger["reserved_input"] == input_tokens
+        assert ledger["reserved_output"] == requests[1]["approved_max_output_tokens"] > 0, "The full forwarded response allowance must remain reserved"
+        assert worker_result["proxy_aggregate_usage"] == {"input_tokens": None, "output_tokens": None, "cached_tokens": None, "reasoning_tokens": None}
+    return {"diagnostic": expected, "request_count": ledger["request_count"],
+            "observed_request_count": ledger["observed_request_count"],
+            "reserved_input": ledger["reserved_input"], "reserved_output": ledger["reserved_output"],
+            "aggregate_usage": worker_result["proxy_aggregate_usage"], "retry_observed": False,
+            "raw_upstream_content_retained": False,
+            "accounting_scope": "Real token reservation boundary in the zero-spend smoke fixture; monetary reservation controls belong to the offline PHP tests."}
+
+
+def verify_prompt_delivery(run_root, requests):
+    evidence = run_root / "evidence"
+    prompt = (evidence / "prompt.md").read_bytes()
+    source_prompt = (evidence / "source-prompt.md").read_bytes()
+    task = json.loads((evidence / "task.json").read_text())
+    policy = json.loads((evidence / "workspace-policy.json").read_text())
+    assert policy == {"schema_version": 1, "kind": "generation-workspace-policy-v1",
+                      "policy": task["workspace_policy"]}, "Retained policy differs from the admitted task"
+    marker = b"## Enforced evaluation workspace policy (v1)\n"
+    assert prompt.startswith(source_prompt + b"\n\n" + marker)
+    assert prompt.count(marker) == 1, "The exact enforced policy must appear once"
+    policy_section = prompt.split(marker, 1)[1].decode("utf-8")
+    policy_blocks = re.findall(r"\n```json\n(.*?)```\n", policy_section, re.DOTALL)
+    assert len(policy_blocks) == 1 and json.loads(policy_blocks[0]) == policy["policy"], "Delivered prompt must state the exact admitted policy"
+    creates = [request for request in requests if request["path"] == "/v1/responses"]
+    assert creates, "Prompt delivery requires the actual pinned Codex Responses request"
+    descriptor = {"bytes": len(prompt), "sha256": hashlib.sha256(prompt).hexdigest()}
+    assert creates[0]["user_texts"].count(descriptor) == 1, "The first generation request must contain the exact retained prompt once as user input_text"
+    return {"retained_prompt": descriptor, "received_user_text_matches": 1, "admitted_workspace_policy": "exact"}
 
 
 def verify_engine_absence(reviewed, identity, temporary_root):
@@ -235,7 +334,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("configuration", type=Path)
     parser.add_argument("--retain-evidence", action="store_true", help="Keep validated evidence in the generated private temporary root")
-    parser.add_argument("--case", choices=["all", "complete", "scoring-boundary", "workspace-escape", "symlink", "file-mode", "relay-signal", "pids-limit", "memory-limit", "disk-limit", "token-limit", "interrupt", "wall-bound", "output-bound"], default="all")
+    parser.add_argument("--case", choices=["all", "complete", "scoring-boundary", "workspace-escape", "symlink", "file-mode", "relay-signal", "pids-limit", "memory-limit", "disk-limit", "token-limit", "interrupt", "wall-bound", "output-bound", *UPSTREAM_CASES], default="all")
     options = parser.parse_args()
     configuration = options.configuration.resolve(strict=True)
     with configuration.open("rb") as source:
@@ -264,7 +363,7 @@ def main():
               "reviewed_inputs": identities, "results": results}
     temporary_root = Path(tempfile.mkdtemp(prefix="phpthis-agent-evaluation-oci-integration-")).resolve()
     os.chmod(temporary_root, 0o700)
-    cases = ["complete", "scoring-boundary", "workspace-escape", "symlink", "file-mode", "relay-signal", "pids-limit", "memory-limit", "disk-limit", "token-limit", "interrupt", "wall-bound", "output-bound"] if options.case == "all" else [options.case]
+    cases = ["complete", "scoring-boundary", "workspace-escape", "symlink", "file-mode", "relay-signal", "pids-limit", "memory-limit", "disk-limit", "token-limit", "interrupt", "wall-bound", "output-bound", *UPSTREAM_CASES] if options.case == "all" else [options.case]
     try:
         for index, case in enumerate(cases, 1):
             server.reset("wall-limit" if case in ["interrupt", "wall-bound"] else case)
@@ -275,6 +374,9 @@ def main():
             code, stdout, stderr = bounded_worker([php, "-r", worker, str(ROOT), str(configuration), str(run_root), run_id, case], server, case == "interrupt")
             if server.failure is not None:
                 raise RuntimeError("Deterministic fixture failed: " + server.failure)
+            upstream_markers = (fixture.UPSTREAM_BODY_SENTINEL, fixture.UPSTREAM_HEADER_SENTINEL) if case in UPSTREAM_CASES else ()
+            for marker in upstream_markers:
+                assert marker.encode() not in stdout and marker.encode() not in stderr, "Raw synthetic upstream content entered worker output"
             result = json.loads(stdout)
             if primitive:
                 expected_reason = "wall_time_limit" if case == "wall-bound" else "output_limit"
@@ -301,7 +403,14 @@ def main():
             if (code == 0) != expected_pass:
                 raise RuntimeError("Unexpected " + case + " result: " + json.dumps(result) + " " + stderr.decode(errors="replace"))
             expected_phase = "freeze" if case in ["workspace-escape", "symlink", "file-mode"] else "generate"
-            evidence_result = verify_evidence(run_root, expected_pass, expected_phase)
+            evidence_result = verify_evidence(run_root, expected_pass, expected_phase, upstream_markers)
+            if case == "complete":
+                evidence_result["prompt_delivery"] = verify_prompt_delivery(run_root, server.requests)
+                generation = json.loads((run_root / "evidence/generation-process.json").read_text())
+                assert generation["upstream_failure"] is None, "Successful upstream calls must not leave a failure observation"
+            if case in UPSTREAM_CASES:
+                evidence_result["upstream_failure_control"] = verify_upstream_failure(
+                    run_root, case, server.requests, server.responses, result, fixture.INPUT_TOKENS)
             mutation_markers = {"workspace-escape": "PASS OCI unlisted file mutation", "symlink": "PASS OCI symlink mutation",
                                 "file-mode": "PASS OCI file mode mutation"}
             if case in mutation_markers:
@@ -314,9 +423,14 @@ def main():
                                    "file-mode": "AGENT_EVALUATION_CONTROLLER_OCI_CANDIDATE_MODE_CHANGED"}.get(case)
                 if expected_marker is not None:
                     assert manifest["primary_failure"]["code"] == expected_marker
+                if case == "workspace-escape":
+                    assert manifest["primary_failure"]["reason_code"] == "candidate_new_path_unapproved", "The actual unapproved-file freeze rejection must retain its fixed safe reason"
+                    evidence_result["reason_code"] = manifest["primary_failure"]["reason_code"]
                 evidence_result["mutation_verified"] = True
                 evidence_result["failure_code"] = manifest["primary_failure"].get("code")
-            if case == "token-limit":
+            if case in UPSTREAM_CASES:
+                pass  # Exact operation counts, including absence of retries, were checked above.
+            elif case == "token-limit":
                 assert server.responses == 0 and len(server.requests) == 1
             else:
                 assert server.responses >= 1, "Control never reached the real Codex Responses transport"

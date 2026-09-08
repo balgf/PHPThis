@@ -1,0 +1,3 @@
+# Architecture
+
+`evaluation/observe.php` is the protected observation composition root; Observation parses bounded cases, creates and seeds a fresh SQLite file and injects a fresh connection and Policy. Application owns request dispatch and mapped generic errors. DocumentHandler owns one named document operation and its direct SQL. Principal and Tenant carry typed authority. Observation uses a separate connection to inspect committed durable state after the operation. Never access observation internals, replace infrastructure, report fabricated measurements or create another database connection in task code.

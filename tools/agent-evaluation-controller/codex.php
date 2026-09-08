@@ -11,11 +11,17 @@ const AGENT_EVALUATION_CONTROLLER_FUTURE_CREDENTIAL_BROKER = 'responses-api-run-
 const AGENT_EVALUATION_CONTROLLER_MAX_PROMPT_BYTES = 1_048_576;
 const AGENT_EVALUATION_CONTROLLER_MAX_EVENT_BYTES = 1_048_576;
 const AGENT_EVALUATION_CONTROLLER_MAX_EVENTS = 4_096;
+// One buffered upstream response; independent of retained Codex command output.
 const AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES = 4_194_304;
 const AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_LIMIT = 128;
+// Sequential wire bytes, never a buffer allocation or a larger per-response allowance.
+const AGENT_EVALUATION_CONTROLLER_PROXY_RUN_RESPONSE_BYTES = AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_LIMIT
+    * AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES;
 
-/** @return list<string> */
-function agentEvaluationControllerLiveCodexArguments(string $model, string $reasoningEffort): array
+/** @param array<string, mixed>|null $spending
+ * @return list<string>
+ */
+function agentEvaluationControllerLiveCodexArguments(string $model, string $reasoningEffort, ?array $spending = null, ?int $modelTokenBudget = null): array
 {
     if (
         preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9._:\/-]{0,127}\z/D', $model) !== 1
@@ -23,6 +29,13 @@ function agentEvaluationControllerLiveCodexArguments(string $model, string $reas
     ) {
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_LIVE_MODEL_INVALID');
     }
+    $spending = agentEvaluationControllerProxyValidateSpending($model, $reasoningEffort, $spending);
+    $effectiveBudget = $modelTokenBudget ?? ($spending === null ? 40_000 : 200_000);
+    if ($effectiveBudget < 1 || ($spending === null && $effectiveBudget > 40_000)
+        || ($spending !== null && $effectiveBudget > 200_000 && $effectiveBudget !== 1_000_000)) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_BUDGET_INVALID');
+    }
+    $compactionLimit = $spending === null ? 40_001 : ($effectiveBudget === 1_000_000 ? 1_000_001 : 200_001);
 
     return [
         AGENT_EVALUATION_CONTROLLER_FUTURE_CODEX_PATH,
@@ -46,7 +59,7 @@ function agentEvaluationControllerLiveCodexArguments(string $model, string $reas
         '-c',
         'model_reasoning_effort="' . $reasoningEffort . '"',
         '-c',
-        'model_auto_compact_token_limit=40001',
+        'model_auto_compact_token_limit=' . $compactionLimit,
         '-c',
         'model_provider="phpthis-run-proxy"',
         '-c',
@@ -111,16 +124,15 @@ function agentEvaluationControllerLiveCodexEnvironment(): array
     ];
 }
 
-/** @return array<string, mixed> */
-function agentEvaluationControllerProxyState(string $model, string $reasoningEffort, int $tokenBudget): array
+/** @param array<string, mixed>|null $spending
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerProxyState(string $model, string $reasoningEffort, int $tokenBudget, ?array $spending = null): array
 {
-    agentEvaluationControllerLiveCodexArguments($model, $reasoningEffort);
+    agentEvaluationControllerLiveCodexArguments($model, $reasoningEffort, $spending, $tokenBudget);
+    $spending = agentEvaluationControllerProxyValidateSpending($model, $reasoningEffort, $spending);
 
-    if ($tokenBudget < 1 || $tokenBudget > 40_000) {
-        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_BUDGET_INVALID');
-    }
-
-    return [
+    $state = [
         'model' => $model,
         'reasoning_effort' => $reasoningEffort,
         'token_budget' => $tokenBudget,
@@ -134,10 +146,92 @@ function agentEvaluationControllerProxyState(string $model, string $reasoningEff
         'observed_request_count' => 0,
         'last_request_sha256' => null,
         'response_bytes' => 0,
+        'last_response_sha256' => null,
+        'last_response_bytes' => null,
+        'response_rejection_stage' => null,
+        'response_observation' => null,
+        'response_event_observation' => null,
+        'provider_error_event_seen' => false,
+        'provider_error_observation' => null,
         'request_sha256' => null,
         'blocked' => false,
         'failure_reason' => null,
     ];
+    if ($spending !== null) {
+        $state['spending'] = ['policy' => $spending, 'settled_units' => 0, 'reserved_units' => 0];
+    }
+    return $state;
+}
+
+/**
+ * Fixed approved standard prices below the 272k input tier; one USD is 100000000 units.
+ * Each token costs its cents-per-million rate in these integer units.
+ *
+ * @param array<string, mixed>|null $spending
+ * @return array{limit_units: int, input_cents_per_million: int, cached_cents_per_million: int, output_cents_per_million: int}|null
+ */
+function agentEvaluationControllerProxyValidateSpending(string $model, string $reasoningEffort, ?array $spending): ?array
+{
+    if ($spending === null) {
+        return null;
+    }
+    agentEvaluationRequireExactKeys($spending, ['limit_units', 'input_cents_per_million', 'cached_cents_per_million', 'output_cents_per_million'], 'proxy spending policy');
+    $limit = agentEvaluationRequirePositiveInteger($spending, 'limit_units', 'proxy spending policy');
+    if ($model !== 'gpt-5.4-2026-03-05' || $reasoningEffort !== 'high' || $limit > 100_000_000
+        || $spending['input_cents_per_million'] !== 250 || $spending['cached_cents_per_million'] !== 25
+        || $spending['output_cents_per_million'] !== 1500) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_SPENDING_POLICY_INVALID');
+    }
+    return ['limit_units' => $limit, 'input_cents_per_million' => 250, 'cached_cents_per_million' => 25, 'output_cents_per_million' => 1500];
+}
+
+/**
+ * Settled units conservatively price missing cached usage as uncached input.
+ * Outstanding units remain reserved until an entire response passes usage validation.
+ *
+ * @param array<string, mixed> $state
+ * @return array{policy: array{limit_units: int, input_cents_per_million: int, cached_cents_per_million: int, output_cents_per_million: int}, settled_units: int, reserved_units: int}|null
+ */
+function agentEvaluationControllerProxySpendingLedger(array $state): ?array
+{
+    $tokenBudget = agentEvaluationRequirePositiveInteger($state, 'token_budget', 'proxy spending ledger');
+    if (!array_key_exists('spending', $state)) {
+        if ($tokenBudget > 40_000) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_SPENDING_LEDGER_INVALID');
+        }
+        return null;
+    }
+    $spending = agentEvaluationRequireObject($state, 'spending', 'proxy spending ledger');
+    agentEvaluationRequireExactKeys($spending, ['policy', 'settled_units', 'reserved_units'], 'proxy spending ledger');
+    $policy = agentEvaluationControllerProxyValidateSpending(
+        agentEvaluationRequireString($state, 'model', 'proxy spending ledger'),
+        agentEvaluationRequireString($state, 'reasoning_effort', 'proxy spending ledger'),
+        agentEvaluationRequireObject($spending, 'policy', 'proxy spending ledger'),
+    );
+    if ($policy === null) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_SPENDING_LEDGER_INVALID');
+    }
+    $settled = agentEvaluationRequireNonNegativeInteger($spending, 'settled_units', 'proxy spending ledger');
+    $reserved = agentEvaluationRequireNonNegativeInteger($spending, 'reserved_units', 'proxy spending ledger');
+    $input = agentEvaluationRequireNonNegativeInteger($state, 'reserved_input', 'proxy spending ledger');
+    $output = agentEvaluationRequireNonNegativeInteger($state, 'reserved_output', 'proxy spending ledger');
+    $settledInput = agentEvaluationRequireNonNegativeInteger($state, 'input_tokens', 'proxy spending ledger');
+    $settledOutput = agentEvaluationRequireNonNegativeInteger($state, 'output_tokens', 'proxy spending ledger');
+    if (($tokenBudget > 200_000 && $tokenBudget !== 1_000_000)
+        || $settled > $policy['limit_units'] || $reserved > $policy['limit_units'] - $settled
+        || $input > 200_000 || $output > 66_666 || $settledInput > 1_000_000 || $settledOutput > 1_000_000
+        || $settledInput + $settledOutput + $input + $output > $tokenBudget
+        || ($output === 0 && $input !== 0)
+        || $reserved !== $input * $policy['input_cents_per_million'] + $output * $policy['output_cents_per_million']) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_SPENDING_LEDGER_INVALID');
+    }
+    foreach (['cached_tokens' => $settledInput, 'reasoning_tokens' => $settledOutput] as $name => $total) {
+        $category = $state[$name] ?? null;
+        if ($category !== null && (!is_int($category) || $category < 0 || $category > $total)) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_SPENDING_LEDGER_INVALID');
+        }
+    }
+    return ['policy' => $policy, 'settled_units' => $settled, 'reserved_units' => $reserved];
 }
 
 /**
@@ -162,6 +256,7 @@ function agentEvaluationControllerProxyRequest(string $body, array &$state): arr
         ) {
             throw new RuntimeException('Proxy is unavailable.');
         }
+        agentEvaluationControllerProxySpendingLedger($state);
 
         $stage = 'json';
         $request = agentEvaluationControllerProxyJsonObject($body);
@@ -263,6 +358,7 @@ function agentEvaluationControllerProxyReserve(array $request, string $countResp
         }
 
         $inputTokens = agentEvaluationRequireNonNegativeInteger($count, 'input_tokens', 'proxy count');
+        $spending = agentEvaluationControllerProxySpendingLedger($state);
         $remaining = agentEvaluationRequirePositiveInteger($state, 'token_budget', 'proxy')
             - agentEvaluationRequireNonNegativeInteger($state, 'input_tokens', 'proxy')
             - agentEvaluationRequireNonNegativeInteger($state, 'output_tokens', 'proxy');
@@ -270,6 +366,10 @@ function agentEvaluationControllerProxyReserve(array $request, string $countResp
         if ($inputTokens > $remaining - 16) {
             $state['failure_reason'] = 'model_token_limit';
             throw new RuntimeException('Proxy token budget is exhausted.');
+        }
+        if ($spending !== null && $inputTokens > 200_000) {
+            $state['failure_reason'] = 'model_input_limit';
+            throw new RuntimeException('Proxy request input exceeds the fixed standard-price allowance.');
         }
 
         $requestedOutput = $request['max_output_tokens'] ?? $remaining;
@@ -279,6 +379,18 @@ function agentEvaluationControllerProxyReserve(array $request, string $countResp
         }
 
         $outputTokens = min($requestedOutput, $remaining - $inputTokens);
+        if ($spending !== null) {
+            $moneyRemaining = $spending['policy']['limit_units'] - $spending['settled_units'];
+            $inputCost = $inputTokens * $spending['policy']['input_cents_per_million'];
+            $outputRate = $spending['policy']['output_cents_per_million'];
+            if ($inputCost > $moneyRemaining - 16 * $outputRate) {
+                $state['failure_reason'] = 'spending_limit';
+                throw new RuntimeException('Proxy spending budget is exhausted.');
+            }
+            $outputTokens = min($outputTokens, intdiv($moneyRemaining - $inputCost, $outputRate));
+            $spending['reserved_units'] = $inputCost + $outputTokens * $outputRate;
+            $state['spending'] = $spending;
+        }
         $state['reserved_input'] = $inputTokens;
         $state['reserved_output'] = $outputTokens;
         $state['request_count'] = agentEvaluationRequireNonNegativeInteger($state, 'request_count', 'proxy') + 1;
@@ -297,17 +409,39 @@ function agentEvaluationControllerProxyReserve(array $request, string $countResp
  */
 function agentEvaluationControllerProxyComplete(string $sse, array &$state): array
 {
+    $stage = 'availability';
+    $state['last_response_bytes'] = strlen($sse) <= AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES ? strlen($sse) : null;
+    $state['last_response_sha256'] = $state['last_response_bytes'] === null ? null : hash('sha256', $sse);
+    $state['response_rejection_stage'] = null;
+    $state['response_observation'] = null;
+    $state['response_event_observation'] = null;
+    $state['provider_error_event_seen'] = false;
+    $state['provider_error_observation'] = null;
+    $event = [];
+    $eventName = null;
+    $dataEventOrdinal = 0;
     try {
-        $responseBytes = agentEvaluationRequireNonNegativeInteger($state, 'response_bytes', 'proxy') + strlen($sse);
-
         if (
             ($state['blocked'] ?? true) !== false
             || agentEvaluationRequireNonNegativeInteger($state, 'reserved_output', 'proxy') < 16
-            || $responseBytes > AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES
         ) {
             throw new RuntimeException('Proxy response is unavailable.');
         }
 
+        $stage = 'response_bytes';
+        $requestCount = agentEvaluationRequireNonNegativeInteger($state, 'request_count', 'proxy');
+        $priorResponseBytes = agentEvaluationRequireNonNegativeInteger($state, 'response_bytes', 'proxy');
+        if (
+            $requestCount < 1
+            || $requestCount > AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_LIMIT
+            || strlen($sse) > AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES
+            || $priorResponseBytes > ($requestCount - 1) * AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES
+        ) {
+            throw new RuntimeException('Proxy response byte accounting is invalid.');
+        }
+
+        // Both operands are validated above; their sum cannot exceed the derived run bound.
+        $responseBytes = $priorResponseBytes + strlen($sse);
         $state['response_bytes'] = $responseBytes;
         $response = null;
         $terminalSeen = false;
@@ -321,6 +455,7 @@ function agentEvaluationControllerProxyComplete(string $sse, array &$state): arr
 
             $data = [];
             $eventName = null;
+            $stage = 'sse_frame';
 
             foreach (explode("\n", $frame) as $line) {
                 if (str_starts_with($line, 'data:')) {
@@ -336,36 +471,54 @@ function agentEvaluationControllerProxyComplete(string $sse, array &$state): arr
                 continue;
             }
 
+            $dataEventOrdinal++;
             $json = implode("\n", $data);
 
             if ($json === '[DONE]' && $terminalSeen) {
                 continue;
             }
 
+            $stage = 'sse_order';
             if ($terminalSeen) {
                 throw new RuntimeException('Proxy SSE has data after its terminal event.');
             }
 
+            $stage = 'sse_json';
             $event = agentEvaluationControllerProxyJsonObject($json);
+            $stage = 'sse_event_identity';
             $type = agentEvaluationRequireString($event, 'type', 'proxy event');
+            if ($type === 'error' && ($eventName === null || $eventName === $type)) {
+                $stage = 'provider_error_event';
+                $state['provider_error_event_seen'] = true;
+                $state['provider_error_observation'] = agentEvaluationControllerProxyErrorObservation($event);
+            }
 
-            if (($eventName !== null && $eventName !== $type) || !str_starts_with($type, 'response.')) {
+            if (($eventName !== null && $eventName !== $type)
+                || ($type !== 'keepalive' && !str_starts_with($type, 'response.'))) {
                 throw new RuntimeException('Proxy SSE event identity is invalid.');
+            }
+
+            // This exact transport event has no response, output, or usage authority.
+            if ($type === 'keepalive') {
+                continue;
             }
 
             if (in_array($type, ['response.completed', 'response.incomplete', 'response.failed'], true)) {
                 $terminalSeen = true;
                 $terminalType = $type;
                 $value = $event['response'] ?? null;
+                $stage = 'terminal_response';
 
                 if (!$value instanceof stdClass) {
                     throw new RuntimeException('Proxy terminal response is invalid.');
                 }
 
                 $response = agentEvaluationControllerProxyObjectMembers($value);
+                $state['response_observation'] = agentEvaluationControllerProxyResponseObservation($response, $type, $state);
             }
         }
 
+        $stage = 'terminal_identity';
         if (
             $response === null
             || ($response['model'] ?? null) !== ($state['model'] ?? null)
@@ -377,16 +530,21 @@ function agentEvaluationControllerProxyComplete(string $sse, array &$state): arr
         }
 
         $usageValue = $response['usage'] ?? null;
+        $stage = 'usage_object';
 
         if (!$usageValue instanceof stdClass) {
             throw new RuntimeException('Proxy response usage is missing.');
         }
 
         $usage = agentEvaluationControllerProxyObjectMembers($usageValue);
+        $stage = 'usage_input_tokens';
         $input = agentEvaluationRequireNonNegativeInteger($usage, 'input_tokens', 'proxy usage');
+        $stage = 'usage_output_tokens';
         $output = agentEvaluationRequireNonNegativeInteger($usage, 'output_tokens', 'proxy usage');
+        $stage = 'usage_total_tokens';
         $total = agentEvaluationRequireNonNegativeInteger($usage, 'total_tokens', 'proxy usage');
 
+        $stage = 'usage_reservation';
         if (
             $input !== ($state['reserved_input'] ?? null)
             || $output > agentEvaluationRequireNonNegativeInteger($state, 'reserved_output', 'proxy')
@@ -395,8 +553,24 @@ function agentEvaluationControllerProxyComplete(string $sse, array &$state): arr
             throw new RuntimeException('Proxy response usage exceeds or disagrees with its reservation.');
         }
 
+        $stage = 'usage_cached_tokens';
         $cached = agentEvaluationControllerProxyDetail($usage['input_tokens_details'] ?? null, 'cached_tokens', $input);
+        $stage = 'usage_reasoning_tokens';
         $reasoning = agentEvaluationControllerProxyDetail($usage['output_tokens_details'] ?? null, 'reasoning_tokens', $output);
+        $spending = agentEvaluationControllerProxySpendingLedger($state);
+        if ($spending !== null) {
+            $stage = 'spending_settlement';
+            $cachedInput = $cached ?? 0;
+            $cost = ($input - $cachedInput) * $spending['policy']['input_cents_per_million']
+                + $cachedInput * $spending['policy']['cached_cents_per_million']
+                + $output * $spending['policy']['output_cents_per_million'];
+            if ($cost > $spending['reserved_units']) {
+                throw new RuntimeException('Proxy spending usage exceeds its reservation.');
+            }
+            $spending['settled_units'] += $cost;
+            $spending['reserved_units'] = 0;
+        }
+        $stage = 'usage_aggregate';
         $state['input_tokens'] = agentEvaluationRequireNonNegativeInteger($state, 'input_tokens', 'proxy') + $input;
         $state['output_tokens'] = agentEvaluationRequireNonNegativeInteger($state, 'output_tokens', 'proxy') + $output;
 
@@ -408,7 +582,11 @@ function agentEvaluationControllerProxyComplete(string $sse, array &$state): arr
         $state['reserved_input'] = 0;
         $state['reserved_output'] = 0;
         $state['request_sha256'] = null;
+        if ($spending !== null) {
+            $state['spending'] = $spending;
+        }
 
+        $stage = 'terminal_status';
         if ($response['status'] !== 'completed') {
             $details = $response['incomplete_details'] ?? null;
 
@@ -422,8 +600,160 @@ function agentEvaluationControllerProxyComplete(string $sse, array &$state): arr
         return ['input_tokens' => $input, 'output_tokens' => $output, 'cached_tokens' => $cached, 'reasoning_tokens' => $reasoning];
     } catch (Throwable) {
         $state['blocked'] = true;
+        $state['response_rejection_stage'] = $stage;
+        if ($stage === 'sse_event_identity') {
+            $state['response_event_observation'] = agentEvaluationControllerProxyEventObservation($event, $eventName, $dataEventOrdinal);
+        }
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_REJECTED');
     }
+}
+
+/**
+ * Called only after an identity rejection; no event payload or unknown label is retained.
+ * Reasons follow the existing type check and header comparison order.
+ *
+ * @param array<string, mixed> $event
+ * @return array{authority: string, data_event_ordinal: int|null, identity_reason: string|null, type_family: string|null, header_matches_type: bool|null, fields: array<string, array{present: bool, kind: string, bytes: int|null, sha256: string|null, over_limit: bool}>}
+ */
+function agentEvaluationControllerProxyEventObservation(array $event, ?string $eventName, int $dataEventOrdinal): array
+{
+    $typePresent = array_key_exists('type', $event);
+    $type = $event['type'] ?? null;
+    $reason = null;
+    if (!$typePresent) {
+        $reason = 'missing_type';
+    } elseif (!is_string($type)) {
+        $reason = 'nonstring_type';
+    } elseif ($eventName !== null && $eventName !== $type) {
+        $reason = 'header_type_mismatch';
+    } elseif ($type === '') {
+        $reason = 'empty_type';
+    } elseif ($type !== 'error' && !str_starts_with($type, 'response.')) {
+        $reason = 'unsupported_type_family';
+    }
+    $fields = [];
+    foreach (['event_name' => [$eventName !== null, $eventName], 'type' => [$typePresent, $type]] as $name => [$present, $value]) {
+        $string = is_string($value);
+        $overLimit = $string && strlen($value) > AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES;
+        $fields[$name] = [
+            'present' => $present,
+            'kind' => !$present ? 'missing' : ($value === null ? 'null' : ($string ? 'string' : 'other')),
+            'bytes' => $string && !$overLimit ? strlen($value) : null,
+            'sha256' => $string && !$overLimit ? hash('sha256', $value) : null,
+            'over_limit' => $overLimit,
+        ];
+    }
+    return [
+        'authority' => 'unvalidated-provider-event-observation',
+        'data_event_ordinal' => $dataEventOrdinal >= 1 && $dataEventOrdinal <= AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES ? $dataEventOrdinal : null,
+        'identity_reason' => $reason,
+        'type_family' => is_string($type) ? (str_starts_with($type, 'response.') ? 'response' : ($type === 'error' ? 'error' : 'other')) : null,
+        'header_matches_type' => $eventName !== null && is_string($type) ? $eventName === $type : null,
+        'fields' => $fields,
+    ];
+}
+
+/**
+ * Error diagnostics never accept a response or settle its token reservation.
+ * Prefer documented top-level fields; never merge a conflicting nested envelope.
+ * Unknown strings are fingerprinted within the response bound, never retained.
+ *
+ * @param array<string, mixed> $event
+ * @return array{authority: string, envelope_source: string, top_level_fields_present: bool, nested_error_present: bool, nested_error_is_object: bool, code: string|null, type: string|null, parameter_root: string|null, fields: array<string, array{present: bool, kind: string, bytes: int|null, sha256: string|null, over_limit: bool}>}
+ */
+function agentEvaluationControllerProxyErrorObservation(array $event): array
+{
+    $topLevelFields = array_key_exists('code', $event) || array_key_exists('param', $event) || array_key_exists('message', $event);
+    $nested = $event['error'] ?? null;
+    $useNested = !$topLevelFields && $nested instanceof stdClass;
+    $source = $useNested ? get_object_vars($nested) : $event;
+    $fields = [];
+    foreach (['code', 'type', 'param', 'message'] as $name) {
+        $present = array_key_exists($name, $source);
+        $value = $source[$name] ?? null;
+        $string = is_string($value);
+        $overLimit = $string && strlen($value) > AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES;
+        $fields[$name] = [
+            'present' => $present,
+            'kind' => !$present ? 'missing' : ($value === null ? 'null' : ($string ? 'string' : 'other')),
+            'bytes' => $string && !$overLimit ? strlen($value) : null,
+            'sha256' => $string && !$overLimit ? hash('sha256', $value) : null,
+            'over_limit' => $overLimit,
+        ];
+    }
+    $code = $source['code'] ?? null;
+    $type = $source['type'] ?? null;
+    $param = $source['param'] ?? null;
+    $root = null;
+    if (is_string($param) && strlen($param) <= 1024
+        && preg_match('/\A([a-z][a-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*|\[(?:0|[1-9][0-9]{0,8})\])*\z/D', $param, $matches) === 1
+        && in_array($matches[1], [
+            'model', 'input', 'instructions', 'tools', 'tool_choice', 'parallel_tool_calls',
+            'reasoning', 'text', 'include', 'store', 'stream', 'max_output_tokens',
+            'service_tier', 'truncation', 'metadata', 'prompt_cache_key', 'client_metadata',
+        ], true)) {
+        $root = $matches[1];
+    }
+    return [
+        'authority' => 'unvalidated-provider-error-observation',
+        'envelope_source' => $useNested ? 'nested-error-object' : 'top-level',
+        'top_level_fields_present' => $topLevelFields,
+        'nested_error_present' => array_key_exists('error', $event),
+        'nested_error_is_object' => $nested instanceof stdClass,
+        'code' => is_string($code) && in_array($code, [
+            'invalid_type', 'invalid_value', 'unsupported_value', 'unsupported_parameter',
+            'unknown_parameter', 'missing_required_parameter', 'invalid_request_error',
+            'context_length_exceeded', 'model_not_found', 'rate_limit_exceeded',
+            'insufficient_quota', 'invalid_api_key', 'server_error', 'internal_server_error',
+            'credit_balance_exhausted',
+        ], true) ? $code : null,
+        'type' => is_string($type) && in_array($type, [
+            'error', 'invalid_request_error', 'authentication_error', 'permission_error',
+            'not_found_error', 'rate_limit_error', 'server_error', 'api_error',
+            'insufficient_quota',
+        ], true) ? $type : null,
+        'parameter_root' => $root,
+        'fields' => $fields,
+    ];
+}
+
+/**
+ * These structural observations are never authoritative usage or acceptance.
+ * Invalid or excessive diagnostic fields become null without changing parsing.
+ *
+ * @param array<string, mixed> $response
+ * @param array<string, mixed> $state
+ * @return array{authority: string, response_id: string|null, terminal_event: string|null, status: string|null, model_matches: bool, service_tier_matches: bool, error_present: bool, usage_is_object: bool, usage: array{input_tokens: int|null, output_tokens: int|null, total_tokens: int|null, cached_tokens: int|null, reasoning_tokens: int|null}}
+ */
+function agentEvaluationControllerProxyResponseObservation(array $response, string $terminalType, array $state): array
+{
+    $id = $response['id'] ?? null;
+    $status = $response['status'] ?? null;
+    $usage = $response['usage'] ?? null;
+    $inputDetails = $usage instanceof stdClass ? ($usage->input_tokens_details ?? null) : null;
+    $outputDetails = $usage instanceof stdClass ? ($usage->output_tokens_details ?? null) : null;
+    return [
+        'authority' => 'unvalidated-provider-observation',
+        'response_id' => is_string($id) && preg_match('/\Aresp_[A-Za-z0-9]{1,128}\z/D', $id) === 1 ? $id : null,
+        'terminal_event' => in_array($terminalType, ['response.completed', 'response.incomplete', 'response.failed'], true) ? $terminalType : null,
+        'status' => is_string($status) && in_array($status, ['completed', 'incomplete', 'failed', 'queued', 'in_progress', 'cancelled'], true) ? $status : null,
+        'model_matches' => is_string($response['model'] ?? null) && $response['model'] === ($state['model'] ?? null),
+        'service_tier_matches' => !isset($response['service_tier']) || $response['service_tier'] === 'default',
+        'error_present' => isset($response['error']),
+        'usage_is_object' => $usage instanceof stdClass,
+        'usage' => [
+            'input_tokens' => agentEvaluationControllerProxyObservedTokenCount($usage instanceof stdClass ? ($usage->input_tokens ?? null) : null),
+            'output_tokens' => agentEvaluationControllerProxyObservedTokenCount($usage instanceof stdClass ? ($usage->output_tokens ?? null) : null),
+            'total_tokens' => agentEvaluationControllerProxyObservedTokenCount($usage instanceof stdClass ? ($usage->total_tokens ?? null) : null),
+            'cached_tokens' => agentEvaluationControllerProxyObservedTokenCount($inputDetails instanceof stdClass ? ($inputDetails->cached_tokens ?? null) : null),
+            'reasoning_tokens' => agentEvaluationControllerProxyObservedTokenCount($outputDetails instanceof stdClass ? ($outputDetails->reasoning_tokens ?? null) : null),
+        ],
+    ];
+}
+
+function agentEvaluationControllerProxyObservedTokenCount(mixed $value): ?int
+{
+    return is_int($value) && $value >= 0 && $value <= 1_000_000_000 ? $value : null;
 }
 
 /** @return array<string, mixed> */
@@ -575,8 +905,73 @@ function agentEvaluationControllerProxyValidateTools(mixed $tools): void
 }
 
 /**
+ * @return array{schema_version:int,operation:string,category:string,http_status:int|null,curl_code:int|null,response_limit_exceeded:bool}|null
+ */
+function agentEvaluationControllerUpstreamFailureObservation(
+    string $operation,
+    bool $transferSucceeded,
+    mixed $httpStatus,
+    mixed $curlCode,
+    bool $responseLimitExceeded,
+): ?array {
+    if (!in_array($operation, ['input_tokens', 'responses'], true)) {
+        throw new RuntimeException('Upstream failure operation is invalid.');
+    }
+    if ($transferSucceeded && $httpStatus === 200 && !$responseLimitExceeded) {
+        return null;
+    }
+    $category = 'http_status';
+    if ($responseLimitExceeded) {
+        $category = 'response_limit';
+    } elseif (!$transferSucceeded) {
+        $category = 'curl';
+    }
+    return [
+        'schema_version' => 1,
+        'operation' => $operation,
+        'category' => $category,
+        'http_status' => is_int($httpStatus) && $httpStatus >= 100 && $httpStatus <= 599 ? $httpStatus : null,
+        'curl_code' => is_int($curlCode) && $curlCode >= 0 && $curlCode <= 999 ? $curlCode : null,
+        'response_limit_exceeded' => $responseLimitExceeded,
+    ];
+}
+
+/** @param array<string,mixed> $generation */
+function agentEvaluationControllerValidateUpstreamFailureEvidence(array $generation): void
+{
+    if (!array_key_exists('upstream_failure', $generation) || $generation['upstream_failure'] === null) {
+        return;
+    }
+    $observation = agentEvaluationRequireObject($generation, 'upstream_failure', 'generation process');
+    agentEvaluationRequireExactKeys($observation, [
+        'schema_version', 'operation', 'category', 'http_status', 'curl_code', 'response_limit_exceeded',
+    ], 'upstream failure observation');
+    $operation = agentEvaluationRequireString($observation, 'operation', 'upstream failure observation');
+    $category = agentEvaluationRequireString($observation, 'category', 'upstream failure observation');
+    $limited = agentEvaluationRequireBoolean($observation, 'response_limit_exceeded', 'upstream failure observation');
+    $status = $observation['http_status'];
+    $curlCode = $observation['curl_code'];
+    if (($observation['schema_version'] ?? null) !== 1
+        || !in_array($operation, ['input_tokens', 'responses'], true)
+        || !in_array($category, ['response_limit', 'curl', 'http_status'], true)
+        || ($status !== null && (!is_int($status) || $status < 100 || $status > 599))
+        || ($curlCode !== null && (!is_int($curlCode) || $curlCode < 0 || $curlCode > 999))
+        || $limited !== ($category === 'response_limit')
+        || ($category === 'http_status' && $status === 200)
+    ) {
+        throw new RuntimeException('Upstream failure observation is invalid.');
+    }
+    if (($generation['failure_code'] ?? null) !== 'AGENT_EVALUATION_CONTROLLER_PROXY_UPSTREAM_FAILED'
+        || agentEvaluationRequireString($generation, 'termination_reason', 'generation process') === 'completed'
+    ) {
+        throw new RuntimeException('Upstream failure observation requires its failed generation operation.');
+    }
+}
+
+/**
  * @param array<string, mixed> $resources
  * @param array<string, mixed> $profile
+ * @param array<string, mixed>|null $spending
  * @return array{
  *   runner: string,
  *   events: list<array<string, mixed>>,
@@ -596,6 +991,7 @@ function agentEvaluationControllerRunLiveCodex(
     array $profile,
     #[SensitiveParameter]
     string $credential,
+    ?array $spending = null,
 ): array {
     $budgetValues = agentEvaluationRequireObject($profile, 'budgets', 'live Codex profile');
     $budgets = [
@@ -605,6 +1001,12 @@ function agentEvaluationControllerRunLiveCodex(
         'command_output_bytes' => agentEvaluationRequirePositiveInteger($budgetValues, 'command_output_bytes', 'live Codex budget'),
     ];
     agentEvaluationControllerValidateBudgets($budgets);
+    if ($spending !== null) {
+        $model = agentEvaluationRequireObject($profile, 'model', 'live Codex profile');
+        $settings = agentEvaluationValueObject($model['settings'] ?? null, 'live Codex settings');
+        agentEvaluationControllerProxyState(agentEvaluationRequireString($model, 'id', 'live Codex model'),
+            agentEvaluationRequireString($settings, 'reasoning_effort', 'live Codex settings'), $budgets['model_tokens'], $spending);
+    }
     agentEvaluationControllerValidateFutureIsolationProfile(
         agentEvaluationRequireObject($profile, 'isolation', 'live Codex profile'),
         $budgets,
@@ -615,7 +1017,8 @@ function agentEvaluationControllerRunLiveCodex(
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_LIVE_PROMPT_INVALID');
     }
 
-    $process = agentEvaluationControllerOciRunGeneration($resources, $prompt, $profile, $credential);
+    $process = agentEvaluationControllerOciRunGeneration($resources, $prompt, $profile, $credential, $spending);
+    agentEvaluationControllerValidateUpstreamFailureEvidence($process);
     $eventsJsonl = agentEvaluationRequireString($process, 'events_jsonl', 'live Codex process');
     $parsed = agentEvaluationControllerParseCodexEvents($eventsJsonl, $budgets['model_tokens'], true);
     $proxy = agentEvaluationRequireObject($process, 'proxy', 'live Codex process');
@@ -627,6 +1030,10 @@ function agentEvaluationControllerRunLiveCodex(
 
     if ($termination === 'process_failed' && ($proxy['failure_reason'] ?? null) === 'model_token_limit') {
         $termination = 'model_token_limit';
+    } elseif ($termination === 'process_failed' && ($proxy['failure_reason'] ?? null) === 'model_input_limit') {
+        $termination = 'model_input_limit';
+    } elseif ($termination === 'process_failed' && ($proxy['failure_reason'] ?? null) === 'spending_limit') {
+        $termination = 'spending_limit';
     }
 
     if ($termination === 'completed') {
@@ -634,6 +1041,10 @@ function agentEvaluationControllerRunLiveCodex(
             $termination = 'cleanup_failed';
         } elseif (($proxy['failure_reason'] ?? null) === 'model_token_limit') {
             $termination = 'model_token_limit';
+        } elseif (($proxy['failure_reason'] ?? null) === 'model_input_limit') {
+            $termination = 'model_input_limit';
+        } elseif (($proxy['failure_reason'] ?? null) === 'spending_limit') {
+            $termination = 'spending_limit';
         } elseif (
             ($proxy['blocked'] ?? true) !== false
             || ($proxy['reserved_output'] ?? -1) !== 0
@@ -677,6 +1088,7 @@ function agentEvaluationControllerRunLiveCodex(
             'resource_observation' => $process['resource_observation'] ?? null,
             'synthetic_upstream' => $syntheticUpstream,
             'failure_code' => $process['failure_code'] ?? null,
+            'upstream_failure' => $process['upstream_failure'] ?? null,
         ],
         'proxy_evidence' => [
             'candidate_operation' => 'POST /v1/responses',

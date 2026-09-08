@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PDO;
+
+final class Application
+{
+    public function __construct(private readonly PDO $connection, private readonly Policy $policy)
+    {
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     * @param array<string, string> $headers
+     */
+    public function handle(string $method, string $path, array $query, array $headers, string $body): Response
+    {
+        if ($method === 'GET' && $path === '/health') {
+            return new Response(200, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'], "{\"status\":\"ok\"}\n");
+        }
+        try {
+            $matches = [];
+            if ($method !== 'GET' || preg_match('~^/accounts/([1-9][0-9]*)/documents/([1-9][0-9]*)$~D', $path, $matches) !== 1) {
+                return self::error(404, 'not_found');
+            }
+            $accountId = filter_var($matches[1], FILTER_VALIDATE_INT);
+            $documentId = filter_var($matches[2], FILTER_VALIDATE_INT);
+            if (!is_int($accountId) || !is_int($documentId)) {
+                return self::error(404, 'not_found');
+            }
+            return (new DocumentHandler($this->connection, $this->policy))->handle($accountId, $documentId, $query, $headers, $body);
+        } catch (Failure $failure) {
+            return self::error($failure->status, $failure->errorCode);
+        } catch (\Throwable) {
+            return self::error(500, 'internal_server_error');
+        }
+    }
+
+    private static function error(int $status, string $code): Response
+    {
+        return new Response($status, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'], json_encode(['error' => ['code' => $code]], JSON_THROW_ON_ERROR) . "\n");
+    }
+}

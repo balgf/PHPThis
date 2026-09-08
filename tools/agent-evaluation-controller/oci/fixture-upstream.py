@@ -5,12 +5,24 @@ reviewed command from this fixture, executes it inside OCI, then receives a fina
 message. This is protocol and containment evidence, not model-quality evidence.
 """
 
+import hashlib
 import json
+import socket
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 INPUT_TOKENS = 100
 OUTPUT_TOKENS = 100
+UPSTREAM_BODY_SENTINEL = "synthetic-upstream-body-must-not-be-retained"
+UPSTREAM_HEADER_SENTINEL = "synthetic-upstream-header-must-not-be-retained"
+UPSTREAM_FAILURE_CASES = {
+    "input-http-failure": ("input_tokens", "http_status", 429),
+    "responses-http-failure": ("responses", "http_status", 503),
+    "input-transport-failure": ("input_tokens", "curl", None),
+    "responses-transport-failure": ("responses", "curl", None),
+    "input-response-limit": ("input_tokens", "response_limit", 200),
+    "responses-response-limit": ("responses", "response_limit", 200),
+}
 
 HEALTH_ROUTES = """<?php
 
@@ -237,19 +249,75 @@ class FixtureHandler(BaseHTTPRequestHandler):
     def log_message(self, *_):
         pass
 
+    def send_upstream_failure(self, operation):
+        selected = UPSTREAM_FAILURE_CASES.get(self.server.mode)
+        if selected is None or selected[0] != operation:
+            return False
+        _, category, status = selected
+        if category == "curl":
+            # An empty reply reaches curl without an HTTP status or a body.
+            # Closing this one accepted socket cannot contact another service.
+            self.close_connection = True
+            self.connection.shutdown(socket.SHUT_RDWR)
+            self.connection.close()
+            return True
+        if category == "http_status":
+            result = json.dumps({"error": {"message": UPSTREAM_BODY_SENTINEL,
+                                          "type": UPSTREAM_BODY_SENTINEL,
+                                          "code": UPSTREAM_BODY_SENTINEL}}).encode()
+        else:
+            limit = 1_048_576 if operation == "input_tokens" else 4_194_304
+            prefix = (UPSTREAM_BODY_SENTINEL + "\n").encode()
+            result = prefix + b"X" * (limit + 1 - len(prefix))
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("X-Upstream-Fixture", UPSTREAM_HEADER_SENTINEL)
+        self.send_header("Content-Length", str(len(result)))
+        self.end_headers()
+        try:
+            self.wfile.write(result)
+        except (BrokenPipeError, ConnectionResetError):
+            # The reviewed local limit deliberately aborts the HTTP transfer.
+            # It is a controller outcome, not an unexpected fixture failure.
+            if category != "response_limit":
+                raise
+        return True
+
     def do_POST(self):
         try:
             length = int(self.headers.get("Content-Length", "0"))
             if not 0 < length <= 1_048_576 or self.path not in ["/v1/responses/input_tokens", "/v1/responses"]:
                 raise ValueError("unapproved fixture operation")
             body = json.loads(self.rfile.read(length))
-            self.server.requests.append({"path": self.path, "model": body.get("model")})
+            user_texts = []
+            for item in body.get("input", []):
+                if not isinstance(item, dict) or item.get("role") != "user":
+                    continue
+                content = item.get("content", [])
+                if not isinstance(content, list):
+                    continue
+                for part in content:
+                    if not isinstance(part, dict) or part.get("type") != "input_text" or not isinstance(part.get("text"), str):
+                        continue
+                    text_bytes = part["text"].encode("utf-8")
+                    user_texts.append({"bytes": len(text_bytes), "sha256": hashlib.sha256(text_bytes).hexdigest()})
+            request = {"path": self.path, "model": body.get("model"), "user_texts": user_texts}
+            if self.server.mode in UPSTREAM_FAILURE_CASES and self.path == "/v1/responses":
+                output_cap = body.get("max_output_tokens")
+                if type(output_cap) is not int or not 16 <= output_cap <= 40_000:
+                    raise ValueError("upstream failure fixture requires the approved output cap")
+                request["approved_max_output_tokens"] = output_cap
+            self.server.requests.append(request)
             if self.path.endswith("/input_tokens"):
+                if self.send_upstream_failure("input_tokens"):
+                    return
                 count = 40_000 if self.server.mode == "token-limit" else INPUT_TOKENS
                 result = json.dumps({"object": "response.input_tokens", "input_tokens": count}).encode()
                 content_type = "application/json"
             else:
                 self.server.responses += 1
+                if self.send_upstream_failure("responses"):
+                    return
                 if self.server.responses == 1:
                     names = [tool.get("name") for tool in body.get("tools", []) if tool.get("type") == "function"]
                     if "exec_command" not in names:

@@ -7,6 +7,80 @@ const AGENT_EVALUATION_CONTROLLER_MAX_TREE_DIRECTORIES = 4_000;
 const AGENT_EVALUATION_CONTROLLER_MAX_DIFF_CELLS = 250_000;
 const AGENT_EVALUATION_CONTROLLER_MAX_DIFF_LINES = 4_096;
 
+const AGENT_EVALUATION_CONTROLLER_FREEZE_BASELINE_CHANGED = 69_001;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_DEPENDENCY_EVIDENCE_CHANGED = 69_002;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_DIRECTORY_SET_CHANGED = 69_003;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_PROTECTED_PATH_CHANGED = 69_004;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_NEW_PATH_UNAPPROVED = 69_005;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_NEW_PATH_EXECUTABLE = 69_006;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_EXISTING_PATH_UNAPPROVED = 69_007;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_EXECUTABLE_MODE_CHANGED = 69_008;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_CHANGED_FILE_LIMIT = 69_009;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_ADDED_LINE_LIMIT = 69_010;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_DELETED_LINE_LIMIT = 69_011;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_ROOT_MODE_CHANGED = 69_012;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_DIRECTORY_MODE_CHANGED = 69_013;
+const AGENT_EVALUATION_CONTROLLER_FREEZE_FILE_MODE_CHANGED = 69_014;
+
+function agentEvaluationControllerFreezeFailureReason(Throwable $failure): ?string
+{
+    if ($failure::class !== RuntimeException::class) {
+        return null;
+    }
+
+    return match ($failure->getCode()) {
+        AGENT_EVALUATION_CONTROLLER_FREEZE_BASELINE_CHANGED => 'baseline_changed',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_DEPENDENCY_EVIDENCE_CHANGED => 'dependency_evidence_changed',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_DIRECTORY_SET_CHANGED => 'candidate_directory_set_changed',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_PROTECTED_PATH_CHANGED => 'candidate_protected_path_changed',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_NEW_PATH_UNAPPROVED => 'candidate_new_path_unapproved',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_NEW_PATH_EXECUTABLE => 'candidate_new_path_executable',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_EXISTING_PATH_UNAPPROVED => 'candidate_existing_path_unapproved',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_EXECUTABLE_MODE_CHANGED => 'candidate_executable_mode_changed',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_CHANGED_FILE_LIMIT => 'candidate_changed_file_limit',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_ADDED_LINE_LIMIT => 'candidate_added_line_limit',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_DELETED_LINE_LIMIT => 'candidate_deleted_line_limit',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_ROOT_MODE_CHANGED => 'candidate_root_mode_changed',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_DIRECTORY_MODE_CHANGED => 'candidate_directory_mode_changed',
+        AGENT_EVALUATION_CONTROLLER_FREEZE_FILE_MODE_CHANGED => 'candidate_file_mode_changed',
+        default => null,
+    };
+}
+
+function agentEvaluationControllerMaterializeComparisonFixture(
+    string $source,
+    string $target,
+    string $expectedHash,
+    string $referenceDirectory,
+): void {
+    $fixture = agentEvaluationComparisonFixture($source, $referenceDirectory);
+    if (!hash_equals($expectedHash, $fixture['sha256'])) {
+        throw new RuntimeException('Comparison materialization requires its exact admitted fixture hash.');
+    }
+    agentEvaluationControllerFreshAbsoluteTarget($target, 'comparison materialization');
+    if (agentEvaluationControllerPathsOverlap($target, $source)
+        || agentEvaluationControllerPathsOverlap($target, $referenceDirectory)) {
+        throw new RuntimeException('Comparison materialization target must be separate from its source inputs.');
+    }
+    if (!mkdir($target, 0700)) {
+        throw new RuntimeException('Comparison materialization root could not be created.');
+    }
+    foreach ($fixture['files'] as $relative => $file) {
+        agentEvaluationControllerValidateTreePath($relative, 'comparison materialized path');
+        $destination = $target . '/' . $relative;
+        $parent = dirname($destination);
+        if (!is_dir($parent) && !mkdir($parent, 0755, true)) {
+            throw new RuntimeException('Comparison materialization directory could not be created.');
+        }
+        $bytes = file_get_contents($file['source_path']);
+        if (!is_string($bytes) || strlen($bytes) !== $file['bytes'] || !hash_equals($file['sha256'], hash('sha256', $bytes))
+            || file_put_contents($destination, $bytes, LOCK_EX) !== strlen($bytes)
+            || !chmod($destination, $file['mode'] === '100755' ? 0755 : 0644)) {
+            throw new RuntimeException('Comparison materialization bytes or modes failed verification.');
+        }
+    }
+}
+
 /**
  * @param array<string, mixed> $task
  * @return array{
@@ -28,27 +102,33 @@ function agentEvaluationControllerPrepareWorkspace(
     string $runRoot,
     array $task,
 ): array {
-    agentEvaluationControllerRequireFixedTask($task);
+    agentEvaluationControllerRequireAdmittedTask($task);
     $sourceRoot = agentEvaluationControllerExistingRoot($sourceSkeleton, 'source-skeleton fixture');
     $dependencySource = agentEvaluationControllerExistingRoot(
         $preparedDependencies,
         'prepared-dependencies source',
     );
     $target = agentEvaluationControllerFreshAbsoluteTarget($runRoot, 'controller run root');
+    $base = $task['base'] ?? null;
+    $referenceSource = isset($task['selected_condition'])
+        ? agentEvaluationControllerExistingRoot(
+            agentEvaluationRequireString(agentEvaluationValueObject($base, 'comparison base'), 'reference_directory', 'comparison base'),
+            'shared comparison references',
+        )
+        : null;
 
     if (
         agentEvaluationControllerPathsOverlap($target, $sourceRoot)
         || agentEvaluationControllerPathsOverlap($target, $dependencySource)
+        || ($referenceSource !== null && agentEvaluationControllerPathsOverlap($target, $referenceSource))
     ) {
         throw new RuntimeException('Controller run root must be separate from source and dependency inputs.');
     }
 
-    $sourceTree = agentEvaluationControllerDescribeTree($sourceRoot, 'source-skeleton fixture', true);
-    $base = $task['base'] ?? null;
     $expectedFixtureHash = is_array($base) ? ($base['fixture_sha256'] ?? null) : null;
 
-    if (!is_string($expectedFixtureHash) || !hash_equals($expectedFixtureHash, $sourceTree['sha256'])) {
-        throw new RuntimeException('Prepared source-skeleton fixture digest does not match the selected task revision.');
+    if (!is_string($expectedFixtureHash)) {
+        throw new RuntimeException('Prepared source fixture is missing its admitted identity.');
     }
 
     $dependencyTree = agentEvaluationControllerDescribeTree(
@@ -71,8 +151,24 @@ function agentEvaluationControllerPrepareWorkspace(
     $evidenceRoot = $target . '/evidence';
 
     try {
-        agentEvaluationControllerCopyTree($sourceRoot, $candidateRoot, 'candidate source copy', true);
-        agentEvaluationControllerCopyTree($sourceRoot, $baselineRoot, 'baseline source copy', true);
+        $materialized = null;
+        if (isset($task['selected_condition'])) {
+            if (($base['directory'] ?? null) !== $sourceRoot || $referenceSource === null) {
+                throw new RuntimeException('Comparison source must be its selected authoritative fixture.');
+            }
+            $materialized = $target . '/materialized-fixture';
+            agentEvaluationControllerMaterializeComparisonFixture($sourceRoot, $materialized, $expectedFixtureHash, $referenceSource);
+        }
+        $copySource = $materialized ?? $sourceRoot;
+        $sourceTree = agentEvaluationControllerDescribeTree($copySource, 'source-skeleton fixture', true);
+        if (!hash_equals($expectedFixtureHash, $sourceTree['sha256'])) {
+            throw new RuntimeException('Prepared source-skeleton fixture digest does not match the selected task revision.');
+        }
+        agentEvaluationControllerCopyTree($copySource, $candidateRoot, 'candidate source copy', true);
+        agentEvaluationControllerCopyTree($copySource, $baselineRoot, 'baseline source copy', true);
+        if ($materialized !== null) {
+            agentEvaluationControllerRemoveTree($materialized);
+        }
         agentEvaluationControllerCopyTree(
             $dependencySource,
             $dependenciesRoot,
@@ -156,7 +252,7 @@ function agentEvaluationControllerPrepareWorkspace(
 function agentEvaluationControllerFreezeWorkspace(array $workspace, array $task): array
 {
     $workspace = agentEvaluationControllerValidateWorkspaceShape($workspace);
-    agentEvaluationControllerRequireFixedTask($task);
+    agentEvaluationControllerRequireAdmittedTask($task);
     $baselineRoot = $workspace['baseline_root'];
     $candidateRoot = $workspace['candidate_root'];
     $dependenciesRoot = $workspace['dependencies_root'];
@@ -167,7 +263,7 @@ function agentEvaluationControllerFreezeWorkspace(array $workspace, array $task)
         !hash_equals($workspace['baseline_sha256'], $baselineTree['sha256'])
         || !hash_equals($workspace['baseline_manifest'], $baselineTree['manifest'])
     ) {
-        throw new RuntimeException('Prepared baseline mutated before candidate freeze.');
+        throw new RuntimeException('Prepared baseline mutated before candidate freeze.', AGENT_EVALUATION_CONTROLLER_FREEZE_BASELINE_CHANGED);
     }
 
     $dependencyManifest = file_get_contents($dependencyManifestPath);
@@ -176,7 +272,7 @@ function agentEvaluationControllerFreezeWorkspace(array $workspace, array $task)
         !is_string($dependencyManifest)
         || !hash_equals($workspace['dependency_manifest_sha256'], hash('sha256', $dependencyManifest))
     ) {
-        throw new RuntimeException('Prepared-dependencies evidence mutated before candidate freeze.');
+        throw new RuntimeException('Prepared-dependencies evidence mutated before candidate freeze.', AGENT_EVALUATION_CONTROLLER_FREEZE_DEPENDENCY_EVIDENCE_CHANGED);
     }
 
     agentEvaluationValidateDependencyManifest($dependencyManifestPath);
@@ -421,7 +517,7 @@ function agentEvaluationControllerValidateWorkspacePolicy(
     );
 
     if (array_keys($baselineTree['directories']) !== array_keys($candidateTree['directories'])) {
-        throw new RuntimeException('Candidate directory set or mode changed outside the fixed workspace policy.');
+        throw new RuntimeException('Candidate directory set or mode changed outside the fixed workspace policy.', AGENT_EVALUATION_CONTROLLER_FREEZE_DIRECTORY_SET_CHANGED);
     }
 
     $paths = array_values(array_unique(array_merge(array_keys($baselineFiles), array_keys($candidateFiles))));
@@ -440,24 +536,24 @@ function agentEvaluationControllerValidateWorkspacePolicy(
 
         foreach ($policy['protected_paths'] as $protectedPath) {
             if (agentEvaluationPathIsWithin($path, $protectedPath)) {
-                throw new RuntimeException("Candidate changed protected path {$path}.");
+                throw new RuntimeException("Candidate changed protected path {$path}.", AGENT_EVALUATION_CONTROLLER_FREEZE_PROTECTED_PATH_CHANGED);
             }
         }
 
         if ($before === null) {
             if (!in_array($path, $policy['allowed_new_paths'], true)) {
-                throw new RuntimeException("Candidate created unapproved path {$path}.");
+                throw new RuntimeException("Candidate created unapproved path {$path}.", AGENT_EVALUATION_CONTROLLER_FREEZE_NEW_PATH_UNAPPROVED);
             }
 
             if (($after['mode'] ?? null) !== '100644') {
-                throw new RuntimeException("Candidate new path {$path} must not be executable.");
+                throw new RuntimeException("Candidate new path {$path} must not be executable.", AGENT_EVALUATION_CONTROLLER_FREEZE_NEW_PATH_EXECUTABLE);
             }
         } elseif (!in_array($path, $policy['allowed_existing_paths'], true)) {
-            throw new RuntimeException("Candidate changed unapproved existing path {$path}.");
+            throw new RuntimeException("Candidate changed unapproved existing path {$path}.", AGENT_EVALUATION_CONTROLLER_FREEZE_EXISTING_PATH_UNAPPROVED);
         }
 
         if ($before !== null && $after !== null && $before['mode'] !== $after['mode']) {
-            throw new RuntimeException("Candidate changed the executable mode of {$path}.");
+            throw new RuntimeException("Candidate changed the executable mode of {$path}.", AGENT_EVALUATION_CONTROLLER_FREEZE_EXECUTABLE_MODE_CHANGED);
         }
 
         $difference = agentEvaluationControllerLineDifference(
@@ -470,15 +566,15 @@ function agentEvaluationControllerValidateWorkspacePolicy(
     }
 
     if (count($changed) > $policy['max_changed_files']) {
-        throw new RuntimeException('Candidate exceeds the maximum changed-file count.');
+        throw new RuntimeException('Candidate exceeds the maximum changed-file count.', AGENT_EVALUATION_CONTROLLER_FREEZE_CHANGED_FILE_LIMIT);
     }
 
     if ($addedLines > $policy['max_added_lines']) {
-        throw new RuntimeException('Candidate exceeds the maximum added-line count.');
+        throw new RuntimeException('Candidate exceeds the maximum added-line count.', AGENT_EVALUATION_CONTROLLER_FREEZE_ADDED_LINE_LIMIT);
     }
 
     if ($deletedLines > $policy['max_deleted_lines']) {
-        throw new RuntimeException('Candidate exceeds the maximum deleted-line count.');
+        throw new RuntimeException('Candidate exceeds the maximum deleted-line count.', AGENT_EVALUATION_CONTROLLER_FREEZE_DELETED_LINE_LIMIT);
     }
 
     return ['changed_files' => $changed, 'added_lines' => $addedLines, 'deleted_lines' => $deletedLines];
@@ -496,12 +592,12 @@ function agentEvaluationControllerValidateWritableCandidateModes(
     $rootMetadata = lstat($candidateRoot);
 
     if (!is_array($rootMetadata) || ($rootMetadata['mode'] & 07777) !== 0700) {
-        throw new RuntimeException('Candidate workspace root changed its prepared private mode.');
+        throw new RuntimeException('Candidate workspace root changed its prepared private mode.', AGENT_EVALUATION_CONTROLLER_FREEZE_ROOT_MODE_CHANGED);
     }
 
     foreach ($directories as $path => $mode) {
         if ($mode !== '0755') {
-            throw new RuntimeException("Candidate directory {$path} changed its prepared mode.");
+            throw new RuntimeException("Candidate directory {$path} changed its prepared mode.", AGENT_EVALUATION_CONTROLLER_FREEZE_DIRECTORY_MODE_CHANGED);
         }
     }
 
@@ -510,7 +606,7 @@ function agentEvaluationControllerValidateWritableCandidateModes(
         $expectedMode = $file['mode'] === '100755' ? 0755 : 0644;
 
         if (!is_array($metadata) || ($metadata['mode'] & 07777) !== $expectedMode) {
-            throw new RuntimeException("Candidate file {$path} changed its prepared mode.");
+            throw new RuntimeException("Candidate file {$path} changed its prepared mode.", AGENT_EVALUATION_CONTROLLER_FREEZE_FILE_MODE_CHANGED);
         }
     }
 }

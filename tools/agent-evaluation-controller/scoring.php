@@ -7,6 +7,300 @@ const AGENT_EVALUATION_CONTROLLER_RESOURCE_SOURCE_BYTES = 32_768;
 
 /**
  * @param array<string, mixed> $resources
+ * @param array<string, mixed> $holdout
+ * @return array{application_gate:string,cases:list<array<string,mixed>>,scaling:list<array<string,mixed>>,automated_status:string}
+ */
+function agentEvaluationControllerScoreComparisonCandidate(array &$resources, string $frozenRoot, array $holdout, string $evidenceRoot): array
+{
+    if (($resources['generation_destroyed'] ?? null) !== true) {
+        throw new RuntimeException('Comparison observations require verified generation destruction after freeze.');
+    }
+    $before = agentEvaluationControllerDescribeTree($frozenRoot, 'comparison frozen input', true);
+    $application = agentEvaluationControllerOciRunApplicationCheck($resources, $frozenRoot);
+    agentEvaluationControllerWriteArtifact($evidenceRoot, 'application-check.json', agentEvaluationControllerComparisonProcessJson($application));
+    $results = agentEvaluationControllerEmptyComparisonResults($holdout);
+    $results['application_gate'] = agentEvaluationControllerLiveCheckPassed($application) ? 'pass' : 'fail';
+    $process = $application;
+    foreach (agentEvaluationRequireList($holdout, 'cases', 'comparison holdout') as $index => $value) {
+        if (($process['container_destroyed'] ?? null) !== true) {
+            // Retain the completed prefix and explicit unavailable remainder;
+            // never start another container while resource ownership is unsettled.
+            break;
+        }
+        $case = agentEvaluationValueObject($value, 'comparison case');
+        $input = agentEvaluationRequireObject($case, 'input', 'comparison case');
+        $process = agentEvaluationControllerOciRunObservation($resources, $frozenRoot, agentEvaluationJson($input));
+        agentEvaluationControllerWriteArtifact($evidenceRoot, sprintf('observation-%02d.json', $index + 1), agentEvaluationControllerComparisonProcessJson($process));
+        $results['cases'][$index] = [
+            'id' => agentEvaluationRequireString($case, 'id', 'comparison case'),
+            'process_admissible' => agentEvaluationControllerLiveCheckPassed($process),
+            ...agentEvaluationControllerCompareObservation(
+                agentEvaluationRequireString($process, 'stdout', 'comparison process'),
+                agentEvaluationRequireObject($case, 'expect', 'comparison case'),
+            ),
+        ];
+    }
+    $results['scaling'] = agentEvaluationControllerComparisonScaling($holdout, $results['cases']);
+    $passed = $results['application_gate'] === 'pass';
+    foreach ($results['cases'] as $case) {
+        foreach (['process_admissible', 'observation_valid', 'response', 'policy_order', 'durable_state', 'transaction_closed', 'query_bounds'] as $name) {
+            $passed = $passed && $case[$name] === true;
+        }
+    }
+    foreach ($results['scaling'] as $group) {
+        $passed = $passed && $group['passed'] === true;
+    }
+    $results['automated_status'] = $passed ? 'pass' : 'fail';
+    agentEvaluationControllerWriteArtifact($evidenceRoot, 'observation-results.json', agentEvaluationJson($results));
+    $after = agentEvaluationControllerDescribeTree($frozenRoot, 'post-comparison frozen input', true);
+    if ($before['manifest'] !== $after['manifest']) {
+        throw new RuntimeException('Comparison frozen candidate changed during scoring.');
+    }
+    return $results;
+}
+
+/**
+ * @param array<string, mixed> $holdout
+ * @return array{application_gate:string,cases:list<array<string,mixed>>,scaling:list<array<string,mixed>>,automated_status:string}
+ */
+function agentEvaluationControllerEmptyComparisonResults(array $holdout): array
+{
+    $cases = [];
+    foreach (agentEvaluationRequireList($holdout, 'cases', 'comparison holdout') as $value) {
+        $case = agentEvaluationValueObject($value, 'comparison case');
+        $cases[] = ['id' => agentEvaluationRequireString($case, 'id', 'comparison case'), 'process_admissible' => false,
+            ...agentEvaluationControllerCompareObservation('', agentEvaluationRequireObject($case, 'expect', 'comparison case'))];
+    }
+    return ['application_gate' => 'unavailable', 'cases' => $cases,
+        'scaling' => agentEvaluationControllerComparisonScaling($holdout, $cases), 'automated_status' => 'fail'];
+}
+
+/**
+ * @param array<string, mixed> $holdout
+ * @param list<array<string, mixed>> $cases
+ * @return list<array<string, mixed>>
+ */
+function agentEvaluationControllerComparisonScaling(array $holdout, array $cases): array
+{
+    $counts = [];
+    foreach ($cases as $case) {
+        $count = $case['statements'] ?? null;
+        if ($count !== null && !is_int($count)) {
+            throw new RuntimeException('Comparison scaling requires observed integer counts or null.');
+        }
+        $counts[agentEvaluationRequireString($case, 'id', 'comparison case')] = $count;
+    }
+    $results = [];
+    foreach (agentEvaluationRequireList($holdout, 'scaling_groups', 'comparison holdout') as $value) {
+        $group = agentEvaluationValueObject($value, 'comparison scaling group');
+        $ids = agentEvaluationRequireStringList($group, 'case_ids', 'comparison scaling group');
+        $observed = [];
+        $known = [];
+        foreach ($ids as $id) {
+            $count = $counts[$id] ?? null;
+            $observed[] = $count;
+            if ($count !== null) {
+                $known[] = $count;
+            }
+        }
+        $results[] = ['id' => agentEvaluationRequireString($group, 'id', 'comparison scaling group'),
+            'case_ids' => $ids, 'counts' => $observed,
+            'passed' => $known !== [] && count($known) === count($observed) && max($known) === min($known)];
+    }
+    return $results;
+}
+
+/**
+ * @param array<string, mixed> $task
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerReadComparisonHoldout(string $path, array $task): array
+{
+    $checks = agentEvaluationRequireObject($task, 'checks', 'comparison task');
+    $identity = agentEvaluationRequireObject($checks, 'holdout', 'comparison task');
+    agentEvaluationRequireBoundedFile($path, AGENT_EVALUATION_MAX_JSON_BYTES, 'private comparison holdout');
+    $bytes = file_get_contents($path, false, null, 0, AGENT_EVALUATION_MAX_JSON_BYTES + 1);
+    if (!is_string($bytes) || strlen($bytes) > AGENT_EVALUATION_MAX_JSON_BYTES
+        || !hash_equals(agentEvaluationRequireString($identity, 'sha256', 'comparison holdout'), hash('sha256', $bytes))
+    ) {
+        throw new RuntimeException('Private comparison holdout bytes do not match their bounded frozen identity.');
+    }
+    $holdout = agentEvaluationValueObject(agentEvaluationJsonValue($bytes, 'private comparison holdout'), 'private comparison holdout');
+    agentEvaluationRequireExactKeys($holdout, ['schema_version', 'id', 'revision', 'task_id', 'cases', 'scaling_groups'], 'comparison holdout');
+    if ($holdout['schema_version'] !== 1 || $holdout['id'] !== $identity['id']
+        || $holdout['revision'] !== $identity['revision'] || $holdout['task_id'] !== $task['id']
+    ) {
+        throw new RuntimeException('Private comparison holdout identity does not match its predeclared task.');
+    }
+    $cases = agentEvaluationRequireList($holdout, 'cases', 'comparison holdout');
+    if (count($cases) < 1 || count($cases) > 64) {
+        throw new RuntimeException('Private comparison holdout requires between one and 64 cases.');
+    }
+    $seen = [];
+    foreach ($cases as $value) {
+        $case = agentEvaluationValueObject($value, 'private holdout case');
+        agentEvaluationRequireExactKeys($case, ['id', 'input', 'expect'], 'private holdout case');
+        $id = agentEvaluationRequireString($case, 'id', 'private holdout case');
+        if (preg_match('/\A[a-z][a-z0-9.-]{0,95}\z/D', $id) !== 1 || isset($seen[$id])) {
+            throw new RuntimeException('Private holdout case IDs must be unique bounded labels.');
+        }
+        $seen[$id] = true;
+        agentEvaluationRequireObject($case, 'input', 'private holdout case');
+        $expected = agentEvaluationRequireObject($case, 'expect', 'private holdout case');
+        agentEvaluationRequireExactKeys($expected, ['response', 'policy_steps', 'query', 'durable_state', 'in_transaction'], 'private holdout expectation');
+        $response = agentEvaluationRequireObject($expected, 'response', 'private holdout expectation');
+        agentEvaluationRequireExactKeys($response, ['status', 'headers', 'body'], 'private holdout response');
+        $status = agentEvaluationRequireInteger($response, 'status', 'private holdout response');
+        if ($status < 100 || $status > 599) {
+            throw new RuntimeException('Private holdout status must be an HTTP status.');
+        }
+        agentEvaluationRequireObject($response, 'headers', 'private holdout response');
+        agentEvaluationRequireObject($response, 'body', 'private holdout response');
+        agentEvaluationRequireStringList($expected, 'policy_steps', 'private holdout expectation');
+        agentEvaluationRequireObject($expected, 'durable_state', 'private holdout expectation');
+        if (agentEvaluationRequireBoolean($expected, 'in_transaction', 'private holdout expectation')) {
+            throw new RuntimeException('Private holdout must require a closed transaction.');
+        }
+        $query = agentEvaluationRequireObject($expected, 'query', 'private holdout expectation');
+        agentEvaluationRequireExactKeys($query, ['min_statements', 'max_statements', 'failures', 'max_fingerprint_executions'], 'private query expectation');
+        foreach (['min_statements', 'max_statements', 'failures', 'max_fingerprint_executions'] as $name) {
+            if (agentEvaluationRequireNonNegativeInteger($query, $name, 'private query expectation') > 64) {
+                throw new RuntimeException('Private query expectation exceeds its finite bound.');
+            }
+        }
+        if ($query['min_statements'] > $query['max_statements']) {
+            throw new RuntimeException('Private query expectation minimum exceeds its maximum.');
+        }
+    }
+    $groups = agentEvaluationRequireList($holdout, 'scaling_groups', 'comparison holdout');
+    if (count($groups) > 16) {
+        throw new RuntimeException('Private holdout has too many scaling groups.');
+    }
+    $groupIds = [];
+    foreach ($groups as $value) {
+        $group = agentEvaluationValueObject($value, 'private scaling group');
+        agentEvaluationRequireExactKeys($group, ['id', 'case_ids', 'max_statement_growth'], 'private scaling group');
+        $id = agentEvaluationRequireString($group, 'id', 'private scaling group');
+        $ids = agentEvaluationRequireStringList($group, 'case_ids', 'private scaling group');
+        if (preg_match('/\A[a-z][a-z0-9.-]{0,95}\z/D', $id) !== 1 || isset($groupIds[$id])
+            || count($ids) < 2 || count($ids) > 64 || count(array_unique($ids)) !== count($ids)
+            || agentEvaluationRequireInteger($group, 'max_statement_growth', 'private scaling group') !== 0
+        ) {
+            throw new RuntimeException('Private scaling group must compare distinct cases with zero statement growth.');
+        }
+        $groupIds[$id] = true;
+        foreach ($ids as $caseId) {
+            if (!isset($seen[$caseId])) {
+                throw new RuntimeException('Private scaling group references an unknown case.');
+            }
+        }
+    }
+    return $holdout;
+}
+
+/**
+ * Expected observations remain in the host. Raw candidate output is never a
+ * verdict and an empty successful process cannot satisfy a holdout case.
+ *
+ * @param array<string, mixed> $expected
+ * @return array{observation_valid:bool,response:bool,policy_order:bool,durable_state:bool,transaction_closed:bool,query_bounds:bool,statements:int|null}
+ */
+function agentEvaluationControllerCompareObservation(string $raw, array $expected): array
+{
+    $result = ['observation_valid' => false, 'response' => false, 'policy_order' => false,
+        'durable_state' => false, 'transaction_closed' => false, 'query_bounds' => false, 'statements' => null];
+    try {
+        $observed = agentEvaluationValueObject(agentEvaluationJsonValue($raw, 'candidate observation'), 'candidate observation');
+        agentEvaluationRequireExactKeys($observed, ['schema_version', 'response', 'policy_steps', 'query_trace', 'durable_state', 'in_transaction'], 'candidate observation');
+        if (agentEvaluationRequireInteger($observed, 'schema_version', 'candidate observation') !== 1) {
+            throw new RuntimeException('Candidate observation must use its fixed version-1 format.');
+        }
+        $response = agentEvaluationRequireObject($observed, 'response', 'candidate observation');
+        agentEvaluationRequireExactKeys($response, ['status', 'headers', 'body'], 'candidate observation response');
+        $expectedResponse = agentEvaluationRequireObject($expected, 'response', 'private response expectation');
+        $headers = agentEvaluationRequireObject($response, 'headers', 'candidate response');
+        $normalizedHeaders = [];
+        foreach ($headers as $name => $value) {
+            $key = strtolower($name);
+            if (isset($normalizedHeaders[$key]) || !is_string($value)) {
+                throw new RuntimeException('Candidate response headers must have unique string values.');
+            }
+            $normalizedHeaders[$key] = $value;
+        }
+        $headersMatch = true;
+        foreach (agentEvaluationRequireObject($expectedResponse, 'headers', 'private response expectation') as $name => $value) {
+            $headersMatch = $headersMatch && ($normalizedHeaders[strtolower($name)] ?? null) === $value;
+        }
+        $body = agentEvaluationJsonValue(agentEvaluationRequireString($response, 'body', 'candidate response'), 'candidate response body');
+        $result['response'] = agentEvaluationRequireInteger($response, 'status', 'candidate response') === $expectedResponse['status']
+            && $headersMatch && agentEvaluationControllerCanonicalObservation($body) === agentEvaluationControllerCanonicalObservation($expectedResponse['body']);
+        $result['policy_order'] = agentEvaluationRequireStringList($observed, 'policy_steps', 'candidate observation')
+            === agentEvaluationRequireStringList($expected, 'policy_steps', 'private expectation');
+        $result['durable_state'] = agentEvaluationControllerCanonicalObservation(agentEvaluationRequireObject($observed, 'durable_state', 'candidate observation'))
+            === agentEvaluationControllerCanonicalObservation(agentEvaluationRequireObject($expected, 'durable_state', 'private expectation'));
+        $result['transaction_closed'] = !agentEvaluationRequireBoolean($observed, 'in_transaction', 'candidate observation');
+        $trace = agentEvaluationRequireObject($observed, 'query_trace', 'candidate observation');
+        agentEvaluationRequireExactKeys($trace, ['statements', 'failures', 'queries', 'truncated'], 'candidate query trace');
+        $count = agentEvaluationRequireNonNegativeInteger($trace, 'statements', 'candidate query trace');
+        $failures = agentEvaluationRequireNonNegativeInteger($trace, 'failures', 'candidate query trace');
+        $queries = agentEvaluationRequireList($trace, 'queries', 'candidate query trace');
+        if ($count > 100_000 || $failures > $count || count($queries) > 64) {
+            throw new RuntimeException('Candidate query trace exceeds its bounded observation shape.');
+        }
+        $seen = [];
+        $sum = 0;
+        $sumFailures = 0;
+        $maximum = 0;
+        foreach ($queries as $value) {
+            $query = agentEvaluationValueObject($value, 'candidate query entry');
+            agentEvaluationRequireExactKeys($query, ['fingerprint', 'executions', 'failures'], 'candidate query entry');
+            $fingerprint = agentEvaluationRequireString($query, 'fingerprint', 'candidate query entry');
+            $executions = agentEvaluationRequirePositiveInteger($query, 'executions', 'candidate query entry');
+            $queryFailures = agentEvaluationRequireNonNegativeInteger($query, 'failures', 'candidate query entry');
+            if (preg_match('/\Asha256:[a-f0-9]{64}\z/D', $fingerprint) !== 1 || isset($seen[$fingerprint])
+                || $executions > 100_000 || $queryFailures > $executions
+            ) {
+                throw new RuntimeException('Candidate query entries must be unique and internally consistent.');
+            }
+            $seen[$fingerprint] = true;
+            $sum += $executions;
+            $sumFailures += $queryFailures;
+            $maximum = max($maximum, $executions);
+        }
+        $queryExpectation = agentEvaluationRequireObject($expected, 'query', 'private query expectation');
+        $result['statements'] = $count;
+        $result['query_bounds'] = !agentEvaluationRequireBoolean($trace, 'truncated', 'candidate query trace')
+            && $sum === $count && $sumFailures === $failures
+            && $count >= agentEvaluationRequireInteger($queryExpectation, 'min_statements', 'private query expectation')
+            && $count <= agentEvaluationRequireInteger($queryExpectation, 'max_statements', 'private query expectation')
+            && $failures === agentEvaluationRequireInteger($queryExpectation, 'failures', 'private query expectation')
+            && $maximum <= agentEvaluationRequireInteger($queryExpectation, 'max_fingerprint_executions', 'private query expectation');
+        $result['observation_valid'] = true;
+        return $result;
+    } catch (JsonException|RuntimeException) {
+        return $result;
+    }
+}
+
+function agentEvaluationControllerCanonicalObservation(mixed $value): mixed
+{
+    if ($value instanceof stdClass) {
+        $properties = get_object_vars($value);
+        ksort($properties, SORT_STRING);
+        return ['object', array_map(agentEvaluationControllerCanonicalObservation(...), $properties)];
+    }
+    if (is_array($value)) {
+        if (!array_is_list($value)) {
+            ksort($value, SORT_STRING);
+            return ['object', array_map(agentEvaluationControllerCanonicalObservation(...), $value)];
+        }
+        return ['array', array_map(agentEvaluationControllerCanonicalObservation(...), $value)];
+    }
+    return ['scalar', $value];
+}
+
+/**
+ * @param array<string, mixed> $resources
  * @param array<string, bool> $checks
  * @param array<string, mixed> $profile
  * @return array{
@@ -606,4 +900,15 @@ function agentEvaluationControllerInspectPingResources(string $candidateRoot): a
         'passed' => $structurePasses && $ioPasses && $responsePasses,
         'evidence' => $evidence,
     ];
+}
+
+/** @param array<string,mixed> $process */
+function agentEvaluationControllerComparisonProcessJson(array $process): string
+{
+    // Base64 preserves arbitrary bounded candidate bytes without UTF-8 failures
+    // or sixfold JSON escaping growth for adversarial control-byte streams.
+    return agentEvaluationJson([...$process,
+        'stdout' => base64_encode(agentEvaluationRequireString($process, 'stdout', 'comparison process')),
+        'stderr' => base64_encode(agentEvaluationRequireString($process, 'stderr', 'comparison process')),
+        'stream_encoding' => 'base64']);
 }

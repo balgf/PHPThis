@@ -1,0 +1,14 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Evaluation\CaseInput;
+use App\Evaluation\Observation;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$input = fgets(STDIN, 1_048_578);
+if (!is_string($input) || !str_ends_with($input, "\n")) {
+    throw new RuntimeException('Observation input is unavailable.');
+}
+fwrite(STDOUT, json_encode(Observation::run(CaseInput::fromJson($input)), JSON_THROW_ON_ERROR) . "\n");

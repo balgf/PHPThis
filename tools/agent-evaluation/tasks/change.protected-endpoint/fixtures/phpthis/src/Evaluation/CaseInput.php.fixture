@@ -1,0 +1,88 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use RuntimeException;
+
+final readonly class CaseInput
+{
+    /**
+     * @param array<string, mixed> $request
+     * @param array<string, mixed> $policy
+     * @param array<string, mixed> $seed
+     */
+    private function __construct(
+        public array $request,
+        public array $policy,
+        public array $seed,
+        public string $fault,
+    ) {
+    }
+
+    public static function fromJson(string $json): self
+    {
+        if ($json === '' || strlen($json) > 1_048_576) {
+            throw new RuntimeException('Observation input exceeds its bound.');
+        }
+        $root = self::object(json_decode($json, true, 32, JSON_THROW_ON_ERROR));
+        if (($root['schema_version'] ?? null) !== 1 || count($root) !== 5) {
+            throw new RuntimeException('Observation input schema is invalid.');
+        }
+        $request = self::object($root['request'] ?? null);
+        $policy = self::object($root['policy'] ?? null);
+        $seed = self::object($root['seed'] ?? null);
+        $fault = self::string($root['fault'] ?? null);
+        if (!in_array($fault, ['none', 'event_write', 'outbox_write'], true)) {
+            throw new RuntimeException('Observation fault is invalid.');
+        }
+        foreach (['memberships', 'documents', 'events', 'outbox'] as $table) {
+            $rows = $seed[$table] ?? null;
+            if (!is_array($rows) || !array_is_list($rows) || count($rows) > 1_000) {
+                throw new RuntimeException('Observation seed exceeds its row bound.');
+            }
+        }
+        return new self($request, $policy, $seed, $fault);
+    }
+
+    /** @return array<string, mixed> */
+    public static function object(mixed $value): array
+    {
+        if (!is_array($value)) {
+            throw new RuntimeException('Observation object is invalid.');
+        }
+        $result = [];
+        foreach ($value as $key => $item) {
+            if (!is_string($key)) {
+                throw new RuntimeException('Observation object key is invalid.');
+            }
+            $result[$key] = $item;
+        }
+        return $result;
+    }
+
+    public static function string(mixed $value): string
+    {
+        if (!is_string($value) || strlen($value) > 65_536) {
+            throw new RuntimeException('Observation text is invalid.');
+        }
+        return $value;
+    }
+
+    public static function positiveInteger(mixed $value): int
+    {
+        if (!is_int($value) || $value < 1 || $value > 1_000_000) {
+            throw new RuntimeException('Observation identifier is invalid.');
+        }
+        return $value;
+    }
+
+    public static function boolean(mixed $value): bool
+    {
+        if (!is_bool($value)) {
+            throw new RuntimeException('Observation boolean is invalid.');
+        }
+        return $value;
+    }
+}

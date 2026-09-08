@@ -17,8 +17,8 @@ function agentEvaluationMain(array $arguments): int
     try {
         if ($command === 'validate') {
             agentEvaluationRequireArgumentCount($arguments, 2, 'validate');
-            $tasks = agentEvaluationValidateKit($kit);
-            fwrite(STDOUT, sprintf("PASS agent evaluation kit: %d task\n", count($tasks)));
+            agentEvaluationValidateKit($kit);
+            fwrite(STDOUT, sprintf("PASS agent evaluation kit: %d tasks\n", count(AGENT_EVALUATION_TASK_REVISIONS)));
 
             return 0;
         }
@@ -37,6 +37,17 @@ function agentEvaluationMain(array $arguments): int
                 ];
             }
 
+            foreach (agentEvaluationComparisonTasks($kit) as $task) {
+                $summary[] = [
+                    'schema_version' => $task['schema_version'],
+                    'id' => $task['id'],
+                    'revision' => $task['revision'],
+                    'kind' => $task['kind'],
+                    'protocol' => $task['protocol']['id'],
+                    'conditions' => array_column($task['conditions'], 'id'),
+                ];
+            }
+
             fwrite(STDOUT, agentEvaluationJson($summary));
 
             return 0;
@@ -50,7 +61,10 @@ function agentEvaluationMain(array $arguments): int
                 throw new RuntimeException('prompt requires one task ID.');
             }
 
-            $task = agentEvaluationTask($kit, $taskId);
+            $pin = AGENT_EVALUATION_TASK_REVISIONS[$taskId] ?? null;
+            $task = is_array($pin) && $pin['schema_version'] === 2
+                ? agentEvaluationComparisonTask($kit, $taskId)
+                : agentEvaluationTask($kit, $taskId);
             $prompt = file_get_contents($task['directory'] . '/' . $task['prompt']['path']);
 
             if (!is_string($prompt)) {

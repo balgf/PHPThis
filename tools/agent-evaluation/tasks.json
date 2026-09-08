@@ -1,3 +1,6 @@
 [
-    "change.simple-ping"
+    "change.simple-ping",
+    "change.protected-endpoint",
+    "repair.transaction-rollback",
+    "change.filtered-collection"
 ]

@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+final class Policy
+{
+    /** @var list<string> */
+    private array $steps = [];
+
+    public function __construct(
+        private readonly bool $authenticated,
+        private readonly int $principalId,
+        private readonly int $tenantId,
+        private readonly bool $authorized,
+    ) {
+    }
+
+    /** @param array<string, string> $headers */
+    public function authenticate(array $headers): Principal
+    {
+        $this->steps[] = 'authenticate';
+        if (!$this->authenticated || ($headers['authorization'] ?? null) !== 'Bearer public-fixture') {
+            throw new Failure(401, 'unauthenticated');
+        }
+        return new Principal($this->principalId);
+    }
+
+    public function resolveTenant(Principal $principal, int $accountId): Tenant
+    {
+        $this->steps[] = 'resolve_tenant';
+        if ($principal->id !== $this->principalId || $accountId !== $this->tenantId) {
+            throw new Failure(403, 'forbidden');
+        }
+        return new Tenant($this->tenantId);
+    }
+
+    public function authorize(Principal $principal, Tenant $tenant): void
+    {
+        $this->steps[] = 'authorize';
+        if (!$this->authorized || $principal->id !== $this->principalId || $tenant->accountId !== $this->tenantId) {
+            throw new Failure(403, 'forbidden');
+        }
+    }
+
+    /** @return list<string> */
+    public function steps(): array
+    {
+        return $this->steps;
+    }
+}

@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PHPThis\Database\Connection;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\Response;
+
+final class DocumentHandler implements RequestHandler
+{
+    public function __construct(private readonly Connection $connection, private readonly Policy $policy)
+    {
+    }
+
+    public function handle(Request $request): Response
+    {
+        $accountId = $request->pathParameters->positiveInteger('account_id');
+        $query = $request->query;
+        $headers = $request->headers;
+        $body = $request->body;
+        $principal = $this->policy->authenticate($headers);
+        $tenant = $this->policy->resolveTenant($principal, $accountId);
+        $this->policy->authorize($principal, $tenant);
+        if ($query !== [] || strlen($body) > 1024) {
+            throw new Failure(400, 'invalid_request');
+        }
+        try {
+            $input = json_decode($body, true, 8, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new Failure(400, 'invalid_request');
+        }
+        if (!is_array($input) || count($input) !== 3 || !isset($input['document_key'], $input['title'], $input['category'])) {
+            throw new Failure(400, 'invalid_request');
+        }
+        $key = $input['document_key'];
+        $title = $input['title'];
+        $category = $input['category'];
+        if (!is_string($key) || preg_match('/^[A-Za-z0-9_-]{1,32}$/D', $key) !== 1 || !is_string($title) || $title === '' || strlen($title) > 120 || !is_string($category) || $category === '' || strlen($category) > 64 || preg_match('//u', $title) !== 1 || preg_match('//u', $category) !== 1 || preg_match('/[\x00-\x1F\x7F]/', $title . $category) === 1) {
+            throw new Failure(400, 'invalid_request');
+        }
+        $this->connection->beginTransaction();
+        try {
+            $inserted = $this->connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO documents (account_id, document_key, title, category) SELECT :account_id, :document_key, :title, :category WHERE :requested_id = :tenant_id AND EXISTS (SELECT 1 FROM memberships WHERE principal_id = :principal_id AND account_id = :membership_id)
+                SQL,
+            ['account_id' => $accountId, 'document_key' => $key, 'title' => $title, 'category' => $category, 'requested_id' => $accountId, 'tenant_id' => $tenant->accountId, 'principal_id' => $principal->id, 'membership_id' => $tenant->accountId],
+        );
+            if ($inserted !== 1) {
+                throw new Failure(403, 'forbidden');
+            }
+            $this->connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO events (document_id, event_type) SELECT id, 'document.created' FROM documents WHERE document_key = :document_key AND account_id = :account_id
+                SQL,
+            ['document_key' => $key, 'account_id' => $accountId],
+        );
+            $this->connection->commit();
+            $this->connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO outbox (document_id, job_type) SELECT id, 'document.index' FROM documents WHERE document_key = :document_key AND account_id = :account_id
+                SQL,
+            ['document_key' => $key, 'account_id' => $accountId],
+        );
+            return new Response(201, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'], json_encode(['data' => ['document_key' => $key, 'title' => $title, 'category' => $category]], JSON_THROW_ON_ERROR) . "\n");
+        } finally {
+            if ($this->connection->inTransaction()) {
+                $this->connection->rollBack();
+            }
+        }
+    }
+}

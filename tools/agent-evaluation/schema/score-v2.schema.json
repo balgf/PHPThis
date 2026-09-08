@@ -1,0 +1,516 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/score-v2.json",
+    "title": "PHPThis bounded comparison score v2",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "campaign_id",
+        "slot",
+        "run_id",
+        "task_id",
+        "condition",
+        "attempt_sha256",
+        "holdout_sha256",
+        "admissible",
+        "application_gate",
+        "cases",
+        "scaling",
+        "automated_status",
+        "human_review",
+        "correct_completion"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 2
+        },
+        "campaign_id": {
+            "$ref": "#/$defs/id32"
+        },
+        "slot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+        },
+        "run_id": {
+            "$ref": "#/$defs/id32"
+        },
+        "task_id": {
+            "enum": [
+                "change.protected-endpoint",
+                "repair.transaction-rollback",
+                "change.filtered-collection"
+            ]
+        },
+        "condition": {
+            "enum": [
+                "phpthis",
+                "plain-php"
+            ]
+        },
+        "attempt_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "holdout_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "admissible": {
+            "type": "boolean"
+        },
+        "application_gate": {
+            "enum": [
+                "pass",
+                "fail",
+                "unavailable"
+            ]
+        },
+        "cases": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {
+                "$ref": "#/$defs/case"
+            }
+        },
+        "scaling": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+                "$ref": "#/$defs/scaling"
+            }
+        },
+        "automated_status": {
+            "enum": [
+                "pass",
+                "fail"
+            ]
+        },
+        "human_review": {
+            "$ref": "#/$defs/humanReview"
+        },
+        "correct_completion": {
+            "type": [
+                "boolean",
+                "null"
+            ]
+        }
+    },
+    "$defs": {
+        "id32": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+        },
+        "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "label": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]{0,95}$"
+        },
+        "statementCount": {
+            "type": [
+                "integer",
+                "null"
+            ],
+            "minimum": 0,
+            "maximum": 100000
+        },
+        "case": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "process_admissible",
+                "observation_valid",
+                "response",
+                "policy_order",
+                "durable_state",
+                "transaction_closed",
+                "query_bounds",
+                "statements"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/label"
+                },
+                "process_admissible": {
+                    "type": "boolean"
+                },
+                "observation_valid": {
+                    "type": "boolean"
+                },
+                "response": {
+                    "type": "boolean"
+                },
+                "policy_order": {
+                    "type": "boolean"
+                },
+                "durable_state": {
+                    "type": "boolean"
+                },
+                "transaction_closed": {
+                    "type": "boolean"
+                },
+                "query_bounds": {
+                    "type": "boolean"
+                },
+                "statements": {
+                    "$ref": "#/$defs/statementCount"
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "query_bounds": {
+                                "const": true
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "observation_valid": {
+                                "const": true
+                            },
+                            "statements": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100000
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "scaling": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "case_ids",
+                "counts",
+                "passed"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/label"
+                },
+                "case_ids": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 64,
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/$defs/label"
+                    }
+                },
+                "counts": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 64,
+                    "items": {
+                        "$ref": "#/$defs/statementCount"
+                    }
+                },
+                "passed": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "humanReview": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "status",
+                "reviewer",
+                "semantic_correctness",
+                "instrumentation_integrity",
+                "review_seconds",
+                "justified_interventions",
+                "unnecessary_interventions",
+                "public_check_repairs",
+                "reason"
+            ],
+            "properties": {
+                "status": {
+                    "enum": [
+                        "pending",
+                        "pass",
+                        "fail"
+                    ]
+                },
+                "reviewer": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.@-]*$"
+                },
+                "semantic_correctness": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "instrumentation_integrity": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "review_seconds": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 86400
+                },
+                "justified_interventions": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 86400
+                },
+                "unnecessary_interventions": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 86400
+                },
+                "public_check_repairs": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 86400
+                },
+                "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "status": {
+                                "const": "pending"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "reviewer": {
+                                "type": "null"
+                            },
+                            "semantic_correctness": {
+                                "type": "null"
+                            },
+                            "instrumentation_integrity": {
+                                "type": "null"
+                            },
+                            "review_seconds": {
+                                "type": "null"
+                            },
+                            "justified_interventions": {
+                                "type": "null"
+                            },
+                            "unnecessary_interventions": {
+                                "type": "null"
+                            },
+                            "public_check_repairs": {
+                                "type": "null"
+                            }
+                        }
+                    },
+                    "else": {
+                        "properties": {
+                            "reviewer": {
+                                "type": "string"
+                            },
+                            "semantic_correctness": {
+                                "type": "boolean"
+                            },
+                            "instrumentation_integrity": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "status": {
+                                "const": "pass"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "semantic_correctness": {
+                                "const": true
+                            },
+                            "instrumentation_integrity": {
+                                "const": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "status": {
+                                "const": "fail"
+                            }
+                        }
+                    },
+                    "then": {
+                        "anyOf": [
+                            {
+                                "properties": {
+                                    "semantic_correctness": {
+                                        "const": false
+                                    }
+                                }
+                            },
+                            {
+                                "properties": {
+                                    "instrumentation_integrity": {
+                                        "const": false
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "admissible": {
+                        "const": true
+                    },
+                    "application_gate": {
+                        "const": "pass"
+                    },
+                    "cases": {
+                        "items": {
+                            "properties": {
+                                "process_admissible": {
+                                    "const": true
+                                },
+                                "observation_valid": {
+                                    "const": true
+                                },
+                                "response": {
+                                    "const": true
+                                },
+                                "policy_order": {
+                                    "const": true
+                                },
+                                "durable_state": {
+                                    "const": true
+                                },
+                                "transaction_closed": {
+                                    "const": true
+                                },
+                                "query_bounds": {
+                                    "const": true
+                                }
+                            }
+                        }
+                    },
+                    "scaling": {
+                        "items": {
+                            "properties": {
+                                "passed": {
+                                    "const": true
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "automated_status": {
+                        "const": "pass"
+                    }
+                }
+            },
+            "else": {
+                "properties": {
+                    "automated_status": {
+                        "const": "fail"
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "human_review": {
+                        "properties": {
+                            "status": {
+                                "const": "pending"
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "correct_completion": {
+                        "type": "null"
+                    }
+                }
+            },
+            "else": {
+                "if": {
+                    "properties": {
+                        "automated_status": {
+                            "const": "pass"
+                        },
+                        "human_review": {
+                            "properties": {
+                                "status": {
+                                    "const": "pass"
+                                }
+                            }
+                        }
+                    }
+                },
+                "then": {
+                    "properties": {
+                        "correct_completion": {
+                            "const": true
+                        }
+                    }
+                },
+                "else": {
+                    "properties": {
+                        "correct_completion": {
+                            "const": false
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "$comment": "The PHP validator additionally binds exact retained attempt and holdout bytes, every ordered private case and scaling group, unique IDs, scaling counts to case counts, the zero-growth rule, and admissibility to a complete attempt."
+}

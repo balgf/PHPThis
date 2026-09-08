@@ -1,0 +1,32 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Evaluation\CaseInput;
+use App\Evaluation\Observation;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$json = file_get_contents(__DIR__ . '/public-case.json');
+if (!is_string($json)) {
+    throw new RuntimeException('Public smoke input is unavailable.');
+}
+$result = Observation::run(CaseInput::fromJson($json));
+$response = $result['response'];
+if ($response['status'] !== 200) {
+    throw new RuntimeException('Public smoke response failed.');
+}
+if ($result['query_trace']['failures'] !== 0 || $result['query_trace']['truncated'] || $result['in_transaction']) {
+    throw new RuntimeException('Public smoke query or transaction state failed.');
+}
+if ($result['policy_steps'] !== ['authenticate', 'resolve_tenant', 'authorize']) {
+    throw new RuntimeException('Public smoke policy order failed.');
+}
+$state = $result['durable_state'];
+if (count($state['documents']) !== 1 || $state['events'] !== [] || $state['outbox'] !== []) {
+    throw new RuntimeException('Public smoke durable state failed.');
+}
+if (is_file(__DIR__ . '/behavior.php')) {
+    require __DIR__ . '/behavior.php';
+}
+fwrite(STDOUT, "PASS public application smoke\n");

@@ -369,3 +369,4 @@ foreach ($events as $event) {
 }
 
 fwrite(STDERR, "PASS deterministic fake Codex generation\n");
+fwrite(STDERR, 'Received prompt SHA256: ' . hash('sha256', $prompt) . "\n");

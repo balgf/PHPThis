@@ -598,6 +598,163 @@ const AGENT_EVALUATION_CONTROLLER_OCI_ARCHIVE_BYTES = 16_777_216;
 const AGENT_EVALUATION_CONTROLLER_OCI_CANDIDATE_BYTES = 805_306_368;
 const AGENT_EVALUATION_CONTROLLER_OCI_TMP_BYTES = 184_549_376;
 const AGENT_EVALUATION_CONTROLLER_OCI_SHM_BYTES = 16_777_216;
+const AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_BYTES = 65_536;
+const AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_CANDIDATES = 32;
+
+function agentEvaluationControllerOciImageRepository(string $reference): string
+{
+    if (strlen($reference) > 255 || preg_match(
+        '/\A((?:[a-z0-9]+(?:[.-][a-z0-9]+)*(?::[0-9]{1,5})?\/)?[a-z0-9]+(?:[._-]+[a-z0-9]+)*(?:\/[a-z0-9]+(?:[._-]+[a-z0-9]+)*)*)@sha256:[a-f0-9]{64}\z/D',
+        $reference,
+        $matches,
+    ) !== 1) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_NOT_PINNED');
+    }
+    return $matches[1];
+}
+
+/** @return list<string> */
+function agentEvaluationControllerOciImageCandidates(string $reference, string $index): array
+{
+    $repository = agentEvaluationControllerOciImageRepository($reference);
+    if (strlen($index) > AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_BYTES) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_LIMIT');
+    }
+    if ($index === '') {
+        return [];
+    }
+    if (!str_ends_with($index, "\n")) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_INVALID');
+    }
+    $lines = explode("\n", substr($index, 0, -1));
+    if (count($lines) > 128) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_LIMIT');
+    }
+    $ids = [];
+    foreach ($lines as $line) {
+        $entry = agentEvaluationValueObject(agentEvaluationJsonValue($line, 'OCI image index'), 'OCI image index');
+        agentEvaluationRequireExactKeys($entry, ['id', 'repository', 'digest'], 'OCI image index');
+        $id = agentEvaluationRequireString($entry, 'id', 'OCI image index');
+        $digest = agentEvaluationRequireString($entry, 'digest', 'OCI image index');
+        if (($entry['repository'] ?? null) !== $repository || preg_match('/\Asha256:[a-f0-9]{64}\z/D', $id) !== 1
+            || ($digest !== '<none>' && preg_match('/\Asha256:[a-f0-9]{64}\z/D', $digest) !== 1)) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_INVALID');
+        }
+        // The index locates IDs only. Inspected RepoDigests remains authoritative.
+        $ids[$id] = true;
+        if (count($ids) > AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_CANDIDATES) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_LIMIT');
+        }
+    }
+    $candidates = array_keys($ids);
+    sort($candidates, SORT_STRING);
+    return $candidates;
+}
+
+/**
+ * @param array<string, array<string, mixed>> $candidates
+ * @return array{image_reference: string, image_id: string, architecture: string}
+ */
+function agentEvaluationControllerOciSelectImageIdentity(string $reference, array $candidates): array
+{
+    agentEvaluationControllerOciImageRepository($reference);
+    if (count($candidates) > AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_CANDIDATES) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_LIMIT');
+    }
+    $matched = [];
+    foreach ($candidates as $id => $identity) {
+        if (preg_match('/\Asha256:[a-f0-9]{64}\z/D', $id) !== 1 || ($identity['Id'] ?? null) !== $id) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_IDENTITY_INVALID');
+        }
+        $digests = $identity['RepoDigests'] ?? null;
+        if (!is_array($digests) || !array_is_list($digests) || count($digests) > 128) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_IDENTITY_INVALID');
+        }
+        foreach ($digests as $digest) {
+            if (!is_string($digest) || strlen($digest) > 255) {
+                throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_IDENTITY_INVALID');
+            }
+        }
+        if (!in_array($reference, $digests, true)) {
+            continue;
+        }
+        $architecture = $identity['Architecture'] ?? null;
+        $config = agentEvaluationRequireObject($identity, 'Config', 'OCI image configuration');
+        if (($identity['Os'] ?? null) !== 'linux' || !is_string($architecture)
+            || !in_array($architecture, ['arm64', 'amd64'], true) || ($config['Volumes'] ?? []) !== []) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_IDENTITY_INVALID');
+        }
+        $matched[] = ['image_reference' => $reference, 'image_id' => $id, 'architecture' => $architecture];
+    }
+    if (count($matched) !== 1) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_RESOLUTION_NOT_UNIQUE');
+    }
+    return $matched[0];
+}
+
+/**
+ * @param array<string, mixed> $engine
+ * @return array{image_reference: string, image_id: string, architecture: string}
+ */
+function agentEvaluationControllerOciResolveImage(array $engine, string $reference): array
+{
+    $repository = agentEvaluationControllerOciImageRepository($reference);
+    $started = hrtime(true);
+    // Docker's positional repository selector is exact and includes every tag.
+    $index = agentEvaluationControllerOciCommand($engine, ['image', 'ls', '--no-trunc', '--digests', '--format',
+        '{"id":{{json .ID}},"repository":{{json .Repository}},"digest":{{json .Digest}}}', $repository],
+        '', 30, AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_BYTES);
+    if ($index['exit_code'] !== 0 || $index['termination_reason'] !== 'completed') {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_FAILED');
+    }
+    $candidates = [];
+    foreach (agentEvaluationControllerOciImageCandidates($reference, $index['stdout']) as $id) {
+        $remaining = 30_000 - agentEvaluationControllerElapsedMilliseconds($started);
+        if ($remaining <= 0) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_RESOLUTION_LIMIT');
+        }
+        $inspection = agentEvaluationControllerOciCommand($engine, ['image', 'inspect', '--format',
+            '{"Id":{{json .Id}},"RepoDigests":{{json .RepoDigests}},"Os":{{json .Os}},"Architecture":{{json .Architecture}},"Config":{{json .Config}}}', $id],
+            '', max(1, intdiv($remaining, 1000)), AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_BYTES);
+        if ($inspection['exit_code'] !== 0 || $inspection['termination_reason'] !== 'completed') {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INSPECTION_FAILED');
+        }
+        $candidates[$id] = agentEvaluationValueObject(agentEvaluationJsonValue($inspection['stdout'], 'OCI image inspection'), 'OCI image inspection');
+    }
+    if (agentEvaluationControllerElapsedMilliseconds($started) > 30_000) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_RESOLUTION_LIMIT');
+    }
+    return agentEvaluationControllerOciSelectImageIdentity($reference, $candidates);
+}
+
+/** @param array<string, mixed> $engine */
+function agentEvaluationControllerOciVerifiedImageId(array $engine, string $role): string
+{
+    if (!in_array($role, ['generation', 'scoring'], true)) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_ROLE_INVALID');
+    }
+    $engine = agentEvaluationControllerOciEngineFields($engine);
+    $images = agentEvaluationRequireObject($engine['identity'], 'images', 'OCI verified images');
+    $identity = agentEvaluationRequireObject($images, $role, 'OCI verified image');
+    $reference = agentEvaluationRequireString($engine['configuration'], $role . '_image', 'OCI configured image');
+    agentEvaluationControllerOciImageRepository($reference);
+    $id = agentEvaluationRequireString($identity, 'image_id', 'OCI verified image');
+    if (($identity['image_reference'] ?? null) !== $reference || preg_match('/\Asha256:[a-f0-9]{64}\z/D', $id) !== 1
+        || !in_array($identity['architecture'] ?? null, ['arm64', 'amd64'], true)) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_IDENTITY_INVALID');
+    }
+    return $id;
+}
+
+/** @param array<string, mixed> $container */
+function agentEvaluationControllerOciValidateContainerImage(array $container, string $imageId): void
+{
+    $configuration = agentEvaluationRequireObject($container, 'Config', 'OCI container image');
+    if (preg_match('/\Asha256:[a-f0-9]{64}\z/D', $imageId) !== 1
+        || ($container['Image'] ?? null) !== $imageId || ($configuration['Image'] ?? null) !== $imageId) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_CONTAINER_IMAGE_INVALID');
+    }
+}
 
 /**
  * @param array<string, mixed> $engine
@@ -711,23 +868,8 @@ function agentEvaluationControllerOciPreflight(array $configuration, string $con
     }
     $identities = [];
     foreach (['generation', 'scoring'] as $role) {
-        $reference = $configuration[$role . '_image'] ?? null;
-        if (!is_string($reference) || preg_match('/\A[a-z0-9][a-z0-9._:\/-]*@sha256:[a-f0-9]{64}\z/D', $reference) !== 1) {
-            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_NOT_PINNED');
-        }
-        $identity = agentEvaluationControllerOciJsonCommand($engine,
-            ['image', 'inspect', '--format', '{{json .}}', $reference]);
-        if (($identity['Os'] ?? null) !== 'linux'
-            || !in_array($identity['Architecture'] ?? null, ['arm64', 'amd64'], true)
-            || !is_string($identity['Id'] ?? null)
-            || !is_array($identity['RepoDigests'] ?? null)
-            || !in_array($reference, $identity['RepoDigests'], true)
-            || !is_array($identity['Config'] ?? null)
-            || ($identity['Config']['Volumes'] ?? []) !== []) {
-            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_IDENTITY_INVALID');
-        }
-        $identities[$role] = ['image_reference' => $reference, 'image_id' => $identity['Id'],
-            'architecture' => $identity['Architecture']];
+        $reference = agentEvaluationRequireString($configuration, $role . '_image', 'OCI configured image');
+        $identities[$role] = agentEvaluationControllerOciResolveImage($engine, $reference);
     }
     $engine['identity'] = ['engine_version' => $version['Version'], 'cgroup_version' => '2',
         'images' => $identities, 'network' => 'none-with-fixed-broker-pipe'];
@@ -891,9 +1033,11 @@ function agentEvaluationControllerOciPrepare(array $engine, string $runId, strin
 function agentEvaluationControllerOciCreateContainer(array &$resources, string $role, string $imageRole, array $mounts, array $command): string
 {
     $resources = agentEvaluationControllerOciResourceState($resources);
+    $imageId = agentEvaluationControllerOciVerifiedImageId($resources['engine'], $imageRole);
     $name = $resources['owner'] . '-' . $role;
     $uid = $imageRole === 'scoring' ? AGENT_EVALUATION_CONTROLLER_OCI_SCORE_UID : AGENT_EVALUATION_CONTROLLER_OCI_UID;
-    $candidateScratch = in_array($role, ['generation', 'score-application-check', 'score-public-scorer'], true);
+    $candidateScratch = in_array($role, ['generation', 'score-application-check', 'score-public-scorer',
+        'score-observation', 'score-comparison-application-check'], true);
     $temporaryBytes = $candidateScratch ? 117_440_512 : AGENT_EVALUATION_CONTROLLER_OCI_TMP_BYTES;
     $arguments = ['create', '--pull', 'never', '--name', $name,
         '--label', 'org.phpthis.evaluation.owner=' . $resources['owner'], '--read-only',
@@ -906,7 +1050,8 @@ function agentEvaluationControllerOciCreateContainer(array &$resources, string $
         '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,size=' . $temporaryBytes . ',mode=1777',
         '--env', 'PATH=/usr/local/bin:/usr/bin:/bin', '--env', 'HOME=/tmp/phpthis-home',
         '--workdir', '/candidate', '--interactive', '--entrypoint', $command[0]];
-    $candidateCache = in_array($role, ['generation', 'score-application-check', 'score-public-scorer'], true);
+    $candidateCache = in_array($role, ['generation', 'score-application-check', 'score-public-scorer',
+        'score-observation', 'score-comparison-application-check'], true);
     if ($candidateCache) {
         $arguments[] = '--tmpfs';
         $arguments[] = '/candidate/vendor/.phpthis:rw,nosuid,nodev,noexec,size=67108864,mode=1777';
@@ -919,7 +1064,7 @@ function agentEvaluationControllerOciCreateContainer(array &$resources, string $
         $arguments[] = '--mount';
         $arguments[] = $mount;
     }
-    $arguments[] = agentEvaluationRequireString($resources['engine']['configuration'], $imageRole . '_image', 'OCI image configuration');
+    $arguments[] = $imageId;
     foreach (array_slice($command, 1) as $argument) {
         $arguments[] = $argument;
     }
@@ -935,6 +1080,7 @@ function agentEvaluationControllerOciCreateContainer(array &$resources, string $
     $resources['containers'][$role] = $name;
     agentEvaluationControllerOciWriteLedger($resources);
     $container = agentEvaluationControllerOciJsonCommand($resources['engine'], ['inspect', '--format', '{{json .}}', $name]);
+    agentEvaluationControllerOciValidateContainerImage($container, $imageId);
     agentEvaluationControllerOciInspectPolicy($container, $uid, $mounts, $resources['owner'], $candidateCache, $candidateScratch);
     return $name;
 }
@@ -1264,6 +1410,10 @@ function agentEvaluationControllerOciExportCandidate(array &$resources, string $
         if (!is_dir($parent) && !mkdir($parent, 0755, true)) {
             throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_EXPORT_CREATE_FAILED');
         }
+        // Restore the validated archive mode independently of the host umask.
+        if ($entry['directory'] && !chmod($destination, 0755)) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_EXPORT_CREATE_FAILED');
+        }
         if (!$entry['directory'] && (file_put_contents($destination, $entry['bytes'], LOCK_EX) === false
             || !chmod($destination, ($entry['mode'] & 0111) !== 0 ? 0755 : 0644))) {
             throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_EXPORT_WRITE_FAILED');
@@ -1369,6 +1519,7 @@ function agentEvaluationControllerOciCleanup(array &$resources): array
 /**
  * @param array<string, mixed> $resources
  * @param array<string, mixed> $profile
+ * @param array<string, mixed>|null $spending
  * @return array<string, mixed>
  * @param-out array{engine: array{binary: string, socket: string, config_root: string, control_root: string, configuration: array<string, mixed>}, owner: string, run_id: string, containers: array<string, string>, volumes: array<string, string>, generation: string|null, generation_stopped: bool, generation_destroyed: bool, frozen: bool, candidate_target: string} $resources
  */
@@ -1377,6 +1528,7 @@ function agentEvaluationControllerOciRunGeneration(
     string $prompt,
     array $profile,
     #[SensitiveParameter] string $credential,
+    ?array $spending = null,
 ): array {
     $resources = agentEvaluationControllerOciResourceState($resources);
     $modelProfile = agentEvaluationRequireObject($profile, 'model', 'live model profile');
@@ -1384,9 +1536,10 @@ function agentEvaluationControllerOciRunGeneration(
     $settings = agentEvaluationValueObject($modelProfile['settings'] ?? null, 'live model settings');
     $effort = agentEvaluationRequireString($settings, 'reasoning_effort', 'live model settings');
     $budgets = agentEvaluationRequireObject($profile, 'budgets', 'live model profile');
-    $proxy = agentEvaluationControllerProxyState($model, $effort, agentEvaluationRequirePositiveInteger($budgets, 'model_tokens', 'live model budgets'));
+    $tokenBudget = agentEvaluationRequirePositiveInteger($budgets, 'model_tokens', 'live model budgets');
+    $proxy = agentEvaluationControllerProxyState($model, $effort, $tokenBudget, $spending);
     $initial = agentEvaluationJson(['type' => 'start', 'prompt_base64' => base64_encode($prompt),
-        'arguments' => agentEvaluationControllerLiveCodexArguments($model, $effort),
+        'arguments' => agentEvaluationControllerLiveCodexArguments($model, $effort, $spending, $tokenBudget),
         'environment' => agentEvaluationControllerLiveCodexEnvironment()]);
     // Relay framing is one line, independent of the human-readable artifact JSON format.
     $queued = json_encode(json_decode($initial, true, 64, JSON_THROW_ON_ERROR), JSON_THROW_ON_ERROR) . "\n";
@@ -1421,6 +1574,7 @@ function agentEvaluationControllerOciRunGeneration(
     $resourceObservation = null;
     $resourceReason = null;
     $failureCode = null;
+    $upstreamFailure = null;
     $attachExitCode = -1;
     $cleanup = ['container_stopped' => false, 'oom_killed' => false, 'pid' => -1];
     try {
@@ -1480,16 +1634,24 @@ function agentEvaluationControllerOciRunGeneration(
                                 throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_WALL_LIMIT');
                             }
                             $count = agentEvaluationControllerOciUpstream('input_tokens', $request['count_json'], $credential, $remaining);
-                            $approved = agentEvaluationControllerProxyReserve($request['request'], $count, $proxy);
+                            $upstreamFailure = $count['upstream_failure'];
+                            if ($upstreamFailure !== null) {
+                                throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_UPSTREAM_FAILED');
+                            }
+                            $approved = agentEvaluationControllerProxyReserve($request['request'], $count['response'], $proxy);
                             $remaining = $wallSeconds * 1000 - agentEvaluationControllerElapsedMilliseconds($started);
                             if ($remaining <= 0) {
                                 $timedOut = true;
                                 throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_WALL_LIMIT');
                             }
                             $response = agentEvaluationControllerOciUpstream('responses', $approved, $credential, $remaining);
-                            agentEvaluationControllerProxyComplete($response, $proxy);
+                            $upstreamFailure = $response['upstream_failure'];
+                            if ($upstreamFailure !== null) {
+                                throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_UPSTREAM_FAILED');
+                            }
+                            agentEvaluationControllerProxyComplete($response['response'], $proxy);
                             $queued = json_encode(['id' => $requestId, 'status' => 200,
-                                'body_base64' => base64_encode($response)], JSON_THROW_ON_ERROR) . "\n";
+                                'body_base64' => base64_encode($response['response'])], JSON_THROW_ON_ERROR) . "\n";
                         } elseif (($frame['type'] ?? null) === 'event') {
                             agentEvaluationRequireExactKeys($frame, ['type', 'event'], 'OCI event frame');
                             if (!($frame['event'] ?? null) instanceof stdClass) {
@@ -1594,15 +1756,19 @@ function agentEvaluationControllerOciRunGeneration(
         'timed_out' => $timedOut, 'output_limit_exceeded' => $outputLimited, 'proxy' => $proxy, 'cleanup' => $cleanup,
         'resource_observation' => $resourceObservation,
         'failure_code' => $failureCode,
+        'upstream_failure' => $upstreamFailure,
         'synthetic_upstream' => agentEvaluationControllerOciSyntheticUpstream()];
 }
 
+/**
+ * @return array{response:string,upstream_failure:array{schema_version:int,operation:string,category:string,http_status:int|null,curl_code:int|null,response_limit_exceeded:bool}|null}
+ */
 function agentEvaluationControllerOciUpstream(
     string $operation,
     string $body,
     #[SensitiveParameter] string $credential,
     int $wallMilliseconds,
-): string {
+): array {
     if (!in_array($operation, ['input_tokens', 'responses'], true) || !function_exists('curl_init')
         || strlen($body) > 1_048_576 || $wallMilliseconds < 1) {
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_UPSTREAM_UNAVAILABLE');
@@ -1616,7 +1782,8 @@ function agentEvaluationControllerOciUpstream(
     $path = $operation === 'input_tokens' ? '/v1/responses/input_tokens' : '/v1/responses';
     $handle = curl_init($base . $path);
     $response = '';
-    $limit = $operation === 'input_tokens' ? 1_048_576 : 4_194_304;
+    $responseLimitExceeded = false;
+    $limit = $operation === 'input_tokens' ? 1_048_576 : AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES;
     $headers = ['Content-Type: application/json', 'Accept: ' . ($operation === 'responses' ? 'text/event-stream' : 'application/json')];
     if (!$synthetic) {
         $headers[] = 'Authorization: Bearer ' . $credential;
@@ -1625,8 +1792,9 @@ function agentEvaluationControllerOciUpstream(
         CURLOPT_FOLLOWLOCATION => false, CURLOPT_MAXREDIRS => 0, CURLOPT_CONNECTTIMEOUT_MS => min(10000, $wallMilliseconds),
         CURLOPT_TIMEOUT_MS => min(120000, $wallMilliseconds), CURLOPT_SSL_VERIFYPEER => true, CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_PROTOCOLS => $synthetic ? CURLPROTO_HTTP : CURLPROTO_HTTPS, CURLOPT_PROXY => '',
-        CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$response, $limit): int {
+        CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$response, &$responseLimitExceeded, $limit): int {
             if (strlen($response) + strlen($chunk) > $limit) {
+                $responseLimitExceeded = true;
                 return 0;
             }
             $response .= $chunk;
@@ -1634,11 +1802,12 @@ function agentEvaluationControllerOciUpstream(
         }]);
     $success = curl_exec($handle);
     $status = curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+    $curlCode = curl_errno($handle);
     curl_close($handle);
-    if ($success !== true || $status !== 200) {
-        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_UPSTREAM_FAILED');
-    }
-    return $response;
+    $upstreamFailure = agentEvaluationControllerUpstreamFailureObservation(
+        $operation, $success === true, $status, $curlCode, $responseLimitExceeded,
+    );
+    return ['response' => $upstreamFailure === null ? $response : '', 'upstream_failure' => $upstreamFailure];
 }
 
 /**
@@ -1648,17 +1817,97 @@ function agentEvaluationControllerOciUpstream(
  */
 function agentEvaluationControllerOciRunScore(array &$resources, string $frozenRoot, string $scorerPath, string $commandSlot): array
 {
+    if (!in_array($commandSlot, ['application-check', 'public-scorer'], true)) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_SCORE_PHASE_INVALID');
+    }
+    return agentEvaluationControllerOciRunScoringSlot($resources, $frozenRoot, $scorerPath, $commandSlot, '');
+}
+
+/**
+ * The returned stdout is untrusted observation data. Neither a zero exit code nor
+ * a candidate-written verdict constitutes a successful holdout evaluation.
+ *
+ * @param array<string, mixed> $resources
+ * @return array<string, mixed>
+ * @param-out array{engine: array{binary: string, socket: string, config_root: string, control_root: string, configuration: array<string, mixed>}, owner: string, run_id: string, containers: array<string, string>, volumes: array<string, string>, generation: string|null, generation_stopped: bool, generation_destroyed: bool, frozen: bool, candidate_target: string} $resources
+ */
+function agentEvaluationControllerOciRunObservation(array &$resources, string $frozenRoot, string $caseInputJson): array
+{
+    return agentEvaluationControllerOciRunScoringSlot($resources, $frozenRoot, null, 'observation', $caseInputJson);
+}
+
+/**
+ * @param array<string, mixed> $resources
+ * @return array<string, mixed>
+ * @param-out array{engine: array{binary: string, socket: string, config_root: string, control_root: string, configuration: array<string, mixed>}, owner: string, run_id: string, containers: array<string, string>, volumes: array<string, string>, generation: string|null, generation_stopped: bool, generation_destroyed: bool, frozen: bool, candidate_target: string} $resources
+ */
+function agentEvaluationControllerOciRunApplicationCheck(array &$resources, string $frozenRoot): array
+{
+    return agentEvaluationControllerOciRunScoringSlot($resources, $frozenRoot, null, 'comparison-application-check', '');
+}
+
+/** @return array{command: non-empty-list<string>, standard_input: string, scorer_mounted: bool} */
+function agentEvaluationControllerOciScoringSlot(string $commandSlot, string $caseInputJson): array
+{
+    if ($commandSlot !== 'observation') {
+        if ($caseInputJson !== '' || !in_array($commandSlot, ['application-check', 'public-scorer', 'comparison-application-check'], true)) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_SCORE_PHASE_INVALID');
+        }
+        return ['command' => $commandSlot === 'public-scorer'
+            ? ['/usr/local/bin/php', '/scorer/public.php', '/candidate']
+            : ['/usr/local/bin/composer', '--no-interaction', 'check'],
+            'standard_input' => '', 'scorer_mounted' => $commandSlot !== 'comparison-application-check'];
+    }
+    if ($caseInputJson === '' || strlen($caseInputJson) >= AGENT_EVALUATION_CONTROLLER_PROCESS_STDIN_BYTES) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_OBSERVATION_INPUT_INVALID');
+    }
+    try {
+        $input = json_decode($caseInputJson, false, 32, JSON_THROW_ON_ERROR);
+        if (!$input instanceof stdClass) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_OBSERVATION_INPUT_INVALID');
+        }
+        $standardInput = json_encode($input, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) . "\n";
+    } catch (JsonException) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_OBSERVATION_INPUT_INVALID');
+    }
+    if (strlen($standardInput) > AGENT_EVALUATION_CONTROLLER_PROCESS_STDIN_BYTES) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_OBSERVATION_INPUT_INVALID');
+    }
+    return ['command' => ['/usr/local/bin/php', '/candidate/evaluation/observe.php'],
+        'standard_input' => $standardInput, 'scorer_mounted' => false];
+}
+
+/**
+ * Only fixed scoring slots are accepted; case data never becomes a command or mount.
+ *
+ * @param array<string, mixed> $resources
+ * @return array<string, mixed>
+ * @param-out array{engine: array{binary: string, socket: string, config_root: string, control_root: string, configuration: array<string, mixed>}, owner: string, run_id: string, containers: array<string, string>, volumes: array<string, string>, generation: string|null, generation_stopped: bool, generation_destroyed: bool, frozen: bool, candidate_target: string} $resources
+ */
+function agentEvaluationControllerOciRunScoringSlot(
+    array &$resources,
+    string $frozenRoot,
+    ?string $scorerPath,
+    string $commandSlot,
+    string $caseInputJson,
+): array {
     $resources = agentEvaluationControllerOciResourceState($resources);
-    if ($resources['generation_destroyed'] !== true || !in_array($commandSlot, ['application-check', 'public-scorer'], true)) {
+    $slot = agentEvaluationControllerOciScoringSlot($commandSlot, $caseInputJson);
+    if ($resources['generation_destroyed'] !== true || $slot['scorer_mounted'] !== ($scorerPath !== null)) {
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_SCORE_PHASE_INVALID');
     }
     agentEvaluationControllerDescribeTree($frozenRoot, 'OCI frozen score input', true);
     if (file_exists($frozenRoot . '/tmp') || is_link($frozenRoot . '/tmp')) {
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_SCORE_SCRATCH_COLLISION');
     }
-    agentEvaluationRequireBoundedFile($scorerPath, AGENT_EVALUATION_MAX_ARTIFACT_BYTES, 'OCI public scorer');
-    if (is_link($scorerPath)) {
-        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_SCORER_INVALID');
+    if ($scorerPath !== null) {
+        agentEvaluationRequireBoundedFile($scorerPath, AGENT_EVALUATION_MAX_ARTIFACT_BYTES, 'OCI public scorer');
+        if (is_link($scorerPath)) {
+            throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_SCORER_INVALID');
+        }
+    } elseif ($commandSlot === 'observation') {
+        agentEvaluationRequireBoundedFile($frozenRoot . '/evaluation/observe.php', AGENT_EVALUATION_MAX_ARTIFACT_BYTES,
+            'OCI observation driver');
     }
     $engine = $resources['engine'];
     $volumeRoles = [];
@@ -1666,7 +1915,7 @@ function agentEvaluationControllerOciRunScore(array &$resources, string $frozenR
     $result = null;
     $destroyed = true;
     try {
-        foreach (['score-candidate', 'score-public'] as $purpose) {
+        foreach ($slot['scorer_mounted'] ? ['score-candidate', 'score-public'] : ['score-candidate'] as $purpose) {
             $role = $purpose . '-' . $commandSlot;
             $volumeRoles[] = $role;
             $name = $resources['owner'] . '-' . $role;
@@ -1686,20 +1935,22 @@ function agentEvaluationControllerOciRunScore(array &$resources, string $frozenR
             agentEvaluationControllerOciWriteLedger($resources);
         }
         $candidateVolume = $resources['volumes']['score-candidate-' . $commandSlot];
-        $publicVolume = $resources['volumes']['score-public-' . $commandSlot];
+        $publicVolume = $slot['scorer_mounted'] ? $resources['volumes']['score-public-' . $commandSlot] : null;
+        $holderMounts = ['type=volume,src=' . $candidateVolume . ',dst=/candidate,readonly,volume-nocopy'];
+        $prepareMounts = ['type=volume,src=' . $candidateVolume . ',dst=/candidate,volume-nocopy'];
+        if ($publicVolume !== null) {
+            $holderMounts[] = 'type=volume,src=' . $publicVolume . ',dst=/scorer,readonly,volume-nocopy';
+            $prepareMounts[] = 'type=volume,src=' . $publicVolume . ',dst=/scorer,volume-nocopy';
+        }
         $holderRole = 'score-holder-' . $commandSlot;
         $containerRoles[] = $holderRole;
-        $holder = agentEvaluationControllerOciCreateContainer($resources, $holderRole, 'scoring', [
-            'type=volume,src=' . $candidateVolume . ',dst=/candidate,readonly,volume-nocopy',
-            'type=volume,src=' . $publicVolume . ',dst=/scorer,readonly,volume-nocopy',
-        ], ['/bin/sleep', '86400']);
+        $holder = agentEvaluationControllerOciCreateContainer($resources, $holderRole, 'scoring', $holderMounts,
+            ['/bin/sleep', '86400']);
         agentEvaluationControllerOciRequireCommand($engine, ['start', $holder]);
         $prepareRole = 'score-prepare-' . $commandSlot;
         $containerRoles[] = $prepareRole;
-        $prepare = agentEvaluationControllerOciCreateContainer($resources, $prepareRole, 'scoring', [
-            'type=volume,src=' . $candidateVolume . ',dst=/candidate,volume-nocopy',
-            'type=volume,src=' . $publicVolume . ',dst=/scorer,volume-nocopy',
-        ], ['/bin/sleep', '86400']);
+        $prepare = agentEvaluationControllerOciCreateContainer($resources, $prepareRole, 'scoring', $prepareMounts,
+            ['/bin/sleep', '86400']);
         $archive = agentEvaluationControllerOciCandidateArchive($frozenRoot);
         $copy = agentEvaluationControllerOciCommand($engine, ['cp', '--archive', '-', $prepare . ':/candidate/'],
             $archive, 30, 1_048_576, true);
@@ -1713,19 +1964,26 @@ function agentEvaluationControllerOciRunScore(array &$resources, string $frozenR
         if ($mountpointCopy['exit_code'] !== 0 || $mountpointCopy['termination_reason'] !== 'completed') {
             throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_SCORE_COPY_FAILED');
         }
-        agentEvaluationControllerOciRequireCommand($engine, ['cp', $scorerPath, $prepare . ':/scorer/public.php']);
+        if ($scorerPath !== null) {
+            agentEvaluationControllerOciRequireCommand($engine, ['cp', $scorerPath, $prepare . ':/scorer/public.php']);
+        }
         agentEvaluationControllerOciDestroyContainer($resources, $prepareRole);
         $scoreRole = 'score-' . $commandSlot;
         $containerRoles[] = $scoreRole;
-        $command = $commandSlot === 'application-check'
-            ? ['/usr/local/bin/composer', '--no-interaction', 'check']
-            : ['/usr/local/bin/php', '/scorer/public.php', '/candidate'];
-        $score = agentEvaluationControllerOciCreateContainer($resources, $scoreRole, 'scoring', [
+        $scoreMounts = [
             'type=volume,src=' . $candidateVolume . ',dst=/candidate,readonly,volume-nocopy',
             'type=volume,src=' . $resources['volumes']['dependencies'] . ',dst=/candidate/vendor,readonly,volume-nocopy',
-            'type=volume,src=' . $publicVolume . ',dst=/scorer,readonly,volume-nocopy',
-        ], $command);
-        $result = agentEvaluationControllerOciCommand($engine, ['start', '--attach', $score], '', 1200, 4_194_304);
+        ];
+        if ($publicVolume !== null) {
+            $scoreMounts[] = 'type=volume,src=' . $publicVolume . ',dst=/scorer,readonly,volume-nocopy';
+        }
+        $score = agentEvaluationControllerOciCreateContainer($resources, $scoreRole, 'scoring', $scoreMounts, $slot['command']);
+        $start = $commandSlot === 'observation' ? ['start', '--attach', '--interactive', $score] : ['start', '--attach', $score];
+        $result = agentEvaluationControllerOciCommand($engine, $start, $slot['standard_input'], 1200, 4_194_304);
+        $result['command_slot'] = $commandSlot;
+        $result['scorer_mounted'] = $slot['scorer_mounted'];
+        $result['standard_input_bytes'] = strlen($slot['standard_input']);
+        $result['standard_input_sha256'] = hash('sha256', $slot['standard_input']);
         $state = agentEvaluationControllerOciJsonCommand($engine, ['inspect', '--format', '{{json .State}}', $score]);
         if (agentEvaluationRequireBoolean($state, 'Running', 'OCI scoring state')) {
             agentEvaluationControllerOciRequireCommand($engine, ['kill', '--signal', 'KILL', $score]);
@@ -1900,6 +2158,14 @@ def command(argv):
     if len(value.stdout)+len(value.stderr)>32768: raise ValueError('output bound')
     return value.stdout.decode().strip()
 php=command(['/usr/local/bin/php','-r','echo PHP_VERSION;'])
+database=json.loads(command(['/usr/local/bin/php','-r',
+    '$drivers=PDO::getAvailableDrivers();sort($drivers,SORT_STRING);'
+    '$sqlite=in_array("sqlite",$drivers,true);'
+    '$version=null;$json1=false;if($sqlite){$pdo=new PDO("sqlite::memory:");'
+    '$version=$pdo->query("SELECT sqlite_version()")->fetchColumn();'
+    'try{$json1=$pdo->query("SELECT count(*) FROM json_each(\'[1,2]\')")->fetchColumn()===2;}catch(PDOException){$json1=false;}}'
+    'echo json_encode(["pdo_drivers"=>$drivers,"pdo_sqlite_version"=>$sqlite?phpversion("pdo_sqlite"):null,'
+    '"sqlite_version"=>$version,"sqlite_json1"=>$json1],JSON_THROW_ON_ERROR);']))
 composer=command(['/usr/local/bin/composer','--version','--no-ansi'])
 match=re.match(r'Composer version ([0-9]+\.[0-9]+\.[0-9]+)(?: |$)',composer)
 if match is None: raise ValueError('composer identity')
@@ -1933,7 +2199,7 @@ if any(line.strip() for line in open('/proc/net/route').readlines()[1:]):
     raise ValueError('IPv4 route')
 if any(line.split()[-1]!='lo' for line in open('/proc/net/ipv6_route') if line.strip()):
     raise ValueError('IPv6 route')
-print(json.dumps(actual,sort_keys=True))
+print(json.dumps({'toolchain':actual,'database':database},sort_keys=True))
 PYTHON;
     try {
         foreach (['generation', 'scoring'] as $role) {
@@ -1943,7 +2209,12 @@ PYTHON;
             if ($result['exit_code'] !== 0 || $result['termination_reason'] !== 'completed') {
                 throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_TOOLCHAIN_PROOF_FAILED');
             }
-            $identity = json_decode($result['stdout'], true, 16, JSON_THROW_ON_ERROR);
+            $proof = json_decode($result['stdout'], true, 16, JSON_THROW_ON_ERROR);
+            if (!is_array($proof) || array_keys($proof) !== ['database', 'toolchain']) {
+                throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_TOOLCHAIN_IDENTITY_INVALID');
+            }
+            $identity = $proof['toolchain'];
+            $database = $proof['database'];
             $expected = $engine['configuration'][$role . '_toolchain'];
             if (!is_array($identity) || !is_array($expected)) {
                 throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_TOOLCHAIN_IDENTITY_INVALID');
@@ -1953,6 +2224,27 @@ PYTHON;
             if ($identity !== $expected) {
                 throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_TOOLCHAIN_IDENTITY_INVALID');
             }
+            if (!is_array($database) || array_keys($database) !== ['pdo_drivers', 'pdo_sqlite_version', 'sqlite_json1', 'sqlite_version']
+                || !is_array($database['pdo_drivers']) || !array_is_list($database['pdo_drivers'])
+                || !is_bool($database['sqlite_json1'])) {
+                throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_DATABASE_IDENTITY_INVALID');
+            }
+            $drivers = $database['pdo_drivers'];
+            foreach ($drivers as $driver) {
+                if (!is_string($driver) || preg_match('/\A[a-z][a-z0-9_]{0,31}\z/D', $driver) !== 1) {
+                    throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_DATABASE_IDENTITY_INVALID');
+                }
+            }
+            if (in_array('sqlite', $drivers, true)) {
+                foreach (['pdo_sqlite_version', 'sqlite_version'] as $field) {
+                    if (!is_string($database[$field]) || preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\z/D', $database[$field]) !== 1) {
+                        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_DATABASE_IDENTITY_INVALID');
+                    }
+                }
+            } elseif ($database['pdo_sqlite_version'] !== null || $database['sqlite_version'] !== null || $database['sqlite_json1']) {
+                throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_DATABASE_IDENTITY_INVALID');
+            }
+            $identity['database'] = $database;
             $observed[$role] = $identity;
             agentEvaluationControllerOciDestroyContainer($resources, 'preflight-' . $role);
         }

@@ -1,0 +1,12 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+final readonly class Tenant
+{
+    public function __construct(public int $accountId)
+    {
+    }
+}

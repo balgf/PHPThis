@@ -1,0 +1,271 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/run-v2.json",
+    "title": "PHPThis bounded comparison attempt v2",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "campaign_id",
+        "slot",
+        "run_id",
+        "task_id",
+        "task_revision",
+        "condition",
+        "protocol_sha256",
+        "task_manifest_sha256",
+        "source_revision",
+        "base_fixture_sha256",
+        "prepared_dependencies_manifest_sha256",
+        "prepared_lock_sha256",
+        "profile_sha256",
+        "holdout_sha256",
+        "status",
+        "phase",
+        "termination_reason",
+        "usage",
+        "elapsed_milliseconds",
+        "repair_turns",
+        "unknown_metrics",
+        "artifacts"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 2
+        },
+        "campaign_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+        },
+        "slot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+        },
+        "run_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+        },
+        "task_id": {
+            "enum": [
+                "change.protected-endpoint",
+                "repair.transaction-rollback",
+                "change.filtered-collection"
+            ]
+        },
+        "task_revision": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "condition": {
+            "enum": [
+                "phpthis",
+                "plain-php"
+            ]
+        },
+        "protocol_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "task_manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "source_revision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{40}([a-f0-9]{24})?$"
+        },
+        "base_fixture_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "prepared_dependencies_manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "prepared_lock_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "profile_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "holdout_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "status": {
+            "enum": [
+                "planned",
+                "running",
+                "complete",
+                "failed",
+                "not_run"
+            ]
+        },
+        "phase": {
+            "enum": [
+                "planned",
+                "prepare",
+                "generate",
+                "freeze",
+                "score",
+                "validate",
+                "retain",
+                "cleanup",
+                "finished"
+            ]
+        },
+        "termination_reason": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "maxLength": 128,
+            "pattern": "^[a-zA-Z0-9_.-]+$"
+        },
+        "usage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "input_tokens",
+                "output_tokens",
+                "cached_tokens",
+                "reasoning_tokens"
+            ],
+            "properties": {
+                "input_tokens": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 40000
+                },
+                "output_tokens": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 40000
+                },
+                "cached_tokens": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 40000
+                },
+                "reasoning_tokens": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 40000
+                }
+            }
+        },
+        "elapsed_milliseconds": {
+            "type": [
+                "integer",
+                "null"
+            ],
+            "minimum": 0,
+            "maximum": 86400000
+        },
+        "repair_turns": {
+            "const": 0
+        },
+        "unknown_metrics": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "input_tokens": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                },
+                "output_tokens": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                },
+                "cached_tokens": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                },
+                "reasoning_tokens": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                },
+                "elapsed_milliseconds": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                },
+                "public_check_repairs": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                },
+                "human_interventions": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                },
+                "reviewer_effort": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                }
+            },
+            "required": [
+                "public_check_repairs",
+                "human_interventions",
+                "reviewer_effort"
+            ]
+        },
+        "artifacts": {
+            "type": "object",
+            "maxProperties": 64,
+            "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+            },
+            "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "bytes",
+                    "sha256"
+                ],
+                "properties": {
+                    "bytes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 16777216
+                    },
+                    "sha256": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                    }
+                }
+            }
+        }
+    },
+    "$comment": "The PHP validator additionally binds campaign slots, task and condition hashes, deterministic run IDs, state/evidence consistency, null reasons, token totals, and distinct bounded retained files."
+}

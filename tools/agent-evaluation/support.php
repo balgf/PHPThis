@@ -21,13 +21,22 @@ function agentEvaluationJsonValueFile(string $path): mixed
         throw new RuntimeException("Unable to read JSON file: {$path}.");
     }
 
+    return agentEvaluationJsonValue($source, "JSON file {$path}");
+}
+
+function agentEvaluationJsonValue(string $source, string $owner, int $maximumBytes = AGENT_EVALUATION_MAX_JSON_BYTES): mixed
+{
+    if ($maximumBytes < 1 || $maximumBytes > AGENT_EVALUATION_MAX_ARTIFACT_BYTES || $source === '' || strlen($source) > $maximumBytes) {
+        throw new RuntimeException("{$owner} must contain bounded JSON bytes.");
+    }
+
     $decoded = json_decode($source, false, AGENT_EVALUATION_MAX_JSON_DEPTH, JSON_THROW_ON_ERROR);
     $offset = 0;
     agentEvaluationScanJsonValue($source, $offset);
     agentEvaluationSkipJsonWhitespace($source, $offset);
 
     if ($offset !== strlen($source)) {
-        throw new RuntimeException("JSON file {$path} could not be scanned completely.");
+        throw new RuntimeException("{$owner} could not be scanned completely.");
     }
 
     return $decoded;

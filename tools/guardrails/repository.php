@@ -886,6 +886,93 @@ function forbidGuardrailArtifactMarkers(
     }
 }
 
+/**
+ * Inspect literal PHP calls, including retained worker-source strings. This is
+ * an ownership guard, not a proof against dynamically constructed execution.
+ * @param list<string> $names
+ * @return list<string>
+ */
+function guardrailLiteralPrimitiveCalls(string $source, array $names, int $literalDepth = 0): array
+{
+    if ($literalDepth > 8) {
+        $ambiguous = [];
+        foreach ($names as $name) {
+            $pattern = '/\b' . preg_quote($name, '/') . '\s*\(/i';
+            if (preg_match($pattern, $source) === 1 || preg_match($pattern, stripcslashes($source)) === 1) {
+                $ambiguous[] = $name;
+            }
+        }
+        return $ambiguous;
+    }
+    $tokens = token_get_all(preg_match('/\A\s*<\?(?:php\b|=)/', $source) === 1 ? $source : '<?php ' . $source);
+    $found = [];
+    foreach ($tokens as $index => $token) {
+        if (!is_array($token)) {
+            continue;
+        }
+        if (in_array($token[0], [T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE], true)) {
+            $literal = $token[0] === T_CONSTANT_ENCAPSED_STRING ? substr($token[1], 1, -1) : $token[1];
+            // Scan raw and decoded fragments conservatively; never evaluate a string.
+            $decoded = $token[0] === T_CONSTANT_ENCAPSED_STRING && str_starts_with($token[1], "'")
+                ? strtr($literal, ["\\\\" => "\\", "\\'" => "'"])
+                : stripcslashes($literal);
+            foreach (array_unique([$literal, $decoded], SORT_STRING) as $fragment) {
+                if ($fragment === $source) {
+                    // An incomplete quoted fragment may lex as itself again.
+                    foreach ($names as $name) {
+                        if (preg_match('/\b' . preg_quote($name, '/') . '\s*\(/i', $fragment) === 1) {
+                            $found[$name] = true;
+                        }
+                    }
+                    continue;
+                }
+                foreach (guardrailLiteralPrimitiveCalls($fragment, $names, $literalDepth + 1) as $name) {
+                    $found[$name] = true;
+                }
+            }
+            continue;
+        }
+        if (!in_array($token[0], [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED, T_NAME_RELATIVE], true)) {
+            continue;
+        }
+        $parts = explode('\\', strtolower($token[1]));
+        $name = $parts[count($parts) - 1];
+        if (!in_array($name, $names, true)) {
+            continue;
+        }
+        $next = routingNextSignificantTokenIndex($tokens, $index + 1);
+        $previous = routingPreviousSignificantTokenIndex($tokens, $index - 1);
+        $previousToken = $previous === null ? null : $tokens[$previous];
+        $previousId = is_array($previousToken) ? $previousToken[0] : null;
+        if ($next !== null && routingTokenText($tokens[$next]) === '('
+            && !in_array($previousId, [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION, T_NEW], true)) {
+            $found[$name] = true;
+        }
+    }
+    return array_keys($found);
+}
+
+/**
+ * @param array<string, list<string>> $artifactMarkers
+ * @param non-empty-string $artifactLabel
+ * @param list<string> $failures
+ */
+function forbidGuardrailLiteralPrimitives(string $root, array $artifactMarkers, string $artifactLabel, array &$failures): void
+{
+    foreach ($artifactMarkers as $relativePath => $markers) {
+        $path = $root . '/' . $relativePath;
+        $contents = is_file($path) ? file_get_contents($path) : false;
+        if (!is_string($contents)) {
+            $failures[] = "Cannot read {$artifactLabel} artifact {$relativePath}.";
+            continue;
+        }
+        $names = array_map(static fn (string $marker): string => substr($marker, 0, -1), $markers);
+        foreach (guardrailLiteralPrimitiveCalls($contents, $names) as $name) {
+            $failures[] = "{$artifactLabel} artifact {$relativePath} contains forbidden primitive: {$name}(";
+        }
+    }
+}
+
 /** @return non-empty-list<non-empty-string> */
 function consumerProjectHarnessModulePaths(): array
 {
@@ -3938,6 +4025,15 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation/schema/run.schema.json',
         'tools/agent-evaluation/schema/score.schema.json',
         'tools/agent-evaluation/schema/task.schema.json',
+        'tools/agent-evaluation/schema/task-v2.schema.json',
+        'tools/agent-evaluation/schema/run-v2.schema.json',
+        'tools/agent-evaluation/schema/score-v2.schema.json',
+        'tools/agent-evaluation/schema/comparison-protocol-v1.schema.json',
+        'tools/agent-evaluation/comparison-v1.json',
+        'tools/agent-evaluation/comparison-v1.md',
+        'tools/agent-evaluation/tasks/change.protected-endpoint/task.json',
+        'tools/agent-evaluation/tasks/repair.transaction-rollback/task.json',
+        'tools/agent-evaluation/tasks/change.filtered-collection/task.json',
         'tools/agent-evaluation/tasks.json',
         'tools/agent-evaluation/tasks/change.simple-ping/prompt.md',
         'tools/agent-evaluation/tasks/change.simple-ping/public/holdout.php.fixture',
@@ -4078,17 +4174,24 @@ function repositoryGuardrailFailures(string $root): array
             "'revision' => 26",
             "'manifest_sha256' => 'bd113b3645c8bc69321d41420c2a5f52e9f8d5b6971974ebe57c0646845fe543'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
+            'agentEvaluationComparisonSchedule',
+            'agentEvaluationComparisonFixture',
         ],
         'tools/agent-evaluation/run.php' => [
             'Run record task revision does not match the selected task.',
             'Prepared-dependencies manifest lines must be unique and byte-sorted.',
+            'agentEvaluationValidateComparisonRunRecord',
         ],
         'tools/agent-evaluation/score.php' => [
             "['manifest_valid', 'workspace_policy', 'application_check', 'public_scorer', 'resource_bounds']",
             'Automated status does not match the admissibility, mandatory checks, and critical dimensions.',
+            'agentEvaluationValidateComparisonScoreRecord',
         ],
         'tools/agent-evaluation/tasks.json' => [
             '"change.simple-ping"',
+            '"change.protected-endpoint"',
+            '"repair.transaction-rollback"',
+            '"change.filtered-collection"',
         ],
         'tools/agent-evaluation/schema/run.schema.json' => [
             '"title": "PHPThis agent evaluation run v1"',
@@ -4151,7 +4254,31 @@ function repositoryGuardrailFailures(string $root): array
         'popen(',
         'pcntl_exec(',
     ];
-    forbidGuardrailArtifactMarkers(
+    $primitiveCallControls = [
+        ['<?php exec("true");', ['exec']],
+        ['<?php \\ExEc /* gap */ ("true");', ['exec']],
+        ['<?php namespace\\exec("true");', ['exec']],
+        ['<?php $worker = \'<?php exec("true");\';', ['exec']],
+        ['<?php $worker = "<?php \\\\exec(\'true\');";', ['exec']],
+        ["<?php \$worker = <<<'WORKER'\n<?php proc_open([], [], \$pipes);\nWORKER;", ['proc_open']],
+        ['<?php $worker = "{$prefix}exec(\'true\');";', ['exec']],
+        ['<?php $pdo->exec("SELECT 1"); $pdo?->exec("SELECT 1"); PDO::exec("SELECT 1");', []],
+        ['<?php $pdo -> /* gap */ exec ("SELECT 1"); parent :: exec("SELECT 1");', []],
+        ['<?php $worker = \'<?php $pdo->exec("SELECT 1");\';', []],
+        ["<?php \$worker = <<<'WORKER'\n<?php \$pdo->exec('SELECT 1');\nWORKER;", []],
+        ['<?php function exec() {} function unrelated_exec() {} unrelated_exec();', []],
+    ];
+    foreach ($primitiveCallControls as [$source, $expected]) {
+        if (guardrailLiteralPrimitiveCalls($source, ['exec', 'proc_open']) !== $expected) {
+            $failures[] = 'The literal process-primitive guard must distinguish native calls and worker strings from method calls.';
+            break;
+        }
+    }
+    if (guardrailLiteralPrimitiveCalls('$pdo->exec("SQL")', ['exec'], 9) !== ['exec']
+        || guardrailLiteralPrimitiveCalls('}\\n', ['exec'], 9) !== []) {
+        $failures[] = 'The literal process-primitive depth limit must conservatively reject call-shaped fragments without inventing calls in data.';
+    }
+    forbidGuardrailLiteralPrimitives(
         $root,
         [
             'tools/agent-evaluation.php' => $candidateExecutionFunctions,
@@ -4368,7 +4495,7 @@ function repositoryGuardrailFailures(string $root): array
         'posix_kill(',
         'posix_getpid(',
     ];
-    forbidGuardrailArtifactMarkers(
+    forbidGuardrailLiteralPrimitives(
         $root,
         [
             'tools/agent-evaluation-controller.php' => $controllerProcessPrimitives,

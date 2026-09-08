@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PDOStatement;
+
+final class ObservedStatement extends PDOStatement
+{
+    protected function __construct(private readonly ObservationTrace $trace)
+    {
+    }
+
+    /** @param array<array-key, mixed>|null $params */
+    public function execute(?array $params = null): bool
+    {
+        $this->trace->beginStatement();
+        $failed = true;
+        try {
+            $result = parent::execute($params);
+            $failed = !$result;
+            return $result;
+        } finally {
+            $this->trace->record($this->queryString, $failed);
+        }
+    }
+}

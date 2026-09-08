@@ -1,0 +1,183 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryTrace;
+
+/**
+ * Durable rows keep the native query boundary; validate individual row values when needed.
+ *
+ * @phpstan-type ObservationResult array{
+ *     schema_version: 1,
+ *     response: array{status: int, headers: array<string, string>, body: string},
+ *     policy_steps: list<string>,
+ *     query_trace: array{
+ *         statements: int,
+ *         failures: int,
+ *         queries: list<array{fingerprint: string, executions: int, failures: int}>,
+ *         truncated: bool
+ *     },
+ *     durable_state: array{
+ *         documents: array<array-key, mixed>,
+ *         events: array<array-key, mixed>,
+ *         outbox: array<array-key, mixed>
+ *     },
+ *     in_transaction: bool
+ * }
+ */
+final class Observation
+{
+    /** @return ObservationResult */
+    public static function run(CaseInput $case): array
+    {
+        $scratch = dirname(__DIR__, 2) . '/tmp';
+        if (!is_dir($scratch) && !mkdir($scratch, 0700)) {
+            throw new \RuntimeException('Observation scratch is unavailable.');
+        }
+        $database = tempnam($scratch, 'observation-');
+        if (!is_string($database)) {
+            throw new \RuntimeException('Observation database is unavailable.');
+        }
+        $dsn = 'sqlite:' . $database;
+        $setup = Connection::connect($dsn, new QueryBudget(64), new QueryTrace(32));
+        $setup->executeStatement(
+            <<<'SQL'
+                CREATE TABLE memberships (principal_id INTEGER NOT NULL, account_id INTEGER NOT NULL, PRIMARY KEY (principal_id, account_id))
+                SQL,
+            [],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                CREATE TABLE documents (id INTEGER PRIMARY KEY, account_id INTEGER NOT NULL, document_key TEXT NOT NULL, title TEXT NOT NULL, category TEXT NOT NULL, private_note TEXT NOT NULL DEFAULT '', UNIQUE(account_id, document_key))
+                SQL,
+            [],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                CREATE TABLE events (id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL REFERENCES documents(id), event_type TEXT NOT NULL)
+                SQL,
+            [],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                CREATE TABLE outbox (id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL REFERENCES documents(id), job_type TEXT NOT NULL)
+                SQL,
+            [],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                CREATE INDEX documents_account_id ON documents(account_id, id)
+                SQL,
+            [],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                CREATE INDEX events_document_id ON events(document_id);
+                SQL,
+            [],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                INSERT INTO memberships (principal_id, account_id) SELECT json_extract(value, '$.principal_id'), json_extract(value, '$.account_id') FROM json_each(:rows)
+                SQL,
+            ['rows' => json_encode($case->seed['memberships'], JSON_THROW_ON_ERROR)],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                INSERT INTO documents (id, account_id, document_key, title, category, private_note) SELECT json_extract(value, '$.id'), json_extract(value, '$.account_id'), json_extract(value, '$.document_key'), json_extract(value, '$.title'), json_extract(value, '$.category'), json_extract(value, '$.private_note') FROM json_each(:rows)
+                SQL,
+            ['rows' => json_encode($case->seed['documents'], JSON_THROW_ON_ERROR)],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                INSERT INTO events (id, document_id, event_type) SELECT json_extract(value, '$.id'), json_extract(value, '$.document_id'), json_extract(value, '$.event_type') FROM json_each(:rows)
+                SQL,
+            ['rows' => json_encode($case->seed['events'], JSON_THROW_ON_ERROR)],
+        );
+        $setup->executeStatement(
+            <<<'SQL'
+                INSERT INTO outbox (id, document_id, job_type) SELECT json_extract(value, '$.id'), json_extract(value, '$.document_id'), json_extract(value, '$.job_type') FROM json_each(:rows)
+                SQL,
+            ['rows' => json_encode($case->seed['outbox'], JSON_THROW_ON_ERROR)],
+        );
+        if ($case->fault === 'event_write') {
+            $setup->executeStatement(
+            <<<'SQL'
+                CREATE TRIGGER fail_event BEFORE INSERT ON events BEGIN SELECT RAISE(ABORT, 'synthetic event refusal'); END
+                SQL,
+            [],
+        );
+        }
+        if ($case->fault === 'outbox_write') {
+            $setup->executeStatement(
+            <<<'SQL'
+                CREATE TRIGGER fail_outbox BEFORE INSERT ON outbox BEGIN SELECT RAISE(ABORT, 'synthetic outbox refusal'); END
+                SQL,
+            [],
+        );
+        }
+        $trace = new QueryTrace(256);
+        $connection = Connection::connect($dsn, new QueryBudget(256), $trace);
+        $policy = new Policy(
+            CaseInput::boolean($case->policy['authenticated'] ?? null),
+            CaseInput::positiveInteger($case->policy['principal_id'] ?? null),
+            CaseInput::positiveInteger($case->policy['tenant_id'] ?? null),
+            CaseInput::boolean($case->policy['authorized'] ?? null),
+        );
+        $headers = [];
+        foreach (CaseInput::object($case->request['headers'] ?? null) as $name => $value) {
+            $headers[$name] = CaseInput::string($value);
+        }
+        $response = (new Application($connection, $policy))->handle(
+            CaseInput::string($case->request['method'] ?? null),
+            CaseInput::string($case->request['path'] ?? null),
+            CaseInput::object($case->request['query'] ?? null),
+            $headers,
+            CaseInput::string($case->request['body'] ?? null),
+        );
+        $inTransaction = $connection->inTransaction();
+        $documents = $setup->selectAllRows(
+            <<<'SQL'
+                SELECT id, account_id, document_key, title, category, private_note FROM documents ORDER BY id
+                SQL,
+            [],
+        );
+        $events = $setup->selectAllRows(
+            <<<'SQL'
+                SELECT id, document_id, event_type FROM events ORDER BY id
+                SQL,
+            [],
+        );
+        $outbox = $setup->selectAllRows(
+            <<<'SQL'
+                SELECT id, document_id, job_type FROM outbox ORDER BY id
+                SQL,
+            [],
+        );
+        $snapshot = $trace->snapshot();
+        $queryEntries = [];
+        foreach ($snapshot['queries'] as $query) {
+            $queryEntries[] = ['fingerprint' => $query['fingerprint'], 'executions' => $query['executions'], 'failures' => $query['failures']];
+        }
+        $result = [
+            'schema_version' => 1,
+            'response' => ['status' => $response->status, 'headers' => $response->headers, 'body' => $response->body],
+            'policy_steps' => $policy->steps(),
+            'query_trace' => ['statements' => $snapshot['statements'], 'failures' => $snapshot['failures'], 'queries' => $queryEntries, 'truncated' => $snapshot['truncated']],
+            'durable_state' => ['documents' => $documents, 'events' => $events, 'outbox' => $outbox],
+            'in_transaction' => $inTransaction,
+        ];
+        if ($inTransaction) {
+            $connection->rollBack();
+        }
+        unset($connection, $setup);
+        if (!unlink($database)) {
+            throw new \RuntimeException('Observation database cleanup failed.');
+        }
+        return $result;
+    }
+}

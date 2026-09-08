@@ -1,0 +1,148 @@
+{
+    "schema_version": 2,
+    "id": "repair.transaction-rollback",
+    "revision": 7,
+    "kind": "repair",
+    "protocol": {
+        "id": "bounded-comparison-v1",
+        "revision": 1,
+        "sha256": "4112bfec48681b01cf24edf30a4115da4538a1e662b19c485cfffde69f5ca6ab"
+    },
+    "prompt": {
+        "path": "prompt.md",
+        "sha256": "0cb177290d3eca76a72a0ce7c2dfe453149d6015da25da5e1742f35e96339829"
+    },
+    "rubric": {
+        "path": "rubric.md",
+        "sha256": "fe101a2254f89426e58af0038d7f6e2bc5f7e045cecd10024b62243d90dd3de2"
+    },
+    "conditions": [
+        {
+            "id": "phpthis",
+            "base": {
+                "path": "fixtures/phpthis",
+                "fixture_sha256": "cc5cdb65ccc0ab9b5f11483129f2c39a3d7408c6a0e1abcebfafa6d3950b7f9d"
+            },
+            "context_manifest": {
+                "path": "context/phpthis.json",
+                "sha256": "78a9e16bb5b209edb7995d1bc6aaab24b484d6aa885142ac12a4379922c40f3a"
+            },
+            "workspace_policy": {
+                "allowed_existing_paths": [
+                    "src/Evaluation/DocumentHandler.php"
+                ],
+                "allowed_new_paths": [
+                    "tests/behavior.php"
+                ],
+                "protected_paths": [
+                    ".ai/README.md",
+                    ".ai/architecture.md",
+                    ".ai/change-workflow.md",
+                    ".ai/configuration.md",
+                    ".ai/data.md",
+                    ".ai/integrations.md",
+                    ".ai/observability.md",
+                    ".ai/operations.md",
+                    ".ai/project.md",
+                    ".ai/request-policy.md",
+                    ".ai/rules.md",
+                    ".ai/testing.md",
+                    ".git",
+                    "AGENTS.md",
+                    "API.md",
+                    "composer.json",
+                    "composer.lock",
+                    "docs/decisions/README.md",
+                    "docs/phpstan",
+                    "evaluation/observe.php",
+                    "src/Evaluation/Application.php",
+                    "src/Evaluation/CaseInput.php",
+                    "src/Evaluation/Failure.php",
+                    "src/Evaluation/Observation.php",
+                    "src/Evaluation/Policy.php",
+                    "src/Evaluation/Principal.php",
+                    "src/Evaluation/Tenant.php",
+                    "tests/public-case.json",
+                    "tests/smoke.php",
+                    "vendor"
+                ],
+                "max_changed_files": 2,
+                "max_added_lines": 1024,
+                "max_deleted_lines": 512
+            }
+        },
+        {
+            "id": "plain-php",
+            "base": {
+                "path": "fixtures/plain-php",
+                "fixture_sha256": "56b2928fd397bcc7208fa7685522c4c01d8e03b2ba63d436c86dc36bbe0c13e7"
+            },
+            "context_manifest": {
+                "path": "context/plain-php.json",
+                "sha256": "4566e77af9943516e782d3fc7386e1a2ac4659327eb91aebf778b40ec1e00a32"
+            },
+            "workspace_policy": {
+                "allowed_existing_paths": [
+                    "src/Evaluation/DocumentHandler.php"
+                ],
+                "allowed_new_paths": [
+                    "tests/behavior.php"
+                ],
+                "protected_paths": [
+                    ".ai/README.md",
+                    ".ai/architecture.md",
+                    ".ai/change-workflow.md",
+                    ".ai/configuration.md",
+                    ".ai/data.md",
+                    ".ai/integrations.md",
+                    ".ai/observability.md",
+                    ".ai/operations.md",
+                    ".ai/project.md",
+                    ".ai/request-policy.md",
+                    ".ai/rules.md",
+                    ".ai/testing.md",
+                    ".git",
+                    "AGENTS.md",
+                    "API.md",
+                    "composer.json",
+                    "composer.lock",
+                    "docs/decisions/README.md",
+                    "docs/phpstan",
+                    "evaluation/observe.php",
+                    "phpstan.neon",
+                    "src/Evaluation/Application.php",
+                    "src/Evaluation/CaseInput.php",
+                    "src/Evaluation/Failure.php",
+                    "src/Evaluation/Observation.php",
+                    "src/Evaluation/ObservationTrace.php",
+                    "src/Evaluation/ObservedPDO.php",
+                    "src/Evaluation/ObservedStatement.php",
+                    "src/Evaluation/Policy.php",
+                    "src/Evaluation/Principal.php",
+                    "src/Evaluation/Response.php",
+                    "src/Evaluation/Tenant.php",
+                    "tests/public-case.json",
+                    "tests/smoke.php",
+                    "vendor"
+                ],
+                "max_changed_files": 2,
+                "max_added_lines": 1024,
+                "max_deleted_lines": 512
+            }
+        }
+    ],
+    "budgets": {
+        "model_tokens": 40000,
+        "wall_seconds": 1200,
+        "repair_turns": 0,
+        "command_output_bytes": 4194304
+    },
+    "checks": {
+        "application_check": "composer check",
+        "holdout": {
+            "id": "repair.transaction-rollback.holdout",
+            "revision": 1,
+            "sha256": "7e02ee8169cbd003eb90565737f240a9304f45475a81ea1641922ec5314d7138"
+        }
+    }
+}

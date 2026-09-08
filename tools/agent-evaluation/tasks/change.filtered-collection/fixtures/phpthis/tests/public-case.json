@@ -1,0 +1,39 @@
+{
+    "schema_version": 1,
+    "request": {
+        "method": "GET",
+        "path": "/accounts/42/documents",
+        "query": {},
+        "headers": {
+            "authorization": "Bearer public-fixture"
+        },
+        "body": ""
+    },
+    "policy": {
+        "authenticated": true,
+        "principal_id": 7,
+        "tenant_id": 42,
+        "authorized": true
+    },
+    "seed": {
+        "memberships": [
+            {
+                "principal_id": 7,
+                "account_id": 42
+            }
+        ],
+        "documents": [
+            {
+                "id": 1,
+                "account_id": 42,
+                "document_key": "first",
+                "title": "Public sample",
+                "category": "general",
+                "private_note": "synthetic private note"
+            }
+        ],
+        "events": [],
+        "outbox": []
+    },
+    "fault": "none"
+}

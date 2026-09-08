@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PDO;
+use PDOStatement;
+
+final class ObservedPDO extends PDO
+{
+    public function __construct(string $dsn, private readonly ObservationTrace $trace)
+    {
+        parent::__construct($dsn, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+        $this->setAttribute(PDO::ATTR_STATEMENT_CLASS, [ObservedStatement::class, [$trace]]);
+    }
+
+    /** @param array<array-key, mixed> $options */
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        $this->trace->assertStatementAvailable();
+        $failed = true;
+        try {
+            $statement = parent::prepare($query, $options);
+            $failed = $statement === false;
+            return $statement;
+        } finally {
+            if ($failed) {
+                $this->trace->beginStatement();
+                $this->trace->record($query, true);
+            }
+        }
+    }
+
+    public function exec(string $statement): int|false
+    {
+        $this->trace->beginStatement();
+        $failed = true;
+        try {
+            $result = parent::exec($statement);
+            $failed = $result === false;
+            return $result;
+        } finally {
+            $this->trace->record($statement, $failed);
+        }
+    }
+
+    public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): PDOStatement|false
+    {
+        $this->trace->beginStatement();
+        $failed = true;
+        try {
+            $result = $fetchMode === null ? parent::query($query) : parent::query($query, $fetchMode, ...$fetchModeArgs);
+            $failed = $result === false;
+            return $result;
+        } finally {
+            $this->trace->record($query, $failed);
+        }
+    }
+}

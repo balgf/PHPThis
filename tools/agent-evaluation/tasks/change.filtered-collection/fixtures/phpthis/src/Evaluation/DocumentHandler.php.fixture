@@ -1,0 +1,68 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PHPThis\Database\Connection;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\Response;
+
+final class DocumentHandler implements RequestHandler
+{
+    public function __construct(private readonly Connection $connection, private readonly Policy $policy)
+    {
+    }
+
+    public function handle(Request $request): Response
+    {
+        $accountId = $request->pathParameters->positiveInteger('account_id');
+        $query = $request->query;
+        $headers = $request->headers;
+        $body = $request->body;
+        $principal = $this->policy->authenticate($headers);
+        $tenant = $this->policy->resolveTenant($principal, $accountId);
+        $this->policy->authorize($principal, $tenant);
+        if ($body !== '') {
+            throw new Failure(400, 'invalid_request');
+        }
+        foreach ($query as $field => $value) {
+            if ($field !== 'after_id' ) {
+                throw new Failure(400, 'invalid_request');
+            }
+        }
+        $afterId = 0;
+        if (array_key_exists('after_id', $query)) {
+            $submitted = $query['after_id'];
+            if (!is_string($submitted) || preg_match('/^[1-9][0-9]*$/D', $submitted) !== 1) {
+                throw new Failure(400, 'invalid_request');
+            }
+            $parsed = filter_var($submitted, FILTER_VALIDATE_INT);
+            if (!is_int($parsed)) {
+                throw new Failure(400, 'invalid_request');
+            }
+            $afterId = $parsed;
+        }
+        $rows = $this->connection->selectAllRows(
+            <<<'SQL'
+                SELECT documents.id, documents.title, documents.category
+                FROM documents
+                WHERE documents.account_id = :account_id AND documents.account_id = :tenant_id
+                  AND documents.id > :after_id
+                  AND EXISTS (SELECT 1 FROM memberships WHERE principal_id = :principal_id AND account_id = :membership_id)
+                ORDER BY documents.id ASC
+                LIMIT 21
+                SQL,
+            ['account_id' => $accountId, 'tenant_id' => $tenant->accountId, 'after_id' => $afterId, 'principal_id' => $principal->id, 'membership_id' => $tenant->accountId],
+        );
+        $hasMore = count($rows) > 20;
+        $page = array_slice($rows, 0, 20);
+        $last = $page === [] ? null : $page[count($page) - 1];
+        $lastId = is_array($last) ? ($last['id'] ?? null) : null;
+        if ($hasMore && !is_int($lastId)) {
+            throw new \RuntimeException('Collection identifier is invalid.');
+        }
+        return new Response(200, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'], json_encode(['data' => $page, 'meta' => ['next_after_id' => $hasMore ? $lastId : null]], JSON_THROW_ON_ERROR) . "\n");
+    }
+}

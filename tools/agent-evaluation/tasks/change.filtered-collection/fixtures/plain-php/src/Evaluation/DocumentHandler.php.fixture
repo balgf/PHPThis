@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PDO;
+
+final class DocumentHandler
+{
+    public function __construct(private readonly PDO $connection, private readonly Policy $policy)
+    {
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     * @param array<string, string> $headers
+     */
+    public function handle(int $accountId, array $query, array $headers, string $body): Response
+    {
+        $principal = $this->policy->authenticate($headers);
+        $tenant = $this->policy->resolveTenant($principal, $accountId);
+        $this->policy->authorize($principal, $tenant);
+        if ($body !== '') {
+            throw new Failure(400, 'invalid_request');
+        }
+        foreach ($query as $field => $value) {
+            if ($field !== 'after_id' ) {
+                throw new Failure(400, 'invalid_request');
+            }
+        }
+        $afterId = 0;
+        if (array_key_exists('after_id', $query)) {
+            $submitted = $query['after_id'];
+            if (!is_string($submitted) || preg_match('/^[1-9][0-9]*$/D', $submitted) !== 1) {
+                throw new Failure(400, 'invalid_request');
+            }
+            $parsed = filter_var($submitted, FILTER_VALIDATE_INT);
+            if (!is_int($parsed)) {
+                throw new Failure(400, 'invalid_request');
+            }
+            $afterId = $parsed;
+        }
+        $rowsStatement = $this->connection->prepare(
+            <<<'SQL'
+                SELECT documents.id, documents.title, documents.category
+                FROM documents
+                WHERE documents.account_id = :account_id AND documents.account_id = :tenant_id
+                  AND documents.id > :after_id
+                  AND EXISTS (SELECT 1 FROM memberships WHERE principal_id = :principal_id AND account_id = :membership_id)
+                ORDER BY documents.id ASC
+                LIMIT 21
+                SQL,
+        );
+        $rowsStatement->bindValue(':account_id', $accountId, \PDO::PARAM_INT);
+        $rowsStatement->bindValue(':tenant_id', $tenant->accountId, \PDO::PARAM_INT);
+        $rowsStatement->bindValue(':after_id', $afterId, \PDO::PARAM_INT);
+        $rowsStatement->bindValue(':principal_id', $principal->id, \PDO::PARAM_INT);
+        $rowsStatement->bindValue(':membership_id', $tenant->accountId, \PDO::PARAM_INT);
+        $rowsStatement->execute();
+        $rows = $rowsStatement->fetchAll(\PDO::FETCH_ASSOC);
+        $hasMore = count($rows) > 20;
+        $page = array_slice($rows, 0, 20);
+        $last = $page === [] ? null : $page[count($page) - 1];
+        $lastId = is_array($last) ? ($last['id'] ?? null) : null;
+        if ($hasMore && !is_int($lastId)) {
+            throw new \RuntimeException('Collection identifier is invalid.');
+        }
+        return new Response(200, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'], json_encode(['data' => $page, 'meta' => ['next_after_id' => $hasMore ? $lastId : null]], JSON_THROW_ON_ERROR) . "\n");
+    }
+}

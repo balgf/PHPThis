@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PDO;
+
+final class DocumentHandler
+{
+    public function __construct(private readonly PDO $connection, private readonly Policy $policy)
+    {
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     * @param array<string, string> $headers
+     */
+    public function handle(int $accountId, array $query, array $headers, string $body): Response
+    {
+        $principal = $this->policy->authenticate($headers);
+        $tenant = $this->policy->resolveTenant($principal, $accountId);
+        $this->policy->authorize($principal, $tenant);
+        if ($query !== [] || strlen($body) > 1024) {
+            throw new Failure(400, 'invalid_request');
+        }
+        try {
+            $input = json_decode($body, true, 8, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new Failure(400, 'invalid_request');
+        }
+        if (!is_array($input) || count($input) !== 3 || !isset($input['document_key'], $input['title'], $input['category'])) {
+            throw new Failure(400, 'invalid_request');
+        }
+        $key = $input['document_key'];
+        $title = $input['title'];
+        $category = $input['category'];
+        if (!is_string($key) || preg_match('/^[A-Za-z0-9_-]{1,32}$/D', $key) !== 1 || !is_string($title) || $title === '' || strlen($title) > 120 || !is_string($category) || $category === '' || strlen($category) > 64 || preg_match('//u', $title) !== 1 || preg_match('//u', $category) !== 1 || preg_match('/[\x00-\x1F\x7F]/', $title . $category) === 1) {
+            throw new Failure(400, 'invalid_request');
+        }
+        $this->connection->beginTransaction();
+        try {
+            $insertedStatement = $this->connection->prepare(
+            <<<'SQL'
+                INSERT INTO documents (account_id, document_key, title, category) SELECT :account_id, :document_key, :title, :category WHERE :requested_id = :tenant_id AND EXISTS (SELECT 1 FROM memberships WHERE principal_id = :principal_id AND account_id = :membership_id)
+                SQL,
+        );
+        $insertedStatement->bindValue(':account_id', $accountId, \PDO::PARAM_INT);
+        $insertedStatement->bindValue(':document_key', $key, \PDO::PARAM_STR);
+        $insertedStatement->bindValue(':title', $title, \PDO::PARAM_STR);
+        $insertedStatement->bindValue(':category', $category, \PDO::PARAM_STR);
+        $insertedStatement->bindValue(':requested_id', $accountId, \PDO::PARAM_INT);
+        $insertedStatement->bindValue(':tenant_id', $tenant->accountId, \PDO::PARAM_INT);
+        $insertedStatement->bindValue(':principal_id', $principal->id, \PDO::PARAM_INT);
+        $insertedStatement->bindValue(':membership_id', $tenant->accountId, \PDO::PARAM_INT);
+        $insertedStatement->execute();
+        $inserted = $insertedStatement->rowCount();
+            if ($inserted !== 1) {
+                throw new Failure(403, 'forbidden');
+            }
+            $statement = $this->connection->prepare(
+            <<<'SQL'
+                INSERT INTO events (document_id, event_type) SELECT id, 'document.created' FROM documents WHERE document_key = :document_key AND account_id = :account_id
+                SQL,
+        );
+        $statement->bindValue(':document_key', $key, \PDO::PARAM_STR);
+        $statement->bindValue(':account_id', $accountId, \PDO::PARAM_INT);
+        $statement->execute();
+            $this->connection->commit();
+            $statement = $this->connection->prepare(
+            <<<'SQL'
+                INSERT INTO outbox (document_id, job_type) SELECT id, 'document.index' FROM documents WHERE document_key = :document_key AND account_id = :account_id
+                SQL,
+        );
+        $statement->bindValue(':document_key', $key, \PDO::PARAM_STR);
+        $statement->bindValue(':account_id', $accountId, \PDO::PARAM_INT);
+        $statement->execute();
+            return new Response(201, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'], json_encode(['data' => ['document_key' => $key, 'title' => $title, 'category' => $category]], JSON_THROW_ON_ERROR) . "\n");
+        } finally {
+            if ($this->connection->inTransaction()) {
+                $this->connection->rollBack();
+            }
+        }
+    }
+}

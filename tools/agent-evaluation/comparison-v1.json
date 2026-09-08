@@ -1,0 +1,32 @@
+{
+    "schema_version": 1,
+    "id": "bounded-comparison-v1",
+    "revision": 1,
+    "task_schema_version": 2,
+    "conditions": [
+        "phpthis",
+        "plain-php"
+    ],
+    "trials_per_task_condition": 10,
+    "budgets": {
+        "model_tokens": 40000,
+        "wall_seconds": 1200,
+        "repair_turns": 0,
+        "command_output_bytes": 4194304
+    },
+    "schedule": {
+        "kind": "balanced-rotating-v1"
+    },
+    "attempt_policy": "retain-every-start-no-replacement-v1",
+    "holdout_policy": "external-post-freeze-v1",
+    "reporting": {
+        "primary_metric": "correct_completion_rate",
+        "denominator": "planned-trials",
+        "group_by": [
+            "task_id",
+            "condition"
+        ],
+        "unknown_metrics": "null-with-reason",
+        "human_review": "required-for-claims"
+    }
+}

@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Evaluation;
+
+use PHPThis\Database\Connection;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\Response;
+
+final class DocumentHandler implements RequestHandler
+{
+    public function __construct(public readonly Connection $connection, public readonly Policy $policy)
+    {
+    }
+
+    public function handle(Request $request): Response
+    {
+        return new Response(404, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'], "{\"error\":{\"code\":\"not_found\"}}\n");
+    }
+}
