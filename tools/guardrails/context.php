@@ -177,6 +177,7 @@ function contextGuardrailFailures(string $root): array
             $installedOrdinaryRoute,
             'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
             '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+            '| Add or change tests outside routine behavior evidence while implementing a qualifying simple endpoint, or change testing tools, shared support, or evidence organization | `.ai/testing.md` | nearest behavior test and complete project gate; routine behavior evidence while implementing a qualifying simple endpoint stays on the simple-endpoint row without loading a second guide |',
         ],
         'templates/application/.ai/rules.md' => [
             $finalClassContract,
@@ -193,6 +194,7 @@ function contextGuardrailFailures(string $root): array
             $installedOrdinaryRoute,
             'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
             '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
+            '| Add or change tests outside routine behavior evidence while implementing a qualifying simple endpoint, or change testing tools, shared support, or evidence organization | `.ai/testing.md` | nearest behavior test and complete project gate; routine behavior evidence while implementing a qualifying simple endpoint stays on the simple-endpoint row without loading a second guide |',
         ],
         'skeleton/.ai/rules.md' => [
             $finalClassContract,

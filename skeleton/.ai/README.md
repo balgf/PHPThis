@@ -59,6 +59,6 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
 | Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, configuration, operation, and socket tests |
 | Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |
 | Change CRUD-shaped operations | installed `vendor/phpthis/framework/docs/crud.md` | implemented routes plus architecture, data, and testing facts actually affected |
-| Add or change tests | `.ai/testing.md` | nearest behavior test and complete project gate |
+| Add or change tests outside routine behavior evidence while implementing a qualifying simple endpoint, or change testing tools, shared support, or evidence organization | `.ai/testing.md` | nearest behavior test and complete project gate; routine behavior evidence while implementing a qualifying simple endpoint stays on the simple-endpoint row without loading a second guide |
 
 Accepted application decisions live in `docs/decisions/`. Read one only when the task reviews or changes its underlying decision.

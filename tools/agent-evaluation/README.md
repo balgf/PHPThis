@@ -2,6 +2,8 @@
 
 This directory is the maintainer-only, model-neutral data contract for bounded PHPThis agent evaluations. Version 1 freezes an explicit task inventory, task and result schemas, and one public smoke case. It does not call a model, select a provider, install a skill, expose a model API, or add framework or consumer runtime behavior.
 
+The [first observed context route](context-observation-v1.md) records Issue #70's single interrupted revision-26 smoke attempt, its measurement limits, and the supported testing-route clarification. It makes no comparative claim.
+
 Stable v1 markers:
 
 - `AGENT_EVALUATION_SCHEMA_VERSION(1)`
