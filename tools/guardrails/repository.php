@@ -4045,9 +4045,11 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/workspace.php',
         'tools/agent-evaluation-controller/process.php',
         'tools/agent-evaluation-controller/codex.php',
+        'tools/agent-evaluation-controller/gemini.php',
         'tools/agent-evaluation-controller/scoring.php',
         'tools/agent-evaluation-controller/controller.php',
         'tools/agent-evaluation-controller/fixtures/fake-codex.php',
+        'tools/agent-evaluation-controller/fixtures/fake-gemini.php',
         'tools/test-agent-evaluation.php',
         'tools/test-agent-evaluation-controller.php',
         'tools/test-application-duplication.php',
@@ -4357,6 +4359,7 @@ function repositoryGuardrailFailures(string $root): array
             "require_once __DIR__ . '/agent-evaluation-controller/workspace.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/process.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/codex.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/gemini.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/scoring.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/controller.php';",
             'agentEvaluationControllerMain($argv)',
@@ -4383,10 +4386,9 @@ function repositoryGuardrailFailures(string $root): array
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
             "const AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER = 'codex-exec';",
             "const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER = 'fake-codex';",
-            '? AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER',
-            ': AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER;',
+            "const AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI = 'gemini-exec';",
+            "const AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_GEMINI = 'fake-gemini';",
             "'launcher' => 'docker-oci'",
-            "'credential_broker' => 'responses-api-run-proxy'",
             "'network' => 'proxy-only'",
         ],
         'tools/agent-evaluation-controller/process.php' => [
@@ -4411,6 +4413,13 @@ function repositoryGuardrailFailures(string $root): array
             "throw new RuntimeException(\n            AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE",
             'agentEvaluationControllerRunProcess(',
         ],
+        'tools/agent-evaluation-controller/gemini.php' => [
+            "const AGENT_EVALUATION_CONTROLLER_LIVE_GEMINI_UNAVAILABLE = 'AGENT_EVALUATION_CONTROLLER_LIVE_GEMINI_UNAVAILABLE';",
+            'if (!$fakeForTests) {',
+            'agentEvaluationControllerValidateFutureIsolationProfile($isolation, $budgets, \'generation\', AGENT_EVALUATION_CONTROLLER_GEMINI_CREDENTIAL_BROKER);',
+            "throw new RuntimeException(\n            AGENT_EVALUATION_CONTROLLER_LIVE_GEMINI_UNAVAILABLE",
+            'agentEvaluationControllerRunProcess(',
+        ],
         'tools/agent-evaluation-controller/scoring.php' => [
             "const AGENT_EVALUATION_CONTROLLER_LIVE_SCORING_UNAVAILABLE = 'AGENT_EVALUATION_CONTROLLER_LIVE_SCORING_UNAVAILABLE';",
             'if (!$fakeForTests) {',
@@ -4428,6 +4437,12 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation-controller/fixtures/fake-codex.php' => [
             "const AGENT_EVALUATION_CONTROLLER_TEST_FAKE_CODEX = 'AGENT_EVALUATION_CONTROLLER_TEST_FAKE_CODEX';",
+            'if ($mode === \'process-output-limit\') {',
+            'if ($mode === \'process-wall-limit\') {',
+            'if ($mode === \'process-descendant\') {',
+        ],
+        'tools/agent-evaluation-controller/fixtures/fake-gemini.php' => [
+            "const AGENT_EVALUATION_CONTROLLER_TEST_FAKE_GEMINI = 'AGENT_EVALUATION_CONTROLLER_TEST_FAKE_GEMINI';",
             'if ($mode === \'process-output-limit\') {',
             'if ($mode === \'process-wall-limit\') {',
             'if ($mode === \'process-descendant\') {',
@@ -4470,11 +4485,12 @@ function repositoryGuardrailFailures(string $root): array
             "require_once __DIR__ . '/agent-evaluation-controller/workspace.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/process.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/codex.php';",
+            "require_once __DIR__ . '/agent-evaluation-controller/gemini.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/scoring.php';",
             "require_once __DIR__ . '/agent-evaluation-controller/controller.php';",
         ]
     ) {
-        $failures[] = 'The agent-evaluation controller entrypoint must retain its exact v0.1 dependency and six-module require order.';
+        $failures[] = 'The agent-evaluation controller entrypoint must retain its exact v0.1 dependency and eight-module require order.';
     }
 
     $controllerProcessPrimitives = [
@@ -4502,9 +4518,11 @@ function repositoryGuardrailFailures(string $root): array
             'tools/agent-evaluation-controller/contract.php' => $controllerProcessPrimitives,
             'tools/agent-evaluation-controller/workspace.php' => $controllerProcessPrimitives,
             'tools/agent-evaluation-controller/codex.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/gemini.php' => $controllerProcessPrimitives,
             'tools/agent-evaluation-controller/scoring.php' => $controllerProcessPrimitives,
             'tools/agent-evaluation-controller/controller.php' => $controllerProcessPrimitives,
             'tools/agent-evaluation-controller/fixtures/fake-codex.php' => $controllerProcessPrimitives,
+            'tools/agent-evaluation-controller/fixtures/fake-gemini.php' => $controllerProcessPrimitives,
             'tools/test-agent-evaluation-controller.php' => $controllerProcessPrimitives,
         ],
         'agent-evaluation controller process-primitive ownership',
@@ -4529,9 +4547,11 @@ function repositoryGuardrailFailures(string $root): array
             'tools/agent-evaluation-controller/workspace.php' => $controllerFallbackMarkers,
             'tools/agent-evaluation-controller/process.php' => $controllerFallbackMarkers,
             'tools/agent-evaluation-controller/codex.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/gemini.php' => $controllerFallbackMarkers,
             'tools/agent-evaluation-controller/scoring.php' => $controllerFallbackMarkers,
             'tools/agent-evaluation-controller/controller.php' => $controllerFallbackMarkers,
             'tools/agent-evaluation-controller/fixtures/fake-codex.php' => $controllerFallbackMarkers,
+            'tools/agent-evaluation-controller/fixtures/fake-gemini.php' => $controllerFallbackMarkers,
             'tools/test-agent-evaluation-controller.php' => $controllerFallbackMarkers,
         ],
         'agent-evaluation controller runner-discovery and native-fallback prohibition',

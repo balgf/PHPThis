@@ -1428,6 +1428,7 @@ function agentEvaluationControllerValidateFutureIsolationProfile(
     array $profile,
     array $budgets,
     string $phase,
+    ?string $credentialBroker = null,
 ): void {
     $expectedKeys = [
         'launcher',
@@ -1461,6 +1462,7 @@ function agentEvaluationControllerValidateFutureIsolationProfile(
     $digest = $profile['image_digest'] ?? null;
     $reference = $profile['image_reference'] ?? null;
     $generation = $phase === 'generation';
+    $expectedBroker = $credentialBroker ?? AGENT_EVALUATION_CONTROLLER_FUTURE_CREDENTIAL_BROKER;
 
     if (
         !in_array($phase, ['generation', 'scoring'], true)
@@ -1472,7 +1474,7 @@ function agentEvaluationControllerValidateFutureIsolationProfile(
         || strlen($reference) > 256
         || preg_match('/[\x00-\x20\x7F]/', $reference) === 1
         || ($profile['credential_broker'] ?? null) !== ($generation
-            ? AGENT_EVALUATION_CONTROLLER_FUTURE_CREDENTIAL_BROKER
+            ? $expectedBroker
             : 'none')
         || ($profile['network'] ?? null) !== ($generation ? 'proxy-only' : 'none')
         || ($profile['root_read_only'] ?? null) !== true

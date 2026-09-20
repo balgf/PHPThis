@@ -10,9 +10,13 @@ const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;
 const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;
 const AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER = 'codex-exec';
 const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER = 'fake-codex';
+const AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI = 'gemini-exec';
+const AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_GEMINI = 'fake-gemini';
+const AGENT_EVALUATION_CONTROLLER_GEMINI_CREDENTIAL_BROKER = 'gemini-api-run-proxy';
 const AGENT_EVALUATION_CONTROLLER_FAKE_CONDITION = 'repository-only-controller-v0.2-fake';
 const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_VERSION = 'fixture-1';
 const AGENT_EVALUATION_CONTROLLER_FAKE_MODEL = 'fake-codex-v1';
+const AGENT_EVALUATION_CONTROLLER_FAKE_GEMINI_MODEL = 'fake-gemini-v1';
 const AGENT_EVALUATION_CONTROLLER_FAKE_MODEL_REVISION = 'fixture-1';
 const AGENT_EVALUATION_CONTROLLER_FAKE_UID = 65_534;
 const AGENT_EVALUATION_CONTROLLER_CPU_MILLIS = 1_000;
@@ -81,12 +85,14 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
     $runner = agentEvaluationRequireObject($profile, 'runner', 'controller execution profile');
     agentEvaluationRequireExactKeys($runner, ['name', 'version'], 'controller runner profile');
     $runnerName = agentEvaluationRequireString($runner, 'name', 'controller runner profile');
-    $expectedRunner = $synthetic
-        ? AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER
-        : AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER;
+    $allowedRunners = $synthetic
+        ? [AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER, AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_GEMINI]
+        : [AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER, AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI];
 
-    if ($runnerName !== $expectedRunner) {
-        throw new RuntimeException("Controller execution profile must use the fixed {$expectedRunner} runner.");
+    if (!in_array($runnerName, $allowedRunners, true)) {
+        throw new RuntimeException($synthetic
+            ? 'Controller execution profile must use the fixed fake-codex or fake-gemini runner.'
+            : 'Controller execution profile must use the fixed codex-exec or gemini-exec runner.');
     }
 
     $runnerVersion = agentEvaluationControllerBoundedLabel(
@@ -99,7 +105,7 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
     }
     $model = agentEvaluationRequireObject($profile, 'model', 'controller execution profile');
     agentEvaluationValidateModel($model);
-    agentEvaluationControllerValidateModelProfile($model, $synthetic);
+    agentEvaluationControllerValidateModelProfile($model, $synthetic, $runnerName);
     $context = agentEvaluationRequireObject($profile, 'context', 'controller execution profile');
     agentEvaluationValidateContext($context);
     $bundleId = $context['bundle_id'] ?? null;
@@ -133,7 +139,7 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
     }
     agentEvaluationValidateRunBudgets($budgets, $taskBudgets);
     $isolation = agentEvaluationRequireObject($profile, 'isolation', 'controller execution profile');
-    agentEvaluationControllerValidateIsolationProfile($isolation, $taskBudgets, $synthetic);
+    agentEvaluationControllerValidateIsolationProfile($isolation, $taskBudgets, $synthetic, $runnerName);
 
     return [
         'condition' => $condition,
@@ -398,9 +404,14 @@ function agentEvaluationControllerValidatePromptEvidence(string $evidenceRoot, a
 }
 
 /** @param array<string, mixed> $model */
-function agentEvaluationControllerValidateModelProfile(array $model, bool $synthetic): void
-{
-    $expectedProvider = $synthetic ? 'synthetic' : 'openai';
+function agentEvaluationControllerValidateModelProfile(
+    array $model,
+    bool $synthetic,
+    string $runnerName = AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER,
+): void {
+    $expectedProvider = $synthetic
+        ? 'synthetic'
+        : ($runnerName === AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI ? 'google' : 'openai');
 
     if (($model['provider'] ?? null) !== $expectedProvider) {
         throw new RuntimeException("Controller model profile must use provider {$expectedProvider}.");
@@ -430,11 +441,28 @@ function agentEvaluationControllerValidateModelProfile(array $model, bool $synth
             throw new RuntimeException('Controller synthetic model profile must be deterministic.');
         }
 
+        $expectedModel = $runnerName === AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_GEMINI
+            ? AGENT_EVALUATION_CONTROLLER_FAKE_GEMINI_MODEL
+            : AGENT_EVALUATION_CONTROLLER_FAKE_MODEL;
+
         if (
-            $id !== AGENT_EVALUATION_CONTROLLER_FAKE_MODEL
+            $id !== $expectedModel
             || $revision !== AGENT_EVALUATION_CONTROLLER_FAKE_MODEL_REVISION
         ) {
             throw new RuntimeException('Controller synthetic model identity must equal its fixed fixture identity.');
+        }
+
+        return;
+    }
+
+    if ($runnerName === AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI) {
+        agentEvaluationRequireExactKeys($settings, ['thinking_budget'], 'controller live model settings');
+        $thinkingBudget = agentEvaluationRequireString($settings, 'thinking_budget', 'controller live model settings');
+
+        if (!in_array($thinkingBudget, ['low', 'medium', 'high', 'max', 'off'], true)) {
+            throw new RuntimeException(
+                'Controller live thinking budget must be low, medium, high, max, or off.',
+            );
         }
 
         return;
@@ -482,6 +510,7 @@ function agentEvaluationControllerValidateIsolationProfile(
     array $isolation,
     array $budgets,
     bool $synthetic,
+    string $runnerName = AGENT_EVALUATION_CONTROLLER_LIVE_RUNNER,
 ): void {
     agentEvaluationRequireExactKeys(
         $isolation,
@@ -509,6 +538,10 @@ function agentEvaluationControllerValidateIsolationProfile(
         'controller isolation profile',
     );
 
+    $expectedBroker = $runnerName === AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI
+        ? AGENT_EVALUATION_CONTROLLER_GEMINI_CREDENTIAL_BROKER
+        : 'responses-api-run-proxy';
+
     $expectedStrings = $synthetic
         ? [
             'launcher' => 'synthetic-test',
@@ -518,7 +551,7 @@ function agentEvaluationControllerValidateIsolationProfile(
         ]
         : [
             'launcher' => 'docker-oci',
-            'credential_broker' => 'responses-api-run-proxy',
+            'credential_broker' => $expectedBroker,
             'network' => 'proxy-only',
             'descendant_cleanup' => 'container-destroy',
         ];

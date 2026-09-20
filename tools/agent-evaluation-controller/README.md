@@ -16,10 +16,11 @@ It remains under export-excluded `tools/` and changes no framework runtime, publ
 2. `workspace.php`
 3. `process.php`
 4. `codex.php`
-5. `scoring.php`
-6. `controller.php`
+5. `gemini.php`
+6. `scoring.php`
+7. `controller.php`
 
-There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 27 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner.
+There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 27 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner. Issue #73 introduces the Gemini evaluation adapter (`gemini-exec` and `fake-gemini`).
 
 ## Ordinary checks
 
@@ -28,13 +29,15 @@ composer test:agent-evaluation-controller
 php tools/agent-evaluation-controller.php validate
 ```
 
-The ordinary self-test exercises the deterministic test-only `fake-codex` lifecycle and pure proxy protocol controls. It performs no model request, needs no credential or OCI engine, contacts no external endpoint, and executes no AI-authored candidate. `composer check` and normal CI retain that synthetic route. These tests prove controller logic, not container containment or real-model behavior.
+The ordinary self-test exercises the deterministic test-only `fake-codex` and `fake-gemini` lifecycles and pure proxy protocol controls. It performs no model request, needs no credential or OCI engine, contacts no external endpoint, and executes no AI-authored candidate. `composer check` and normal CI retain that synthetic route. These tests prove controller logic, not container containment or real-model behavior.
 
-A legacy `run <run-id>` without its explicit live configuration still fails with `AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE`. Missing or unverifiable live controls fail closed; there is no direct-host, native macOS, `sandbox-exec`, arbitrary-shell, discovered-runner, or second-runner fallback.
+A legacy `run <run-id>` without its explicit live configuration still fails with `AGENT_EVALUATION_CONTROLLER_LIVE_CODEX_UNAVAILABLE` or `AGENT_EVALUATION_CONTROLLER_LIVE_GEMINI_UNAVAILABLE`. Missing or unverifiable live controls fail closed; there is no direct-host, native macOS, `sandbox-exec`, arbitrary-shell, discovered-runner, or second-runner fallback.
 
 ## Live execution boundary
 
-The sole accepted real runner is `codex-exec`, one fixed invocation of the pinned Codex executable in the generation image. Exact model and reasoning settings come from the reviewed profile, with a fresh bounded home and Codex state directory. The runner receives no upstream credential, ambient host environment, Git metadata, checkout, home mount, or engine socket. Optional client integrations and network tools are disabled in its fixed configuration; those settings do not replace OCI containment.
+The accepted real runners are `codex-exec` and `gemini-exec`, each a fixed invocation of the pinned runner executable in the generation image. Exact model and reasoning/thinking settings come from the reviewed profile, with a fresh bounded home and runner state directory. The runner receives no upstream credential, ambient host environment, Git metadata, checkout, home mount, or engine socket. Optional client integrations and network tools are disabled in its fixed configuration; those settings do not replace OCI containment.
+
+For `codex-exec`, the host proxy exposes the Responses create and token-counting operations. For `gemini-exec`, the host-side `gemini-api-run-proxy` credential broker mediates requests to Google Gemini models, requiring a configured `thinking_budget` (`low`, `medium`, `high`, `max`, or `off`).
 
 Generation uses Docker networking `none`. Its only provider connection is a loopback HTTP relay in the container, carried over the controller-owned standard-input/output channel to the host-side `responses-api-run-proxy`. There is no candidate network route to a host listener, Docker bridge, DNS server, or upstream API. The relay disables dumpability before starting candidate processes; relay failure or candidate interference fails the run.
 

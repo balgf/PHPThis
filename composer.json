@@ -67,6 +67,7 @@
         "exclude": [
             "/.ai",
             "/.DS_Store",
+            "/.git",
             "/.github",
             "/.gitattributes",
             "/.gitignore",

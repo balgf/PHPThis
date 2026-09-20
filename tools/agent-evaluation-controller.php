@@ -9,6 +9,7 @@ require_once __DIR__ . '/agent-evaluation-controller/contract.php';
 require_once __DIR__ . '/agent-evaluation-controller/workspace.php';
 require_once __DIR__ . '/agent-evaluation-controller/process.php';
 require_once __DIR__ . '/agent-evaluation-controller/codex.php';
+require_once __DIR__ . '/agent-evaluation-controller/gemini.php';
 require_once __DIR__ . '/agent-evaluation-controller/scoring.php';
 require_once __DIR__ . '/agent-evaluation-controller/controller.php';
 

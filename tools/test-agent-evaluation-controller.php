@@ -225,6 +225,65 @@ try {
         'Generation events must record the bounded candidate change without exposing the scorer.',
     );
 
+    $geminiProfile = agentEvaluationControllerSyntheticGeminiProfile($task['budgets']);
+    $geminiResult = agentEvaluationControllerExecuteSynthetic(
+        $root,
+        $dependencies,
+        $temporaryRoot . '/gemini-run',
+        [
+            'run_id' => '00000000000000000000000000000046',
+            'task_id' => AGENT_EVALUATION_CONTROLLER_TASK_ID,
+        ],
+        $geminiProfile,
+    );
+
+    agentEvaluationControllerTest(
+        $geminiResult['automated_status'] === 'pass' && $geminiResult['weighted_score'] === 100,
+        'The deterministic Gemini controller lifecycle must derive one complete synthetic pass.',
+    );
+    agentEvaluationControllerTest(
+        $geminiResult['cleanup']['status'] === 'pass'
+        && array_map('basename', $geminiResult['cleanup']['removed']) === ['scoring'],
+        'The final Gemini cleanup must remove the remaining scoring workspace.',
+    );
+    agentEvaluationControllerTest(
+        !is_dir($temporaryRoot . '/gemini-run/candidate')
+        && !is_dir($temporaryRoot . '/gemini-run/baseline')
+        && !is_dir($temporaryRoot . '/gemini-run/dependencies')
+        && !is_dir($temporaryRoot . '/gemini-run/scoring')
+        && is_dir($geminiResult['evidence_root']),
+        'Only retained evidence may survive the successful synthetic Gemini lifecycle.',
+    );
+
+    $geminiRunRecord = agentEvaluationJsonFile($geminiResult['run_record_path']);
+    $geminiScoreRecord = agentEvaluationJsonFile($geminiResult['score_record_path']);
+    agentEvaluationValidateRunRecord($geminiRunRecord, $task);
+    agentEvaluationValidateRunArtifacts($geminiRunRecord, $geminiResult['evidence_root']);
+    agentEvaluationValidateScoreRecord(
+        $geminiScoreRecord,
+        $task,
+        $geminiRunRecord,
+        agentEvaluationFileHash($geminiResult['run_record_path'], 'controller self-test gemini run record'),
+    );
+
+    $geminiEvidenceManifest = agentEvaluationJsonFile($geminiResult['evidence_manifest_path']);
+    agentEvaluationControllerTest(
+        ($geminiEvidenceManifest['expected_phase_order'] ?? null) === AGENT_EVALUATION_CONTROLLER_PHASES
+        && ($geminiEvidenceManifest['observed_phases'] ?? null) === AGENT_EVALUATION_CONTROLLER_PHASES
+        && ($geminiEvidenceManifest['synthetic'] ?? null) === true
+        && ($geminiEvidenceManifest['comparative_claims'] ?? null) === false,
+        'Gemini retained evidence must record the exact complete non-comparative synthetic phase order.',
+    );
+
+    $geminiEvents = file_get_contents($geminiResult['evidence_root'] . '/events.jsonl');
+    agentEvaluationControllerTest(
+        is_string($geminiEvents)
+        && str_contains($geminiEvents, 'src/PingHandler.php')
+        && str_contains($geminiEvents, 'Added the dependency-free ping endpoint and its behavior evidence via Gemini.')
+        && !str_contains($geminiEvents, 'holdout.php.fixture'),
+        'Gemini generation events must record the bounded candidate change without exposing the scorer.',
+    );
+
     agentEvaluationControllerExpectFailure(
         static function () use ($task): void {
             agentEvaluationControllerValidateRequest(
@@ -246,7 +305,7 @@ try {
         static function () use ($wrongRunner, $task): void {
             agentEvaluationControllerValidateProfile($wrongRunner, $task, true);
         },
-        'Controller execution profile must use the fixed fake-codex runner.',
+        'Controller execution profile must use the fixed fake-codex or fake-gemini runner.',
     );
     $forgedProfile = $profile;
     $forgedProfile['condition'] = 'unrecorded-synthetic-condition';
@@ -432,6 +491,7 @@ try {
     agentEvaluationControllerTestArchiveControls($root);
     agentEvaluationControllerTestImageResolution($temporaryRoot);
     agentEvaluationControllerTestProcessBounds($root);
+    agentEvaluationControllerTestGeminiControls($root, $dependencies, $temporaryRoot, $task);
     agentEvaluationControllerTestCliGrammar($root);
     agentEvaluationControllerTestWorkspaceControls(
         $root,
@@ -604,6 +664,82 @@ function agentEvaluationControllerLiveIsolationProfile(array $budgets): array
         'image_reference' => 'registry.invalid/phpthis/agent-evaluation@' . $digest,
         'image_digest' => $digest,
         'credential_broker' => AGENT_EVALUATION_CONTROLLER_FUTURE_CREDENTIAL_BROKER,
+        'network' => 'proxy-only',
+        'root_read_only' => true,
+        'capabilities_dropped' => true,
+        'no_new_privileges' => true,
+        'candidate_git_absent' => true,
+        'dependencies_read_only' => true,
+        'uid' => AGENT_EVALUATION_CONTROLLER_FAKE_UID,
+        'cpu_millis' => AGENT_EVALUATION_CONTROLLER_CPU_MILLIS,
+        'memory_bytes' => AGENT_EVALUATION_CONTROLLER_MEMORY_BYTES,
+        'disk_bytes' => AGENT_EVALUATION_CONTROLLER_DISK_BYTES,
+        'processes' => AGENT_EVALUATION_CONTROLLER_PROCESS_LIMIT,
+        'wall_seconds' => $budgets['wall_seconds'],
+        'model_tokens' => $budgets['model_tokens'],
+        'output_bytes' => $budgets['command_output_bytes'],
+        'descendant_cleanup' => 'container-destroy',
+    ];
+}
+
+/**
+ * @param array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int} $budgets
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerSyntheticGeminiProfile(array $budgets): array
+{
+    return [
+        'condition' => AGENT_EVALUATION_CONTROLLER_FAKE_CONDITION,
+        'runner' => [
+            'name' => AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_GEMINI,
+            'version' => AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_VERSION,
+        ],
+        'model' => [
+            'provider' => 'synthetic',
+            'id' => AGENT_EVALUATION_CONTROLLER_FAKE_GEMINI_MODEL,
+            'revision' => AGENT_EVALUATION_CONTROLLER_FAKE_MODEL_REVISION,
+            'settings' => ['deterministic' => true],
+        ],
+        'context' => ['bundle_id' => null, 'bundle_sha256' => null],
+        'tools' => [],
+        'budgets' => $budgets,
+        'isolation' => [
+            'launcher' => 'synthetic-test',
+            'image_reference' => null,
+            'image_digest' => null,
+            'credential_broker' => 'none',
+            'network' => 'none',
+            'root_read_only' => true,
+            'capabilities_dropped' => true,
+            'no_new_privileges' => true,
+            'candidate_git_absent' => true,
+            'dependencies_read_only' => true,
+            'uid' => AGENT_EVALUATION_CONTROLLER_FAKE_UID,
+            'cpu_millis' => AGENT_EVALUATION_CONTROLLER_CPU_MILLIS,
+            'memory_bytes' => AGENT_EVALUATION_CONTROLLER_MEMORY_BYTES,
+            'disk_bytes' => AGENT_EVALUATION_CONTROLLER_DISK_BYTES,
+            'processes' => AGENT_EVALUATION_CONTROLLER_PROCESS_LIMIT,
+            'wall_seconds' => $budgets['wall_seconds'],
+            'model_tokens' => $budgets['model_tokens'],
+            'output_bytes' => $budgets['command_output_bytes'],
+            'descendant_cleanup' => 'in-process-fixture',
+        ],
+    ];
+}
+
+/**
+ * @param array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int} $budgets
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerLiveGeminiIsolationProfile(array $budgets): array
+{
+    $digest = 'sha256:' . str_repeat('a', 64);
+
+    return [
+        'launcher' => AGENT_EVALUATION_CONTROLLER_FUTURE_OCI_LAUNCHER,
+        'image_reference' => 'registry.invalid/phpthis/agent-evaluation@' . $digest,
+        'image_digest' => $digest,
+        'credential_broker' => AGENT_EVALUATION_CONTROLLER_GEMINI_CREDENTIAL_BROKER,
         'network' => 'proxy-only',
         'root_read_only' => true,
         'capabilities_dropped' => true,
@@ -2521,6 +2657,323 @@ function agentEvaluationControllerTestProcessBounds(string $root): void
         && $orphanedDescendant['cleanup']['process_reaped']
         && $orphanedDescendant['cleanup']['process_group_absent'],
         'A same-group descendant must be terminated even after its parent exits successfully.',
+    );
+}
+
+/**
+ * @param array<string, mixed> $task
+ */
+function agentEvaluationControllerTestGeminiControls(
+    string $root,
+    string $dependencies,
+    string $temporaryRoot,
+    array $task,
+): void {
+    /** @var array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int} $budgets */
+    $budgets = $task['budgets'];
+
+    $syntheticProfile = agentEvaluationControllerSyntheticGeminiProfile($budgets);
+    $validatedSynthetic = agentEvaluationControllerValidateProfile($syntheticProfile, $task, true);
+    agentEvaluationControllerTest(
+        $validatedSynthetic['runner']['name'] === AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_GEMINI
+        && $validatedSynthetic['model']['id'] === AGENT_EVALUATION_CONTROLLER_FAKE_GEMINI_MODEL,
+        'Synthetic Gemini profile must validate cleanly.',
+    );
+
+    $liveProfile = [
+        'condition' => AGENT_EVALUATION_CONTROLLER_FAKE_CONDITION,
+        'runner' => [
+            'name' => AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI,
+            'version' => '0.1.0',
+        ],
+        'model' => [
+            'provider' => 'google',
+            'id' => 'gemini-2.5-pro',
+            'revision' => null,
+            'settings' => ['thinking_budget' => 'low'],
+        ],
+        'context' => ['bundle_id' => null, 'bundle_sha256' => null],
+        'tools' => [[
+            'name' => 'shell',
+            'version' => null,
+            'permissions' => ['workspace-read', 'workspace-write', 'process-execute'],
+        ]],
+        'budgets' => $budgets,
+        'isolation' => agentEvaluationControllerLiveGeminiIsolationProfile($budgets),
+    ];
+
+    $validatedLive = agentEvaluationControllerValidateProfile($liveProfile, $task, false);
+    /** @var array<string, mixed> $modelSettings */
+    $modelSettings = $validatedLive['model']['settings'];
+    agentEvaluationControllerTest(
+        $validatedLive['runner']['name'] === AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI
+        && $validatedLive['model']['provider'] === 'google'
+        && $modelSettings['thinking_budget'] === 'low',
+        'Live Gemini profile must validate cleanly.',
+    );
+
+    foreach (['low', 'medium', 'high', 'max', 'off'] as $budgetLevel) {
+        $variant = $liveProfile;
+        $variant['model']['settings']['thinking_budget'] = $budgetLevel;
+        $validated = agentEvaluationControllerValidateProfile($variant, $task, false);
+        /** @var array<string, mixed> $settings */
+        $settings = $validated['model']['settings'];
+        agentEvaluationControllerTest(
+            $settings['thinking_budget'] === $budgetLevel,
+            "Live Gemini profile must accept thinking_budget={$budgetLevel}.",
+        );
+    }
+
+    $invalidThinking = $liveProfile;
+    $invalidThinking['model']['settings']['thinking_budget'] = 'turbo';
+    agentEvaluationControllerExpectFailure(
+        static function () use ($invalidThinking, $task): void {
+            agentEvaluationControllerValidateProfile($invalidThinking, $task, false);
+        },
+        'Controller live thinking budget must be low, medium, high, max, or off.',
+    );
+
+    $wrongProvider = $liveProfile;
+    $wrongProvider['model']['provider'] = 'openai';
+    agentEvaluationControllerExpectFailure(
+        static function () use ($wrongProvider, $task): void {
+            agentEvaluationControllerValidateProfile($wrongProvider, $task, false);
+        },
+        'Controller model profile must use provider google.',
+    );
+
+    $wrongBroker = $liveProfile;
+    $wrongBroker['isolation']['credential_broker'] = 'responses-api-run-proxy';
+    agentEvaluationControllerExpectFailure(
+        static function () use ($wrongBroker, $task): void {
+            agentEvaluationControllerValidateProfile($wrongBroker, $task, false);
+        },
+        'Controller isolation field credential_broker must equal gemini-api-run-proxy.',
+    );
+
+    $geminiCandidate = $temporaryRoot . '/live-gemini-candidate';
+    if (!mkdir($geminiCandidate, 0700)) {
+        throw new RuntimeException('Unable to create the live Gemini candidate root.');
+    }
+    try {
+        agentEvaluationControllerExpectFailureContains(
+            static function () use ($geminiCandidate, $budgets, $liveProfile): void {
+                agentEvaluationControllerRunGemini(
+                    $geminiCandidate,
+                    'Sample prompt',
+                    'gemini-2.5-pro',
+                    'low',
+                    $budgets,
+                    $liveProfile['isolation'],
+                    false,
+                );
+            },
+            AGENT_EVALUATION_CONTROLLER_LIVE_GEMINI_UNAVAILABLE,
+        );
+    } finally {
+        rmdir($geminiCandidate);
+    }
+
+    $args = agentEvaluationControllerLiveGeminiArguments('gemini-2.5-pro', 'medium');
+    agentEvaluationControllerTest(
+        $args[0] === AGENT_EVALUATION_CONTROLLER_FUTURE_GEMINI_PATH
+        && in_array('thinking_budget="medium"', $args, true)
+        && in_array('model_providers.phpthis-gemini-proxy={name="PHPThis Gemini proxy",base_url="http://127.0.0.1:8765/v1beta",wire_api="gemini",requires_auth=false,supports_websockets=false,request_max_retries=0,stream_max_retries=0,stream_idle_timeout_ms=1200000}', $args, true),
+        'Live Gemini CLI arguments must match the expected pinned flags.',
+    );
+    $env = agentEvaluationControllerLiveGeminiEnvironment();
+    agentEvaluationControllerTest(
+        $env['GEMINI_HOME'] === '/tmp/phpthis-gemini'
+        && $env['HOME'] === '/tmp/phpthis-home'
+        && $env['PATH'] === '/usr/local/bin:/usr/bin:/bin',
+        'Live Gemini environment must provide pinned minimal environment variables.',
+    );
+
+    $stateWithoutSpending = agentEvaluationControllerGeminiProxyState('gemini-2.5-pro', 'low', 40_000);
+    agentEvaluationControllerTest(
+        $stateWithoutSpending['model'] === 'gemini-2.5-pro'
+        && $stateWithoutSpending['thinking_budget'] === 'low'
+        && $stateWithoutSpending['token_budget'] === 40_000
+        && !isset($stateWithoutSpending['spending']),
+        'Gemini proxy state without spending must initialize properly.',
+    );
+    $spendingPolicy = [
+        'limit_units' => 100_000_000,
+        'input_cents_per_million' => 250,
+        'cached_cents_per_million' => 25,
+        'output_cents_per_million' => 1500,
+    ];
+    $stateWithSpending = agentEvaluationControllerGeminiProxyState('gemini-2.5-pro', 'low', 200_000, $spendingPolicy);
+    agentEvaluationControllerTest(
+        isset($stateWithSpending['spending'])
+        && $stateWithSpending['spending']['policy'] === $spendingPolicy
+        && $stateWithSpending['spending']['settled_units'] === 0,
+        'Gemini proxy state with spending must track policy and units.',
+    );
+
+    $validEventsJsonl = implode("\n", [
+        '{"type":"thread.started","thread_id":"test-thread-1"}',
+        '{"type":"turn.started"}',
+        '{"type":"item.completed","item":{"id":"item_1","type":"file_change","status":"completed","paths":["src/HealthRoutes.php"]}}',
+        '{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"Gemini finished task"}}',
+        '{"type":"turn.completed","usage":{"input_tokens":500,"cached_input_tokens":100,"output_tokens":150,"reasoning_output_tokens":50}}',
+        '',
+    ]);
+    $parsedEvents = agentEvaluationControllerParseGeminiEvents($validEventsJsonl, 40_000);
+    agentEvaluationControllerTest(
+        count($parsedEvents['events']) === 5
+        && $parsedEvents['response'] === 'Gemini finished task'
+        && $parsedEvents['usage']['input_tokens'] === 500
+        && $parsedEvents['usage']['output_tokens'] === 150
+        && $parsedEvents['usage']['cached_tokens'] === 100
+        && $parsedEvents['usage']['reasoning_tokens'] === 50,
+        'Valid Gemini JSONL events must parse cleanly and aggregate token usage.',
+    );
+
+    agentEvaluationControllerExpectFailure(
+        static function () use ($validEventsJsonl): void {
+            agentEvaluationControllerParseGeminiEvents($validEventsJsonl, 600);
+        },
+        'AGENT_EVALUATION_CONTROLLER_GEMINI_TOKEN_BUDGET_EXCEEDED',
+    );
+
+    agentEvaluationControllerExpectFailure(
+        static function (): void {
+            agentEvaluationControllerParseGeminiEvents("{\"type\":\"thread.started\"}\n{not valid json}\n", 40_000);
+        },
+        'AGENT_EVALUATION_CONTROLLER_GEMINI_EVENTS_MALFORMED',
+    );
+
+    agentEvaluationControllerExpectFailure(
+        static function (): void {
+            agentEvaluationControllerParseGeminiEvents("[\"not an object\"]\n", 40_000);
+        },
+        'AGENT_EVALUATION_CONTROLLER_GEMINI_EVENTS_MALFORMED',
+    );
+
+    $overflowJsonl = str_repeat("{\"type\":\"turn.started\"}\n", 4097);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($overflowJsonl): void {
+            agentEvaluationControllerParseGeminiEvents($overflowJsonl, 40_000);
+        },
+        'AGENT_EVALUATION_CONTROLLER_GEMINI_EVENTS_OVERFLOW',
+    );
+
+    agentEvaluationControllerTest(
+        agentEvaluationControllerGeminiTerminationReason(['exit_code' => 0], $parsedEvents) === 'completed',
+        'Gemini termination reason on 0 must be completed.',
+    );
+    agentEvaluationControllerTest(
+        agentEvaluationControllerGeminiTerminationReason(['exit_code' => 1, 'timed_out' => true], $parsedEvents) === 'wall_time_limit',
+        'Gemini termination reason on timed_out must be wall_time_limit.',
+    );
+    agentEvaluationControllerTest(
+        agentEvaluationControllerGeminiTerminationReason(['exit_code' => 1, 'output_limit_exceeded' => true], $parsedEvents) === 'output_limit',
+        'Gemini termination reason on output_limit_exceeded must be output_limit.',
+    );
+    agentEvaluationControllerTest(
+        agentEvaluationControllerGeminiTerminationReason(['exit_code' => 42], $parsedEvents) === 'runner_failed',
+        'Gemini termination reason on unexpected exit code must be runner_failed.',
+    );
+
+    $fixture = $root . '/tools/agent-evaluation-controller/fixtures/fake-gemini.php';
+    $environment = agentEvaluationControllerMinimalProcessEnvironment();
+
+    $output = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $fixture, 'process-output-limit'],
+        $root,
+        $environment,
+        '',
+        2,
+        64,
+    );
+    agentEvaluationControllerTest(
+        $output['output_limit_exceeded']
+        && $output['termination_reason'] === 'output_limit'
+        && strlen($output['stdout']) === 64
+        && $output['cleanup']['process_group_absent'],
+        'Fake Gemini process output overflow must terminate and reap the process group.',
+    );
+
+    $wall = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $fixture, 'process-wall-limit'],
+        $root,
+        $environment,
+        '',
+        1,
+        1_024,
+    );
+    agentEvaluationControllerTest(
+        $wall['timed_out']
+        && $wall['termination_reason'] === 'wall_time_limit'
+        && $wall['cleanup']['terminate_sent']
+        && $wall['cleanup']['process_group_absent'],
+        'Fake Gemini process wall overflow must terminate and reap the process group.',
+    );
+
+    $failure = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $fixture, 'process-fail'],
+        $root,
+        $environment,
+        '',
+        2,
+        1_024,
+    );
+    agentEvaluationControllerTest(
+        $failure['exit_code'] === 42
+        && $failure['termination_reason'] === 'process_failed'
+        && $failure['stderr'] === "EXPECTED synthetic Gemini process failure\n",
+        'Fake Gemini process failure must retain exact stderr and exit code.',
+    );
+
+    $partial = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $fixture, 'process-partial-jsonl'],
+        $root,
+        $environment,
+        '',
+        2,
+        1_024,
+    );
+    $partialParsed = agentEvaluationControllerParseGeminiEvents($partial['stdout'], 40_000);
+    agentEvaluationControllerTest(
+        $partial['exit_code'] === 0
+        && count($partialParsed['events']) === 2
+        && $partialParsed['response'] === '',
+        'Fake Gemini partial JSONL must parse without completed response.',
+    );
+
+    $descendant = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $fixture, 'process-descendant'],
+        $root,
+        $environment,
+        '',
+        1,
+        1_024,
+    );
+    agentEvaluationControllerTest(
+        $descendant['timed_out']
+        && $descendant['cleanup']['process_group_created']
+        && $descendant['cleanup']['process_reaped']
+        && $descendant['cleanup']['process_group_absent'],
+        'Fake Gemini same-group descendant must not survive bounded synthetic termination.',
+    );
+
+    $orphanedDescendant = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $fixture, 'process-orphaned-descendant'],
+        $root,
+        $environment,
+        '',
+        2,
+        1_024,
+    );
+    agentEvaluationControllerTest(
+        $orphanedDescendant['exit_code'] === 0
+        && !$orphanedDescendant['timed_out']
+        && $orphanedDescendant['termination_reason'] === 'completed'
+        && $orphanedDescendant['cleanup']['terminate_sent']
+        && $orphanedDescendant['cleanup']['process_reaped']
+        && $orphanedDescendant['cleanup']['process_group_absent'],
+        'Fake Gemini same-group descendant must be terminated even after parent exits.',
     );
 }
 

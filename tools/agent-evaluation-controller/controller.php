@@ -1246,16 +1246,35 @@ function agentEvaluationControllerExecuteControlled(
         agentEvaluationControllerEnterPhase($observedPhases, 'generate');
         agentEvaluationControllerInjectSyntheticFailure($workspace, $testFailureMode);
         $startedAt = agentEvaluationControllerUtcNow();
-        $generation = $oci === null ? agentEvaluationControllerRunCodex(
-            $workspace['candidate_root'],
-            $prompt,
-            agentEvaluationRequireString($validatedProfile['model'], 'id', 'controller model profile'),
-            'high',
-            $taskBudgets,
-            $validatedProfile['isolation'],
-            true,
-        ) : agentEvaluationControllerRunLiveCodex($oci, $prompt, $validatedProfile, $credential,
-            $calibration === null ? null : agentEvaluationControllerCalibrationSpending());
+        $runnerName = $validatedProfile['runner']['name'];
+        if ($runnerName === AGENT_EVALUATION_CONTROLLER_RUNNER_FAKE_GEMINI || $runnerName === AGENT_EVALUATION_CONTROLLER_RUNNER_GEMINI) {
+            $modelId = agentEvaluationRequireString($validatedProfile['model'], 'id', 'controller model profile');
+            $modelSettings = agentEvaluationValueObject($validatedProfile['model']['settings'] ?? null, 'controller model settings');
+            $thinkingBudget = $synthetic ? 'high' : agentEvaluationRequireString($modelSettings, 'thinking_budget', 'controller model settings');
+            $generation = $oci === null ? agentEvaluationControllerRunGemini(
+                $workspace['candidate_root'],
+                $prompt,
+                $modelId,
+                $thinkingBudget,
+                $taskBudgets,
+                $validatedProfile['isolation'],
+                true,
+            ) : throw new RuntimeException(
+                AGENT_EVALUATION_CONTROLLER_LIVE_GEMINI_UNAVAILABLE
+                . ': live OCI execution for gemini-exec is not yet supported in controller',
+            );
+        } else {
+            $generation = $oci === null ? agentEvaluationControllerRunCodex(
+                $workspace['candidate_root'],
+                $prompt,
+                agentEvaluationRequireString($validatedProfile['model'], 'id', 'controller model profile'),
+                'high',
+                $taskBudgets,
+                $validatedProfile['isolation'],
+                true,
+            ) : agentEvaluationControllerRunLiveCodex($oci, $prompt, $validatedProfile, $credential,
+                $calibration === null ? null : agentEvaluationControllerCalibrationSpending());
+        }
         $finishedAt = agentEvaluationControllerUtcNow();
         agentEvaluationControllerWriteArtifact(
             $workspace['evidence_root'],
