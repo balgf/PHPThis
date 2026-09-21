@@ -318,7 +318,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 self.server.responses += 1
                 if self.send_upstream_failure("responses"):
                     return
-                if self.server.responses == 1:
+                if self.server.mode == "explanation" and self.server.responses == 1:
+                    item = {"type": "message", "id": "msg_phpthis_explanation_1", "role": "assistant",
+                            "status": "completed", "content": [{"type": "output_text",
+                            "text": "Deterministic read-only explanation fixture completed.", "annotations": []}]}
+                elif self.server.responses == 1:
                     names = [tool.get("name") for tool in body.get("tools", []) if tool.get("type") == "function"]
                     if "exec_command" not in names:
                         raise ValueError("pinned Codex exec_command tool is unavailable: " + repr(names))

@@ -48,6 +48,15 @@ function agentEvaluationMain(array $arguments): int
                 ];
             }
 
+            $explanationTask = agentEvaluationExplanationTask($kit);
+            $summary[] = [
+                'schema_version' => $explanationTask['schema_version'],
+                'id' => $explanationTask['id'],
+                'revision' => $explanationTask['revision'],
+                'kind' => $explanationTask['kind'],
+                'comparative_claims' => $explanationTask['comparative_claims'],
+            ];
+
             fwrite(STDOUT, agentEvaluationJson($summary));
 
             return 0;
@@ -62,9 +71,11 @@ function agentEvaluationMain(array $arguments): int
             }
 
             $pin = AGENT_EVALUATION_TASK_REVISIONS[$taskId] ?? null;
-            $task = is_array($pin) && $pin['schema_version'] === 2
-                ? agentEvaluationComparisonTask($kit, $taskId)
-                : agentEvaluationTask($kit, $taskId);
+            $task = match (is_array($pin) ? $pin['schema_version'] : null) {
+                2 => agentEvaluationComparisonTask($kit, $taskId),
+                3 => agentEvaluationExplanationTask($kit),
+                default => agentEvaluationTask($kit, $taskId),
+            };
             $prompt = file_get_contents($task['directory'] . '/' . $task['prompt']['path']);
 
             if (!is_string($prompt)) {
@@ -85,10 +96,18 @@ function agentEvaluationMain(array $arguments): int
                 throw new RuntimeException('validate-run requires one task ID and one run-record path.');
             }
 
-            $task = agentEvaluationTask($kit, $taskId);
+            $pin = AGENT_EVALUATION_TASK_REVISIONS[$taskId] ?? null;
+            $explanation = is_array($pin) && $pin['schema_version'] === 3;
             $runRecord = agentEvaluationJsonFile($recordPath);
-            agentEvaluationValidateRunRecord($runRecord, $task);
-            agentEvaluationValidateRunArtifacts($runRecord, dirname($recordPath));
+            if ($explanation) {
+                $task = agentEvaluationExplanationTask($kit);
+                agentEvaluationValidateExplanationRunRecord($runRecord, $task);
+                agentEvaluationValidateExplanationRunArtifacts($runRecord, dirname($recordPath));
+            } else {
+                $task = agentEvaluationTask($kit, $taskId);
+                agentEvaluationValidateRunRecord($runRecord, $task);
+                agentEvaluationValidateRunArtifacts($runRecord, dirname($recordPath));
+            }
             fwrite(STDOUT, "PASS agent evaluation run record: {$taskId}\n");
 
             return 0;
@@ -115,16 +134,40 @@ function agentEvaluationMain(array $arguments): int
                 throw new RuntimeException('validate-score requires one task ID, one run-record path, and one score-record path.');
             }
 
-            $task = agentEvaluationTask($kit, $taskId);
+            $pin = AGENT_EVALUATION_TASK_REVISIONS[$taskId] ?? null;
+            $explanation = is_array($pin) && $pin['schema_version'] === 3;
             $runRecord = agentEvaluationJsonFile($runPath);
-            agentEvaluationValidateRunRecord($runRecord, $task);
-            agentEvaluationValidateRunArtifacts($runRecord, dirname($runPath));
-            agentEvaluationValidateScoreRecord(
-                agentEvaluationJsonFile($recordPath),
-                $task,
-                $runRecord,
-                agentEvaluationFileHash($runPath, 'run record'),
-            );
+            if ($explanation) {
+                $task = agentEvaluationExplanationTask($kit);
+                $runRoot = realpath(dirname($runPath));
+                $scoreRoot = realpath(dirname($recordPath));
+                if ($runRoot === false || $scoreRoot === false || $runRoot !== $scoreRoot) {
+                    throw new RuntimeException(
+                        'Explanation run and score records must share one existing evidence directory.',
+                    );
+                }
+                $scoreRecord = agentEvaluationJsonFile($recordPath);
+                agentEvaluationValidateExplanationRunRecord($runRecord, $task);
+                agentEvaluationValidateExplanationRunArtifacts($runRecord, $runRoot);
+                agentEvaluationValidateExplanationScoreRecord(
+                    $scoreRecord,
+                    $task,
+                    $runRecord,
+                    agentEvaluationFileHash($runPath, 'run record'),
+                );
+                agentEvaluationValidateExplanationScoreArtifacts($scoreRecord, $runRecord, $runRoot);
+                agentEvaluationValidateExplanationOuterEvidence($scoreRecord, $runRecord, $runRoot);
+            } else {
+                $task = agentEvaluationTask($kit, $taskId);
+                agentEvaluationValidateRunRecord($runRecord, $task);
+                agentEvaluationValidateRunArtifacts($runRecord, dirname($runPath));
+                agentEvaluationValidateScoreRecord(
+                    agentEvaluationJsonFile($recordPath),
+                    $task,
+                    $runRecord,
+                    agentEvaluationFileHash($runPath, 'run record'),
+                );
+            }
             fwrite(STDOUT, "PASS agent evaluation score record: {$taskId}\n");
 
             return 0;

@@ -1,0 +1,262 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/task-v3.json",
+    "title": "PHPThis explanation evaluation task v3",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "id",
+        "revision",
+        "kind",
+        "prompt",
+        "rubric",
+        "base",
+        "workspace_policy",
+        "budgets",
+        "execution_profile",
+        "checks",
+        "comparative_claims"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 3
+        },
+        "id": {
+            "const": "explain.file-profile-s3"
+        },
+        "revision": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "kind": {
+            "const": "explanation"
+        },
+        "prompt": {
+            "$ref": "#/$defs/promptArtifact"
+        },
+        "rubric": {
+            "$ref": "#/$defs/artifact"
+        },
+        "base": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "fixture",
+                "revision",
+                "tree",
+                "fixture_sha256"
+            ],
+            "properties": {
+                "fixture": {
+                    "const": "tracked-maintainer-source"
+                },
+                "revision": {
+                    "const": "d7ab170c190c9fd7e18be3ca00b874a8d954fa2b"
+                },
+                "tree": {
+                    "const": "3b017642ecc90fbc5af93f2f9454cb86d1e2add7"
+                },
+                "fixture_sha256": {
+                    "const": "da90475f0d494a125dfdff21f85408b97164ec276961c1d7db522a63bbb5be6d"
+                }
+            }
+        },
+        "workspace_policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "allowed_existing_paths",
+                "allowed_new_paths",
+                "protected_paths",
+                "max_changed_files",
+                "max_added_lines",
+                "max_deleted_lines"
+            ],
+            "properties": {
+                "allowed_existing_paths": {
+                    "const": []
+                },
+                "allowed_new_paths": {
+                    "const": []
+                },
+                "protected_paths": {
+                    "const": []
+                },
+                "max_changed_files": {
+                    "const": 0
+                },
+                "max_added_lines": {
+                    "const": 0
+                },
+                "max_deleted_lines": {
+                    "const": 0
+                }
+            }
+        },
+        "budgets": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "model_tokens",
+                "wall_seconds",
+                "repair_turns",
+                "command_output_bytes"
+            ],
+            "properties": {
+                "model_tokens": {
+                    "const": 40000
+                },
+                "wall_seconds": {
+                    "const": 1200
+                },
+                "repair_turns": {
+                    "const": 0
+                },
+                "command_output_bytes": {
+                    "const": 4194304
+                }
+            }
+        },
+        "execution_profile": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "condition",
+                "runner",
+                "model",
+                "context",
+                "tools",
+                "transport_tools"
+            ],
+            "properties": {
+                "condition": {
+                    "const": "repository-only"
+                },
+                "runner": {
+                    "const": {
+                        "name": "codex-exec",
+                        "version": "0.153.1"
+                    }
+                },
+                "model": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "provider",
+                        "id",
+                        "revision",
+                        "settings"
+                    ],
+                    "properties": {
+                        "provider": {
+                            "const": "openai"
+                        },
+                        "id": {
+                            "const": "gpt-5.4-2026-03-05"
+                        },
+                        "revision": {
+                            "type": "null"
+                        },
+                        "settings": {
+                            "const": {
+                                "reasoning_effort": "high"
+                            }
+                        }
+                    }
+                },
+                "context": {
+                    "const": {
+                        "bundle_id": null,
+                        "bundle_sha256": null
+                    }
+                },
+                "tools": {
+                    "const": [
+                        {
+                            "name": "shell",
+                            "version": null,
+                            "permissions": [
+                                "workspace-read",
+                                "process-execute"
+                            ]
+                        }
+                    ]
+                },
+                "transport_tools": {
+                    "const": {
+                        "kind": "codex-responses-local-tools-v1",
+                        "count": 4,
+                        "sha256": "3392681cd5b82960557ffe2ce5b0ba1e223cc0f97a226432a7a43353475d6aed"
+                    }
+                }
+            }
+        },
+        "checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "structural",
+                "semantic_review"
+            ],
+            "properties": {
+                "structural": {
+                    "const": "artifact-bound-v1"
+                },
+                "semantic_review": {
+                    "const": "human-v1"
+                }
+            }
+        },
+        "comparative_claims": {
+            "const": false
+        }
+    },
+    "$defs": {
+        "promptArtifact": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "sha256",
+                "effective_sha256"
+            ],
+            "properties": {
+                "path": {
+                    "$ref": "#/$defs/relativePath"
+                },
+                "sha256": {
+                    "$ref": "#/$defs/sha256"
+                },
+                "effective_sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "artifact": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "sha256"
+            ],
+            "properties": {
+                "path": {
+                    "$ref": "#/$defs/relativePath"
+                },
+                "sha256": {
+                    "$ref": "#/$defs/sha256"
+                }
+            }
+        },
+        "relativePath": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*[\\u0000-\\u001F\\u007F])(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$)).+$"
+        },
+        "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        }
+    }
+}

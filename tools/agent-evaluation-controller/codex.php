@@ -14,6 +14,9 @@ const AGENT_EVALUATION_CONTROLLER_MAX_EVENTS = 4_096;
 // One buffered upstream response; independent of retained Codex command output.
 const AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES = 4_194_304;
 const AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_LIMIT = 128;
+const AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_KIND = 'codex-responses-local-tools-v1';
+const AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_COUNT = 4;
+const AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_SHA256 = '3392681cd5b82960557ffe2ce5b0ba1e223cc0f97a226432a7a43353475d6aed';
 // Sequential wire bytes, never a buffer allocation or a larger per-response allowance.
 const AGENT_EVALUATION_CONTROLLER_PROXY_RUN_RESPONSE_BYTES = AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_LIMIT
     * AGENT_EVALUATION_CONTROLLER_PROXY_RESPONSE_BYTES;
@@ -144,6 +147,7 @@ function agentEvaluationControllerProxyState(string $model, string $reasoningEff
         'reserved_output' => 0,
         'request_count' => 0,
         'observed_request_count' => 0,
+        'transport_tools' => null,
         'last_request_sha256' => null,
         'response_bytes' => 0,
         'last_response_sha256' => null,
@@ -304,7 +308,12 @@ function agentEvaluationControllerProxyRequest(string $body, array &$state): arr
         $stage = 'input';
         agentEvaluationControllerProxyValidateInput($request['input']);
         $stage = 'tools';
-        agentEvaluationControllerProxyValidateTools($request['tools'] ?? []);
+        $transportTools = agentEvaluationControllerProxyTransportToolsIdentity($request['tools'] ?? []);
+        $observedTransportTools = $state['transport_tools'] ?? null;
+        if ($observedTransportTools !== null && $observedTransportTools !== $transportTools) {
+            throw new RuntimeException('Proxy wire tools changed between requests.');
+        }
+        $state['transport_tools'] = $transportTools;
         $stage = 'tool_choice';
         $toolChoice = $request['tool_choice'] ?? 'auto';
 
@@ -883,25 +892,60 @@ function agentEvaluationControllerProxyValidateInput(mixed $input): void
     }
 }
 
-function agentEvaluationControllerProxyValidateTools(mixed $tools): void
+/** @return array{kind: string, count: int, sha256: string} */
+function agentEvaluationControllerProxyTransportToolsIdentity(mixed $tools): array
 {
     if (!is_array($tools) || !array_is_list($tools)) {
         throw new RuntimeException('Proxy tool list is invalid.');
     }
-
-    foreach ($tools as $tool) {
-        if (!$tool instanceof stdClass) {
-            throw new RuntimeException('Proxy tool is invalid.');
-        }
-
-        $type = $tool->type ?? null;
-
-        if ($type === 'namespace') {
-            agentEvaluationControllerProxyValidateTools($tool->tools ?? null);
-        } elseif (!in_array($type, ['function', 'custom', 'local_shell'], true)) {
-            throw new RuntimeException('Proxy refuses provider-hosted tools and external destinations.');
+    if (count($tools) !== AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_COUNT) {
+        throw new RuntimeException('Proxy tool count does not match its pinned Codex transport.');
+    }
+    $expected = [
+        ['type' => 'function', 'name' => 'exec_command'],
+        ['type' => 'function', 'name' => 'write_stdin'],
+        ['type' => 'function', 'name' => 'request_user_input'],
+        ['type' => 'custom', 'name' => 'apply_patch'],
+    ];
+    foreach ($tools as $index => $tool) {
+        if (!$tool instanceof stdClass
+            || ($tool->type ?? null) !== $expected[$index]['type']
+            || ($tool->name ?? null) !== $expected[$index]['name']) {
+            throw new RuntimeException('Proxy tool identity does not match its pinned Codex transport.');
         }
     }
+    $canonical = json_encode(
+        agentEvaluationControllerProxyCanonicalJsonValue($tools),
+        JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+    );
+    $sha256 = hash('sha256', $canonical);
+    if (!hash_equals(AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_SHA256, $sha256)) {
+        throw new RuntimeException('Proxy tool schema does not match its pinned Codex transport.');
+    }
+    return ['kind' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_KIND,
+        'count' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_COUNT, 'sha256' => $sha256];
+}
+
+function agentEvaluationControllerProxyCanonicalJsonValue(mixed $value): mixed
+{
+    if ($value instanceof stdClass) {
+        $members = get_object_vars($value);
+        ksort($members, SORT_STRING);
+        foreach ($members as $name => $member) {
+            $members[$name] = agentEvaluationControllerProxyCanonicalJsonValue($member);
+        }
+        return $members;
+    }
+    if (is_array($value)) {
+        if (!array_is_list($value)) {
+            throw new RuntimeException('Proxy canonical JSON arrays must be lists.');
+        }
+        return array_map(agentEvaluationControllerProxyCanonicalJsonValue(...), $value);
+    }
+    if ($value === null || is_string($value) || is_int($value) || is_float($value) || is_bool($value)) {
+        return $value;
+    }
+    throw new RuntimeException('Proxy canonical JSON value is invalid.');
 }
 
 /**

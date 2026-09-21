@@ -482,6 +482,8 @@ try {
     agentEvaluationControllerTestComparisonContinuation($temporaryRoot);
     agentEvaluationControllerTestComparisonBinaryEvidence($temporaryRoot);
     agentEvaluationControllerTestGenerationPolicy($root, $temporaryRoot);
+    agentEvaluationControllerTestExplanationExecution($root, $dependencies, $temporaryRoot);
+    agentEvaluationControllerTestExplanationDependencyProvenance($temporaryRoot);
     agentEvaluationControllerTestUpstreamFailureObservations();
     agentEvaluationControllerTestComparisonMeasurements($root, $temporaryRoot);
     agentEvaluationControllerTestLiveConfiguration($root, $temporaryRoot, $task['budgets']);
@@ -756,6 +758,395 @@ function agentEvaluationControllerLiveGeminiIsolationProfile(array $budgets): ar
         'output_bytes' => $budgets['command_output_bytes'],
         'descendant_cleanup' => 'container-destroy',
     ];
+}
+
+function agentEvaluationControllerTestExplanationExecution(
+    string $root,
+    string $dependencies,
+    string $temporaryRoot,
+): void {
+    $task = agentEvaluationExplanationTask($root . '/tools/agent-evaluation');
+    $profile = agentEvaluationControllerSyntheticProfile($task['budgets']);
+    $taskProfile = agentEvaluationRequireObject($task, 'execution_profile', 'explanation task');
+    $profile['condition'] = $taskProfile['condition'];
+    $profile['context'] = $taskProfile['context'];
+    $profile['tools'] = $taskProfile['tools'];
+    $profile['transport_tools'] = null;
+    $runRoot = $temporaryRoot . '/explanation-run';
+    $result = agentEvaluationControllerExecuteExplanationSynthetic(
+        $root,
+        $dependencies,
+        $runRoot,
+        ['run_id' => '00000000000000000000000000000070', 'task_id' => AGENT_EVALUATION_EXPLANATION_TASK_ID],
+        $profile,
+        $task,
+    );
+    agentEvaluationControllerTest(
+        $result['automated_status'] === 'pass'
+        && $result['human_review'] === 'pending'
+        && $result['cleanup']['status'] === 'pass'
+        && $result['cleanup']['removed'] === [],
+        'Explanation collection must pass only structural checks and leave semantic review pending.',
+    );
+    $run = agentEvaluationJsonFile($result['run_record_path']);
+    $score = agentEvaluationJsonFile($result['score_record_path']);
+    agentEvaluationValidateExplanationRunRecord($run, $task);
+    agentEvaluationValidateExplanationRunArtifacts($run, $result['evidence_root']);
+    agentEvaluationValidateExplanationScoreRecord(
+        $score,
+        $task,
+        $run,
+        agentEvaluationFileHash($result['run_record_path'], 'synthetic explanation run'),
+    );
+    agentEvaluationValidateExplanationScoreArtifacts($score, $run, $result['evidence_root']);
+    $manifest = agentEvaluationJsonFile($result['evidence_manifest_path']);
+    agentEvaluationValidateExplanationOuterEvidence($score, $run, $result['evidence_root']);
+    $artifacts = agentEvaluationRequireObject($manifest, 'artifacts', 'explanation evidence manifest');
+    agentEvaluationControllerTest(
+        ($manifest['task_id'] ?? null) === AGENT_EVALUATION_EXPLANATION_TASK_ID
+        && ($manifest['task_revision'] ?? null) === $task['revision']
+        && ($manifest['explanation_execution'] ?? null) === true
+        && ($manifest['condition'] ?? null) === 'repository-only'
+        && !isset($manifest['comparison_execution'])
+        && !isset($artifacts['application-check.json'])
+        && !isset($artifacts['public-scorer.json'])
+        && !isset($artifacts['resource-inspection.json'])
+        && !isset($artifacts['source-skeleton.manifest'])
+        && isset($artifacts['structural-evidence.json'])
+        && isset($artifacts['tracked-source.manifest']),
+        'Explanation evidence must bind its own task and omit implementation-only scoring artifacts.',
+    );
+    agentEvaluationControllerTest(
+        file_get_contents($result['evidence_root'] . '/candidate.patch') === ''
+        && hash_file('sha256', $result['evidence_root'] . '/response.txt') === $run['response_sha256']
+        && file_get_contents($result['evidence_root'] . '/prompt.md')
+            === agentEvaluationExplanationEffectivePrompt(
+                (string) file_get_contents($result['evidence_root'] . '/source-prompt.md'),
+            ),
+        'Explanation evidence must bind its exact effective prompt, nonempty response, and literal empty patch.',
+    );
+    $trackedManifest = (string) file_get_contents($result['evidence_root'] . '/tracked-source.manifest');
+    $candidateManifest = (string) file_get_contents($result['evidence_root'] . '/candidate.manifest');
+    agentEvaluationControllerTest(
+        hash('sha256', $trackedManifest) === $task['base']['fixture_sha256']
+        && $candidateManifest === $trackedManifest
+        && hash('sha256', $candidateManifest) === $run['base_fixture_sha256']
+        && !str_contains($trackedManifest, 'tasks/explain.file-profile-s3/')
+        && !str_contains($trackedManifest, '.git/'),
+        'Tracked source and zero-write candidate must share the exact pinned fixture identity.',
+    );
+    agentEvaluationControllerTest(
+        agentEvaluationControllerOciGenerationPolicy('fixed-candidate', 'fixed-dependencies', true) === [
+            'candidate_read_only' => true,
+            'candidate_writable' => false,
+            'candidate_relative_writable_mounts' => ['cache' => false, 'scratch' => false],
+            'mounts' => [
+                'type=volume,src=fixed-candidate,dst=/candidate,readonly,volume-nocopy',
+                'type=volume,src=fixed-dependencies,dst=/candidate/vendor,readonly,volume-nocopy',
+            ],
+        ]
+        && agentEvaluationControllerOciGenerationPolicy('fixed-candidate', 'fixed-dependencies', false) === [
+            'candidate_read_only' => false,
+            'candidate_writable' => true,
+            'candidate_relative_writable_mounts' => ['cache' => true, 'scratch' => true],
+            'mounts' => [
+                'type=volume,src=fixed-candidate,dst=/candidate,volume-nocopy',
+                'type=volume,src=fixed-dependencies,dst=/candidate/vendor,readonly,volume-nocopy',
+            ],
+        ],
+        'The complete explanation generation policy must keep /candidate read-only and disable candidate-relative scratch and cache mounts.',
+    );
+    agentEvaluationControllerExpectFailure(
+        static function () use ($task): void {
+            agentEvaluationControllerValidateRequest(
+                ['run_id' => str_repeat('0', 32), 'task_id' => AGENT_EVALUATION_CONTROLLER_TASK_ID],
+                $task,
+            );
+        },
+        'Controller request must select its exact admitted task.',
+    );
+    agentEvaluationControllerExpectFailure(
+        static function (): void {
+            agentEvaluationControllerValidateExplanationResponse([], '');
+        },
+        'Explanation generation requires a nonempty final agent message.',
+    );
+    agentEvaluationControllerValidateExplanationResponse([
+        ['type' => 'item.completed', 'item' => [
+            'id' => 'commentary', 'type' => 'agent_message', 'text' => 'Inspecting the pinned source.',
+        ]],
+        ['type' => 'item.completed', 'item' => [
+            'id' => 'final', 'type' => 'agent_message', 'text' => 'Final explanation.',
+        ]],
+    ], 'Final explanation.');
+    agentEvaluationControllerExpectFailure(
+        static function (): void {
+            agentEvaluationControllerValidateExplanationResponse([
+                ['type' => 'item.completed', 'item' => [
+                    'id' => 'empty', 'type' => 'agent_message', 'text' => '',
+                ]],
+            ], '');
+        },
+        'Explanation generation requires a nonempty final agent message.',
+    );
+    agentEvaluationControllerExpectFailure(
+        static function (): void {
+            agentEvaluationControllerValidateExplanationResponse([
+                ['type' => 'item.completed', 'item' => [
+                    'id' => 'final', 'type' => 'agent_message', 'text' => 'Retained response.',
+                ]],
+            ], 'Different response.');
+        },
+        'Explanation generation requires a nonempty final agent message.',
+    );
+    agentEvaluationControllerTest(
+        !agentEvaluationControllerExplanationActionsApproved([[
+            'type' => 'item.completed',
+            'item' => ['id' => 'write', 'type' => 'file_change', 'paths' => ['README.md']],
+        ]]),
+        'Any reported explanation file-change attempt must be rejected.',
+    );
+    $promptPath = $result['evidence_root'] . '/prompt.md';
+    $promptBytes = (string) file_get_contents($promptPath);
+    if (file_put_contents($promptPath, "tampered prompt\n", LOCK_EX) === false) {
+        throw new RuntimeException('Unable to prepare the explanation prompt tamper control.');
+    }
+    agentEvaluationControllerExpectFailure(
+        static function () use ($result, $task): void {
+            agentEvaluationControllerValidateEffectivePromptEvidence(
+                $result['evidence_root'],
+                $task,
+                null,
+                null,
+            );
+        },
+        'explanation effective prompt SHA-256 does not match its recorded hash.',
+    );
+    if (file_put_contents($promptPath, $promptBytes, LOCK_EX) !== strlen($promptBytes)) {
+        throw new RuntimeException('Unable to restore explanation prompt evidence.');
+    }
+    $responsePath = $result['evidence_root'] . '/response.txt';
+    $responseBytes = (string) file_get_contents($responsePath);
+    if (file_put_contents($responsePath, "tampered\n", LOCK_EX) === false) {
+        throw new RuntimeException('Unable to prepare the explanation response tamper control.');
+    }
+    agentEvaluationControllerExpectFailure(
+        static function () use ($run, $result): void {
+            agentEvaluationValidateExplanationRunArtifacts($run, $result['evidence_root']);
+        },
+        'explanation response artifact SHA-256 does not match its recorded hash.',
+    );
+    if (file_put_contents($responsePath, $responseBytes, LOCK_EX) !== strlen($responseBytes)) {
+        throw new RuntimeException('Unable to restore explanation response evidence.');
+    }
+    $actionsPath = $result['evidence_root'] . '/external-actions.json';
+    $actionsBytes = (string) file_get_contents($actionsPath);
+    if (file_put_contents($actionsPath, "{}\n", LOCK_EX) !== 3) {
+        throw new RuntimeException('Unable to prepare the explanation structural-evidence tamper control.');
+    }
+    agentEvaluationControllerExpectFailure(
+        static function () use ($score, $run, $result): void {
+            agentEvaluationValidateExplanationScoreArtifacts($score, $run, $result['evidence_root']);
+        },
+        'explanation structural evidence artifact external-actions.json SHA-256 does not match its recorded hash.',
+    );
+    if (file_put_contents($actionsPath, $actionsBytes, LOCK_EX) !== strlen($actionsBytes)) {
+        throw new RuntimeException('Unable to restore explanation structural evidence.');
+    }
+
+    $cleanupFailureRoot = $temporaryRoot . '/explanation-cleanup-failure-run';
+    agentEvaluationControllerExpectFailure(
+        static function () use ($root, $dependencies, $cleanupFailureRoot, $profile, $task): void {
+            agentEvaluationControllerExecuteExplanationSynthetic(
+                $root,
+                $dependencies,
+                $cleanupFailureRoot,
+                ['run_id' => '00000000000000000000000000000071',
+                    'task_id' => AGENT_EVALUATION_EXPLANATION_TASK_ID],
+                $profile,
+                $task,
+                'cleanup',
+            );
+        },
+        'AGENT_EVALUATION_CONTROLLER_RUN_FAILED primary=none cleanup=RuntimeException',
+    );
+    $failedRun = agentEvaluationJsonFile($cleanupFailureRoot . '/evidence/run.json');
+    $failedScore = agentEvaluationJsonFile($cleanupFailureRoot . '/evidence/score.json');
+    $failedCleanup = agentEvaluationJsonFile($cleanupFailureRoot . '/evidence/cleanup.json');
+    agentEvaluationValidateExplanationRunRecord($failedRun, $task);
+    agentEvaluationValidateExplanationRunArtifacts($failedRun, $cleanupFailureRoot . '/evidence');
+    agentEvaluationValidateExplanationScoreRecord(
+        $failedScore,
+        $task,
+        $failedRun,
+        agentEvaluationFileHash($cleanupFailureRoot . '/evidence/run.json', 'failed-cleanup explanation run'),
+    );
+    agentEvaluationValidateExplanationScoreArtifacts(
+        $failedScore,
+        $failedRun,
+        $cleanupFailureRoot . '/evidence',
+    );
+    $failedChecks = agentEvaluationRequireObject(
+        $failedScore,
+        'structural_checks',
+        'failed-cleanup explanation score',
+    );
+    agentEvaluationControllerTest(
+        ($failedCleanup['status'] ?? null) === 'fail'
+        && ($failedScore['admissible'] ?? null) === false
+        && ($failedScore['automated_status'] ?? null) === 'fail'
+        && ($failedChecks['cleanup'] ?? null) === false,
+        'Final cleanup failure must remain a failed structural check in retained explanation evidence.',
+    );
+    if (!unlink($cleanupFailureRoot . '/unexpected-cleanup.control')) {
+        throw new RuntimeException('Unable to remove the explanation final-cleanup control.');
+    }
+    agentEvaluationControllerRemoveTree($cleanupFailureRoot);
+}
+
+function agentEvaluationControllerTestExplanationDependencyProvenance(string $temporaryRoot): void
+{
+    $root = $temporaryRoot . '/explanation-dependency-provenance';
+    $candidate = $root . '/candidate';
+    $dependencies = $root . '/dependencies';
+    $composer = $dependencies . '/composer';
+    $runtimePackage = [
+        'name' => 'example/runtime',
+        'version' => '1.2.3',
+        'source' => ['reference' => str_repeat('a', 40)],
+        'dist' => ['reference' => str_repeat('b', 40)],
+    ];
+    $developmentPackage = [
+        'name' => 'example/devtool',
+        'version' => '2.0.0',
+        'source' => ['reference' => str_repeat('c', 40)],
+        'dist' => ['reference' => str_repeat('d', 40)],
+    ];
+    $lockBytes = agentEvaluationJson([
+        'packages' => [$runtimePackage],
+        'packages-dev' => [$developmentPackage],
+    ]);
+    $installed = [
+        'packages' => [
+            [...$runtimePackage, 'install-path' => '../example/runtime'],
+            [...$developmentPackage, 'install-path' => '../example/devtool'],
+        ],
+        'dev' => true,
+        'dev-package-names' => ['example/devtool'],
+    ];
+    $installedBytes = agentEvaluationJson($installed);
+    $preparedLock = $root . '/prepared.lock';
+
+    if (
+        !mkdir($candidate, 0700, true)
+        || !mkdir($composer, 0700, true)
+        || !mkdir($dependencies . '/example/runtime', 0700, true)
+        || !mkdir($dependencies . '/example/devtool', 0700, true)
+        || file_put_contents($candidate . '/composer.lock', $lockBytes, LOCK_EX) !== strlen($lockBytes)
+        || file_put_contents($preparedLock, $lockBytes, LOCK_EX) !== strlen($lockBytes)
+        || file_put_contents($composer . '/installed.json', $installedBytes, LOCK_EX)
+            !== strlen($installedBytes)
+    ) {
+        throw new RuntimeException('Unable to prepare explanation dependency-provenance controls.');
+    }
+
+    $provenance = agentEvaluationControllerValidateExplanationDependencyProvenance(
+        $candidate,
+        $dependencies,
+        $preparedLock,
+        hash('sha256', $lockBytes),
+    );
+    agentEvaluationControllerTest(
+        $provenance === [
+            'lock_sha256' => hash('sha256', $lockBytes),
+            'installed_metadata_sha256' => hash('sha256', $installedBytes),
+            'package_count' => 2,
+        ],
+        'Explanation dependency provenance must bind the tracked lock and matching inert Composer metadata.',
+    );
+
+    $wrongLockBytes = substr($lockBytes, 0, -1) . " \n";
+    if (file_put_contents($preparedLock, $wrongLockBytes, LOCK_EX) !== strlen($wrongLockBytes)) {
+        throw new RuntimeException('Unable to prepare the wrong explanation lock control.');
+    }
+    agentEvaluationControllerExpectFailure(
+        static function () use ($candidate, $dependencies, $preparedLock, $wrongLockBytes): void {
+            agentEvaluationControllerValidateExplanationDependencyProvenance(
+                $candidate,
+                $dependencies,
+                $preparedLock,
+                hash('sha256', $wrongLockBytes),
+            );
+        },
+        'Explanation prepared lock must exactly match the tracked candidate composer.lock.',
+    );
+    if (file_put_contents($preparedLock, $lockBytes, LOCK_EX) !== strlen($lockBytes)) {
+        throw new RuntimeException('Unable to restore the admitted explanation lock control.');
+    }
+
+    if (!mkdir($dependencies . '/phpthis/framework', 0700, true)) {
+        throw new RuntimeException('Unable to prepare the duplicate framework path control.');
+    }
+    agentEvaluationControllerExpectFailure(
+        static function () use ($candidate, $dependencies, $preparedLock, $lockBytes): void {
+            agentEvaluationControllerValidateExplanationDependencyProvenance(
+                $candidate,
+                $dependencies,
+                $preparedLock,
+                hash('sha256', $lockBytes),
+            );
+        },
+        'Explanation prepared dependencies expose a duplicate phpthis/framework package path.',
+    );
+    agentEvaluationControllerRemoveTree($dependencies . '/phpthis');
+
+    $duplicatePackage = $installed;
+    $duplicatePackage['packages'][] = [
+        'name' => 'phpthis/framework',
+        'version' => 'dev-main',
+        'source' => ['reference' => str_repeat('e', 40)],
+        'dist' => ['reference' => null],
+        'install-path' => '../phpthis/framework',
+    ];
+    $duplicatePackageBytes = agentEvaluationJson($duplicatePackage);
+    if (
+        file_put_contents($composer . '/installed.json', $duplicatePackageBytes, LOCK_EX)
+            !== strlen($duplicatePackageBytes)
+    ) {
+        throw new RuntimeException('Unable to prepare the duplicate framework metadata control.');
+    }
+    agentEvaluationControllerExpectFailure(
+        static function () use ($candidate, $dependencies, $preparedLock, $lockBytes): void {
+            agentEvaluationControllerValidateExplanationDependencyProvenance(
+                $candidate,
+                $dependencies,
+                $preparedLock,
+                hash('sha256', $lockBytes),
+            );
+        },
+        'Explanation prepared dependencies expose a duplicate phpthis/framework package path.',
+    );
+
+    $wrongMetadata = $installed;
+    $wrongMetadata['packages'][0]['version'] = '9.9.9';
+    $wrongMetadataBytes = agentEvaluationJson($wrongMetadata);
+    if (
+        file_put_contents($composer . '/installed.json', $wrongMetadataBytes, LOCK_EX)
+            !== strlen($wrongMetadataBytes)
+    ) {
+        throw new RuntimeException('Unable to prepare the wrong Composer metadata control.');
+    }
+    agentEvaluationControllerExpectFailure(
+        static function () use ($candidate, $dependencies, $preparedLock, $lockBytes): void {
+            agentEvaluationControllerValidateExplanationDependencyProvenance(
+                $candidate,
+                $dependencies,
+                $preparedLock,
+                hash('sha256', $lockBytes),
+            );
+        },
+        'Explanation prepared Composer metadata does not match the admitted lock.',
+    );
 }
 
 function agentEvaluationControllerTestGenerationPolicy(string $root, string $temporaryRoot): void
@@ -1717,12 +2108,42 @@ function agentEvaluationControllerTestArchiveControls(string $root): void
     }
 }
 
+/** @return list<stdClass> */
+function agentEvaluationControllerTestProxyTransportTools(): array
+{
+    $path = __DIR__ . '/agent-evaluation-controller/fixtures/codex-tools-0.153.1.json';
+    $metadata = lstat($path);
+    $bytes = file_get_contents($path);
+    if (!is_array($metadata) || ($metadata['mode'] & 07777) !== 0644
+        || !is_string($bytes) || strlen($bytes) > 16_384
+    ) {
+        throw new RuntimeException('Unable to read the bounded pinned Codex tool fixture.');
+    }
+    $tools = json_decode($bytes, false, 64, JSON_THROW_ON_ERROR);
+    if (!is_array($tools) || !array_is_list($tools)) {
+        throw new RuntimeException('Pinned Codex tool fixture must be one JSON list.');
+    }
+    if (agentEvaluationControllerProxyTransportToolsIdentity($tools) !== [
+        'kind' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_KIND,
+        'count' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_COUNT,
+        'sha256' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_SHA256,
+    ]) {
+        throw new RuntimeException('Pinned Codex tool fixture identity changed.');
+    }
+    /** @var list<stdClass> $tools */
+    return $tools;
+}
+
 function agentEvaluationControllerTestProxyControls(): void
 {
-    $body = '{"model":"phpthis-fixture","stream":true,"store":false,"input":"Synthetic task.",'
-        . '"reasoning":{"effort":"high"},"tools":[],"max_output_tokens":100}';
+    $requestFields = ['model' => 'phpthis-fixture', 'stream' => true, 'store' => false,
+        'input' => 'Synthetic task.', 'reasoning' => ['effort' => 'high'],
+        'tools' => agentEvaluationControllerTestProxyTransportTools(), 'max_output_tokens' => 100];
+    $body = json_encode($requestFields, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $metadataState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
-    $metadataBody = str_replace('"tools":[]', '"tools":[],"client_metadata":{"x-codex-turn-metadata":"synthetic transport hint"}', $body);
+    $metadataBody = json_encode([...$requestFields,
+        'client_metadata' => ['x-codex-turn-metadata' => 'synthetic transport hint']],
+        JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $metadataRequest = agentEvaluationControllerProxyRequest($metadataBody, $metadataState);
     agentEvaluationControllerTest(
         !array_key_exists('client_metadata', $metadataRequest['request'])
@@ -1756,6 +2177,14 @@ function agentEvaluationControllerTestProxyControls(): void
         && ($state['reserved_output'] ?? null) === 0,
         'A complete fixture response must settle only the provider-reported token categories.',
     );
+    agentEvaluationControllerTest(
+        ($state['transport_tools'] ?? null) === [
+            'kind' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_KIND,
+            'count' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_COUNT,
+            'sha256' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_SHA256,
+        ],
+        'Every accepted proxy request must retain its exact pinned Codex wire-tool identity.',
+    );
     $second = agentEvaluationControllerProxyRequest($body, $state);
     $secondReserved = agentEvaluationControllerProxyJsonObject(
         agentEvaluationControllerProxyReserve($second['request'], $count, $state),
@@ -1765,15 +2194,19 @@ function agentEvaluationControllerTestProxyControls(): void
         'A second request must share the original run allowance rather than resetting quota.',
     );
 
+    $hostedToolRequest = $requestFields;
+    $hostedToolRequest['tools'] = [(object) ['type' => 'web_search']];
+    $previousResponseRequest = [...$requestFields, 'previous_response_id' => 'unapproved'];
+    $invalidMetadataRequest = [...$requestFields, 'client_metadata' => 'invalid'];
     $requestControls = [
         str_replace('"phpthis-fixture"', '"unapproved-model"', $body),
         str_replace('"high"', '"low"', $body),
         str_replace('"stream":true', '"stream":false', $body),
         str_replace('"store":false', '"store":true', $body),
-        str_replace('"tools":[]', '"tools":[{"type":"web_search"}]', $body),
+        json_encode($hostedToolRequest, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         str_replace('"input":"Synthetic task."', '"input":[{"type":"message","role":"user","content":[{"type":"input_image","image_url":"https://example.invalid/image"}]}]', $body),
-        str_replace('"tools":[]', '"tools":[],"previous_response_id":"unapproved"', $body),
-        str_replace('"tools":[]', '"tools":[],"client_metadata":"invalid"', $body),
+        json_encode($previousResponseRequest, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        json_encode($invalidMetadataRequest, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         str_replace('"stream":true', '"stream":true,"str\\u0065am":true', $body),
     ];
 
@@ -1798,6 +2231,59 @@ function agentEvaluationControllerTestProxyControls(): void
             'A rejected request must retain its observed attempt and hash separately from authorized reservations.',
         );
     }
+
+    $extraTools = agentEvaluationControllerTestProxyTransportTools();
+    $extraTools[] = (object) ['type' => 'function', 'name' => 'unexpected'];
+    $mutatedTools = agentEvaluationControllerTestProxyTransportTools();
+    $mutatedDescription = $mutatedTools[0]->description ?? null;
+    if (!is_string($mutatedDescription)) {
+        throw new RuntimeException('Pinned Codex tool fixture description is unavailable.');
+    }
+    $mutatedTools[0]->description = $mutatedDescription . ' Mutated.';
+    foreach ([$extraTools, $mutatedTools] as $invalidTools) {
+        $invalidBody = json_encode([...$requestFields, 'tools' => $invalidTools],
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $invalidState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+        agentEvaluationControllerExpectFailure(
+            static function () use ($invalidBody, &$invalidState): void {
+                agentEvaluationControllerProxyRequest($invalidBody, $invalidState);
+            },
+            'AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_REJECTED',
+        );
+        agentEvaluationControllerTest(
+            ($invalidState['request_rejection_stage'] ?? null) === 'tools'
+            && ($invalidState['transport_tools'] ?? null) === null,
+            'An extra or mutated Codex wire tool must be rejected before it can acquire an approved identity.',
+        );
+    }
+
+    $changedState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
+    $changedRequest = agentEvaluationControllerProxyRequest($body, $changedState);
+    agentEvaluationControllerProxyReserve($changedRequest['request'], $count, $changedState);
+    agentEvaluationControllerProxyComplete($completed, $changedState);
+    $changedTools = agentEvaluationControllerTestProxyTransportTools();
+    $changedDescription = $changedTools[1]->description ?? null;
+    if (!is_string($changedDescription)) {
+        throw new RuntimeException('Pinned Codex tool fixture description is unavailable.');
+    }
+    $changedTools[1]->description = $changedDescription . ' Changed after the first response.';
+    $changedBody = json_encode([...$requestFields, 'tools' => $changedTools],
+        JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($changedBody, &$changedState): void {
+            agentEvaluationControllerProxyRequest($changedBody, $changedState);
+        },
+        'AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_REJECTED',
+    );
+    agentEvaluationControllerTest(
+        ($changedState['request_rejection_stage'] ?? null) === 'tools'
+        && ($changedState['transport_tools'] ?? null) === [
+            'kind' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_KIND,
+            'count' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_COUNT,
+            'sha256' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_SHA256,
+        ],
+        'The proxy must close a run if a later request changes its already observed wire-tool schema.',
+    );
 
     $pendingState = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
     agentEvaluationControllerProxyRequest($body, $pendingState);
@@ -1870,7 +2356,10 @@ function agentEvaluationControllerTestReservedProxyState(): array
 {
     $state = agentEvaluationControllerProxyState('phpthis-fixture', 'high', 120);
     $request = agentEvaluationControllerProxyRequest(
-        '{"model":"phpthis-fixture","stream":true,"store":false,"input":"Synthetic diagnostics only.","reasoning":{"effort":"high"},"tools":[],"max_output_tokens":100}',
+        json_encode(['model' => 'phpthis-fixture', 'stream' => true, 'store' => false,
+            'input' => 'Synthetic diagnostics only.', 'reasoning' => ['effort' => 'high'],
+            'tools' => agentEvaluationControllerTestProxyTransportTools(), 'max_output_tokens' => 100],
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         $state,
     );
     agentEvaluationControllerProxyReserve($request['request'], '{"object":"response.input_tokens","input_tokens":20}', $state);
@@ -1930,7 +2419,8 @@ function agentEvaluationControllerTestProxySpending(): void
         [200_000, 100_000_000, 16, 16, 29_000]] as [$tokens, $limit, $requestedOutput, $expectedOutput, $expectedCost]) {
         $state = agentEvaluationControllerProxyState($model, 'high', $tokens, [...$policy, 'limit_units' => $limit]);
         $request = agentEvaluationControllerProxyRequest(json_encode(['model' => $model, 'stream' => true, 'store' => false,
-            'input' => 'Synthetic money reservation.', 'reasoning' => ['effort' => 'high'], 'tools' => [],
+            'input' => 'Synthetic money reservation.', 'reasoning' => ['effort' => 'high'],
+            'tools' => agentEvaluationControllerTestProxyTransportTools(),
             'max_output_tokens' => $requestedOutput], JSON_THROW_ON_ERROR), $state);
         $approved = agentEvaluationControllerProxyJsonObject(agentEvaluationControllerProxyReserve($request['request'],
             '{"object":"response.input_tokens","input_tokens":20}', $state));
@@ -1941,7 +2431,8 @@ function agentEvaluationControllerTestProxySpending(): void
             'Reservation must enforce the minimum of requested output, remaining tokens, and integer money capacity before create.');
     }
     $body = json_encode(['model' => $model, 'stream' => true, 'store' => false, 'input' => 'Synthetic money settlement.',
-        'reasoning' => ['effort' => 'high'], 'tools' => [], 'max_output_tokens' => 100], JSON_THROW_ON_ERROR);
+        'reasoning' => ['effort' => 'high'], 'tools' => agentEvaluationControllerTestProxyTransportTools(),
+        'max_output_tokens' => 100], JSON_THROW_ON_ERROR);
     $state = agentEvaluationControllerProxyState($model, 'high', 200_000, [...$policy, 'limit_units' => 28_999]);
     $request = agentEvaluationControllerProxyRequest($body, $state);
     $pendingHash = $state['request_sha256'];
@@ -2043,7 +2534,8 @@ function agentEvaluationControllerTestProxyResponseByteBounds(): void
         $model = $policy === null ? 'phpthis-fixture' : 'gpt-5.4-2026-03-05';
         $body = json_encode(['model' => $model, 'stream' => true, 'store' => false,
             'input' => 'Offline sequential response-byte control.', 'reasoning' => ['effort' => 'high'],
-            'tools' => [], 'max_output_tokens' => 100], JSON_THROW_ON_ERROR);
+            'tools' => agentEvaluationControllerTestProxyTransportTools(),
+            'max_output_tokens' => 100], JSON_THROW_ON_ERROR);
         $terminal = agentEvaluationControllerTestResponseStream(['model' => $model, 'status' => 'completed', 'usage' => $usage]);
         $fullResponse = ':' . str_repeat('x', $limit - strlen($terminal) - 3) . "\n\n" . $terminal;
         agentEvaluationControllerTest(strlen($fullResponse) === $limit,
@@ -2158,7 +2650,8 @@ function agentEvaluationControllerTestProxyKeepalive(): void
         $model = $policy === null ? 'phpthis-fixture' : 'gpt-5.4-2026-03-05';
         $base = agentEvaluationControllerProxyState($model, 'high', $policy === null ? 120 : 200_000, $policy);
         $body = json_encode(['model' => $model, 'stream' => true, 'store' => false,
-            'input' => 'Offline keepalive control.', 'reasoning' => ['effort' => 'high'], 'tools' => [], 'max_output_tokens' => 100], JSON_THROW_ON_ERROR);
+            'input' => 'Offline keepalive control.', 'reasoning' => ['effort' => 'high'],
+            'tools' => agentEvaluationControllerTestProxyTransportTools(), 'max_output_tokens' => 100], JSON_THROW_ON_ERROR);
         $request = agentEvaluationControllerProxyRequest($body, $base);
         agentEvaluationControllerProxyReserve($request['request'], '{"object":"response.input_tokens","input_tokens":20}', $base);
         $response = ['model' => $model, 'service_tier' => 'default', 'status' => 'completed', 'usage' => $usage];
@@ -3030,6 +3523,37 @@ function agentEvaluationControllerTestCliGrammar(string $root): void
         && $run['stdout'] === '',
         'The only live CLI command must fail closed with its stable boundary marker.',
     );
+
+    $explanationPreflight = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $entrypoint, 'explanation-preflight'],
+        $root,
+        $environment,
+        '',
+        5,
+        4_096,
+    );
+    agentEvaluationControllerTest(
+        $explanationPreflight['exit_code'] === 1
+        && $explanationPreflight['stdout'] === ''
+        && $explanationPreflight['stderr']
+            === "FAIL agent evaluation controller: explanation-preflight <configuration.json> received an unexpected number of arguments.\n",
+        'Explanation preflight must require only its fixed configuration argument.',
+    );
+    $explanationSelector = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $entrypoint, 'explanation-run', str_repeat('0', 32), '/absent/config.json', 'change.simple-ping'],
+        $root,
+        $environment,
+        '',
+        5,
+        4_096,
+    );
+    agentEvaluationControllerTest(
+        $explanationSelector['exit_code'] === 1
+        && $explanationSelector['stdout'] === ''
+        && $explanationSelector['stderr']
+            === "FAIL agent evaluation controller: explanation-run <run-id> <configuration.json> received an unexpected number of arguments.\n",
+        'Explanation execution must reject every generic task selector.',
+    );
 }
 
 /** @param Closure(): void $callback */
@@ -3465,6 +3989,285 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
         && $accepted['prepared_lock_sha256'] === hash('sha256', $lockBytes),
         'An exact live configuration must parse without starting OCI or executing prepared dependencies.',
     );
+
+    $explanationTask = agentEvaluationExplanationTask($root . '/tools/agent-evaluation');
+    $explanationConfiguration = $configuration;
+    $explanationProfile = agentEvaluationNormalizeExplanationExecutionProfile(
+        agentEvaluationRequireObject($explanationTask, 'execution_profile', 'explanation task'),
+        'explanation task execution profile',
+    );
+    foreach (['condition', 'runner', 'model', 'context', 'tools', 'transport_tools'] as $name) {
+        $explanationConfiguration['profile'][$name] = $explanationProfile[$name];
+    }
+    $explanationConfiguration['profile']['budgets'] = $explanationTask['budgets'];
+    $explanationConfiguration['profile']['isolation'] = agentEvaluationControllerLiveIsolationProfile(
+        $explanationTask['budgets'],
+    );
+    $explanationConfiguration['engine']['generation_toolchain']['relay_sha256']
+        = AGENT_EVALUATION_EXPLANATION_RELAY_SHA256;
+    $explanationConfiguration['approval']['model'] = $explanationProfile['model']['id'];
+    $explanationConfiguration['approval']['run_id'] = '00000000000000000000000000000072';
+    $explanationConfiguration['approval']['spending_ceiling_usd'] = '0.60';
+    $explanationBytes = agentEvaluationJson($explanationConfiguration);
+    if (file_put_contents($path, $explanationBytes, LOCK_EX) !== strlen($explanationBytes)) {
+        throw new RuntimeException('Unable to write the explanation live configuration control.');
+    }
+    clearstatcache(true, $path);
+    $acceptedExplanation = agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+    agentEvaluationControllerRequireExplanationApprovalRunId(
+        $acceptedExplanation,
+        '00000000000000000000000000000072',
+    );
+    $acceptedExplanationProfile = agentEvaluationRequireObject(
+        $acceptedExplanation,
+        'profile',
+        'accepted explanation configuration',
+    );
+    $acceptedExplanationTools = array_map(
+        static fn (mixed $tool): array => agentEvaluationValueObject(
+            $tool,
+            'accepted explanation tool',
+        ),
+        agentEvaluationRequireList(
+            $acceptedExplanationProfile,
+            'tools',
+            'accepted explanation profile',
+        ),
+    );
+    $explanationSpending = agentEvaluationControllerExplanationSpending();
+    $explanationProxy = agentEvaluationControllerProxyState(
+        'gpt-5.4-2026-03-05',
+        'high',
+        40_000,
+        $explanationSpending,
+    );
+    $proxySpending = agentEvaluationRequireObject(
+        $explanationProxy,
+        'spending',
+        'explanation proxy state',
+    );
+    $proxySpendingPolicy = agentEvaluationRequireObject(
+        $proxySpending,
+        'policy',
+        'explanation proxy spending',
+    );
+    $explanationTokenBudget = agentEvaluationRequirePositiveInteger(
+        agentEvaluationRequireObject($explanationTask, 'budgets', 'explanation task'),
+        'model_tokens',
+        'explanation task budgets',
+    );
+    agentEvaluationControllerTest(
+        agentEvaluationRequireString(
+            $acceptedExplanationProfile,
+            'condition',
+            'accepted explanation profile',
+        ) === 'repository-only'
+        && agentEvaluationRequireStringList(
+            $acceptedExplanationTools[0],
+            'permissions',
+            'accepted explanation tool',
+        ) === ['workspace-read', 'process-execute']
+        && ($acceptedExplanationProfile['transport_tools'] ?? null) === [
+            'kind' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_KIND,
+            'count' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_COUNT,
+            'sha256' => AGENT_EVALUATION_CONTROLLER_PROXY_TRANSPORT_TOOLS_SHA256,
+        ]
+        && $explanationSpending === [
+            'limit_units' => 60_000_000,
+            'input_cents_per_million' => 250,
+            'cached_cents_per_million' => 25,
+            'output_cents_per_million' => 1_500,
+        ]
+        && $proxySpendingPolicy === $explanationSpending
+        && $explanationTokenBudget * $explanationSpending['output_cents_per_million']
+            === $explanationSpending['limit_units'],
+        'Explanation live configuration must bind its tools and conservatively enforced USD 0.60 ceiling.',
+    );
+    foreach (['00000000000000000000000000000073', '00000000000000000000000000000074'] as $unapprovedRunId) {
+        agentEvaluationControllerExpectFailure(
+            static function () use ($acceptedExplanation, $unapprovedRunId): void {
+                agentEvaluationControllerRequireExplanationApprovalRunId(
+                    $acceptedExplanation,
+                    $unapprovedRunId,
+                );
+            },
+            'Explanation approval is bound to a different run ID.',
+        );
+    }
+    $invalidApproval = $explanationConfiguration;
+    $invalidApproval['approval']['run_id'] = 'not-a-run-id';
+    $invalidApprovalBytes = agentEvaluationJson($invalidApproval);
+    if (file_put_contents($path, $invalidApprovalBytes, LOCK_EX) !== strlen($invalidApprovalBytes)) {
+        throw new RuntimeException('Unable to write the explanation approval-identity control.');
+    }
+    clearstatcache(true, $path);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path, $explanationTask): void {
+            agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+        },
+        'Explanation approval must bind one exact 32-character lowercase hexadecimal run ID.',
+    );
+    foreach (['pending paid approval', 'PLACEHOLDER approval'] as $reference) {
+        $pendingApproval = $explanationConfiguration;
+        $pendingApproval['approval']['reference'] = $reference;
+        $pendingApprovalBytes = agentEvaluationJson($pendingApproval);
+        if (file_put_contents($path, $pendingApprovalBytes, LOCK_EX) !== strlen($pendingApprovalBytes)) {
+            throw new RuntimeException('Unable to write the explanation pending-approval control.');
+        }
+        clearstatcache(true, $path);
+        agentEvaluationControllerExpectFailure(
+            static function () use ($path, $explanationTask): void {
+                agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+            },
+            'Explanation configuration requires exact pending/0.00 preflight or accountable approved/0.60 state.',
+        );
+    }
+    $insufficientApproval = $explanationConfiguration;
+    $insufficientApproval['approval']['spending_ceiling_usd'] = '0.01';
+    $insufficientApprovalBytes = agentEvaluationJson($insufficientApproval);
+    if (file_put_contents($path, $insufficientApprovalBytes, LOCK_EX) !== strlen($insufficientApprovalBytes)) {
+        throw new RuntimeException('Unable to write the explanation insufficient-ceiling control.');
+    }
+    clearstatcache(true, $path);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path, $explanationTask): void {
+            agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+        },
+        'Explanation configuration requires exact pending/0.00 preflight or accountable approved/0.60 state.',
+    );
+    $pendingPreflight = $explanationConfiguration;
+    $pendingPreflight['approval']['reference'] = 'pending';
+    $pendingPreflight['approval']['spending_ceiling_usd'] = '0.00';
+    $pendingPreflightBytes = agentEvaluationJson($pendingPreflight);
+    if (file_put_contents($path, $pendingPreflightBytes, LOCK_EX) !== strlen($pendingPreflightBytes)) {
+        throw new RuntimeException('Unable to write the explanation pending-preflight control.');
+    }
+    clearstatcache(true, $path);
+    $acceptedPendingPreflight = agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+    $wrongLockPreflight = agentEvaluationControllerRunProcess(
+        [
+            PHP_BINARY,
+            $root . '/tools/agent-evaluation-controller.php',
+            'explanation-preflight',
+            $path,
+        ],
+        $root,
+        agentEvaluationControllerMinimalProcessEnvironment(),
+        '',
+        30,
+        4_096,
+    );
+    agentEvaluationControllerTest(
+        $wrongLockPreflight['exit_code'] === 1
+        && $wrongLockPreflight['termination_reason'] === 'process_failed'
+        && $wrongLockPreflight['stdout'] === ''
+        && $wrongLockPreflight['stderr'] === "FAIL agent evaluation controller: Explanation prepared lock must exactly match the tracked candidate composer.lock.\n",
+        'Explanation preflight must reject a wrong tracked-source lock before touching the absent OCI engine.',
+    );
+    agentEvaluationControllerExpectFailure(
+        static function () use ($acceptedPendingPreflight): void {
+            agentEvaluationControllerRequireExplanationApprovalRunId(
+                $acceptedPendingPreflight,
+                '00000000000000000000000000000072',
+            );
+        },
+        'Explanation execution requires its exact accountable USD 0.60 approval.',
+    );
+    $ociControl = $explanationConfiguration;
+    $ociControl['approval']['reference'] = 'synthetic-oci-explanation-control';
+    $ociControl['approval']['spending_ceiling_usd'] = '0.00';
+    agentEvaluationControllerExpectFailure(
+        static function () use ($ociControl, $explanationTask): void {
+            agentEvaluationControllerValidateExplanationOciControlConfiguration(
+                $ociControl,
+                $explanationTask,
+                '',
+            );
+        },
+        'Explanation OCI control requires its test-only zero-provider boundary.',
+    );
+    $invalidTransport = $explanationConfiguration;
+    $invalidTransport['profile']['transport_tools']['count'] = 5;
+    $invalidTransportBytes = agentEvaluationJson($invalidTransport);
+    if (file_put_contents($path, $invalidTransportBytes, LOCK_EX) !== strlen($invalidTransportBytes)) {
+        throw new RuntimeException('Unable to write the explanation transport identity control.');
+    }
+    clearstatcache(true, $path);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path, $explanationTask): void {
+            agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+        },
+        'Explanation execution must use its exact pinned read-only task profile.',
+    );
+    $invalidRunner = $explanationConfiguration;
+    $invalidRunner['profile']['runner']['version'] = '0.153.0';
+    $invalidRunner['engine']['generation_toolchain']['codex_version'] = '0.153.0';
+    $invalidRunnerBytes = agentEvaluationJson($invalidRunner);
+    if (file_put_contents($path, $invalidRunnerBytes, LOCK_EX) !== strlen($invalidRunnerBytes)) {
+        throw new RuntimeException('Unable to write the explanation runner-version control.');
+    }
+    clearstatcache(true, $path);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path, $explanationTask): void {
+            agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+        },
+        'Explanation execution must use its exact pinned read-only task profile.',
+    );
+    $invalidToolchain = $explanationConfiguration;
+    $invalidToolchain['engine']['generation_toolchain']['codex_version'] = '0.153.0';
+    $invalidToolchainBytes = agentEvaluationJson($invalidToolchain);
+    if (file_put_contents($path, $invalidToolchainBytes, LOCK_EX) !== strlen($invalidToolchainBytes)) {
+        throw new RuntimeException('Unable to write the explanation Codex-toolchain control.');
+    }
+    clearstatcache(true, $path);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path, $explanationTask): void {
+            agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+        },
+        'Pinned Codex version must match the recorded runner version.',
+    );
+    $invalidRelay = $explanationConfiguration;
+    $invalidRelay['engine']['generation_toolchain']['relay_sha256'] = str_repeat('d', 64);
+    $invalidRelayBytes = agentEvaluationJson($invalidRelay);
+    if (file_put_contents($path, $invalidRelayBytes, LOCK_EX) !== strlen($invalidRelayBytes)) {
+        throw new RuntimeException('Unable to write the explanation relay-identity control.');
+    }
+    clearstatcache(true, $path);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path, $explanationTask): void {
+            agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+        },
+        'Explanation generation toolchain must use its exact pinned relay identity.',
+    );
+    $writeProfile = agentEvaluationRequireObject(
+        $explanationConfiguration,
+        'profile',
+        'explanation write-permission configuration',
+    );
+    $writeTools = array_map(
+        static fn (mixed $tool): array => agentEvaluationValueObject(
+            $tool,
+            'explanation write-permission tool',
+        ),
+        agentEvaluationRequireList($writeProfile, 'tools', 'explanation write-permission profile'),
+    );
+    $writeTools[0]['permissions'] = [
+        'workspace-read', 'workspace-write', 'process-execute',
+    ];
+    $writeProfile['tools'] = $writeTools;
+    $explanationConfiguration['profile'] = $writeProfile;
+    $explanationBytes = agentEvaluationJson($explanationConfiguration);
+    if (file_put_contents($path, $explanationBytes, LOCK_EX) !== strlen($explanationBytes)) {
+        throw new RuntimeException('Unable to write the explanation write-permission control.');
+    }
+    clearstatcache(true, $path);
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path, $explanationTask): void {
+            agentEvaluationControllerReadExplanationLiveConfiguration($path, $explanationTask);
+        },
+        'Controller live runner must expose only the fixed bounded shell tool profile.',
+    );
+    $writeConfiguration();
 
     foreach (['php_version' => '8.4.18', 'composer_version' => '2.8.11'] as $field => $mismatched) {
         $configuration['engine']['scoring_toolchain'][$field] = $mismatched;
@@ -4288,7 +5091,9 @@ function agentEvaluationControllerTestProxyCalibrationV2(): void
         [0, PHP_INT_MAX, 66_666, 99_999_000]] as [$input, $output, $expectedOutput, $expectedUnits]) {
         $state = agentEvaluationControllerProxyState($model, 'high', 1_000_000, $policy);
         $request = agentEvaluationControllerProxyRequest(json_encode(['model' => $model, 'stream' => true, 'store' => false,
-            'input' => 'V2 input boundary.', 'reasoning' => ['effort' => 'high'], 'tools' => [], 'max_output_tokens' => $output], JSON_THROW_ON_ERROR), $state);
+            'input' => 'V2 input boundary.', 'reasoning' => ['effort' => 'high'],
+            'tools' => agentEvaluationControllerTestProxyTransportTools(),
+            'max_output_tokens' => $output], JSON_THROW_ON_ERROR), $state);
         $approved = agentEvaluationControllerProxyJsonObject(agentEvaluationControllerProxyReserve($request['request'],
             json_encode(['object' => 'response.input_tokens', 'input_tokens' => $input], JSON_THROW_ON_ERROR), $state));
         $spending = agentEvaluationRequireObject($state, 'spending', 'v2 reservation');
@@ -4296,7 +5101,9 @@ function agentEvaluationControllerTestProxyCalibrationV2(): void
             'V2 still reserves full uncached counted input plus only the output affordable under one dollar.');
     }
     $body = json_encode(['model' => $model, 'stream' => true, 'store' => false,
-        'input' => 'V2 cumulative boundary.', 'reasoning' => ['effort' => 'high'], 'tools' => [], 'max_output_tokens' => 16], JSON_THROW_ON_ERROR);
+        'input' => 'V2 cumulative boundary.', 'reasoning' => ['effort' => 'high'],
+        'tools' => agentEvaluationControllerTestProxyTransportTools(),
+        'max_output_tokens' => 16], JSON_THROW_ON_ERROR);
     $state = agentEvaluationControllerProxyState($model, 'high', 1_000_000, $policy);
     $request = agentEvaluationControllerProxyRequest($body, $state);
     agentEvaluationControllerExpectFailure(

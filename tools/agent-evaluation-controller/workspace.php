@@ -110,6 +110,7 @@ function agentEvaluationControllerPrepareWorkspace(
     );
     $target = agentEvaluationControllerFreshAbsoluteTarget($runRoot, 'controller run root');
     $base = $task['base'] ?? null;
+    $trackedSource = ($task['schema_version'] ?? null) === 3;
     $referenceSource = isset($task['selected_condition'])
         ? agentEvaluationControllerExistingRoot(
             agentEvaluationRequireString(agentEvaluationValueObject($base, 'comparison base'), 'reference_directory', 'comparison base'),
@@ -152,7 +153,20 @@ function agentEvaluationControllerPrepareWorkspace(
 
     try {
         $materialized = null;
-        if (isset($task['selected_condition'])) {
+        if ($trackedSource) {
+            $trackedBase = agentEvaluationValueObject($base, 'explanation task base');
+            if (($trackedBase['fixture'] ?? null) !== 'tracked-maintainer-source') {
+                throw new RuntimeException('Explanation source must use its admitted tracked maintainer fixture.');
+            }
+            $materialized = $target . '/materialized-fixture';
+            agentEvaluationControllerMaterializeTrackedSource(
+                $sourceRoot,
+                $materialized,
+                agentEvaluationRequireString($trackedBase, 'revision', 'explanation task base'),
+                agentEvaluationRequireString($trackedBase, 'tree', 'explanation task base'),
+                $expectedFixtureHash,
+            );
+        } elseif (isset($task['selected_condition'])) {
             if (($base['directory'] ?? null) !== $sourceRoot || $referenceSource === null) {
                 throw new RuntimeException('Comparison source must be its selected authoritative fixture.');
             }
@@ -180,7 +194,7 @@ function agentEvaluationControllerPrepareWorkspace(
             throw new RuntimeException('Unable to create the private retained-evidence root.');
         }
 
-        agentEvaluationControllerMakeTreeReadOnly($baselineRoot, false);
+        agentEvaluationControllerMakeTreeReadOnly($baselineRoot, $trackedSource);
         agentEvaluationControllerMakeTreeReadOnly($dependenciesRoot, true);
         $dependencyManifestPath = $evidenceRoot . '/prepared-dependencies.manifest';
 
@@ -294,6 +308,19 @@ function agentEvaluationControllerFreezeWorkspace(array $workspace, array $task)
         $change['changed_files'],
     );
     $candidateManifest = agentEvaluationControllerFrozenTreeManifest($candidateTree);
+
+    if (($task['schema_version'] ?? null) === 3) {
+        if ($change !== ['changed_files' => [], 'added_lines' => 0, 'deleted_lines' => 0]) {
+            throw new RuntimeException('Explanation freeze requires an unchanged pinned workspace.');
+        }
+
+        // The explanation task has no implementation output. After the full
+        // directory-aware freeze proves zero writes, retain the exact tracked
+        // source identity so candidate.manifest can be replayed against the
+        // pinned fixture without a second manifest dialect.
+        $candidateManifest = $baselineTree['manifest'];
+        $patch = '';
+    }
 
     return [
         'candidate_manifest' => $candidateManifest,
@@ -855,6 +882,132 @@ function agentEvaluationControllerValidateReadOnlyDependencies(string $directory
     if (!is_array($rootMetadata) || ($rootMetadata['mode'] & 07777) !== 0555) {
         throw new RuntimeException('Prepared-dependencies root is not read-only.');
     }
+}
+
+/**
+ * @return array{lock_sha256: string, installed_metadata_sha256: string, package_count: int}
+ */
+function agentEvaluationControllerValidateExplanationDependencyProvenance(
+    string $candidateDirectory,
+    string $dependenciesDirectory,
+    string $preparedLockPath,
+    string $preparedLockSha256,
+): array {
+    $candidateRoot = agentEvaluationControllerExistingRoot(
+        $candidateDirectory,
+        'explanation candidate root',
+    );
+    $dependenciesRoot = agentEvaluationControllerExistingRoot(
+        $dependenciesDirectory,
+        'explanation prepared-dependencies root',
+    );
+    $candidateLockPath = $candidateRoot . '/composer.lock';
+
+    if (
+        !is_file($candidateLockPath)
+        || is_link($candidateLockPath)
+        || !is_file($preparedLockPath)
+        || is_link($preparedLockPath)
+    ) {
+        throw new RuntimeException(
+            'Explanation prepared lock must exactly match the tracked candidate composer.lock.',
+        );
+    }
+
+    agentEvaluationRequireBoundedFile(
+        $candidateLockPath,
+        AGENT_EVALUATION_MAX_ARTIFACT_BYTES,
+        'tracked explanation composer.lock',
+    );
+    agentEvaluationRequireBoundedFile(
+        $preparedLockPath,
+        AGENT_EVALUATION_MAX_ARTIFACT_BYTES,
+        'explanation prepared lock',
+    );
+    $candidateLockBytes = file_get_contents($candidateLockPath);
+    $preparedLockBytes = file_get_contents($preparedLockPath);
+
+    if (
+        !is_string($candidateLockBytes)
+        || !is_string($preparedLockBytes)
+        || !hash_equals($candidateLockBytes, $preparedLockBytes)
+        || !hash_equals($preparedLockSha256, hash('sha256', $preparedLockBytes))
+    ) {
+        throw new RuntimeException(
+            'Explanation prepared lock must exactly match the tracked candidate composer.lock.',
+        );
+    }
+
+    $duplicateFrameworkPath = $dependenciesRoot . '/phpthis/framework';
+
+    if (file_exists($duplicateFrameworkPath) || is_link($duplicateFrameworkPath)) {
+        throw new RuntimeException(
+            'Explanation prepared dependencies expose a duplicate phpthis/framework package path.',
+        );
+    }
+
+    $installedMetadataPath = $dependenciesRoot . '/composer/installed.json';
+
+    if (!is_file($installedMetadataPath) || is_link($installedMetadataPath)) {
+        throw new RuntimeException(
+            'Explanation prepared Composer metadata does not match the admitted lock.',
+        );
+    }
+
+    try {
+        $lock = agentEvaluationValueObject(
+            agentEvaluationJsonValue($candidateLockBytes, 'tracked explanation composer.lock'),
+            'tracked explanation composer.lock',
+        );
+        $installed = agentEvaluationJsonFile($installedMetadataPath);
+        $lockedPackages = agentEvaluationExplanationComposerLockPackages($lock);
+        $installedPackages = agentEvaluationExplanationInstalledComposerPackages($installed);
+
+        if ($lockedPackages !== $installedPackages) {
+            throw new RuntimeException(
+                'Explanation prepared Composer metadata does not match the admitted lock.',
+            );
+        }
+        foreach (array_keys($installedPackages) as $packageName) {
+            $packagePath = $dependenciesRoot . '/' . $packageName;
+            if (!is_dir($packagePath) || is_link($packagePath)) {
+                throw new RuntimeException(
+                    'Explanation prepared Composer metadata does not match the admitted lock.',
+                );
+            }
+        }
+    } catch (Throwable $failure) {
+        if (
+            $failure::class === RuntimeException::class
+            && $failure->getMessage()
+                === 'Explanation prepared dependencies expose a duplicate phpthis/framework package path.'
+        ) {
+            throw $failure;
+        }
+
+        if (
+            $failure::class === RuntimeException::class
+            && $failure->getMessage()
+                === 'Explanation prepared Composer metadata does not match the admitted lock.'
+        ) {
+            throw $failure;
+        }
+
+        throw new RuntimeException(
+            'Explanation prepared Composer metadata does not match the admitted lock.',
+            0,
+            $failure,
+        );
+    }
+
+    return [
+        'lock_sha256' => $preparedLockSha256,
+        'installed_metadata_sha256' => agentEvaluationFileHash(
+            $installedMetadataPath,
+            'explanation installed Composer metadata',
+        ),
+        'package_count' => count($lockedPackages),
+    ];
 }
 
 /**

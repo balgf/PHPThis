@@ -4,6 +4,12 @@ This directory is the maintainer-only, model-neutral data contract for bounded P
 
 The [first observed context route](context-observation-v1.md) records Issue #70's single interrupted revision-26 smoke attempt, its measurement limits, and the supported testing-route clarification. It makes no comparative claim.
 
+Schema v3 adds the non-comparative `explain.file-profile-s3` task for routing-review seed 7. It freezes the exact source and effective prompts against tracked maintainer commit `d7ab170c190c9fd7e18be3ca00b874a8d954fa2b` under the `repository-only` condition, with an exact runner/version, model/settings/context, logical and transport tool, and generation-isolation profile. Materialization excludes dirty, untracked, and Git-metadata bytes. The candidate permits no mutation or workspace-write permission. Replay validation derives the final response and external-action summary from bounded retained events, requires the frozen candidate manifest to equal the tracked source, cross-binds OCI image/toolchain evidence, requires a literal empty patch, and validates internally consistent integer provider usage.
+
+The explanation task runs no application check or public scorer. Its automated result covers only task identity, response integrity, the unchanged workspace, resource bounds, external-action admission, and cleanup. Human review separately scores route selection, necessary concern coverage, unsupported claims, answer correctness, repairs, and clarification; `correct_completion` remains unknown until an accountable review is complete. Live records use `execution_kind: live-model`; synthetic controls use `execution_kind: synthetic-control` and cannot become semantic completion evidence. Synthetic validation and task preparation are not a real-model result, and this task authorizes no comparison claim.
+
+Live explanation records retain the tracked source's exact Composer lock and matching installed-package metadata; replay rejects a duplicate framework package in the dependency manifest. `validate-score` validates the final evidence manifest and validation record as well as the structural evidence. A completed live review may change only `human_review` and derived `correct_completion` in `score.json`; the unchanged manifest binds the canonical pending score reconstructed from that record.
+
 Stable v1 markers:
 
 - `AGENT_EVALUATION_SCHEMA_VERSION(1)`
@@ -21,7 +27,7 @@ The repository CLI is one small explicit ordered entrypoint, `tools/agent-evalua
 
 ## Explicit inventory
 
-`tasks.json` is the complete ordered list of task IDs. `tasks.php` pins each ID’s schema version, revision, and manifest hash. The original v1 smoke remains separate from the three v2 comparison tasks. Consumers of the data must read that file and then resolve each ID to exactly one reviewed directory under `tasks/`; they must not discover tasks by walking the filesystem. A task revision is immutable. Changing a prompt, base fixture, workspace policy, budget, check, or rubric requires a new revision; every changed hashed artifact receives a new hash. `source-skeleton` means the `skeleton/` directory from the same exact framework checkout as this task data; that enclosing repository revision must be retained with the trial artifacts, and changing that source requires a new task revision.
+`tasks.json` is the complete ordered list of task IDs. `tasks.php` pins each ID’s schema version, revision, and manifest hash. The original v1 smoke, the three v2 comparison tasks, and the v3 explanation task remain distinct contracts. Consumers of the data must read that file and then resolve each ID to exactly one reviewed directory under `tasks/`; they must not discover tasks by walking the filesystem. A task revision is immutable. Changing a prompt, base fixture, workspace policy, budget, check, or rubric requires a new revision; every changed hashed artifact receives a new hash. `source-skeleton` means the `skeleton/` directory from the same exact framework checkout as this task data; that enclosing repository revision must be retained with the trial artifacts, and changing that source requires a new task revision.
 
 Each v1 smoke task directory contains:
 

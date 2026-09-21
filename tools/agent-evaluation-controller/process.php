@@ -601,6 +601,93 @@ const AGENT_EVALUATION_CONTROLLER_OCI_SHM_BYTES = 16_777_216;
 const AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_INDEX_BYTES = 65_536;
 const AGENT_EVALUATION_CONTROLLER_OCI_IMAGE_CANDIDATES = 32;
 
+/**
+ * Materialize one exact committed tree without reading untracked or dirty
+ * working-copy bytes. A disposable index keeps the repository index unchanged.
+ */
+function agentEvaluationControllerMaterializeTrackedSource(
+    string $repositoryRoot,
+    string $target,
+    string $revision,
+    string $tree,
+    string $fixtureSha256,
+): void {
+    $root = agentEvaluationControllerExistingRoot($repositoryRoot, 'tracked source repository');
+    $destination = agentEvaluationControllerFreshAbsoluteTarget($target, 'tracked source target');
+    agentEvaluationRequireHash($fixtureSha256, 'tracked source fixture');
+    if (preg_match('/\A[a-f0-9]{40}(?:[a-f0-9]{24})?\z/D', $revision) !== 1
+        || preg_match('/\A[a-f0-9]{40}(?:[a-f0-9]{24})?\z/D', $tree) !== 1
+        || (!is_dir($root . '/.git') && !is_file($root . '/.git'))
+    ) {
+        throw new RuntimeException('Tracked source requires one exact repository commit and tree.');
+    }
+    $index = dirname($destination) . '/tracked-source.index';
+    agentEvaluationControllerFreshAbsoluteTarget($index, 'tracked source disposable index');
+    $environment = ['LANG' => 'C', 'LC_ALL' => 'C', 'PATH' => '/usr/bin:/bin'];
+    $gitPrefix = ['/usr/bin/env', 'GIT_CONFIG_NOSYSTEM=1', 'HOME=/nonexistent'];
+
+    try {
+        foreach ([[$revision . '^{commit}', $revision], [$revision . '^{tree}', $tree]] as [$object, $expected]) {
+            $resolved = agentEvaluationControllerRunProcess(
+                [...$gitPrefix, '/usr/bin/git', '-C', $root, 'rev-parse', '--verify', $object],
+                $root,
+                $environment,
+                '',
+                30,
+                4_096,
+            );
+            if ($resolved['exit_code'] !== 0 || $resolved['termination_reason'] !== 'completed'
+                || trim($resolved['stdout']) !== $expected
+            ) {
+                throw new RuntimeException('Tracked source commit or tree identity is unavailable.');
+            }
+        }
+        $readTree = agentEvaluationControllerRunProcess(
+            [...$gitPrefix, '/usr/bin/git', '-C', $root, 'read-tree', '--index-output=' . $index, $revision],
+            $root,
+            $environment,
+            '',
+            30,
+            4_096,
+        );
+        if ($readTree['exit_code'] !== 0 || $readTree['termination_reason'] !== 'completed'
+            || $readTree['stdout'] !== '' || !is_file($index) || is_link($index)
+        ) {
+            throw new RuntimeException('Tracked source disposable index could not be prepared.');
+        }
+        if (!mkdir($destination, 0700) || !chmod($destination, 0700)) {
+            throw new RuntimeException('Tracked source target could not be prepared.');
+        }
+        $checkout = agentEvaluationControllerRunProcess(
+            [...$gitPrefix, 'GIT_INDEX_FILE=' . $index, '/usr/bin/git', '-C', $root, 'checkout-index', '--all',
+                '--prefix=' . $destination . '/'],
+            $root,
+            $environment,
+            '',
+            120,
+            4_096,
+        );
+        if ($checkout['exit_code'] !== 0 || $checkout['termination_reason'] !== 'completed'
+            || $checkout['stdout'] !== ''
+        ) {
+            throw new RuntimeException('Tracked source tree could not be materialized.');
+        }
+        $materialized = agentEvaluationControllerDescribeTree($destination, 'tracked source fixture', true);
+        if (!hash_equals($fixtureSha256, $materialized['sha256'])) {
+            throw new RuntimeException('Tracked source fixture does not match its admitted identity.');
+        }
+    } catch (Throwable $failure) {
+        if (is_dir($destination) && !is_link($destination)) {
+            agentEvaluationControllerRemoveTree($destination);
+        }
+        throw $failure;
+    } finally {
+        if (is_file($index) && !is_link($index) && !unlink($index)) {
+            throw new RuntimeException('Tracked source disposable index cleanup failed.');
+        }
+    }
+}
+
 function agentEvaluationControllerOciImageRepository(string $reference): string
 {
     if (strlen($reference) > 255 || preg_match(
@@ -931,13 +1018,19 @@ function agentEvaluationControllerOciJsonCommand(array $engine, array $arguments
  * @param array<string, mixed> $engine
  * @return array<string, mixed>
  */
-function agentEvaluationControllerOciPrepare(array $engine, string $runId, string $candidateRoot, string $dependenciesRoot): array
+function agentEvaluationControllerOciPrepare(
+    array $engine,
+    string $runId,
+    string $candidateRoot,
+    string $dependenciesRoot,
+    bool $readOnlyCandidate = false,
+): array
 {
     $engine = agentEvaluationControllerOciEngineFields($engine);
     if (preg_match('/\A[a-f0-9]{32}\z/D', $runId) !== 1) {
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_RUN_ID_INVALID');
     }
-    agentEvaluationControllerDescribeTree($candidateRoot, 'OCI candidate input', false);
+    agentEvaluationControllerDescribeTree($candidateRoot, 'OCI candidate input', $readOnlyCandidate);
     foreach (['tmp', 'vendor'] as $mountpoint) {
         if (file_exists($candidateRoot . '/' . $mountpoint) || is_link($candidateRoot . '/' . $mountpoint)) {
             throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_CANDIDATE_MOUNTPOINT_COLLISION');
@@ -1009,10 +1102,19 @@ function agentEvaluationControllerOciPrepare(array $engine, string $runId, strin
             throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_CACHE_MOUNTPOINT_FAILED');
         }
         agentEvaluationControllerOciDestroyContainer($resources, 'prepare');
-        $generation = agentEvaluationControllerOciCreateContainer($resources, 'generation', 'generation', [
-            'type=volume,src=' . $resources['volumes']['candidate'] . ',dst=/candidate,volume-nocopy',
-            'type=volume,src=' . $resources['volumes']['dependencies'] . ',dst=/candidate/vendor,readonly,volume-nocopy',
-        ], ['/usr/bin/python3', '/opt/phpthis/relay.py']);
+        $generationPolicy = agentEvaluationControllerOciGenerationPolicy(
+            $resources['volumes']['candidate'],
+            $resources['volumes']['dependencies'],
+            $readOnlyCandidate,
+        );
+        $generation = agentEvaluationControllerOciCreateContainer(
+            $resources,
+            'generation',
+            'generation',
+            $generationPolicy['mounts'],
+            ['/usr/bin/python3', '/opt/phpthis/relay.py'],
+            $generationPolicy['candidate_writable'],
+        );
         $resources['generation'] = $generation;
         return $resources;
     } catch (Throwable $failure) {
@@ -1024,20 +1126,65 @@ function agentEvaluationControllerOciPrepare(array $engine, string $runId, strin
     }
 }
 
+function agentEvaluationControllerOciGenerationCandidateMount(string $volume, bool $readOnly): string
+{
+    if (preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}\z/D', $volume) !== 1) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_VOLUME_NAME_INVALID');
+    }
+
+    return 'type=volume,src=' . $volume . ',dst=/candidate,'
+        . ($readOnly ? 'readonly,' : '')
+        . 'volume-nocopy';
+}
+
+/**
+ * @return array{candidate_read_only: bool, candidate_writable: bool,
+ *   candidate_relative_writable_mounts: array{cache: bool, scratch: bool}, mounts: list<string>}
+ */
+function agentEvaluationControllerOciGenerationPolicy(
+    string $candidateVolume,
+    string $dependenciesVolume,
+    bool $readOnlyCandidate,
+): array {
+    if (preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}\z/D', $dependenciesVolume) !== 1) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_OCI_VOLUME_NAME_INVALID');
+    }
+    $candidateWritable = !$readOnlyCandidate;
+    return [
+        'candidate_read_only' => $readOnlyCandidate,
+        'candidate_writable' => $candidateWritable,
+        'candidate_relative_writable_mounts' => agentEvaluationControllerOciCandidateWritableMounts(
+            'generation',
+            $candidateWritable,
+        ),
+        'mounts' => [
+            agentEvaluationControllerOciGenerationCandidateMount($candidateVolume, $readOnlyCandidate),
+            'type=volume,src=' . $dependenciesVolume . ',dst=/candidate/vendor,readonly,volume-nocopy',
+        ],
+    ];
+}
+
 /**
  * @param array<string, mixed> $resources
  * @param list<string> $mounts
  * @param non-empty-list<string> $command
  * @param-out array{engine: array{binary: string, socket: string, config_root: string, control_root: string, configuration: array<string, mixed>}, owner: string, run_id: string, containers: array<string, string>, volumes: array<string, string>, generation: string|null, generation_stopped: bool, generation_destroyed: bool, frozen: bool, candidate_target: string} $resources
  */
-function agentEvaluationControllerOciCreateContainer(array &$resources, string $role, string $imageRole, array $mounts, array $command): string
+function agentEvaluationControllerOciCreateContainer(
+    array &$resources,
+    string $role,
+    string $imageRole,
+    array $mounts,
+    array $command,
+    bool $candidateWritable = true,
+): string
 {
     $resources = agentEvaluationControllerOciResourceState($resources);
     $imageId = agentEvaluationControllerOciVerifiedImageId($resources['engine'], $imageRole);
     $name = $resources['owner'] . '-' . $role;
     $uid = $imageRole === 'scoring' ? AGENT_EVALUATION_CONTROLLER_OCI_SCORE_UID : AGENT_EVALUATION_CONTROLLER_OCI_UID;
-    $candidateScratch = in_array($role, ['generation', 'score-application-check', 'score-public-scorer',
-        'score-observation', 'score-comparison-application-check'], true);
+    $candidateMounts = agentEvaluationControllerOciCandidateWritableMounts($role, $candidateWritable);
+    $candidateScratch = $candidateMounts['scratch'];
     $temporaryBytes = $candidateScratch ? 117_440_512 : AGENT_EVALUATION_CONTROLLER_OCI_TMP_BYTES;
     $arguments = ['create', '--pull', 'never', '--name', $name,
         '--label', 'org.phpthis.evaluation.owner=' . $resources['owner'], '--read-only',
@@ -1050,8 +1197,7 @@ function agentEvaluationControllerOciCreateContainer(array &$resources, string $
         '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,size=' . $temporaryBytes . ',mode=1777',
         '--env', 'PATH=/usr/local/bin:/usr/bin:/bin', '--env', 'HOME=/tmp/phpthis-home',
         '--workdir', '/candidate', '--interactive', '--entrypoint', $command[0]];
-    $candidateCache = in_array($role, ['generation', 'score-application-check', 'score-public-scorer',
-        'score-observation', 'score-comparison-application-check'], true);
+    $candidateCache = $candidateMounts['cache'];
     if ($candidateCache) {
         $arguments[] = '--tmpfs';
         $arguments[] = '/candidate/vendor/.phpthis:rw,nosuid,nodev,noexec,size=67108864,mode=1777';
@@ -1083,6 +1229,17 @@ function agentEvaluationControllerOciCreateContainer(array &$resources, string $
     agentEvaluationControllerOciValidateContainerImage($container, $imageId);
     agentEvaluationControllerOciInspectPolicy($container, $uid, $mounts, $resources['owner'], $candidateCache, $candidateScratch);
     return $name;
+}
+
+/** @return array{cache: bool, scratch: bool} */
+function agentEvaluationControllerOciCandidateWritableMounts(string $role, bool $candidateWritable): array
+{
+    $usesCandidateScratch = in_array($role, [
+        'generation', 'score-application-check', 'score-public-scorer',
+        'score-observation', 'score-comparison-application-check',
+    ], true);
+    return ['cache' => $candidateWritable && $usesCandidateScratch,
+        'scratch' => $candidateWritable && $usesCandidateScratch];
 }
 
 /**

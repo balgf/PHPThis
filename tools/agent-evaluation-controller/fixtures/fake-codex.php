@@ -177,6 +177,40 @@ if (!is_string($prompt) || $prompt === '' || strlen($prompt) > 1_048_576 || str_
     exit(2);
 }
 
+$explanationSuffix = "\n\nThis is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.\n";
+if (str_ends_with($prompt, $explanationSuffix)) {
+    $events = [
+        [
+            'type' => 'thread.started',
+            'thread_id' => '00000000-0000-7000-8000-000000000070',
+        ],
+        ['type' => 'turn.started'],
+        [
+            'type' => 'item.completed',
+            'item' => [
+                'id' => 'item_1',
+                'type' => 'agent_message',
+                'text' => 'A consumer may adopt the explicit Amazon S3 file profile only through its own recorded decision and evidence.',
+            ],
+        ],
+        [
+            'type' => 'turn.completed',
+            'usage' => [
+                'input_tokens' => 1_200,
+                'cached_input_tokens' => 0,
+                'output_tokens' => 120,
+                'reasoning_output_tokens' => 80,
+            ],
+        ],
+    ];
+    foreach ($events as $event) {
+        fwrite(STDOUT, json_encode($event, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) . "\n");
+    }
+    fwrite(STDERR, "PASS deterministic fake Codex explanation\n");
+    fwrite(STDERR, 'Received prompt SHA256: ' . hash('sha256', $prompt) . "\n");
+    exit(0);
+}
+
 $healthRoutesPath = $candidateRoot . '/src/HealthRoutes.php';
 $pingHandlerPath = $candidateRoot . '/src/PingHandler.php';
 $testsPath = $candidateRoot . '/tests/run.php';

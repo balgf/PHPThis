@@ -29,6 +29,13 @@ function agentEvaluationControllerCalibrationSpending(): array
         'cached_cents_per_million' => 25, 'output_cents_per_million' => 1500];
 }
 
+/** @return array{limit_units:int,input_cents_per_million:int,cached_cents_per_million:int,output_cents_per_million:int} */
+function agentEvaluationControllerExplanationSpending(): array
+{
+    return ['limit_units' => 60_000_000, 'input_cents_per_million' => 250,
+        'cached_cents_per_million' => 25, 'output_cents_per_million' => 1500];
+}
+
 function agentEvaluationControllerCalibrationPrompt(int $revision = 1): string
 {
     agentEvaluationControllerCalibrationBudgets($revision);
@@ -860,6 +867,7 @@ function agentEvaluationControllerMain(array $arguments): int
             agentEvaluationControllerRequireArgumentCount($arguments, 2, 'validate');
             $task = agentEvaluationTask($kit, AGENT_EVALUATION_CONTROLLER_TASK_ID);
             agentEvaluationControllerRequireFixedTask($task);
+            agentEvaluationControllerRequireAdmittedTask(agentEvaluationExplanationTask($kit));
             fwrite(
                 STDOUT,
                 "PASS agent evaluation controller v0.2: synthetic lifecycle installed; live execution fails closed\n",
@@ -885,6 +893,46 @@ function agentEvaluationControllerMain(array $arguments): int
                     $ledger = agentEvaluationControllerReadOciRecoveryLedger($controlRoot);
                     if ($ledger !== null && ($ledger['containers'] !== [] || $ledger['volumes'] !== [])) {
                         fwrite(STDERR, 'OCI cleanup requires review; recovery ledger retained at ' . $controlRoot . "/owned-resources.json\n");
+                    } else {
+                        agentEvaluationControllerRemoveTree($controlRoot);
+                    }
+                } finally {
+                    if ($interruptState !== null) {
+                        agentEvaluationControllerRestoreInterruptHandlers($interruptState);
+                    }
+                }
+            }
+            return 0;
+        }
+
+        if ($command === 'explanation-preflight') {
+            agentEvaluationControllerRequireArgumentCount(
+                $arguments,
+                3,
+                'explanation-preflight <configuration.json>',
+            );
+            $task = agentEvaluationExplanationTask($kit);
+            $configuration = agentEvaluationControllerReadExplanationLiveConfiguration($arguments[2], $task);
+            agentEvaluationControllerValidateExplanationPreflightInputs(
+                $root,
+                $configuration,
+                $task,
+            );
+            $controlRoot = agentEvaluationControllerCreatePreflightRoot();
+            $interruptState = null;
+            try {
+                $interruptState = agentEvaluationControllerInstallInterruptHandlers();
+                $engine = agentEvaluationControllerOciPreflight(
+                    agentEvaluationRequireObject($configuration, 'engine', 'controller explanation configuration'),
+                    $controlRoot,
+                );
+                fwrite(STDOUT, agentEvaluationJson(['status' => 'pass', 'engine' => $engine['identity']]));
+            } finally {
+                try {
+                    $ledger = agentEvaluationControllerReadOciRecoveryLedger($controlRoot);
+                    if ($ledger !== null && ($ledger['containers'] !== [] || $ledger['volumes'] !== [])) {
+                        fwrite(STDERR, 'OCI cleanup requires review; recovery ledger retained at '
+                            . $controlRoot . "/owned-resources.json\n");
                     } else {
                         agentEvaluationControllerRemoveTree($controlRoot);
                     }
@@ -939,6 +987,47 @@ function agentEvaluationControllerMain(array $arguments): int
             return $result['automated_status'] === 'pass' ? 0 : 1;
         }
 
+        if ($command === 'explanation-run') {
+            agentEvaluationControllerRequireArgumentCount(
+                $arguments,
+                4,
+                'explanation-run <run-id> <configuration.json>',
+            );
+            $runId = $arguments[2];
+            $task = agentEvaluationExplanationTask($kit);
+            $request = agentEvaluationControllerValidateRequest(
+                ['run_id' => $runId, 'task_id' => AGENT_EVALUATION_EXPLANATION_TASK_ID],
+                $task,
+            );
+            $configuration = agentEvaluationControllerReadExplanationLiveConfiguration($arguments[3], $task);
+            agentEvaluationControllerRequireExplanationApprovalRunId($configuration, $runId);
+            $approval = agentEvaluationRequireObject($configuration, 'approval', 'controller explanation approval');
+            if ($approval['spending_ceiling_usd'] !== '0.60') {
+                throw new RuntimeException('A paid explanation run requires its exact enforced USD 0.60 ceiling.');
+            }
+            $credential = \getenv('OPENAI_API_KEY');
+            if (!is_string($credential) || $credential === '' || strlen($credential) > 4_096
+                || preg_match('/[\x00-\x20\x7F]/', $credential) === 1
+            ) {
+                throw new RuntimeException('Live explanation execution requires the host-only OPENAI_API_KEY.');
+            }
+            $runsRoot = dirname($root) . '/agent-evaluation-runs';
+            if (!file_exists($runsRoot) && !mkdir($runsRoot, 0700)) {
+                throw new RuntimeException('Unable to prepare the fixed evaluation evidence parent.');
+            }
+            agentEvaluationControllerExistingRoot($runsRoot, 'evaluation evidence parent');
+            $result = agentEvaluationControllerExecuteExplanationLive(
+                $root,
+                $runsRoot . '/' . $runId,
+                $request,
+                $configuration,
+                $credential,
+                $task,
+            );
+            fwrite(STDOUT, agentEvaluationJson($result));
+            return $result['automated_status'] === 'pass' ? 0 : 1;
+        }
+
         if ($command === 'help') {
             if (count($arguments) !== 1 && count($arguments) !== 2) {
                 throw new RuntimeException('help received an unexpected number of arguments.');
@@ -950,6 +1039,8 @@ function agentEvaluationControllerMain(array $arguments): int
                 . "  php tools/agent-evaluation-controller.php validate\n"
                 . "  php tools/agent-evaluation-controller.php preflight <configuration.json>\n"
                 . "  php tools/agent-evaluation-controller.php run <32-lowercase-hex-run-id> <configuration.json>\n\n"
+                . "  php tools/agent-evaluation-controller.php explanation-preflight <configuration.json>\n"
+                . "  php tools/agent-evaluation-controller.php explanation-run <32-lowercase-hex-run-id> <configuration.json>\n\n"
                 . "  php tools/agent-evaluation-controller.php comparison-{prepare,run,report} <configuration.json>\n"
                 . "  php tools/agent-evaluation-controller.php calibration-{prepare,run,report} <configuration.json>\n\n"
                 . "Live execution is opt-in and fails closed unless every ADR 048 OCI and proxy control passes.\n",
@@ -974,6 +1065,64 @@ function agentEvaluationControllerRequireArgumentCount(array $arguments, int $ex
     if (count($arguments) !== $expected) {
         throw new RuntimeException("{$usage} received an unexpected number of arguments.");
     }
+}
+
+/** @param array<string, mixed> $task */
+function agentEvaluationControllerValidateEffectivePromptEvidence(
+    string $evidenceRoot,
+    array $task,
+    ?string $condition,
+    ?int $calibrationRevision,
+): void {
+    if (($task['schema_version'] ?? null) !== 3) {
+        agentEvaluationControllerValidatePromptEvidence(
+            $evidenceRoot,
+            agentEvaluationJsonFile($evidenceRoot . '/task.json'),
+            $condition,
+            $calibrationRevision,
+        );
+        return;
+    }
+    if ($condition !== null || $calibrationRevision !== null) {
+        throw new RuntimeException('Explanation prompt cannot select a comparison condition or calibration suffix.');
+    }
+    $promptDescriptor = agentEvaluationRequireObject($task, 'prompt', 'explanation task prompt');
+    agentEvaluationRequireFileHash(
+        $evidenceRoot . '/source-prompt.md',
+        agentEvaluationRequireString($promptDescriptor, 'sha256', 'explanation task prompt'),
+        'explanation source prompt',
+    );
+    $source = file_get_contents(
+        $evidenceRoot . '/source-prompt.md',
+        false,
+        null,
+        0,
+        AGENT_EVALUATION_CONTROLLER_MAX_PROMPT_BYTES + 1,
+    );
+    if (!is_string($source)) {
+        throw new RuntimeException('Explanation source prompt is unavailable.');
+    }
+    $effective = agentEvaluationExplanationEffectivePrompt($source);
+    $effectiveHash = agentEvaluationRequireString(
+        $promptDescriptor,
+        'effective_sha256',
+        'explanation task prompt',
+    );
+    if (!hash_equals($effectiveHash, hash('sha256', $effective))) {
+        throw new RuntimeException('Explanation task effective prompt hash does not match its fixed prompt transformation.');
+    }
+    agentEvaluationRequireFileHash(
+        $evidenceRoot . '/prompt.md',
+        $effectiveHash,
+        'explanation effective prompt',
+    );
+    $policy = agentEvaluationControllerWorkspacePolicy($task);
+    $policyBytes = agentEvaluationJson(agentEvaluationControllerWorkspacePolicyEvidence($policy, true));
+    agentEvaluationRequireFileHash(
+        $evidenceRoot . '/workspace-policy.json',
+        hash('sha256', $policyBytes),
+        'explanation workspace policy',
+    );
 }
 
 /**
@@ -1032,6 +1181,90 @@ function agentEvaluationControllerExecuteLive(
 }
 
 /**
+ * @param array<string, mixed> $request
+ * @param array<string, mixed> $configuration
+ * @param array<string, mixed> $task
+ * @return array{run_id:string,evidence_root:string,run_record_path:string,score_record_path:string,evidence_manifest_path:string,automated_status:string,human_review:string,cleanup:array{status:string,removed:list<string>}}
+ */
+function agentEvaluationControllerExecuteExplanationLive(
+    string $repositoryRoot,
+    string $runRoot,
+    array $request,
+    array $configuration,
+    #[SensitiveParameter] string $credential,
+    array $task,
+): array {
+    agentEvaluationControllerRequireExplanationApprovalRunId(
+        $configuration,
+        agentEvaluationRequireString($request, 'run_id', 'controller explanation request'),
+    );
+    return agentEvaluationControllerExplanationResult(agentEvaluationControllerExecuteControlled(
+        $repositoryRoot,
+        agentEvaluationRequireString($configuration, 'prepared_dependencies', 'controller explanation configuration'),
+        $runRoot,
+        $request,
+        agentEvaluationRequireObject($configuration, 'profile', 'controller explanation configuration'),
+        null,
+        $configuration,
+        $credential,
+        null,
+        null,
+        $task,
+    ));
+}
+
+/**
+ * @param array<string, mixed> $result
+ * @return array{run_id:string,evidence_root:string,run_record_path:string,score_record_path:string,evidence_manifest_path:string,automated_status:string,human_review:string,cleanup:array{status:string,removed:list<string>}}
+ */
+function agentEvaluationControllerExplanationResult(array $result): array
+{
+    $cleanup = agentEvaluationRequireObject($result, 'cleanup', 'explanation lifecycle result');
+    return ['run_id' => agentEvaluationRequireString($result, 'run_id', 'explanation lifecycle result'),
+        'evidence_root' => agentEvaluationRequireString($result, 'evidence_root', 'explanation lifecycle result'),
+        'run_record_path' => agentEvaluationRequireString($result, 'run_record_path', 'explanation lifecycle result'),
+        'score_record_path' => agentEvaluationRequireString($result, 'score_record_path', 'explanation lifecycle result'),
+        'evidence_manifest_path' => agentEvaluationRequireString($result, 'evidence_manifest_path', 'explanation lifecycle result'),
+        'automated_status' => agentEvaluationRequireString($result, 'automated_status', 'explanation lifecycle result'),
+        'human_review' => agentEvaluationRequireString($result, 'human_review', 'explanation lifecycle result'),
+        'cleanup' => ['status' => agentEvaluationRequireString($cleanup, 'status', 'explanation cleanup'),
+            'removed' => agentEvaluationRequireStringList($cleanup, 'removed', 'explanation cleanup')]];
+}
+
+/**
+ * @param array<string, mixed> $request
+ * @param array<string, mixed> $profile
+ * @param array<string, mixed> $task
+ * @return array{run_id:string,evidence_root:string,run_record_path:string,score_record_path:string,evidence_manifest_path:string,automated_status:string,human_review:string,cleanup:array{status:string,removed:list<string>}}
+ */
+function agentEvaluationControllerExecuteExplanationSynthetic(
+    string $repositoryRoot,
+    string $preparedDependencies,
+    string $runRoot,
+    array $request,
+    array $profile,
+    array $task,
+    ?string $testFailureMode = null,
+): array {
+    if (!agentEvaluationControllerTestingEnabled()) {
+        throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_SYNTHETIC_EXECUTION_TEST_ONLY');
+    }
+    return agentEvaluationControllerExplanationResult(agentEvaluationControllerExecuteControlled(
+        $repositoryRoot,
+        $preparedDependencies,
+        $runRoot,
+        $request,
+        $profile,
+        $testFailureMode,
+        null,
+        '',
+        null,
+        null,
+        $task,
+    ));
+}
+
+/**
  * @param array<string, mixed> $result
  * @return array{run_id:string,evidence_root:string,run_record_path:string,score_record_path:string,evidence_manifest_path:string,automated_status:string,weighted_score:int,cleanup:array{status:string,removed:list<string>}}
  */
@@ -1075,6 +1308,7 @@ function agentEvaluationControllerExecuteComparisonLive(
  * @param array<string, mixed>|null $execution
  * @param array<string, mixed>|null $comparisonContext
  * @param array<string, mixed>|null $calibration
+ * @param array<string, mixed>|null $explanationTask
  * @return array<string, mixed>
  */
 function agentEvaluationControllerExecuteControlled(
@@ -1088,13 +1322,14 @@ function agentEvaluationControllerExecuteControlled(
     #[SensitiveParameter] string $credential,
     ?array $comparisonContext = null,
     ?array $calibration = null,
+    ?array $explanationTask = null,
 ): array {
     $synthetic = $execution === null;
     if ($synthetic && !agentEvaluationControllerTestingEnabled()) {
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_SYNTHETIC_EXECUTION_TEST_ONLY');
     }
 
-    if (!in_array($testFailureMode, [null, 'generate', 'generate-and-cleanup'], true)) {
+    if (!in_array($testFailureMode, [null, 'generate', 'generate-and-cleanup', 'cleanup'], true)) {
         throw new RuntimeException('Synthetic controller failure mode is not one fixed test control.');
     }
 
@@ -1107,8 +1342,14 @@ function agentEvaluationControllerExecuteControlled(
         );
     }
 
+    if ($comparisonContext !== null && $explanationTask !== null) {
+        throw new RuntimeException('One execution cannot select both comparison and explanation tasks.');
+    }
     $kit = $root . '/tools/agent-evaluation';
-    $smokeTask = $comparisonContext === null ? agentEvaluationTask($kit, AGENT_EVALUATION_CONTROLLER_TASK_ID) : null;
+    $explanation = $explanationTask !== null;
+    $smokeTask = $comparisonContext === null && !$explanation
+        ? agentEvaluationTask($kit, AGENT_EVALUATION_CONTROLLER_TASK_ID)
+        : null;
     if ($comparisonContext !== null) {
         if ($synthetic) {
             throw new RuntimeException('Comparison execution requires the existing OCI runner.');
@@ -1119,6 +1360,13 @@ function agentEvaluationControllerExecuteControlled(
             agentEvaluationRequireObject($comparisonContext, 'condition', 'comparison execution context'),
         );
         $holdout = agentEvaluationRequireObject($comparisonContext, 'holdout', 'comparison execution context');
+    } elseif ($explanation) {
+        $authoritativeExplanation = agentEvaluationExplanationTask($kit);
+        if ($explanationTask !== $authoritativeExplanation) {
+            throw new RuntimeException('Explanation execution must select its exact authoritative task.');
+        }
+        $task = $authoritativeExplanation;
+        $holdout = null;
     } else {
         $task = $smokeTask;
         $holdout = null;
@@ -1155,7 +1403,13 @@ function agentEvaluationControllerExecuteControlled(
     agentEvaluationRequireFileHash($rubricPath, agentEvaluationRequireString($rubricDescriptor, 'sha256', 'controller rubric'), 'controller rubric');
     $sourcePrompt = $prompt;
     $workspacePolicy = agentEvaluationControllerWorkspacePolicy($task);
-    $prompt = agentEvaluationControllerGenerationPrompt($sourcePrompt, $workspacePolicy, $calibration === null ? null : $calibrationRevision);
+    $prompt = $explanation
+        ? agentEvaluationExplanationEffectivePrompt($sourcePrompt)
+        : agentEvaluationControllerGenerationPrompt(
+            $sourcePrompt,
+            $workspacePolicy,
+            $calibration === null ? null : $calibrationRevision,
+        );
     if ($scorerPath !== null) {
         agentEvaluationRequireFileHash($scorerPath, $smokeTask['public_scorer']['sha256'], 'controller public scorer');
     }
@@ -1173,26 +1427,36 @@ function agentEvaluationControllerExecuteControlled(
     $success = null;
     $generation = null;
     $comparisonResults = null;
+    $score = null;
+    $explanationRunRecord = null;
+    $explanationRunRecordHash = null;
+    $explanationScoreChecks = null;
     $interruptState = $synthetic ? null : agentEvaluationControllerInstallInterruptHandlers();
 
     try {
         agentEvaluationControllerEnterPhase($observedPhases, 'prepare');
+        $sourceFixture = $explanation ? $root : ($comparisonContext === null
+            ? $root . '/skeleton'
+            : agentEvaluationRequireString(
+                agentEvaluationRequireObject($task, 'base', 'comparison task'),
+                'directory',
+                'comparison base',
+            ));
         $workspace = agentEvaluationControllerPrepareWorkspace(
-            $comparisonContext === null ? $root . '/skeleton'
-                : agentEvaluationRequireString(agentEvaluationRequireObject($task, 'base', 'comparison task'), 'directory', 'comparison base'),
+            $sourceFixture,
             $preparedDependencies,
             $runRoot,
             $task,
         );
         agentEvaluationControllerWriteArtifact(
             $workspace['evidence_root'],
-            'source-skeleton.manifest',
+            $explanation ? 'tracked-source.manifest' : 'source-skeleton.manifest',
             $workspace['baseline_manifest'],
         );
         agentEvaluationControllerWriteArtifact($workspace['evidence_root'], 'prompt.md', $prompt);
         agentEvaluationControllerWriteArtifact($workspace['evidence_root'], 'source-prompt.md', $sourcePrompt);
         agentEvaluationControllerWriteArtifact($workspace['evidence_root'], 'workspace-policy.json',
-            agentEvaluationJson(agentEvaluationControllerWorkspacePolicyEvidence($workspacePolicy)));
+            agentEvaluationJson(agentEvaluationControllerWorkspacePolicyEvidence($workspacePolicy, $explanation)));
         if ($calibration !== null) {
             agentEvaluationControllerWriteArtifact($workspace['evidence_root'], 'calibration.json', agentEvaluationJson($calibration));
         }
@@ -1209,12 +1473,50 @@ function agentEvaluationControllerExecuteControlled(
         );
         agentEvaluationRequireFileHash($workspace['evidence_root'] . '/task.json',
             agentEvaluationRequireString($task, 'manifest_sha256', 'generation source task'), 'generation source task');
-        agentEvaluationControllerValidatePromptEvidence($workspace['evidence_root'],
-            agentEvaluationJsonFile($workspace['evidence_root'] . '/task.json'),
+        agentEvaluationControllerValidateEffectivePromptEvidence(
+            $workspace['evidence_root'],
+            $task,
             $comparisonContext === null ? null : agentEvaluationRequireString($task, 'selected_condition', 'generation condition'),
-            $calibration === null ? null : $calibrationRevision);
+            $calibration === null ? null : $calibrationRevision,
+        );
 
         if ($execution !== null) {
+            $lockPath = agentEvaluationRequireString($execution, 'prepared_lock', 'controller live configuration');
+            agentEvaluationRequireBoundedFile($lockPath, AGENT_EVALUATION_MAX_ARTIFACT_BYTES, 'live prepared lock');
+            $lockBytes = file_get_contents($lockPath);
+            $lockHash = agentEvaluationRequireString($execution, 'prepared_lock_sha256', 'controller live configuration');
+            $dependencyHash = agentEvaluationRequireString($execution, 'prepared_dependencies_sha256', 'controller live configuration');
+            if (!is_string($lockBytes) || !hash_equals($lockHash, hash('sha256', $lockBytes)) || !hash_equals($dependencyHash, $workspace['dependency_manifest_sha256'])) {
+                throw new RuntimeException('Live prepared inputs changed before generation.');
+            }
+            if ($explanation) {
+                $dependencyProvenance = agentEvaluationControllerValidateExplanationDependencyProvenance(
+                    $workspace['candidate_root'],
+                    $workspace['dependencies_root'],
+                    $lockPath,
+                    $lockHash,
+                );
+                $installedMetadata = file_get_contents(
+                    $workspace['dependencies_root'] . '/composer/installed.json',
+                );
+                if (
+                    !is_string($installedMetadata)
+                    || !hash_equals(
+                        $dependencyProvenance['installed_metadata_sha256'],
+                        hash('sha256', $installedMetadata),
+                    )
+                ) {
+                    throw new RuntimeException(
+                        'Explanation prepared Composer metadata changed before retention.',
+                    );
+                }
+                agentEvaluationControllerWriteArtifact(
+                    $workspace['evidence_root'],
+                    'dependencies.installed.json',
+                    $installedMetadata,
+                );
+            }
+            agentEvaluationControllerWriteArtifact($workspace['evidence_root'], 'dependencies.lock', $lockBytes);
             $controlRoot = agentEvaluationControllerCreatePreflightRoot();
             $engine = agentEvaluationControllerOciPreflight(
                 agentEvaluationRequireObject($execution, 'engine', 'controller live configuration'),
@@ -1228,17 +1530,9 @@ function agentEvaluationControllerExecuteControlled(
                 $workspace['evidence_root'], 'approval.json',
                 agentEvaluationJson(agentEvaluationRequireObject($execution, 'approval', 'controller live configuration')),
             );
-            $lockPath = agentEvaluationRequireString($execution, 'prepared_lock', 'controller live configuration');
-            agentEvaluationRequireBoundedFile($lockPath, AGENT_EVALUATION_MAX_ARTIFACT_BYTES, 'live prepared lock');
-            $lockBytes = file_get_contents($lockPath);
-            $lockHash = agentEvaluationRequireString($execution, 'prepared_lock_sha256', 'controller live configuration');
-            $dependencyHash = agentEvaluationRequireString($execution, 'prepared_dependencies_sha256', 'controller live configuration');
-            if (!is_string($lockBytes) || !hash_equals($lockHash, hash('sha256', $lockBytes)) || !hash_equals($dependencyHash, $workspace['dependency_manifest_sha256'])) {
-                throw new RuntimeException('Live prepared inputs changed before generation.');
-            }
-            agentEvaluationControllerWriteArtifact($workspace['evidence_root'], 'dependencies.lock', $lockBytes);
             $oci = agentEvaluationControllerOciPrepare(
                 $engine, $validatedRequest['run_id'], $workspace['candidate_root'], $workspace['dependencies_root'],
+                $explanation,
             );
         }
 
@@ -1272,8 +1566,15 @@ function agentEvaluationControllerExecuteControlled(
                 $taskBudgets,
                 $validatedProfile['isolation'],
                 true,
-            ) : agentEvaluationControllerRunLiveCodex($oci, $prompt, $validatedProfile, $credential,
-                $calibration === null ? null : agentEvaluationControllerCalibrationSpending());
+            ) : agentEvaluationControllerRunLiveCodex(
+                $oci,
+                $prompt,
+                $validatedProfile,
+                $credential,
+                $explanation
+                    ? agentEvaluationControllerExplanationSpending()
+                    : ($calibration === null ? null : agentEvaluationControllerCalibrationSpending()),
+            );
         }
         $finishedAt = agentEvaluationControllerUtcNow();
         agentEvaluationControllerWriteArtifact(
@@ -1305,19 +1606,25 @@ function agentEvaluationControllerExecuteControlled(
                 $workspace['evidence_root'], 'proxy.json',
                 agentEvaluationJson(agentEvaluationRequireObject($generation, 'proxy_evidence', 'live generation evidence')),
             );
-            agentEvaluationControllerWriteArtifact(
-                $workspace['evidence_root'], 'external-actions.json',
-                agentEvaluationJson(agentEvaluationRequireObject($generation, 'external_actions', 'live generation evidence')),
-            );
         }
 
         if ($generation['termination_reason'] !== 'completed') {
             throw new RuntimeException('Generation did not complete within every fixed bound.');
         }
 
-        $externalActionsApproved = $synthetic ? agentEvaluationControllerSyntheticExternalActionsApproved(
-            $generation['events'],
-        ) : ($generation['external_actions_approved'] ?? false) === true;
+        if ($explanation) {
+            agentEvaluationControllerValidateExplanationResponse(
+                $generation['events'],
+                agentEvaluationRequireString($generation, 'response', 'explanation generation'),
+            );
+        }
+
+        $externalActionsApproved = $synthetic
+            ? ($explanation
+                ? agentEvaluationControllerExplanationActionsApproved($generation['events'])
+                : agentEvaluationControllerSyntheticExternalActionsApproved($generation['events']))
+            : ($generation['external_actions_approved'] ?? false) === true
+                && (!$explanation || agentEvaluationControllerExplanationActionsApproved($generation['events']));
 
         if (!$externalActionsApproved) {
             throw new RuntimeException('Generation reported an unapproved action.');
@@ -1326,12 +1633,35 @@ function agentEvaluationControllerExecuteControlled(
             agentEvaluationControllerWriteArtifact(
                 $workspace['evidence_root'],
                 'external-actions.json',
-                agentEvaluationJson([
+                agentEvaluationJson($explanation ? [
+                    'approved' => true,
+                    'network_attempts' => 0,
+                    'process_tool_calls' => 0,
+                    'file_change_events' => 0,
+                    'changed_paths' => [],
+                ] : [
                     'approved' => true,
                     'network_attempts' => 0,
                     'process_tool_calls' => 0,
                     'changed_paths' => ['src/HealthRoutes.php', 'src/PingHandler.php', 'tests/run.php'],
                 ]),
+            );
+        } else {
+            $externalActionEvidence = agentEvaluationRequireObject(
+                $generation,
+                'external_actions',
+                'live generation evidence',
+            );
+            if ($explanation) {
+                $externalActionEvidence['approved'] = $externalActionsApproved;
+                $externalActionEvidence['file_change_events'] = agentEvaluationControllerExplanationFileChangeEvents(
+                    $generation['events'],
+                );
+            }
+            agentEvaluationControllerWriteArtifact(
+                $workspace['evidence_root'],
+                'external-actions.json',
+                agentEvaluationJson($externalActionEvidence),
             );
         }
 
@@ -1339,15 +1669,24 @@ function agentEvaluationControllerExecuteControlled(
         agentEvaluationControllerEnterPhase($observedPhases, 'freeze');
         agentEvaluationRequireFileHash($workspace['evidence_root'] . '/task.json',
             agentEvaluationRequireString($task, 'manifest_sha256', 'generation source task'), 'generation source task');
-        agentEvaluationControllerValidatePromptEvidence($workspace['evidence_root'],
-            agentEvaluationJsonFile($workspace['evidence_root'] . '/task.json'),
+        agentEvaluationControllerValidateEffectivePromptEvidence(
+            $workspace['evidence_root'],
+            $task,
             $comparisonContext === null ? null : agentEvaluationRequireString($task, 'selected_condition', 'generation condition'),
-            $calibration === null ? null : $calibrationRevision);
+            $calibration === null ? null : $calibrationRevision,
+        );
         if ($oci !== null) {
             agentEvaluationControllerOciStopGeneration($oci);
             agentEvaluationControllerOciExportCandidate($oci, $workspace['candidate_root']);
         }
         $freeze = agentEvaluationControllerFreezeWorkspace($workspace, $task);
+        if ($explanation) {
+            if ($freeze['changed_files'] !== [] || $freeze['added_lines'] !== 0 || $freeze['deleted_lines'] !== 0) {
+                throw new RuntimeException('Explanation generation changed its pinned read-only workspace.');
+            }
+            $freeze['patch'] = '';
+            $freeze['patch_sha256'] = hash('sha256', '');
+        }
         agentEvaluationControllerWriteArtifact(
             $workspace['evidence_root'],
             'candidate.patch',
@@ -1369,7 +1708,7 @@ function agentEvaluationControllerExecuteControlled(
                 'deleted_lines' => $freeze['deleted_lines'],
             ]),
         );
-        $scoringWorkspace = agentEvaluationControllerCreateScoringWorkspace(
+        $scoringWorkspace = $explanation ? null : agentEvaluationControllerCreateScoringWorkspace(
             $workspace,
             $workspace['run_root'] . '/scoring',
             $freeze,
@@ -1393,14 +1732,27 @@ function agentEvaluationControllerExecuteControlled(
 
         $phase = 'score';
         agentEvaluationControllerEnterPhase($observedPhases, 'score');
-        if ($comparisonContext !== null) {
+        if ($explanation) {
+            if (!$generationCleanup) {
+                throw new RuntimeException('Explanation scoring requires complete generation cleanup.');
+            }
+            $explanationScoreChecks = ['task_identity' => true, 'response_integrity' => true,
+                'workspace_unchanged' => true, 'resource_bounds' => true,
+                'external_actions_approved' => $externalActionsApproved, 'cleanup' => false];
+        } elseif ($comparisonContext !== null) {
             if (!$generationCleanup) {
                 throw new RuntimeException('Comparison scoring requires destroyed generation and its pinned holdout.');
+            }
+            if ($scoringWorkspace === null) {
+                throw new RuntimeException('Comparison scoring workspace is unavailable.');
             }
             $comparisonResults = agentEvaluationControllerScoreComparisonCandidate(
                 $oci, $scoringWorkspace['candidate_root'], $holdout, $workspace['evidence_root'],
             );
         } else {
+        if ($scoringWorkspace === null || $scorerPath === null) {
+            throw new RuntimeException('Implementation scoring inputs are unavailable.');
+        }
         agentEvaluationRequireFileHash(
             $scorerPath,
             $smokeTask['public_scorer']['sha256'],
@@ -1434,13 +1786,42 @@ function agentEvaluationControllerExecuteControlled(
             agentEvaluationControllerRetainScoringEvidence($workspace['evidence_root'], $score['evidence']);
         }
         }
-        agentEvaluationControllerValidateReadOnlyScoringCandidate(
-            $scoringWorkspace['candidate_root'], $freeze['candidate_manifest'], $freeze['candidate_sha256'],
-        );
+        if (!$explanation) {
+            if ($scoringWorkspace === null) {
+                throw new RuntimeException('Implementation scoring workspace is unavailable.');
+            }
+            agentEvaluationControllerValidateReadOnlyScoringCandidate(
+                $scoringWorkspace['candidate_root'], $freeze['candidate_manifest'], $freeze['candidate_sha256'],
+            );
+        }
 
         $phase = 'validate';
         agentEvaluationControllerEnterPhase($observedPhases, 'validate');
-        if ($comparisonContext !== null) {
+        if ($explanation) {
+            $explanationRunRecord = agentEvaluationControllerExplanationRunRecord(
+                $validatedRequest,
+                $validatedProfile,
+                $task,
+                $workspace,
+                $generation,
+                $startedAt,
+                $finishedAt,
+                $synthetic,
+            );
+            $runRecordPath = agentEvaluationControllerWriteArtifact(
+                $workspace['evidence_root'],
+                'run.json',
+                agentEvaluationJson($explanationRunRecord),
+            );
+            agentEvaluationValidateExplanationRunRecord($explanationRunRecord, $task);
+            agentEvaluationValidateExplanationRunArtifacts($explanationRunRecord, $workspace['evidence_root']);
+            $explanationRunRecordHash = agentEvaluationFileHash($runRecordPath, 'explanation run record');
+            $phase = 'retain';
+            agentEvaluationControllerEnterPhase($observedPhases, 'retain');
+            $success = ['run_id' => $validatedRequest['run_id'], 'run_record_path' => $runRecordPath,
+                'score_record_path' => $workspace['evidence_root'] . '/score.json', 'automated_status' => 'fail',
+                'human_review' => 'pending'];
+        } elseif ($comparisonContext !== null) {
             agentEvaluationControllerWriteArtifact($workspace['evidence_root'], 'validation.json', agentEvaluationJson([
                 'frozen_candidate' => 'pass', 'task_admission' => 'pass',
                 'attempt_record' => 'campaign-finalization-after-cleanup',
@@ -1449,10 +1830,13 @@ function agentEvaluationControllerExecuteControlled(
             agentEvaluationControllerEnterPhase($observedPhases, 'retain');
             $success = ['run_id' => $validatedRequest['run_id']];
         } else {
+        if ($smokeTask === null || $score === null) {
+            throw new RuntimeException('Implementation run validation inputs are unavailable.');
+        }
         $runRecord = agentEvaluationControllerRunRecord(
             $validatedRequest,
             $validatedProfile,
-            $task,
+            $smokeTask,
             $workspace,
             $generation,
             $startedAt,
@@ -1468,7 +1852,7 @@ function agentEvaluationControllerExecuteControlled(
         $runRecordHash = agentEvaluationFileHash($runRecordPath, 'controller run record');
         $scoreRecord = agentEvaluationControllerScoreRecord(
             $validatedRequest,
-            $task,
+            $smokeTask,
             $runRecord,
             $runRecordHash,
             $score,
@@ -1507,6 +1891,7 @@ function agentEvaluationControllerExecuteControlled(
             ),
         ];
         }
+        agentEvaluationControllerInjectSyntheticCleanupFailure($workspace, $testFailureMode);
     } catch (Throwable $throwable) {
         $primaryFailure = [
             'phase' => $phase,
@@ -1576,6 +1961,29 @@ function agentEvaluationControllerExecuteControlled(
                             'cleanup_failure' => $cleanupFailure,
                         ]),
                     );
+                    if ($explanation
+                        && $explanationRunRecord !== null
+                        && $explanationRunRecordHash !== null
+                        && $explanationScoreChecks !== null) {
+                        $structuralEvidence = agentEvaluationControllerRetainExplanationStructuralEvidence(
+                            $workspace['evidence_root'],
+                            $synthetic,
+                        );
+                        $finalScore = agentEvaluationControllerRetainExplanationScore(
+                            $workspace['evidence_root'],
+                            $validatedRequest,
+                            $task,
+                            $explanationRunRecord,
+                            $explanationRunRecordHash,
+                            $structuralEvidence['sha256'],
+                            $explanationScoreChecks,
+                            $cleanup['status'] === 'pass' && $cleanupFailure === null,
+                        );
+                        if ($success !== null) {
+                            $success['score_record_path'] = $finalScore['path'];
+                            $success['automated_status'] = $finalScore['automated_status'];
+                        }
+                    }
                     $manifest = agentEvaluationControllerEvidenceManifest(
                         $workspace['evidence_root'],
                         $validatedRequest['run_id'],
@@ -1583,7 +1991,7 @@ function agentEvaluationControllerExecuteControlled(
                         $primaryFailure,
                         $cleanupFailure,
                         $synthetic,
-                        $comparisonContext === null ? null : $task,
+                        $comparisonContext !== null || $explanation ? $task : null,
                     );
                     if ($calibration !== null) {
                         $manifest['comparison_execution'] = false;
@@ -1597,6 +2005,60 @@ function agentEvaluationControllerExecuteControlled(
                 } catch (Throwable $throwable) {
                     $cleanupFailure ??= ['class' => $throwable::class];
                     $cleanup['status'] = 'fail';
+                    if ($explanation
+                        && $explanationRunRecord !== null
+                        && $explanationRunRecordHash !== null
+                        && $explanationScoreChecks !== null) {
+                        try {
+                            agentEvaluationControllerReplaceFinalArtifact(
+                                $workspace['evidence_root'],
+                                'cleanup.json',
+                                agentEvaluationJson([
+                                    'status' => 'fail',
+                                    'removed' => array_map(
+                                        static fn (string $path): string => basename($path),
+                                        $cleanup['removed'],
+                                    ),
+                                    'primary_failure' => $primaryFailure,
+                                    'cleanup_failure' => $cleanupFailure,
+                                ]),
+                            );
+                            $structuralEvidence = agentEvaluationControllerRetainExplanationStructuralEvidence(
+                                $workspace['evidence_root'],
+                                $synthetic,
+                            );
+                            $finalScore = agentEvaluationControllerRetainExplanationScore(
+                                $workspace['evidence_root'],
+                                $validatedRequest,
+                                $task,
+                                $explanationRunRecord,
+                                $explanationRunRecordHash,
+                                $structuralEvidence['sha256'],
+                                $explanationScoreChecks,
+                                false,
+                            );
+                            if ($success !== null) {
+                                $success['score_record_path'] = $finalScore['path'];
+                                $success['automated_status'] = 'fail';
+                            }
+                            $manifest = agentEvaluationControllerEvidenceManifest(
+                                $workspace['evidence_root'],
+                                $validatedRequest['run_id'],
+                                $observedPhases,
+                                $primaryFailure,
+                                $cleanupFailure,
+                                $synthetic,
+                                $task,
+                            );
+                            agentEvaluationControllerReplaceFinalArtifact(
+                                $workspace['evidence_root'],
+                                'evidence-manifest.json',
+                                agentEvaluationJson($manifest),
+                            );
+                        } catch (Throwable) {
+                            // The original finalization failure remains authoritative.
+                        }
+                    }
                 }
             }
         }
@@ -1629,16 +2091,25 @@ function agentEvaluationControllerExecuteControlled(
         throw new RuntimeException('Controller completion requires retained results and a prepared workspace.');
     }
 
-    return [
+    $result = [
         'run_id' => $success['run_id'],
         'evidence_root' => $workspace['evidence_root'],
         'run_record_path' => agentEvaluationRequireString($success, 'run_record_path', 'smoke completion'),
         'score_record_path' => agentEvaluationRequireString($success, 'score_record_path', 'smoke completion'),
         'evidence_manifest_path' => $workspace['evidence_root'] . '/evidence-manifest.json',
         'automated_status' => agentEvaluationRequireString($success, 'automated_status', 'smoke completion'),
-        'weighted_score' => agentEvaluationRequireInteger($success, 'weighted_score', 'smoke completion'),
         'cleanup' => $cleanup,
     ];
+    if ($explanation) {
+        $result['human_review'] = agentEvaluationRequireString(
+            $success,
+            'human_review',
+            'explanation completion',
+        );
+    } else {
+        $result['weighted_score'] = agentEvaluationRequireInteger($success, 'weighted_score', 'smoke completion');
+    }
+    return $result;
 }
 
 /** @return array{owner: string, run_id: string, containers: array<string, string>, volumes: array<string, string>}|null */
@@ -1672,7 +2143,7 @@ function agentEvaluationControllerReadOciRecoveryLedger(string $controlRoot): ?a
  */
 function agentEvaluationControllerInjectSyntheticFailure(array $workspace, ?string $mode): void
 {
-    if ($mode === null) {
+    if ($mode === null || $mode === 'cleanup') {
         return;
     }
 
@@ -1686,6 +2157,21 @@ function agentEvaluationControllerInjectSyntheticFailure(array $workspace, ?stri
     }
 
     throw new RuntimeException('Fixed synthetic generation failure.');
+}
+
+/** @param array<string, mixed> $workspace */
+function agentEvaluationControllerInjectSyntheticCleanupFailure(array $workspace, ?string $mode): void
+{
+    if ($mode !== 'cleanup') {
+        return;
+    }
+
+    $runRoot = agentEvaluationRequireString($workspace, 'run_root', 'controller workspace');
+    $unexpected = $runRoot . '/unexpected-cleanup.control';
+
+    if (file_put_contents($unexpected, "fixed final cleanup failure\n", LOCK_EX) === false) {
+        throw new RuntimeException('Unable to prepare the fixed final cleanup-failure control.');
+    }
 }
 
 /**
@@ -1742,11 +2228,64 @@ function agentEvaluationControllerCreatePreflightRoot(): string
     return $target;
 }
 
+/**
+ * @param array<string, mixed> $configuration
+ * @param array<string, mixed> $task
+ */
+function agentEvaluationControllerValidateExplanationPreflightInputs(
+    string $repositoryRoot,
+    array $configuration,
+    array $task,
+): void {
+    $temporaryRoot = agentEvaluationControllerCreatePreflightRoot();
+
+    try {
+        $workspace = agentEvaluationControllerPrepareWorkspace(
+            $repositoryRoot,
+            agentEvaluationRequireString(
+                $configuration,
+                'prepared_dependencies',
+                'controller explanation configuration',
+            ),
+            $temporaryRoot . '/workspace',
+            $task,
+        );
+        $dependencyHash = agentEvaluationRequireString(
+            $configuration,
+            'prepared_dependencies_sha256',
+            'controller explanation configuration',
+        );
+        if (!hash_equals($dependencyHash, $workspace['dependency_manifest_sha256'])) {
+            throw new RuntimeException('Live prepared inputs changed before generation.');
+        }
+        agentEvaluationControllerValidateExplanationDependencyProvenance(
+            $workspace['candidate_root'],
+            $workspace['dependencies_root'],
+            agentEvaluationRequireString(
+                $configuration,
+                'prepared_lock',
+                'controller explanation configuration',
+            ),
+            agentEvaluationRequireString(
+                $configuration,
+                'prepared_lock_sha256',
+                'controller explanation configuration',
+            ),
+        );
+    } finally {
+        agentEvaluationControllerRemoveTree($temporaryRoot);
+    }
+}
+
 function agentEvaluationControllerWriteArtifact(string $evidenceRoot, string $name, string $bytes): string
 {
     agentEvaluationRequireRelativePath($name, 'controller evidence filename');
 
-    $emptyStream = $bytes === '' && in_array($name, ['events.jsonl', 'generation.stderr'], true);
+    $emptyStream = $bytes === '' && in_array(
+        $name,
+        ['events.jsonl', 'generation.stderr', 'candidate.patch'],
+        true,
+    );
     if (str_contains($name, '/') || ($bytes === '' && !$emptyStream) || strlen($bytes) > AGENT_EVALUATION_MAX_ARTIFACT_BYTES) {
         throw new RuntimeException('Controller evidence artifact must be bounded flat content; only observed streams may be empty.');
     }
@@ -1767,6 +2306,103 @@ function agentEvaluationControllerWriteArtifact(string $evidenceRoot, string $na
         $name,
         AGENT_EVALUATION_MAX_ARTIFACT_BYTES,
     );
+}
+
+function agentEvaluationControllerReplaceFinalArtifact(
+    string $evidenceRoot,
+    string $name,
+    string $bytes,
+): string {
+    if (!in_array($name, [
+        'cleanup.json', 'structural-evidence.json', 'score.json', 'validation.json', 'evidence-manifest.json',
+    ], true)
+        || $bytes === '' || strlen($bytes) > AGENT_EVALUATION_MAX_ARTIFACT_BYTES) {
+        throw new RuntimeException('Controller final artifact replacement is outside its fixed boundary.');
+    }
+    $root = agentEvaluationControllerExistingRoot($evidenceRoot, 'controller evidence root');
+    $path = $root . '/' . $name;
+    if (!file_exists($path) && !is_link($path)) {
+        return agentEvaluationControllerWriteArtifact($root, $name, $bytes);
+    }
+    agentEvaluationControllerValidateRetainedArtifact(
+        $root,
+        $name,
+        AGENT_EVALUATION_MAX_ARTIFACT_BYTES,
+    );
+    if (file_put_contents($path, $bytes, LOCK_EX) !== strlen($bytes) || !chmod($path, 0600)) {
+        throw new RuntimeException("Unable to replace controller final artifact {$name}.");
+    }
+    return agentEvaluationControllerValidateRetainedArtifact(
+        $root,
+        $name,
+        AGENT_EVALUATION_MAX_ARTIFACT_BYTES,
+    );
+}
+
+/** @return array{document: array<string, mixed>, path: string, sha256: string} */
+function agentEvaluationControllerRetainExplanationStructuralEvidence(
+    string $evidenceRoot,
+    bool $synthetic,
+): array {
+    $root = agentEvaluationControllerExistingRoot($evidenceRoot, 'explanation evidence root');
+    $document = agentEvaluationExplanationStructuralEvidenceDocument(
+        $synthetic ? 'synthetic-control' : 'live-model',
+        $root,
+    );
+    $path = agentEvaluationControllerReplaceFinalArtifact(
+        $root,
+        'structural-evidence.json',
+        agentEvaluationJson($document),
+    );
+    return ['document' => $document, 'path' => $path,
+        'sha256' => agentEvaluationFileHash($path, 'explanation structural evidence')];
+}
+
+/**
+ * @param array{run_id: string, task_id: string} $request
+ * @param array<string, mixed> $task
+ * @param array<string, mixed> $runRecord
+ * @param array<string, bool> $checks
+ * @return array{path: string, automated_status: string}
+ */
+function agentEvaluationControllerRetainExplanationScore(
+    string $evidenceRoot,
+    array $request,
+    array $task,
+    array $runRecord,
+    string $runRecordHash,
+    string $structuralEvidenceHash,
+    array $checks,
+    bool $cleanupPassed,
+): array {
+    $checks['cleanup'] = $cleanupPassed;
+    $score = agentEvaluationControllerExplanationScoreRecord(
+        $request,
+        $task,
+        $runRecord,
+        $runRecordHash,
+        $structuralEvidenceHash,
+        $checks,
+    );
+    $path = agentEvaluationControllerReplaceFinalArtifact(
+        $evidenceRoot,
+        'score.json',
+        agentEvaluationJson($score),
+    );
+    agentEvaluationValidateExplanationScoreRecord($score, $task, $runRecord, $runRecordHash);
+    agentEvaluationValidateExplanationScoreArtifacts($score, $runRecord, $evidenceRoot);
+    $automatedStatus = agentEvaluationRequireString($score, 'automated_status', 'explanation score record');
+    agentEvaluationControllerReplaceFinalArtifact(
+        $evidenceRoot,
+        'validation.json',
+        agentEvaluationJson([
+            'v3_run_record' => 'pass',
+            'v3_score_record' => 'pass',
+            'structural_status' => $automatedStatus,
+            'semantic_review' => 'pending',
+        ]),
+    );
+    return ['path' => $path, 'automated_status' => $automatedStatus];
 }
 
 /** @param list<array<string, mixed>> $events */
@@ -1814,6 +2450,69 @@ function agentEvaluationControllerSyntheticExternalActionsApproved(array $events
     }
 
     return $fileChanges === 1 && $messages === 1;
+}
+
+/** @param list<array<string, mixed>> $events */
+function agentEvaluationControllerValidateExplanationResponse(array $events, string $response): void
+{
+    $messages = [];
+    foreach ($events as $event) {
+        if (($event['type'] ?? null) !== 'item.completed') {
+            continue;
+        }
+        $item = $event['item'] ?? null;
+        if (is_array($item) && ($item['type'] ?? null) === 'agent_message') {
+            $text = $item['text'] ?? null;
+            if (!is_string($text)) {
+                throw new RuntimeException('Explanation final agent message is invalid.');
+            }
+            $messages[] = $text;
+        }
+    }
+    if ($messages === [] || trim($response) === '' || $messages[array_key_last($messages)] !== $response) {
+        throw new RuntimeException('Explanation generation requires a nonempty final agent message.');
+    }
+}
+
+/** @param list<array<string, mixed>> $events */
+function agentEvaluationControllerExplanationFileChangeEvents(array $events): int
+{
+    $changes = 0;
+    foreach ($events as $event) {
+        $eventType = $event['type'] ?? null;
+        if (!is_string($eventType) || !str_starts_with($eventType, 'item.')) {
+            continue;
+        }
+        $item = $event['item'] ?? null;
+        if (is_array($item) && ($item['type'] ?? null) === 'file_change') {
+            $changes++;
+        }
+    }
+    return $changes;
+}
+
+/** @param list<array<string, mixed>> $events */
+function agentEvaluationControllerExplanationActionsApproved(array $events): bool
+{
+    foreach ($events as $event) {
+        $eventType = $event['type'] ?? null;
+        if (in_array($eventType, ['thread.started', 'turn.started', 'turn.completed'], true)) {
+            continue;
+        }
+        if (!is_string($eventType) || !str_starts_with($eventType, 'item.')) {
+            return false;
+        }
+        $item = $event['item'] ?? null;
+        $type = is_array($item) ? ($item['type'] ?? null) : null;
+        if (!is_string($type) || !in_array(
+            $type,
+            ['agent_message', 'reasoning', 'command_execution', 'todo_list'],
+            true,
+        )) {
+            return false;
+        }
+    }
+    return agentEvaluationControllerExplanationFileChangeEvents($events) === 0;
 }
 
 /**
@@ -1925,6 +2624,165 @@ function agentEvaluationControllerRunRecord(
 
 /**
  * @param array{run_id: string, task_id: string} $request
+ * @param array<string, mixed> $profile
+ * @param array<string, mixed> $task
+ * @param array<string, mixed> $workspace
+ * @param array<string, mixed> $generation
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerExplanationRunRecord(
+    array $request,
+    array $profile,
+    array $task,
+    array $workspace,
+    array $generation,
+    string $startedAt,
+    string $finishedAt,
+    bool $synthetic,
+): array {
+    $prompt = agentEvaluationRequireObject($task, 'prompt', 'explanation task prompt');
+    $rubric = agentEvaluationRequireObject($task, 'rubric', 'explanation task rubric');
+    $base = agentEvaluationRequireObject($task, 'base', 'explanation task base');
+    $evidenceRoot = agentEvaluationRequireString($workspace, 'evidence_root', 'explanation workspace');
+    $transportTools = null;
+    if (!$synthetic) {
+        $proxyEvidence = agentEvaluationRequireObject($generation, 'proxy_evidence', 'explanation generation');
+        $proxyLedger = agentEvaluationRequireObject($proxyEvidence, 'ledger', 'explanation proxy evidence');
+        $transportTools = agentEvaluationNormalizeExplanationTransportTools(
+            $proxyLedger['transport_tools'] ?? null,
+            'observed explanation transport tools',
+        );
+        $configuredTransportTools = agentEvaluationNormalizeExplanationTransportTools(
+            $profile['transport_tools'] ?? null,
+            'configured explanation transport tools',
+        );
+        if ($transportTools === null || $transportTools !== $configuredTransportTools) {
+            throw new RuntimeException('Explanation run transport tools do not match the proxy-observed identity.');
+        }
+    }
+    $installedMetadataPath = null;
+    $installedMetadataSha256 = null;
+    $installedPackageCount = null;
+    if (!$synthetic) {
+        $installedMetadataPath = 'dependencies.installed.json';
+        $installedMetadataArtifact = $evidenceRoot . '/' . $installedMetadataPath;
+        $installedMetadataSha256 = agentEvaluationFileHash(
+            $installedMetadataArtifact,
+            'explanation installed Composer metadata',
+        );
+        $installedPackageCount = count(agentEvaluationExplanationInstalledComposerPackages(
+            agentEvaluationJsonFile($installedMetadataArtifact),
+        ));
+    }
+    return [
+        'schema_version' => 3,
+        'execution_kind' => $synthetic ? 'synthetic-control' : 'live-model',
+        'run_id' => $request['run_id'],
+        'task_id' => $task['id'],
+        'task_revision' => $task['revision'],
+        'task_manifest_sha256' => $task['manifest_sha256'],
+        'prompt_sha256' => agentEvaluationRequireString($prompt, 'sha256', 'explanation task prompt'),
+        'effective_prompt_sha256' => agentEvaluationRequireString(
+            $prompt,
+            'effective_sha256',
+            'explanation task prompt',
+        ),
+        'rubric_sha256' => agentEvaluationRequireString($rubric, 'sha256', 'explanation task rubric'),
+        'base_revision' => agentEvaluationRequireString($base, 'revision', 'explanation task base'),
+        'base_tree' => agentEvaluationRequireString($base, 'tree', 'explanation task base'),
+        'base_fixture_sha256' => $workspace['base_fixture_sha256'],
+        'prepared_dependencies_manifest_path' => 'prepared-dependencies.manifest',
+        'prepared_dependencies_manifest_sha256' => $workspace['dependency_manifest_sha256'],
+        'prepared_lock_path' => $synthetic ? null : 'dependencies.lock',
+        'prepared_lock_sha256' => $synthetic ? null : agentEvaluationFileHash(
+            $evidenceRoot . '/dependencies.lock',
+            'explanation prepared lock',
+        ),
+        'prepared_installed_metadata_path' => $installedMetadataPath,
+        'prepared_installed_metadata_sha256' => $installedMetadataSha256,
+        'prepared_installed_package_count' => $installedPackageCount,
+        'condition' => $profile['condition'],
+        'runner' => $profile['runner'],
+        'model' => $profile['model'],
+        'context' => $profile['context'],
+        'tools' => $profile['tools'],
+        'transport_tools' => $transportTools,
+        'budgets' => $profile['budgets'],
+        'usage' => $generation['usage'],
+        'timing' => ['started_at' => $startedAt, 'finished_at' => $finishedAt],
+        'repair_turns' => 0,
+        'termination_reason' => $generation['termination_reason'],
+        'events_path' => 'events.jsonl',
+        'events_sha256' => agentEvaluationFileHash($evidenceRoot . '/events.jsonl', 'explanation events'),
+        'candidate_patch_path' => 'candidate.patch',
+        'candidate_patch_sha256' => agentEvaluationFileHash($evidenceRoot . '/candidate.patch', 'explanation patch'),
+        'response_path' => 'response.txt',
+        'response_sha256' => agentEvaluationFileHash($evidenceRoot . '/response.txt', 'explanation response'),
+    ];
+}
+
+/**
+ * @param array{run_id: string, task_id: string} $request
+ * @param array<string, mixed> $task
+ * @param array<string, mixed> $runRecord
+ * @param array<string, mixed> $checks
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerExplanationScoreRecord(
+    array $request,
+    array $task,
+    array $runRecord,
+    string $runRecordHash,
+    string $structuralEvidenceHash,
+    array $checks,
+): array {
+    $expectedChecks = ['task_identity', 'response_integrity', 'workspace_unchanged', 'resource_bounds',
+        'external_actions_approved', 'cleanup'];
+    if (array_keys($checks) !== $expectedChecks) {
+        throw new RuntimeException('Explanation scoring requires every structural check.');
+    }
+    foreach ($checks as $check) {
+        if (!is_bool($check)) {
+            throw new RuntimeException('Explanation structural checks must be Boolean.');
+        }
+    }
+    $structuralPass = !in_array(false, $checks, true);
+    $unknown = static fn (string $evidence): array => ['status' => 'unknown', 'evidence' => $evidence];
+    return [
+        'schema_version' => 3,
+        'run_id' => $request['run_id'],
+        'task_id' => $task['id'],
+        'task_revision' => $task['revision'],
+        'run_record_sha256' => $runRecordHash,
+        'prompt_sha256' => $runRecord['prompt_sha256'],
+        'effective_prompt_sha256' => $runRecord['effective_prompt_sha256'],
+        'rubric_sha256' => $runRecord['rubric_sha256'],
+        'response_sha256' => $runRecord['response_sha256'],
+        'candidate_patch_sha256' => $runRecord['candidate_patch_sha256'],
+        'structural_evidence_path' => 'structural-evidence.json',
+        'structural_evidence_sha256' => $structuralEvidenceHash,
+        'admissible' => $structuralPass,
+        'structural_checks' => $checks,
+        'automated_status' => $structuralPass ? 'pass' : 'fail',
+        'human_review' => [
+            'status' => 'pending',
+            'reviewer' => null,
+            'dimensions' => [
+                'route_selection' => $unknown('Pending accountable review of the retained response and events.'),
+                'necessary_concern_coverage' => $unknown('Pending accountable review of the retained response and events.'),
+                'unsupported_claims' => $unknown('Pending accountable review of the retained response and events.'),
+                'answer_correctness' => $unknown('Pending accountable review of the retained response and events.'),
+                'repairs' => $unknown('Pending accountable review of the retained response and events.'),
+                'clarification' => $unknown('Pending accountable review of the retained response and events.'),
+            ],
+            'reason' => 'Semantic correctness requires a separate accountable human review.',
+        ],
+        'correct_completion' => null,
+    ];
+}
+
+/**
+ * @param array{run_id: string, task_id: string} $request
  * @param array<string, mixed> $task
  * @param array<string, mixed> $runRecord
  * @param array<string, mixed> $score
@@ -1974,7 +2832,7 @@ function agentEvaluationControllerScoreRecord(
 /**
  * @param list<string> $observedPhases
  * @param array<string, string>|null $primaryFailure
- * @param array<string, mixed>|null $comparisonTask
+ * @param array<string, mixed>|null $selectedTask
  * @param array<string, string>|null $cleanupFailure
  * @return array<string, mixed>
  */
@@ -1985,7 +2843,7 @@ function agentEvaluationControllerEvidenceManifest(
     ?array $primaryFailure,
     ?array $cleanupFailure,
     bool $synthetic = true,
-    ?array $comparisonTask = null,
+    ?array $selectedTask = null,
 ): array {
     $root = agentEvaluationControllerExistingRoot($evidenceRoot, 'controller evidence root');
     $entries = scandir($root);
@@ -2028,11 +2886,16 @@ function agentEvaluationControllerEvidenceManifest(
         'schema_version' => AGENT_EVALUATION_CONTROLLER_EVIDENCE_VERSION,
         'controller_version' => AGENT_EVALUATION_CONTROLLER_VERSION,
         'run_id' => $runId,
-        'task_id' => $comparisonTask === null ? AGENT_EVALUATION_CONTROLLER_TASK_ID : $comparisonTask['id'],
-        'task_revision' => $comparisonTask === null ? AGENT_EVALUATION_CONTROLLER_TASK_REVISION : $comparisonTask['revision'],
+        'task_id' => $selectedTask === null ? AGENT_EVALUATION_CONTROLLER_TASK_ID : $selectedTask['id'],
+        'task_revision' => $selectedTask === null ? AGENT_EVALUATION_CONTROLLER_TASK_REVISION : $selectedTask['revision'],
         'synthetic' => $synthetic,
         'comparative_claims' => false,
-        ...($comparisonTask === null ? [] : ['comparison_execution' => true, 'condition' => $comparisonTask['selected_condition']]),
+        ...($selectedTask !== null && isset($selectedTask['selected_condition'])
+            ? ['comparison_execution' => true, 'condition' => $selectedTask['selected_condition']]
+            : []),
+        ...($selectedTask !== null && ($selectedTask['schema_version'] ?? null) === 3
+            ? ['explanation_execution' => true, 'condition' => 'repository-only']
+            : []),
         'expected_phase_order' => AGENT_EVALUATION_CONTROLLER_PHASES,
         'observed_phases' => $observedPhases,
         'primary_failure' => $primaryFailure,

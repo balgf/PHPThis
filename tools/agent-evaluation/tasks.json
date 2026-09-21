@@ -2,5 +2,6 @@
     "change.simple-ping",
     "change.protected-endpoint",
     "repair.transaction-rollback",
-    "change.filtered-collection"
+    "change.filtered-collection",
+    "explain.file-profile-s3"
 ]

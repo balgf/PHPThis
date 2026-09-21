@@ -1,0 +1,74 @@
+{
+    "schema_version": 3,
+    "id": "explain.file-profile-s3",
+    "revision": 1,
+    "kind": "explanation",
+    "prompt": {
+        "path": "prompt.md",
+        "sha256": "47ba33d38402b8491c3ba95e04c00ce78a4c8019d95d92a13fbd21ac6d9e2052",
+        "effective_sha256": "2d9f731008a4a0d41c9ccc32ceabc2365f39a547be389f35b8f98e6fd496b043"
+    },
+    "rubric": {
+        "path": "rubric.md",
+        "sha256": "37582ef04511a8b09d52456f47771e6d90659dee80740559eea708b64edde41d"
+    },
+    "base": {
+        "fixture": "tracked-maintainer-source",
+        "revision": "d7ab170c190c9fd7e18be3ca00b874a8d954fa2b",
+        "tree": "3b017642ecc90fbc5af93f2f9454cb86d1e2add7",
+        "fixture_sha256": "da90475f0d494a125dfdff21f85408b97164ec276961c1d7db522a63bbb5be6d"
+    },
+    "workspace_policy": {
+        "allowed_existing_paths": [],
+        "allowed_new_paths": [],
+        "protected_paths": [],
+        "max_changed_files": 0,
+        "max_added_lines": 0,
+        "max_deleted_lines": 0
+    },
+    "budgets": {
+        "model_tokens": 40000,
+        "wall_seconds": 1200,
+        "repair_turns": 0,
+        "command_output_bytes": 4194304
+    },
+    "execution_profile": {
+        "condition": "repository-only",
+        "runner": {
+            "name": "codex-exec",
+            "version": "0.153.1"
+        },
+        "model": {
+            "provider": "openai",
+            "id": "gpt-5.4-2026-03-05",
+            "revision": null,
+            "settings": {
+                "reasoning_effort": "high"
+            }
+        },
+        "context": {
+            "bundle_id": null,
+            "bundle_sha256": null
+        },
+        "tools": [
+            {
+                "name": "shell",
+                "version": null,
+                "permissions": [
+                    "workspace-read",
+                    "process-execute"
+                ]
+            }
+        ],
+        "transport_tools": {
+            "kind": "codex-responses-local-tools-v1",
+            "count": 4,
+            "sha256": "3392681cd5b82960557ffe2ce5b0ba1e223cc0f97a226432a7a43353475d6aed"
+        }
+    },
+    "checks": {
+        "structural": "artifact-bound-v1",
+        "semantic_review": "human-v1"
+    },
+    "comparative_claims": false
+}

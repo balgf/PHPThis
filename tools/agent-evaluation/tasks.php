@@ -23,11 +23,27 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
         'revision' => 7,
         'manifest_sha256' => '492beb6546c111cc57706766e3fd44a0da85ba9d5dbd7a298a6eb9df03eb8e32',
     ],
+    'explain.file-profile-s3' => [
+        'schema_version' => 3,
+        'revision' => 1,
+        'manifest_sha256' => '5dd6b4d855a3d788188a7a2cdf770373d86291eee5b5c6f74e8372e217a7cd9c',
+    ],
 ];
 
 const AGENT_EVALUATION_COMPARISON_PROTOCOL_SHA256 = '4112bfec48681b01cf24edf30a4115da4538a1e662b19c485cfffde69f5ca6ab';
 const AGENT_EVALUATION_COMPARISON_TASK_SCHEMA_SHA256 = '7ad4659623022d9884bf5f7a15fd35d6dc3b7cc676b3cc76cab6e3f7ff114ea8';
 const AGENT_EVALUATION_COMPARISON_PROTOCOL_SCHEMA_SHA256 = '69e834fb1ce2869586a891831b5f0543415611940430650ecc1438678c2cd874';
+const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
+const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = 'd7ab170c190c9fd7e18be3ca00b874a8d954fa2b';
+const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = '3b017642ecc90fbc5af93f2f9454cb86d1e2add7';
+const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = 'da90475f0d494a125dfdff21f85408b97164ec276961c1d7db522a63bbb5be6d';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '2d9f731008a4a0d41c9ccc32ceabc2365f39a547be389f35b8f98e6fd496b043';
+const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '92ebd37b23791cdf3652defe1d7f856adc733ed2cb7810ea280da2350e9bfbd2';
+const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = 'eaf9595e12636a7ac98b22b92d59143d4a593a84fc5bc80e7cabf186bddd5fc1';
+const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
+const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.';
+const AGENT_EVALUATION_EXPLANATION_MAX_EVENTS = 4_096;
+const AGENT_EVALUATION_EXPLANATION_RELAY_SHA256 = 'eef4017c83216929f74504e0025821b12232190b8d87257cd8bc6186dfbfe123';
 
 /**
  * @return list<array{
@@ -64,6 +80,9 @@ function agentEvaluationValidateKit(string $kit): array
         'comparison-protocol-v1.schema.json' => AGENT_EVALUATION_COMPARISON_PROTOCOL_SCHEMA_SHA256,
         'run-v2.schema.json' => '626bf4903096e08e517685214bee11a204640c15e63307d65aecc14fb48db457',
         'score-v2.schema.json' => '7f5d68e3b4056961e1dbcfe85159a0378b67f11cd9c8d597f71bd148b4c79364',
+        'task-v3.schema.json' => AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256,
+        'run-v3.schema.json' => AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256,
+        'score-v3.schema.json' => AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256,
     ];
 
     foreach ($schemaHashes as $schema => $hash) {
@@ -78,9 +97,13 @@ function agentEvaluationValidateKit(string $kit): array
 
     foreach (AGENT_EVALUATION_TASK_REVISIONS as $taskId => $pinnedRevision) {
         $version = $pinnedRevision['schema_version'];
-        $task = $version === 1
-            ? agentEvaluationTaskDocument($kit, $taskId)
-            : agentEvaluationComparisonTaskDocument($kit, $taskId);
+        if ($version === 1) {
+            $task = agentEvaluationTaskDocument($kit, $taskId);
+        } elseif ($version === 2) {
+            $task = agentEvaluationComparisonTaskDocument($kit, $taskId);
+        } else {
+            $task = agentEvaluationExplanationTaskDocument($kit, $taskId);
+        }
 
         if ($task['revision'] !== $pinnedRevision['revision']) {
             throw new RuntimeException("Task {$taskId} revision does not match its pinned identity.");
@@ -91,7 +114,7 @@ function agentEvaluationValidateKit(string $kit): array
         }
 
         if ($version === 1) {
-            $tasks[] = agentEvaluationTaskDocument($kit, $taskId);
+            $tasks[] = $task;
         }
     }
 
@@ -385,6 +408,427 @@ function agentEvaluationValidateBudgets(array $budgets, string $taskId): array
             $budgets,
             'command_output_bytes',
             "task {$taskId} budgets",
+        ),
+    ];
+}
+
+function agentEvaluationExplanationEffectivePrompt(string $sourcePrompt): string
+{
+    if (
+        $sourcePrompt === ''
+        || !str_ends_with($sourcePrompt, "\n")
+        || str_contains($sourcePrompt, "\0")
+    ) {
+        throw new RuntimeException('Explanation source prompt must be non-empty newline-terminated text without NUL bytes.');
+    }
+
+    $prompt = $sourcePrompt . "\n" . AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX . "\n";
+
+    if (strlen($prompt) > AGENT_EVALUATION_MAX_JSON_BYTES) {
+        throw new RuntimeException('Explanation effective prompt exceeds its fixed byte bound.');
+    }
+
+    return $prompt;
+}
+
+/**
+ * @return array{
+ *   schema_version: int,
+ *   id: string,
+ *   revision: int,
+ *   kind: string,
+ *   comparative_claims: bool,
+ *   prompt: array{path: string, sha256: string, effective_sha256: string},
+ *   rubric: array{path: string, sha256: string},
+ *   manifest_sha256: string,
+ *   base: array{fixture: string, revision: string, tree: string, fixture_sha256: string},
+ *   workspace_policy: array{allowed_existing_paths: list<string>, allowed_new_paths: list<string>, protected_paths: list<string>, max_changed_files: int, max_added_lines: int, max_deleted_lines: int},
+ *   budgets: array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int},
+ *   execution_profile: array{condition: string, runner: array{name: string, version: string}, model: array{provider: string, id: string, revision: ?string, settings: array<string, mixed>}, context: array{bundle_id: ?string, bundle_sha256: ?string}, tools: list<array{name: string, version: ?string, permissions: list<string>}>, transport_tools: array{kind: string, count: int, sha256: string}},
+ *   checks: array{structural: string, semantic_review: string},
+ *   directory: string
+ * }
+ */
+function agentEvaluationExplanationTask(string $kit): array
+{
+    agentEvaluationValidateKit($kit);
+
+    return agentEvaluationExplanationTaskDocument($kit, AGENT_EVALUATION_EXPLANATION_TASK_ID);
+}
+
+/**
+ * @return array{
+ *   schema_version: int,
+ *   id: string,
+ *   revision: int,
+ *   kind: string,
+ *   comparative_claims: bool,
+ *   prompt: array{path: string, sha256: string, effective_sha256: string},
+ *   rubric: array{path: string, sha256: string},
+ *   manifest_sha256: string,
+ *   base: array{fixture: string, revision: string, tree: string, fixture_sha256: string},
+ *   workspace_policy: array{allowed_existing_paths: list<string>, allowed_new_paths: list<string>, protected_paths: list<string>, max_changed_files: int, max_added_lines: int, max_deleted_lines: int},
+ *   budgets: array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int},
+ *   execution_profile: array{condition: string, runner: array{name: string, version: string}, model: array{provider: string, id: string, revision: ?string, settings: array<string, mixed>}, context: array{bundle_id: ?string, bundle_sha256: ?string}, tools: list<array{name: string, version: ?string, permissions: list<string>}>, transport_tools: array{kind: string, count: int, sha256: string}},
+ *   checks: array{structural: string, semantic_review: string},
+ *   directory: string
+ * }
+ */
+function agentEvaluationExplanationTaskDocument(string $kit, string $taskId): array
+{
+    $pin = AGENT_EVALUATION_TASK_REVISIONS[$taskId] ?? null;
+    $kitRoot = realpath($kit);
+
+    if (
+        $taskId !== AGENT_EVALUATION_EXPLANATION_TASK_ID
+        || !is_array($pin)
+        || $pin['schema_version'] !== 3
+        || !is_string($kitRoot)
+    ) {
+        throw new RuntimeException('Unknown explanation evaluation task.');
+    }
+
+    $candidate = $kitRoot . '/tasks/' . $taskId;
+    $directory = realpath($candidate);
+
+    if (
+        !is_string($directory)
+        || $directory !== $candidate
+        || !is_dir($directory)
+        || is_link($directory)
+    ) {
+        throw new RuntimeException('Explanation task must remain in its canonical inventory directory.');
+    }
+
+    $document = agentEvaluationJsonFile($directory . '/task.json');
+    agentEvaluationRequireExactKeys(
+        $document,
+        [
+            'schema_version',
+            'id',
+            'revision',
+            'kind',
+            'prompt',
+            'rubric',
+            'base',
+            'workspace_policy',
+            'budgets',
+            'execution_profile',
+            'checks',
+            'comparative_claims',
+        ],
+        'explanation task',
+    );
+
+    $revision = agentEvaluationRequirePositiveInteger($document, 'revision', 'explanation task');
+
+    if (
+        ($document['schema_version'] ?? null) !== 3
+        || ($document['id'] ?? null) !== AGENT_EVALUATION_EXPLANATION_TASK_ID
+        || $revision !== $pin['revision']
+        || ($document['kind'] ?? null) !== 'explanation'
+    ) {
+        throw new RuntimeException('Explanation task identity must match its explicit pinned version and kind.');
+    }
+
+    $promptDescriptor = agentEvaluationRequireObject($document, 'prompt', 'explanation task');
+    agentEvaluationRequireExactKeys(
+        $promptDescriptor,
+        ['path', 'sha256', 'effective_sha256'],
+        'explanation prompt',
+    );
+    $prompt = agentEvaluationExplanationArtifact(
+        [
+            'path' => agentEvaluationRequireString($promptDescriptor, 'path', 'explanation prompt'),
+            'sha256' => agentEvaluationRequireString($promptDescriptor, 'sha256', 'explanation prompt'),
+        ],
+        $directory,
+        'prompt.md',
+        'explanation prompt',
+    );
+    $sourcePrompt = file_get_contents($directory . '/' . $prompt['path']);
+
+    if (
+        $sourcePrompt !== "Review whether a consumer may switch its adopted local file profile to Amazon S3.\n"
+    ) {
+        throw new RuntimeException('Explanation task prompt must equal the frozen routing-review seed.');
+    }
+
+    $effectivePrompt = agentEvaluationExplanationEffectivePrompt($sourcePrompt);
+    $effectivePromptHash = agentEvaluationRequireHash(
+        agentEvaluationRequireString($promptDescriptor, 'effective_sha256', 'explanation prompt'),
+        'explanation effective prompt',
+    );
+
+    if (
+        $effectivePromptHash !== AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256
+        || !hash_equals($effectivePromptHash, hash('sha256', $effectivePrompt))
+    ) {
+        throw new RuntimeException('Explanation effective prompt hash does not match the exact source and suffix bytes.');
+    }
+
+    $prompt['effective_sha256'] = $effectivePromptHash;
+    $rubric = agentEvaluationExplanationArtifact(
+        agentEvaluationRequireObject($document, 'rubric', 'explanation task'),
+        $directory,
+        'rubric.md',
+        'explanation rubric',
+    );
+    $base = agentEvaluationRequireObject($document, 'base', 'explanation task');
+    agentEvaluationRequireExactKeys(
+        $base,
+        ['fixture', 'revision', 'tree', 'fixture_sha256'],
+        'explanation task base',
+    );
+    $expectedBase = [
+        'fixture' => 'tracked-maintainer-source',
+        'revision' => AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION,
+        'tree' => AGENT_EVALUATION_EXPLANATION_SOURCE_TREE,
+        'fixture_sha256' => AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256,
+    ];
+
+    foreach ($expectedBase as $name => $value) {
+        if (($base[$name] ?? null) !== $value) {
+            throw new RuntimeException('Explanation task must bind the exact tracked maintainer source revision.');
+        }
+    }
+
+    $workspacePolicy = agentEvaluationValidateExplanationWorkspacePolicy(
+        agentEvaluationRequireObject($document, 'workspace_policy', 'explanation task'),
+        $taskId,
+    );
+    $budgets = agentEvaluationValidateBudgets(
+        agentEvaluationRequireObject($document, 'budgets', 'explanation task'),
+        $taskId,
+    );
+    $expectedBudgets = [
+        'model_tokens' => 40_000,
+        'wall_seconds' => 1_200,
+        'repair_turns' => 0,
+        'command_output_bytes' => 4_194_304,
+    ];
+
+    if ($budgets !== $expectedBudgets) {
+        throw new RuntimeException('Explanation task budgets must equal the fixed bounded protocol.');
+    }
+
+    $executionProfile = agentEvaluationNormalizeExplanationExecutionProfile(
+        agentEvaluationRequireObject($document, 'execution_profile', 'explanation task'),
+        'explanation task execution profile',
+    );
+    $expectedExecutionProfile = agentEvaluationExplanationLiveExecutionProfile();
+
+    if ($executionProfile !== $expectedExecutionProfile) {
+        throw new RuntimeException('Explanation task must bind its exact live execution profile.');
+    }
+
+    $checks = agentEvaluationRequireObject($document, 'checks', 'explanation task');
+    agentEvaluationRequireExactKeys($checks, ['structural', 'semantic_review'], 'explanation task checks');
+
+    if (
+        ($checks['structural'] ?? null) !== 'artifact-bound-v1'
+        || ($checks['semantic_review'] ?? null) !== 'human-v1'
+    ) {
+        throw new RuntimeException('Explanation checks must keep structural collection separate from human semantic review.');
+    }
+
+    if (agentEvaluationRequireBoolean($document, 'comparative_claims', 'explanation task')) {
+        throw new RuntimeException('The explanation task cannot authorize comparative claims.');
+    }
+
+    return [
+        'schema_version' => 3,
+        'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
+        'revision' => $revision,
+        'kind' => 'explanation',
+        'comparative_claims' => false,
+        'prompt' => $prompt,
+        'rubric' => $rubric,
+        'manifest_sha256' => agentEvaluationFileHash($directory . '/task.json', 'explanation task'),
+        'base' => $expectedBase,
+        'workspace_policy' => $workspacePolicy,
+        'budgets' => $budgets,
+        'execution_profile' => $expectedExecutionProfile,
+        'checks' => ['structural' => 'artifact-bound-v1', 'semantic_review' => 'human-v1'],
+        'directory' => $directory,
+    ];
+}
+
+/**
+ * @param array<string, mixed> $descriptor
+ * @return array{path: string, sha256: string}
+ */
+function agentEvaluationExplanationArtifact(
+    array $descriptor,
+    string $directory,
+    string $expectedPath,
+    string $owner,
+): array {
+    agentEvaluationRequireExactKeys($descriptor, ['path', 'sha256'], $owner);
+    $path = agentEvaluationRequireRelativePath(
+        agentEvaluationRequireString($descriptor, 'path', $owner),
+        $owner,
+    );
+    $hash = agentEvaluationRequireHash(
+        agentEvaluationRequireString($descriptor, 'sha256', $owner),
+        $owner,
+    );
+
+    if ($path !== $expectedPath) {
+        throw new RuntimeException("{$owner} must use its fixed task-local path.");
+    }
+
+    agentEvaluationRequireFileHash(
+        agentEvaluationContainedArtifactPath($directory, $path, $owner),
+        $hash,
+        $owner,
+    );
+
+    return ['path' => $path, 'sha256' => $hash];
+}
+
+/**
+ * @param array<string, mixed> $policy
+ * @return array{allowed_existing_paths: list<string>, allowed_new_paths: list<string>, protected_paths: list<string>, max_changed_files: int, max_added_lines: int, max_deleted_lines: int}
+ */
+function agentEvaluationValidateExplanationWorkspacePolicy(array $policy, string $taskId): array
+{
+    $owner = "task {$taskId} explanation workspace policy";
+    agentEvaluationRequireExactKeys(
+        $policy,
+        [
+            'allowed_existing_paths',
+            'allowed_new_paths',
+            'protected_paths',
+            'max_changed_files',
+            'max_added_lines',
+            'max_deleted_lines',
+        ],
+        $owner,
+    );
+    $normalized = [
+        'allowed_existing_paths' => agentEvaluationRequireStringList($policy, 'allowed_existing_paths', $owner),
+        'allowed_new_paths' => agentEvaluationRequireStringList($policy, 'allowed_new_paths', $owner),
+        'protected_paths' => agentEvaluationRequireStringList($policy, 'protected_paths', $owner),
+        'max_changed_files' => agentEvaluationRequireNonNegativeInteger($policy, 'max_changed_files', $owner),
+        'max_added_lines' => agentEvaluationRequireNonNegativeInteger($policy, 'max_added_lines', $owner),
+        'max_deleted_lines' => agentEvaluationRequireNonNegativeInteger($policy, 'max_deleted_lines', $owner),
+    ];
+    $expected = [
+        'allowed_existing_paths' => [],
+        'allowed_new_paths' => [],
+        'protected_paths' => [],
+        'max_changed_files' => 0,
+        'max_added_lines' => 0,
+        'max_deleted_lines' => 0,
+    ];
+
+    if ($normalized !== $expected) {
+        throw new RuntimeException('Explanation workspace policy must prohibit every candidate mutation.');
+    }
+
+    return $normalized;
+}
+
+/**
+ * @return array{condition: string, runner: array{name: string, version: string}, model: array{provider: string, id: string, revision: ?string, settings: array<string, mixed>}, context: array{bundle_id: ?string, bundle_sha256: ?string}, tools: list<array{name: string, version: ?string, permissions: list<string>}>, transport_tools: array{kind: string, count: int, sha256: string}}
+ */
+function agentEvaluationExplanationLiveExecutionProfile(): array
+{
+    return [
+        'condition' => 'repository-only',
+        'runner' => ['name' => 'codex-exec', 'version' => '0.153.1'],
+        'model' => [
+            'provider' => 'openai',
+            'id' => 'gpt-5.4-2026-03-05',
+            'revision' => null,
+            'settings' => ['reasoning_effort' => 'high'],
+        ],
+        'context' => ['bundle_id' => null, 'bundle_sha256' => null],
+        'tools' => [[
+            'name' => 'shell',
+            'version' => null,
+            'permissions' => ['workspace-read', 'process-execute'],
+        ]],
+        'transport_tools' => [
+            'kind' => 'codex-responses-local-tools-v1',
+            'count' => 4,
+            'sha256' => '3392681cd5b82960557ffe2ce5b0ba1e223cc0f97a226432a7a43353475d6aed',
+        ],
+    ];
+}
+
+/**
+ * @param array<string, mixed> $profile
+ * @return array{condition: string, runner: array{name: string, version: string}, model: array{provider: string, id: string, revision: ?string, settings: array<string, mixed>}, context: array{bundle_id: ?string, bundle_sha256: ?string}, tools: list<array{name: string, version: ?string, permissions: list<string>}>, transport_tools: ?array{kind: string, count: int, sha256: string}}
+ */
+function agentEvaluationNormalizeExplanationExecutionProfile(array $profile, string $owner): array
+{
+    agentEvaluationRequireExactKeys($profile, ['condition', 'runner', 'model', 'context', 'tools', 'transport_tools'], $owner);
+    $runner = agentEvaluationRequireObject($profile, 'runner', $owner);
+    agentEvaluationRequireExactKeys($runner, ['name', 'version'], $owner . ' runner');
+    $model = agentEvaluationRequireObject($profile, 'model', $owner);
+    agentEvaluationValidateModel($model);
+    $settings = agentEvaluationValueObject($model['settings'] ?? null, $owner . ' model settings');
+    $context = agentEvaluationRequireObject($profile, 'context', $owner);
+    agentEvaluationValidateContext($context);
+    $toolValues = agentEvaluationRequireList($profile, 'tools', $owner);
+    agentEvaluationValidateTools($toolValues);
+    $tools = [];
+
+    foreach ($toolValues as $index => $value) {
+        $tool = agentEvaluationValueObject($value, "{$owner} tool {$index}");
+        $tools[] = [
+            'name' => agentEvaluationRequireNonEmptyString($tool, 'name', "{$owner} tool {$index}"),
+            'version' => agentEvaluationRequireNullableString($tool, 'version', "{$owner} tool {$index}"),
+            'permissions' => agentEvaluationRequireStringList($tool, 'permissions', "{$owner} tool {$index}"),
+        ];
+    }
+
+    return [
+        'condition' => agentEvaluationRequireNonEmptyString($profile, 'condition', $owner),
+        'runner' => [
+            'name' => agentEvaluationRequireNonEmptyString($runner, 'name', $owner . ' runner'),
+            'version' => agentEvaluationRequireNonEmptyString($runner, 'version', $owner . ' runner'),
+        ],
+        'model' => [
+            'provider' => agentEvaluationRequireNonEmptyString($model, 'provider', $owner . ' model'),
+            'id' => agentEvaluationRequireNonEmptyString($model, 'id', $owner . ' model'),
+            'revision' => agentEvaluationRequireNullableString($model, 'revision', $owner . ' model'),
+            'settings' => $settings,
+        ],
+        'context' => [
+            'bundle_id' => agentEvaluationRequireNullableString($context, 'bundle_id', $owner . ' context'),
+            'bundle_sha256' => agentEvaluationRequireNullableString(
+                $context,
+                'bundle_sha256',
+                $owner . ' context',
+            ),
+        ],
+        'tools' => $tools,
+        'transport_tools' => agentEvaluationNormalizeExplanationTransportTools(
+            $profile['transport_tools'],
+            $owner . ' transport tools',
+        ),
+    ];
+}
+
+/** @return ?array{kind: string, count: int, sha256: string} */
+function agentEvaluationNormalizeExplanationTransportTools(mixed $value, string $owner): ?array
+{
+    if ($value === null) {
+        return null;
+    }
+
+    $transport = agentEvaluationValueObject($value, $owner);
+    agentEvaluationRequireExactKeys($transport, ['kind', 'count', 'sha256'], $owner);
+
+    return [
+        'kind' => agentEvaluationRequireNonEmptyString($transport, 'kind', $owner),
+        'count' => agentEvaluationRequirePositiveInteger($transport, 'count', $owner),
+        'sha256' => agentEvaluationRequireHash(
+            agentEvaluationRequireString($transport, 'sha256', $owner),
+            $owner,
         ),
     ];
 }

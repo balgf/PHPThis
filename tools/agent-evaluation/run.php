@@ -389,6 +389,14 @@ function agentEvaluationFileMetadata(string $path): mixed
 
 function agentEvaluationValidateDependencyManifest(string $path): void
 {
+    agentEvaluationDependencyManifestFiles($path);
+}
+
+/**
+ * @return array<string, array{mode: string, sha256: string}>
+ */
+function agentEvaluationDependencyManifestFiles(string $path): array
+{
     $source = file_get_contents($path);
 
     if (!is_string($source) || $source === '' || !str_ends_with($source, "\n") || str_contains($source, "\r")) {
@@ -416,8 +424,903 @@ function agentEvaluationValidateDependencyManifest(string $path): void
             throw new RuntimeException('Prepared-dependencies manifest paths must be unique and bounded.');
         }
 
-        $seenPaths[$dependencyPath] = true;
+        $seenPaths[$dependencyPath] = [
+            'mode' => $matches[1],
+            'sha256' => $matches[2],
+        ];
     }
+
+    return $seenPaths;
+}
+
+/**
+ * @param array<string, mixed> $lock
+ * @return array<string, array{
+ *   version: string,
+ *   source_reference: string|null,
+ *   dist_reference: string|null,
+ *   dev: bool
+ * }>
+ */
+function agentEvaluationExplanationComposerLockPackages(array $lock): array
+{
+    $packages = [];
+
+    foreach ([['packages', false], ['packages-dev', true]] as [$field, $dev]) {
+        foreach (agentEvaluationRequireList($lock, $field, 'tracked explanation composer.lock') as $value) {
+            $package = agentEvaluationValueObject($value, 'tracked explanation Composer package');
+            $name = agentEvaluationExplanationComposerPackageName(
+                $package,
+                'tracked explanation Composer package',
+            );
+
+            if (isset($packages[$name])) {
+                throw new RuntimeException(
+                    'Explanation prepared Composer metadata does not match the admitted lock.',
+                );
+            }
+
+            $packages[$name] = [
+                'version' => agentEvaluationExplanationComposerPackageVersion(
+                    $package,
+                    'tracked explanation Composer package',
+                ),
+                'source_reference' => agentEvaluationExplanationComposerPackageReference(
+                    $package['source'] ?? null,
+                    'tracked explanation Composer package source',
+                ),
+                'dist_reference' => agentEvaluationExplanationComposerPackageReference(
+                    $package['dist'] ?? null,
+                    'tracked explanation Composer package dist',
+                ),
+                'dev' => $dev,
+            ];
+        }
+    }
+
+    ksort($packages, SORT_STRING);
+
+    return $packages;
+}
+
+/**
+ * @param array<string, mixed> $installed
+ * @return array<string, array{
+ *   version: string,
+ *   source_reference: string|null,
+ *   dist_reference: string|null,
+ *   dev: bool
+ * }>
+ */
+function agentEvaluationExplanationInstalledComposerPackages(array $installed): array
+{
+    $devPackageNames = agentEvaluationRequireStringList(
+        $installed,
+        'dev-package-names',
+        'explanation installed Composer metadata',
+    );
+    $sortedDevPackageNames = $devPackageNames;
+    sort($sortedDevPackageNames, SORT_STRING);
+
+    if (
+        count(array_unique($sortedDevPackageNames, SORT_STRING)) !== count($sortedDevPackageNames)
+        || !is_bool($installed['dev'] ?? null)
+        || $installed['dev'] !== ($sortedDevPackageNames !== [])
+    ) {
+        throw new RuntimeException(
+            'Explanation prepared Composer metadata does not match the admitted lock.',
+        );
+    }
+
+    $devPackages = array_fill_keys($sortedDevPackageNames, true);
+    $packages = [];
+
+    foreach (
+        agentEvaluationRequireList(
+            $installed,
+            'packages',
+            'explanation installed Composer metadata',
+        ) as $value
+    ) {
+        $package = agentEvaluationValueObject($value, 'explanation installed Composer package');
+        $name = agentEvaluationExplanationComposerPackageName(
+            $package,
+            'explanation installed Composer package',
+        );
+
+        if ($name === 'phpthis/framework') {
+            throw new RuntimeException(
+                'Explanation prepared dependencies expose a duplicate phpthis/framework package path.',
+            );
+        }
+
+        if (
+            agentEvaluationRequireNonEmptyString(
+                $package,
+                'install-path',
+                'explanation installed Composer package',
+            ) !== '../' . $name
+            || isset($packages[$name])
+        ) {
+            throw new RuntimeException(
+                'Explanation prepared Composer metadata does not match the admitted lock.',
+            );
+        }
+
+        $packages[$name] = [
+            'version' => agentEvaluationExplanationComposerPackageVersion(
+                $package,
+                'explanation installed Composer package',
+            ),
+            'source_reference' => agentEvaluationExplanationComposerPackageReference(
+                $package['source'] ?? null,
+                'explanation installed Composer package source',
+            ),
+            'dist_reference' => agentEvaluationExplanationComposerPackageReference(
+                $package['dist'] ?? null,
+                'explanation installed Composer package dist',
+            ),
+            'dev' => isset($devPackages[$name]),
+        ];
+    }
+
+    foreach (array_keys($devPackages) as $name) {
+        if (!isset($packages[$name])) {
+            throw new RuntimeException(
+                'Explanation prepared Composer metadata does not match the admitted lock.',
+            );
+        }
+    }
+
+    ksort($packages, SORT_STRING);
+
+    return $packages;
+}
+
+/** @param array<string, mixed> $package */
+function agentEvaluationExplanationComposerPackageName(array $package, string $owner): string
+{
+    $name = agentEvaluationRequireNonEmptyString($package, 'name', $owner);
+
+    if (
+        strlen($name) > 255
+        || preg_match('/\A[a-z0-9_.-]+\/[a-z0-9_.-]+\z/D', $name) !== 1
+    ) {
+        throw new RuntimeException(
+            'Explanation prepared Composer metadata does not match the admitted lock.',
+        );
+    }
+
+    return $name;
+}
+
+/** @param array<string, mixed> $package */
+function agentEvaluationExplanationComposerPackageVersion(array $package, string $owner): string
+{
+    $version = agentEvaluationRequireNonEmptyString($package, 'version', $owner);
+
+    if (strlen($version) > 255 || preg_match('/[\x00-\x1F\x7F]/', $version) === 1) {
+        throw new RuntimeException(
+            'Explanation prepared Composer metadata does not match the admitted lock.',
+        );
+    }
+
+    return $version;
+}
+
+function agentEvaluationExplanationComposerPackageReference(mixed $value, string $owner): ?string
+{
+    if ($value === null) {
+        return null;
+    }
+
+    $source = agentEvaluationValueObject($value, $owner);
+    $reference = $source['reference'] ?? null;
+
+    if ($reference === null) {
+        return null;
+    }
+
+    if (
+        !is_string($reference)
+        || $reference === ''
+        || strlen($reference) > 255
+        || preg_match('/[\x00-\x1F\x7F]/', $reference) === 1
+    ) {
+        throw new RuntimeException(
+            'Explanation prepared Composer metadata does not match the admitted lock.',
+        );
+    }
+
+    return $reference;
+}
+
+/**
+ * @param array<string, mixed> $record
+ * @param array<string, mixed> $task
+ */
+function agentEvaluationValidateExplanationRunRecord(array $record, array $task): void
+{
+    $owner = 'explanation run record';
+    agentEvaluationRequireExactKeys(
+        $record,
+        [
+            'schema_version',
+            'execution_kind',
+            'run_id',
+            'task_id',
+            'task_revision',
+            'task_manifest_sha256',
+            'prompt_sha256',
+            'effective_prompt_sha256',
+            'rubric_sha256',
+            'base_revision',
+            'base_tree',
+            'base_fixture_sha256',
+            'prepared_dependencies_manifest_path',
+            'prepared_dependencies_manifest_sha256',
+            'prepared_lock_path',
+            'prepared_lock_sha256',
+            'prepared_installed_metadata_path',
+            'prepared_installed_metadata_sha256',
+            'prepared_installed_package_count',
+            'condition',
+            'runner',
+            'model',
+            'context',
+            'tools',
+            'transport_tools',
+            'budgets',
+            'usage',
+            'timing',
+            'repair_turns',
+            'termination_reason',
+            'events_path',
+            'events_sha256',
+            'candidate_patch_path',
+            'candidate_patch_sha256',
+            'response_path',
+            'response_sha256',
+        ],
+        $owner,
+    );
+
+    if (
+        ($task['schema_version'] ?? null) !== 3
+        || ($task['id'] ?? null) !== AGENT_EVALUATION_EXPLANATION_TASK_ID
+        || ($task['kind'] ?? null) !== 'explanation'
+    ) {
+        throw new RuntimeException('Explanation run validation requires the explicit schema-v3 task.');
+    }
+
+    if (agentEvaluationRequireInteger($record, 'schema_version', $owner) !== 3) {
+        throw new RuntimeException('Explanation run record must use schema version 3.');
+    }
+
+    $executionKind = agentEvaluationRequireString($record, 'execution_kind', $owner);
+
+    if (!in_array($executionKind, ['live-model', 'synthetic-control'], true)) {
+        throw new RuntimeException('Explanation run execution kind must be live-model or synthetic-control.');
+    }
+
+    $runId = agentEvaluationRequireString($record, 'run_id', $owner);
+
+    if (preg_match('/\A[a-f0-9]{32}\z/D', $runId) !== 1) {
+        throw new RuntimeException('Explanation run ID must use 32 lowercase hexadecimal characters.');
+    }
+
+    if (
+        agentEvaluationRequireString($record, 'task_id', $owner) !== $task['id']
+        || agentEvaluationRequireInteger($record, 'task_revision', $owner) !== $task['revision']
+    ) {
+        throw new RuntimeException('Explanation run record task identity does not match the selected task.');
+    }
+
+    $prompt = agentEvaluationRequireObject($task, 'prompt', 'explanation task');
+    $rubric = agentEvaluationRequireObject($task, 'rubric', 'explanation task');
+
+    foreach (
+        [
+            'task_manifest_sha256' => agentEvaluationRequireString(
+                $task,
+                'manifest_sha256',
+                'explanation task',
+            ),
+            'prompt_sha256' => agentEvaluationRequireString($prompt, 'sha256', 'explanation task prompt'),
+            'effective_prompt_sha256' => agentEvaluationRequireString(
+                $prompt,
+                'effective_sha256',
+                'explanation task prompt',
+            ),
+            'rubric_sha256' => agentEvaluationRequireString($rubric, 'sha256', 'explanation task rubric'),
+        ] as $name => $expected
+    ) {
+        $actual = agentEvaluationRequireHash(
+            agentEvaluationRequireString($record, $name, $owner),
+            "{$owner} {$name}",
+        );
+
+        if (!hash_equals($expected, $actual)) {
+            throw new RuntimeException('Explanation run record task artifacts do not match the selected task.');
+        }
+    }
+
+    $base = agentEvaluationRequireObject($task, 'base', 'explanation task');
+
+    if (
+        agentEvaluationRequireString($record, 'base_revision', $owner) !== ($base['revision'] ?? null)
+        || agentEvaluationRequireString($record, 'base_tree', $owner) !== ($base['tree'] ?? null)
+        || agentEvaluationRequireHash(
+            agentEvaluationRequireString($record, 'base_fixture_sha256', $owner),
+            $owner . ' base fixture',
+        ) !== ($base['fixture_sha256'] ?? null)
+    ) {
+        throw new RuntimeException('Explanation run record base does not match the pinned tracked maintainer source.');
+    }
+
+    agentEvaluationRequireRelativePath(
+        agentEvaluationRequireString($record, 'prepared_dependencies_manifest_path', $owner),
+        $owner . ' prepared-dependencies manifest path',
+    );
+    agentEvaluationRequireHash(
+        agentEvaluationRequireString($record, 'prepared_dependencies_manifest_sha256', $owner),
+        $owner . ' prepared-dependencies manifest',
+    );
+    $preparedLockPath = $record['prepared_lock_path'] ?? null;
+    $preparedLockSha256 = $record['prepared_lock_sha256'] ?? null;
+    $installedMetadataPath = $record['prepared_installed_metadata_path'] ?? null;
+    $installedMetadataSha256 = $record['prepared_installed_metadata_sha256'] ?? null;
+    $installedPackageCount = $record['prepared_installed_package_count'] ?? null;
+
+    if ($executionKind === 'live-model') {
+        if (
+            $preparedLockPath !== 'dependencies.lock'
+            || !is_string($preparedLockSha256)
+            || $installedMetadataPath !== 'dependencies.installed.json'
+            || !is_string($installedMetadataSha256)
+            || !is_int($installedPackageCount)
+            || $installedPackageCount < 0
+            || $installedPackageCount > 4_000
+        ) {
+            throw new RuntimeException(
+                'Live explanation run must bind its retained lock and installed Composer metadata.',
+            );
+        }
+        agentEvaluationRequireHash($preparedLockSha256, $owner . ' prepared lock');
+        agentEvaluationRequireHash(
+            $installedMetadataSha256,
+            $owner . ' installed Composer metadata',
+        );
+    } elseif (
+        $preparedLockPath !== null
+        || $preparedLockSha256 !== null
+        || $installedMetadataPath !== null
+        || $installedMetadataSha256 !== null
+        || $installedPackageCount !== null
+    ) {
+        throw new RuntimeException(
+            'Synthetic explanation controls cannot claim prepared dependency-provenance artifacts.',
+        );
+    }
+
+    $runProfile = agentEvaluationNormalizeExplanationExecutionProfile(
+        [
+            'condition' => agentEvaluationRequireString($record, 'condition', $owner),
+            'runner' => agentEvaluationRequireObject($record, 'runner', $owner),
+            'model' => agentEvaluationRequireObject($record, 'model', $owner),
+            'context' => agentEvaluationRequireObject($record, 'context', $owner),
+            'tools' => agentEvaluationRequireList($record, 'tools', $owner),
+            'transport_tools' => $record['transport_tools'],
+        ],
+        $owner . ' execution profile',
+    );
+    $taskProfile = agentEvaluationNormalizeExplanationExecutionProfile(
+        agentEvaluationRequireObject($task, 'execution_profile', 'explanation task'),
+        'explanation task execution profile',
+    );
+
+    foreach ($runProfile['tools'] as $tool) {
+        $permissions = $tool['permissions'];
+
+        if (in_array('workspace-write', $permissions, true)) {
+            throw new RuntimeException('Explanation run tools cannot claim candidate workspace write permission.');
+        }
+    }
+
+    if ($executionKind === 'live-model' && $runProfile !== $taskProfile) {
+        throw new RuntimeException('Live explanation run profile does not match the pinned task profile.');
+    }
+
+    if (
+        $executionKind === 'synthetic-control'
+        && (
+            $runProfile['condition'] !== $taskProfile['condition']
+            || $runProfile['runner']['name'] !== 'fake-codex'
+            || $runProfile['context'] !== $taskProfile['context']
+            || $runProfile['tools'] !== $taskProfile['tools']
+            || $runProfile['transport_tools'] !== null
+            || $runProfile['model']['provider'] !== 'synthetic'
+        )
+    ) {
+        throw new RuntimeException('Synthetic explanation control must keep the read-only profile, null transport identity, and synthetic provider label.');
+    }
+
+    $taskBudgets = agentEvaluationValidateBudgets(
+        agentEvaluationRequireObject($task, 'budgets', 'explanation task'),
+        AGENT_EVALUATION_EXPLANATION_TASK_ID,
+    );
+    agentEvaluationValidateRunBudgets(agentEvaluationRequireObject($record, 'budgets', $owner), $taskBudgets);
+    $usage = agentEvaluationRequireObject($record, 'usage', $owner);
+    agentEvaluationValidateUsage($usage, $taskBudgets['model_tokens']);
+    $observedUsage = [];
+
+    foreach (['input_tokens', 'output_tokens', 'cached_tokens', 'reasoning_tokens'] as $name) {
+        $value = $usage[$name] ?? null;
+
+        if (!is_int($value)) {
+            throw new RuntimeException('Completed explanation run usage must contain integer token values.');
+        }
+
+        $observedUsage[$name] = $value;
+    }
+
+    if (
+        $observedUsage['cached_tokens'] > $observedUsage['input_tokens']
+        || $observedUsage['reasoning_tokens'] > $observedUsage['output_tokens']
+    ) {
+        throw new RuntimeException('Explanation cached and reasoning tokens cannot exceed their provider totals.');
+    }
+    agentEvaluationValidateTiming(
+        agentEvaluationRequireObject($record, 'timing', $owner),
+        $taskBudgets['wall_seconds'],
+    );
+
+    if (
+        agentEvaluationRequireNonNegativeInteger($record, 'repair_turns', $owner) !== 0
+        || agentEvaluationRequireString($record, 'termination_reason', $owner) !== 'completed'
+    ) {
+        throw new RuntimeException('Explanation run record must complete without a post-score repair turn.');
+    }
+
+    foreach (['events_path', 'candidate_patch_path', 'response_path'] as $name) {
+        agentEvaluationRequireRelativePath(
+            agentEvaluationRequireString($record, $name, $owner),
+            "{$owner} {$name}",
+        );
+    }
+
+    foreach (['events_sha256', 'response_sha256'] as $name) {
+        agentEvaluationRequireHash(
+            agentEvaluationRequireString($record, $name, $owner),
+            "{$owner} {$name}",
+        );
+    }
+
+    if (
+        agentEvaluationRequireHash(
+            agentEvaluationRequireString($record, 'candidate_patch_sha256', $owner),
+            $owner . ' candidate patch',
+        ) !== hash('sha256', '')
+    ) {
+        throw new RuntimeException('Explanation run record must bind an empty candidate patch.');
+    }
+}
+
+/** @param array<string, mixed> $record */
+function agentEvaluationValidateExplanationRunArtifacts(array $record, string $artifactRoot): void
+{
+    $root = realpath($artifactRoot);
+
+    if (!is_string($root) || !is_dir($root)) {
+        throw new RuntimeException('Explanation run artifact root is unavailable.');
+    }
+
+    $descriptors = [
+        'events' => ['path' => 'events_path', 'hash' => 'events_sha256'],
+        'candidate patch' => ['path' => 'candidate_patch_path', 'hash' => 'candidate_patch_sha256'],
+        'prepared-dependencies manifest' => [
+            'path' => 'prepared_dependencies_manifest_path',
+            'hash' => 'prepared_dependencies_manifest_sha256',
+        ],
+        'response' => ['path' => 'response_path', 'hash' => 'response_sha256'],
+    ];
+    if (($record['execution_kind'] ?? null) === 'live-model') {
+        $descriptors['prepared lock'] = [
+            'path' => 'prepared_lock_path',
+            'hash' => 'prepared_lock_sha256',
+        ];
+        $descriptors['installed Composer metadata'] = [
+            'path' => 'prepared_installed_metadata_path',
+            'hash' => 'prepared_installed_metadata_sha256',
+        ];
+    }
+    $relativePaths = [];
+    $paths = [];
+    $resolvedPaths = [];
+
+    foreach ($descriptors as $name => $descriptor) {
+        $relative = agentEvaluationRequireRelativePath(
+            agentEvaluationRequireString($record, $descriptor['path'], 'explanation run record'),
+            "explanation {$name} artifact path",
+        );
+        $path = agentEvaluationContainedArtifactPath($root, $relative, "explanation {$name} artifact");
+        agentEvaluationRequireBoundedFile($path, AGENT_EVALUATION_MAX_ARTIFACT_BYTES, "explanation {$name} artifact");
+        agentEvaluationRequireFileHash(
+            $path,
+            agentEvaluationRequireString($record, $descriptor['hash'], 'explanation run record'),
+            "explanation {$name} artifact",
+        );
+        $relativePaths[] = $relative;
+        $paths[] = $path;
+        $resolvedPaths[$name] = $path;
+    }
+
+    if (count(array_unique($relativePaths, SORT_STRING)) !== count($relativePaths)) {
+        throw new RuntimeException('Explanation run artifacts must use distinct relative paths.');
+    }
+
+    agentEvaluationRequireDistinctFileIdentities($paths);
+    $events = $resolvedPaths['events'];
+    $candidatePatch = $resolvedPaths['candidate patch'];
+    $dependenciesManifest = $resolvedPaths['prepared-dependencies manifest'];
+    $response = $resolvedPaths['response'];
+
+    if (filesize($candidatePatch) !== 0) {
+        throw new RuntimeException('Explanation candidate patch must be empty.');
+    }
+
+    $dependencyFiles = agentEvaluationDependencyManifestFiles($dependenciesManifest);
+    $preparedLock = $resolvedPaths['prepared lock'] ?? null;
+    $installedMetadata = $resolvedPaths['installed Composer metadata'] ?? null;
+    if (is_string($preparedLock) && is_string($installedMetadata)) {
+        $recordedMetadataSha256 = agentEvaluationRequireString(
+            $record,
+            'prepared_installed_metadata_sha256',
+            'explanation run record',
+        );
+        if (
+            ($dependencyFiles['composer/installed.json']['sha256'] ?? null)
+                !== $recordedMetadataSha256
+        ) {
+            throw new RuntimeException(
+                'Explanation prepared-dependencies manifest does not bind retained Composer metadata.',
+            );
+        }
+        foreach (array_keys($dependencyFiles) as $dependencyPath) {
+            if (
+                $dependencyPath === 'phpthis/framework'
+                || str_starts_with($dependencyPath, 'phpthis/framework/')
+            ) {
+                throw new RuntimeException(
+                    'Explanation prepared dependencies expose a duplicate phpthis/framework package path.',
+                );
+            }
+        }
+        $lockedPackages = agentEvaluationExplanationComposerLockPackages(
+            agentEvaluationJsonFile($preparedLock),
+        );
+        $installedPackages = agentEvaluationExplanationInstalledComposerPackages(
+            agentEvaluationJsonFile($installedMetadata),
+        );
+        if (
+            $lockedPackages !== $installedPackages
+            || count($installedPackages) !== agentEvaluationRequireNonNegativeInteger(
+                $record,
+                'prepared_installed_package_count',
+                'explanation run record',
+            )
+        ) {
+            throw new RuntimeException(
+                'Explanation retained Composer metadata does not match the admitted lock and package count.',
+            );
+        }
+        foreach (array_keys($installedPackages) as $packageName) {
+            $prefix = $packageName . '/';
+            $present = false;
+            foreach (array_keys($dependencyFiles) as $dependencyPath) {
+                if (str_starts_with($dependencyPath, $prefix)) {
+                    $present = true;
+                    break;
+                }
+            }
+            if (!$present) {
+                throw new RuntimeException(
+                    'Explanation prepared-dependencies manifest omits an installed Composer package path.',
+                );
+            }
+        }
+    }
+    $eventEvidence = agentEvaluationExplanationEventEvidence($events, $response);
+    $recordedUsage = agentEvaluationRequireObject($record, 'usage', 'explanation run record');
+
+    if ($eventEvidence['usage'] !== [
+        'input_tokens' => agentEvaluationRequireNonNegativeInteger(
+            $recordedUsage,
+            'input_tokens',
+            'explanation run record usage',
+        ),
+        'output_tokens' => agentEvaluationRequireNonNegativeInteger(
+            $recordedUsage,
+            'output_tokens',
+            'explanation run record usage',
+        ),
+        'cached_tokens' => agentEvaluationRequireNonNegativeInteger(
+            $recordedUsage,
+            'cached_tokens',
+            'explanation run record usage',
+        ),
+        'reasoning_tokens' => agentEvaluationRequireNonNegativeInteger(
+            $recordedUsage,
+            'reasoning_tokens',
+            'explanation run record usage',
+        ),
+    ]) {
+        throw new RuntimeException('Explanation terminal event usage does not match the validated run record.');
+    }
+}
+
+/**
+ * @return array{
+ *   commands: list<array{item_id: string, sha256: string, bytes: int}>,
+ *   file_change_events: int,
+ *   usage: array{input_tokens: int, output_tokens: int, cached_tokens: int, reasoning_tokens: int}
+ * }
+ */
+function agentEvaluationExplanationEventEvidence(string $events, string $response): array
+{
+    $eventBytes = file_get_contents($events);
+    $responseBytes = file_get_contents($response);
+
+    if (
+        !is_string($eventBytes)
+        || $eventBytes === ''
+        || !str_ends_with($eventBytes, "\n")
+        || str_contains($eventBytes, "\0")
+    ) {
+        throw new RuntimeException('Explanation events artifact must contain retained event evidence.');
+    }
+
+    if (
+        !is_string($responseBytes)
+        || trim($responseBytes) === ''
+        || strlen($responseBytes) > AGENT_EVALUATION_MAX_JSON_BYTES
+        || str_contains($responseBytes, "\0")
+    ) {
+        throw new RuntimeException('Explanation response artifact must contain bounded non-empty text.');
+    }
+
+    $eventLines = explode("\n", $eventBytes);
+    array_pop($eventLines);
+
+    if (count($eventLines) > AGENT_EVALUATION_EXPLANATION_MAX_EVENTS) {
+        throw new RuntimeException('Explanation events artifact exceeds its fixed event-count bound.');
+    }
+
+    $lastAgentMessage = null;
+    /** @var array<string, array{item_id: string, sha256: string, bytes: int}> $commands */
+    $commands = [];
+    /** @var array<string, true> $commandCompleted */
+    $commandCompleted = [];
+    /** @var array<string, array{type: string, seen: bool, completed: bool}> $itemStates */
+    $itemStates = [];
+    $fileChangeEvents = 0;
+    $threadStarted = false;
+    $turnStarted = false;
+    $terminalSeen = false;
+    $usage = null;
+
+    foreach ($eventLines as $index => $line) {
+        if ($line === '' || strlen($line) > AGENT_EVALUATION_MAX_JSON_BYTES) {
+            throw new RuntimeException('Explanation events artifact contains an invalid bounded JSONL record.');
+        }
+
+        $event = agentEvaluationValueObject(
+            agentEvaluationJsonValue($line, "explanation event record {$index}"),
+            "explanation event record {$index}",
+        );
+        $eventType = agentEvaluationRequireString($event, 'type', "explanation event record {$index}");
+
+        if ($terminalSeen) {
+            throw new RuntimeException('Explanation events artifact contains data after its terminal event.');
+        }
+
+        if ($eventType === 'thread.started') {
+            agentEvaluationRequireNonEmptyString(
+                $event,
+                'thread_id',
+                "explanation event record {$index}",
+            );
+
+            if ($threadStarted || $turnStarted) {
+                throw new RuntimeException('Explanation events artifact has an invalid thread lifecycle.');
+            }
+
+            $threadStarted = true;
+            continue;
+        }
+
+        if ($eventType === 'turn.started') {
+            if (!$threadStarted || $turnStarted) {
+                throw new RuntimeException('Explanation events artifact has an invalid turn lifecycle.');
+            }
+
+            $turnStarted = true;
+            continue;
+        }
+
+        if ($eventType === 'turn.completed') {
+            if (!$turnStarted) {
+                throw new RuntimeException('Explanation events artifact has an invalid turn lifecycle.');
+            }
+
+            $rawUsage = agentEvaluationRequireObject(
+                $event,
+                'usage',
+                "explanation event record {$index}",
+            );
+            $expectedUsageKeys = [
+                'input_tokens',
+                'cached_input_tokens',
+                'output_tokens',
+                'reasoning_output_tokens',
+            ];
+            if (array_key_exists('cache_write_input_tokens', $rawUsage)) {
+                $expectedUsageKeys[] = 'cache_write_input_tokens';
+            }
+            agentEvaluationRequireExactKeys(
+                $rawUsage,
+                $expectedUsageKeys,
+                "explanation event record {$index} usage",
+            );
+            $inputTokens = agentEvaluationRequireNonNegativeInteger(
+                $rawUsage,
+                'input_tokens',
+                "explanation event record {$index} usage",
+            );
+            $outputTokens = agentEvaluationRequireNonNegativeInteger(
+                $rawUsage,
+                'output_tokens',
+                "explanation event record {$index} usage",
+            );
+            $cachedTokens = agentEvaluationRequireNonNegativeInteger(
+                $rawUsage,
+                'cached_input_tokens',
+                "explanation event record {$index} usage",
+            );
+            $reasoningTokens = agentEvaluationRequireNonNegativeInteger(
+                $rawUsage,
+                'reasoning_output_tokens',
+                "explanation event record {$index} usage",
+            );
+            $cacheWriteTokens = array_key_exists('cache_write_input_tokens', $rawUsage)
+                ? agentEvaluationRequireNonNegativeInteger(
+                    $rawUsage,
+                    'cache_write_input_tokens',
+                    "explanation event record {$index} usage",
+                )
+                : 0;
+
+            if (
+                $cachedTokens > $inputTokens
+                || $cacheWriteTokens > $inputTokens
+                || $reasoningTokens > $outputTokens
+            ) {
+                throw new RuntimeException('Explanation terminal event contains inconsistent usage evidence.');
+            }
+
+            $usage = [
+                'input_tokens' => $inputTokens,
+                'output_tokens' => $outputTokens,
+                'cached_tokens' => $cachedTokens,
+                'reasoning_tokens' => $reasoningTokens,
+            ];
+            $terminalSeen = true;
+            continue;
+        }
+
+        if (
+            !$turnStarted
+            || !in_array($eventType, ['item.started', 'item.updated', 'item.completed'], true)
+        ) {
+            throw new RuntimeException('Explanation events artifact contains an unapproved event or item type.');
+        }
+
+        $item = agentEvaluationValueObject(
+            $event['item'] ?? null,
+            "explanation event record {$index} item",
+        );
+        $itemId = agentEvaluationRequireNonEmptyString(
+            $item,
+            'id',
+            "explanation event record {$index} item",
+        );
+        $itemType = agentEvaluationRequireString($item, 'type', "explanation event record {$index} item");
+
+        if (
+            isset($itemStates[$itemId])
+            && (
+                $itemStates[$itemId]['type'] !== $itemType
+                || $itemStates[$itemId]['completed']
+                || ($eventType === 'item.started' && $itemStates[$itemId]['seen'])
+            )
+        ) {
+            throw new RuntimeException('Explanation events artifact contains an invalid item lifecycle.');
+        }
+
+        $itemStates[$itemId] ??= ['type' => $itemType, 'seen' => false, 'completed' => false];
+        $itemStates[$itemId]['seen'] = true;
+        if ($eventType === 'item.completed') {
+            $itemStates[$itemId]['completed'] = true;
+        }
+
+        if ($itemType === 'file_change') {
+            $fileChangeEvents++;
+            continue;
+        }
+
+        if (!in_array($itemType, ['agent_message', 'reasoning', 'command_execution', 'todo_list'], true)) {
+            throw new RuntimeException('Explanation events artifact contains an unapproved event or item type.');
+        }
+
+        if ($itemType === 'command_execution') {
+            $command = $item['command'] ?? null;
+
+            if (!is_string($command)) {
+                if ($eventType === 'item.completed') {
+                    throw new RuntimeException('Explanation events artifact contains inconsistent command evidence.');
+                }
+
+                continue;
+            }
+
+            $descriptor = [
+                'item_id' => $itemId,
+                'sha256' => hash('sha256', $command),
+                'bytes' => strlen($command),
+            ];
+
+            if (isset($commands[$itemId]) && $commands[$itemId] !== $descriptor) {
+                throw new RuntimeException('Explanation events artifact contains inconsistent command evidence.');
+            }
+
+            $commands[$itemId] = $descriptor;
+            if ($eventType === 'item.completed') {
+                $commandCompleted[$itemId] = true;
+            }
+        }
+
+        if ($eventType === 'item.completed' && $itemType === 'agent_message') {
+            $lastAgentMessage = agentEvaluationRequireString(
+                $item,
+                'text',
+                "explanation event record {$index} item",
+            );
+        }
+    }
+
+    if (!$threadStarted || !$turnStarted || !$terminalSeen || $usage === null) {
+        throw new RuntimeException('Explanation events artifact does not contain one completed Codex lifecycle.');
+    }
+
+    foreach (array_keys($commands) as $itemId) {
+        if (($commandCompleted[$itemId] ?? false) !== true) {
+            throw new RuntimeException('Explanation events artifact contains an incomplete command lifecycle.');
+        }
+    }
+
+    if ($fileChangeEvents !== 0) {
+        throw new RuntimeException('Explanation events artifact contains a file-change item.');
+    }
+
+    if ($lastAgentMessage === null || $responseBytes !== $lastAgentMessage . "\n") {
+        throw new RuntimeException('Explanation response artifact must equal the last completed agent message.');
+    }
+
+    return [
+        'commands' => array_values($commands),
+        'file_change_events' => $fileChangeEvents,
+        'usage' => $usage,
+    ];
 }
 
 /**

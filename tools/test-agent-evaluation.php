@@ -15,6 +15,7 @@ agentEvaluationComparisonSharedReferenceControls();
 agentEvaluationComparisonInstrumentationControls($kit);
 agentEvaluationComparisonRouteControls($kit);
 $tasks = agentEvaluationValidateKit($kit);
+agentEvaluationExplanationContractControls($kit);
 
 agentEvaluationTest(
     count($tasks) === 1 && $tasks[0]['id'] === 'change.simple-ping',
@@ -655,6 +656,11 @@ function agentEvaluationRemoveDirectory(string $directory): void
 
 function agentEvaluationSourceFixtureHash(string $directory): string
 {
+    return hash('sha256', agentEvaluationSourceFixtureManifest($directory));
+}
+
+function agentEvaluationSourceFixtureManifest(string $directory): string
+{
     if (!is_dir($directory) || is_link($directory)) {
         throw new RuntimeException('The source-skeleton fixture must be one real directory.');
     }
@@ -683,7 +689,2089 @@ function agentEvaluationSourceFixtureHash(string $directory): string
 
     sort($lines, SORT_STRING);
 
-    return hash('sha256', implode("\n", $lines) . "\n");
+    return implode("\n", $lines) . "\n";
+}
+
+function agentEvaluationPinnedExplanationSourceManifest(string $repositoryRoot): string
+{
+    $temporary = sys_get_temp_dir() . '/phpthis-agent-evaluation-explanation-source-' . bin2hex(random_bytes(8));
+    $index = $temporary . '/index';
+    $source = $temporary . '/source';
+
+    if (!mkdir($temporary, 0700) || !mkdir($source, 0700)) {
+        throw new RuntimeException('Unable to create the pinned explanation source fixture control.');
+    }
+
+    try {
+        $readTree = runBoundedMaintainerProcess(
+            [
+                '/usr/bin/git',
+                'read-tree',
+                '--index-output=' . $index,
+                AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION,
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+
+        if ($readTree['exit_code'] !== 0 || $readTree['stdout'] !== '' || $readTree['stderr'] !== '') {
+            throw new RuntimeException('Unable to read the pinned explanation source tree.');
+        }
+
+        $checkout = runBoundedMaintainerProcess(
+            [
+                '/usr/bin/env',
+                'GIT_INDEX_FILE=' . $index,
+                '/usr/bin/git',
+                'checkout-index',
+                '--all',
+                '--prefix=' . $source . '/',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+
+        if ($checkout['exit_code'] !== 0 || $checkout['stdout'] !== '' || $checkout['stderr'] !== '') {
+            throw new RuntimeException('Unable to materialize the pinned explanation source tree.');
+        }
+
+        $manifest = agentEvaluationSourceFixtureManifest($source);
+
+        if (hash('sha256', $manifest) !== AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256) {
+            throw new RuntimeException('The materialized explanation source tree does not match its pinned fixture.');
+        }
+
+        return $manifest;
+    } finally {
+        agentEvaluationRemoveDirectory($temporary);
+    }
+}
+
+/**
+ * @param array<string, mixed> $scoreRecord
+ * @return array<string, mixed>
+ */
+function agentEvaluationRefreshExplanationStructuralScore(
+    string $artifactRoot,
+    string $runBytes,
+    array $scoreRecord,
+): array {
+    $document = agentEvaluationExplanationStructuralEvidenceDocument('live-model', $artifactRoot);
+    $documentBytes = agentEvaluationJson($document);
+    $scoreRecord['run_record_sha256'] = hash('sha256', $runBytes);
+    $scoreRecord['structural_evidence_sha256'] = hash('sha256', $documentBytes);
+
+    if (
+        file_put_contents($artifactRoot . '/structural-evidence.json', $documentBytes) === false
+        || file_put_contents($artifactRoot . '/score.json', agentEvaluationJson($scoreRecord)) === false
+    ) {
+        throw new RuntimeException('Unable to refresh explanation structural-evidence controls.');
+    }
+
+    return $scoreRecord;
+}
+
+/**
+ * @param array<string, mixed> $runRecord
+ * @param array<string, mixed> $scoreRecord
+ * @return array<string, mixed>
+ */
+function agentEvaluationWriteExplanationOuterEvidence(
+    string $artifactRoot,
+    array $runRecord,
+    array $scoreRecord,
+): array {
+    $executionKind = agentEvaluationRequireString($runRecord, 'execution_kind', 'explanation run fixture');
+    $validation = [
+        'v3_run_record' => 'pass',
+        'v3_score_record' => 'pass',
+        'structural_status' => agentEvaluationRequireString(
+            $scoreRecord,
+            'automated_status',
+            'explanation score fixture',
+        ),
+        'semantic_review' => 'pending',
+    ];
+
+    if (file_put_contents($artifactRoot . '/validation.json', agentEvaluationJson($validation)) === false) {
+        throw new RuntimeException('Unable to write explanation validation fixture.');
+    }
+
+    $names = agentEvaluationExplanationOuterEvidencePaths($executionKind);
+    if ($executionKind === 'live-model' && is_file($artifactRoot . '/owned-resources.json')) {
+        $names[] = 'owned-resources.json';
+        sort($names, SORT_STRING);
+    }
+    $pendingScoreBytes = agentEvaluationJson(agentEvaluationExplanationPendingScore($scoreRecord));
+    $artifacts = [];
+
+    foreach ($names as $name) {
+        $path = $artifactRoot . '/' . $name;
+        $bytes = $name === 'score.json' ? $pendingScoreBytes : file_get_contents($path);
+        if (!is_string($bytes)) {
+            throw new RuntimeException("Unable to read explanation outer fixture {$name}.");
+        }
+        $artifacts[$name] = ['bytes' => strlen($bytes), 'sha256' => hash('sha256', $bytes)];
+    }
+
+    $cleanup = agentEvaluationJsonFile($artifactRoot . '/cleanup.json');
+    $phases = ['prepare', 'generate', 'freeze', 'score', 'validate', 'retain', 'cleanup'];
+    $manifest = [
+        'schema_version' => 1,
+        'controller_version' => 2,
+        'run_id' => agentEvaluationRequireString($runRecord, 'run_id', 'explanation run fixture'),
+        'task_id' => agentEvaluationRequireString($runRecord, 'task_id', 'explanation run fixture'),
+        'task_revision' => agentEvaluationRequireInteger(
+            $runRecord,
+            'task_revision',
+            'explanation run fixture',
+        ),
+        'synthetic' => $executionKind === 'synthetic-control',
+        'comparative_claims' => false,
+        'explanation_execution' => true,
+        'condition' => 'repository-only',
+        'expected_phase_order' => $phases,
+        'observed_phases' => $phases,
+        'primary_failure' => $cleanup['primary_failure'] ?? null,
+        'cleanup_failure' => $cleanup['cleanup_failure'] ?? null,
+        'artifacts' => $artifacts,
+    ];
+
+    if (file_put_contents($artifactRoot . '/evidence-manifest.json', agentEvaluationJson($manifest)) === false) {
+        throw new RuntimeException('Unable to write explanation evidence-manifest fixture.');
+    }
+
+    return $manifest;
+}
+
+function agentEvaluationExplanationContractControls(string $kit): void
+{
+    $task = agentEvaluationExplanationTask($kit);
+    agentEvaluationTest(
+        $task['schema_version'] === 3
+        && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
+        && $task['revision'] === 1
+        && $task['kind'] === 'explanation'
+        && $task['comparative_claims'] === false,
+        'The explanation task must retain its explicit schema-v3 identity.',
+    );
+    agentEvaluationTest(
+        $task['base'] === [
+            'fixture' => 'tracked-maintainer-source',
+            'revision' => AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION,
+            'tree' => AGENT_EVALUATION_EXPLANATION_SOURCE_TREE,
+            'fixture_sha256' => AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256,
+        ],
+        'The explanation task must retain its pinned tracked maintainer source.',
+    );
+    agentEvaluationTest(
+        $task['workspace_policy'] === [
+            'allowed_existing_paths' => [],
+            'allowed_new_paths' => [],
+            'protected_paths' => [],
+            'max_changed_files' => 0,
+            'max_added_lines' => 0,
+            'max_deleted_lines' => 0,
+        ],
+        'The explanation task must retain its zero-write policy.',
+    );
+    agentEvaluationTest(
+        $task['execution_profile'] === agentEvaluationExplanationLiveExecutionProfile(),
+        'The explanation task must retain its exact live execution profile.',
+    );
+    $sourcePrompt = file_get_contents($task['directory'] . '/' . $task['prompt']['path']);
+    agentEvaluationTest(
+        $sourcePrompt === "Review whether a consumer may switch its adopted local file profile to Amazon S3.\n",
+        'The explanation source prompt changed from the frozen routing-review seed.',
+    );
+    agentEvaluationTest(
+        is_string($sourcePrompt)
+        && agentEvaluationExplanationEffectivePrompt($sourcePrompt) === $sourcePrompt
+            . "\n"
+            . AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX
+            . "\n"
+        && $task['prompt']['effective_sha256'] === AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256
+        && hash('sha256', agentEvaluationExplanationEffectivePrompt($sourcePrompt))
+            === $task['prompt']['effective_sha256'],
+        'The explanation effective prompt must append only the fixed no-write instruction.',
+    );
+    agentEvaluationExpectFailure(
+        static function (): void {
+            agentEvaluationExplanationEffectivePrompt('not newline terminated');
+        },
+        'Explanation source prompt must be non-empty newline-terminated text without NUL bytes.',
+    );
+    agentEvaluationExpectFailure(
+        static function (): void {
+            agentEvaluationValidateWorkspacePolicy(
+                [
+                    'allowed_existing_paths' => [],
+                    'allowed_new_paths' => [],
+                    'protected_paths' => [],
+                    'max_changed_files' => 0,
+                    'max_added_lines' => 0,
+                    'max_deleted_lines' => 0,
+                ],
+                'synthetic.v1-zero',
+            );
+        },
+        'task synthetic.v1-zero workspace policy field allowed_existing_paths must contain at least one path.',
+    );
+    $writableExplanationPolicy = $task['workspace_policy'];
+    $writableExplanationPolicy['allowed_new_paths'] = ['answer.md'];
+    agentEvaluationExpectFailure(
+        static function () use ($writableExplanationPolicy): void {
+            agentEvaluationValidateExplanationWorkspacePolicy(
+                $writableExplanationPolicy,
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+            );
+        },
+        'Explanation workspace policy must prohibit every candidate mutation.',
+    );
+
+    $preparedLockBytes = file_get_contents(dirname($kit, 2) . '/composer.lock');
+    $preparedInstalledMetadataBytes = file_get_contents(
+        dirname($kit, 2) . '/vendor/composer/installed.json',
+    );
+    if (!is_string($preparedLockBytes) || !is_string($preparedInstalledMetadataBytes)) {
+        throw new RuntimeException('Unable to read the pinned explanation Composer provenance.');
+    }
+    $preparedInstalledPackages = agentEvaluationExplanationInstalledComposerPackages(
+        agentEvaluationValueObject(
+            agentEvaluationJsonValue(
+                $preparedInstalledMetadataBytes,
+                'explanation installed Composer test metadata',
+            ),
+            'explanation installed Composer test metadata',
+        ),
+    );
+    $dependencyManifestLines = [
+        '100644 ' . hash('sha256', $preparedInstalledMetadataBytes) . ' composer/installed.json',
+    ];
+    foreach (array_keys($preparedInstalledPackages) as $packageName) {
+        $dependencyManifestLines[] = '100644 '
+            . hash('sha256', $packageName . "\n")
+            . ' '
+            . $packageName
+            . '/provenance.fixture';
+    }
+    sort($dependencyManifestLines, SORT_STRING);
+    $dependencies = implode("\n", $dependencyManifestLines) . "\n";
+    $responseText = 'The switch is conditional on deliberate profile adoption and consumer evidence.';
+    $commandText = 'pwd';
+    $events = '{"type":"thread.started","thread_id":"thread-1"}'
+        . "\n"
+        . '{"type":"turn.started"}'
+        . "\n"
+        . '{"type":"item.started","item":{"type":"command_execution","id":"command-1","command":"pwd"}}'
+        . "\n"
+        . '{"type":"item.completed","item":{"type":"command_execution","id":"command-1","command":"pwd"}}'
+        . "\n"
+        . '{"type":"item.completed","item":{"id":"message-1","type":"agent_message","text":"'
+        . $responseText
+        . '"}}'
+        . "\n"
+        . '{"type":"turn.completed","usage":{"input_tokens":1000,"cached_input_tokens":100,'
+        . '"output_tokens":500,"reasoning_output_tokens":200}}'
+        . "\n";
+    $response = $responseText . "\n";
+    $run = [
+        'schema_version' => 3,
+        'execution_kind' => 'live-model',
+        'run_id' => '00000000000000000000000000000070',
+        'task_id' => $task['id'],
+        'task_revision' => $task['revision'],
+        'task_manifest_sha256' => $task['manifest_sha256'],
+        'prompt_sha256' => $task['prompt']['sha256'],
+        'effective_prompt_sha256' => $task['prompt']['effective_sha256'],
+        'rubric_sha256' => $task['rubric']['sha256'],
+        'base_revision' => $task['base']['revision'],
+        'base_tree' => $task['base']['tree'],
+        'base_fixture_sha256' => $task['base']['fixture_sha256'],
+        'prepared_dependencies_manifest_path' => 'prepared-dependencies.manifest',
+        'prepared_dependencies_manifest_sha256' => hash('sha256', $dependencies),
+        'prepared_lock_path' => 'dependencies.lock',
+        'prepared_lock_sha256' => hash('sha256', $preparedLockBytes),
+        'prepared_installed_metadata_path' => 'dependencies.installed.json',
+        'prepared_installed_metadata_sha256' => hash('sha256', $preparedInstalledMetadataBytes),
+        'prepared_installed_package_count' => count($preparedInstalledPackages),
+        'condition' => $task['execution_profile']['condition'],
+        'runner' => $task['execution_profile']['runner'],
+        'model' => $task['execution_profile']['model'],
+        'context' => $task['execution_profile']['context'],
+        'tools' => $task['execution_profile']['tools'],
+        'transport_tools' => $task['execution_profile']['transport_tools'],
+        'budgets' => $task['budgets'],
+        'usage' => [
+            'input_tokens' => 1_000,
+            'output_tokens' => 500,
+            'cached_tokens' => 100,
+            'reasoning_tokens' => 200,
+        ],
+        'timing' => [
+            'started_at' => '2026-09-19T01:00:00Z',
+            'finished_at' => '2026-09-19T01:10:00Z',
+        ],
+        'repair_turns' => 0,
+        'termination_reason' => 'completed',
+        'events_path' => 'events.jsonl',
+        'events_sha256' => hash('sha256', $events),
+        'candidate_patch_path' => 'candidate.patch',
+        'candidate_patch_sha256' => hash('sha256', ''),
+        'response_path' => 'response.txt',
+        'response_sha256' => hash('sha256', $response),
+    ];
+    agentEvaluationValidateExplanationRunRecord($run, $task);
+    $invalidExplanationRunId = $run;
+    $invalidExplanationRunId['run_id'] = 'x';
+    agentEvaluationExpectFailure(
+        static function () use ($invalidExplanationRunId, $task): void {
+            agentEvaluationValidateExplanationRunRecord($invalidExplanationRunId, $task);
+        },
+        'Explanation run ID must use 32 lowercase hexadecimal characters.',
+    );
+
+    $providerDrift = $run;
+    $providerDrift['model'] = [...$run['model'], 'provider' => 'other'];
+    $modelDrift = $run;
+    $modelDrift['model'] = [...$run['model'], 'id' => 'gpt-5.4'];
+    $effortDrift = $run;
+    $effortDrift['model'] = [
+        ...$run['model'],
+        'settings' => ['reasoning_effort' => 'medium'],
+    ];
+    $contextDrift = $run;
+    $contextDrift['context'] = [
+        'bundle_id' => 'unexpected-context',
+        'bundle_sha256' => str_repeat('a', 64),
+    ];
+    $permissionDrift = $run;
+    $permissionDrift['tools'] = [[
+        'name' => 'shell',
+        'version' => null,
+        'permissions' => ['workspace-read'],
+    ]];
+    $toolDrift = $run;
+    $toolDrift['tools'] = [[
+        'name' => 'filesystem',
+        'version' => null,
+        'permissions' => ['workspace-read', 'process-execute'],
+    ]];
+    $emptyTools = $run;
+    $emptyTools['tools'] = [];
+    $transportKindDrift = $run;
+    $transportKindDrift['transport_tools'] = [
+        ...$run['transport_tools'],
+        'kind' => 'other-transport-v1',
+    ];
+    $transportCountDrift = $run;
+    $transportCountDrift['transport_tools'] = [
+        ...$run['transport_tools'],
+        'count' => 3,
+    ];
+    $transportHashDrift = $run;
+    $transportHashDrift['transport_tools'] = [
+        ...$run['transport_tools'],
+        'sha256' => str_repeat('a', 64),
+    ];
+    $missingLiveTransport = $run;
+    $missingLiveTransport['transport_tools'] = null;
+    $runnerVersionDrift = $run;
+    $runnerVersionDrift['runner'] = [...$run['runner'], 'version' => '0.153.0'];
+
+    foreach (
+        [
+            $providerDrift,
+            $modelDrift,
+            $effortDrift,
+            $contextDrift,
+            $permissionDrift,
+            $toolDrift,
+            $emptyTools,
+            $transportKindDrift,
+            $transportCountDrift,
+            $transportHashDrift,
+            $missingLiveTransport,
+            $runnerVersionDrift,
+        ]
+        as $driftedProfile
+    ) {
+        agentEvaluationExpectFailure(
+            static function () use ($driftedProfile, $task): void {
+                agentEvaluationValidateExplanationRunRecord($driftedProfile, $task);
+            },
+            'Live explanation run profile does not match the pinned task profile.',
+        );
+    }
+
+    $syntheticRun = $run;
+    $syntheticRun['execution_kind'] = 'synthetic-control';
+    $syntheticRun['run_id'] = '00000000000000000000000000000071';
+    $syntheticRun['model'] = [
+        'provider' => 'synthetic',
+        'id' => 'fixture-model',
+        'revision' => null,
+        'settings' => ['reasoning_effort' => 'high'],
+    ];
+    $syntheticRun['runner'] = ['name' => 'fake-codex', 'version' => 'fixture-1'];
+    $syntheticRun['transport_tools'] = null;
+    $syntheticRun['prepared_lock_path'] = null;
+    $syntheticRun['prepared_lock_sha256'] = null;
+    $syntheticRun['prepared_installed_metadata_path'] = null;
+    $syntheticRun['prepared_installed_metadata_sha256'] = null;
+    $syntheticRun['prepared_installed_package_count'] = null;
+    agentEvaluationValidateExplanationRunRecord($syntheticRun, $task);
+    $syntheticTransportIdentity = $syntheticRun;
+    $syntheticTransportIdentity['transport_tools'] = $task['execution_profile']['transport_tools'];
+    agentEvaluationExpectFailure(
+        static function () use ($syntheticTransportIdentity, $task): void {
+            agentEvaluationValidateExplanationRunRecord($syntheticTransportIdentity, $task);
+        },
+        'Synthetic explanation control must keep the read-only profile, null transport identity, and synthetic provider label.',
+    );
+
+    $writePermission = $run;
+    $writePermission['tools'] = [[
+        'name' => 'shell',
+        'version' => null,
+        'permissions' => ['workspace-read', 'process-execute', 'workspace-write'],
+    ]];
+    agentEvaluationExpectFailure(
+        static function () use ($writePermission, $task): void {
+            agentEvaluationValidateExplanationRunRecord($writePermission, $task);
+        },
+        'Explanation run tools cannot claim candidate workspace write permission.',
+    );
+    $wrongBase = $run;
+    $wrongBase['base_revision'] = str_repeat('a', 40);
+    agentEvaluationExpectFailure(
+        static function () use ($wrongBase, $task): void {
+            agentEvaluationValidateExplanationRunRecord($wrongBase, $task);
+        },
+        'Explanation run record base does not match the pinned tracked maintainer source.',
+    );
+    $nonEmptyPatchRecord = $run;
+    $nonEmptyPatchRecord['candidate_patch_sha256'] = hash('sha256', "mutation\n");
+    agentEvaluationExpectFailure(
+        static function () use ($nonEmptyPatchRecord, $task): void {
+            agentEvaluationValidateExplanationRunRecord($nonEmptyPatchRecord, $task);
+        },
+        'Explanation run record must bind an empty candidate patch.',
+    );
+    $nullUsage = $run;
+    $nullUsage['usage']['cached_tokens'] = null;
+    agentEvaluationExpectFailure(
+        static function () use ($nullUsage, $task): void {
+            agentEvaluationValidateExplanationRunRecord($nullUsage, $task);
+        },
+        'Completed explanation run usage must contain integer token values.',
+    );
+    $excessCachedUsage = $run;
+    $excessCachedUsage['usage']['input_tokens'] = 99;
+    $excessCachedUsage['usage']['cached_tokens'] = 100;
+    agentEvaluationExpectFailure(
+        static function () use ($excessCachedUsage, $task): void {
+            agentEvaluationValidateExplanationRunRecord($excessCachedUsage, $task);
+        },
+        'Explanation cached and reasoning tokens cannot exceed their provider totals.',
+    );
+    $excessReasoningUsage = $run;
+    $excessReasoningUsage['usage']['output_tokens'] = 199;
+    $excessReasoningUsage['usage']['reasoning_tokens'] = 200;
+    agentEvaluationExpectFailure(
+        static function () use ($excessReasoningUsage, $task): void {
+            agentEvaluationValidateExplanationRunRecord($excessReasoningUsage, $task);
+        },
+        'Explanation cached and reasoning tokens cannot exceed their provider totals.',
+    );
+
+    $runHash = str_repeat('d', 64);
+    $unknownDimensions = [];
+
+    foreach (
+        [
+            'route_selection',
+            'necessary_concern_coverage',
+            'unsupported_claims',
+            'answer_correctness',
+            'repairs',
+            'clarification',
+        ] as $name
+    ) {
+        $unknownDimensions[$name] = [
+            'status' => 'unknown',
+            'evidence' => 'Pending accountable review of the retained response and events.',
+        ];
+    }
+
+    $score = [
+        'schema_version' => 3,
+        'run_id' => $run['run_id'],
+        'task_id' => $task['id'],
+        'task_revision' => $task['revision'],
+        'run_record_sha256' => $runHash,
+        'prompt_sha256' => $task['prompt']['sha256'],
+        'effective_prompt_sha256' => $task['prompt']['effective_sha256'],
+        'rubric_sha256' => $task['rubric']['sha256'],
+        'response_sha256' => $run['response_sha256'],
+        'candidate_patch_sha256' => $run['candidate_patch_sha256'],
+        'structural_evidence_path' => 'structural-evidence.json',
+        'structural_evidence_sha256' => str_repeat('f', 64),
+        'admissible' => true,
+        'structural_checks' => [
+            'task_identity' => true,
+            'response_integrity' => true,
+            'workspace_unchanged' => true,
+            'resource_bounds' => true,
+            'external_actions_approved' => true,
+            'cleanup' => true,
+        ],
+        'automated_status' => 'pass',
+        'human_review' => [
+            'status' => 'pending',
+            'reviewer' => null,
+            'dimensions' => $unknownDimensions,
+            'reason' => 'Semantic correctness requires a separate accountable human review.',
+        ],
+        'correct_completion' => null,
+    ];
+    agentEvaluationValidateExplanationScoreRecord($score, $task, $run, $runHash);
+
+    $pendingDecision = $score;
+    $pendingDecision['human_review']['dimensions']['route_selection']['status'] = 'pass';
+    agentEvaluationExpectFailure(
+        static function () use ($pendingDecision, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($pendingDecision, $task, $run, $runHash);
+        },
+        'A pending explanation review requires a null reviewer and unknown dimensions.',
+    );
+    $pendingCompletion = $score;
+    $pendingCompletion['correct_completion'] = false;
+    agentEvaluationExpectFailure(
+        static function () use ($pendingCompletion, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($pendingCompletion, $task, $run, $runHash);
+        },
+        'A pending explanation review requires unknown correct completion.',
+    );
+
+    $passed = $score;
+    $passed['human_review']['status'] = 'pass';
+    $passed['human_review']['reviewer'] = 'maintainer-1';
+    $passed['human_review']['reason'] = 'The retained response and event evidence satisfy every required semantic judgment.';
+
+    foreach (
+        ['route_selection', 'necessary_concern_coverage', 'unsupported_claims', 'answer_correctness']
+        as $name
+    ) {
+        $passed['human_review']['dimensions'][$name] = [
+            'status' => 'pass',
+            'evidence' => "Retained response evidence supports {$name}.",
+        ];
+    }
+
+    $passed['correct_completion'] = true;
+    agentEvaluationValidateExplanationScoreRecord($passed, $task, $run, $runHash);
+
+    $failed = $passed;
+    $failed['human_review']['status'] = 'fail';
+    $failed['human_review']['dimensions']['answer_correctness'] = [
+        'status' => 'fail',
+        'evidence' => 'The retained response incorrectly presents profile adoption as automatic.',
+    ];
+    $failed['human_review']['reason'] = 'Answer correctness failed the frozen rubric.';
+    $failed['correct_completion'] = false;
+    agentEvaluationValidateExplanationScoreRecord($failed, $task, $run, $runHash);
+
+    $syntheticPending = $score;
+    $syntheticPending['run_id'] = $syntheticRun['run_id'];
+    agentEvaluationValidateExplanationScoreRecord($syntheticPending, $task, $syntheticRun, $runHash);
+    $syntheticSemanticCompletion = $passed;
+    $syntheticSemanticCompletion['run_id'] = $syntheticRun['run_id'];
+    agentEvaluationExpectFailure(
+        static function () use ($syntheticSemanticCompletion, $task, $syntheticRun, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord(
+                $syntheticSemanticCompletion,
+                $task,
+                $syntheticRun,
+                $runHash,
+            );
+        },
+        'Synthetic explanation controls cannot claim semantic review or correct completion.',
+    );
+
+    $falseFail = $passed;
+    $falseFail['human_review']['status'] = 'fail';
+    $falseFail['correct_completion'] = false;
+    agentEvaluationExpectFailure(
+        static function () use ($falseFail, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($falseFail, $task, $run, $runHash);
+        },
+        'Explanation human review status must match its six semantic dimensions.',
+    );
+    $falseFailureCompletion = $failed;
+    $falseFailureCompletion['correct_completion'] = true;
+    agentEvaluationExpectFailure(
+        static function () use ($falseFailureCompletion, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($falseFailureCompletion, $task, $run, $runHash);
+        },
+        'Explanation correct completion must combine structural and human review status.',
+    );
+
+    $falsePass = $failed;
+    $falsePass['human_review']['status'] = 'pass';
+    $falsePass['correct_completion'] = true;
+    agentEvaluationExpectFailure(
+        static function () use ($falsePass, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($falsePass, $task, $run, $runHash);
+        },
+        'Explanation human review status must match its six semantic dimensions.',
+    );
+    $unaccountablePass = $passed;
+    $unaccountablePass['human_review']['reviewer'] = null;
+    agentEvaluationExpectFailure(
+        static function () use ($unaccountablePass, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($unaccountablePass, $task, $run, $runHash);
+        },
+        'A completed explanation review requires an accountable reviewer.',
+    );
+    $wrongResponseBinding = $score;
+    $wrongResponseBinding['response_sha256'] = str_repeat('e', 64);
+    agentEvaluationExpectFailure(
+        static function () use ($wrongResponseBinding, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($wrongResponseBinding, $task, $run, $runHash);
+        },
+        'Explanation score artifacts do not match the validated task and run records.',
+    );
+    $wrongEffectivePromptBinding = $score;
+    $wrongEffectivePromptBinding['effective_prompt_sha256'] = str_repeat('e', 64);
+    agentEvaluationExpectFailure(
+        static function () use ($wrongEffectivePromptBinding, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($wrongEffectivePromptBinding, $task, $run, $runHash);
+        },
+        'Explanation score artifacts do not match the validated task and run records.',
+    );
+    $wrongRunEffectivePrompt = $run;
+    $wrongRunEffectivePrompt['effective_prompt_sha256'] = str_repeat('e', 64);
+    agentEvaluationExpectFailure(
+        static function () use ($score, $task, $wrongRunEffectivePrompt, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($score, $task, $wrongRunEffectivePrompt, $runHash);
+        },
+        'Explanation score effective prompt does not match the validated run record.',
+    );
+    $hiddenStructuralFailure = $score;
+    $hiddenStructuralFailure['structural_checks']['cleanup'] = false;
+    agentEvaluationExpectFailure(
+        static function () use ($hiddenStructuralFailure, $task, $run, $runHash): void {
+            agentEvaluationValidateExplanationScoreRecord($hiddenStructuralFailure, $task, $run, $runHash);
+        },
+        'Explanation admissibility must equal every structural automated check.',
+    );
+    foreach (
+        ['task_identity', 'response_integrity', 'workspace_unchanged', 'resource_bounds', 'external_actions_approved']
+        as $checkName
+    ) {
+        $falseCompletedCheck = $score;
+        $falseCompletedCheck['structural_checks'][$checkName] = false;
+        $falseCompletedCheck['admissible'] = false;
+        $falseCompletedCheck['automated_status'] = 'fail';
+        agentEvaluationExpectFailure(
+            static function () use ($falseCompletedCheck, $task, $run, $runHash): void {
+                agentEvaluationValidateExplanationScoreRecord($falseCompletedCheck, $task, $run, $runHash);
+            },
+            'A completed explanation run requires every non-cleanup structural check to pass.',
+        );
+    }
+    $structuralFailureWithSemanticPass = $passed;
+    $structuralFailureWithSemanticPass['structural_checks']['cleanup'] = false;
+    $structuralFailureWithSemanticPass['admissible'] = false;
+    $structuralFailureWithSemanticPass['automated_status'] = 'fail';
+    $structuralFailureWithSemanticPass['correct_completion'] = false;
+    agentEvaluationValidateExplanationScoreRecord(
+        $structuralFailureWithSemanticPass,
+        $task,
+        $run,
+        $runHash,
+    );
+
+    $artifactRoot = sys_get_temp_dir() . '/phpthis-agent-evaluation-explanation-' . bin2hex(random_bytes(8));
+
+    if (!mkdir($artifactRoot, 0700)) {
+        throw new RuntimeException('Unable to create explanation artifact controls.');
+    }
+
+    try {
+        $repositoryRoot = dirname($kit, 2);
+        $taskManifest = file_get_contents($task['directory'] . '/task.json');
+        $rubric = file_get_contents($task['directory'] . '/' . $task['rubric']['path']);
+        $trackedSourceManifest = agentEvaluationPinnedExplanationSourceManifest($repositoryRoot);
+        $effectivePrompt = is_string($sourcePrompt)
+            ? agentEvaluationExplanationEffectivePrompt($sourcePrompt)
+            : '';
+        $candidateManifest = $trackedSourceManifest;
+        $generationImageDigest = 'sha256:' . str_repeat('b', 64);
+        $generationImage = 'registry.invalid/phpthis/agent-evaluation-generation@' . $generationImageDigest;
+        $scoringImage = 'registry.invalid/phpthis/agent-evaluation-scoring@sha256:' . str_repeat('c', 64);
+        $profile = [
+            'condition' => $run['condition'],
+            'runner' => $run['runner'],
+            'model' => $run['model'],
+            'context' => $run['context'],
+            'tools' => $run['tools'],
+            'transport_tools' => $run['transport_tools'],
+            'budgets' => $run['budgets'],
+            'isolation' => [
+                'launcher' => 'docker-oci',
+                'image_reference' => $generationImage,
+                'image_digest' => $generationImageDigest,
+                'credential_broker' => 'responses-api-run-proxy',
+                'network' => 'proxy-only',
+                'root_read_only' => true,
+                'capabilities_dropped' => true,
+                'no_new_privileges' => true,
+                'candidate_git_absent' => true,
+                'dependencies_read_only' => true,
+                'uid' => 65_534,
+                'cpu_millis' => 1_000,
+                'memory_bytes' => 1_073_741_824,
+                'disk_bytes' => 1_073_741_824,
+                'processes' => 64,
+                'wall_seconds' => $run['budgets']['wall_seconds'],
+                'model_tokens' => $run['budgets']['model_tokens'],
+                'output_bytes' => $run['budgets']['command_output_bytes'],
+                'descendant_cleanup' => 'container-destroy',
+            ],
+        ];
+        $databaseIdentity = [
+            'pdo_drivers' => ['sqlite'],
+            'pdo_sqlite_version' => '8.4.19',
+            'sqlite_json1' => true,
+            'sqlite_version' => '3.49.1',
+        ];
+        $ociPreflight = [
+            'engine_version' => '27.3.1',
+            'cgroup_version' => '2',
+            'images' => [
+                'generation' => [
+                    'image_reference' => $generationImage,
+                    'image_id' => 'sha256:' . str_repeat('d', 64),
+                    'architecture' => 'arm64',
+                ],
+                'scoring' => [
+                    'image_reference' => $scoringImage,
+                    'image_id' => 'sha256:' . str_repeat('e', 64),
+                    'architecture' => 'arm64',
+                ],
+            ],
+            'network' => 'none-with-fixed-broker-pipe',
+            'toolchains' => [
+                'generation' => [
+                    'php_version' => '8.4.19',
+                    'composer_version' => '2.8.12',
+                    'python_version' => '3.13.7',
+                    'codex_version' => '0.153.1',
+                    'relay_sha256' => AGENT_EVALUATION_EXPLANATION_RELAY_SHA256,
+                    'database' => $databaseIdentity,
+                ],
+                'scoring' => [
+                    'php_version' => '8.4.19',
+                    'composer_version' => '2.8.12',
+                    'python_version' => '3.13.7',
+                    'codex_version' => null,
+                    'relay_sha256' => null,
+                    'database' => $databaseIdentity,
+                ],
+            ],
+        ];
+        $generationProcess = [
+            'exit_code' => 0,
+            'stdout' => 'retained separately as events.jsonl',
+            'stderr' => 'retained separately as generation.stderr',
+            'termination_reason' => 'completed',
+            'elapsed_milliseconds' => 600_000,
+            'timed_out' => false,
+            'output_limit_exceeded' => false,
+            'cleanup' => ['container_stopped' => true, 'oom_killed' => false, 'pid' => 0],
+            'resource_observation' => [
+                'memory_events' => ['oom' => 0, 'oom_kill' => 0],
+                'pids_events' => ['max' => 0],
+                'disk_free_bytes' => [
+                    'candidate' => 1,
+                    'tmp' => 1,
+                    'workspace_tmp' => 1,
+                    'cache' => 1,
+                    'shm' => 1,
+                ],
+            ],
+            'synthetic_upstream' => false,
+            'failure_code' => null,
+            'upstream_failure' => null,
+        ];
+        $externalActions = [
+            'approved' => true,
+            'network' => 'none',
+            'socket_attempt_telemetry' => null,
+            'host_proxy_requests' => 1,
+            'proxy_blocked' => false,
+            'observed_commands' => [[
+                'item_id' => 'command-1',
+                'sha256' => hash('sha256', $commandText),
+                'bytes' => strlen($commandText),
+            ]],
+            'file_change_events' => 0,
+        ];
+        $freeze = [
+            'candidate_sha256' => hash('sha256', $candidateManifest),
+            'patch_sha256' => hash('sha256', ''),
+            'changed_files' => [],
+            'added_lines' => 0,
+            'deleted_lines' => 0,
+        ];
+        $generationCleanup = [
+            'status' => 'pass',
+            'oci' => ['status' => 'pass', 'generation_destroyed' => true],
+            'removed' => ['candidate', 'baseline', 'dependencies'],
+        ];
+        $cleanup = [
+            'status' => 'pass',
+            'removed' => [],
+            'primary_failure' => null,
+            'cleanup_failure' => null,
+        ];
+        $approval = [
+            'reference' => 'issue-70-approved-live-run',
+            'model' => $run['model']['id'],
+            'runs' => 1,
+            'spending_ceiling_usd' => '0.60',
+            'run_id' => $run['run_id'],
+        ];
+        $proxy = [
+            'candidate_operation' => 'POST /v1/responses',
+            'upstream_operations' => ['POST /v1/responses/input_tokens', 'POST /v1/responses'],
+            'upstream_origin' => 'https://api.openai.com',
+            'synthetic_upstream' => false,
+            'transport' => 'container-loopback-to-stdio',
+            'provider_reported_usage' => $run['usage'],
+            'runner_reported_usage' => $run['usage'],
+            'ledger' => [
+                'model' => $run['model']['id'],
+                'reasoning_effort' => $run['model']['settings']['reasoning_effort'],
+                'token_budget' => 40_000,
+                'input_tokens' => 1_000,
+                'output_tokens' => 500,
+                'cached_tokens' => 100,
+                'reasoning_tokens' => 200,
+                'reserved_input' => 0,
+                'reserved_output' => 0,
+                'request_sha256' => null,
+                'failure_reason' => null,
+                'transport_tools' => $run['transport_tools'],
+                'blocked' => false,
+                'request_count' => 1,
+                'observed_request_count' => 1,
+                'spending' => [
+                    'policy' => [
+                        'limit_units' => 60_000_000,
+                        'input_cents_per_million' => 250,
+                        'cached_cents_per_million' => 25,
+                        'output_cents_per_million' => 1_500,
+                    ],
+                    'settled_units' => 977_500,
+                    'reserved_units' => 0,
+                ],
+            ],
+        ];
+        $ociCleanup = [
+            'verified' => true,
+            'status' => 'pass',
+            'containers_remaining' => 0,
+            'volumes_remaining' => 0,
+        ];
+        $runBytes = agentEvaluationJson($run);
+
+        if (
+            !is_string($taskManifest)
+            || !is_string($rubric)
+            || !is_string($sourcePrompt)
+            || $effectivePrompt === ''
+            || file_put_contents($artifactRoot . '/events.jsonl', $events) === false
+            || file_put_contents($artifactRoot . '/generation.stderr', "retained generation stderr\n") === false
+            || file_put_contents($artifactRoot . '/candidate.patch', '') === false
+            || file_put_contents($artifactRoot . '/prepared-dependencies.manifest', $dependencies) === false
+            || file_put_contents($artifactRoot . '/response.txt', $response) === false
+            || file_put_contents($artifactRoot . '/task.json', $taskManifest) === false
+            || file_put_contents($artifactRoot . '/source-prompt.md', $sourcePrompt) === false
+            || file_put_contents($artifactRoot . '/rubric.md', $rubric) === false
+            || file_put_contents(
+                $artifactRoot . '/workspace-policy.json',
+                agentEvaluationJson($task['workspace_policy']),
+            ) === false
+            || file_put_contents($artifactRoot . '/profile.json', agentEvaluationJson($profile)) === false
+            || file_put_contents($artifactRoot . '/tracked-source.manifest', $trackedSourceManifest) === false
+            || file_put_contents($artifactRoot . '/prompt.md', $effectivePrompt) === false
+            || file_put_contents($artifactRoot . '/generation-process.json', agentEvaluationJson($generationProcess)) === false
+            || file_put_contents($artifactRoot . '/external-actions.json', agentEvaluationJson($externalActions)) === false
+            || file_put_contents($artifactRoot . '/candidate.manifest', $candidateManifest) === false
+            || file_put_contents($artifactRoot . '/freeze.json', agentEvaluationJson($freeze)) === false
+            || file_put_contents($artifactRoot . '/generation-cleanup.json', agentEvaluationJson($generationCleanup)) === false
+            || file_put_contents($artifactRoot . '/cleanup.json', agentEvaluationJson($cleanup)) === false
+            || file_put_contents($artifactRoot . '/approval.json', agentEvaluationJson($approval)) === false
+            || file_put_contents(
+                $artifactRoot . '/dependencies.installed.json',
+                $preparedInstalledMetadataBytes,
+            ) === false
+            || file_put_contents($artifactRoot . '/dependencies.lock', $preparedLockBytes) === false
+            || file_put_contents($artifactRoot . '/oci-preflight.json', agentEvaluationJson($ociPreflight)) === false
+            || file_put_contents($artifactRoot . '/proxy.json', agentEvaluationJson($proxy)) === false
+            || file_put_contents($artifactRoot . '/oci-cleanup.json', agentEvaluationJson($ociCleanup)) === false
+            || file_put_contents($artifactRoot . '/run.json', $runBytes) === false
+        ) {
+            throw new RuntimeException('Unable to write explanation artifact controls.');
+        }
+
+        agentEvaluationValidateExplanationRunArtifacts($run, $artifactRoot);
+        $structuralEvidence = agentEvaluationExplanationStructuralEvidenceDocument('live-model', $artifactRoot);
+        $structuralEvidenceBytes = agentEvaluationJson($structuralEvidence);
+        $cliScore = $score;
+        $cliScore['run_record_sha256'] = hash('sha256', $runBytes);
+        $cliScore['structural_evidence_sha256'] = hash('sha256', $structuralEvidenceBytes);
+        $scoreBytes = agentEvaluationJson($cliScore);
+
+        if (
+            file_put_contents($artifactRoot . '/structural-evidence.json', $structuralEvidenceBytes) === false
+            || file_put_contents($artifactRoot . '/score.json', $scoreBytes) === false
+        ) {
+            throw new RuntimeException('Unable to write explanation CLI controls.');
+        }
+
+        agentEvaluationValidateExplanationScoreRecord(
+            $cliScore,
+            $task,
+            $run,
+            hash('sha256', $runBytes),
+        );
+        agentEvaluationValidateExplanationScoreArtifacts($cliScore, $run, $artifactRoot);
+
+        $wrongPreparedLockBytes = $preparedLockBytes . "\n";
+        $wrongPreparedLockRun = $run;
+        $wrongPreparedLockRun['prepared_lock_sha256'] = hash('sha256', $wrongPreparedLockBytes);
+        if (
+            file_put_contents($artifactRoot . '/dependencies.lock', $wrongPreparedLockBytes)
+                !== strlen($wrongPreparedLockBytes)
+        ) {
+            throw new RuntimeException('Unable to write the wrong retained prepared-lock control.');
+        }
+        $wrongPreparedLockScore = agentEvaluationRefreshExplanationStructuralScore(
+            $artifactRoot,
+            $runBytes,
+            $cliScore,
+        );
+        agentEvaluationExpectFailure(
+            static function () use ($wrongPreparedLockScore, $wrongPreparedLockRun, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts(
+                    $wrongPreparedLockScore,
+                    $wrongPreparedLockRun,
+                    $artifactRoot,
+                );
+            },
+            'Explanation retained prepared lock does not match the tracked source composer.lock.',
+        );
+        if (
+            file_put_contents($artifactRoot . '/dependencies.lock', $preparedLockBytes)
+                !== strlen($preparedLockBytes)
+        ) {
+            throw new RuntimeException('Unable to restore the retained prepared-lock control.');
+        }
+        $cliScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+
+        $duplicateInstalledMetadata = agentEvaluationJsonValue(
+            $preparedInstalledMetadataBytes,
+            'duplicate installed Composer metadata control',
+        );
+        if (!is_object($duplicateInstalledMetadata)) {
+            throw new RuntimeException('Unable to decode the duplicate installed Composer metadata control.');
+        }
+        $duplicateInstalledMetadata = (array) $duplicateInstalledMetadata;
+        $duplicateInstalledPackages = $duplicateInstalledMetadata['packages'] ?? null;
+        if (!is_array($duplicateInstalledPackages) || !array_is_list($duplicateInstalledPackages)) {
+            throw new RuntimeException('Unable to prepare the duplicate installed Composer package control.');
+        }
+        $duplicateInstalledPackages[] = (object) [
+            'name' => 'phpthis/framework',
+            'version' => 'dev-main',
+            'install-path' => '../phpthis/framework',
+        ];
+        $duplicateInstalledMetadata['packages'] = $duplicateInstalledPackages;
+        $duplicateInstalledMetadataBytes = agentEvaluationJson($duplicateInstalledMetadata);
+        $duplicateInstalledRun = $run;
+        $duplicateInstalledRun['prepared_installed_metadata_sha256'] = hash(
+            'sha256',
+            $duplicateInstalledMetadataBytes,
+        );
+        $duplicateInstalledManifest = str_replace(
+            '100644 ' . hash('sha256', $preparedInstalledMetadataBytes) . ' composer/installed.json',
+            '100644 ' . hash('sha256', $duplicateInstalledMetadataBytes) . ' composer/installed.json',
+            $dependencies,
+        );
+        $duplicateInstalledLines = explode("\n", rtrim($duplicateInstalledManifest, "\n"));
+        sort($duplicateInstalledLines, SORT_STRING);
+        $duplicateInstalledManifest = implode("\n", $duplicateInstalledLines) . "\n";
+        $duplicateInstalledRun['prepared_dependencies_manifest_sha256'] = hash(
+            'sha256',
+            $duplicateInstalledManifest,
+        );
+        if (
+            file_put_contents(
+                $artifactRoot . '/dependencies.installed.json',
+                $duplicateInstalledMetadataBytes,
+            ) !== strlen($duplicateInstalledMetadataBytes)
+            || file_put_contents(
+                $artifactRoot . '/prepared-dependencies.manifest',
+                $duplicateInstalledManifest,
+            ) !== strlen($duplicateInstalledManifest)
+        ) {
+            throw new RuntimeException('Unable to write the duplicate installed Composer package control.');
+        }
+        $duplicateInstalledScore = agentEvaluationRefreshExplanationStructuralScore(
+            $artifactRoot,
+            $runBytes,
+            $cliScore,
+        );
+        agentEvaluationExpectFailure(
+            static function () use ($duplicateInstalledScore, $duplicateInstalledRun, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts(
+                    $duplicateInstalledScore,
+                    $duplicateInstalledRun,
+                    $artifactRoot,
+                );
+            },
+            'Explanation prepared dependencies expose a duplicate phpthis/framework package path.',
+        );
+        if (
+            file_put_contents(
+                $artifactRoot . '/dependencies.installed.json',
+                $preparedInstalledMetadataBytes,
+            ) !== strlen($preparedInstalledMetadataBytes)
+            || file_put_contents($artifactRoot . '/prepared-dependencies.manifest', $dependencies)
+                !== strlen($dependencies)
+        ) {
+            throw new RuntimeException('Unable to restore the installed Composer metadata control.');
+        }
+        $cliScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+
+        $duplicateDependencyLines = explode("\n", substr($dependencies, 0, -1));
+        $duplicateDependencyLines[] = '100644 '
+            . hash('sha256', "duplicate framework source\n")
+            . ' phpthis/framework/src/Duplicate.php';
+        sort($duplicateDependencyLines, SORT_STRING);
+        $duplicateDependencies = implode("\n", $duplicateDependencyLines) . "\n";
+        $duplicateDependencyRun = $run;
+        $duplicateDependencyRun['prepared_dependencies_manifest_sha256'] = hash(
+            'sha256',
+            $duplicateDependencies,
+        );
+        if (
+            file_put_contents($artifactRoot . '/prepared-dependencies.manifest', $duplicateDependencies)
+                !== strlen($duplicateDependencies)
+        ) {
+            throw new RuntimeException('Unable to write the duplicate framework manifest control.');
+        }
+        agentEvaluationExpectFailure(
+            static function () use ($cliScore, $duplicateDependencyRun, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts(
+                    $cliScore,
+                    $duplicateDependencyRun,
+                    $artifactRoot,
+                );
+            },
+            'Explanation prepared dependencies expose a duplicate phpthis/framework package path.',
+        );
+        if (
+            file_put_contents($artifactRoot . '/prepared-dependencies.manifest', $dependencies)
+                !== strlen($dependencies)
+        ) {
+            throw new RuntimeException('Unable to restore the prepared-dependencies manifest control.');
+        }
+
+        $changedCommandEvents = str_replace('"command":"pwd"', '"command":"ls"', $events);
+        $changedCommandRun = $run;
+        $changedCommandRun['events_sha256'] = hash('sha256', $changedCommandEvents);
+        if (file_put_contents($artifactRoot . '/events.jsonl', $changedCommandEvents) === false) {
+            throw new RuntimeException('Unable to write the changed-command replay control.');
+        }
+        agentEvaluationValidateExplanationRunArtifacts($changedCommandRun, $artifactRoot);
+        agentEvaluationExpectFailure(
+            static function () use ($cliScore, $changedCommandRun, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($cliScore, $changedCommandRun, $artifactRoot);
+            },
+            'Live explanation evidence contains an unapproved external action.',
+        );
+
+        $fileChangeEvents = str_replace(
+            '{"type":"item.completed","item":{"id":"message-1","type":"agent_message"',
+            '{"type":"item.completed","item":{"id":"change-1","type":"file_change"}}' . "\n"
+                . '{"type":"item.completed","item":{"id":"message-1","type":"agent_message"',
+            $events,
+        );
+        $fileChangeRun = $run;
+        $fileChangeRun['events_sha256'] = hash('sha256', $fileChangeEvents);
+        if (file_put_contents($artifactRoot . '/events.jsonl', $fileChangeEvents) === false) {
+            throw new RuntimeException('Unable to write the file-change replay control.');
+        }
+        agentEvaluationExpectFailure(
+            static function () use ($fileChangeRun, $artifactRoot): void {
+                agentEvaluationValidateExplanationRunArtifacts($fileChangeRun, $artifactRoot);
+            },
+            'Explanation events artifact contains a file-change item.',
+        );
+
+        $eventReplayControls = [
+            [
+                $events . '{"type":"item.completed","item":{"id":"late","type":"agent_message","text":"late"}}' . "\n",
+                'Explanation events artifact contains data after its terminal event.',
+            ],
+            [
+                str_replace(
+                    '{"type":"item.completed","item":{"id":"message-1","type":"agent_message"',
+                    '{"type":"item.delta","item":{"id":"message-1","type":"agent_message"',
+                    $events,
+                ),
+                'Explanation events artifact contains an unapproved event or item type.',
+            ],
+            [
+                str_replace(
+                    '{"type":"item.completed","item":{"type":"command_execution","id":"command-1","command":"pwd"}}' . "\n",
+                    '',
+                    $events,
+                ),
+                'Explanation events artifact contains an incomplete command lifecycle.',
+            ],
+            [
+                str_replace(
+                    '{"type":"thread.started","thread_id":"thread-1"}' . "\n" . '{"type":"turn.started"}',
+                    '{"type":"turn.started"}' . "\n" . '{"type":"thread.started","thread_id":"thread-1"}',
+                    $events,
+                ),
+                'Explanation events artifact has an invalid turn lifecycle.',
+            ],
+            [
+                str_replace('"cached_input_tokens":100', '"cached_input_tokens":99', $events),
+                'Explanation terminal event usage does not match the validated run record.',
+            ],
+        ];
+        foreach ($eventReplayControls as [$tamperedEvents, $expectedFailure]) {
+            $tamperedEventRun = $run;
+            $tamperedEventRun['events_sha256'] = hash('sha256', $tamperedEvents);
+            if (file_put_contents($artifactRoot . '/events.jsonl', $tamperedEvents) === false) {
+                throw new RuntimeException('Unable to write an explanation event-lifecycle replay control.');
+            }
+            agentEvaluationExpectFailure(
+                static function () use ($tamperedEventRun, $artifactRoot): void {
+                    agentEvaluationValidateExplanationRunArtifacts($tamperedEventRun, $artifactRoot);
+                },
+                $expectedFailure,
+            );
+        }
+
+        $excessEvents = str_repeat("{\"type\":\"turn.started\"}\n", AGENT_EVALUATION_EXPLANATION_MAX_EVENTS)
+            . '{"type":"item.completed","item":{"type":"agent_message","text":"'
+            . $responseText
+            . '"}}' . "\n";
+        $excessEventRun = $run;
+        $excessEventRun['events_sha256'] = hash('sha256', $excessEvents);
+        if (file_put_contents($artifactRoot . '/events.jsonl', $excessEvents) === false) {
+            throw new RuntimeException('Unable to write the event-count replay control.');
+        }
+        agentEvaluationExpectFailure(
+            static function () use ($excessEventRun, $artifactRoot): void {
+                agentEvaluationValidateExplanationRunArtifacts($excessEventRun, $artifactRoot);
+            },
+            'Explanation events artifact exceeds its fixed event-count bound.',
+        );
+
+        if (file_put_contents($artifactRoot . '/events.jsonl', $events) === false) {
+            throw new RuntimeException('Unable to restore the explanation event replay controls.');
+        }
+        $expectedStructuralPaths = implode(', ', agentEvaluationExplanationStructuralEvidencePaths('live-model'));
+        $missingArtifactDocument = $structuralEvidence;
+        unset($missingArtifactDocument['artifacts']['proxy.json']);
+        $missingArtifactBytes = agentEvaluationJson($missingArtifactDocument);
+        $missingArtifactScore = $cliScore;
+        $missingArtifactScore['structural_evidence_sha256'] = hash('sha256', $missingArtifactBytes);
+
+        if (file_put_contents($artifactRoot . '/structural-evidence.json', $missingArtifactBytes) === false) {
+            throw new RuntimeException('Unable to write the missing structural-artifact control.');
+        }
+        agentEvaluationExpectFailure(
+            static function () use ($missingArtifactScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($missingArtifactScore, $run, $artifactRoot);
+            },
+            'explanation structural evidence artifacts must contain exactly: ' . $expectedStructuralPaths . '.',
+        );
+
+        $unlistedArtifactDocument = $structuralEvidence;
+        $unlistedArtifactDocument['artifacts']['unlisted.json'] = str_repeat('a', 64);
+        ksort($unlistedArtifactDocument['artifacts'], SORT_STRING);
+        $unlistedArtifactBytes = agentEvaluationJson($unlistedArtifactDocument);
+        $unlistedArtifactScore = $cliScore;
+        $unlistedArtifactScore['structural_evidence_sha256'] = hash('sha256', $unlistedArtifactBytes);
+
+        if (file_put_contents($artifactRoot . '/structural-evidence.json', $unlistedArtifactBytes) === false) {
+            throw new RuntimeException('Unable to write the unlisted structural-artifact control.');
+        }
+        agentEvaluationExpectFailure(
+            static function () use ($unlistedArtifactScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($unlistedArtifactScore, $run, $artifactRoot);
+            },
+            'explanation structural evidence artifacts must contain exactly: ' . $expectedStructuralPaths . '.',
+        );
+
+        if (
+            file_put_contents($artifactRoot . '/structural-evidence.json', $structuralEvidenceBytes) === false
+            || file_put_contents($artifactRoot . '/score.json', $scoreBytes) === false
+            || file_put_contents($artifactRoot . '/freeze.json', agentEvaluationJson([
+                ...$freeze,
+                'changed_files' => ['src/Changed.php'],
+            ])) === false
+        ) {
+            throw new RuntimeException('Unable to write the changed-workspace evidence control.');
+        }
+        $changedWorkspaceScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($changedWorkspaceScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($changedWorkspaceScore, $run, $artifactRoot);
+            },
+            'Explanation freeze evidence does not prove an unchanged workspace.',
+        );
+
+        if (file_put_contents($artifactRoot . '/freeze.json', agentEvaluationJson($freeze)) === false) {
+            throw new RuntimeException('Unable to restore the unchanged-workspace evidence control.');
+        }
+        $tamperedCandidateManifest = $candidateManifest
+            . '100644 '
+            . hash('sha256', "untracked\n")
+            . " untracked.txt\n";
+        $tamperedCandidateFreeze = [
+            ...$freeze,
+            'candidate_sha256' => hash('sha256', $tamperedCandidateManifest),
+        ];
+        if (
+            file_put_contents($artifactRoot . '/candidate.manifest', $tamperedCandidateManifest) === false
+            || file_put_contents($artifactRoot . '/freeze.json', agentEvaluationJson($tamperedCandidateFreeze)) === false
+        ) {
+            throw new RuntimeException('Unable to write the candidate-manifest replay control.');
+        }
+        $tamperedCandidateScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($tamperedCandidateScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($tamperedCandidateScore, $run, $artifactRoot);
+            },
+            'Explanation freeze evidence does not prove an unchanged workspace.',
+        );
+        if (
+            file_put_contents($artifactRoot . '/candidate.manifest', $candidateManifest) === false
+            || file_put_contents($artifactRoot . '/freeze.json', agentEvaluationJson($freeze)) === false
+        ) {
+            throw new RuntimeException('Unable to restore the candidate-manifest replay control.');
+        }
+        $resourceDrift = [...$generationProcess, 'timed_out' => true];
+        if (file_put_contents($artifactRoot . '/generation-process.json', agentEvaluationJson($resourceDrift)) === false) {
+            throw new RuntimeException('Unable to write the resource-drift evidence control.');
+        }
+        $resourceDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($resourceDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($resourceDriftScore, $run, $artifactRoot);
+            },
+            'Explanation generation process evidence does not describe bounded completion.',
+        );
+
+        if (file_put_contents($artifactRoot . '/generation-process.json', agentEvaluationJson($generationProcess)) === false) {
+            throw new RuntimeException('Unable to restore the resource evidence control.');
+        }
+        $unapprovedActions = [...$externalActions, 'approved' => false];
+        if (file_put_contents($artifactRoot . '/external-actions.json', agentEvaluationJson($unapprovedActions)) === false) {
+            throw new RuntimeException('Unable to write the unapproved-action evidence control.');
+        }
+        $unapprovedActionScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($unapprovedActionScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($unapprovedActionScore, $run, $artifactRoot);
+            },
+            'Explanation external-action evidence does not prove approved read-only execution.',
+        );
+
+        if (file_put_contents($artifactRoot . '/external-actions.json', agentEvaluationJson($externalActions)) === false) {
+            throw new RuntimeException('Unable to restore the approved-action evidence control.');
+        }
+        $cleanupFailureScore = $cliScore;
+        $cleanupFailureScore['structural_checks'] = [
+            ...agentEvaluationRequireObject($cliScore, 'structural_checks', 'cleanup failure control'),
+            'cleanup' => false,
+        ];
+        $cleanupFailureScore['admissible'] = false;
+        $cleanupFailureScore['automated_status'] = 'fail';
+        $cleanupFailureScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cleanupFailureScore);
+        agentEvaluationValidateExplanationScoreRecord(
+            $cleanupFailureScore,
+            $task,
+            $run,
+            hash('sha256', $runBytes),
+        );
+        agentEvaluationExpectFailure(
+            static function () use ($cleanupFailureScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($cleanupFailureScore, $run, $artifactRoot);
+            },
+            'Explanation cleanup score does not match final cleanup evidence.',
+        );
+
+        foreach (
+            [
+                ['reference' => 'pending-review', 'spending_ceiling_usd' => '0.60'],
+                ['reference' => 'approval-placeholder', 'spending_ceiling_usd' => '0.60'],
+                ['reference' => 'issue-70-approved-live-run', 'spending_ceiling_usd' => '0.01'],
+                ['reference' => 'issue-70-approved-live-run', 'spending_ceiling_usd' => '1.00'],
+            ]
+            as $approvalDrift
+        ) {
+            if (file_put_contents($artifactRoot . '/approval.json', agentEvaluationJson([
+                ...$approval,
+                ...$approvalDrift,
+            ])) === false) {
+                throw new RuntimeException('Unable to write the approval-drift evidence control.');
+            }
+            $approvalDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+            agentEvaluationExpectFailure(
+                static function () use ($approvalDriftScore, $run, $artifactRoot): void {
+                    agentEvaluationValidateExplanationScoreArtifacts($approvalDriftScore, $run, $artifactRoot);
+                },
+                'Explanation approval evidence does not bind the exact reviewed live run and ceiling.',
+            );
+        }
+
+        if (file_put_contents($artifactRoot . '/approval.json', agentEvaluationJson($approval)) === false) {
+            throw new RuntimeException('Unable to restore the approval evidence control.');
+        }
+        $runnerDriftProfile = $profile;
+        $runnerDriftProfile['runner']['version'] = '0.153.0';
+        if (file_put_contents($artifactRoot . '/profile.json', agentEvaluationJson($runnerDriftProfile)) === false) {
+            throw new RuntimeException('Unable to write the retained runner-drift control.');
+        }
+        $runnerDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($runnerDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($runnerDriftScore, $run, $artifactRoot);
+            },
+            'Explanation retained profile does not match the validated run record.',
+        );
+
+        $isolationDriftProfile = $profile;
+        $isolationDriftProfile['isolation']['network'] = 'none';
+        if (file_put_contents($artifactRoot . '/profile.json', agentEvaluationJson($isolationDriftProfile)) === false) {
+            throw new RuntimeException('Unable to write the retained isolation-drift control.');
+        }
+        $isolationDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($isolationDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($isolationDriftScore, $run, $artifactRoot);
+            },
+            'Explanation retained isolation profile does not match its fixed execution kind.',
+        );
+
+        if (file_put_contents($artifactRoot . '/profile.json', agentEvaluationJson($profile)) === false) {
+            throw new RuntimeException('Unable to restore the retained profile evidence control.');
+        }
+        $imageDriftPreflight = $ociPreflight;
+        $imageDriftPreflight['images']['generation']['image_reference'] =
+            'registry.invalid/phpthis/agent-evaluation-other@sha256:' . str_repeat('f', 64);
+        if (file_put_contents($artifactRoot . '/oci-preflight.json', agentEvaluationJson($imageDriftPreflight)) === false) {
+            throw new RuntimeException('Unable to write the OCI image-drift control.');
+        }
+        $imageDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($imageDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($imageDriftScore, $run, $artifactRoot);
+            },
+            'Explanation OCI preflight generation image does not match the retained isolation profile.',
+        );
+
+        foreach (
+            [
+                ['codex_version' => '0.153.0'],
+                ['relay_sha256' => str_repeat('a', 64)],
+            ]
+            as $toolchainDrift
+        ) {
+            $toolchainDriftPreflight = $ociPreflight;
+            $toolchainDriftPreflight['toolchains']['generation'] = [
+                ...$toolchainDriftPreflight['toolchains']['generation'],
+                ...$toolchainDrift,
+            ];
+            if (file_put_contents(
+                $artifactRoot . '/oci-preflight.json',
+                agentEvaluationJson($toolchainDriftPreflight),
+            ) === false) {
+                throw new RuntimeException('Unable to write the OCI toolchain-drift control.');
+            }
+            $toolchainDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+            agentEvaluationExpectFailure(
+                static function () use ($toolchainDriftScore, $run, $artifactRoot): void {
+                    agentEvaluationValidateExplanationScoreArtifacts($toolchainDriftScore, $run, $artifactRoot);
+                },
+                'Explanation OCI preflight does not match the pinned generation client and relay.',
+            );
+        }
+
+        $phpDriftPreflight = $ociPreflight;
+        $phpDriftPreflight['toolchains']['generation']['php_version'] = '9.9.9';
+        if (file_put_contents($artifactRoot . '/oci-preflight.json', agentEvaluationJson($phpDriftPreflight)) === false) {
+            throw new RuntimeException('Unable to write the OCI PHP-drift control.');
+        }
+        $phpDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($phpDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($phpDriftScore, $run, $artifactRoot);
+            },
+            'Explanation OCI preflight requires the supported PHP 8.4 toolchain.',
+        );
+
+        $composerDriftPreflight = $ociPreflight;
+        $composerDriftPreflight['toolchains']['scoring']['composer_version'] = '2.8.11';
+        if (file_put_contents(
+            $artifactRoot . '/oci-preflight.json',
+            agentEvaluationJson($composerDriftPreflight),
+        ) === false) {
+            throw new RuntimeException('Unable to write the OCI Composer-drift control.');
+        }
+        $composerDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($composerDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($composerDriftScore, $run, $artifactRoot);
+            },
+            'Explanation generation and scoring toolchains must share PHP and Composer identities.',
+        );
+
+        if (file_put_contents($artifactRoot . '/oci-preflight.json', agentEvaluationJson($ociPreflight)) === false) {
+            throw new RuntimeException('Unable to restore the OCI preflight evidence control.');
+        }
+        $transportDriftProxy = $proxy;
+        $transportDriftProxy['ledger']['transport_tools']['sha256'] = str_repeat('a', 64);
+        if (file_put_contents($artifactRoot . '/proxy.json', agentEvaluationJson($transportDriftProxy)) === false) {
+            throw new RuntimeException('Unable to write the proxy transport-drift control.');
+        }
+        $transportDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($transportDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($transportDriftScore, $run, $artifactRoot);
+            },
+            'Explanation proxy evidence does not match the validated live run.',
+        );
+
+        foreach (
+            [
+                ['token_budget', 39_999],
+                ['input_tokens', 999],
+                ['output_tokens', 499],
+                ['cached_tokens', 99],
+                ['reasoning_tokens', 199],
+                ['reserved_input', 1],
+                ['reserved_output', 1],
+                ['request_sha256', str_repeat('a', 64)],
+                ['failure_reason', 'model_token_limit'],
+                ['model', 'other-model'],
+                ['reasoning_effort', 'medium'],
+            ] as [$field, $value]
+        ) {
+            $ledgerDriftProxy = $proxy;
+            $ledgerDriftProxy['ledger'][$field] = $value;
+            if (file_put_contents($artifactRoot . '/proxy.json', agentEvaluationJson($ledgerDriftProxy)) === false) {
+                throw new RuntimeException('Unable to write a proxy ledger-drift control.');
+            }
+            $ledgerDriftScore = agentEvaluationRefreshExplanationStructuralScore(
+                $artifactRoot,
+                $runBytes,
+                $cliScore,
+            );
+            agentEvaluationExpectFailure(
+                static function () use ($ledgerDriftScore, $run, $artifactRoot): void {
+                    agentEvaluationValidateExplanationScoreArtifacts($ledgerDriftScore, $run, $artifactRoot);
+                },
+                'Explanation proxy ledger does not match the completed run usage and zero-reservation state.',
+            );
+        }
+
+        $missingLedgerFieldProxy = $proxy;
+        unset($missingLedgerFieldProxy['ledger']['token_budget']);
+        if (file_put_contents(
+            $artifactRoot . '/proxy.json',
+            agentEvaluationJson($missingLedgerFieldProxy),
+        ) === false) {
+            throw new RuntimeException('Unable to write the missing proxy ledger-field control.');
+        }
+        $missingLedgerFieldScore = agentEvaluationRefreshExplanationStructuralScore(
+            $artifactRoot,
+            $runBytes,
+            $cliScore,
+        );
+        agentEvaluationExpectFailure(
+            static function () use ($missingLedgerFieldScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($missingLedgerFieldScore, $run, $artifactRoot);
+            },
+            'Explanation proxy ledger does not match the completed run usage and zero-reservation state.',
+        );
+
+        $spendingDriftProxy = $proxy;
+        $spendingDriftProxy['ledger']['spending']['policy']['limit_units'] = 59_999_999;
+        if (file_put_contents($artifactRoot . '/proxy.json', agentEvaluationJson($spendingDriftProxy)) === false) {
+            throw new RuntimeException('Unable to write the proxy spending-drift control.');
+        }
+        $spendingDriftScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        agentEvaluationExpectFailure(
+            static function () use ($spendingDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($spendingDriftScore, $run, $artifactRoot);
+            },
+            'Explanation proxy evidence does not bind the exact approved spending policy.',
+        );
+
+        $settlementDriftProxy = $proxy;
+        $settlementDriftProxy['ledger']['spending']['settled_units'] = 977_499;
+        if (file_put_contents($artifactRoot . '/proxy.json', agentEvaluationJson($settlementDriftProxy)) === false) {
+            throw new RuntimeException('Unable to write the proxy settlement-drift control.');
+        }
+        $settlementDriftScore = agentEvaluationRefreshExplanationStructuralScore(
+            $artifactRoot,
+            $runBytes,
+            $cliScore,
+        );
+        agentEvaluationExpectFailure(
+            static function () use ($settlementDriftScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($settlementDriftScore, $run, $artifactRoot);
+            },
+            'Explanation proxy evidence does not match the validated live run.',
+        );
+
+        if (file_put_contents($artifactRoot . '/proxy.json', agentEvaluationJson($proxy)) === false) {
+            throw new RuntimeException('Unable to restore the proxy evidence control.');
+        }
+        $cliScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        $structuralEvidence = agentEvaluationExplanationStructuralEvidenceDocument('live-model', $artifactRoot);
+        $structuralEvidenceBytes = agentEvaluationJson($structuralEvidence);
+        $scoreBytes = agentEvaluationJson($cliScore);
+        $missingProxyBytes = file_get_contents($artifactRoot . '/proxy.json');
+        if (!is_string($missingProxyBytes) || !unlink($artifactRoot . '/proxy.json')) {
+            throw new RuntimeException('Unable to prepare the missing structural-evidence file control.');
+        }
+        agentEvaluationExpectFailure(
+            static function () use ($cliScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($cliScore, $run, $artifactRoot);
+            },
+            'explanation structural evidence artifact proxy.json must remain inside the run artifact root.',
+        );
+        if (file_put_contents($artifactRoot . '/proxy.json', $missingProxyBytes) === false) {
+            throw new RuntimeException('Unable to restore the missing structural-evidence file control.');
+        }
+
+        $dependencyLockBytes = file_get_contents($artifactRoot . '/dependencies.lock');
+        if (
+            !is_string($dependencyLockBytes)
+            || !unlink($artifactRoot . '/dependencies.lock')
+            || !link($artifactRoot . '/approval.json', $artifactRoot . '/dependencies.lock')
+        ) {
+            throw new RuntimeException('Unable to prepare the aliased structural-evidence control.');
+        }
+        $aliasedDocument = $structuralEvidence;
+        $aliasedDocument['artifacts']['dependencies.lock'] = hash('sha256', agentEvaluationJson($approval));
+        $aliasedDocumentBytes = agentEvaluationJson($aliasedDocument);
+        $aliasedScore = $cliScore;
+        $aliasedScore['structural_evidence_sha256'] = hash('sha256', $aliasedDocumentBytes);
+        $aliasedRun = $run;
+        $aliasedRun['prepared_lock_sha256'] = hash('sha256', agentEvaluationJson($approval));
+        if (file_put_contents($artifactRoot . '/structural-evidence.json', $aliasedDocumentBytes) === false) {
+            throw new RuntimeException('Unable to write the aliased structural-evidence descriptor.');
+        }
+        agentEvaluationExpectFailure(
+            static function () use ($aliasedScore, $aliasedRun, $artifactRoot): void {
+                agentEvaluationValidateExplanationScoreArtifacts($aliasedScore, $aliasedRun, $artifactRoot);
+            },
+            'Run artifacts must not use hard-linked files.',
+        );
+        if (
+            !unlink($artifactRoot . '/dependencies.lock')
+            || file_put_contents($artifactRoot . '/dependencies.lock', $dependencyLockBytes) === false
+        ) {
+            throw new RuntimeException('Unable to restore the aliased structural-evidence control.');
+        }
+
+        $cliScore = agentEvaluationRefreshExplanationStructuralScore($artifactRoot, $runBytes, $cliScore);
+        $structuralEvidence = agentEvaluationExplanationStructuralEvidenceDocument('live-model', $artifactRoot);
+        $structuralEvidenceBytes = agentEvaluationJson($structuralEvidence);
+        $scoreBytes = agentEvaluationJson($cliScore);
+        $outerManifest = agentEvaluationWriteExplanationOuterEvidence($artifactRoot, $run, $cliScore);
+        agentEvaluationValidateExplanationOuterEvidence($cliScore, $run, $artifactRoot);
+        $outerManifestBytes = agentEvaluationJson($outerManifest);
+        $validationBytes = (string) file_get_contents($artifactRoot . '/validation.json');
+        foreach (['validation.json' => 'explanation validation evidence', 'evidence-manifest.json' => 'explanation evidence manifest'] as $missingName => $missingOwner) {
+            $savedBytes = (string) file_get_contents($artifactRoot . '/' . $missingName);
+            unlink($artifactRoot . '/' . $missingName);
+            agentEvaluationExpectFailure(
+                static function () use ($cliScore, $run, $artifactRoot): void {
+                    agentEvaluationValidateExplanationOuterEvidence($cliScore, $run, $artifactRoot);
+                },
+                $missingOwner . ' must remain inside the run artifact root.',
+            );
+            file_put_contents($artifactRoot . '/' . $missingName, $savedBytes);
+        }
+        $wrongPhases = $outerManifest;
+        $wrongPhases['observed_phases'] = ['prepare'];
+        file_put_contents($artifactRoot . '/evidence-manifest.json', agentEvaluationJson($wrongPhases));
+        agentEvaluationExpectFailure(
+            static function () use ($cliScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationOuterEvidence($cliScore, $run, $artifactRoot);
+            },
+            'Explanation evidence manifest does not match its final lifecycle.',
+        );
+        $wrongInventory = $outerManifest;
+        $wrongArtifacts = agentEvaluationRequireObject($outerManifest, 'artifacts', 'outer evidence control');
+        $wrongArtifacts['response.txt'] = [
+            ...agentEvaluationRequireObject($wrongArtifacts, 'response.txt', 'outer evidence control'),
+            'sha256' => str_repeat('0', 64),
+        ];
+        $wrongInventory['artifacts'] = $wrongArtifacts;
+        file_put_contents($artifactRoot . '/evidence-manifest.json', agentEvaluationJson($wrongInventory));
+        agentEvaluationExpectFailure(
+            static function () use ($cliScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationOuterEvidence($cliScore, $run, $artifactRoot);
+            },
+            'Explanation evidence manifest artifact response.txt does not match final evidence.',
+        );
+        file_put_contents($artifactRoot . '/evidence-manifest.json', $outerManifestBytes);
+        $wrongValidation = agentEvaluationJsonFile($artifactRoot . '/validation.json');
+        $wrongValidation['structural_status'] = 'fail';
+        file_put_contents($artifactRoot . '/validation.json', agentEvaluationJson($wrongValidation));
+        agentEvaluationExpectFailure(
+            static function () use ($cliScore, $run, $artifactRoot): void {
+                agentEvaluationValidateExplanationOuterEvidence($cliScore, $run, $artifactRoot);
+            },
+            'Explanation validation evidence does not match the replayed score.',
+        );
+        file_put_contents($artifactRoot . '/validation.json', $validationBytes);
+        $reviewedScore = $cliScore;
+        $reviewedScore['human_review'] = $passed['human_review'];
+        $reviewedScore['correct_completion'] = true;
+        file_put_contents($artifactRoot . '/score.json', agentEvaluationJson($reviewedScore));
+        agentEvaluationValidateExplanationScoreRecord($reviewedScore, $task, $run, hash('sha256', $runBytes));
+        agentEvaluationValidateExplanationOuterEvidence($reviewedScore, $run, $artifactRoot);
+        file_put_contents($artifactRoot . '/score.json', $scoreBytes);
+        $listResult = runBoundedMaintainerProcess(
+            [PHP_BINARY, 'tools/agent-evaluation.php', 'list'],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        $listed = agentEvaluationJsonValue($listResult['stdout'], 'explanation CLI list output');
+        $listedExplanation = is_array($listed) && array_is_list($listed) && $listed !== []
+            ? agentEvaluationValueObject($listed[count($listed) - 1], 'explanation CLI list item')
+            : null;
+        agentEvaluationTest(
+            $listResult['exit_code'] === 0
+            && $listResult['stderr'] === ''
+            && is_array($listed)
+            && array_is_list($listed)
+            && $listedExplanation === [
+                'schema_version' => 3,
+                'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                'revision' => 1,
+                'kind' => 'explanation',
+                'comparative_claims' => false,
+            ],
+            'The CLI must list the explicit explanation task.',
+        );
+        $promptResult = runBoundedMaintainerProcess(
+            [PHP_BINARY, 'tools/agent-evaluation.php', 'prompt', AGENT_EVALUATION_EXPLANATION_TASK_ID],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $promptResult['exit_code'] === 0
+            && $promptResult['stderr'] === ''
+            && $promptResult['stdout'] === $sourcePrompt,
+            'The CLI must emit the exact frozen explanation source prompt.',
+        );
+        $runResult = runBoundedMaintainerProcess(
+            [
+                PHP_BINARY,
+                'tools/agent-evaluation.php',
+                'validate-run',
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                $artifactRoot . '/run.json',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $runResult === [
+                'exit_code' => 0,
+                'stdout' => "PASS agent evaluation run record: explain.file-profile-s3\n",
+                'stderr' => '',
+            ],
+            'The CLI must validate a complete explanation run and its bound response.',
+        );
+        $scoreResult = runBoundedMaintainerProcess(
+            [
+                PHP_BINARY,
+                'tools/agent-evaluation.php',
+                'validate-score',
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                $artifactRoot . '/run.json',
+                $artifactRoot . '/score.json',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $scoreResult === [
+                'exit_code' => 0,
+                'stdout' => "PASS agent evaluation score record: explain.file-profile-s3\n",
+                'stderr' => '',
+            ],
+            'The CLI must validate a structurally complete pending explanation score.',
+        );
+
+        $splitRoot = $artifactRoot . '/split-score';
+        if (
+            !mkdir($splitRoot, 0700)
+            || file_put_contents($splitRoot . '/score.json', $scoreBytes) === false
+        ) {
+            throw new RuntimeException('Unable to write the split-directory explanation score control.');
+        }
+        $splitScoreResult = runBoundedMaintainerProcess(
+            [
+                PHP_BINARY,
+                'tools/agent-evaluation.php',
+                'validate-score',
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                $artifactRoot . '/run.json',
+                $splitRoot . '/score.json',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $splitScoreResult === [
+                'exit_code' => 1,
+                'stdout' => '',
+                'stderr' => "FAIL agent evaluation: Explanation run and score records must share one existing evidence directory.\n",
+            ],
+            'The CLI must reject explanation run and score records from split evidence directories.',
+        );
+
+        if (file_put_contents($artifactRoot . '/cleanup.json', agentEvaluationJson($cleanup) . "\n") === false) {
+            throw new RuntimeException('Unable to write the tampered structural-evidence CLI control.');
+        }
+        $tamperedStructuralResult = runBoundedMaintainerProcess(
+            [
+                PHP_BINARY,
+                'tools/agent-evaluation.php',
+                'validate-score',
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                $artifactRoot . '/run.json',
+                $artifactRoot . '/score.json',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $tamperedStructuralResult === [
+                'exit_code' => 1,
+                'stdout' => '',
+                'stderr' => "FAIL agent evaluation: explanation structural evidence artifact cleanup.json SHA-256 does not match its recorded hash.\n",
+            ],
+            'The CLI must reject a tampered structural-evidence artifact.',
+        );
+        if (file_put_contents($artifactRoot . '/cleanup.json', agentEvaluationJson($cleanup)) === false) {
+            throw new RuntimeException('Unable to restore the structural-evidence CLI control.');
+        }
+
+        $mismatchedResponse = "A different retained response.\n";
+        $mismatchedResponseRun = $run;
+        $mismatchedResponseRun['response_sha256'] = hash('sha256', $mismatchedResponse);
+        if (
+            file_put_contents($artifactRoot . '/response.txt', $mismatchedResponse) === false
+            || file_put_contents($artifactRoot . '/run.json', agentEvaluationJson($mismatchedResponseRun)) === false
+        ) {
+            throw new RuntimeException('Unable to write the response/event mismatch CLI control.');
+        }
+        $mismatchedResponseResult = runBoundedMaintainerProcess(
+            [
+                PHP_BINARY,
+                'tools/agent-evaluation.php',
+                'validate-run',
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                $artifactRoot . '/run.json',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $mismatchedResponseResult === [
+                'exit_code' => 1,
+                'stdout' => '',
+                'stderr' => "FAIL agent evaluation: Explanation response artifact must equal the last completed agent message.\n",
+            ],
+            'The CLI must reject a response that disagrees with the last completed agent message.',
+        );
+        if (
+            file_put_contents($artifactRoot . '/response.txt', $response) === false
+            || file_put_contents($artifactRoot . '/run.json', $runBytes) === false
+        ) {
+            throw new RuntimeException('Unable to restore the response/event CLI control.');
+        }
+
+        $tamperedRun = $run;
+        $tamperedRun['response_sha256'] = str_repeat('e', 64);
+
+        if (file_put_contents($artifactRoot . '/run.json', agentEvaluationJson($tamperedRun)) === false) {
+            throw new RuntimeException('Unable to write the tampered explanation CLI run control.');
+        }
+
+        $tamperedRunResult = runBoundedMaintainerProcess(
+            [
+                PHP_BINARY,
+                'tools/agent-evaluation.php',
+                'validate-run',
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                $artifactRoot . '/run.json',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $tamperedRunResult['exit_code'] === 1
+            && $tamperedRunResult['stdout'] === ''
+            && $tamperedRunResult['stderr'] === "FAIL agent evaluation: explanation response artifact SHA-256 does not match its recorded hash.\n",
+            'The CLI must reject a tampered explanation run response binding.',
+        );
+
+        if (file_put_contents($artifactRoot . '/run.json', $runBytes) === false) {
+            throw new RuntimeException('Unable to restore the explanation CLI run control.');
+        }
+
+        $tamperedScore = $cliScore;
+        $tamperedScore['response_sha256'] = str_repeat('e', 64);
+
+        if (file_put_contents($artifactRoot . '/score.json', agentEvaluationJson($tamperedScore)) === false) {
+            throw new RuntimeException('Unable to write the tampered explanation CLI score control.');
+        }
+
+        $tamperedScoreResult = runBoundedMaintainerProcess(
+            [
+                PHP_BINARY,
+                'tools/agent-evaluation.php',
+                'validate-score',
+                AGENT_EVALUATION_EXPLANATION_TASK_ID,
+                $artifactRoot . '/run.json',
+                $artifactRoot . '/score.json',
+            ],
+            $repositoryRoot,
+            null,
+            30_000,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+            AGENT_EVALUATION_MAX_JSON_BYTES,
+        );
+        agentEvaluationTest(
+            $tamperedScoreResult['exit_code'] === 1
+            && $tamperedScoreResult['stdout'] === ''
+            && $tamperedScoreResult['stderr'] === "FAIL agent evaluation: Explanation score artifacts do not match the validated task and run records.\n",
+            'The CLI must reject a tampered explanation score response binding.',
+        );
+
+        $nonEmptyPatch = $run;
+        $nonEmptyPatch['candidate_patch_sha256'] = hash('sha256', "mutation\n");
+
+        if (file_put_contents($artifactRoot . '/candidate.patch', "mutation\n") === false) {
+            throw new RuntimeException('Unable to mutate the explanation candidate-patch control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($nonEmptyPatch, $artifactRoot): void {
+                agentEvaluationValidateExplanationRunArtifacts($nonEmptyPatch, $artifactRoot);
+            },
+            'Explanation candidate patch must be empty.',
+        );
+
+        if (file_put_contents($artifactRoot . '/candidate.patch', '') === false) {
+            throw new RuntimeException('Unable to restore the explanation candidate-patch control.');
+        }
+
+        $aliasedResponse = $run;
+        $aliasedResponse['response_path'] = $aliasedResponse['events_path'];
+        $aliasedResponse['response_sha256'] = $aliasedResponse['events_sha256'];
+        agentEvaluationExpectFailure(
+            static function () use ($aliasedResponse, $artifactRoot): void {
+                agentEvaluationValidateExplanationRunArtifacts($aliasedResponse, $artifactRoot);
+            },
+            'Explanation run artifacts must use distinct relative paths.',
+        );
+
+        if (file_put_contents($artifactRoot . '/response.txt', $response . "tampered\n") === false) {
+            throw new RuntimeException('Unable to tamper with explanation response control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($run, $artifactRoot): void {
+                agentEvaluationValidateExplanationRunArtifacts($run, $artifactRoot);
+            },
+            'explanation response artifact SHA-256 does not match its recorded hash.',
+        );
+        $emptyResponse = $run;
+        $emptyResponse['response_sha256'] = hash('sha256', '');
+
+        if (file_put_contents($artifactRoot . '/response.txt', '') === false) {
+            throw new RuntimeException('Unable to empty the explanation response control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($emptyResponse, $artifactRoot): void {
+                agentEvaluationValidateExplanationRunArtifacts($emptyResponse, $artifactRoot);
+            },
+            'Explanation response artifact must contain bounded non-empty text.',
+        );
+    } finally {
+        agentEvaluationRemoveDirectory($artifactRoot);
+    }
+
+    $copiedKit = sys_get_temp_dir() . '/phpthis-agent-evaluation-explanation-kit-' . bin2hex(random_bytes(8));
+
+    try {
+        agentEvaluationCopyDirectory($kit, $copiedKit);
+        $promptPath = $copiedKit . '/tasks/' . AGENT_EVALUATION_EXPLANATION_TASK_ID . '/prompt.md';
+        $promptBytes = file_get_contents($promptPath);
+
+        if (!is_string($promptBytes) || file_put_contents($promptPath, $promptBytes . "tampered\n") === false) {
+            throw new RuntimeException('Unable to mutate the copied explanation prompt control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($copiedKit): void {
+                agentEvaluationValidateKit($copiedKit);
+            },
+            'explanation prompt SHA-256 does not match its recorded hash.',
+        );
+
+        if (file_put_contents($promptPath, $promptBytes) === false) {
+            throw new RuntimeException('Unable to restore the copied explanation prompt control.');
+        }
+
+        $rubricPath = $copiedKit . '/tasks/' . AGENT_EVALUATION_EXPLANATION_TASK_ID . '/rubric.md';
+        $rubricBytes = file_get_contents($rubricPath);
+
+        if (!is_string($rubricBytes) || file_put_contents($rubricPath, $rubricBytes . "tampered\n") === false) {
+            throw new RuntimeException('Unable to mutate the copied explanation rubric control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($copiedKit): void {
+                agentEvaluationValidateKit($copiedKit);
+            },
+            'explanation rubric SHA-256 does not match its recorded hash.',
+        );
+
+        if (file_put_contents($rubricPath, $rubricBytes) === false) {
+            throw new RuntimeException('Unable to restore the copied explanation rubric control.');
+        }
+
+        $manifestPath = $copiedKit . '/tasks/' . AGENT_EVALUATION_EXPLANATION_TASK_ID . '/task.json';
+        $manifestBytes = file_get_contents($manifestPath);
+
+        if (!is_string($manifestBytes) || file_put_contents($manifestPath, $manifestBytes . "\n") === false) {
+            throw new RuntimeException('Unable to mutate the copied explanation manifest control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($copiedKit): void {
+                agentEvaluationValidateKit($copiedKit);
+            },
+            'Task explain.file-profile-s3 manifest SHA-256 does not match its pinned revision.',
+        );
+
+        if (file_put_contents($manifestPath, $manifestBytes) === false) {
+            throw new RuntimeException('Unable to restore the copied explanation manifest control.');
+        }
+
+        $effectivePromptManifest = agentEvaluationValueObject(
+            agentEvaluationJsonValue($manifestBytes, 'copied explanation manifest'),
+            'copied explanation manifest',
+        );
+        $effectivePromptDescriptor = agentEvaluationRequireObject(
+            $effectivePromptManifest,
+            'prompt',
+            'copied explanation manifest',
+        );
+        $effectivePromptDescriptor['effective_sha256'] = hash(
+            'sha256',
+            $sourcePrompt . "\nThis is an altered explanation suffix.\n",
+        );
+        $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
+
+        if (file_put_contents($manifestPath, agentEvaluationJson($effectivePromptManifest)) === false) {
+            throw new RuntimeException('Unable to mutate the copied explanation effective-prompt control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($copiedKit): void {
+                agentEvaluationExplanationTaskDocument($copiedKit, AGENT_EVALUATION_EXPLANATION_TASK_ID);
+            },
+            'Explanation effective prompt hash does not match the exact source and suffix bytes.',
+        );
+
+        if (file_put_contents($manifestPath, $manifestBytes) === false) {
+            throw new RuntimeException('Unable to restore the copied explanation effective-prompt control.');
+        }
+
+        $schemaPath = $copiedKit . '/schema/score-v3.schema.json';
+        $schemaBytes = file_get_contents($schemaPath);
+
+        if (!is_string($schemaBytes) || file_put_contents($schemaPath, $schemaBytes . "\n") === false) {
+            throw new RuntimeException('Unable to mutate the copied explanation schema control.');
+        }
+
+        agentEvaluationExpectFailure(
+            static function () use ($copiedKit): void {
+                agentEvaluationValidateKit($copiedKit);
+            },
+            'schema/score-v3.schema.json SHA-256 does not match its recorded hash.',
+        );
+    } finally {
+        agentEvaluationRemoveDirectory($copiedKit);
+    }
 }
 
 function agentEvaluationComparisonInstrumentationControls(string $kit): void

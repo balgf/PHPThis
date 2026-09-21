@@ -42,8 +42,9 @@ function agentEvaluationControllerValidateRequest(array $request, array $task): 
     $taskId = agentEvaluationRequireString($request, 'task_id', 'controller request');
 
     if ($taskId !== $task['id']) {
-        throw new RuntimeException(isset($task['selected_condition'])
-            ? 'Controller request must select its exact admitted task.' : 'Controller request must select change.simple-ping.');
+        throw new RuntimeException(isset($task['selected_condition']) || ($task['schema_version'] ?? null) === 3
+            ? 'Controller request must select its exact admitted task.'
+            : 'Controller request must select change.simple-ping.');
     }
 
     return ['run_id' => $runId, 'task_id' => $taskId];
@@ -58,6 +59,7 @@ function agentEvaluationControllerValidateRequest(array $request, array $task): 
  *   model: array<string, mixed>,
  *   context: array<string, mixed>,
  *   tools: list<mixed>,
+ *   transport_tools?: array{kind: string, count: int, sha256: string}|null,
  *   budgets: array<string, mixed>,
  *   isolation: array<string, mixed>
  * }
@@ -65,9 +67,11 @@ function agentEvaluationControllerValidateRequest(array $request, array $task): 
 function agentEvaluationControllerValidateProfile(array $profile, array $task, bool $synthetic, bool $calibration = false, int $calibrationRevision = 1): array
 {
     agentEvaluationControllerRequireAdmittedTask($task);
+    $explanation = ($task['schema_version'] ?? null) === 3;
     agentEvaluationRequireExactKeys(
         $profile,
-        ['condition', 'runner', 'model', 'context', 'tools', 'budgets', 'isolation'],
+        ['condition', 'runner', 'model', 'context', 'tools',
+            ...($explanation ? ['transport_tools'] : []), 'budgets', 'isolation'],
         'controller execution profile',
     );
 
@@ -79,7 +83,11 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
         throw new RuntimeException('Comparison execution must use its exact admitted live condition.');
     }
 
-    if ($synthetic && $condition !== AGENT_EVALUATION_CONTROLLER_FAKE_CONDITION) {
+    if ($explanation && $condition !== 'repository-only') {
+        throw new RuntimeException('Explanation execution must use its fixed repository-only condition.');
+    }
+
+    if ($synthetic && !$explanation && $condition !== AGENT_EVALUATION_CONTROLLER_FAKE_CONDITION) {
         throw new RuntimeException('Controller synthetic condition must equal its fixed fixture identity.');
     }
     $runner = agentEvaluationRequireObject($profile, 'runner', 'controller execution profile');
@@ -127,7 +135,33 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
         static fn (mixed $tool): array => agentEvaluationValueObject($tool, 'controller tool profile'),
         $tools,
     );
-    agentEvaluationControllerValidateToolsProfile($tools, $synthetic);
+    agentEvaluationControllerValidateToolsProfile($tools, $synthetic, $explanation);
+    $transportTools = $explanation
+        ? agentEvaluationNormalizeExplanationTransportTools(
+            $profile['transport_tools'],
+            'controller explanation transport tools',
+        )
+        : null;
+    if ($explanation) {
+        $taskProfile = agentEvaluationNormalizeExplanationExecutionProfile(
+            agentEvaluationRequireObject($task, 'execution_profile', 'explanation task'),
+            'explanation task execution profile',
+        );
+        $runProfile = agentEvaluationNormalizeExplanationExecutionProfile(
+            ['condition' => $condition, 'runner' => ['name' => $runnerName, 'version' => $runnerVersion],
+                'model' => $model, 'context' => $context, 'tools' => $tools,
+                'transport_tools' => $transportTools],
+            'controller explanation execution profile',
+        );
+        if ((!$synthetic && $runProfile !== $taskProfile)
+            || ($synthetic && ($runProfile['condition'] !== $taskProfile['condition']
+                || $runProfile['runner']['name'] !== AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER
+                || $runProfile['context'] !== $taskProfile['context']
+                || $runProfile['tools'] !== $taskProfile['tools']
+                || $runProfile['transport_tools'] !== null))) {
+            throw new RuntimeException('Explanation execution must use its exact pinned read-only task profile.');
+        }
+    }
     $budgets = agentEvaluationRequireObject($profile, 'budgets', 'controller execution profile');
     /** @var array{model_tokens: int, wall_seconds: int, repair_turns: int, command_output_bytes: int} $taskBudgets */
     $taskBudgets = $task['budgets'];
@@ -141,7 +175,7 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
     $isolation = agentEvaluationRequireObject($profile, 'isolation', 'controller execution profile');
     agentEvaluationControllerValidateIsolationProfile($isolation, $taskBudgets, $synthetic, $runnerName);
 
-    return [
+    $validated = [
         'condition' => $condition,
         'runner' => ['name' => $runnerName, 'version' => $runnerVersion],
         'model' => $model,
@@ -150,6 +184,10 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
         'budgets' => $budgets,
         'isolation' => $isolation,
     ];
+    if ($explanation) {
+        $validated['transport_tools'] = $transportTools;
+    }
+    return $validated;
 }
 
 /** @param array<string, mixed> $task */
@@ -203,6 +241,14 @@ function agentEvaluationControllerAdmitComparisonTask(array $task, array $condit
 /** @param array<string, mixed> $task */
 function agentEvaluationControllerRequireAdmittedTask(array $task): void
 {
+    if (($task['schema_version'] ?? null) === 3) {
+        $directory = agentEvaluationRequireString($task, 'directory', 'explanation task');
+        $authoritative = agentEvaluationExplanationTask(dirname(dirname($directory)));
+        if ($authoritative !== $task) {
+            throw new RuntimeException('Explanation task does not match its authoritative pinned revision.');
+        }
+        return;
+    }
     if (($task['schema_version'] ?? null) !== 2) {
         agentEvaluationControllerRequireFixedTask($task);
         return;
@@ -273,7 +319,10 @@ function agentEvaluationControllerWorkspacePolicy(array $task): array
         throw new RuntimeException('Controller task directory is unavailable.');
     }
 
-    if (isset($task['selected_condition'])) {
+    $zeroWrite = ($task['schema_version'] ?? null) === 3;
+    if ($zeroWrite) {
+        $policy = agentEvaluationRequireObject($task, 'workspace_policy', 'explanation task');
+    } elseif (isset($task['selected_condition'])) {
         $policy = agentEvaluationRequireObject($task, 'workspace_policy', 'admitted comparison task');
     } else {
         $document = agentEvaluationJsonFile($directory . '/task.json');
@@ -281,7 +330,7 @@ function agentEvaluationControllerWorkspacePolicy(array $task): array
         agentEvaluationValidateWorkspacePolicy($policy, AGENT_EVALUATION_CONTROLLER_TASK_ID);
     }
 
-    return agentEvaluationControllerNormalizeWorkspacePolicy($policy);
+    return agentEvaluationControllerNormalizeWorkspacePolicy($policy, $zeroWrite);
 }
 
 /**
@@ -289,7 +338,7 @@ function agentEvaluationControllerWorkspacePolicy(array $task): array
  * @return array{allowed_existing_paths: list<string>, allowed_new_paths: list<string>, protected_paths: list<string>,
  *   max_changed_files: int, max_added_lines: int, max_deleted_lines: int}
  */
-function agentEvaluationControllerNormalizeWorkspacePolicy(array $policy): array
+function agentEvaluationControllerNormalizeWorkspacePolicy(array $policy, bool $zeroWrite = false): array
 {
     agentEvaluationRequireExactKeys($policy, ['allowed_existing_paths', 'allowed_new_paths', 'protected_paths',
         'max_changed_files', 'max_added_lines', 'max_deleted_lines'], 'controller workspace policy');
@@ -298,7 +347,7 @@ function agentEvaluationControllerNormalizeWorkspacePolicy(array $policy): array
             agentEvaluationRequireRelativePath($path, 'controller workspace policy');
         }
     }
-    return [
+    $normalized = [
         'allowed_existing_paths' => agentEvaluationRequireStringList(
             $policy,
             'allowed_existing_paths',
@@ -314,11 +363,9 @@ function agentEvaluationControllerNormalizeWorkspacePolicy(array $policy): array
             'protected_paths',
             'controller workspace policy',
         ),
-        'max_changed_files' => agentEvaluationRequirePositiveInteger(
-            $policy,
-            'max_changed_files',
-            'controller workspace policy',
-        ),
+        'max_changed_files' => $zeroWrite
+            ? agentEvaluationRequireNonNegativeInteger($policy, 'max_changed_files', 'controller workspace policy')
+            : agentEvaluationRequirePositiveInteger($policy, 'max_changed_files', 'controller workspace policy'),
         'max_added_lines' => agentEvaluationRequireNonNegativeInteger(
             $policy,
             'max_added_lines',
@@ -330,16 +377,25 @@ function agentEvaluationControllerNormalizeWorkspacePolicy(array $policy): array
             'controller workspace policy',
         ),
     ];
+
+    if ($zeroWrite && $normalized !== [
+        'allowed_existing_paths' => [], 'allowed_new_paths' => [], 'protected_paths' => [],
+        'max_changed_files' => 0, 'max_added_lines' => 0, 'max_deleted_lines' => 0,
+    ]) {
+        throw new RuntimeException('Explanation workspace policy must prohibit every candidate mutation.');
+    }
+
+    return $normalized;
 }
 
 /**
  * @param array<string, mixed> $policy
  * @return array<string, mixed>
  */
-function agentEvaluationControllerWorkspacePolicyEvidence(array $policy): array
+function agentEvaluationControllerWorkspacePolicyEvidence(array $policy, bool $zeroWrite = false): array
 {
     return ['schema_version' => 1, 'kind' => 'generation-workspace-policy-v1',
-        'policy' => agentEvaluationControllerNormalizeWorkspacePolicy($policy)];
+        'policy' => agentEvaluationControllerNormalizeWorkspacePolicy($policy, $zeroWrite)];
 }
 
 /** @param array<string, mixed> $policy */
@@ -479,9 +535,9 @@ function agentEvaluationControllerValidateModelProfile(
 }
 
 /** @param list<mixed> $tools */
-function agentEvaluationControllerValidateToolsProfile(array $tools, bool $synthetic): void
+function agentEvaluationControllerValidateToolsProfile(array $tools, bool $synthetic, bool $explanation = false): void
 {
-    if ($synthetic) {
+    if ($synthetic && !$explanation) {
         if ($tools !== []) {
             throw new RuntimeException('Controller synthetic runner must not expose agent tools.');
         }
@@ -493,7 +549,9 @@ function agentEvaluationControllerValidateToolsProfile(array $tools, bool $synth
         [
             'name' => 'shell',
             'version' => null,
-            'permissions' => ['workspace-read', 'workspace-write', 'process-execute'],
+            'permissions' => $explanation
+                ? ['workspace-read', 'process-execute']
+                : ['workspace-read', 'workspace-write', 'process-execute'],
         ],
     ];
 
@@ -652,14 +710,114 @@ function agentEvaluationControllerReadLiveConfiguration(string $path): array
     return agentEvaluationControllerValidateLiveConfiguration(agentEvaluationJsonFile($path));
 }
 
+/** @param array<string, mixed> $task
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerReadExplanationLiveConfiguration(string $path, array $task): array
+{
+    $size = is_file($path) && !is_link($path) ? filesize($path) : false;
+    if (!is_int($size) || $size < 1 || $size > 65_536) {
+        throw new RuntimeException('Explanation live configuration must be one bounded regular JSON file.');
+    }
+    return agentEvaluationControllerValidateLiveConfiguration(
+        agentEvaluationJsonFile($path),
+        $task,
+        1,
+        false,
+        1,
+        true,
+    );
+}
+
+/** @param array<string, mixed> $task
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerReadExplanationOciControlConfiguration(
+    string $path,
+    array $task,
+    #[SensitiveParameter] string $credential,
+): array {
+    $size = is_file($path) && !is_link($path) ? filesize($path) : false;
+    if (!is_int($size) || $size < 1 || $size > 65_536) {
+        throw new RuntimeException('Explanation OCI control configuration must be one bounded regular JSON file.');
+    }
+    return agentEvaluationControllerValidateExplanationOciControlConfiguration(
+        agentEvaluationJsonFile($path),
+        $task,
+        $credential,
+    );
+}
+
+/**
+ * @param array<string, mixed> $configuration
+ * @param array<string, mixed> $task
+ * @return array<string, mixed>
+ */
+function agentEvaluationControllerValidateExplanationOciControlConfiguration(
+    array $configuration,
+    array $task,
+    #[SensitiveParameter] string $credential,
+): array {
+    if (!agentEvaluationControllerTestingEnabled()
+        || !agentEvaluationControllerOciSyntheticUpstream()
+        || $credential !== ''
+    ) {
+        throw new RuntimeException('Explanation OCI control requires its test-only zero-provider boundary.');
+    }
+    $approval = agentEvaluationRequireObject($configuration, 'approval', 'explanation OCI control configuration');
+    agentEvaluationRequireExactKeys(
+        $approval,
+        ['reference', 'model', 'runs', 'spending_ceiling_usd', 'run_id'],
+        'explanation OCI control approval',
+    );
+    $taskProfile = agentEvaluationNormalizeExplanationExecutionProfile(
+        agentEvaluationRequireObject($task, 'execution_profile', 'explanation task'),
+        'explanation task execution profile',
+    );
+    $controlRunId = agentEvaluationRequireString($approval, 'run_id', 'explanation OCI control approval');
+    if (($approval['reference'] ?? null) !== 'synthetic-oci-explanation-control'
+        || ($approval['model'] ?? null) !== $taskProfile['model']['id']
+        || ($approval['runs'] ?? null) !== 1
+        || ($approval['spending_ceiling_usd'] ?? null) !== '0.00'
+        || preg_match('/\A[a-f0-9]{32}\z/D', $controlRunId) !== 1
+    ) {
+        throw new RuntimeException('Explanation OCI control requires its exact synthetic zero-spend approval.');
+    }
+    $productionShape = $configuration;
+    $productionApproval = $approval;
+    $productionApproval['spending_ceiling_usd'] = '0.60';
+    $productionShape['approval'] = $productionApproval;
+    $validated = agentEvaluationControllerValidateLiveConfiguration(
+        $productionShape,
+        $task,
+        1,
+        false,
+        1,
+        true,
+    );
+    $validated['approval'] = $approval;
+    return $validated;
+}
+
 /**
  * @param array<string, mixed> $configuration
  * @param array<string, mixed>|null $comparisonTask
  * @return array<string, mixed>
  */
-function agentEvaluationControllerValidateLiveConfiguration(array $configuration, ?array $comparisonTask = null, int $approvedRuns = 1, bool $calibration = false, int $calibrationRevision = 1): array
+function agentEvaluationControllerValidateLiveConfiguration(
+    array $configuration,
+    ?array $comparisonTask = null,
+    int $approvedRuns = 1,
+    bool $calibration = false,
+    int $calibrationRevision = 1,
+    bool $explanation = false,
+): array
 {
-    if ((!$calibration && !in_array($approvedRuns, [1, 60], true))
+    if ($explanation) {
+        if ($calibration || $approvedRuns !== 1 || ($comparisonTask['schema_version'] ?? null) !== 3) {
+            throw new RuntimeException('Explanation live configuration must bind its one explicit schema-v3 run.');
+        }
+    } elseif ((!$calibration && !in_array($approvedRuns, [1, 60], true))
         || ($calibration && ($approvedRuns !== 6 || $comparisonTask === null))
         || ($comparisonTask === null) !== ($approvedRuns === 1)) {
         throw new RuntimeException('Live configuration must bind one smoke run or the fixed 60-slot comparison.');
@@ -682,7 +840,9 @@ function agentEvaluationControllerValidateLiveConfiguration(array $configuration
     );
     $context = agentEvaluationRequireObject($profile, 'context', 'controller live profile');
 
-    if ($comparisonTask === null && (($context['bundle_id'] ?? null) !== null || ($context['bundle_sha256'] ?? null) !== null)) {
+    if (($comparisonTask === null || $explanation)
+        && (($context['bundle_id'] ?? null) !== null || ($context['bundle_sha256'] ?? null) !== null)
+    ) {
         throw new RuntimeException('The public smoke runner accepts repository context without an additional bundle.');
     }
 
@@ -735,10 +895,18 @@ function agentEvaluationControllerValidateLiveConfiguration(array $configuration
             if (agentEvaluationRequireNonEmptyString($toolchain, 'codex_version', 'controller OCI toolchain') !== $runner['version']) {
                 throw new RuntimeException('Pinned Codex version must match the recorded runner version.');
             }
-            agentEvaluationRequireHash(
+            $relaySha256 = agentEvaluationRequireHash(
                 agentEvaluationRequireString($toolchain, 'relay_sha256', 'controller OCI toolchain'),
                 'controller relay',
             );
+            if (
+                $explanation
+                && !hash_equals(AGENT_EVALUATION_EXPLANATION_RELAY_SHA256, $relaySha256)
+            ) {
+                throw new RuntimeException(
+                    'Explanation generation toolchain must use its exact pinned relay identity.',
+                );
+            }
         } elseif ($toolchain['codex_version'] !== null || $toolchain['relay_sha256'] !== null) {
             throw new RuntimeException('Scoring must have neither Codex nor the generation relay.');
         }
@@ -777,10 +945,10 @@ function agentEvaluationControllerValidateLiveConfiguration(array $configuration
     $approval = agentEvaluationRequireObject($configuration, 'approval', 'controller live configuration');
     agentEvaluationRequireExactKeys(
         $approval,
-        ['reference', 'model', 'runs', 'spending_ceiling_usd'],
+        ['reference', 'model', 'runs', 'spending_ceiling_usd', ...($explanation ? ['run_id'] : [])],
         'controller smoke approval record',
     );
-    agentEvaluationControllerBoundedLabel(
+    $approvalReference = agentEvaluationControllerBoundedLabel(
         agentEvaluationRequireNonEmptyString($approval, 'reference', 'controller smoke approval record'),
         'Controller approval reference',
     );
@@ -791,6 +959,20 @@ function agentEvaluationControllerValidateLiveConfiguration(array $configuration
             ? 'The smoke approval must name the exact model, one run, and a bounded decimal spending ceiling.'
             : 'The approval must name the exact model, approved run count, and bounded decimal spending ceiling.');
     }
+    if ($explanation) {
+        $approvedRunId = agentEvaluationRequireString($approval, 'run_id', 'controller explanation approval');
+        if (preg_match('/\A[a-f0-9]{32}\z/D', $approvedRunId) !== 1) {
+            throw new RuntimeException('Explanation approval must bind one exact 32-character lowercase hexadecimal run ID.');
+        }
+        $pending = $approvalReference === 'pending' && $ceiling === '0.00';
+        $approved = $ceiling === '0.60'
+            && preg_match('/(?:pending|placeholder)/i', $approvalReference) !== 1;
+        if (!$pending && !$approved) {
+            throw new RuntimeException(
+                'Explanation configuration requires exact pending/0.00 preflight or accountable approved/0.60 state.',
+            );
+        }
+    }
 
     return [
         ...$configuration,
@@ -799,4 +981,29 @@ function agentEvaluationControllerValidateLiveConfiguration(array $configuration
         'approval' => $approval,
         'prepared_dependencies' => $dependencies,
     ];
+}
+
+/** @param array<string, mixed> $configuration */
+function agentEvaluationControllerRequireExplanationApprovalRunId(
+    array $configuration,
+    string $runId,
+): void {
+    if (preg_match('/\A[a-f0-9]{32}\z/D', $runId) !== 1) {
+        throw new RuntimeException('Explanation execution requires one exact bounded run ID.');
+    }
+    $approval = agentEvaluationRequireObject($configuration, 'approval', 'controller explanation configuration');
+    $approvedRunId = agentEvaluationRequireString($approval, 'run_id', 'controller explanation approval');
+    $reference = agentEvaluationRequireNonEmptyString($approval, 'reference', 'controller explanation approval');
+    $profile = agentEvaluationRequireObject($configuration, 'profile', 'controller explanation configuration');
+    $model = agentEvaluationRequireObject($profile, 'model', 'controller explanation profile');
+    if (!hash_equals($approvedRunId, $runId)) {
+        throw new RuntimeException('Explanation approval is bound to a different run ID.');
+    }
+    if (preg_match('/(?:pending|placeholder)/i', $reference) === 1
+        || ($approval['runs'] ?? null) !== 1
+        || ($approval['model'] ?? null) !== ($model['id'] ?? null)
+        || ($approval['spending_ceiling_usd'] ?? null) !== '0.60'
+    ) {
+        throw new RuntimeException('Explanation execution requires its exact accountable USD 0.60 approval.');
+    }
 }

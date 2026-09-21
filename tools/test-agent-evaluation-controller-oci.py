@@ -3,7 +3,9 @@
 
 Usage: python3 tools/test-agent-evaluation-controller-oci.py /absolute/config.json
 The configuration must reference already built digest-pinned images and already
-reviewed locked dependencies. This test never builds, downloads, or uses a key.
+reviewed locked dependencies. The explanation case uses its separate fixed
+zero-spend control configuration and must be selected explicitly with
+``--case explanation``. This test never builds, downloads, or uses a key.
 """
 
 import argparse
@@ -41,6 +43,7 @@ UPSTREAM_CASES = {
     "responses-response-limit": {"operation": "responses", "category": "response_limit", "http_status": 200,
                                  "curl_code": 23, "response_limit_exceeded": True},
 }
+EXPLANATION_RUN_ID = "00000000000000000000000000007099"
 PHP_WORKER = r"""
 // Host export must preserve candidate modes even with a private runner umask.
 umask(0077);
@@ -127,6 +130,163 @@ try {
         $result['source'] = basename($failure->getFile()) . ':' . $failure->getLine();
     } finally {
         if ($interruptHandlers !== null) { agentEvaluationControllerRestoreInterruptHandlers($interruptHandlers); }
+    }
+}
+fwrite(STDOUT, json_encode($result, JSON_THROW_ON_ERROR) . "\n");
+exit($result['status'] === 'completed' ? 0 : 1);
+"""
+PHP_EXPLANATION_WORKER = r"""
+umask(0077);
+define('PHPTHIS_AGENT_EVALUATION_CONTROLLER_LIBRARY_ONLY', true);
+define('PHPTHIS_AGENT_EVALUATION_CONTROLLER_TESTING', true);
+define('AGENT_EVALUATION_CONTROLLER_OCI_TEST_UPSTREAM', true);
+require $argv[1] . '/tools/agent-evaluation-controller.php';
+$workspace = null;
+$resources = null;
+$control = null;
+$result = null;
+$interruptHandlers = null;
+try {
+    $interruptHandlers = agentEvaluationControllerInstallInterruptHandlers();
+    $task = agentEvaluationExplanationTask($argv[1] . '/tools/agent-evaluation');
+    $configuration = agentEvaluationControllerReadExplanationOciControlConfiguration($argv[2], $task, '');
+    agentEvaluationControllerValidateExplanationPreflightInputs($argv[1], $configuration, $task);
+    $approval = agentEvaluationRequireObject($configuration, 'approval', 'explanation OCI control');
+    if (!hash_equals(
+        agentEvaluationRequireString($approval, 'run_id', 'explanation OCI control approval'),
+        $argv[4],
+    )) {
+        throw new RuntimeException('Explanation OCI control is bound to a different run ID.');
+    }
+    $workspace = agentEvaluationControllerPrepareWorkspace(
+        $argv[1],
+        agentEvaluationRequireString($configuration, 'prepared_dependencies', 'explanation OCI control'),
+        $argv[3],
+        $task,
+    );
+    $control = agentEvaluationControllerCreatePreflightRoot();
+    $engine = agentEvaluationControllerOciPreflight(
+        agentEvaluationRequireObject($configuration, 'engine', 'explanation OCI control'),
+        $control,
+    );
+    $resources = agentEvaluationControllerOciPrepare(
+        $engine,
+        $argv[4],
+        $workspace['candidate_root'],
+        $workspace['dependencies_root'],
+        true,
+    );
+    $sourcePrompt = file_get_contents(
+        agentEvaluationRequireString($task, 'directory', 'explanation OCI task') . '/'
+        . agentEvaluationRequireString(
+            agentEvaluationRequireObject($task, 'prompt', 'explanation OCI task'),
+            'path',
+            'explanation OCI task prompt',
+        ),
+    );
+    if (!is_string($sourcePrompt)) {
+        throw new RuntimeException('Unable to read the explanation OCI source prompt.');
+    }
+    $profile = agentEvaluationRequireObject($configuration, 'profile', 'explanation OCI control');
+    $generation = agentEvaluationControllerRunLiveCodex(
+        $resources,
+        agentEvaluationExplanationEffectivePrompt($sourcePrompt),
+        $profile,
+        '',
+    );
+    if ($generation['termination_reason'] !== 'completed'
+        || $generation['external_actions_approved'] !== true
+        || !agentEvaluationControllerExplanationActionsApproved($generation['events'])
+    ) {
+        throw new RuntimeException('Explanation OCI control did not complete its read-only generation boundary.');
+    }
+    $ledger = agentEvaluationRequireObject(
+        agentEvaluationRequireObject($generation, 'proxy_evidence', 'explanation OCI generation'),
+        'ledger',
+        'explanation OCI proxy evidence',
+    );
+    $observedTransport = agentEvaluationNormalizeExplanationTransportTools(
+        $ledger['transport_tools'] ?? null,
+        'explanation OCI observed transport tools',
+    );
+    $configuredTransport = agentEvaluationNormalizeExplanationTransportTools(
+        $profile['transport_tools'] ?? null,
+        'explanation OCI configured transport tools',
+    );
+    if ($observedTransport === null || $observedTransport !== $configuredTransport) {
+        throw new RuntimeException('Explanation OCI control transport identity drifted.');
+    }
+    agentEvaluationControllerOciStopGeneration($resources);
+    $export = agentEvaluationControllerOciExportCandidate($resources, $workspace['candidate_root']);
+    $freeze = agentEvaluationControllerFreezeWorkspace($workspace, $task);
+    if ($freeze['changed_files'] !== [] || $freeze['added_lines'] !== 0 || $freeze['deleted_lines'] !== 0
+        || $freeze['patch'] !== ''
+    ) {
+        throw new RuntimeException('Explanation OCI control changed the pinned workspace.');
+    }
+    $generationCleanup = agentEvaluationControllerOciDestroyGeneration($resources);
+    $result = [
+        'status' => 'completed',
+        'termination_reason' => $generation['termination_reason'],
+        'response' => $generation['response'],
+        'usage' => $generation['usage'],
+        'transport_tools' => $observedTransport,
+        'external_actions' => $generation['external_actions'],
+        'process' => $generation['process'],
+        'freeze' => [
+            'candidate_sha256' => $freeze['candidate_sha256'],
+            'patch_sha256' => $freeze['patch_sha256'],
+            'changed_files' => $freeze['changed_files'],
+            'added_lines' => $freeze['added_lines'],
+            'deleted_lines' => $freeze['deleted_lines'],
+        ],
+        'export' => $export,
+        'generation_cleanup' => $generationCleanup,
+        'resource_identity' => ['owner' => $resources['owner'], 'run_id' => $resources['run_id']],
+    ];
+} catch (Throwable $failure) {
+    $result = [
+        'status' => 'failed',
+        'class' => $failure::class,
+        'message' => $failure->getMessage(),
+        'source' => basename($failure->getFile()) . ':' . $failure->getLine(),
+    ];
+} finally {
+    try {
+        $cleanupVerified = $resources === null && $control === null;
+        if ($resources !== null) {
+            $result['oci_cleanup'] = agentEvaluationControllerOciCleanup($resources);
+            $cleanupVerified = $result['oci_cleanup']['verified'] === true
+                && $result['oci_cleanup']['status'] === 'pass';
+        } elseif ($control !== null) {
+            $ledger = agentEvaluationControllerReadOciRecoveryLedger($control);
+            $cleanupVerified = $ledger === null
+                || ($ledger['containers'] === [] && $ledger['volumes'] === []);
+        }
+        if ($cleanupVerified) {
+            if ($workspace !== null) {
+                $result['workspace_cleanup'] = [
+                    'status' => 'pass',
+                    'removed' => agentEvaluationControllerCleanupWorkspace($workspace),
+                ];
+            }
+            if ($control !== null) {
+                agentEvaluationControllerRemoveTree($control);
+            }
+        } else {
+            $result['status'] = 'failed';
+            $result['cleanup_failure'] = 'Explanation OCI resource cleanup requires review.';
+            $result['recovery_control_root'] = $control;
+        }
+    } catch (Throwable $failure) {
+        $result['status'] = 'failed';
+        $result['cleanup_failure'] = 'Explanation OCI cleanup failed.';
+        $result['recovery_control_root'] = $control;
+        $result['source'] = basename($failure->getFile()) . ':' . $failure->getLine();
+    } finally {
+        if ($interruptHandlers !== null) {
+            agentEvaluationControllerRestoreInterruptHandlers($interruptHandlers);
+        }
     }
 }
 fwrite(STDOUT, json_encode($result, JSON_THROW_ON_ERROR) . "\n");
@@ -285,6 +445,62 @@ def verify_prompt_delivery(run_root, requests):
     return {"retained_prompt": descriptor, "received_user_text_matches": 1, "admitted_workspace_policy": "exact"}
 
 
+def verify_explanation_control(run_root, requests, response_count, result, dependencies_sha256):
+    assert result["status"] == "completed" and result["termination_reason"] == "completed"
+    assert result["response"] == "Deterministic read-only explanation fixture completed."
+    assert result["usage"] == {"input_tokens": 100, "output_tokens": 100,
+                               "cached_tokens": 0, "reasoning_tokens": 0}
+    assert result["transport_tools"] == {
+        "kind": "codex-responses-local-tools-v1",
+        "count": 4,
+        "sha256": "3392681cd5b82960557ffe2ce5b0ba1e223cc0f97a226432a7a43353475d6aed",
+    }
+    assert result["external_actions"] == {
+        "approved": True,
+        "network": "none",
+        "socket_attempt_telemetry": None,
+        "host_proxy_requests": 1,
+        "proxy_blocked": False,
+        "observed_commands": [],
+    }, "Explanation infrastructure control must complete without a command or file action"
+    process = result["process"]
+    assert process["exit_code"] == 0 and process["termination_reason"] == "completed"
+    assert process["timed_out"] is False and process["output_limit_exceeded"] is False
+    assert process["synthetic_upstream"] is True and process["failure_code"] is None
+    assert process["upstream_failure"] is None
+    assert process["cleanup"]["container_stopped"] is True and process["cleanup"]["oom_killed"] is False
+    freeze = result["freeze"]
+    assert freeze["changed_files"] == [] and freeze["added_lines"] == 0 and freeze["deleted_lines"] == 0
+    assert freeze["candidate_sha256"] == "da90475f0d494a125dfdff21f85408b97164ec276961c1d7db522a63bbb5be6d"
+    assert freeze["patch_sha256"] == hashlib.sha256(b"").hexdigest()
+    assert result["export"]["generation_stopped"] is True
+    assert result["generation_cleanup"] == {"status": "pass", "generation_destroyed": True}
+    assert result["oci_cleanup"]["status"] == "pass" and result["oci_cleanup"]["verified"] is True
+    assert result["workspace_cleanup"]["status"] == "pass"
+    assert [path.name for path in run_root.iterdir()] == ["evidence"]
+    assert [path.name for path in (run_root / "evidence").iterdir()] == ["prepared-dependencies.manifest"], \
+        "Infrastructure control must retain only preparation metadata, without schema-v3 model evidence"
+    assert hashlib.sha256((run_root / "evidence/prepared-dependencies.manifest").read_bytes()).hexdigest() \
+        == dependencies_sha256
+    assert [request["path"] for request in requests] == ["/v1/responses/input_tokens", "/v1/responses"]
+    assert response_count == 1
+    assert requests[1]["model"] == "gpt-5.4-2026-03-05"
+    return {
+        "boundary": "infrastructure-only",
+        "schema_v3_model_evidence": False,
+        "read_only_candidate": True,
+        "candidate_relative_writable_mounts": False,
+        "response": result["response"],
+        "usage": result["usage"],
+        "transport_tools": result["transport_tools"],
+        "changed_files": [],
+        "cleanup": "verified",
+        "fixture_requests": requests,
+        "resource_identity": result["resource_identity"],
+        "control_status": "pass",
+    }
+
+
 def verify_engine_absence(reviewed, identity, temporary_root):
     owner = identity.get("owner")
     run_id = identity.get("run_id")
@@ -334,7 +550,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("configuration", type=Path)
     parser.add_argument("--retain-evidence", action="store_true", help="Keep validated evidence in the generated private temporary root")
-    parser.add_argument("--case", choices=["all", "complete", "scoring-boundary", "workspace-escape", "symlink", "file-mode", "relay-signal", "pids-limit", "memory-limit", "disk-limit", "token-limit", "interrupt", "wall-bound", "output-bound", *UPSTREAM_CASES], default="all")
+    parser.add_argument("--case", choices=["all", "complete", "explanation", "scoring-boundary", "workspace-escape", "symlink", "file-mode", "relay-signal", "pids-limit", "memory-limit", "disk-limit", "token-limit", "interrupt", "wall-bound", "output-bound", *UPSTREAM_CASES], default="all")
     options = parser.parse_args()
     configuration = options.configuration.resolve(strict=True)
     with configuration.open("rb") as source:
@@ -342,6 +558,16 @@ def main():
     if not 1 <= len(configuration_bytes) <= 65_536:
         raise RuntimeError("Integration configuration must fit the controller's 64 KiB limit")
     reviewed = json.loads(configuration_bytes)
+    approval = reviewed.get("approval")
+    explanation_control = isinstance(approval, dict) and approval == {
+        "reference": "synthetic-oci-explanation-control",
+        "model": "gpt-5.4-2026-03-05",
+        "runs": 1,
+        "spending_ceiling_usd": "0.00",
+        "run_id": EXPLANATION_RUN_ID,
+    }
+    if (options.case == "explanation") != explanation_control:
+        raise RuntimeError("The explanation case requires its separate exact zero-spend control configuration")
     identities = {"configuration_sha256": hashlib.sha256(configuration_bytes).hexdigest(),
                   "generation_image": reviewed["engine"]["generation_image"],
                   "scoring_image": reviewed["engine"]["scoring_image"],
@@ -368,9 +594,9 @@ def main():
         for index, case in enumerate(cases, 1):
             server.reset("wall-limit" if case in ["interrupt", "wall-bound"] else case)
             run_root = temporary_root / case
-            run_id = hashlib.sha256((str(temporary_root) + case).encode()).hexdigest()[:32]
+            run_id = EXPLANATION_RUN_ID if case == "explanation" else hashlib.sha256((str(temporary_root) + case).encode()).hexdigest()[:32]
             primitive = case in ["wall-bound", "output-bound"]
-            worker = PHP_BOUND_WORKER if primitive else PHP_WORKER
+            worker = PHP_EXPLANATION_WORKER if case == "explanation" else (PHP_BOUND_WORKER if primitive else PHP_WORKER)
             code, stdout, stderr = bounded_worker([php, "-r", worker, str(ROOT), str(configuration), str(run_root), run_id, case], server, case == "interrupt")
             if server.failure is not None:
                 raise RuntimeError("Deterministic fixture failed: " + server.failure)
@@ -397,6 +623,18 @@ def main():
                 result["fixture_requests"] = server.requests
                 result["control_status"] = "pass"
                 results[case] = result
+                print("PASS OCI integration " + case, flush=True)
+                continue
+            if case == "explanation":
+                if code != 0:
+                    raise RuntimeError("Unexpected explanation infrastructure result: " + json.dumps(result)
+                                       + " " + stderr.decode(errors="replace"))
+                evidence_result = verify_explanation_control(
+                    run_root, server.requests, server.responses, result,
+                    reviewed["prepared_dependencies_sha256"])
+                evidence_result["independent_engine_cleanup"] = verify_engine_absence(
+                    reviewed, result["resource_identity"], temporary_root)
+                results[case] = evidence_result
                 print("PASS OCI integration " + case, flush=True)
                 continue
             expected_pass = case in ["complete", "scoring-boundary"]

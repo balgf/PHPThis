@@ -1,0 +1,211 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://phpthis.dev/schema/agent-evaluation/score-v3.json",
+    "title": "PHPThis explanation evaluation score v3",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schema_version",
+        "run_id",
+        "task_id",
+        "task_revision",
+        "run_record_sha256",
+        "prompt_sha256",
+        "effective_prompt_sha256",
+        "rubric_sha256",
+        "response_sha256",
+        "candidate_patch_sha256",
+        "structural_evidence_path",
+        "structural_evidence_sha256",
+        "admissible",
+        "structural_checks",
+        "automated_status",
+        "human_review",
+        "correct_completion"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": 3
+        },
+        "run_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "task_id": {
+            "const": "explain.file-profile-s3"
+        },
+        "task_revision": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "run_record_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "prompt_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "effective_prompt_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "rubric_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "response_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "candidate_patch_sha256": {
+            "const": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "structural_evidence_path": {
+            "const": "structural-evidence.json"
+        },
+        "structural_evidence_sha256": {
+            "$ref": "#/$defs/sha256"
+        },
+        "admissible": {
+            "type": "boolean"
+        },
+        "structural_checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "task_identity",
+                "response_integrity",
+                "workspace_unchanged",
+                "resource_bounds",
+                "external_actions_approved",
+                "cleanup"
+            ],
+            "properties": {
+                "task_identity": {
+                    "const": true
+                },
+                "response_integrity": {
+                    "const": true
+                },
+                "workspace_unchanged": {
+                    "const": true
+                },
+                "resource_bounds": {
+                    "const": true
+                },
+                "external_actions_approved": {
+                    "const": true
+                },
+                "cleanup": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "automated_status": {
+            "enum": [
+                "pass",
+                "fail"
+            ]
+        },
+        "human_review": {
+            "$ref": "#/$defs/humanReview"
+        },
+        "correct_completion": {
+            "type": [
+                "boolean",
+                "null"
+            ]
+        }
+    },
+    "$defs": {
+        "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "dimension": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "status",
+                "evidence"
+            ],
+            "properties": {
+                "status": {
+                    "enum": [
+                        "pass",
+                        "fail",
+                        "unknown"
+                    ]
+                },
+                "evidence": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                }
+            }
+        },
+        "humanReview": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "status",
+                "reviewer",
+                "dimensions",
+                "reason"
+            ],
+            "properties": {
+                "status": {
+                    "enum": [
+                        "pending",
+                        "pass",
+                        "fail"
+                    ]
+                },
+                "reviewer": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.@-]*$"
+                },
+                "dimensions": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "route_selection",
+                        "necessary_concern_coverage",
+                        "unsupported_claims",
+                        "answer_correctness",
+                        "repairs",
+                        "clarification"
+                    ],
+                    "properties": {
+                        "route_selection": {
+                            "$ref": "#/$defs/dimension"
+                        },
+                        "necessary_concern_coverage": {
+                            "$ref": "#/$defs/dimension"
+                        },
+                        "unsupported_claims": {
+                            "$ref": "#/$defs/dimension"
+                        },
+                        "answer_correctness": {
+                            "$ref": "#/$defs/dimension"
+                        },
+                        "repairs": {
+                            "$ref": "#/$defs/dimension"
+                        },
+                        "clarification": {
+                            "$ref": "#/$defs/dimension"
+                        }
+                    }
+                },
+                "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+                }
+            }
+        }
+    }
+}
