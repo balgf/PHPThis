@@ -856,7 +856,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 1
+        && $task['revision'] === 2
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -899,7 +899,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
         && $task['prompt']['effective_sha256'] === AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256
         && hash('sha256', agentEvaluationExplanationEffectivePrompt($sourcePrompt))
             === $task['prompt']['effective_sha256'],
-        'The explanation effective prompt must append only the fixed no-write instruction.',
+        'The explanation effective prompt must append the frozen read-only and bounded-reading instructions.',
     );
     agentEvaluationExpectFailure(
         static function (): void {
@@ -2387,7 +2387,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 1,
+                'revision' => 2,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -2737,12 +2737,12 @@ function agentEvaluationExplanationContractControls(string $kit): void
         );
         $effectivePromptDescriptor['effective_sha256'] = hash(
             'sha256',
-            $sourcePrompt . "\nThis is an altered explanation suffix.\n",
+            $sourcePrompt . "\nThis is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.\n",
         );
         $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 
         if (file_put_contents($manifestPath, agentEvaluationJson($effectivePromptManifest)) === false) {
-            throw new RuntimeException('Unable to mutate the copied explanation effective-prompt control.');
+            throw new RuntimeException('Unable to prepare the revision-1 effective-prompt rejection control.');
         }
 
         agentEvaluationExpectFailure(

@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 1,
-        'manifest_sha256' => '5dd6b4d855a3d788188a7a2cdf770373d86291eee5b5c6f74e8372e217a7cd9c',
+        'revision' => 2,
+        'manifest_sha256' => '9d739860589e0b8bb3681742182b22841de3ea06256169cb9ef44752ee33abe8',
     ],
 ];
 
@@ -37,11 +37,20 @@ const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = 'd7ab170c190c9fd7e18be3ca00b874a8d954fa2b';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = '3b017642ecc90fbc5af93f2f9454cb86d1e2add7';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = 'da90475f0d494a125dfdff21f85408b97164ec276961c1d7db522a63bbb5be6d';
-const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '2d9f731008a4a0d41c9ccc32ceabc2365f39a547be389f35b8f98e6fd496b043';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6';
 const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '92ebd37b23791cdf3652defe1d7f856adc733ed2cb7810ea280da2350e9bfbd2';
 const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = 'eaf9595e12636a7ac98b22b92d59143d4a593a84fc5bc80e7cabf186bddd5fc1';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
-const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.';
+const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.'
+    . "\n\n"
+    . 'Read scope after required entrypoints (revision 2): Follow all mandatory repository entrypoints. '
+    . 'Select the owning guide through the router, then follow its exact links to relevant policy, source, and tests. '
+    . 'Discover paths with scoped filename searches before reading contents. '
+    . 'Do not run repository-wide content searches or broad searches across multiple concern directories. '
+    . 'After entrypoints, keep each read or search output within 120 lines and 8,192 bytes; narrow by exact file, section, or symbol before expanding. '
+    . 'If output is truncated, narrow the query instead of repeating it. '
+    . 'Batch independent reads of already identified files, avoid rereading unchanged text, and stop collecting context once the required evidence is sufficient to answer. '
+    . 'Do not skip required concerns or invent missing evidence to fit the budget.';
 const AGENT_EVALUATION_EXPLANATION_MAX_EVENTS = 4_096;
 const AGENT_EVALUATION_EXPLANATION_RELAY_SHA256 = 'eef4017c83216929f74504e0025821b12232190b8d87257cd8bc6186dfbfe123';
 

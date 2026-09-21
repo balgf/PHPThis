@@ -177,8 +177,8 @@ if (!is_string($prompt) || $prompt === '' || strlen($prompt) > 1_048_576 || str_
     exit(2);
 }
 
-$explanationSuffix = "\n\nThis is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.\n";
-if (str_ends_with($prompt, $explanationSuffix)) {
+$explanationPromptSha256 = '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6';
+if (hash_equals($explanationPromptSha256, hash('sha256', $prompt))) {
     $events = [
         [
             'type' => 'thread.started',
