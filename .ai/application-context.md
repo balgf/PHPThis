@@ -7,6 +7,7 @@ ADR 009, ADR 011, ADR 013, ADR 044, and ADR 058 own the context, template, optio
 ## Ownership and authority
 
 - Keep one current owner for every mutable authoring rule. Universal entrypoints retain only universal authority, safety, scope, validity, and verification. Concern-specific detail belongs in its routed current guide; contract evolution and historical ADRs are loaded only for upgrade or decision work.
+- Keep the six maintainer entrypoints and their read order. `VISION.md` retains universal principles and the exact locality metric; `docs/design-goals.md` owns the conditional design detail. `.ai/strict-profile.md` summarizes every current diagnostic and routes exact coverage, repairs, history, and enforcement to the existing catalogue and static-analysis guide. A summary changes neither rule coverage nor validity.
 - Preserve AI as the primary author and knowledge interface while keeping human intent, consequential approval, and accountability explicit.
 - Require framework explanations to use the installed current contract, knowledge map, source, and tests rather than model memory.
 - Keep role, authority, and human-decision language aligned across the Consumer Contract, skeleton, and application template.

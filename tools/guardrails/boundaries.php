@@ -624,8 +624,8 @@ PHP;
             'Direct `Request` paths apply the same path-only byte exclusions',
         ],
         '.ai/strict-profile.md' => [
-            "Version 14's raw request-target and path byte rejection",
-            'they are not part of PHT008 or a new Strict Profile rule.',
+            'Runtime and deployment obligations remain in the [current Consumer Contract](../docs/consumer-contract.md) and routed guides; they are not additional PHT rules.',
+            '[upgrade companion](../docs/consumer-contract-upgrades.md)',
         ],
         '.ai/static-analysis.md' => [
             "Treat Consumer Contract v14's raw request-target/path byte rejection",
@@ -842,7 +842,7 @@ PHP;
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
             'keeps `.ai/websockets.md` optional under current Contract version 18 as well as its originating Contract version 9',
         ],
-        'VISION.md' => [
+        'docs/design-goals.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',
             'without adding a framework real-time runtime or adapting frames into HTTP values',
         ],
@@ -1151,7 +1151,7 @@ PHP;
             'mixed-failure property-order evidence',
             'query/header/route/transport non-inheritance',
         ],
-        'VISION.md' => [
+        'docs/design-goals.md' => [
             'at most one operation-specific typed seam',
         ],
         'docs/decisions/021-application-owned-typed-input-boundaries.md' => [

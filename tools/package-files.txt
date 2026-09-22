@@ -9,6 +9,7 @@ bin/phpthis
 composer.json
 docs/ai-context-routing-review.md
 docs/architecture.md
+docs/design-goals.md
 docs/caching.md
 docs/coordination.md
 docs/redis-coordination.md
