@@ -12,7 +12,7 @@ A simple endpoint is an unprotected route on one exact literal path that fits an
 
 | Question or task | First current guide | Add only when the task enters this concern |
 | --- | --- | --- |
-| Explain PHPThis's purpose or whether a mechanism belongs | `VISION.md` | `ROADMAP.md` for planned or unsupported capability; a decision record only when reviewing or changing that decision. |
+| Explain PHPThis's purpose or whether a mechanism belongs | `VISION.md` | `docs/design-goals.md` for detailed goals and non-goals; `ROADMAP.md` for planned or unsupported capability; a decision record only when reviewing or changing that decision. |
 | Start or validate an application | `docs/getting-started.md` | `docs/guardrails.md` for package, skeleton, checker, or distribution proof. |
 | Change application architecture or composition | `docs/architecture.md` | The current guide for each entered runtime concern and the application's `.ai/architecture.md`; no container, discovery, reflection wiring, facade, or hidden lifecycle is implied. |
 | Review security, disclosure, credentials, or application threat policy | `docs/security.md` | The current guide for the concrete authentication, authorization, transport, data, integration, or deployment concern. Do not invent product policy or a generic framework security mechanism. |

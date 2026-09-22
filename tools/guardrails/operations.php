@@ -795,7 +795,7 @@ function operationGuardrailFailures(string $root): array
             'The Workbench guard retains only the accepted integration contract for the separately owned `phpthis/workbench` package.',
             'It keeps `.ai/workbench.md` optional under Consumer Contract version 18.',
         ],
-        'VISION.md' => [
+        'docs/design-goals.md' => [
             'A human can inspect one explicitly composed development object or operation through a fresh strict process',
             'Providing a framework-owned production shell, container-backed console, administrative execution path, generic dispatcher, or remotely accessible Workbench.',
         ],

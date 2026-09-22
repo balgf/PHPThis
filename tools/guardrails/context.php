@@ -94,6 +94,7 @@ function contextGuardrailFailures(string $root): array
             $simpleEndpointLocality,
             '| Add a simple application endpoint | `docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged, and this is the complete four-file task-specific set after universal entrypoints |',
             'Read an ADR only when reviewing or changing the decision it records',
+            '`docs/design-goals.md` for detailed goals and non-goals',
         ],
         'docs/consumer-contract.md' => [
             'Ordinary implementation starts with the current operational guide selected by those routers.',
@@ -108,6 +109,17 @@ function contextGuardrailFailures(string $root): array
             $simpleEndpointDefinition,
             $simpleEndpointLocality,
             $ordinaryImplementationRoute,
+            '[Detailed design goals](docs/design-goals.md)',
+            'They remain binding within their concerns',
+        ],
+        'docs/design-goals.md' => [
+            '# Detailed design goals',
+            'Read this companion when reviewing framework direction, a concern\'s design goal, or its rationale.',
+            'Current operational rules remain in the selected concern guide.',
+            '## Problem',
+            '## Performance-obscuring shorthand',
+            '## Success measures',
+            '## Non-goals',
         ],
         'AGENTS.md' => [
             $slimUniversalEntrypoint,
@@ -130,6 +142,9 @@ function contextGuardrailFailures(string $root): array
         '.ai/strict-profile.md' => [
             'every named repository class is `final`. Use an interface for an extension point',
             'inside the header or body of any `for`, `foreach`, `while`, or `do` loop',
+            '[full rule catalogue](../docs/strict-profile.md#phpthis-owned-rule-catalogue)',
+            '[enforcement guide](static-analysis.md)',
+            'Load those details when implementing, repairing, or reviewing the affected rule',
         ],
         '.ai/types.md' => [
             'Every parser-owned operation-specific request, command, page-request, or projection factory must:',
@@ -226,6 +241,7 @@ function contextGuardrailFailures(string $root): array
         ],
         'tools/package-files.txt' => [
             'docs/decisions/044-bounded-task-routed-ai-context.md',
+            'docs/design-goals.md',
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project, $installedFramework);',
@@ -559,7 +575,7 @@ function contextGuardrailFailures(string $root): array
         ],
         '.ai/strict-profile.md' => [
             'Consumer Contract version 18 carries version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
-            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, ADR 053's application-owned optional S3 profile, ADR 059's bounded fail-closed application source discovery, ADR 060's pending-output emission preflight, and ADR 061's outer HTTP failure boundary, disclosure modes, safe-message allowlist, and real-SAPI evidence remain contract behavior; they are not part of PHT008 or a new Strict Profile rule.",
+            'Runtime and deployment obligations remain in the [current Consumer Contract](../docs/consumer-contract.md) and routed guides; they are not additional PHT rules.',
         ],
         '.ai/testing.md' => [
             'Inject native cleanup faults only through the isolated framework test boundary',
@@ -820,7 +836,7 @@ function contextGuardrailFailures(string $root): array
         ],
         '.ai/strict-profile.md' => [
             'Consumer Contract version 18 carries version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
-            "ADR 045's response/session runtime behavior, ADR 049's response-cookie boundary, ADR 053's application-owned optional S3 profile, ADR 059's bounded fail-closed application source discovery, ADR 060's pending-output emission preflight, and ADR 061's outer HTTP failure boundary, disclosure modes, safe-message allowlist, and real-SAPI evidence remain contract behavior; they are not part of PHT008 or a new Strict Profile rule.",
+            'Runtime and deployment obligations remain in the [current Consumer Contract](../docs/consumer-contract.md) and routed guides; they are not additional PHT rules.',
         ],
         'docs/request-handling.md' => [
             'At emitter entry, both ordinary and local-file responses fail as `ResponseEmissionFailed(true)`',
@@ -1835,7 +1851,7 @@ function contextGuardrailFailures(string $root): array
             'PostgreSQL dollar-quote-looking text',
         ],
         '.ai/strict-profile.md' => [
-            'Strict Profile v4 carries `PHT001` through `PHT007` forward and adds:',
+            'Consumer Contract version 18 carries version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
             '`PHT008`:',
             'PHT006 retains finite SQL-shape ownership; PHT008 alone owns distinct named-placeholder occurrences',
         ],
@@ -2441,8 +2457,8 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 230',
-            'current post-Alpha-7 release inventory must contain exactly 230 reviewed files',
+            'count($packagePaths) !== 231',
+            'current post-Alpha-7 release inventory must contain exactly 231 reviewed files',
             'ADR 058 concern-local context routing',
             'accepted ADR 059 bounded source-prefix discovery',
             'accepted ADR 060 pending-output response-emission preflight',
