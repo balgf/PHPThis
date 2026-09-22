@@ -2466,6 +2466,14 @@ function agentEvaluationControllerTestProxySpending(): void
             && $state['reserved_input'] === 0 && $state['reserved_output'] === 0 && $state['request_sha256'] === null
             && $state['input_tokens'] === 20 && $state['output_tokens'] === 30,
             'Validated terminal usage settles exact cached subsets, conservatively prices absent cache data, and preserves existing failed/incomplete settlement.');
+        agentEvaluationControllerTest($state['request_diagnostics'] === [[
+            'authority' => 'diagnostic_only', 'request_ordinal' => 1,
+            'counted_input_tokens' => 20, 'remaining_tokens' => 200_000,
+            'reservation_outcome' => 'reserved', 'reserved_output_tokens' => 100,
+            'rejection_reason' => null,
+            'settled_usage' => ['input_tokens' => 20, 'output_tokens' => 30,
+                'cached_tokens' => isset($responseUsage['input_tokens_details']) ? 5 : null, 'reasoning_tokens' => 7],
+        ]], 'Request diagnostics must retain validated settlement, including failed/incomplete responses and unknown cache details.');
     }
     $valid = agentEvaluationControllerTestResponseStream(['model' => $model, 'status' => 'completed', 'usage' => $usage]);
     foreach (['', "event: error\ndata: {\"type\":\"error\"}\n\n", "data: {\"type\":\"unknown\"}\n\n",
@@ -2486,6 +2494,11 @@ function agentEvaluationControllerTestProxySpending(): void
             && $state['request_sha256'] === $pendingHash && $money['reserved_units'] === 155_000 && $money['settled_units'] === 0
             && agentEvaluationControllerProxyAggregateUsage($state)['input_tokens'] === null,
             'Rejected or ambiguous streams must never release money or token reservations, including after a terminal event followed by invalid data.');
+        $diagnostics = agentEvaluationRequireList($state, 'request_diagnostics', 'ambiguous request diagnostics');
+        $diagnostic = agentEvaluationValueObject($diagnostics[0], 'ambiguous request diagnostic');
+        agentEvaluationControllerTest($diagnostic['settled_usage'] === null
+            && $diagnostic['reservation_outcome'] === 'reserved',
+            'Rejected usage must never appear as settled per-request diagnostics.');
     }
     $state = agentEvaluationControllerProxyState($model, 'high', 200_000, [...$policy, 'limit_units' => 100_000]);
     for ($turn = 0; $turn < 2; $turn++) {
@@ -2503,6 +2516,41 @@ function agentEvaluationControllerTestProxySpending(): void
         && $state['failure_reason'] === 'spending_limit' && $state['request_count'] === 2
         && $state['input_tokens'] === 40 && $state['output_tokens'] === 60,
         'Every turn must share the original dollar allowance; settled input/output totals remain available when the next count cannot reserve money.');
+    $diagnostics = agentEvaluationRequireList($state, 'request_diagnostics', 'cumulative request diagnostics');
+    $first = agentEvaluationValueObject($diagnostics[0], 'first request diagnostic');
+    $second = agentEvaluationValueObject($diagnostics[1], 'second request diagnostic');
+    agentEvaluationControllerTest(count($diagnostics) === 3
+        && $first['remaining_tokens'] === 200_000
+        && $second['remaining_tokens'] === 199_950
+        && $diagnostics[2] === [
+            'authority' => 'diagnostic_only', 'request_ordinal' => 3,
+            'counted_input_tokens' => 20, 'remaining_tokens' => 199_900,
+            'reservation_outcome' => 'rejected', 'reserved_output_tokens' => null,
+            'rejection_reason' => 'spending_limit', 'settled_usage' => null,
+        ], 'Diagnostics must retain every settled request and the rejected count without creating another reservation.');
+    foreach ([['{"object":"response.input_tokens","input_tokens":85}', 85, 100, 'model_token_limit'],
+        ['{"object":"response.input_tokens","input_tokens":"secret-count-sentinel"}', null, null, 'invalid_reservation']] as [$countResponse, $counted, $remaining, $reason]) {
+        $state = agentEvaluationControllerProxyState($model, 'high', 100);
+        $request = agentEvaluationControllerProxyRequest($body, $state);
+        agentEvaluationControllerExpectFailure(
+            static function () use ($request, $countResponse, &$state): void { agentEvaluationControllerProxyReserve($request['request'], $countResponse, $state); },
+            'AGENT_EVALUATION_CONTROLLER_PROXY_RESERVATION_REJECTED',
+        );
+        agentEvaluationControllerTest($state['request_diagnostics'] === [[
+            'authority' => 'diagnostic_only', 'request_ordinal' => 1,
+            'counted_input_tokens' => $counted, 'remaining_tokens' => $remaining,
+            'reservation_outcome' => 'rejected', 'reserved_output_tokens' => null,
+            'rejection_reason' => $reason, 'settled_usage' => null,
+        ]] && $state['reserved_input'] === 0 && $state['reserved_output'] === 0 && $state['request_count'] === 0,
+            'A denied count must explain token capacity; malformed provider values must not enter diagnostics or authorize create.');
+        $diagnostics = $state['request_diagnostics'];
+        agentEvaluationControllerExpectFailure(
+            static function () use ($request, $countResponse, &$state): void { agentEvaluationControllerProxyReserve($request['request'], $countResponse, $state); },
+            'AGENT_EVALUATION_CONTROLLER_PROXY_RESERVATION_REJECTED',
+        );
+        agentEvaluationControllerTest($state['request_diagnostics'] === $diagnostics,
+            'Calling reserve again on a blocked request must not append or overwrite its diagnostics.');
+    }
     $state = agentEvaluationControllerProxyState($model, 'high', 200_000, $policy);
     unset($state['spending']);
     agentEvaluationControllerExpectFailure(
@@ -2583,6 +2631,14 @@ function agentEvaluationControllerTestProxyResponseByteBounds(): void
             && agentEvaluationControllerProxyAggregateUsage($state) === $settled
             && agentEvaluationControllerProxySpendingLedger($state) === $settledMoney,
             'Request 129 must be rejected before reservation without losing the 128 settled usages or charges.');
+        $diagnostics = agentEvaluationRequireList($state, 'request_diagnostics', 'bounded request diagnostics');
+        $last = agentEvaluationValueObject($diagnostics[127], 'last request diagnostic');
+        agentEvaluationControllerTest(count($diagnostics) === 128
+            && $last['request_ordinal'] === 128
+            && array_sum(array_column(array_column($diagnostics, 'settled_usage'), 'input_tokens')) === $settled['input_tokens']
+            && array_sum(array_column(array_column($diagnostics, 'settled_usage'), 'output_tokens')) === $settled['output_tokens']
+            && strlen(json_encode($diagnostics, JSON_THROW_ON_ERROR)) < 65_536,
+            'Per-request diagnostics must remain bounded at the request ceiling and reproduce validated token totals.');
 
         $base = $initial;
         $request = agentEvaluationControllerProxyRequest($body, $base);

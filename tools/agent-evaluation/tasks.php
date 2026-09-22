@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 2,
-        'manifest_sha256' => '9d739860589e0b8bb3681742182b22841de3ea06256169cb9ef44752ee33abe8',
+        'revision' => 3,
+        'manifest_sha256' => 'ea9db9aea9ae8330c17e9df31d567ebb6f5ae612f9763d289dee17ba4f34c08a',
     ],
 ];
 
@@ -37,20 +37,26 @@ const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = 'd7ab170c190c9fd7e18be3ca00b874a8d954fa2b';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = '3b017642ecc90fbc5af93f2f9454cb86d1e2add7';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = 'da90475f0d494a125dfdff21f85408b97164ec276961c1d7db522a63bbb5be6d';
-const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '0d62291e24f81b8a5a68e6bc3b825682c14ca23f3f4574f48a68d0deede699a6';
 const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '92ebd37b23791cdf3652defe1d7f856adc733ed2cb7810ea280da2350e9bfbd2';
 const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = 'eaf9595e12636a7ac98b22b92d59143d4a593a84fc5bc80e7cabf186bddd5fc1';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
+const AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON = 'import pathlib,sys; p,a,b=sys.argv[1:]; a,b=int(a),int(b); '
+    . '(1<=a<=b and b-a<120) or sys.exit("Invalid range: use 1-120 lines"); '
+    . 'lines=pathlib.Path(p).read_bytes().splitlines(keepends=True); b<=len(lines) or sys.exit("Range exceeds file"); '
+    . 'data=b"".join(lines[a-1:b]); data.decode("utf-8"); '
+    . 'len(data)<=8192 or sys.exit("Narrow range: exceeds 8192 bytes"); sys.stdout.buffer.write(data)';
 const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.'
     . "\n\n"
-    . 'Read scope after required entrypoints (revision 2): Follow all mandatory repository entrypoints. '
-    . 'Select the owning guide through the router, then follow its exact links to relevant policy, source, and tests. '
-    . 'Discover paths with scoped filename searches before reading contents. '
-    . 'Do not run repository-wide content searches or broad searches across multiple concern directories. '
-    . 'After entrypoints, keep each read or search output within 120 lines and 8,192 bytes; narrow by exact file, section, or symbol before expanding. '
-    . 'If output is truncated, narrow the query instead of repeating it. '
-    . 'Batch independent reads of already identified files, avoid rereading unchanged text, and stop collecting context once the required evidence is sufficient to answer. '
-    . 'Do not skip required concerns or invent missing evidence to fit the budget.';
+    . 'Reading protocol (revision 3): Follow AGENTS.md and all mandatory entrypoints. '
+    . 'Read the known paths VISION.md, .ai/README.md, .ai/rules.md, .ai/change-workflow.md, and .ai/strict-profile.md in one batched tool invocation; do not rediscover these paths. '
+    . 'Select the owning guide through the router, locate its headings, and read relevant sections before following exact links to policy, source, and tests. '
+    . 'Use scoped filename discovery only for unknown paths. Avoid repository-wide content searches and searches spanning multiple concern directories. '
+    . 'After entrypoints, each read or search output must fit 120 lines and 8,192 bytes. A line bound alone is insufficient. '
+    . 'For selected sections use the read-only command below with an exact PATH and inclusive START/END line numbers; it emits no source on a bound error. '
+    . 'Narrow the range on error; do not pipe a whole file through a truncating command. Batch independent reads, avoid rereading unchanged text, and stop when evidence is sufficient. '
+    . 'Do not skip required concerns or invent missing evidence to fit the budget.'
+    . "\n\npython3 -I -B -c '" . AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON . "' PATH START END";
 const AGENT_EVALUATION_EXPLANATION_MAX_EVENTS = 4_096;
 const AGENT_EVALUATION_EXPLANATION_RELAY_SHA256 = 'eef4017c83216929f74504e0025821b12232190b8d87257cd8bc6186dfbfe123';
 

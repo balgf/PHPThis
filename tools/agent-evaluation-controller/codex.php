@@ -147,6 +147,7 @@ function agentEvaluationControllerProxyState(string $model, string $reasoningEff
         'reserved_output' => 0,
         'request_count' => 0,
         'observed_request_count' => 0,
+        'request_diagnostics' => [],
         'transport_tools' => null,
         'last_request_sha256' => null,
         'response_bytes' => 0,
@@ -350,6 +351,8 @@ function agentEvaluationControllerProxyRequest(string $body, array &$state): arr
  */
 function agentEvaluationControllerProxyReserve(array $request, string $countResponse, array &$state): string
 {
+    $diagnostic = null;
+    $diagnostics = $state['request_diagnostics'] ?? null;
     try {
         if (
             ($state['blocked'] ?? true) !== false
@@ -357,6 +360,21 @@ function agentEvaluationControllerProxyReserve(array $request, string $countResp
             || ($state['request_sha256'] ?? null) !== hash('sha256', agentEvaluationControllerProxyEncodeRequest($request))
         ) {
             throw new RuntimeException('Proxy request is not pending.');
+        }
+
+        // Optional observations never authorize a request or replace the accounting ledger.
+        if (is_array($diagnostics) && array_is_list($diagnostics)
+            && count($diagnostics) < AGENT_EVALUATION_CONTROLLER_PROXY_REQUEST_LIMIT) {
+            $diagnostic = [
+                'authority' => 'diagnostic_only',
+                'request_ordinal' => $state['observed_request_count'],
+                'counted_input_tokens' => null,
+                'remaining_tokens' => null,
+                'reservation_outcome' => 'rejected',
+                'reserved_output_tokens' => null,
+                'rejection_reason' => null,
+                'settled_usage' => null,
+            ];
         }
 
         $count = agentEvaluationControllerProxyJsonObject($countResponse);
@@ -371,6 +389,11 @@ function agentEvaluationControllerProxyReserve(array $request, string $countResp
         $remaining = agentEvaluationRequirePositiveInteger($state, 'token_budget', 'proxy')
             - agentEvaluationRequireNonNegativeInteger($state, 'input_tokens', 'proxy')
             - agentEvaluationRequireNonNegativeInteger($state, 'output_tokens', 'proxy');
+
+        if ($diagnostic !== null) {
+            $diagnostic['counted_input_tokens'] = $inputTokens;
+            $diagnostic['remaining_tokens'] = $remaining;
+        }
 
         if ($inputTokens > $remaining - 16) {
             $state['failure_reason'] = 'model_token_limit';
@@ -405,9 +428,25 @@ function agentEvaluationControllerProxyReserve(array $request, string $countResp
         $state['request_count'] = agentEvaluationRequireNonNegativeInteger($state, 'request_count', 'proxy') + 1;
         $request['max_output_tokens'] = $outputTokens;
 
-        return agentEvaluationControllerProxyEncodeRequest($request);
+        $encoded = agentEvaluationControllerProxyEncodeRequest($request);
+        if ($diagnostic !== null && is_array($diagnostics)) {
+            $diagnostic['reservation_outcome'] = 'reserved';
+            $diagnostic['reserved_output_tokens'] = $outputTokens;
+            $diagnostics[] = $diagnostic;
+            $state['request_diagnostics'] = $diagnostics;
+        }
+
+        return $encoded;
     } catch (Throwable) {
         $state['blocked'] = true;
+        if ($diagnostic !== null && is_array($diagnostics)) {
+            $diagnostic['rejection_reason'] = match ($state['failure_reason'] ?? null) {
+                'model_token_limit', 'model_input_limit', 'spending_limit' => $state['failure_reason'],
+                default => 'invalid_reservation',
+            };
+            $diagnostics[] = $diagnostic;
+            $state['request_diagnostics'] = $diagnostics;
+        }
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_PROXY_RESERVATION_REJECTED');
     }
 }
@@ -593,6 +632,22 @@ function agentEvaluationControllerProxyComplete(string $sse, array &$state): arr
         $state['request_sha256'] = null;
         if ($spending !== null) {
             $state['spending'] = $spending;
+        }
+
+        $diagnostics = $state['request_diagnostics'] ?? null;
+        if (is_array($diagnostics) && array_is_list($diagnostics) && $diagnostics !== []) {
+            $index = count($diagnostics) - 1;
+            $diagnostic = $diagnostics[$index];
+            if (is_array($diagnostic)
+                && ($diagnostic['request_ordinal'] ?? null) === ($state['observed_request_count'] ?? null)
+                && ($diagnostic['reservation_outcome'] ?? null) === 'reserved') {
+                $diagnostic['settled_usage'] = [
+                    'input_tokens' => $input, 'output_tokens' => $output,
+                    'cached_tokens' => $cached, 'reasoning_tokens' => $reasoning,
+                ];
+                $diagnostics[$index] = $diagnostic;
+                $state['request_diagnostics'] = $diagnostics;
+            }
         }
 
         $stage = 'terminal_status';

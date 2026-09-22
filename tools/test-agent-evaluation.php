@@ -850,17 +850,68 @@ function agentEvaluationWriteExplanationOuterEvidence(
     return $manifest;
 }
 
+function agentEvaluationExplanationBoundedReadControls(string $kit): void
+{
+    $directory = sys_get_temp_dir() . '/phpthis-explanation-read-' . bin2hex(random_bytes(8));
+    if (!mkdir($directory, 0700)) {
+        throw new RuntimeException('Unable to create bounded-read control directory.');
+    }
+    try {
+        $guide = runBoundedMaintainerProcess(
+            ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':.ai/file-transfers.md'],
+            dirname($kit, 2), null, 5_000, 32_768, 4_096,
+        );
+        agentEvaluationTest($guide['exit_code'] === 0 && $guide['stderr'] === '',
+            'The read command control must use the exact pinned guide.');
+        $guideLines = explode("\n", $guide['stdout']);
+        $s3Section = implode("\n", array_slice($guideLines, 65, 5)) . "\n";
+        $controls = [
+            [$guide['stdout'], 1, 70, null],
+            [$guide['stdout'], 66, 70, $s3Section],
+            [str_repeat('x', 8192), 1, 1, str_repeat('x', 8192)],
+            [str_repeat('x', 8193), 1, 1, null],
+            [str_repeat('é', 4096), 1, 1, str_repeat('é', 4096)],
+            [str_repeat('é', 4097), 1, 1, null],
+            [str_repeat("x\n", 121), 1, 120, str_repeat("x\n", 120)],
+            [str_repeat("x\n", 121), 1, 121, null],
+            ["first\r\nlast", 1, 2, "first\r\nlast"],
+            ["\xFF", 1, 1, null],
+            ["line\n", 0, 1, null],
+            ["line\n", 2, 1, null],
+            ["line\n", 1, 2, null],
+        ];
+        foreach ($controls as [$bytes, $start, $end, $expected]) {
+            $file = $directory . '/selected document.md';
+            if (file_put_contents($file, $bytes) !== strlen($bytes)) {
+                throw new RuntimeException('Unable to write bounded-read control.');
+            }
+            $read = runBoundedMaintainerProcess(
+                ['python3', '-I', '-B', '-c', AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON, $file, (string) $start, (string) $end],
+                $directory, null, 5_000, 16_384, 4_096,
+            );
+            agentEvaluationTest($expected === null
+                ? ($read['exit_code'] !== 0 && $read['stdout'] === '')
+                : ($read['exit_code'] === 0 && $read['stderr'] === '' && $read['stdout'] === $expected
+                    && strlen($read['stdout']) <= 8192),
+                'The exact prompted reader must preserve complete UTF-8/line bytes or fail without emitting source.');
+        }
+    } finally {
+        agentEvaluationRemoveDirectory($directory);
+    }
+}
+
 function agentEvaluationExplanationContractControls(string $kit): void
 {
     $task = agentEvaluationExplanationTask($kit);
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 2
+        && $task['revision'] === 3
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
     );
+    agentEvaluationExplanationBoundedReadControls($kit);
     agentEvaluationTest(
         $task['base'] === [
             'fixture' => 'tracked-maintainer-source',
@@ -2387,7 +2438,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 2,
+                'revision' => 3,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -2735,22 +2786,22 @@ function agentEvaluationExplanationContractControls(string $kit): void
             'prompt',
             'copied explanation manifest',
         );
-        $effectivePromptDescriptor['effective_sha256'] = hash(
-            'sha256',
-            $sourcePrompt . "\nThis is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.\n",
-        );
-        $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
+        foreach (['2d9f731008a4a0d41c9ccc32ceabc2365f39a547be389f35b8f98e6fd496b043',
+            '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6'] as $oldPromptHash) {
+            $effectivePromptDescriptor['effective_sha256'] = $oldPromptHash;
+            $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 
-        if (file_put_contents($manifestPath, agentEvaluationJson($effectivePromptManifest)) === false) {
-            throw new RuntimeException('Unable to prepare the revision-1 effective-prompt rejection control.');
+            if (file_put_contents($manifestPath, agentEvaluationJson($effectivePromptManifest)) === false) {
+                throw new RuntimeException('Unable to prepare the older effective-prompt rejection control.');
+            }
+
+            agentEvaluationExpectFailure(
+                static function () use ($copiedKit): void {
+                    agentEvaluationExplanationTaskDocument($copiedKit, AGENT_EVALUATION_EXPLANATION_TASK_ID);
+                },
+                'Explanation effective prompt hash does not match the exact source and suffix bytes.',
+            );
         }
-
-        agentEvaluationExpectFailure(
-            static function () use ($copiedKit): void {
-                agentEvaluationExplanationTaskDocument($copiedKit, AGENT_EVALUATION_EXPLANATION_TASK_ID);
-            },
-            'Explanation effective prompt hash does not match the exact source and suffix bytes.',
-        );
 
         if (file_put_contents($manifestPath, $manifestBytes) === false) {
             throw new RuntimeException('Unable to restore the copied explanation effective-prompt control.');
