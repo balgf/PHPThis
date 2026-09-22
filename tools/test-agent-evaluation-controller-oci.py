@@ -471,7 +471,7 @@ def verify_explanation_control(run_root, requests, response_count, result, depen
     assert process["cleanup"]["container_stopped"] is True and process["cleanup"]["oom_killed"] is False
     freeze = result["freeze"]
     assert freeze["changed_files"] == [] and freeze["added_lines"] == 0 and freeze["deleted_lines"] == 0
-    assert freeze["candidate_sha256"] == "da90475f0d494a125dfdff21f85408b97164ec276961c1d7db522a63bbb5be6d"
+    assert freeze["candidate_sha256"] == "6ce18064ba7a512fcd6c830e5fc912201a34ddbf3982e2e50bd807cf66e68c5c"
     assert freeze["patch_sha256"] == hashlib.sha256(b"").hexdigest()
     assert result["export"]["generation_stopped"] is True
     assert result["generation_cleanup"] == {"status": "pass", "generation_destroyed": True}

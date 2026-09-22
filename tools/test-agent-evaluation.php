@@ -906,7 +906,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 3
+        && $task['revision'] === 4
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2438,7 +2438,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 3,
+                'revision' => 4,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
