@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 5,
-        'manifest_sha256' => 'b1c26b9b98f98a0aa6e3fdaa97f8be052d521f8730526185d58128d309ffebc3',
+        'revision' => 6,
+        'manifest_sha256' => '9bd091ccbdb70dd9c7f09b7cfd8f524cb98d486c049fe466d65bd7f940abeb60',
     ],
 ];
 
@@ -38,8 +38,8 @@ const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = '1017038cf2144226c4c420e1fd
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = '986870bcf29a637bc610d863984f7dc6dfd82255';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = '6ce18064ba7a512fcd6c830e5fc912201a34ddbf3982e2e50bd807cf66e68c5c';
 const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e';
-const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '92ebd37b23791cdf3652defe1d7f856adc733ed2cb7810ea280da2350e9bfbd2';
-const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = 'eaf9595e12636a7ac98b22b92d59143d4a593a84fc5bc80e7cabf186bddd5fc1';
+const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = 'ca581e29c9af264fa86a275ec8ed8b82f9f63e95b398f957de39e50fd8f1f990';
+const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = 'ce857a734dd6df75aeb0d255b61f0b4bc867ed436310aaa150980ad80de01d96';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
 const AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND = 'cat VISION.md .ai/README.md .ai/rules.md .ai/change-workflow.md .ai/strict-profile.md';
 const AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON = 'import pathlib,sys; p,a,b=sys.argv[1:]; a,b=int(a),int(b); '
@@ -623,7 +623,7 @@ function agentEvaluationExplanationTaskDocument(string $kit, string $taskId): ar
         $taskId,
     );
     $expectedBudgets = [
-        'model_tokens' => 40_000,
+        'model_tokens' => 100_000,
         'wall_seconds' => 1_200,
         'repair_turns' => 0,
         'command_output_bytes' => 4_194_304,

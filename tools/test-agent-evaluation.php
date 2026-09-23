@@ -955,10 +955,19 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 5
+        && $task['revision'] === 6
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
+    );
+    agentEvaluationTest(
+        $task['budgets'] === [
+            'model_tokens' => 100_000,
+            'wall_seconds' => 1_200,
+            'repair_turns' => 0,
+            'command_output_bytes' => 4_194_304,
+        ],
+        'The revised explanation task must admit 100,000 cumulative tokens with the other limits fixed.',
     );
     agentEvaluationExplanationEntrypointReadControls($kit);
     agentEvaluationExplanationBoundedReadControls($kit);
@@ -1662,7 +1671,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             'ledger' => [
                 'model' => $run['model']['id'],
                 'reasoning_effort' => $run['model']['settings']['reasoning_effort'],
-                'token_budget' => 40_000,
+                'token_budget' => 100_000,
                 'input_tokens' => 1_000,
                 'output_tokens' => 500,
                 'cached_tokens' => 100,
@@ -2275,7 +2284,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
 
         foreach (
             [
-                ['token_budget', 39_999],
+                ['token_budget', 40_000],
+                ['token_budget', 99_999],
                 ['input_tokens', 999],
                 ['output_tokens', 499],
                 ['cached_tokens', 99],
@@ -2488,7 +2498,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 5,
+                'revision' => 6,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],

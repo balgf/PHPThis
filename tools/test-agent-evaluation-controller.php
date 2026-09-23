@@ -4094,7 +4094,7 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
     $explanationProxy = agentEvaluationControllerProxyState(
         'gpt-5.4-2026-03-05',
         'high',
-        40_000,
+        100_000,
         $explanationSpending,
     );
     $proxySpending = agentEvaluationRequireObject(
@@ -4135,9 +4135,8 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
             'output_cents_per_million' => 1_500,
         ]
         && $proxySpendingPolicy === $explanationSpending
-        && $explanationTokenBudget * $explanationSpending['output_cents_per_million']
-            === $explanationSpending['limit_units'],
-        'Explanation live configuration must bind its tools and conservatively enforced USD 0.60 ceiling.',
+        && $explanationTokenBudget === 100_000,
+        'Explanation live configuration must bind a larger cumulative token allowance and an independent USD 0.60 ceiling.',
     );
     foreach (['00000000000000000000000000000073', '00000000000000000000000000000074'] as $unapprovedRunId) {
         agentEvaluationControllerExpectFailure(

@@ -193,6 +193,7 @@ try {
         agentEvaluationExplanationEffectivePrompt($sourcePrompt),
         $profile,
         '',
+        agentEvaluationControllerExplanationSpending(),
     );
     if ($generation['termination_reason'] !== 'completed'
         || $generation['external_actions_approved'] !== true
@@ -205,6 +206,12 @@ try {
         'ledger',
         'explanation OCI proxy evidence',
     );
+    $spending = agentEvaluationControllerProxySpendingLedger($ledger);
+    if ($ledger['token_budget'] !== 100_000 || $spending === null
+        || $spending['policy'] !== agentEvaluationControllerExplanationSpending()
+    ) {
+        throw new RuntimeException('Explanation OCI control lost its token or spending cap.');
+    }
     $observedTransport = agentEvaluationNormalizeExplanationTransportTools(
         $ledger['transport_tools'] ?? null,
         'explanation OCI observed transport tools',

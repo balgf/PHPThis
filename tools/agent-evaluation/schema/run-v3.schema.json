@@ -290,7 +290,10 @@
             ],
             "properties": {
                 "model_tokens": {
-                    "const": 40000
+                    "enum": [
+                        40000,
+                        100000
+                    ]
                 },
                 "wall_seconds": {
                     "const": 1200
@@ -385,7 +388,7 @@
         "tokenCount": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 40000
+            "maximum": 100000
         }
     },
     "allOf": [
