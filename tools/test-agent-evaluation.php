@@ -904,6 +904,26 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
         );
         agentEvaluationTest($guide['exit_code'] === 0 && $guide['stderr'] === '',
             'The read command control must use the exact pinned guide.');
+        $guidePath = $directory . '/pinned-guide.md';
+        if (file_put_contents($guidePath, $guide['stdout']) !== strlen($guide['stdout'])) {
+            throw new RuntimeException('Unable to write the pinned guide window control.');
+        }
+        $guideWindows = '';
+        foreach ([[1, 20], [21, 40], [41, 60], [61, 80]] as [$start, $end]) {
+            $window = runBoundedMaintainerProcess(
+                ['python3', '-I', '-B', '-c', AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON,
+                    $guidePath, (string) $start, (string) $end],
+                $directory, null, 5_000, 16_384, 4_096,
+            );
+            agentEvaluationTest(
+                $window['exit_code'] === 0 && $window['stderr'] === ''
+                    && $window['stdout'] !== '' && strlen($window['stdout']) <= 8192,
+                'Each 20-line guide window must fit the existing byte cap and return complete source.',
+            );
+            $guideWindows .= $window['stdout'];
+        }
+        agentEvaluationTest($guideWindows === $guide['stdout'],
+            'The ordered 20-line windows must reconstruct the exact pinned guide.');
         $guideLines = explode("\n", $guide['stdout']);
         $s3Section = implode("\n", array_slice($guideLines, 65, 5)) . "\n";
         $controls = [
@@ -953,9 +973,19 @@ function agentEvaluationExplanationContractControls(string $kit): void
 {
     $task = agentEvaluationExplanationTask($kit);
     agentEvaluationTest(
+        str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'For an unfamiliar guide or linked document, begin with selected windows of at most 20 lines.',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'Batch independent reads only when their combined output fits 8,192 bytes',
+        ),
+        'The explanation prompt must avoid an oversized first read of an unfamiliar guide.',
+    );
+    agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 6
+        && $task['revision'] === 7
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2498,7 +2528,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 6,
+                'revision' => 7,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -2848,7 +2878,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
         );
         foreach (['2d9f731008a4a0d41c9ccc32ceabc2365f39a547be389f35b8f98e6fd496b043',
             '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6',
-            '0d62291e24f81b8a5a68e6bc3b825682c14ca23f3f4574f48a68d0deede699a6'] as $oldPromptHash) {
+            '0d62291e24f81b8a5a68e6bc3b825682c14ca23f3f4574f48a68d0deede699a6',
+            '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e'] as $oldPromptHash) {
             $effectivePromptDescriptor['effective_sha256'] = $oldPromptHash;
             $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 

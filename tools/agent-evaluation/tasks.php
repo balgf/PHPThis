@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 6,
-        'manifest_sha256' => '9bd091ccbdb70dd9c7f09b7cfd8f524cb98d486c049fe466d65bd7f940abeb60',
+        'revision' => 7,
+        'manifest_sha256' => '1c69832fc9608300d95f3953bb2e567dc905de163b3da304825af377c938fcd1',
     ],
 ];
 
@@ -37,7 +37,7 @@ const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = '1017038cf2144226c4c420e1fd3c3e86a1cfa19c';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = '986870bcf29a637bc610d863984f7dc6dfd82255';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = '6ce18064ba7a512fcd6c830e5fc912201a34ddbf3982e2e50bd807cf66e68c5c';
-const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = 'bc69afd57bde6a57d6ba39540340a8b23f285df5ae66959577fe1b65cb85bdfa';
 const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = 'ca581e29c9af264fa86a275ec8ed8b82f9f63e95b398f957de39e50fd8f1f990';
 const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = 'ce857a734dd6df75aeb0d255b61f0b4bc867ed436310aaa150980ad80de01d96';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
@@ -49,18 +49,21 @@ const AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON = 'import pathlib,sys; p,
     . 'len(data)<=8192 or sys.exit("Narrow range: exceeds 8192 bytes"); sys.stdout.buffer.write(data)';
 const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.'
     . "\n\n"
-    . 'Reading protocol (revision 5): Follow AGENTS.md and all mandatory entrypoints. '
+    . 'Reading protocol (revision 7): Follow AGENTS.md and all mandatory entrypoints. '
     . 'First read all five mandatory files completely by running this exact command once in one shell invocation:'
     . "\n\n" . AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND . "\n\n"
     . 'Do not rediscover these known paths, count their lines, or use the selected-section reader for this initial batch. '
     . 'The section limits below apply only after this batch. '
     . 'Then select the owning guide through the router, locate its headings, and read relevant sections before following exact links to policy, source, and tests. '
+    . 'For an unfamiliar guide or linked document, begin with selected windows of at most 20 lines. '
+    . 'Continue in adjacent windows only when needed; do not request the whole document or the maximum span by default. '
     . 'Use scoped filename discovery only for unknown paths. Avoid repository-wide content searches and searches spanning multiple concern directories. '
     . 'After entrypoints, each read or search output must fit 120 lines and 8,192 bytes. A line bound alone is insufficient. '
     . 'For selected sections use the read-only command below with an exact PATH and inclusive START/END line numbers. '
     . 'Request at most 120 lines; END may extend past EOF and returns the remaining lines, but START must exist. '
     . 'Invalid ranges, encoding, or excess bytes emit no source. '
-    . 'Narrow the range on error; do not pipe a whole file through a truncating command. Batch independent reads, avoid rereading unchanged text, and stop when evidence is sufficient. '
+    . 'Narrow the range on error; do not pipe a whole file through a truncating command. '
+    . 'Batch independent reads only when their combined output fits 8,192 bytes; avoid rereading unchanged text, and stop when evidence is sufficient. '
     . 'Do not skip required concerns or invent missing evidence to fit the budget.'
     . "\n\npython3 -I -B -c '" . AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON . "' PATH START END";
 const AGENT_EVALUATION_EXPLANATION_MAX_EVENTS = 4_096;

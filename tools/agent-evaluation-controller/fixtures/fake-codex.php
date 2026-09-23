@@ -177,7 +177,7 @@ if (!is_string($prompt) || $prompt === '' || strlen($prompt) > 1_048_576 || str_
     exit(2);
 }
 
-$explanationPromptSha256 = '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e';
+$explanationPromptSha256 = 'bc69afd57bde6a57d6ba39540340a8b23f285df5ae66959577fe1b65cb85bdfa';
 if (hash_equals($explanationPromptSha256, hash('sha256', $prompt))) {
     $events = [
         [
