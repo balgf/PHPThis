@@ -876,9 +876,8 @@ function agentEvaluationExplanationEntrypointReadControls(string $kit): void
                 ['python3', '-I', '-B', '-c', AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON, $path, '1', '120'],
                 $directory, null, 5_000, 16_384, 4_096,
             );
-            agentEvaluationTest($section['exit_code'] === 0 && $section['stderr'] === ''
-                && $section['stdout'] === $source['stdout'],
-                'The section reader must recover the observed 1-120 requests on all five short entrypoints.');
+            agentEvaluationTest($section['exit_code'] !== 0 && $section['stdout'] === '',
+                'The current section reader must reject former 1-120 entrypoint reads without partial source.');
         }
         $batch = runBoundedMaintainerProcess(
             ['/bin/sh', '-c', AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND],
@@ -933,21 +932,22 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
             [str_repeat('x', 8193), 1, 1, null],
             [str_repeat('é', 4096), 1, 1, str_repeat('é', 4096)],
             [str_repeat('é', 4097), 1, 1, null],
-            [str_repeat("x\n", 121), 1, 120, str_repeat("x\n", 120)],
-            [str_repeat("x\n", 121), 1, 121, null],
+            [str_repeat("x\n", 21), 1, 21, null],
+            [str_repeat("x\n", 21), 1, 20, str_repeat("x\n", 20)],
+            [str_repeat("x\n", 21), 2, 21, str_repeat("x\n", 20)],
             ["first\r\nlast", 1, 2, "first\r\nlast"],
             ["\xFF", 1, 1, null],
             ["line\n", 0, 1, null],
             ["line\n", 2, 1, null],
             ["line\n", 1, 2, "line\n"],
-            ["line\n", 1, 120, "line\n"],
-            ["line\n", 1, 121, null],
+            ["line\n", 1, 20, "line\n"],
+            ["line\n", 1, 21, null],
             ["line\n", 2, 2, null],
-            ['', 1, 120, null],
+            ['', 1, 20, null],
             [$guide['stdout'], 1, 120, null],
-            [$guide['stdout'], 66, 120, $s3Section],
-            ["first\r\nlast", 2, 120, 'last'],
-            ["\xFF", 1, 120, null],
+            [$guide['stdout'], 66, 85, $s3Section],
+            ["first\r\nlast", 2, 20, 'last'],
+            ["\xFF", 1, 20, null],
         ];
         foreach ($controls as [$bytes, $start, $end, $expected]) {
             $file = $directory . '/selected document.md';
@@ -963,6 +963,36 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
                 : ($read['exit_code'] === 0 && $read['stderr'] === '' && $read['stdout'] === $expected
                     && strlen($read['stdout']) <= 8192),
                 'The exact prompted reader must preserve complete UTF-8/line bytes or fail without emitting source.');
+        }
+        foreach ([
+            ['docs/file-transfers/amazon-s3.md', 157, 260],
+            ['docs/file-transfers/amazon-s3-verification.md', 20, 82],
+            ['docs/file-transfers/amazon-s3.md', 201, 260],
+        ] as [$path, $start, $end]) {
+            $source = runBoundedMaintainerProcess(
+                ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':' . $path],
+                dirname($kit, 2), null, 5_000, 131_072, 4_096,
+            );
+            agentEvaluationTest($source['exit_code'] === 0 && $source['stderr'] === '',
+                'The overwide-read regression must use the exact pinned linked document.');
+            $file = $directory . '/observed-overwide.md';
+            if (file_put_contents($file, $source['stdout']) !== strlen($source['stdout'])) {
+                throw new RuntimeException('Unable to write observed overwide-read control.');
+            }
+            $overwide = runBoundedMaintainerProcess(
+                ['python3', '-I', '-B', '-c', AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON,
+                    $file, (string) $start, (string) $end],
+                $directory, null, 5_000, 16_384, 4_096,
+            );
+            $window = runBoundedMaintainerProcess(
+                ['python3', '-I', '-B', '-c', AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON,
+                    $file, (string) $start, (string) ($start + 19)],
+                $directory, null, 5_000, 16_384, 4_096,
+            );
+            agentEvaluationTest($overwide['exit_code'] !== 0 && $overwide['stdout'] === ''
+                && $window['exit_code'] === 0 && $window['stdout'] !== ''
+                && strlen($window['stdout']) <= 8192,
+                'Observed overwide linked-document reads must reject without source while a 20-line window succeeds.');
         }
     } finally {
         agentEvaluationRemoveDirectory($directory);
@@ -1078,13 +1108,16 @@ function agentEvaluationExplanationContractControls(string $kit): void
         ) && str_contains(
             AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
             'For content searches, use one exact file and one specific term.',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'Inspect concrete execution-path source and its nearest test before answering.',
         ),
         'The explanation prompt must bound reads and avoid repeated broad linked-document searches.',
     );
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 9
+        && $task['revision'] === 10
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2640,7 +2673,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 9,
+                'revision' => 10,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -2993,7 +3026,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
             '0d62291e24f81b8a5a68e6bc3b825682c14ca23f3f4574f48a68d0deede699a6',
             '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e',
             'bc69afd57bde6a57d6ba39540340a8b23f285df5ae66959577fe1b65cb85bdfa',
-            'e0d43884d6c38a1ab2eba3e6575da15d13f9f9450c48683225c020a42f562b99'] as $oldPromptHash) {
+            'e0d43884d6c38a1ab2eba3e6575da15d13f9f9450c48683225c020a42f562b99',
+            '4e9fc1550b7acf8aea364eac05050be5720920806a1a28c858267a3b24a1ec1c'] as $oldPromptHash) {
             $effectivePromptDescriptor['effective_sha256'] = $oldPromptHash;
             $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 

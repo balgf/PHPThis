@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 9,
-        'manifest_sha256' => 'f95472c2846ab8a94e07cc935fafb18b4c64adbf301dcae213333dfbce2ee383',
+        'revision' => 10,
+        'manifest_sha256' => '77c3713f043ad5b71271c9c36f63540eee606c02fa7556089067031c00bfdb75',
     ],
 ];
 
@@ -37,13 +37,13 @@ const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = '1017038cf2144226c4c420e1fd3c3e86a1cfa19c';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = '986870bcf29a637bc610d863984f7dc6dfd82255';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = '6ce18064ba7a512fcd6c830e5fc912201a34ddbf3982e2e50bd807cf66e68c5c';
-const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '4e9fc1550b7acf8aea364eac05050be5720920806a1a28c858267a3b24a1ec1c';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '12a4d8099c764e0ba77641cfdb5077e6e184900732e375d68ee47c6adeddeb12';
 const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '591111e42e91fd9e928de4e6a59f6a3769552913796c82a8ca11eee99b682d13';
 const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = '9cc9b0df25b15f1d8005fac3dd7c397bca064a46715feb2a1b5dd410d6caee42';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
 const AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND = 'cat VISION.md .ai/README.md .ai/rules.md .ai/change-workflow.md .ai/strict-profile.md';
 const AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON = 'import pathlib,sys; p,a,b=sys.argv[1:]; a,b=int(a),int(b); '
-    . '(1<=a<=b and b-a<120) or sys.exit("Invalid range: use 1-120 lines"); '
+    . '(1<=a<=b and b-a<20) or sys.exit("Invalid range: use 1-20 lines"); '
     . 'lines=pathlib.Path(p).read_bytes().splitlines(keepends=True); a<=len(lines) or sys.exit("Start exceeds file"); '
     . 'data=b"".join(lines[a-1:b]); data.decode("utf-8"); '
     . 'len(data)<=8192 or sys.exit("Narrow range: exceeds 8192 bytes"); sys.stdout.buffer.write(data)';
@@ -56,7 +56,7 @@ const AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON = 'import pathlib,re,sy
     . 'sys.stdout.buffer.write(data)';
 const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.'
     . "\n\n"
-    . 'Reading protocol (revision 9): Follow AGENTS.md and all mandatory entrypoints. '
+    . 'Reading protocol (revision 10): Follow AGENTS.md and all mandatory entrypoints. '
     . 'First read all five mandatory files completely by running this exact command once in one shell invocation:'
     . "\n\n" . AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND . "\n\n"
     . 'Do not rediscover these known paths, count their lines, or use the selected-section reader for this initial batch. '
@@ -65,13 +65,16 @@ const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only 
     . 'For an unfamiliar guide or linked document, begin with selected windows of at most 20 lines. '
     . 'Continue in adjacent windows only when needed; do not request the whole document or the maximum span by default. '
     . 'Use scoped filename discovery only for unknown paths. Avoid repository-wide content searches and searches spanning multiple concern directories. '
-    . 'After entrypoints, each read or search output must fit 120 lines and 8,192 bytes. A line bound alone is insufficient. '
+    . 'After entrypoints, each selected read must fit 20 lines and 8,192 bytes. A line bound alone is insufficient. '
     . 'For selected sections use the read-only command below with an exact PATH and inclusive START/END line numbers. '
-    . 'Request at most 120 lines; END may extend past EOF and returns the remaining lines, but START must exist. '
+    . 'Request at most 20 lines; END may extend past EOF and returns the remaining lines, but START must exist. '
     . 'Invalid ranges, encoding, or excess bytes emit no source. '
     . 'Narrow the range on error; do not pipe a whole file through a truncating command. '
     . 'Batch independent reads only when their combined output fits 8,192 bytes; avoid rereading unchanged text, and stop when evidence is sufficient. '
-    . 'Do not skip required concerns or invent missing evidence to fit the budget.'
+    . 'Do not skip required concerns or invent missing evidence to fit the budget. '
+    . 'Inspect concrete execution-path source and its nearest test before answering. '
+    . 'Once the current guide, necessary linked policy, source, and nearest test support the required claims, answer in that turn; do not continue optional discovery for completeness. '
+    . 'If a specific claim remains unsupported, make only targeted reads for that claim or state the limit.'
     . "\n\npython3 -I -B -c '" . AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON . "' PATH START END"
     . "\n\nFor line-based content searches after the entrypoint batch, use the bounded command below with 1-4 exact known file paths. "
     . 'Search headings first with the pattern `^#{1,6} `, then narrow to specific terms and paths if needed. '
