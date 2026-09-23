@@ -1,12 +1,12 @@
 {
     "schema_version": 3,
     "id": "explain.file-profile-s3",
-    "revision": 8,
+    "revision": 9,
     "kind": "explanation",
     "prompt": {
         "path": "prompt.md",
         "sha256": "47ba33d38402b8491c3ba95e04c00ce78a4c8019d95d92a13fbd21ac6d9e2052",
-        "effective_sha256": "e0d43884d6c38a1ab2eba3e6575da15d13f9f9450c48683225c020a42f562b99"
+        "effective_sha256": "4e9fc1550b7acf8aea364eac05050be5720920806a1a28c858267a3b24a1ec1c"
     },
     "rubric": {
         "path": "rubric.md",
@@ -27,7 +27,7 @@
         "max_deleted_lines": 0
     },
     "budgets": {
-        "model_tokens": 100000,
+        "model_tokens": 200000,
         "wall_seconds": 1200,
         "repair_turns": 0,
         "command_output_bytes": 4194304

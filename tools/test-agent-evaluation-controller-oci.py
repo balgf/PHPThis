@@ -207,7 +207,7 @@ try {
         'explanation OCI proxy evidence',
     );
     $spending = agentEvaluationControllerProxySpendingLedger($ledger);
-    if ($ledger['token_budget'] !== 100_000 || $spending === null
+    if ($ledger['token_budget'] !== 200_000 || $spending === null
         || $spending['policy'] !== agentEvaluationControllerExplanationSpending()
     ) {
         throw new RuntimeException('Explanation OCI control lost its token or spending cap.');
@@ -492,11 +492,11 @@ def verify_explanation_control(run_root, requests, response_count, result, depen
     assert [request["path"] for request in requests] == ["/v1/responses/input_tokens", "/v1/responses"]
     assert response_count == 1
     assert requests[1]["model"] == "gpt-5.4-2026-03-05"
-    expected_prompt = {"bytes": 3142,
-                       "sha256": "e0d43884d6c38a1ab2eba3e6575da15d13f9f9450c48683225c020a42f562b99"}
+    expected_prompt = {"bytes": 3530,
+                       "sha256": "4e9fc1550b7acf8aea364eac05050be5720920806a1a28c858267a3b24a1ec1c"}
     for request in requests:
         assert request["user_texts"].count(expected_prompt) == 1, \
-            "Both token counting and generation must receive the exact revision-8 explanation prompt once"
+            "Both token counting and generation must receive the exact revision-9 explanation prompt once"
     return {
         "boundary": "infrastructure-only",
         "effective_prompt": expected_prompt,

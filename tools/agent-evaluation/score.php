@@ -1556,7 +1556,11 @@ function agentEvaluationValidateExplanationScoreArtifacts(
                 $ledger,
                 'token_budget',
                 'explanation proxy ledger',
-            ) !== 100_000
+            ) !== agentEvaluationRequirePositiveInteger(
+                $budgets,
+                'model_tokens',
+                'explanation run budgets',
+            )
             || $ledgerUsage !== $expectedUsage
             || agentEvaluationRequireNonNegativeInteger(
                 $ledger,

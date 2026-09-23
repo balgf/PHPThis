@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 8,
-        'manifest_sha256' => '1abe327d67e6bb24388a42c869644b59c4c7b8bf4f3cd10c5f164794ad75b6a9',
+        'revision' => 9,
+        'manifest_sha256' => 'f95472c2846ab8a94e07cc935fafb18b4c64adbf301dcae213333dfbce2ee383',
     ],
 ];
 
@@ -37,9 +37,9 @@ const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = '1017038cf2144226c4c420e1fd3c3e86a1cfa19c';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = '986870bcf29a637bc610d863984f7dc6dfd82255';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = '6ce18064ba7a512fcd6c830e5fc912201a34ddbf3982e2e50bd807cf66e68c5c';
-const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = 'e0d43884d6c38a1ab2eba3e6575da15d13f9f9450c48683225c020a42f562b99';
-const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = 'ca581e29c9af264fa86a275ec8ed8b82f9f63e95b398f957de39e50fd8f1f990';
-const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = 'ce857a734dd6df75aeb0d255b61f0b4bc867ed436310aaa150980ad80de01d96';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '4e9fc1550b7acf8aea364eac05050be5720920806a1a28c858267a3b24a1ec1c';
+const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '591111e42e91fd9e928de4e6a59f6a3769552913796c82a8ca11eee99b682d13';
+const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = '9cc9b0df25b15f1d8005fac3dd7c397bca064a46715feb2a1b5dd410d6caee42';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
 const AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND = 'cat VISION.md .ai/README.md .ai/rules.md .ai/change-workflow.md .ai/strict-profile.md';
 const AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON = 'import pathlib,sys; p,a,b=sys.argv[1:]; a,b=int(a),int(b); '
@@ -56,7 +56,7 @@ const AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON = 'import pathlib,re,sy
     . 'sys.stdout.buffer.write(data)';
 const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.'
     . "\n\n"
-    . 'Reading protocol (revision 8): Follow AGENTS.md and all mandatory entrypoints. '
+    . 'Reading protocol (revision 9): Follow AGENTS.md and all mandatory entrypoints. '
     . 'First read all five mandatory files completely by running this exact command once in one shell invocation:'
     . "\n\n" . AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND . "\n\n"
     . 'Do not rediscover these known paths, count their lines, or use the selected-section reader for this initial batch. '
@@ -75,6 +75,10 @@ const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only 
     . "\n\npython3 -I -B -c '" . AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON . "' PATH START END"
     . "\n\nFor line-based content searches after the entrypoint batch, use the bounded command below with 1-4 exact known file paths. "
     . 'Search headings first with the pattern `^#{1,6} `, then narrow to specific terms and paths if needed. '
+    . 'For content searches, use one exact file and one specific term. '
+    . 'Do not combine profile names with regex alternation or search several documents for broad terms. '
+    . 'When the heading map identifies a relevant section, read its 20-line window directly instead of searching. '
+    . 'If a content search is rejected, use the heading map to read one linked document section; do not repeat a broad search. '
     . 'It rejects more than 40 matches or 4,096 output bytes without emitting partial source; narrow the pattern or path list on rejection. '
     . 'Do not use raw grep or rg for document content searches.'
     . "\n\npython3 -I -B -c '" . AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON . "' PATTERN PATH [PATH ...]";
@@ -638,7 +642,7 @@ function agentEvaluationExplanationTaskDocument(string $kit, string $taskId): ar
         $taskId,
     );
     $expectedBudgets = [
-        'model_tokens' => 100_000,
+        'model_tokens' => 200_000,
         'wall_seconds' => 1_200,
         'repair_turns' => 0,
         'command_output_bytes' => 4_194_304,

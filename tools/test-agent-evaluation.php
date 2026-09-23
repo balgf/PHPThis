@@ -1075,25 +1075,28 @@ function agentEvaluationExplanationContractControls(string $kit): void
         ) && str_contains(
             AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
             AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON,
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'For content searches, use one exact file and one specific term.',
         ),
-        'The explanation prompt must bound guide reads and linked-document searches.',
+        'The explanation prompt must bound reads and avoid repeated broad linked-document searches.',
     );
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 8
+        && $task['revision'] === 9
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
     );
     agentEvaluationTest(
         $task['budgets'] === [
-            'model_tokens' => 100_000,
+            'model_tokens' => 200_000,
             'wall_seconds' => 1_200,
             'repair_turns' => 0,
             'command_output_bytes' => 4_194_304,
         ],
-        'The revised explanation task must admit 100,000 cumulative tokens with the other limits fixed.',
+        'The revised explanation task must admit 200,000 cumulative tokens with the other limits fixed.',
     );
     agentEvaluationExplanationEntrypointReadControls($kit);
     agentEvaluationExplanationBoundedReadControls($kit);
@@ -1265,6 +1268,17 @@ function agentEvaluationExplanationContractControls(string $kit): void
         'response_sha256' => hash('sha256', $response),
     ];
     agentEvaluationValidateExplanationRunRecord($run, $task);
+    $higherUsageRun = $run;
+    $higherUsageRun['usage']['input_tokens'] = 150_000;
+    agentEvaluationValidateExplanationRunRecord($higherUsageRun, $task);
+    $staleBudgetRun = $run;
+    $staleBudgetRun['budgets']['model_tokens'] = 100_000;
+    agentEvaluationExpectFailure(
+        static function () use ($staleBudgetRun, $task): void {
+            agentEvaluationValidateExplanationRunRecord($staleBudgetRun, $task);
+        },
+        'Run record budgets do not match the selected task.',
+    );
     $invalidExplanationRunId = $run;
     $invalidExplanationRunId['run_id'] = 'x';
     agentEvaluationExpectFailure(
@@ -1798,7 +1812,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             'ledger' => [
                 'model' => $run['model']['id'],
                 'reasoning_effort' => $run['model']['settings']['reasoning_effort'],
-                'token_budget' => 100_000,
+                'token_budget' => 200_000,
                 'input_tokens' => 1_000,
                 'output_tokens' => 500,
                 'cached_tokens' => 100,
@@ -2412,7 +2426,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
         foreach (
             [
                 ['token_budget', 40_000],
-                ['token_budget', 99_999],
+                ['token_budget', 100_000],
+                ['token_budget', 199_999],
                 ['input_tokens', 999],
                 ['output_tokens', 499],
                 ['cached_tokens', 99],
@@ -2625,7 +2640,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 8,
+                'revision' => 9,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -2977,7 +2992,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
             '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6',
             '0d62291e24f81b8a5a68e6bc3b825682c14ca23f3f4574f48a68d0deede699a6',
             '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e',
-            'bc69afd57bde6a57d6ba39540340a8b23f285df5ae66959577fe1b65cb85bdfa'] as $oldPromptHash) {
+            'bc69afd57bde6a57d6ba39540340a8b23f285df5ae66959577fe1b65cb85bdfa',
+            'e0d43884d6c38a1ab2eba3e6575da15d13f9f9450c48683225c020a42f562b99'] as $oldPromptHash) {
             $effectivePromptDescriptor['effective_sha256'] = $oldPromptHash;
             $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 
@@ -2995,6 +3011,35 @@ function agentEvaluationExplanationContractControls(string $kit): void
 
         if (file_put_contents($manifestPath, $manifestBytes) === false) {
             throw new RuntimeException('Unable to restore the copied explanation effective-prompt control.');
+        }
+
+        foreach ([40_000, 100_000] as $oldTokenBudget) {
+            $staleBudgetManifest = agentEvaluationValueObject(
+                agentEvaluationJsonValue($manifestBytes, 'copied explanation manifest'),
+                'copied explanation manifest',
+            );
+            $staleBudgets = agentEvaluationRequireObject(
+                $staleBudgetManifest,
+                'budgets',
+                'copied explanation manifest',
+            );
+            $staleBudgets['model_tokens'] = $oldTokenBudget;
+            $staleBudgetManifest['budgets'] = $staleBudgets;
+
+            if (file_put_contents($manifestPath, agentEvaluationJson($staleBudgetManifest)) === false) {
+                throw new RuntimeException('Unable to prepare the stale explanation budget control.');
+            }
+
+            agentEvaluationExpectFailure(
+                static function () use ($copiedKit): void {
+                    agentEvaluationExplanationTaskDocument($copiedKit, AGENT_EVALUATION_EXPLANATION_TASK_ID);
+                },
+                'Explanation task budgets must equal the fixed bounded protocol.',
+            );
+        }
+
+        if (file_put_contents($manifestPath, $manifestBytes) === false) {
+            throw new RuntimeException('Unable to restore the copied explanation budget control.');
         }
 
         $schemaPath = $copiedKit . '/schema/score-v3.schema.json';

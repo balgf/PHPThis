@@ -4309,7 +4309,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/explain.file-profile-s3/task.json' => [
             '"schema_version": 3',
-            '"revision": 8',
+            '"revision": 9',
+            '"model_tokens": 200000',
             '"fixture": "tracked-maintainer-source"',
             '"max_changed_files": 0',
             '"id": "gpt-5.4-2026-03-05"',
