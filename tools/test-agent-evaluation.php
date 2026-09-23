@@ -850,6 +850,47 @@ function agentEvaluationWriteExplanationOuterEvidence(
     return $manifest;
 }
 
+function agentEvaluationExplanationEntrypointReadControls(string $kit): void
+{
+    $directory = sys_get_temp_dir() . '/phpthis-explanation-entrypoints-' . bin2hex(random_bytes(8));
+    if (!mkdir($directory, 0700)) {
+        throw new RuntimeException('Unable to create entrypoint-read control directory.');
+    }
+    try {
+        if (!mkdir($directory . '/.ai', 0700)) {
+            throw new RuntimeException('Unable to create entrypoint-read guide directory.');
+        }
+        $expected = '';
+        foreach (['VISION.md', '.ai/README.md', '.ai/rules.md', '.ai/change-workflow.md', '.ai/strict-profile.md'] as $path) {
+            $source = runBoundedMaintainerProcess(
+                ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':' . $path],
+                dirname($kit, 2), null, 5_000, 32_768, 4_096,
+            );
+            agentEvaluationTest($source['exit_code'] === 0 && $source['stderr'] === '',
+                'The entrypoint-read control must use each exact pinned file.');
+            if (file_put_contents($directory . '/' . $path, $source['stdout']) !== strlen($source['stdout'])) {
+                throw new RuntimeException('Unable to write entrypoint-read control.');
+            }
+            $expected .= $source['stdout'];
+            $section = runBoundedMaintainerProcess(
+                ['python3', '-I', '-B', '-c', AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON, $path, '1', '120'],
+                $directory, null, 5_000, 16_384, 4_096,
+            );
+            agentEvaluationTest($section['exit_code'] === 0 && $section['stderr'] === ''
+                && $section['stdout'] === $source['stdout'],
+                'The section reader must recover the observed 1-120 requests on all five short entrypoints.');
+        }
+        $batch = runBoundedMaintainerProcess(
+            ['/bin/sh', '-c', AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND],
+            $directory, null, 5_000, 32_768, 4_096,
+        );
+        agentEvaluationTest($batch['exit_code'] === 0 && $batch['stderr'] === '' && $batch['stdout'] === $expected,
+            'The exact prompted entrypoint command must read all five complete files in order in one invocation.');
+    } finally {
+        agentEvaluationRemoveDirectory($directory);
+    }
+}
+
 function agentEvaluationExplanationBoundedReadControls(string $kit): void
 {
     $directory = sys_get_temp_dir() . '/phpthis-explanation-read-' . bin2hex(random_bytes(8));
@@ -878,7 +919,15 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
             ["\xFF", 1, 1, null],
             ["line\n", 0, 1, null],
             ["line\n", 2, 1, null],
-            ["line\n", 1, 2, null],
+            ["line\n", 1, 2, "line\n"],
+            ["line\n", 1, 120, "line\n"],
+            ["line\n", 1, 121, null],
+            ["line\n", 2, 2, null],
+            ['', 1, 120, null],
+            [$guide['stdout'], 1, 120, null],
+            [$guide['stdout'], 66, 120, $s3Section],
+            ["first\r\nlast", 2, 120, 'last'],
+            ["\xFF", 1, 120, null],
         ];
         foreach ($controls as [$bytes, $start, $end, $expected]) {
             $file = $directory . '/selected document.md';
@@ -906,11 +955,12 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 4
+        && $task['revision'] === 5
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
     );
+    agentEvaluationExplanationEntrypointReadControls($kit);
     agentEvaluationExplanationBoundedReadControls($kit);
     agentEvaluationTest(
         $task['base'] === [
@@ -2438,7 +2488,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 4,
+                'revision' => 5,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -2787,7 +2837,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
             'copied explanation manifest',
         );
         foreach (['2d9f731008a4a0d41c9ccc32ceabc2365f39a547be389f35b8f98e6fd496b043',
-            '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6'] as $oldPromptHash) {
+            '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6',
+            '0d62291e24f81b8a5a68e6bc3b825682c14ca23f3f4574f48a68d0deede699a6'] as $oldPromptHash) {
             $effectivePromptDescriptor['effective_sha256'] = $oldPromptHash;
             $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 
