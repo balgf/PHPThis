@@ -969,6 +969,96 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
     }
 }
 
+function agentEvaluationExplanationBoundedSearchControls(): void
+{
+    $directory = sys_get_temp_dir() . '/phpthis-explanation-search-' . bin2hex(random_bytes(8));
+    if (!mkdir($directory, 0700)) {
+        throw new RuntimeException('Unable to create bounded-search control directory.');
+    }
+    try {
+        $first = $directory . '/first.md';
+        $second = $directory . '/second.md';
+        file_put_contents($first, "# First\nordinary text\n## Profile boundary\n");
+        file_put_contents($second, "# Second\n## Evidence boundary\n");
+        $search = static function (string $pattern, array $paths) use ($directory): array {
+            return runBoundedMaintainerProcess(
+                ['python3', '-I', '-B', '-c', AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON,
+                    $pattern, ...$paths],
+                $directory, null, 5_000, 16_384, 4_096,
+            );
+        };
+        $headings = $search('^#{1,6} ', [$first, $second]);
+        agentEvaluationTest(
+            $headings['exit_code'] === 0 && $headings['stderr'] === ''
+                && $headings['stdout'] === "{$first}:1:# First\n{$first}:3:## Profile boundary\n"
+                    . "{$second}:1:# Second\n{$second}:2:## Evidence boundary\n",
+            'The prompted search must return complete headed matches with exact paths and line numbers.',
+        );
+        $noMatch = $search('not-present', [$first]);
+        agentEvaluationTest($noMatch['exit_code'] === 0 && $noMatch['stdout'] === ''
+            && $noMatch['stderr'] === '', 'An empty bounded search must be an ordinary result.');
+        $snapshotPaths = [];
+        foreach ([
+            'docs/file-transfers/README.md',
+            'docs/file-transfers/amazon-s3.md',
+            'docs/file-transfers/amazon-s3-verification.md',
+            'docs/consumer-profile.md',
+        ] as $index => $path) {
+            $source = runBoundedMaintainerProcess(
+                ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':' . $path],
+                dirname(__DIR__), null, 5_000, 131_072, 4_096,
+            );
+            agentEvaluationTest($source['exit_code'] === 0 && $source['stderr'] === '',
+                'The search regression must use the exact pinned linked documents.');
+            $snapshotPath = $directory . '/linked-' . $index . '.md';
+            file_put_contents($snapshotPath, $source['stdout']);
+            $snapshotPaths[] = $snapshotPath;
+        }
+        $observedBroadSearch = $search('^#|amazon-s3|local', $snapshotPaths);
+        agentEvaluationTest($observedBroadSearch['exit_code'] !== 0
+            && $observedBroadSearch['stdout'] === '',
+            'The observed broad linked-document search must be rejected without partial source.');
+        $snapshotHeadings = $search('^#{1,6} ', $snapshotPaths);
+        agentEvaluationTest($snapshotHeadings['exit_code'] === 0
+            && $snapshotHeadings['stderr'] === ''
+            && str_contains($snapshotHeadings['stdout'], 'Amazon S3')
+            && strlen($snapshotHeadings['stdout']) <= 4096,
+            'Heading discovery across the same linked documents must remain available and bounded.');
+        $exactBytes = $directory . '/exact-bytes.md';
+        $prefix = $exactBytes . ':1:';
+        file_put_contents($exactBytes, '# ' . str_repeat('x', 4096 - strlen($prefix) - 3) . "\n");
+        $byteBoundary = $search('^#', [$exactBytes]);
+        agentEvaluationTest($byteBoundary['exit_code'] === 0 && $byteBoundary['stderr'] === ''
+            && strlen($byteBoundary['stdout']) === 4096,
+            'The bounded search must admit exactly 4,096 complete output bytes.');
+        $exactMatches = $directory . '/exact-matches.md';
+        file_put_contents($exactMatches, str_repeat("# heading\n", 40));
+        $matchBoundary = $search('^#', ['exact-matches.md']);
+        agentEvaluationTest($matchBoundary['exit_code'] === 0 && $matchBoundary['stderr'] === ''
+            && substr_count($matchBoundary['stdout'], "\n") === 40,
+            'The bounded search must admit exactly 40 complete matches.');
+        $oversized = $directory . '/oversized.md';
+        file_put_contents($oversized, '# ' . str_repeat('x', 4096) . "\n");
+        $tooMany = $directory . '/too-many.md';
+        file_put_contents($tooMany, str_repeat("# heading\n", 41));
+        $invalidUtf8 = $directory . '/invalid.md';
+        file_put_contents($invalidUtf8, "# \xFF\n");
+        foreach ([
+            ['^#', [$oversized]],
+            ['^#', ['too-many.md']],
+            ['^#', [$invalidUtf8]],
+            ['^#', []],
+            ['^#', [$first, $second, $first, $second, $first]],
+        ] as [$pattern, $paths]) {
+            $rejected = $search($pattern, $paths);
+            agentEvaluationTest($rejected['exit_code'] !== 0 && $rejected['stdout'] === '',
+                'Oversized, invalid, or unscoped searches must fail without emitting partial source.');
+        }
+    } finally {
+        agentEvaluationRemoveDirectory($directory);
+    }
+}
+
 function agentEvaluationExplanationContractControls(string $kit): void
 {
     $task = agentEvaluationExplanationTask($kit);
@@ -979,13 +1069,19 @@ function agentEvaluationExplanationContractControls(string $kit): void
         ) && str_contains(
             AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
             'Batch independent reads only when their combined output fits 8,192 bytes',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'For line-based content searches after the entrypoint batch, use the bounded command below',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON,
         ),
-        'The explanation prompt must avoid an oversized first read of an unfamiliar guide.',
+        'The explanation prompt must bound guide reads and linked-document searches.',
     );
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 7
+        && $task['revision'] === 8
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -1001,6 +1097,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
     );
     agentEvaluationExplanationEntrypointReadControls($kit);
     agentEvaluationExplanationBoundedReadControls($kit);
+    agentEvaluationExplanationBoundedSearchControls();
     agentEvaluationTest(
         $task['base'] === [
             'fixture' => 'tracked-maintainer-source',
@@ -2528,7 +2625,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 7,
+                'revision' => 8,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -2879,7 +2976,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
         foreach (['2d9f731008a4a0d41c9ccc32ceabc2365f39a547be389f35b8f98e6fd496b043',
             '33038bfb324e53b2ab0704284dc78087ff85f948a2170e19b1f10925ecff79f6',
             '0d62291e24f81b8a5a68e6bc3b825682c14ca23f3f4574f48a68d0deede699a6',
-            '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e'] as $oldPromptHash) {
+            '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e',
+            'bc69afd57bde6a57d6ba39540340a8b23f285df5ae66959577fe1b65cb85bdfa'] as $oldPromptHash) {
             $effectivePromptDescriptor['effective_sha256'] = $oldPromptHash;
             $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 
