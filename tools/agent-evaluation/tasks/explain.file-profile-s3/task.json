@@ -1,12 +1,12 @@
 {
     "schema_version": 3,
     "id": "explain.file-profile-s3",
-    "revision": 11,
+    "revision": 12,
     "kind": "explanation",
     "prompt": {
         "path": "prompt.md",
         "sha256": "47ba33d38402b8491c3ba95e04c00ce78a4c8019d95d92a13fbd21ac6d9e2052",
-        "effective_sha256": "12a4d8099c764e0ba77641cfdb5077e6e184900732e375d68ee47c6adeddeb12"
+        "effective_sha256": "2d46f6a39d59cbd15a99ba65ce101de1ed190fb9ed303091363c72d7a087ccc7"
     },
     "rubric": {
         "path": "rubric.md",

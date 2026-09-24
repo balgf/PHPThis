@@ -1137,13 +1137,16 @@ function agentEvaluationExplanationContractControls(string $kit): void
         ) && str_contains(
             AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
             'Inspect concrete execution-path source and its nearest test before answering.',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'the next assistant message must be the final answer',
         ),
         'The explanation prompt must bound reads and avoid repeated broad linked-document searches.',
     );
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 11
+        && $task['revision'] === 12
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2699,7 +2702,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 11,
+                'revision' => 12,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -3053,7 +3056,8 @@ function agentEvaluationExplanationContractControls(string $kit): void
             '02dca53c3943d6f5cf06ca485daee2aebee79f637fe114b261964d058a27e21e',
             'bc69afd57bde6a57d6ba39540340a8b23f285df5ae66959577fe1b65cb85bdfa',
             'e0d43884d6c38a1ab2eba3e6575da15d13f9f9450c48683225c020a42f562b99',
-            '4e9fc1550b7acf8aea364eac05050be5720920806a1a28c858267a3b24a1ec1c'] as $oldPromptHash) {
+            '4e9fc1550b7acf8aea364eac05050be5720920806a1a28c858267a3b24a1ec1c',
+            '12a4d8099c764e0ba77641cfdb5077e6e184900732e375d68ee47c6adeddeb12'] as $oldPromptHash) {
             $effectivePromptDescriptor['effective_sha256'] = $oldPromptHash;
             $effectivePromptManifest['prompt'] = $effectivePromptDescriptor;
 

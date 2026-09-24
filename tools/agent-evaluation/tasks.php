@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 11,
-        'manifest_sha256' => '5e82728bf2f9ea63067843ea0e78160d992c371ae2fe8f4e42730897e260305b',
+        'revision' => 12,
+        'manifest_sha256' => '89a310675dae470ed30266bee470eef681b9bf41e8dcdc73018f88760f587aec',
     ],
 ];
 
@@ -37,7 +37,7 @@ const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = 'ce369d9f8f29775a6cc3819617ff0ccdadba481e';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = 'ef58eac15f569bcc8b340a0a666eb68082a2094f';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = '9471b5f5a2e83db7b13891a9669def11f4a7876ea47068dee13526e0637380c4';
-const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '12a4d8099c764e0ba77641cfdb5077e6e184900732e375d68ee47c6adeddeb12';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '2d46f6a39d59cbd15a99ba65ce101de1ed190fb9ed303091363c72d7a087ccc7';
 const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '591111e42e91fd9e928de4e6a59f6a3769552913796c82a8ca11eee99b682d13';
 const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = '9cc9b0df25b15f1d8005fac3dd7c397bca064a46715feb2a1b5dd410d6caee42';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
@@ -56,7 +56,7 @@ const AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON = 'import pathlib,re,sy
     . 'sys.stdout.buffer.write(data)';
 const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.'
     . "\n\n"
-    . 'Reading protocol (revision 10): Follow AGENTS.md and all mandatory entrypoints. '
+    . 'Reading protocol (revision 12): Follow AGENTS.md and all mandatory entrypoints. '
     . 'First read all five mandatory files completely by running this exact command once in one shell invocation:'
     . "\n\n" . AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND . "\n\n"
     . 'Do not rediscover these known paths, count their lines, or use the selected-section reader for this initial batch. '
@@ -73,8 +73,9 @@ const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only 
     . 'Batch independent reads only when their combined output fits 8,192 bytes; avoid rereading unchanged text, and stop when evidence is sufficient. '
     . 'Do not skip required concerns or invent missing evidence to fit the budget. '
     . 'Inspect concrete execution-path source and its nearest test before answering. '
-    . 'Once the current guide, necessary linked policy, source, and nearest test support the required claims, answer in that turn; do not continue optional discovery for completeness. '
-    . 'If a specific claim remains unsupported, make only targeted reads for that claim or state the limit.'
+    . 'After reading the current guide, necessary linked policy, concrete source, and nearest test, ask whether any unresolved fact would change the answer. '
+    . 'If not, the next assistant message must be the final answer, not a progress update; do not make another tool call to reconfirm an already supported claim. '
+    . 'If a fact would change the answer, make only a targeted read for that fact, return to this checkpoint, and state any remaining limit in the final answer.'
     . "\n\npython3 -I -B -c '" . AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON . "' PATH START END"
     . "\n\nFor line-based content searches after the entrypoint batch, use the bounded command below with 1-4 exact known file paths. "
     . 'Search headings first with the pattern `^#{1,6} `, then narrow to specific terms and paths if needed. '
