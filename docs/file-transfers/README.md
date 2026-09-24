@@ -12,6 +12,7 @@ Consumer Contract version 18 carries version 17 and version 13's requirement for
 | Review client metadata | [Metadata trust](metadata-trust.md), [Security](security.md) | `RequestUpload`, application handler, public outputs and terminal evidence |
 | Store an upload locally | [Storage ownership](storage-ownership.md), [Deployment](deployment.md) | one concrete application storage operation and filesystem configuration under `LOCAL_ADR026` |
 | Adopt or review the Amazon S3 profile | [Amazon S3 guidance](amazon-s3.md), [verification](amazon-s3-verification.md) | exact `AMAZON_S3_ADR053` application policy, source, behavior, isolated real-AWS, deployment evidence, and complete gate |
+| Inspect the framework S3 reference proof | [Amazon S3 verification](amazon-s3-verification.md) | `tools/test-consumer-project/amazon-s3-file-transfers.php` tests synthetic installed-reference fixtures; the checker source is a consumer-owned template in the verification guide, not a framework or real-consumer adoption |
 | Return a local file | [Local-file response](local-file-response.md), [Emission](emission.md) | `LocalFileBody`, `Response`, `ResponseEmitter`, outer front-controller catch |
 | Handle `Range` | [Range policy](range-policy.md) | handler headers and range/full-body integration test |
 | Add evidence | [Testing](testing.md), [Deployment](deployment.md) | common boundary/real-SAPI/proxy evidence plus the selected profile's storage, delivery, resource, service, and deployment evidence |
