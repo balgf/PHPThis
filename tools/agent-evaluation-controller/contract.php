@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 const AGENT_EVALUATION_CONTROLLER_VERSION = 2;
 const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';
-const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 27;
+const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 28;
 const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;
 const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;
 const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;
@@ -199,7 +199,7 @@ function agentEvaluationControllerRequireFixedTask(array $task): void
         || ($task['comparative_claims'] ?? null) !== false
     ) {
         throw new RuntimeException(
-            'Controller v0.2 supports only change.simple-ping revision 27 without comparative claims.',
+            'Controller v0.2 supports only change.simple-ping revision 28 without comparative claims.',
         );
     }
 
@@ -945,7 +945,7 @@ function agentEvaluationControllerValidateLiveConfiguration(
     $approval = agentEvaluationRequireObject($configuration, 'approval', 'controller live configuration');
     agentEvaluationRequireExactKeys(
         $approval,
-        ['reference', 'model', 'runs', 'spending_ceiling_usd', ...($explanation ? ['run_id'] : [])],
+        ['reference', 'model', 'runs', 'spending_ceiling_usd', ...($explanation || $comparisonTask === null ? ['run_id'] : [])],
         'controller smoke approval record',
     );
     $approvalReference = agentEvaluationControllerBoundedLabel(
@@ -959,18 +959,25 @@ function agentEvaluationControllerValidateLiveConfiguration(
             ? 'The smoke approval must name the exact model, one run, and a bounded decimal spending ceiling.'
             : 'The approval must name the exact model, approved run count, and bounded decimal spending ceiling.');
     }
-    if ($explanation) {
+    if ($explanation || $comparisonTask === null) {
         $approvedRunId = agentEvaluationRequireString($approval, 'run_id', 'controller explanation approval');
         if (preg_match('/\A[a-f0-9]{32}\z/D', $approvedRunId) !== 1) {
-            throw new RuntimeException('Explanation approval must bind one exact 32-character lowercase hexadecimal run ID.');
+            throw new RuntimeException(($explanation ? 'Explanation' : 'Smoke')
+                . ' approval must bind one exact 32-character lowercase hexadecimal run ID.');
         }
         $pending = $approvalReference === 'pending' && $ceiling === '0.00';
         $approved = $ceiling === '0.60'
             && preg_match('/(?:pending|placeholder)/i', $approvalReference) !== 1;
         if (!$pending && !$approved) {
             throw new RuntimeException(
-                'Explanation configuration requires exact pending/0.00 preflight or accountable approved/0.60 state.',
+                ($explanation ? 'Explanation' : 'Smoke')
+                . ' configuration requires exact pending/0.00 preflight or accountable approved/0.60 state.',
             );
+        }
+        $settings = agentEvaluationValueObject($model['settings'] ?? null, 'controller single-run model settings');
+        if (!$explanation && ($model['id'] !== 'gpt-5.4-2026-03-05'
+            || ($settings['reasoning_effort'] ?? null) !== 'high')) {
+            throw new RuntimeException('Smoke spending policy requires the exact priced model and high reasoning effort.');
         }
     }
 
@@ -981,6 +988,29 @@ function agentEvaluationControllerValidateLiveConfiguration(
         'approval' => $approval,
         'prepared_dependencies' => $dependencies,
     ];
+}
+
+/** @param array<string, mixed> $configuration */
+function agentEvaluationControllerRequireSmokeApprovalRunId(array $configuration, string $runId): void
+{
+    if (preg_match('/\A[a-f0-9]{32}\z/D', $runId) !== 1) {
+        throw new RuntimeException('Smoke execution requires one exact bounded run ID.');
+    }
+    $approval = agentEvaluationRequireObject($configuration, 'approval', 'controller smoke configuration');
+    $approvedRunId = agentEvaluationRequireString($approval, 'run_id', 'controller smoke approval');
+    if (!hash_equals($approvedRunId, $runId)) {
+        throw new RuntimeException('Smoke approval is bound to a different run ID.');
+    }
+    $reference = agentEvaluationRequireNonEmptyString($approval, 'reference', 'controller smoke approval');
+    $profile = agentEvaluationRequireObject($configuration, 'profile', 'controller smoke configuration');
+    $model = agentEvaluationRequireObject($profile, 'model', 'controller smoke profile');
+    if (preg_match('/(?:pending|placeholder)/i', $reference) === 1
+        || ($approval['runs'] ?? null) !== 1
+        || ($approval['model'] ?? null) !== ($model['id'] ?? null)
+        || ($approval['spending_ceiling_usd'] ?? null) !== '0.60'
+    ) {
+        throw new RuntimeException('Smoke execution requires its exact accountable USD 0.60 approval.');
+    }
 }
 
 /** @param array<string, mixed> $configuration */

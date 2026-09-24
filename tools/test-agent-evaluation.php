@@ -74,7 +74,7 @@ $runRecord = [
         ],
     ],
     'budgets' => [
-        'model_tokens' => 40_000,
+        'model_tokens' => 200_000,
         'wall_seconds' => 1_200,
         'repair_turns' => 1,
         'command_output_bytes' => 4_194_304,
@@ -176,7 +176,7 @@ agentEvaluationExpectFailure(
 );
 
 $excessUsage = $runRecord;
-$excessUsage['usage']['input_tokens'] = 40_001;
+$excessUsage['usage']['input_tokens'] = 200_001;
 agentEvaluationExpectFailure(
     static function () use ($excessUsage, $task): void {
         agentEvaluationValidateRunRecord($excessUsage, $task);
@@ -204,8 +204,8 @@ agentEvaluationExpectFailure(
 );
 
 $excessTotalUsage = $runRecord;
-$excessTotalUsage['usage']['input_tokens'] = 20_000;
-$excessTotalUsage['usage']['output_tokens'] = 20_001;
+$excessTotalUsage['usage']['input_tokens'] = 100_000;
+$excessTotalUsage['usage']['output_tokens'] = 100_001;
 agentEvaluationExpectFailure(
     static function () use ($excessTotalUsage, $task): void {
         agentEvaluationValidateRunRecord($excessTotalUsage, $task);

@@ -1,7 +1,7 @@
 {
     "schema_version": 1,
     "id": "change.simple-ping",
-    "revision": 27,
+    "revision": 28,
     "kind": "implementation",
     "prompt": {
         "path": "prompt.md",
@@ -39,7 +39,7 @@
         "max_deleted_lines": 20
     },
     "budgets": {
-        "model_tokens": 40000,
+        "model_tokens": 200000,
         "wall_seconds": 1200,
         "repair_turns": 1,
         "command_output_bytes": 4194304

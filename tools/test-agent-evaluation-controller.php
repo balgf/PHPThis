@@ -3996,7 +3996,7 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
     $profile['condition'] = 'repository-only-controller-v0.2-live-fixture';
     $profile['runner'] = ['name' => 'codex-exec', 'version' => '0.153.1'];
     $profile['model'] = [
-        'provider' => 'openai', 'id' => 'phpthis-fixture', 'revision' => null,
+        'provider' => 'openai', 'id' => 'gpt-5.4-2026-03-05', 'revision' => null,
         'settings' => ['reasoning_effort' => 'high'],
     ];
     $profile['tools'] = [[
@@ -4027,8 +4027,9 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
         'prepared_dependencies_sha256' => agentEvaluationControllerDescribeTree($dependencies, 'configuration fixture', true)['sha256'],
         'prepared_lock_sha256' => hash('sha256', $lockBytes),
         'approval' => [
-            'reference' => 'synthetic-configuration-test', 'model' => 'phpthis-fixture',
-            'runs' => 1, 'spending_ceiling_usd' => '1.00',
+            'reference' => 'synthetic-configuration-test', 'model' => 'gpt-5.4-2026-03-05',
+            'runs' => 1, 'spending_ceiling_usd' => '0.60',
+            'run_id' => '00000000000000000000000000000042',
         ],
     ];
     $writeConfiguration = static function () use ($path, &$configuration): void {
@@ -4040,11 +4041,81 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
     };
     $writeConfiguration();
     $accepted = agentEvaluationControllerReadLiveConfiguration($path);
+    $acceptedProfile = agentEvaluationRequireObject($accepted, 'profile', 'accepted smoke configuration');
+    $acceptedBudgets = agentEvaluationRequireObject($acceptedProfile, 'budgets', 'accepted smoke profile');
     agentEvaluationControllerTest(
         $accepted['prepared_dependencies'] === $dependencies
-        && $accepted['prepared_lock_sha256'] === hash('sha256', $lockBytes),
+        && $accepted['prepared_lock_sha256'] === hash('sha256', $lockBytes)
+        && $acceptedBudgets['model_tokens'] === 200_000
+        && agentEvaluationControllerSingleRunSpending()['limit_units'] === 60_000_000,
         'An exact live configuration must parse without starting OCI or executing prepared dependencies.',
     );
+    agentEvaluationControllerRequireSmokeApprovalRunId($accepted, '00000000000000000000000000000042');
+    agentEvaluationControllerExpectFailure(
+        static function () use ($accepted): void {
+            agentEvaluationControllerRequireSmokeApprovalRunId($accepted, '00000000000000000000000000000043');
+        },
+        'Smoke approval is bound to a different run ID.',
+    );
+    $smokeSpending = agentEvaluationControllerSingleRunSpending();
+    $smokeProxy = agentEvaluationControllerProxyState('gpt-5.4-2026-03-05', 'high', 200_000, $smokeSpending);
+    $initialSmokeMoney = agentEvaluationControllerProxySpendingLedger($smokeProxy);
+    agentEvaluationControllerTest(
+        $initialSmokeMoney !== null && $initialSmokeMoney['policy'] === $smokeSpending,
+        'The longer smoke allowance must retain the independent USD 0.60 proxy ledger.',
+    );
+    $smokeRequestBody = json_encode([
+        'model' => 'gpt-5.4-2026-03-05', 'stream' => true, 'store' => false,
+        'input' => 'Offline smoke spending control.', 'reasoning' => ['effort' => 'high'],
+        'tools' => agentEvaluationControllerTestProxyTransportTools(),
+        'max_output_tokens' => 100_000,
+    ], JSON_THROW_ON_ERROR);
+    $smokeRequest = agentEvaluationControllerProxyRequest($smokeRequestBody, $smokeProxy);
+    agentEvaluationControllerProxyReserve(
+        $smokeRequest['request'],
+        '{"object":"response.input_tokens","input_tokens":10000}',
+        $smokeProxy,
+    );
+    $reservedSmokeMoney = agentEvaluationControllerProxySpendingLedger($smokeProxy);
+    agentEvaluationControllerTest(
+        $smokeProxy['reserved_output'] === 38_333
+        && $reservedSmokeMoney !== null
+        && $reservedSmokeMoney['reserved_units'] === 59_999_500,
+        'The smoke proxy must clip output to the USD 0.60 charge ceiling even when token capacity remains.',
+    );
+    $wrongRun = agentEvaluationControllerRunProcess(
+        [PHP_BINARY, $root . '/tools/agent-evaluation-controller.php', 'run',
+            '00000000000000000000000000000043', $path],
+        $root,
+        agentEvaluationControllerMinimalProcessEnvironment(),
+        '',
+        5,
+        4_096,
+    );
+    agentEvaluationControllerTest(
+        $wrongRun['exit_code'] === 1 && $wrongRun['stdout'] === ''
+        && $wrongRun['stderr'] === "FAIL agent evaluation controller: Smoke approval is bound to a different run ID.\n",
+        'The paid smoke command must reject a different run ID before credential validation or OCI.',
+    );
+    foreach (['0.01', '1.00'] as $wrongCeiling) {
+        $configuration['approval']['spending_ceiling_usd'] = $wrongCeiling;
+        $writeConfiguration();
+        agentEvaluationControllerExpectFailure(
+            static function () use ($path): void { agentEvaluationControllerReadLiveConfiguration($path); },
+            'Smoke configuration requires exact pending/0.00 preflight or accountable approved/0.60 state.',
+        );
+    }
+    $configuration['approval']['spending_ceiling_usd'] = '0.60';
+    $configuration['profile']['model']['id'] = 'unpriced-model';
+    $configuration['approval']['model'] = 'unpriced-model';
+    $writeConfiguration();
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path): void { agentEvaluationControllerReadLiveConfiguration($path); },
+        'Smoke spending policy requires the exact priced model and high reasoning effort.',
+    );
+    $configuration['profile']['model']['id'] = 'gpt-5.4-2026-03-05';
+    $configuration['approval']['model'] = 'gpt-5.4-2026-03-05';
+    $writeConfiguration();
 
     $explanationTask = agentEvaluationExplanationTask($root . '/tools/agent-evaluation');
     $explanationConfiguration = $configuration;
@@ -4090,7 +4161,7 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
             'accepted explanation profile',
         ),
     );
-    $explanationSpending = agentEvaluationControllerExplanationSpending();
+    $explanationSpending = agentEvaluationControllerSingleRunSpending();
     $explanationProxy = agentEvaluationControllerProxyState(
         'gpt-5.4-2026-03-05',
         'high',
@@ -4368,6 +4439,7 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
         throw new RuntimeException('Unable to restore the bounded lock control.');
     }
     clearstatcache(true, $lock);
+    $configuration['approval']['reference'] = 'pending';
     $configuration['approval']['spending_ceiling_usd'] = '0.00';
     $writeConfiguration();
     $zeroSpend = agentEvaluationControllerRunProcess(
@@ -4382,7 +4454,7 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
     agentEvaluationControllerTest(
         $zeroSpend['exit_code'] === 1 && $zeroSpend['termination_reason'] === 'process_failed'
         && $zeroSpend['stdout'] === ''
-        && $zeroSpend['stderr'] === "FAIL agent evaluation controller: A zero-spend integration approval cannot authorize a paid run.\n",
+        && $zeroSpend['stderr'] === "FAIL agent evaluation controller: Smoke execution requires its exact accountable USD 0.60 approval.\n",
         'The paid CLI must reject zero spending before credential validation, OCI, or evidence creation.',
     );
 }

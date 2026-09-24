@@ -20,7 +20,7 @@ It remains under export-excluded `tools/` and changes no framework runtime, publ
 6. `scoring.php`
 7. `controller.php`
 
-There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 27 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner. Issue #73 introduces the Gemini evaluation adapter (`gemini-exec` and `fake-gemini`).
+There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 28 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner. Issue #73 introduces the Gemini evaluation adapter (`gemini-exec` and `fake-gemini`).
 
 ## Ordinary checks
 
@@ -83,16 +83,17 @@ The tmpfs sizes enforce storage capacity. End-of-run free-space readings are sna
 
 Build the separate targets described by [the OCI assets](oci/README.md), resolve them to immutable local registry digests, and prepare a standalone vendor tree from exact locked inputs outside generation. Keep its Composer lock file separately. Record its sorted file/mode/hash manifest digest, lock digest, image references, and toolchain versions in one bounded JSON configuration. Never copy host authentication or an engine socket into an image or prepared tree.
 
-`agentEvaluationControllerReadLiveConfiguration()` in `contract.php` owns the exact configuration keys. The configuration contains the existing validated `profile`, the fixed `engine` fields, `prepared_dependencies`, `prepared_lock`, both SHA-256 identities, and an `approval` record naming its reference, exact model, one run, and decimal spending ceiling. It supplies no arbitrary command, upstream endpoint, runner, or output location. Additional context bundles are unavailable for this initial repository-context smoke task.
+`agentEvaluationControllerReadLiveConfiguration()` in `contract.php` owns the exact configuration keys. The configuration contains the existing validated `profile`, the fixed `engine` fields, `prepared_dependencies`, `prepared_lock`, both SHA-256 identities, and an `approval` record naming its reference, exact model, one run ID, one run, and decimal spending ceiling. A pending/0.00 approval allows provider-free preflight; execution requires an accountable approved/0.60 record bound to that run ID. It supplies no arbitrary command, upstream endpoint, runner, or output location. Additional context bundles are unavailable for this initial repository-context smoke task.
 
 The bounded smoke protocol uses these fixed limits and explicitly reviewed inputs:
 
 | Setting | Value |
 | --- | --- |
-| Task | `change.simple-ping`, revision 27 |
-| Provider and reasoning | OpenAI; exact model ID, recorded revision, and supported reasoning effort supplied for review |
+| Task | `change.simple-ping`, revision 28 |
+| Provider and reasoning | OpenAI `gpt-5.4-2026-03-05`, high reasoning, standard/default service tier |
 | Run count | One fresh invocation per approval; another invocation requires another approval |
-| Shared model allowance | 40,000 input/output tokens, reserved before each create request |
+| Shared model allowance | 200,000 input/output tokens, reserved before each create request |
+| Provider token-charge ceiling | USD 0.60, separately reserved and settled by the proxy at the pinned standard prices |
 | Generation wall allowance | 1,200 seconds, including proxy requests and termination |
 | Retained command output | 4 MiB bound |
 | Per-container CPU, memory, PIDs | One CPU, 1 GiB without swap, 64 PIDs |
@@ -107,7 +108,9 @@ php tools/agent-evaluation-controller.php preflight /absolute/path/smoke-configu
 
 Preflight uses no upstream key or model call. It checks the selected local engine/images/toolchains and removes its temporary control directory. A passing preflight is prerequisite evidence, not a paid-trial approval or a completed adversarial integration proof.
 
-Before a paid run, obtain accountable approval for the concrete model/settings, one run, token allowance, spending ceiling, engine/images/dependency identity, and evidence destination. The approval record documents that decision; merely generating a JSON file is not approval. Token limits are enforced by the proxy. Price assumptions and the monetary ceiling must be reviewed for the selected model before execution.
+Revision 28 changes only the smoke task's token allowance and the controller's approval/spending enforcement. Revision 27 stopped before authoring or scoring after two settled requests and a third request rejected at the 40,000-token reservation boundary. The source prompt, fixture, rubric, workspace policy, and non-token limits remain unchanged. A larger allowance gives the agent room to finish; it is no completion guarantee. The proxy now enforces both the 200,000-token allowance and the independent USD 0.60 standard-price ceiling. It checks every counted request input and reserves output before create, then settles provider usage; a request that cannot fit either remaining allowance is refused before dispatch. The quoted ceiling is for the pinned standard/default model charge, not an account invoice or regional/service-tier uplift.
+
+Before a paid run, obtain accountable approval for the concrete model/settings, one run ID and run, token allowance, spending ceiling, engine/images/dependency identity, and evidence destination. The approval record documents that decision; merely generating a JSON file is not approval. Price assumptions and the monetary ceiling must be reviewed before execution.
 
 After that approval, the host process alone receives `OPENAI_API_KEY` and runs:
 

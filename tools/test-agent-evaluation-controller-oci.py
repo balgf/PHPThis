@@ -57,11 +57,12 @@ try {
     if ($approval['spending_ceiling_usd'] !== '0.00') {
         throw new RuntimeException('Integration requires a zero-spend synthetic approval record.');
     }
-    $result = agentEvaluationControllerExecuteLive(
-        $argv[1], $argv[3],
+    // This test-only zero-provider path deliberately bypasses paid approval.
+    $result = agentEvaluationControllerSmokeResult(agentEvaluationControllerExecuteControlled(
+        $argv[1], $configuration['prepared_dependencies'], $argv[3],
         ['run_id' => $argv[4], 'task_id' => AGENT_EVALUATION_CONTROLLER_TASK_ID],
-        $configuration, '',
-    );
+        $configuration['profile'], null, $configuration, '',
+    ));
     fwrite(STDOUT, json_encode(['status' => 'completed', 'result' => $result], JSON_THROW_ON_ERROR) . "\n");
 } catch (Throwable $failure) {
     $result = ['status' => 'failed', 'class' => $failure::class, 'message' => $failure->getMessage(),
@@ -193,7 +194,7 @@ try {
         agentEvaluationExplanationEffectivePrompt($sourcePrompt),
         $profile,
         '',
-        agentEvaluationControllerExplanationSpending(),
+        agentEvaluationControllerSingleRunSpending(),
     );
     if ($generation['termination_reason'] !== 'completed'
         || $generation['external_actions_approved'] !== true
@@ -208,7 +209,7 @@ try {
     );
     $spending = agentEvaluationControllerProxySpendingLedger($ledger);
     if ($ledger['token_budget'] !== 200_000 || $spending === null
-        || $spending['policy'] !== agentEvaluationControllerExplanationSpending()
+        || $spending['policy'] !== agentEvaluationControllerSingleRunSpending()
     ) {
         throw new RuntimeException('Explanation OCI control lost its token or spending cap.');
     }
@@ -413,7 +414,13 @@ def verify_upstream_failure(run_root, case, requests, response_count, worker_res
     assert ledger["response_bytes"] == 0 and ledger["last_response_bytes"] is None and ledger["last_response_sha256"] is None
     assert ledger["response_rejection_stage"] is None and ledger["response_observation"] is None
     assert ledger["provider_error_event_seen"] is False and ledger["provider_error_observation"] is None
-    assert "spending" not in ledger, "The fixed zero-spend smoke fixture must not introduce a calibration money policy"
+    assert ledger["token_budget"] == 200_000
+    spending = ledger["spending"]
+    assert spending["policy"] == {"limit_units": 60_000_000, "input_cents_per_million": 250,
+                                  "cached_cents_per_million": 25, "output_cents_per_million": 1500}
+    assert spending["settled_units"] == 0
+    assert spending["reserved_units"] == ledger["reserved_input"] * 250 + ledger["reserved_output"] * 1500
+    assert spending["reserved_units"] <= 60_000_000
     if expected["operation"] == "input_tokens":
         assert [request["path"] for request in requests] == ["/v1/responses/input_tokens"] and response_count == 0
         assert ledger["request_count"] == 0 and ledger["reserved_input"] == 0 and ledger["reserved_output"] == 0
@@ -428,7 +435,7 @@ def verify_upstream_failure(run_root, case, requests, response_count, worker_res
             "reserved_input": ledger["reserved_input"], "reserved_output": ledger["reserved_output"],
             "aggregate_usage": worker_result["proxy_aggregate_usage"], "retry_observed": False,
             "raw_upstream_content_retained": False,
-            "accounting_scope": "Real token reservation boundary in the zero-spend smoke fixture; monetary reservation controls belong to the offline PHP tests."}
+            "accounting_scope": "Real token and money reservation boundaries with a synthetic zero-provider upstream."}
 
 
 def verify_prompt_delivery(run_root, requests):

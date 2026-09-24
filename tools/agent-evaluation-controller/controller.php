@@ -30,7 +30,7 @@ function agentEvaluationControllerCalibrationSpending(): array
 }
 
 /** @return array{limit_units:int,input_cents_per_million:int,cached_cents_per_million:int,output_cents_per_million:int} */
-function agentEvaluationControllerExplanationSpending(): array
+function agentEvaluationControllerSingleRunSpending(): array
 {
     return ['limit_units' => 60_000_000, 'input_cents_per_million' => 250,
         'cached_cents_per_million' => 25, 'output_cents_per_million' => 1500];
@@ -963,10 +963,7 @@ function agentEvaluationControllerMain(array $arguments): int
                 );
             }
             $configuration = agentEvaluationControllerReadLiveConfiguration($arguments[3]);
-            $approval = agentEvaluationRequireObject($configuration, 'approval', 'controller smoke approval');
-            if ($approval['spending_ceiling_usd'] === '0.00') {
-                throw new RuntimeException('A zero-spend integration approval cannot authorize a paid run.');
-            }
+            agentEvaluationControllerRequireSmokeApprovalRunId($configuration, $runId);
             $credential = \getenv('OPENAI_API_KEY');
             if (!is_string($credential) || $credential === '' || strlen($credential) > 4_096 || preg_match('/[\x00-\x20\x7F]/', $credential) === 1) {
                 throw new RuntimeException('Live execution requires the host-only OPENAI_API_KEY.');
@@ -1168,6 +1165,10 @@ function agentEvaluationControllerExecuteLive(
     array $configuration,
     #[SensitiveParameter] string $credential,
 ): array {
+    agentEvaluationControllerRequireSmokeApprovalRunId(
+        $configuration,
+        agentEvaluationRequireString($request, 'run_id', 'controller smoke request'),
+    );
     return agentEvaluationControllerSmokeResult(agentEvaluationControllerExecuteControlled(
         $repositoryRoot,
         agentEvaluationRequireString($configuration, 'prepared_dependencies', 'controller live configuration'),
@@ -1571,8 +1572,8 @@ function agentEvaluationControllerExecuteControlled(
                 $prompt,
                 $validatedProfile,
                 $credential,
-                $explanation
-                    ? agentEvaluationControllerExplanationSpending()
+                $explanation || $smokeTask !== null
+                    ? agentEvaluationControllerSingleRunSpending()
                     : ($calibration === null ? null : agentEvaluationControllerCalibrationSpending()),
             );
         }
