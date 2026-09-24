@@ -903,6 +903,31 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
         );
         agentEvaluationTest($guide['exit_code'] === 0 && $guide['stderr'] === '',
             'The read command control must use the exact pinned guide.');
+        $router = runBoundedMaintainerProcess(
+            ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':docs/file-transfers/README.md'],
+            dirname($kit, 2), null, 5_000, 32_768, 4_096,
+        );
+        $referenceTest = runBoundedMaintainerProcess(
+            ['/usr/bin/git', 'cat-file', '-e',
+                AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':tools/test-consumer-project/amazon-s3-file-transfers.php'],
+            dirname($kit, 2), null, 5_000, 4_096, 4_096,
+        );
+        $verification = runBoundedMaintainerProcess(
+            ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION
+                . ':docs/file-transfers/amazon-s3-verification.md'],
+            dirname($kit, 2), null, 5_000, 131_072, 4_096,
+        );
+        agentEvaluationTest(
+            $router['exit_code'] === 0 && $router['stderr'] === ''
+                && $referenceTest['exit_code'] === 0 && $referenceTest['stdout'] === ''
+                && $referenceTest['stderr'] === ''
+                && $verification['exit_code'] === 0 && $verification['stderr'] === ''
+                && str_contains($guide['stdout'], '`tools/test-consumer-project/amazon-s3-file-transfers.php`')
+                && str_contains($router['stdout'], '`tools/test-consumer-project/amazon-s3-file-transfers.php`')
+                && str_contains($guide['stdout'], 'consumer')
+                && str_contains($verification['stdout'], 'Copy this exact source to `tools/verify-amazon-s3-file-transfer-source.php`.'),
+            'The pinned file-transfer route must resolve the synthetic reference test and consumer-owned checker template.',
+        );
         $guidePath = $directory . '/pinned-guide.md';
         if (file_put_contents($guidePath, $guide['stdout']) !== strlen($guide['stdout'])) {
             throw new RuntimeException('Unable to write the pinned guide window control.');
@@ -924,10 +949,11 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
         agentEvaluationTest($guideWindows === $guide['stdout'],
             'The ordered 20-line windows must reconstruct the exact pinned guide.');
         $guideLines = explode("\n", $guide['stdout']);
-        $s3Section = implode("\n", array_slice($guideLines, 65, 5)) . "\n";
+        $s3Window = implode("\n", array_slice($guideLines, 65, 5)) . "\n";
+        $s3Section = implode("\n", array_slice($guideLines, 65, -1)) . "\n";
         $controls = [
             [$guide['stdout'], 1, 70, null],
-            [$guide['stdout'], 66, 70, $s3Section],
+            [$guide['stdout'], 66, 70, $s3Window],
             [str_repeat('x', 8192), 1, 1, str_repeat('x', 8192)],
             [str_repeat('x', 8193), 1, 1, null],
             [str_repeat('é', 4096), 1, 1, str_repeat('é', 4096)],
@@ -1117,7 +1143,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 10
+        && $task['revision'] === 11
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2673,7 +2699,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 10,
+                'revision' => 11,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
