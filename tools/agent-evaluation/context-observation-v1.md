@@ -65,3 +65,7 @@ The before/after written-route review uses these representative requests:
 These checks establish written precedence only; source guards and installed-consumer proofs separately check distribution coherence. The clarification adds 38 words / 288 bytes to each application router, making the default-consumer universal inventory 8,592 words / 65,715 bytes. It is not a measured context-size or performance reduction. The changed source skeleton requires smoke revision 27 with refreshed fixture/tree/manifest pins; the prompt, rubric, policy, budgets and comparison fixtures remain unchanged.
 
 No after-change model trial, explanation trial or repeated matched comparison has been approved or performed. Issue 70 therefore remains incomplete. This record introduces no context-report command, context-size validity rule, diagnostic, automatic discovery or revised ADR 044/058 decision.
+
+## Later observation (2026-09-24)
+
+A separately approved after-change revision-27 trial later ran against the clarified route. Its retained reads omitted `.ai/testing.md`, but generation again stopped at the 40,000-token reservation boundary before a patch or score. The sibling `agent-evaluation-preparation/issue-70-route-after-v1/` packet records its ordered reads, bounded usage, cleanup, and review; one incomplete before/after pair does not establish a general improvement or task correctness. Separate explanation trials are retained under their pinned revisions. This dated note updates the issue evidence without rewriting the original frozen observation above.
