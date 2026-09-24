@@ -20,7 +20,7 @@ It remains under export-excluded `tools/` and changes no framework runtime, publ
 6. `scoring.php`
 7. `controller.php`
 
-There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 28 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner. Issue #73 introduces the Gemini evaluation adapter (`gemini-exec` and `fake-gemini`).
+There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 29 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner. Issue #73 introduces the Gemini evaluation adapter (`gemini-exec` and `fake-gemini`).
 
 ## Ordinary checks
 
@@ -89,10 +89,10 @@ The bounded smoke protocol uses these fixed limits and explicitly reviewed input
 
 | Setting | Value |
 | --- | --- |
-| Task | `change.simple-ping`, revision 28 |
+| Task | `change.simple-ping`, revision 29 |
 | Provider and reasoning | OpenAI `gpt-5.4-2026-03-05`, high reasoning, standard/default service tier |
 | Run count | One fresh invocation per approval; another invocation requires another approval |
-| Shared model allowance | 200,000 input/output tokens, reserved before each create request |
+| Shared model allowance | 1,000,000 cumulative input/output tokens, reserved before each create request; at most 200,000 counted input tokens per request |
 | Provider token-charge ceiling | USD 0.60, separately reserved and settled by the proxy at the pinned standard prices |
 | Generation wall allowance | 1,200 seconds, including proxy requests and termination |
 | Retained command output | 4 MiB bound |
@@ -108,7 +108,7 @@ php tools/agent-evaluation-controller.php preflight /absolute/path/smoke-configu
 
 Preflight uses no upstream key or model call. It checks the selected local engine/images/toolchains and removes its temporary control directory. A passing preflight is prerequisite evidence, not a paid-trial approval or a completed adversarial integration proof.
 
-Revision 28 changes only the smoke task's token allowance and the controller's approval/spending enforcement. Revision 27 stopped before authoring or scoring after two settled requests and a third request rejected at the 40,000-token reservation boundary. The source prompt, fixture, rubric, workspace policy, and non-token limits remain unchanged. A larger allowance gives the agent room to finish; it is no completion guarantee. The proxy now enforces both the 200,000-token allowance and the independent USD 0.60 standard-price ceiling. It checks every counted request input and reserves output before create, then settles provider usage; a request that cannot fit either remaining allowance is refused before dispatch. The quoted ceiling is for the pinned standard/default model charge, not an account invoice or regional/service-tier uplift.
+Revision 28 raised the smoke allowance to 200,000 tokens and added the independent USD 0.60 host-proxy ceiling after revision 27 stopped at 40,000 tokens. The approved revision-28 run then stopped after seven settled requests: the eighth needed 35,844 counted input tokens with 12,510 cumulative tokens remaining. It had emitted a three-file edit event but no frozen patch, application check, or score. Revision 29 raises only the cumulative smoke allowance to 1,000,000 tokens. The per-request counted-input cap remains 200,000, and the same USD 0.60 standard-price ceiling independently reserves and settles charges. Source prompt, fixture, rubric, workspace policy, model, runner, and other limits are unchanged. The quoted ceiling is for the pinned standard/default model charge, not an account invoice or regional/service-tier uplift. A larger allowance gives the agent room to finish; it is no completion guarantee.
 
 Before a paid run, obtain accountable approval for the concrete model/settings, one run ID and run, token allowance, spending ceiling, engine/images/dependency identity, and evidence destination. The approval record documents that decision; merely generating a JSON file is not approval. Price assumptions and the monetary ceiling must be reviewed before execution.
 

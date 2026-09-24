@@ -4046,10 +4046,22 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
     agentEvaluationControllerTest(
         $accepted['prepared_dependencies'] === $dependencies
         && $accepted['prepared_lock_sha256'] === hash('sha256', $lockBytes)
-        && $acceptedBudgets['model_tokens'] === 200_000
+        && $acceptedBudgets['model_tokens'] === 1_000_000
         && agentEvaluationControllerSingleRunSpending()['limit_units'] === 60_000_000,
         'An exact live configuration must parse without starting OCI or executing prepared dependencies.',
     );
+    $staleProfile = agentEvaluationRequireObject($configuration, 'profile', 'smoke configuration');
+    $staleBudgets = agentEvaluationRequireObject($staleProfile, 'budgets', 'smoke profile');
+    $staleBudgets['model_tokens'] = 200_000;
+    $staleProfile['budgets'] = $staleBudgets;
+    $configuration['profile'] = $staleProfile;
+    $writeConfiguration();
+    agentEvaluationControllerExpectFailure(
+        static function () use ($path): void { agentEvaluationControllerReadLiveConfiguration($path); },
+        'Run record budgets do not match the selected task.',
+    );
+    $configuration['profile'] = $profile;
+    $writeConfiguration();
     agentEvaluationControllerRequireSmokeApprovalRunId($accepted, '00000000000000000000000000000042');
     agentEvaluationControllerExpectFailure(
         static function () use ($accepted): void {
@@ -4058,11 +4070,14 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
         'Smoke approval is bound to a different run ID.',
     );
     $smokeSpending = agentEvaluationControllerSingleRunSpending();
-    $smokeProxy = agentEvaluationControllerProxyState('gpt-5.4-2026-03-05', 'high', 200_000, $smokeSpending);
+    $smokeProxy = agentEvaluationControllerProxyState('gpt-5.4-2026-03-05', 'high', 1_000_000, $smokeSpending);
     $initialSmokeMoney = agentEvaluationControllerProxySpendingLedger($smokeProxy);
     agentEvaluationControllerTest(
-        $initialSmokeMoney !== null && $initialSmokeMoney['policy'] === $smokeSpending,
-        'The longer smoke allowance must retain the independent USD 0.60 proxy ledger.',
+        $smokeProxy['token_budget'] === 1_000_000
+        && $initialSmokeMoney !== null && $initialSmokeMoney['policy'] === $smokeSpending
+        && in_array('model_auto_compact_token_limit=1000001',
+            agentEvaluationControllerLiveCodexArguments('gpt-5.4-2026-03-05', 'high', $smokeSpending, 1_000_000), true),
+        'The million-token smoke allowance must retain the USD 0.60 ledger and defer compaction.',
     );
     $smokeRequestBody = json_encode([
         'model' => 'gpt-5.4-2026-03-05', 'stream' => true, 'store' => false,

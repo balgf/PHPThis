@@ -74,7 +74,7 @@ $runRecord = [
         ],
     ],
     'budgets' => [
-        'model_tokens' => 200_000,
+        'model_tokens' => 1_000_000,
         'wall_seconds' => 1_200,
         'repair_turns' => 1,
         'command_output_bytes' => 4_194_304,
@@ -157,6 +157,15 @@ agentEvaluationExpectFailure(
     'Run record budgets do not match the selected task.',
 );
 
+$priorBudget = $runRecord;
+$priorBudget['budgets']['model_tokens'] = 200_000;
+agentEvaluationExpectFailure(
+    static function () use ($priorBudget, $task): void {
+        agentEvaluationValidateRunRecord($priorBudget, $task);
+    },
+    'Run record budgets do not match the selected task.',
+);
+
 $excessRepair = $runRecord;
 $excessRepair['repair_turns'] = 2;
 agentEvaluationExpectFailure(
@@ -176,7 +185,7 @@ agentEvaluationExpectFailure(
 );
 
 $excessUsage = $runRecord;
-$excessUsage['usage']['input_tokens'] = 200_001;
+$excessUsage['usage']['input_tokens'] = 1_000_001;
 agentEvaluationExpectFailure(
     static function () use ($excessUsage, $task): void {
         agentEvaluationValidateRunRecord($excessUsage, $task);
@@ -204,8 +213,8 @@ agentEvaluationExpectFailure(
 );
 
 $excessTotalUsage = $runRecord;
-$excessTotalUsage['usage']['input_tokens'] = 100_000;
-$excessTotalUsage['usage']['output_tokens'] = 100_001;
+$excessTotalUsage['usage']['input_tokens'] = 500_000;
+$excessTotalUsage['usage']['output_tokens'] = 500_001;
 agentEvaluationExpectFailure(
     static function () use ($excessTotalUsage, $task): void {
         agentEvaluationValidateRunRecord($excessTotalUsage, $task);
