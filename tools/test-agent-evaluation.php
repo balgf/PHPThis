@@ -1154,6 +1154,15 @@ function agentEvaluationExplanationContractControls(string $kit): void
             'Follow the index\'s explicit adoption-review links',
         ) && str_contains(
             AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'An index row addressed to adoption or review is necessary linked policy',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'State which common ingress and request-policy boundary remains in force',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'Include required concerns in the answer rather than relying on having read them',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
             'the next assistant message must be the final answer',
         ),
         'The explanation prompt must bound reads and avoid repeated broad linked-document searches.',
@@ -1161,7 +1170,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 14
+        && $task['revision'] === 15
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2720,7 +2729,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 14,
+                'revision' => 15,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
