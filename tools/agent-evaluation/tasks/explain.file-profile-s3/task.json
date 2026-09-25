@@ -1,7 +1,7 @@
 {
     "schema_version": 3,
     "id": "explain.file-profile-s3",
-    "revision": 15,
+    "revision": 16,
     "kind": "explanation",
     "prompt": {
         "path": "prompt.md",
@@ -14,9 +14,9 @@
     },
     "base": {
         "fixture": "tracked-maintainer-source",
-        "revision": "ce369d9f8f29775a6cc3819617ff0ccdadba481e",
-        "tree": "ef58eac15f569bcc8b340a0a666eb68082a2094f",
-        "fixture_sha256": "9471b5f5a2e83db7b13891a9669def11f4a7876ea47068dee13526e0637380c4"
+        "revision": "62d11ddb4a8ba24c94ab3a948d942146d4418481",
+        "tree": "c918c6e77a511cf39cfc5e4f515fbe165df85aec",
+        "fixture_sha256": "0ca386f6fc605f524698d0e3d3a385e8a65163c9c5d4aceb13e6a1df0dfa7217"
     },
     "workspace_policy": {
         "allowed_existing_paths": [],

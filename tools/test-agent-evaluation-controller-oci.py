@@ -485,7 +485,7 @@ def verify_explanation_control(run_root, requests, response_count, result, depen
     assert process["cleanup"]["container_stopped"] is True and process["cleanup"]["oom_killed"] is False
     freeze = result["freeze"]
     assert freeze["changed_files"] == [] and freeze["added_lines"] == 0 and freeze["deleted_lines"] == 0
-    assert freeze["candidate_sha256"] == "9471b5f5a2e83db7b13891a9669def11f4a7876ea47068dee13526e0637380c4"
+    assert freeze["candidate_sha256"] == "0ca386f6fc605f524698d0e3d3a385e8a65163c9c5d4aceb13e6a1df0dfa7217"
     assert freeze["patch_sha256"] == hashlib.sha256(b"").hexdigest()
     assert result["export"]["generation_stopped"] is True
     assert result["generation_cleanup"] == {"status": "pass", "generation_destroyed": True}
@@ -503,7 +503,7 @@ def verify_explanation_control(run_root, requests, response_count, result, depen
                        "sha256": "100c9e40670cadd4bcb39e0673461ee2cb1b171be1ddbec002e3413c87b9939c"}
     for request in requests:
         assert request["user_texts"].count(expected_prompt) == 1, \
-            "Both token counting and generation must receive the exact revision-15 explanation prompt once"
+            "Both token counting and generation must receive the unchanged explanation prompt once"
     return {
         "boundary": "infrastructure-only",
         "effective_prompt": expected_prompt,

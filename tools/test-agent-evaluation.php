@@ -921,6 +921,11 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
                 AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':tools/test-consumer-project/amazon-s3-file-transfers.php'],
             dirname($kit, 2), null, 5_000, 4_096, 4_096,
         );
+        $referenceCaller = runBoundedMaintainerProcess(
+            ['/usr/bin/git', 'show',
+                AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':tools/test-consumer-project.php'],
+            dirname($kit, 2), null, 5_000, 65_536, 4_096,
+        );
         $verification = runBoundedMaintainerProcess(
             ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION
                 . ':docs/file-transfers/amazon-s3-verification.md'],
@@ -930,12 +935,16 @@ function agentEvaluationExplanationBoundedReadControls(string $kit): void
             $router['exit_code'] === 0 && $router['stderr'] === ''
                 && $referenceTest['exit_code'] === 0 && $referenceTest['stdout'] === ''
                 && $referenceTest['stderr'] === ''
+                && $referenceCaller['exit_code'] === 0 && $referenceCaller['stderr'] === ''
                 && $verification['exit_code'] === 0 && $verification['stderr'] === ''
                 && str_contains($guide['stdout'], '`tools/test-consumer-project/amazon-s3-file-transfers.php`')
                 && str_contains($router['stdout'], '`tools/test-consumer-project/amazon-s3-file-transfers.php`')
+                && str_contains($guide['stdout'], '`tools/test-consumer-project.php`')
+                && str_contains($router['stdout'], '`tools/test-consumer-project.php`')
+                && str_contains($referenceCaller['stdout'], 'proveInstalledAmazonS3FileTransferVerificationReference(')
                 && str_contains($guide['stdout'], 'consumer')
                 && str_contains($verification['stdout'], 'Copy this exact source to `tools/verify-amazon-s3-file-transfer-source.php`.'),
-            'The pinned file-transfer route must resolve the synthetic reference test and consumer-owned checker template.',
+            'The pinned file-transfer route must resolve the synthetic reference test, direct caller, and consumer-owned checker template.',
         );
         $guidePath = $directory . '/pinned-guide.md';
         if (file_put_contents($guidePath, $guide['stdout']) !== strlen($guide['stdout'])) {
@@ -1170,7 +1179,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 15
+        && $task['revision'] === 16
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2729,7 +2738,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 15,
+                'revision' => 16,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
