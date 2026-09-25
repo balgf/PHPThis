@@ -1,7 +1,7 @@
 {
     "schema_version": 3,
     "id": "explain.file-profile-s3",
-    "revision": 12,
+    "revision": 13,
     "kind": "explanation",
     "prompt": {
         "path": "prompt.md",
@@ -27,7 +27,7 @@
         "max_deleted_lines": 0
     },
     "budgets": {
-        "model_tokens": 200000,
+        "model_tokens": 1000000,
         "wall_seconds": 1200,
         "repair_turns": 0,
         "command_output_bytes": 4194304

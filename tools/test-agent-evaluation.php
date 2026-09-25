@@ -1155,19 +1155,19 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 12
+        && $task['revision'] === 13
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
     );
     agentEvaluationTest(
         $task['budgets'] === [
-            'model_tokens' => 200_000,
+            'model_tokens' => 1_000_000,
             'wall_seconds' => 1_200,
             'repair_turns' => 0,
             'command_output_bytes' => 4_194_304,
         ],
-        'The revised explanation task must admit 200,000 cumulative tokens with the other limits fixed.',
+        'The revised explanation task must admit 1,000,000 cumulative tokens with the other limits fixed.',
     );
     agentEvaluationExplanationEntrypointReadControls($kit);
     agentEvaluationExplanationBoundedReadControls($kit);
@@ -1342,14 +1342,16 @@ function agentEvaluationExplanationContractControls(string $kit): void
     $higherUsageRun = $run;
     $higherUsageRun['usage']['input_tokens'] = 150_000;
     agentEvaluationValidateExplanationRunRecord($higherUsageRun, $task);
-    $staleBudgetRun = $run;
-    $staleBudgetRun['budgets']['model_tokens'] = 100_000;
-    agentEvaluationExpectFailure(
-        static function () use ($staleBudgetRun, $task): void {
-            agentEvaluationValidateExplanationRunRecord($staleBudgetRun, $task);
-        },
-        'Run record budgets do not match the selected task.',
-    );
+    foreach ([40_000, 100_000, 200_000] as $oldTokenBudget) {
+        $staleBudgetRun = $run;
+        $staleBudgetRun['budgets']['model_tokens'] = $oldTokenBudget;
+        agentEvaluationExpectFailure(
+            static function () use ($staleBudgetRun, $task): void {
+                agentEvaluationValidateExplanationRunRecord($staleBudgetRun, $task);
+            },
+            'Run record budgets do not match the selected task.',
+        );
+    }
     $invalidExplanationRunId = $run;
     $invalidExplanationRunId['run_id'] = 'x';
     agentEvaluationExpectFailure(
@@ -1883,7 +1885,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             'ledger' => [
                 'model' => $run['model']['id'],
                 'reasoning_effort' => $run['model']['settings']['reasoning_effort'],
-                'token_budget' => 200_000,
+                'token_budget' => 1_000_000,
                 'input_tokens' => 1_000,
                 'output_tokens' => 500,
                 'cached_tokens' => 100,
@@ -2498,6 +2500,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             [
                 ['token_budget', 40_000],
                 ['token_budget', 100_000],
+                ['token_budget', 200_000],
                 ['token_budget', 199_999],
                 ['input_tokens', 999],
                 ['output_tokens', 499],
@@ -2711,7 +2714,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 12,
+                'revision' => 13,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],
@@ -3086,7 +3089,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             throw new RuntimeException('Unable to restore the copied explanation effective-prompt control.');
         }
 
-        foreach ([40_000, 100_000] as $oldTokenBudget) {
+        foreach ([40_000, 100_000, 200_000] as $oldTokenBudget) {
             $staleBudgetManifest = agentEvaluationValueObject(
                 agentEvaluationJsonValue($manifestBytes, 'copied explanation manifest'),
                 'copied explanation manifest',

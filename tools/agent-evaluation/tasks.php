@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 12,
-        'manifest_sha256' => '89a310675dae470ed30266bee470eef681b9bf41e8dcdc73018f88760f587aec',
+        'revision' => 13,
+        'manifest_sha256' => '5a6847675f262059b14852a0dd64070dd2c1d87a3aa8d3cba6c2c934d8f551e3',
     ],
 ];
 
@@ -38,8 +38,8 @@ const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = 'ce369d9f8f29775a6cc3819617
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = 'ef58eac15f569bcc8b340a0a666eb68082a2094f';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = '9471b5f5a2e83db7b13891a9669def11f4a7876ea47068dee13526e0637380c4';
 const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '2d46f6a39d59cbd15a99ba65ce101de1ed190fb9ed303091363c72d7a087ccc7';
-const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '591111e42e91fd9e928de4e6a59f6a3769552913796c82a8ca11eee99b682d13';
-const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = '9cc9b0df25b15f1d8005fac3dd7c397bca064a46715feb2a1b5dd410d6caee42';
+const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '46667ae3215cb5a55ad17d5062eccb871daa65f29258aad89ca425b674525ce9';
+const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = '9f6378ffc9abbe91ae2443c2afbc2f6b0179fcdc0c37faf0ab672e1be3f80621';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
 const AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND = 'cat VISION.md .ai/README.md .ai/rules.md .ai/change-workflow.md .ai/strict-profile.md';
 const AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON = 'import pathlib,sys; p,a,b=sys.argv[1:]; a,b=int(a),int(b); '
@@ -646,7 +646,7 @@ function agentEvaluationExplanationTaskDocument(string $kit, string $taskId): ar
         $taskId,
     );
     $expectedBudgets = [
-        'model_tokens' => 200_000,
+        'model_tokens' => 1_000_000,
         'wall_seconds' => 1_200,
         'repair_turns' => 0,
         'command_output_bytes' => 4_194_304,

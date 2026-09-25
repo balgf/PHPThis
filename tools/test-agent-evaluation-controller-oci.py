@@ -208,7 +208,7 @@ try {
         'explanation OCI proxy evidence',
     );
     $spending = agentEvaluationControllerProxySpendingLedger($ledger);
-    if ($ledger['token_budget'] !== 200_000 || $spending === null
+    if ($ledger['token_budget'] !== 1_000_000 || $spending === null
         || $spending['policy'] !== agentEvaluationControllerSingleRunSpending()
     ) {
         throw new RuntimeException('Explanation OCI control lost its token or spending cap.');
@@ -414,7 +414,7 @@ def verify_upstream_failure(run_root, case, requests, response_count, worker_res
     assert ledger["response_bytes"] == 0 and ledger["last_response_bytes"] is None and ledger["last_response_sha256"] is None
     assert ledger["response_rejection_stage"] is None and ledger["response_observation"] is None
     assert ledger["provider_error_event_seen"] is False and ledger["provider_error_observation"] is None
-    assert ledger["token_budget"] == 200_000
+    assert ledger["token_budget"] == 1_000_000
     spending = ledger["spending"]
     assert spending["policy"] == {"limit_units": 60_000_000, "input_cents_per_million": 250,
                                   "cached_cents_per_million": 25, "output_cents_per_million": 1500}

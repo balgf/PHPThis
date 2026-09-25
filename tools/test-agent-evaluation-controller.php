@@ -4180,7 +4180,7 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
     $explanationProxy = agentEvaluationControllerProxyState(
         'gpt-5.4-2026-03-05',
         'high',
-        200_000,
+        1_000_000,
         $explanationSpending,
     );
     $proxySpending = agentEvaluationRequireObject(
@@ -4221,9 +4221,45 @@ function agentEvaluationControllerTestLiveConfiguration(string $root, string $te
             'output_cents_per_million' => 1_500,
         ]
         && $proxySpendingPolicy === $explanationSpending
-        && $explanationTokenBudget === 200_000,
+        && $explanationTokenBudget === 1_000_000,
         'Explanation live configuration must bind a larger cumulative token allowance and an independent USD 0.60 ceiling.',
     );
+    $inputBoundBody = json_encode([
+        'model' => 'gpt-5.4-2026-03-05', 'stream' => true, 'store' => false,
+        'input' => 'Offline explanation per-request input control.',
+        'reasoning' => ['effort' => 'high'],
+        'tools' => agentEvaluationControllerTestProxyTransportTools(),
+        'max_output_tokens' => 16,
+    ], JSON_THROW_ON_ERROR);
+    foreach ([200_000, 200_001] as $countedInput) {
+        $inputBoundProxy = agentEvaluationControllerProxyState(
+            'gpt-5.4-2026-03-05', 'high', 1_000_000, $explanationSpending,
+        );
+        $inputBoundRequest = agentEvaluationControllerProxyRequest($inputBoundBody, $inputBoundProxy);
+        $countResponse = json_encode([
+            'object' => 'response.input_tokens', 'input_tokens' => $countedInput,
+        ], JSON_THROW_ON_ERROR);
+        if ($countedInput === 200_000) {
+            agentEvaluationControllerProxyReserve($inputBoundRequest['request'], $countResponse, $inputBoundProxy);
+            agentEvaluationControllerTest(
+                $inputBoundProxy['request_count'] === 1 && $inputBoundProxy['reserved_input'] === 200_000,
+                'The explanation proxy must admit the exact counted-input request boundary.',
+            );
+        } else {
+            agentEvaluationControllerExpectFailure(
+                static function () use ($inputBoundRequest, $countResponse, &$inputBoundProxy): void {
+                    agentEvaluationControllerProxyReserve($inputBoundRequest['request'], $countResponse, $inputBoundProxy);
+                },
+                'AGENT_EVALUATION_CONTROLLER_PROXY_RESERVATION_REJECTED',
+            );
+            agentEvaluationControllerTest(
+                $inputBoundProxy['failure_reason'] === 'model_input_limit'
+                && $inputBoundProxy['request_count'] === 0
+                && $inputBoundProxy['reserved_input'] === 0,
+                'The explanation proxy must refuse counted input above 200,000 before provider dispatch.',
+            );
+        }
+    }
     foreach (['00000000000000000000000000000073', '00000000000000000000000000000074'] as $unapprovedRunId) {
         agentEvaluationControllerExpectFailure(
             static function () use ($acceptedExplanation, $unapprovedRunId): void {
