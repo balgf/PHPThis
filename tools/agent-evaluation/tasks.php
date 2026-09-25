@@ -25,8 +25,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,
-        'revision' => 13,
-        'manifest_sha256' => '5a6847675f262059b14852a0dd64070dd2c1d87a3aa8d3cba6c2c934d8f551e3',
+        'revision' => 14,
+        'manifest_sha256' => '8f4978c78fca34fcd1fe7ad7c8338f960442f396ae482a27eaf137b888c94b2d',
     ],
 ];
 
@@ -37,7 +37,7 @@ const AGENT_EVALUATION_EXPLANATION_TASK_ID = 'explain.file-profile-s3';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION = 'ce369d9f8f29775a6cc3819617ff0ccdadba481e';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_TREE = 'ef58eac15f569bcc8b340a0a666eb68082a2094f';
 const AGENT_EVALUATION_EXPLANATION_SOURCE_FIXTURE_SHA256 = '9471b5f5a2e83db7b13891a9669def11f4a7876ea47068dee13526e0637380c4';
-const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '2d46f6a39d59cbd15a99ba65ce101de1ed190fb9ed303091363c72d7a087ccc7';
+const AGENT_EVALUATION_EXPLANATION_EFFECTIVE_PROMPT_SHA256 = '98cec37c1bdf5030b35f21af22a970e81020d5f50bcb69e461ac1e8420d26bc8';
 const AGENT_EVALUATION_EXPLANATION_TASK_SCHEMA_SHA256 = '46667ae3215cb5a55ad17d5062eccb871daa65f29258aad89ca425b674525ce9';
 const AGENT_EVALUATION_EXPLANATION_RUN_SCHEMA_SHA256 = '9f6378ffc9abbe91ae2443c2afbc2f6b0179fcdc0c37faf0ab672e1be3f80621';
 const AGENT_EVALUATION_EXPLANATION_SCORE_SCHEMA_SHA256 = '4811c0b55524f243539556f98336ca152791a6f616141fc28d74f6b9cba4510a';
@@ -56,7 +56,7 @@ const AGENT_EVALUATION_EXPLANATION_BOUNDED_SEARCH_PYTHON = 'import pathlib,re,sy
     . 'sys.stdout.buffer.write(data)';
 const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only evaluation. Do not modify files. Answer from the pinned workspace.'
     . "\n\n"
-    . 'Reading protocol (revision 12): Follow AGENTS.md and all mandatory entrypoints. '
+    . 'Reading protocol (revision 14): Follow AGENTS.md and all mandatory entrypoints. '
     . 'First read all five mandatory files completely by running this exact command once in one shell invocation:'
     . "\n\n" . AGENT_EVALUATION_EXPLANATION_ENTRYPOINT_COMMAND . "\n\n"
     . 'Do not rediscover these known paths, count their lines, or use the selected-section reader for this initial batch. '
@@ -72,8 +72,12 @@ const AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX = 'This is an explanation-only 
     . 'Narrow the range on error; do not pipe a whole file through a truncating command. '
     . 'Batch independent reads only when their combined output fits 8,192 bytes; avoid rereading unchanged text, and stop when evidence is sufficient. '
     . 'Do not skip required concerns or invent missing evidence to fit the budget. '
-    . 'Inspect concrete execution-path source and its nearest test before answering. '
-    . 'After reading the current guide, necessary linked policy, concrete source, and nearest test, ask whether any unresolved fact would change the answer. '
+    . 'Inspect concrete execution-path source and its nearest test when the pinned workspace contains an actual implementation. '
+    . 'When the owning guide instead names a synthetic framework reference test for an optional consumer-owned profile, inspect that exact test and its direct caller. '
+    . 'Do not search unrelated test families for consumer application source that the guide says is outside this workspace; state missing consumer evidence as a condition. '
+    . 'Follow the index\'s explicit adoption-review links, but do not reread an already supported concern solely to find another restatement. '
+    . 'After reading the current guide, necessary linked policy, and the concrete source and nearest test or named reference proof, ask whether any unresolved fact would change the answer. '
+    . 'For a generic possible-adoption review, absent consumer-specific records, implementations, and results are limitations to explain, not facts to discover in the framework. '
     . 'If not, the next assistant message must be the final answer, not a progress update; do not make another tool call to reconfirm an already supported claim. '
     . 'If a fact would change the answer, make only a targeted read for that fact, return to this checkpoint, and state any remaining limit in the final answer.'
     . "\n\npython3 -I -B -c '" . AGENT_EVALUATION_EXPLANATION_BOUNDED_READ_PYTHON . "' PATH START END"

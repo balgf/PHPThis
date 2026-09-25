@@ -1145,7 +1145,13 @@ function agentEvaluationExplanationContractControls(string $kit): void
             'For content searches, use one exact file and one specific term.',
         ) && str_contains(
             AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
-            'Inspect concrete execution-path source and its nearest test before answering.',
+            'When the owning guide instead names a synthetic framework reference test for an optional consumer-owned profile',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'Do not search unrelated test families for consumer application source that the guide says is outside this workspace',
+        ) && str_contains(
+            AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
+            'Follow the index\'s explicit adoption-review links',
         ) && str_contains(
             AGENT_EVALUATION_EXPLANATION_PROMPT_SUFFIX,
             'the next assistant message must be the final answer',
@@ -1155,7 +1161,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
     agentEvaluationTest(
         $task['schema_version'] === 3
         && $task['id'] === AGENT_EVALUATION_EXPLANATION_TASK_ID
-        && $task['revision'] === 13
+        && $task['revision'] === 14
         && $task['kind'] === 'explanation'
         && $task['comparative_claims'] === false,
         'The explanation task must retain its explicit schema-v3 identity.',
@@ -2714,7 +2720,7 @@ function agentEvaluationExplanationContractControls(string $kit): void
             && $listedExplanation === [
                 'schema_version' => 3,
                 'id' => AGENT_EVALUATION_EXPLANATION_TASK_ID,
-                'revision' => 13,
+                'revision' => 14,
                 'kind' => 'explanation',
                 'comparative_claims' => false,
             ],

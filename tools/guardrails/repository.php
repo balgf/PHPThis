@@ -4310,7 +4310,7 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/explain.file-profile-s3/task.json' => [
             '"schema_version": 3',
-            '"revision": 13',
+            '"revision": 14',
             '"model_tokens": 1000000',
             '"fixture": "tracked-maintainer-source"',
             '"max_changed_files": 0',

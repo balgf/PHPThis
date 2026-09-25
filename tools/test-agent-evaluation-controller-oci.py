@@ -499,11 +499,11 @@ def verify_explanation_control(run_root, requests, response_count, result, depen
     assert [request["path"] for request in requests] == ["/v1/responses/input_tokens", "/v1/responses"]
     assert response_count == 1
     assert requests[1]["model"] == "gpt-5.4-2026-03-05"
-    expected_prompt = {"bytes": 4056,
-                       "sha256": "2d46f6a39d59cbd15a99ba65ce101de1ed190fb9ed303091363c72d7a087ccc7"}
+    expected_prompt = {"bytes": 4761,
+                       "sha256": "98cec37c1bdf5030b35f21af22a970e81020d5f50bcb69e461ac1e8420d26bc8"}
     for request in requests:
         assert request["user_texts"].count(expected_prompt) == 1, \
-            "Both token counting and generation must receive the exact revision-12 explanation prompt once"
+            "Both token counting and generation must receive the exact revision-14 explanation prompt once"
     return {
         "boundary": "infrastructure-only",
         "effective_prompt": expected_prompt,
