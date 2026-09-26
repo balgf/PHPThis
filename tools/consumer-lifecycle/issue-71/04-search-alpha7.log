@@ -1,0 +1,14 @@
+PASS application guardrails: 42 PHP files
+ADVISORY possible application duplication: 1 group (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected
+
+ [OK] No errors                                                                 
+
+PASS PHPThis application check
+PASS disposable fixture setup
+{"schema_version":1,"event":"application.request_summary","correlation_id":"6fd86a1321ae021c29bd7d002b092d98","duration_us":14,"response_status":200,"outcome":"success","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[{"name":"directory","budget_limit":3,"budget_used":0,"budget_exceeded":false,"query_trace":{"schema_version":1,"event":"database.query_summary","statements":0,"failures":0,"tracked_fingerprints":0,"repeated_fingerprints":0,"maximum_executions_per_fingerprint":0,"total_execute_duration_us":0,"slowest_execute_duration_us":0,"truncated":false,"untracked_statements":0,"queries":[]}}]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"6937a99e7f59998166d6f4cfb144606e","duration_us":35,"response_status":400,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[{"name":"directory","budget_limit":3,"budget_used":0,"budget_exceeded":false,"query_trace":{"schema_version":1,"event":"database.query_summary","statements":0,"failures":0,"tracked_fingerprints":0,"repeated_fingerprints":0,"maximum_executions_per_fingerprint":0,"total_execute_duration_us":0,"slowest_execute_duration_us":0,"truncated":false,"untracked_statements":0,"queries":[]}}]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"003fe8b063c41527aa9f7bd4bfd3b0b4","duration_us":71,"response_status":413,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[{"name":"directory","budget_limit":3,"budget_used":0,"budget_exceeded":false,"query_trace":{"schema_version":1,"event":"database.query_summary","statements":0,"failures":0,"tracked_fingerprints":0,"repeated_fingerprints":0,"maximum_executions_per_fingerprint":0,"total_execute_duration_us":0,"slowest_execute_duration_us":0,"truncated":false,"untracked_statements":0,"queries":[]}}]}
+PASS application behavior and front controller
+PASS retained Create/List: success, policy order/replacement, denial, input, rollback, redaction, query counts 1/1 (2/500 rows)
+PASS retained search: name/email, case, literal data, validation, tenant scope, continuation, query counts 1/1
+PASS real HTTP: unchanged front controller, deny-all default, injected Create/List, tenant denial, summary counts/redaction

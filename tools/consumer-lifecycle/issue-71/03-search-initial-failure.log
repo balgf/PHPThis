@@ -1,0 +1,7 @@
+PASS retained Create/List: success, policy order/replacement, denial, input, rollback, redaction, query counts 1/1 (2/500 rows)
+
+Fatal error: Uncaught RuntimeException: name search accepted: [200,400] in /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/directory.php:37
+Stack trace:
+#0 /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/directory.php(161): directoryExpect(200, 400, 'name search acc...')
+#1 {main}
+  thrown in /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/directory.php on line 37

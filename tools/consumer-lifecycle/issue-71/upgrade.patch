@@ -1,0 +1,558 @@
+diff --git a/.ai/README.md b/.ai/README.md
+index 86bd8d8..4707786 100644
+--- a/.ai/README.md
++++ b/.ai/README.md
+@@ -2,7 +2,7 @@
+ 
+ This directory owns current context for the retained synthetic account directory. Replace only the guides entered by a task with verified project facts before adding product behavior. Keep context committed, concise, and free of secrets.
+ 
+-Consumer Contract v13 and Strict Profile v3 remain mandatory. Application guidance may strengthen them but may not weaken them.
++Consumer Contract v18 and Strict Profile v4 remain mandatory. Application guidance may strengthen them but may not weaken them.
+ 
+ ## Universal entrypoints
+ 
+@@ -28,6 +28,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
+ | --- | --- | --- |
+ | Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
+ | Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
++| Upgrade the installed framework | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | `docs/upgrade-source.md`, current concern guidance, retained app source and tests; never replace app context from a new skeleton |
+ | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
+ | Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`; add installed `vendor/phpthis/framework/docs/database.md` when nested data enters an I/O plan | exact application response construction and `Content-Type`, operation-owned `data` and optional `meta` fields, semantic relationship names, fixed bounded query/cache/external-call counts independent of parent-page cardinality, I/O-free mapping and encoding, parent pagination, exact nested decoder fixtures, compatibility decision, `.ai/data.md`, and `.ai/testing.md`; add no generic wrapper, relationship loader, serializer, paginator, or generator |
+ | Build or change frontend integration or application-owned HTML rendering | installed `vendor/phpthis/framework/docs/frontend-integration.md` | `.ai/architecture.md`, `.ai/testing.md`, and exact HTTP paths; add other concern guides only when entered |
+diff --git a/.ai/architecture.md b/.ai/architecture.md
+index fd71219..75a9d57 100644
+--- a/.ai/architecture.md
++++ b/.ai/architecture.md
+@@ -1,6 +1,6 @@
+ # Application architecture
+ 
+-`public/index.php -> bootstrap.php -> DirectoryComposition -> RequestBoundary -> Application -> Router -> explicit Routes/HealthRoutes/UserRoutes`. Bootstrap constructs one connection, distinct budget/trace, deny-all authentication, named tenant/action policies and one sink. The coordinator owns response selection and one summary; the front controller separately emits. The installed Alpha 7 starter's pre-coordinator failure boundary is not claimed here.
++`public/index.php -> bootstrap.php -> DirectoryComposition -> RequestBoundary -> Application -> Router -> explicit Routes/HealthRoutes/UserRoutes`. Bootstrap constructs one connection, distinct budget/trace, deny-all authentication, named tenant/action policies and one sink. The coordinator owns response selection and one summary; the front controller separately emits. After ordinary Composer autoloading and generic-response construction, one code-owned GENERIC outer catch now contains bootstrap and coordinator invocation. Emission remains separate; see `docs/upgrade-source.md`.
+ 
+ Feature-first source: shared account values/policy interfaces in `src/Accounts`, shared positive `UserId` in `src/Users`, operation-specific `CreateUser` and `ListUsers` directories. Routes use the narrow `positive-int` representation; the adapter immediately wraps `account_id` in `AccountId`. Identifiers use validated private constructors and `fromInteger/toInteger`, with no actor/user equivalence. Nothing discovers classes or routes.
+ 
+diff --git a/.ai/configuration.md b/.ai/configuration.md
+index 3b2caed..f2341c7 100644
+--- a/.ai/configuration.md
++++ b/.ai/configuration.md
+@@ -1,3 +1,5 @@
+ # Application configuration
+ 
+ `NOT_APPLICABLE(CONFIGURATION)` and `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`: no external process settings, secrets, env reader or configuration types are adopted. Bootstrap's fixture location and deny-all policies are code-owned constants; request input cannot select a different DSN/profile. PHP native settings for the isolated HTTP test process are explicit in tests/front_controller.py and operational instructions, separate from application configuration. Any later environment inputs require the installed one-file typed-boundary pattern before I/O; do not create unused factories now.
++
++HTTP failure disclosure is deliberately code-owned GENERIC in public/index.php. There are no disclosure/profile input names or details renderer, no request-based mode selection, and no configuration-failure profile to simulate. Do not introduce dummy environment inputs.
+diff --git a/.ai/observability.md b/.ai/observability.md
+index cfcd69c..d089d9b 100644
+--- a/.ai/observability.md
++++ b/.ai/observability.md
+@@ -1,7 +1,9 @@
+ # Application observability
+ 
+-Keep the shipped application-owned `src/Observability` schema v1 coordinator/sink. It generates one 32-hex X-Request-ID, selects response then attempts one failure-isolated summary. DirectoryComposition registers exactly one `directory` source with this request's distinct budget/trace; I/O-free policies contribute no sources. Counts include attempted statements, no parameter values or SQL. Summary fields retain status/outcome, bounded fingerprint aggregates and only the unknown class. Response emission and network delivery are outside the coordinator; Alpha 7 has no guaranteed pre-coordinator summary/correlation.
++Keep the shipped application-owned `src/Observability` schema v1 coordinator/sink. It generates one 32-hex X-Request-ID, selects response then attempts one failure-isolated summary. DirectoryComposition registers exactly one `directory` source with this request's distinct budget/trace; I/O-free policies contribute no sources. Counts include attempted statements, no parameter values or SQL. Summary fields retain status/outcome, bounded fingerprint aggregates and only the unknown class. Response emission and network delivery are outside the coordinator; Pre-coordinator failure has no correlation or terminal-summary guarantee; the sole front controller now attempts exactly one protected class-only outer event.
+ 
+ `ErrorLogRequestSummarySink` writes to PHP's configured destination, no remote collector/durability claim. HTTP tests select a private scratch file (owned temp directory), suppress native error display, enable E_ALL/log_errors and omit exception arguments; remove it with the fixture. The separate built-in server access log can contain request paths; it is private disposable test output, not a redacted application event. Both are outside public document root. No deployed destination, retention or latency policy exists.
+ 
+ Evidence: retained starter tests for exact response/correlation, one attempt and throwing sink; directory and real HTTP checks for source counts, known denial status and unknown class, and absence of synthetic credential/payload/SQL markers. `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)`, `NOT_APPLICABLE(GRAFANA_LOG_DELIVERY)`: optional destination envelope/collector not adopted.
++
++Outer payload is exactly `application.http_outer_failure failure_class=<ADR023-safe-class>`. Anonymous classes use their Throwable parent to exclude source suffixes. Event failure retains the preconstructed generic response; no retry or details. Outer tests prove missing fixture, input non-selection, anonymous redaction and event failure isolation.
+diff --git a/.ai/operations.md b/.ai/operations.md
+index ea69b64..9b4a315 100644
+--- a/.ai/operations.md
++++ b/.ai/operations.md
+@@ -7,3 +7,5 @@ Only local sequence: install -> `php tests/fixture.php` creates/resets the synth
+ Manual evaluation server (after fixture setup): `php -d display_errors=0 -d display_startup_errors=0 -d error_reporting=-1 -d log_errors=1 -d zend.exception_ignore_args=1 -d error_log=/tmp/phpthis-directory-private.log -S 127.0.0.1:8080 -t public public/index.php`. First reserve the log with mode 0600 in a private directory under your control and use that path instead of the example; do not expose native logs over HTTP. No production launch, traffic, deploy, migrate, schedule or credential action is approved. The automatic HTTP harness already creates a private temporary directory and bounded owned process.
+ 
+ Reproduction tags, upgrade procedure, fixed scenario and next public-release trigger: `docs/lifecycle-plan.md`. Preserve the same application; no skeleton replacement. `NOT_APPLICABLE(MIGRATIONS)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(SESSION)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(WEBSOCKETS)`, `NOT_APPLICABLE(FILE_TRANSFER)`.
++
++Current source evaluation is pinned by composer.lock to framework 909977b762ff08f823be1e2c16a4dbb704e4f93a; it is not public-release certification. The actual built-in HTTP SAPI settings are asserted by outer_failure.py: every E_ALL bit, native/error startup display off, private log on, exception arguments omitted. No other deployment/profile exists. Missing fixture now returns the exact generic private no-store 500 plus one protected outer event; bootstrap never creates it.
+diff --git a/.ai/rules.md b/.ai/rules.md
+index b0d0007..2c1fc0a 100644
+--- a/.ai/rules.md
++++ b/.ai/rules.md
+@@ -1,6 +1,6 @@
+ # Universal application rules
+ 
+-These rules supplement installed PHPThis Consumer Contract v13 and Strict Profile v3. They apply to every change in this application; concern-specific contracts live in the current guide routed by `.ai/README.md`.
++These rules supplement installed PHPThis Consumer Contract v18 and Strict Profile v4. They apply to every change in this application; concern-specific contracts live in the current guide routed by `.ai/README.md`.
+ 
+ ## Required
+ 
+diff --git a/.ai/testing.md b/.ai/testing.md
+index b9429fe..4677837 100644
+--- a/.ai/testing.md
++++ b/.ai/testing.md
+@@ -9,3 +9,5 @@
+ Additional upgrade-specific tests must first fail on the unchanged older front controller, then pass after repair. Keep the initial failure in retained campaign artifacts, not as a diagnostic exception. Campaign log/lock/hash/size records are maintainer evidence, not new framework validity rules.
+ 
+ Search evidence additionally preserves unfiltered output and checks name/email, case sensitivity, no match, literal wildcard/SQL-looking data, rejected representations before SQL, account isolation, keyset continuation and one query on 2/500-row fixtures.
++
++Source-upgrade gate adds `php tests/compatibility.php` (raw-target/direct path rejection and unchanged empty/top/lower PHP buffers) and `python3 tests/outer_failure.py` (generic missing-fixture failure, input non-selection, anonymous/event isolation and effective web-SAPI settings). Initial red checkpoint is retained separately; no assertion is skipped for it.
+diff --git a/AGENTS.md b/AGENTS.md
+index fd3f8cb..bbcd804 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -29,7 +29,7 @@ Ordinary implementation starts with one current operational guide. Read an ADR o
+ 
+ ## Authority and safety
+ 
+-- Consumer Contract v13 and Strict Profile v3 are the minimum accepted rules.
++- Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules.
+ - Application `.ai/` guides add verified project facts and may strengthen but never weaken the installed contract.
+ - Preserve the installed contract when project guidance conflicts, report the conflict, and distinguish installed behavior, application policy, and proposals.
+ - Never invent product intent, human approval, external-system facts, or unsupported PHPThis behavior.
+diff --git a/bootstrap.php b/bootstrap.php
+index 154d89f..f0deeea 100644
+--- a/bootstrap.php
++++ b/bootstrap.php
+@@ -10,7 +10,7 @@ use App\Users\ListUsers\AccountListAuthorization;
+ use PHPThis\Database\Connection;
+ use PHPThis\Database\QueryBudget;
+ use PHPThis\Database\QueryTrace;
+-require __DIR__ . '/vendor/autoload.php';
++require_once __DIR__ . '/vendor/autoload.php';
+ $databasePath = __DIR__ . '/tmp/directory.sqlite';
+ if (!is_file($databasePath)) { throw new RuntimeException('Evaluation fixture is absent.'); }
+ $budget = new QueryBudget(3);
+diff --git a/composer.json b/composer.json
+index 7b17f4e..598e71e 100644
+--- a/composer.json
++++ b/composer.json
+@@ -5,8 +5,8 @@
+     "license": "MIT",
+     "require": {
+         "php": "~8.4.0",
+-        "phpthis/framework": "0.1.0-alpha.7",
+-        "ext-pdo_sqlite": "*"
++        "ext-pdo_sqlite": "*",
++        "phpthis/framework": "dev-main#909977b762ff08f823be1e2c16a4dbb704e4f93a"
+     },
+     "require-dev": {
+         "phpstan/phpstan": "^2.1",
+@@ -23,7 +23,9 @@
+             "@php tests/fixture.php",
+             "@php tests/run.php",
+             "@php tests/directory.php",
+-            "python3 tests/front_controller.py"
++            "python3 tests/front_controller.py",
++            "@php tests/compatibility.php",
++            "python3 tests/outer_failure.py"
+         ],
+         "check": [
+             "@profile",
+@@ -33,5 +35,12 @@
+     "config": {
+         "allow-plugins": false,
+         "sort-packages": true
+-    }
++    },
++    "repositories": [
++        {
++            "name": "phpthis-source",
++            "type": "vcs",
++            "url": "https://github.com/balgf/PHPThis.git"
++        }
++    ]
+ }
+diff --git a/composer.lock b/composer.lock
+index 5e1c80f..c306bf9 100644
+--- a/composer.lock
++++ b/composer.lock
+@@ -4,20 +4,20 @@
+         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+         "This file is @generated automatically"
+     ],
+-    "content-hash": "9226ebbfad82e3d61e5d3c59c6075f40",
++    "content-hash": "639ed9dfae2687a3d3846adf93164130",
+     "packages": [
+         {
+             "name": "phpthis/framework",
+-            "version": "v0.1.0-alpha.7",
++            "version": "dev-main",
+             "source": {
+                 "type": "git",
+                 "url": "https://github.com/balgf/PHPThis.git",
+-                "reference": "de07cbd449ed3e905331aeea105e528fbaa83ac3"
++                "reference": "909977b762ff08f823be1e2c16a4dbb704e4f93a"
+             },
+             "dist": {
+                 "type": "zip",
+-                "url": "https://api.github.com/repos/balgf/PHPThis/zipball/de07cbd449ed3e905331aeea105e528fbaa83ac3",
+-                "reference": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
++                "url": "https://api.github.com/repos/balgf/PHPThis/zipball/909977b762ff08f823be1e2c16a4dbb704e4f93a",
++                "reference": "909977b762ff08f823be1e2c16a4dbb704e4f93a",
+                 "shasum": ""
+             },
+             "require": {
+@@ -32,6 +32,7 @@
+                 "phpstan/phpstan-strict-rules": "^2.0",
+                 "phpunit/phpunit": "^13.0"
+             },
++            "default-branch": true,
+             "bin": [
+                 "bin/phpthis"
+             ],
+@@ -41,7 +42,90 @@
+                     "PHPThis\\": "src/"
+                 }
+             },
+-            "notification-url": "https://packagist.org/downloads/",
++            "autoload-dev": {
++                "psr-4": {
++                    "Example\\": "example/src/"
++                }
++            },
++            "archive": {
++                "exclude": [
++                    "/.ai",
++                    "/.DS_Store",
++                    "/.git",
++                    "/.github",
++                    "/.gitattributes",
++                    "/.gitignore",
++                    "/.phpunit.cache",
++                    "/AGENTS.md",
++                    "/autoload.php",
++                    "/composer.lock",
++                    "/example",
++                    "/phpstan.neon",
++                    "/phpunit.xml.dist",
++                    "/skeleton",
++                    "/tests",
++                    "/tmp",
++                    "/tools",
++                    "/vendor"
++                ]
++            },
++            "scripts": {
++                "analyse": [
++                    "php -d disable_functions=proc_open vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress --memory-limit=1G"
++                ],
++                "benchmark:routing": [
++                    "php tools/benchmark-routing.php"
++                ],
++                "example:setup": [
++                    "php tools/setup-example.php"
++                ],
++                "guard": [
++                    "php tools/guardrails.php"
++                ],
++                "test": [
++                    "php vendor/bin/phpunit --configuration=phpunit.xml.dist"
++                ],
++                "test:agent-evaluation": [
++                    "php tools/test-agent-evaluation.php"
++                ],
++                "test:agent-evaluation-controller": [
++                    "php tools/test-agent-evaluation-controller.php"
++                ],
++                "test:process": [
++                    "php tools/test-process-support.php"
++                ],
++                "test:coverage": [
++                    "php vendor/bin/phpunit --configuration=phpunit.xml.dist --coverage-text --coverage-clover=.phpunit.cache/coverage.xml"
++                ],
++                "test:duplication": [
++                    "php tools/test-application-duplication.php"
++                ],
++                "test:consumer": [
++                    "php tools/test-consumer-project.php"
++                ],
++                "test:database-drivers": [
++                    "php tools/test-database-drivers.php"
++                ],
++                "test:query-scaling": [
++                    "php tools/test-query-scaling.php"
++                ],
++                "test:profile": [
++                    "php tools/test-strict-profile.php"
++                ],
++                "check": [
++                    "@guard",
++                    "@analyse",
++                    "@test:process",
++                    "@test:agent-evaluation",
++                    "@test:agent-evaluation-controller",
++                    "@test:profile",
++                    "@test:duplication",
++                    "@test:consumer",
++                    "@test:database-drivers",
++                    "@test:query-scaling",
++                    "@test"
++                ]
++            },
+             "license": [
+                 "MIT"
+             ],
+@@ -53,10 +137,10 @@
+                 "web-framework"
+             ],
+             "support": {
+-                "issues": "https://github.com/balgf/PHPThis/issues",
+-                "source": "https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.7"
++                "source": "https://github.com/balgf/PHPThis/tree/main",
++                "issues": "https://github.com/balgf/PHPThis/issues"
+             },
+-            "time": "2026-08-15T21:51:11+00:00"
++            "time": "2026-09-26T06:21:15+00:00"
+         }
+     ],
+     "packages-dev": [
+@@ -180,7 +264,7 @@
+     "aliases": [],
+     "minimum-stability": "stable",
+     "stability-flags": {
+-        "phpthis/framework": 15
++        "phpthis/framework": 20
+     },
+     "prefer-stable": false,
+     "prefer-lowest": false,
+diff --git a/docs/upgrade-source.md b/docs/upgrade-source.md
+new file mode 100644
+index 0000000..178198d
+--- /dev/null
++++ b/docs/upgrade-source.md
+@@ -0,0 +1,17 @@
++# In-place source upgrade applicability
++
++Target installed from public VCS at `909977b762ff08f823be1e2c16a4dbb704e4f93a`, Contract 18/Profile 4. Both Composer source and dist references are pinned; this is source evaluation, not package publication evidence. The public Alpha 7 app and subsequent search feature remain the same retained application. `docs/lifecycle-plan.md` remains the frozen plan.
++
++Derived from the INSTALLED `vendor/phpthis/framework/docs/consumer-contract-upgrades.md`, Contract 14–18; current contract/map, errors and request-handling guide supply the entered requirements.
++
++| Change | Applicability and retained repair/evidence |
++| --- | --- |
++| 14: raw target/path bytes | Literal route declarations and fixtures contained no newly excluded bytes. `tests/compatibility.php` proves NUL/tab/0x1f/space/DEL in query suffix stop before handler work, direct Request/Route reject without echo, and existing percent/slash/dot/backslash/high bytes remain unchanged. Real loopback HTTP preserves ordinary paths/search; no proxy or alternate adapter claim. |
++| 15 / PHT008 | Every existing statement already uses distinct placeholder occurrences, as Alpha 7 prose required. Installed checker and original SQL-looking data/1-query tests pass. No intentional duplicate-placeholder baseline or binding rewrite. Profile markers move 3 to 4. |
++| 16: source discovery | Application-owned checked-in files are readable regular files/directories; PHP entrypoints use .php, Python files are decisively non-PHP. No app symlinks or extensionless PHP adopted. The transient HTTP fixture links only its vendor dependency boundary; it is outside the checked application tree. Inventory plus complete checker pass retained by campaign. |
++| 17: pending output | Only public/index.php emits. Existing bootstrap/handlers print no pre-emitter bytes. Existing CLI capture begins empty. New real-controller child tests prove empty-buffer success, top/lower pending-byte rejection, unchanged buffer contents/depth and zero fallback on responseStarted=true. Tests clean buffers only after assertions. Custom handlers/files/proxies are not adopted. |
++| 18: outer HTTP boundary | APPLICABLE COMPATIBILITY REPAIR. First installed-target complete gate passed static and existing behavior but failed new real-SAPI missing-fixture test: expected exact generic body, got empty body. Tag upgrade-red is a failed checkpoint. Move ordinary autoload/generic construction before one Throwable catch; retain generic before one safe-class event attempt; keep emission catch separate. No context/skeleton replacement. |
++| 18: disclosure selection/details | Deliberately code-owned GENERIC, no inputs or renderer. Details selection, paired-input validation, message allowlists and renderer/truncation branches are not adopted and not claimed tested. Tests prove supplied debug/profile/query/header hints cannot enable details. |
++| 18: native SAPI/outer event | PHP built-in SAPI assertions prove all E_ALL bits, display/startup display off, log_errors on to a private scratch destination, and exception arguments omitted. Actual original bootstrap missing its fixture, controlled bootstrap failure, anonymous class redaction and disabled error_log prove exact generic response/event and event failure isolation. Earlier autoload/generic-setup failure, uncatchable termination and lost-response ownership remain outside this app boundary. |
++
++No runtime schema, named policy, data, user input, transaction, pagination, or dependency other than phpthis/framework is changed by this upgrade. Existing app-owned context is edited at the specific version/HTTP concerns. Unknown coordinator failures and starter emission fallback tests remain intact. All valid checkpoints require the entire zero-argument `composer check`.
+diff --git a/public/index.php b/public/index.php
+index 40e73e2..4e38d4d 100644
+--- a/public/index.php
++++ b/public/index.php
+@@ -6,10 +6,29 @@ use App\Observability\TerminalRequestCoordinator;
+ use PHPThis\Http\Response;
+ use PHPThis\Http\ResponseEmissionFailed;
+ use PHPThis\Http\ResponseEmitter;
++use PHPThis\Http\UnknownFailureBoundary;
+ 
+-/** @var TerminalRequestCoordinator $coordinator */
+-$coordinator = require dirname(__DIR__) . '/bootstrap.php';
+-$response = $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);
++require dirname(__DIR__) . '/vendor/autoload.php';
++$genericResponse = new UnknownFailureBoundary()->respond();
++
++// Deliberate code-owned GENERIC: no request or configuration value selects details.
++try {
++    /** @var TerminalRequestCoordinator $coordinator */
++    $coordinator = require dirname(__DIR__) . '/bootstrap.php';
++    $response = $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);
++} catch (Throwable $failure) {
++    $response = $genericResponse;
++    try {
++        $failureClass = $failure::class;
++        if (str_contains($failureClass, '@anonymous')) {
++            $parent = get_parent_class($failure);
++            $failureClass = is_string($parent) && is_a($parent, Throwable::class, true) ? $parent : Throwable::class;
++        }
++        error_log('application.http_outer_failure failure_class=' . $failureClass);
++    } catch (Throwable) {
++        // One event attempt, isolated from the already selected generic response.
++    }
++}
+ 
+ $emitter = new ResponseEmitter();
+ 
+diff --git a/tests/compatibility.php b/tests/compatibility.php
+new file mode 100644
+index 0000000..db6fd1d
+--- /dev/null
++++ b/tests/compatibility.php
+@@ -0,0 +1,85 @@
++<?php
++
++declare(strict_types=1);
++use PHPThis\Http\ErrorResponseRegistry;
++use PHPThis\Http\InvalidRequest;
++use PHPThis\Http\Request;
++use PHPThis\Http\RequestBoundary;
++use PHPThis\Http\RequestHandler;
++use PHPThis\Http\RequestReader;
++use PHPThis\Http\Response;
++use PHPThis\Routing\Route;
++require dirname(__DIR__) . '/vendor/autoload.php';
++final class CompatibilityHandler implements RequestHandler
++{
++    public int $calls = 0;
++    public function handle(Request $request): Response
++    {
++        $this->calls++;
++        return new Response(200, ['Cache-Control' => 'no-store'], 'accepted');
++    }
++}
++$handler = new CompatibilityHandler();
++$boundary = new RequestBoundary(new RequestReader(1024, 'data://text/plain,'), $handler,
++    new ErrorResponseRegistry([InvalidRequest::class => new Response(400, ['Cache-Control' => 'private, no-store'], 'invalid')]));
++foreach (["\x00", "\x09", "\x1f", ' ', "\x7f"] as $byte) {
++    $rejected = $boundary->handle(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/health?value=' . $byte . 'private-marker'], []);
++    if ($rejected->status !== 400 || $rejected->body !== 'invalid' || $handler->calls !== 0) {
++        throw new RuntimeException('Raw target must fail before handler entry.');
++    }
++    try {
++        new Request('GET', '/private-marker' . $byte);
++        throw new RuntimeException('Request accepted an excluded path byte.');
++    } catch (InvalidArgumentException $failure) {
++        if (str_contains($failure->getMessage(), 'private-marker')) { throw new RuntimeException('Request diagnostic leaked.'); }
++    }
++    try {
++        new Route('GET', '/private-marker' . $byte, $handler);
++        throw new RuntimeException('Route accepted an excluded path byte.');
++    } catch (InvalidArgumentException $failure) {
++        if (str_contains($failure->getMessage(), 'private-marker')) { throw new RuntimeException('Route diagnostic leaked.'); }
++    }
++}
++$reader = new RequestReader(1024, 'data://text/plain,');
++foreach (['/a%20b', '/a//b', '/a/../b', '/a\\b', "/high\x80"] as $path) {
++    $request = $reader->read(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $path], []);
++    if ($request->path !== $path) { throw new RuntimeException('Raw path unexpectedly normalized.'); }
++}
++
++// Exercise the actual retained controller; cleanup is in the test after observing unchanged buffers.
++$program = <<<'PHP'
++$_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/health'];
++$_GET = []; $_POST = []; $_FILES = [];
++ob_start();
++if ($argv[2] !== 'empty') { echo 'pending-private-marker'; }
++if ($argv[2] === 'lower') { ob_start(); }
++$before = ob_get_level();
++require $argv[1];
++if (ob_get_level() !== $before) { throw new RuntimeException('Controller changed buffer depth.'); }
++$top = ob_get_contents();
++if ($argv[2] === 'lower') {
++    if ($top !== '') { throw new RuntimeException('Controller appended a lower-buffer fallback.'); }
++    ob_end_clean();
++    $top = ob_get_contents();
++}
++$expected = $argv[2] === 'empty' ? "{\"status\":\"ok\"}\n" : 'pending-private-marker';
++if ($top !== $expected) { throw new RuntimeException('Controller changed prior bytes or appended fallback.'); }
++ob_end_clean();
++fwrite(STDOUT, "PASS buffer\n");
++PHP;
++foreach (['empty', 'top', 'lower'] as $mode) {
++    $process = proc_open([PHP_BINARY, '-d', 'display_errors=0', '-d', 'error_reporting=-1', '-r', $program,
++        dirname(__DIR__) . '/public/index.php', $mode],
++        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
++    if (!is_resource($process)) { throw new RuntimeException('Cannot start buffer evidence.'); }
++    fclose($pipes[0]);
++    $output = stream_get_contents($pipes[1]);
++    $errors = stream_get_contents($pipes[2]);
++    fclose($pipes[1]); fclose($pipes[2]);
++    if (proc_close($process) !== 0 || $output !== "PASS buffer\n" || !is_string($errors)) {
++        throw new RuntimeException('Failed real controller buffer evidence.');
++    }
++    $attempts = substr_count($errors, 'application.response_emission_failed');
++    if ($attempts !== ($mode === 'empty' ? 0 : 1)) { throw new RuntimeException('Wrong emission attempt boundary.'); }
++}
++fwrite(STDOUT, "PASS Contract 14 raw targets and Contract 17 real controller empty/top/lower buffers\n");
+diff --git a/tests/outer_failure.py b/tests/outer_failure.py
+new file mode 100644
+index 0000000..e532562
+--- /dev/null
++++ b/tests/outer_failure.py
+@@ -0,0 +1,92 @@
++#!/usr/bin/env python3
++"""Contract 18: actual front controller under the real built-in HTTP SAPI."""
++import http.client
++import json
++import os
++from pathlib import Path
++import shutil
++import socket
++import subprocess
++import tempfile
++import time
++
++APP = Path(__file__).resolve().parent.parent
++PHP = shutil.which("php")
++assert PHP
++GENERIC = b'{"error":{"code":"internal_server_error","message":"Internal server error."}}\n'
++SETTINGS = '''file_put_contents(__DIR__ . '/settings.json', json_encode([
++    'all_errors' => (error_reporting() & E_ALL) === E_ALL,
++    'display_errors' => ini_get('display_errors'), 'display_startup_errors' => ini_get('display_startup_errors'),
++    'log_errors' => ini_get('log_errors'), 'ignore_args' => ini_get('zend.exception_ignore_args'),
++    'private_log' => ini_get('error_log') === __DIR__ . '/application.log',
++], JSON_THROW_ON_ERROR));
++'''
++
++def check(scenario, bootstrap, disable_log=False):
++    with tempfile.TemporaryDirectory(prefix="phpthis-directory-outer-") as scratch:
++        root = Path(scratch).resolve()
++        (root / "public").mkdir()
++        shutil.copy2(APP / "public/index.php", root / "public/index.php")
++        os.symlink(APP / "vendor", root / "vendor", target_is_directory=True)
++        (root / "bootstrap.php").write_text(bootstrap)
++        with socket.socket() as sock:
++            sock.bind(("127.0.0.1", 0))
++            port = sock.getsockname()[1]
++        command = [PHP, "-d", "display_errors=0", "-d", "display_startup_errors=0", "-d", "error_reporting=-1",
++            "-d", "log_errors=1", "-d", "zend.exception_ignore_args=1", "-d", f"error_log={root / 'application.log'}"]
++        if disable_log:
++            command += ["-d", "disable_functions=error_log"]
++        command += ["-S", f"127.0.0.1:{port}", "-t", str(root / "public"), str(root / "public/index.php")]
++        with (root / "server.log").open("wb") as output:
++            process = subprocess.Popen(command, cwd=root, stdout=output, stderr=output)
++            try:
++                deadline = time.monotonic() + 5
++                while True:
++                    try:
++                        with socket.create_connection(("127.0.0.1", port), timeout=.2):
++                            break
++                    except OSError:
++                        if process.poll() is not None or time.monotonic() > deadline:
++                            raise AssertionError("HTTP process did not become ready")
++                        time.sleep(.02)
++                connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
++                connection.request("POST", "/health?debug=1&disclosure=DEVELOPMENT_DETAILS&environment=development",
++                    body='{"message":"request-private-marker"}',
++                    headers={"Content-Type": "application/json", "X-Debug": "1", "X-Forwarded-For": "127.0.0.1"})
++                response = connection.getresponse()
++                status, headers, body = response.status, dict(response.getheaders()), response.read()
++                connection.close()
++                assert status == 500, (scenario, "status", status)
++                assert body == GENERIC, (scenario, "generic body", body)
++                assert headers.get("Content-Type") == "application/json; charset=utf-8"
++                assert headers.get("Cache-Control") == "private, no-store"
++                assert "X-Request-ID" not in headers
++                settings_file = root / "settings.json"
++                if settings_file.exists():
++                    settings = json.loads(settings_file.read_text())
++                    assert settings == {"all_errors": True, "display_errors": "0", "display_startup_errors": "0",
++                        "log_errors": "1", "ignore_args": "1", "private_log": True}, settings
++                    print("PASS effective HTTP settings", json.dumps(settings, sort_keys=True))
++            finally:
++                process.terminate()
++                try:
++                    process.wait(timeout=5)
++                except subprocess.TimeoutExpired:
++                    process.kill()
++                    process.wait(timeout=5)
++        log_file = root / "application.log"
++        logs = log_file.read_text() if log_file.exists() else ""
++        if disable_log:
++            assert "application.http_outer_failure" not in logs
++        else:
++            event = "application.http_outer_failure failure_class=RuntimeException"
++            lines = logs.splitlines()
++            assert len(lines) == 1 and lines[0].endswith(event), (scenario, logs)
++        assert "private-marker" not in logs and "@anonymous" not in logs and "application.request_summary" not in logs
++        print("PASS outer HTTP", scenario)
++
++# Real missing fixture: exact original bootstrap in a scratch root with no tmp/database.
++check("original bootstrap missing fixture", (APP / "bootstrap.php").read_text())
++check("generic input non-selection", "<?php\ndeclare(strict_types=1);\n" + SETTINGS + "throw new RuntimeException('bootstrap-private-marker');\n")
++check("anonymous class redaction", "<?php\ndeclare(strict_types=1);\nthrow new class('anonymous-private-marker') extends RuntimeException {};\n")
++check("outer event failure isolation", "<?php\ndeclare(strict_types=1);\nthrow new RuntimeException('event-private-marker');\n", True)

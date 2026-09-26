@@ -1,0 +1,7 @@
+
+Warning: require(/Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/DirectoryFixture.php): Failed to open stream: No such file or directory in /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/directory.php on line 6
+
+Fatal error: Uncaught Error: Failed opening required '/Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/DirectoryFixture.php' (include_path='.:/nix/store/ipd3wqq4rjgl3jldvq2jbfy96qvrp3ny-php-8.4.19/lib/php') in /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/directory.php:6
+Stack trace:
+#0 {main}
+  thrown in /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/directory.php on line 6

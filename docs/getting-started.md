@@ -24,6 +24,8 @@ composer check
 
 This creates the application root from the exact proved `phpthis/skeleton` version and installs its matching `phpthis/framework` under `vendor/phpthis/framework`. Consumers do not clone or copy the PHPThis framework repository. Before selecting a later prerelease, verify its exact skeleton version and clean public-install evidence in the release work item, GitHub, and Packagist.
 
+An installed package's documentation is frozen at its source commit. Release-state labels can describe preparation-time facts: the immutable Alpha 7 archive still contains README/setup wording that calls Alpha 6 current, even though its installed version is Alpha 7. For an existing application, establish package identity with `composer show phpthis/framework` and its committed `composer.lock` (including `source.reference`); do not change versions merely to match a historical “current” label or `PENDING` entry. Verify live package availability separately when selecting a new installation. This does not authorize editing `vendor/` or replacing application-owned context.
+
 ## Framework source evaluation only
 
 Use this fallback only to evaluate unpublished framework source when the Composer package is unavailable. It is not the normal consumer installation path. Use the public repository's `skeleton/` directory:
