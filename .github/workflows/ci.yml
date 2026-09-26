@@ -24,7 +24,7 @@ jobs:
 
     services:
       redis-cache:
-        image: redis:7.4-alpine
+        image: redis:7.4-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
         ports:
           - 6379:6379
         options: >-
@@ -33,7 +33,7 @@ jobs:
           --health-timeout=3s
           --health-retries=10
       redis-lease:
-        image: redis:7.4-alpine
+        image: redis:7.4-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
         ports:
           - 6380:6379
         options: >-
@@ -44,12 +44,13 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo, pdo_sqlite, redis
@@ -70,7 +71,7 @@ jobs:
 
       - name: Upload maintainer test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: php-${{ matrix.php }}-maintainer-test-reports
           path: |
@@ -85,7 +86,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:8.4
+        image: mysql:8.4@sha256:0744ee5ef89ce6ccfa13de3e579fe6b9e27f93dd70da9c06d2c908b1b193fb8d
         env:
           MYSQL_DATABASE: phpthis
           MYSQL_USER: phpthis
@@ -99,7 +100,7 @@ jobs:
           --health-timeout=5s
           --health-retries=10
       postgres:
-        image: postgres:17
+        image: postgres:17@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f
         env:
           POSTGRES_DB: phpthis
           POSTGRES_USER: phpthis
@@ -114,10 +115,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up PHP database drivers
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, pdo_mysql, pdo_pgsql, redis

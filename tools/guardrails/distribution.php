@@ -1032,7 +1032,7 @@ function distributionGuardrailFailures(
         && (
             substr_count($ciContents, 'coverage: pcov') !== 1
             || !str_contains($ciContents, 'run: composer test:coverage')
-            || !str_contains($ciContents, 'uses: actions/upload-artifact@v4')
+            || preg_match('/uses: actions\/upload-artifact@[a-f0-9]{40}(?:\s|$)/', $ciContents) !== 1
             || !str_contains($ciContents, '.phpunit.cache/junit.xml')
             || !str_contains($ciContents, '.phpunit.cache/coverage.xml')
             || !str_contains($ciContents, 'if-no-files-found: warn')

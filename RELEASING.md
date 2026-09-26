@@ -114,6 +114,18 @@ Preparing a proposal or accepted source scope, proving or publishing an approved
 
 ## Version-neutral release gate
 
+### Supply-chain prerequisites
+
+Before approving a future candidate, verify the effective framework repository settings and record the result in the release work item. Configuration files and earlier successful checks do not prove continuing remote enforcement.
+
+- `main` must reject deletion and force pushes and require successful `PHP 8.4 validity`, `PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.11)`, `Dependency audit`, and `Workflow security` checks from the GitHub Actions app. Require an up-to-date base. The reviewed ruleset has no routine bypass; push a topic branch and prove its commit before advancing `main`. Independent review is required when a trusted reviewer is available; do not invent a second approver for a sole-maintainer project. If a check name changes, update the required check alongside the workflow and verify the result.
+- Existing `v*` release tags must reject updates and deletion without a routine bypass. Restrict creation of new `v*` tags to repository administrators. An administrator can still change repository rules, so these settings do not eliminate account-compromise risk. Any emergency rule change needs explicit human authorization and a recorded reason, affected refs, restoration, and verification.
+- GitHub immutable releases must be enabled before publishing a new framework release. Create a draft, attach and verify any intended assets, then publish it only at the existing authorized release step. Verify the resulting release's `immutable` state and attestation. This does not retroactively make Alpha 7 or another historical GitHub release immutable. Never rewrite, re-sign, or move an existing tag to retrofit these controls.
+- Future framework release tags must be annotated and cryptographically signed by an approved maintainer key. Before tag creation, record the approved public key identity and verify the signing setup using a disposable local repository. Verify each new tag with `git verify-tag`, confirm its target matches the approved candidate, and record the verification before pushing. Keep private keys and recovery material outside the repository and evidence. A verified signature establishes an approved signer, not code safety; Composer does not automatically verify Git tag signatures or GitHub release attestations. Packagist's immutable non-dev source/distribution references are a separate control.
+- The maintainer must confirm GitHub and Packagist MFA, securely retained recovery methods, scoped publishing credentials, and a continuity plan. Record confirmation and any accepted sole-maintainer limitation without credentials, recovery codes, or private-key material. A backup maintainer must be explicitly appointed and have appropriate access; a recovery document alone is not a second maintainer.
+
+The reviewable framework ruleset payloads are in `.github/rulesets/` in the source repository. Verify the dedicated skeleton repository separately before applying any of these claims to a coordinated release. These prerequisites authorize no tag, package update, GitHub release, or announcement; the existing exact-operation approvals below still apply.
+
 ### 1. Freeze the release candidate
 
 - [ ] Record the explicitly approved Composer version, framework tag, skeleton tag, exact framework candidate commit, planned release date, bounded scope record, release-notes path, candidate-specific announcement text, accountable-human authorization records, and each exact authorized next operation. Record the skeleton candidate commit now when it already exists; otherwise record `PENDING` and do not authorize a skeleton write yet.
@@ -146,7 +158,7 @@ composer check
 ### 3. Publish the framework prerelease
 
 - [ ] Confirm the authorization record names framework tag creation and push and the framework Packagist update as separate permitted operations against the exact proved framework candidate commit.
-- [ ] Create the approved framework prerelease tag from the proven commit without moving or reusing an existing tag, then push that exact tag to the approved remote.
+- [ ] Create the approved framework prerelease tag as a signed annotated tag from the proven commit, verify its signature and exact target, then push that exact tag to the approved remote without moving or reusing an existing tag.
 - [ ] Submit or refresh `phpthis/framework` on Packagist and wait until the exact prerelease is indexed with a preferred distribution artifact.
 - [ ] Record the framework tag, commit, Packagist version, distribution reference, and observed timestamp and result of each framework publication operation in the release evidence.
 
