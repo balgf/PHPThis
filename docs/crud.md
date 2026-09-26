@@ -16,6 +16,8 @@ PHPThis never discovers or validates a feature from its directory name. Routes, 
 
 ## Reference placement
 
+The `example/` paths below describe the framework maintainer's reference application. Composer distributions deliberately exclude that application, the skeleton source tree, and maintainer tests; these paths are not files an installed consumer is expected to have. Follow the installed concern guides and the consumer's own source first. When an executable reference is needed, use `phpthis/framework`'s exact `source.reference` from the consumer's `composer.lock` to select that revision in the [framework source repository](https://github.com/balgf/PHPThis), then inspect its `example/` path. Do not substitute current `main` for an older installed package or copy the maintainer application's context into a consumer.
+
 Use application vocabulary for the feature and operation names. For the checked-in `example/src/Users` reference, this is the single canonical current tree. It lists every current Create, List, and Get source file and contains no speculative Update or Delete scaffold:
 
 ```text

@@ -10,6 +10,8 @@ The maintainer source report `tools/restriction-review/README.md` records Issue 
 
 The maintainer source note `tools/agent-evaluation/fixture-revision-3.md` records identical offline PHPStan references and typed observation helpers for both comparison conditions. `tools/agent-evaluation/fixture-revision-4.md` expands those references and clarifies malformed-input boundaries in the JSON observation transport. `tools/agent-evaluation/fixture-revision-5.md` adds task-directed documentation reads and the complete authored diagnostic snapshot at the pinned commit. `tools/agent-evaluation/fixture-revision-6.md` clarifies optional final line citations, targeted diagnostic lookup, and supplemental PHPDoc reads before typed-helper authoring. These revisions preserve fixture PHP source and prior campaign results. Fresh application checks verify the authoring inputs. The notes are excluded from the installed package, and preparation does not establish a change in model success rates.
 
+The [retained consumer lifecycle report](https://github.com/balgf/PHPThis/tree/main/tools/consumer-lifecycle) records Issue #71's public Alpha 7 account-directory baseline, same-version search change, and in-place Contract 18 source upgrade. It retains a portable application Git history, exact locks/diffs/hashes, failed and repaired checkpoints, real HTTP evidence, and a fresh qualitative reviewer receipt. This is maintainer-source evidence excluded from the installed package; it adds no validity stage, public-release claim, paid model campaign, or longitudinal result. The next matching public release is the recorded maintenance trigger for that same consumer.
+
 ## Current proof
 
 Run:

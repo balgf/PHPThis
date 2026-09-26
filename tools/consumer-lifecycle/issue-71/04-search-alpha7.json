@@ -1,0 +1,415 @@
+{
+  "started_at": "2026-09-26T06:50:37.638450+00:00",
+  "finished_at": "2026-09-26T06:50:40.128972+00:00",
+  "elapsed_seconds": 2.49,
+  "command": [
+    "composer",
+    "check"
+  ],
+  "exit_code": 0,
+  "head_before_capture": "bdd599da805380eb38b847ba98a1ff5d39825962",
+  "php": "8.4.19",
+  "python": "Python 3.14.6",
+  "dependencies": [
+    {
+      "name": "phpthis/framework",
+      "version": "v0.1.0-alpha.7",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/balgf/PHPThis.git",
+        "reference": "de07cbd449ed3e905331aeea105e528fbaa83ac3"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/balgf/PHPThis/zipball/de07cbd449ed3e905331aeea105e528fbaa83ac3",
+        "reference": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "phpstan/phpstan",
+      "version": "2.2.7",
+      "source": null,
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/phpstan/phpstan/zipball/692db47b9dddb0487934e5236e77d48594aef921",
+        "reference": "692db47b9dddb0487934e5236e77d48594aef921",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "phpstan/phpstan-strict-rules",
+      "version": "2.0.12",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/phpstan/phpstan-strict-rules.git",
+        "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/2bc5ae19ae965663b62ac907ee6342c3903ec93b",
+        "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b",
+        "shasum": ""
+      }
+    }
+  ],
+  "files": {
+    ".ai/README.md": {
+      "bytes": 7462,
+      "lines": 56,
+      "sha256": "b34cdb470d10bf826a5dbf2354d15f1ffdc8f77b92a685a2fb3d089fed5c5030"
+    },
+    ".ai/architecture.md": {
+      "bytes": 3599,
+      "lines": 17,
+      "sha256": "04bfefcf627a29ab1070250d22e6dc05fe3eab53a78c32cc9ac478fc56a0d7b3"
+    },
+    ".ai/change-workflow.md": {
+      "bytes": 5287,
+      "lines": 44,
+      "sha256": "484e421fb5b1169eece192d786ba770900f18871b70ac291ea527eded1e89676"
+    },
+    ".ai/cli.md": {
+      "bytes": 3344,
+      "lines": 24,
+      "sha256": "91fd22d80cba87ef478c8c4eb793e29652c156be8a7a3ca756d7e57111444be5"
+    },
+    ".ai/configuration.md": {
+      "bytes": 626,
+      "lines": 3,
+      "sha256": "9f1686ae41134b78e939194f3ab47708303a1375963ebedfe7595748ffd10abf"
+    },
+    ".ai/data.md": {
+      "bytes": 3297,
+      "lines": 15,
+      "sha256": "60ec3be043426b8c9fb903dc0914141452e4c115009c04f2730525080ad7f716"
+    },
+    ".ai/file-transfers.md": {
+      "bytes": 6507,
+      "lines": 36,
+      "sha256": "c578ee3f2e2aa2be881278cde74e1ace0079f632245d5c9d41440bb7d02f5419"
+    },
+    ".ai/integrations.md": {
+      "bytes": 2378,
+      "lines": 9,
+      "sha256": "826bdd73e869063828f4a6c0b2d7f37d2d5ccbfbc8cac1c6673b1b9a4dde6cb9"
+    },
+    ".ai/jobs.md": {
+      "bytes": 1486,
+      "lines": 7,
+      "sha256": "9dd451a6b7cc4ef6a5bc810d346b08420c37e95b1b500e0a5e2b6bdbba7aee0c"
+    },
+    ".ai/migrations.md": {
+      "bytes": 10321,
+      "lines": 32,
+      "sha256": "20638266380afd440b747b22b812173f57593db678e86a4a858f6096c6069784"
+    },
+    ".ai/observability.md": {
+      "bytes": 1553,
+      "lines": 7,
+      "sha256": "cee16967946c7c9e8c62081c7cbee7573255f8f3a10386cc3ebf499d48ca2ab4"
+    },
+    ".ai/operations.md": {
+      "bytes": 1834,
+      "lines": 9,
+      "sha256": "10d6309f8cf72505e7d92ed66fa666afe0414557e7f926e6f756c4d4dcddc6b0"
+    },
+    ".ai/project.md": {
+      "bytes": 1342,
+      "lines": 9,
+      "sha256": "48cf3519579b2621b59426de1aa33143ac72a9c3ef671313a3be421b6d4d8e14"
+    },
+    ".ai/request-policy.md": {
+      "bytes": 1901,
+      "lines": 9,
+      "sha256": "75cbc367e0ecd9f552ebd82f6b482ccb7356a3acac745ab6e7c058bdd138fd64"
+    },
+    ".ai/rules.md": {
+      "bytes": 3091,
+      "lines": 31,
+      "sha256": "6480091e6942a0e6445882f65417727aed79cf7891ab0860d4d62538ec78d08c"
+    },
+    ".ai/testing.md": {
+      "bytes": 2205,
+      "lines": 11,
+      "sha256": "dec038d42ce2581f2a46f93dca2c9aa4e685e42df7d7f69eb2280b9127590150"
+    },
+    ".ai/websockets.md": {
+      "bytes": 3541,
+      "lines": 21,
+      "sha256": "7fcada13d7a438a23c3798bc2092c4242fde6c525a59ee8dcb5122c6c850a14a"
+    },
+    ".ai/workbench.md": {
+      "bytes": 2820,
+      "lines": 16,
+      "sha256": "61efaf2e8be2fdaf8c678316da25b936766a5296e3ab0b6ebe93f69496d6ed2f"
+    },
+    ".github/workflows/ci.yml": {
+      "bytes": 508,
+      "lines": 26,
+      "sha256": "98a3e7bdda021f73a4d14f391f07535bf505e3f314e09ffdf66a7a51e1cf957e"
+    },
+    ".gitignore": {
+      "bytes": 118,
+      "lines": 14,
+      "sha256": "5b2953ee6fa5dea410dd01a739a2533a1f716ea33a809c1756953a972cf60ef7"
+    },
+    "AGENTS.md": {
+      "bytes": 4199,
+      "lines": 49,
+      "sha256": "25333116c8f91943362b3586027b55f7e1e38bc2b7ad64a6e13bdfe76b14d76c"
+    },
+    "LICENSE": {
+      "bytes": 1077,
+      "lines": 21,
+      "sha256": "aaa909a38302359fef8f537cd94dd8883a01f5c2d5773b1a9652a0382d499026"
+    },
+    "README.md": {
+      "bytes": 810,
+      "lines": 5,
+      "sha256": "797977599a22bf5bddb843eb630451e34e09d16917c3eb9d9e7f95ac16f89d58"
+    },
+    "bootstrap.php": {
+      "bytes": 940,
+      "lines": 20,
+      "sha256": "40f863888e1c4343186bd7f0d6c1eb158e7d017f01a9be07c0e3c68cc5575f15"
+    },
+    "composer.json": {
+      "bytes": 893,
+      "lines": 37,
+      "sha256": "14b78996454a6f77e68a5518db9c4728fdeefa8480b6db08df655bdefb872a9e"
+    },
+    "composer.lock": {
+      "bytes": 6671,
+      "lines": 193,
+      "sha256": "67fc726ca455babb584de3db41bcb05e8a5fb54bb4a8d3a0a953936ee87c8141"
+    },
+    "docs/decisions/README.md": {
+      "bytes": 695,
+      "lines": 5,
+      "sha256": "adc5c88f09383d8bb0ec4acd7f4a23cdfab44bbf1e40155b9bc10ca3076dabd7"
+    },
+    "docs/lifecycle-plan.md": {
+      "bytes": 5724,
+      "lines": 31,
+      "sha256": "d4bcc692d9b32b3b9e85816bb15bf4306ee1dcf8a445274af809af112e572965"
+    },
+    "public/index.php": {
+      "bytes": 901,
+      "lines": 31,
+      "sha256": "c6a0f03392d26079d3f1dd482db3c6c74d91635e3adb70966f6eb3b7b15adb2d"
+    },
+    "src/Accounts/AccountId.php": {
+      "bytes": 399,
+      "lines": 14,
+      "sha256": "ac42bf3beb63d5a619817960353970d8043529d62c800a3798cbf0320ec016b0"
+    },
+    "src/Accounts/AuthenticateAccountRequest.php": {
+      "bytes": 186,
+      "lines": 9,
+      "sha256": "dfe06881579b1ac0b1f96d123de5a54ca078d2838023ac8ec9395b8863d07729"
+    },
+    "src/Accounts/DenyAllAuthentication.php": {
+      "bytes": 253,
+      "lines": 9,
+      "sha256": "b0b800a6aff21c9b835e15c9475627cc2564db22e29b44a237b1e709579182cc"
+    },
+    "src/Accounts/Forbidden.php": {
+      "bytes": 107,
+      "lines": 5,
+      "sha256": "b3f4d2d10f8187b5d8f873436adf5864385049138935e07eafb1089c6a7f03cc"
+    },
+    "src/Accounts/Principal.php": {
+      "bytes": 286,
+      "lines": 11,
+      "sha256": "5ee327ab67071a4e22d6be1c7923cadfd54e2ceda7fe96ee17026e4e3f56e763"
+    },
+    "src/Accounts/ResolveAccountTenant.php": {
+      "bytes": 172,
+      "lines": 8,
+      "sha256": "f7362acb7336d0758aeee15f3458a13c310de49f35e8f2bb4697ba05ffb16dd9"
+    },
+    "src/Accounts/SameAccountTenant.php": {
+      "bytes": 354,
+      "lines": 12,
+      "sha256": "ced6ec2f03e2efd9ed688a3bf25f5638ee76f705d39af3e3e953dd8f58a87d0a"
+    },
+    "src/Accounts/Tenant.php": {
+      "bytes": 150,
+      "lines": 8,
+      "sha256": "5158240f78132646636b64357eaa43dc262119d662357795e80f193b1b42ae76"
+    },
+    "src/Accounts/Unauthenticated.php": {
+      "bytes": 113,
+      "lines": 5,
+      "sha256": "07ae3bfe99f6404a0340eb15dac8def798250d66ea8ee97973342853a35999d3"
+    },
+    "src/DirectoryComposition.php": {
+      "bytes": 3153,
+      "lines": 57,
+      "sha256": "058ffabb1f8304a53761e76b69e5533b578a3d5a37683a2af40b728629783c7a"
+    },
+    "src/HealthHandler.php": {
+      "bytes": 557,
+      "lines": 24,
+      "sha256": "ed95782c8e09f9a51c932cde94f56e61c6fb57307bb57d9b26583a637d30d323"
+    },
+    "src/HealthRoutes.php": {
+      "bytes": 259,
+      "lines": 16,
+      "sha256": "51da44163c7ca3d64f3903d69938616f88ae5771ce319fbe17f8155da2fd42e5"
+    },
+    "src/Observability/CorrelationId.php": {
+      "bytes": 278,
+      "lines": 17,
+      "sha256": "3e783693c02e545f027a7f1ce182c1c824bf81845a1f9c2dd5727a09a22f8c8e"
+    },
+    "src/Observability/ErrorLogRequestSummarySink.php": {
+      "bytes": 487,
+      "lines": 22,
+      "sha256": "5c2d65ef1b4f814f21955dfdd315446e5a765257e951f945736a482957a3c24e"
+    },
+    "src/Observability/QuerySummarySource.php": {
+      "bytes": 1372,
+      "lines": 51,
+      "sha256": "b48d19a46e2314d1bc0790bc4affddb08dd12cf436635fef20595c3c8a295fc0"
+    },
+    "src/Observability/README.md": {
+      "bytes": 1075,
+      "lines": 14,
+      "sha256": "c63cfe37d52a16e98fdff2e411c933944b7c5b99802148db11cbd292bd5c3181"
+    },
+    "src/Observability/RequestSummary.php": {
+      "bytes": 4627,
+      "lines": 146,
+      "sha256": "fb9ab4581cfab7b7bf30cd8bc76e9cdaffdb95887ca7e23972632df6ec582c08"
+    },
+    "src/Observability/RequestSummarySink.php": {
+      "bytes": 153,
+      "lines": 10,
+      "sha256": "886195ba3ef07580375e39ad0572245a7a927bf5f90f9755d1d10f1b72cedd77"
+    },
+    "src/Observability/TerminalRequestCoordinator.php": {
+      "bytes": 3486,
+      "lines": 118,
+      "sha256": "8830e1f8e1f241d2a744d8c0ceec2143bca15fdf3d9ac13e86229d14cd2ee2c3"
+    },
+    "src/Routes.php": {
+      "bytes": 435,
+      "lines": 16,
+      "sha256": "c9fc819fcc875257e7481e19650fbe0c2c8d7e688584374a93bf03d14e794662"
+    },
+    "src/Users/CreateUser/AccountCreateAuthorization.php": {
+      "bytes": 452,
+      "lines": 16,
+      "sha256": "cbb98937f0c0443b93bc41f54099fde19ab29e5e3b3eb5a9bef4a7f418d51cd0"
+    },
+    "src/Users/CreateUser/AuthorizeCreateUser.php": {
+      "bytes": 1165,
+      "lines": 25,
+      "sha256": "29cc2bc508ee49aef238bed76a3a46b3ef0927b19a7725bbe981ae823794c782"
+    },
+    "src/Users/CreateUser/CanCreateUser.php": {
+      "bytes": 216,
+      "lines": 7,
+      "sha256": "c7dd71626172a19137003429e78ea61920be4325519986810bc731f3bcfdd927"
+    },
+    "src/Users/CreateUser/CreateUserCommand.php": {
+      "bytes": 1487,
+      "lines": 30,
+      "sha256": "edcfeefa1fe72a92efdd3554e1662d3b323edeeb694f8d3d5204f24b355b4d7c"
+    },
+    "src/Users/CreateUser/CreateUserConflict.php": {
+      "bytes": 124,
+      "lines": 5,
+      "sha256": "1063ca535065d6d22834bee896d77ffda209d1e9a1be32dc0e7b3cae422861f9"
+    },
+    "src/Users/CreateUser/CreateUserHandler.php": {
+      "bytes": 2519,
+      "lines": 40,
+      "sha256": "982960bf0f5ce877cfeec082895a1e3c31c6b8134474337bf1526a34a3318270"
+    },
+    "src/Users/CreateUser/UnacceptableCreateUser.php": {
+      "bytes": 128,
+      "lines": 5,
+      "sha256": "850032adea990bbe1706e9fdcbfa19cd8ab3f6a52027a72bb18fc9851b4861fb"
+    },
+    "src/Users/CreateUser/UnsupportedCreateMedia.php": {
+      "bytes": 128,
+      "lines": 5,
+      "sha256": "d566eb0893e0bc669b6fbf69338f6eae40ec9cde8d94c2c40563622c036e2868"
+    },
+    "src/Users/ListUsers/AccountListAuthorization.php": {
+      "bytes": 402,
+      "lines": 14,
+      "sha256": "27631f2784aa192e253a3a567bd284f9e0e99cc44bfbf76cc2acd1eee022c49f"
+    },
+    "src/Users/ListUsers/AuthorizeListUsers.php": {
+      "bytes": 1035,
+      "lines": 24,
+      "sha256": "2edd877b9cd809069ed3c7efad422298a2291a86cf187cbca2f345cb7c732b6d"
+    },
+    "src/Users/ListUsers/CanListUsers.php": {
+      "bytes": 214,
+      "lines": 7,
+      "sha256": "3c5755ce2d5032c425d97aa48170c340aa98aadad45e0fdb2a9cbaf514998da1"
+    },
+    "src/Users/ListUsers/ListUsersHandler.php": {
+      "bytes": 2197,
+      "lines": 36,
+      "sha256": "af21ad8b43a5c6f6d02bee7dd8479e9d79a1cff334963c6799a8304e9d2d63e3"
+    },
+    "src/Users/ListUsers/ListUsersPage.php": {
+      "bytes": 1379,
+      "lines": 32,
+      "sha256": "0b2cd4dea5de740c802d65ee3091a5f103773b58a88ec5e6359ccbb1e12288de"
+    },
+    "src/Users/ListUsers/UserSummary.php": {
+      "bytes": 998,
+      "lines": 21,
+      "sha256": "de44d2a0b87ad38286445f31de2f456d863e52e54e6e22c78a7c31fed6e1df99"
+    },
+    "src/Users/UserId.php": {
+      "bytes": 390,
+      "lines": 14,
+      "sha256": "fb2f937c082be896daa9b03b3e290add828d09ca2e1b733a2095aac463a40035"
+    },
+    "src/Users/UserRoutes.php": {
+      "bytes": 508,
+      "lines": 16,
+      "sha256": "32ee24e5cce18f70488773b86f79c1034124845ca56ae07f8439840fbdb1c9ef"
+    },
+    "tests/DirectoryFixture.php": {
+      "bytes": 3285,
+      "lines": 41,
+      "sha256": "6915aceb89e98c1fb0fc4752a1494bac95c3d3d357f19f1335264761cca103d1"
+    },
+    "tests/PolicyFixtures.php": {
+      "bytes": 2618,
+      "lines": 61,
+      "sha256": "11e0c003a7d94b1dbb4c4f41bc900ff367a12bfad6c2a97f7b418fa52f623cb0"
+    },
+    "tests/directory.php": {
+      "bytes": 13786,
+      "lines": 207,
+      "sha256": "e7db7ac4c4fb0568b3e6c4a6f1461aed21dd85a4bb9fd841c8eff8f499d83013"
+    },
+    "tests/fixture.php": {
+      "bytes": 221,
+      "lines": 7,
+      "sha256": "12adff884ed2b5853e6057d2f06b87feae3dc5b45adb7e7ccfd70ab9c199b3ea"
+    },
+    "tests/front_controller.py": {
+      "bytes": 5614,
+      "lines": 101,
+      "sha256": "418bbfe7b3f1a0f1c6a59c00e4fab0f68fa32ed642407c63de55398e90ac6f9d"
+    },
+    "tests/run.php": {
+      "bytes": 11612,
+      "lines": 308,
+      "sha256": "e33b7a5466f2fee355b03f1f93ec15bcb036ce12cd77c8214e191376be00d746"
+    }
+  },
+  "model_usage": null,
+  "measurement_limits": "Wall time covers this check only. File hashes include actual tracked and nonignored working files. Read inventory and authoring/review effort are recorded separately; no measured model token/cost claim."
+}

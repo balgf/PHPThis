@@ -1,0 +1,1830 @@
+diff --git a/.ai/README.md b/.ai/README.md
+index ef5e7d5..86bd8d8 100644
+--- a/.ai/README.md
++++ b/.ai/README.md
+@@ -1,6 +1,6 @@
+ # Application AI context index
+ 
+-This directory owns current context for the checked health-only starter. Replace only the guides entered by a task with verified project facts before adding product behavior. Keep context committed, concise, and free of secrets.
++This directory owns current context for the retained synthetic account directory. Replace only the guides entered by a task with verified project facts before adding product behavior. Keep context committed, concise, and free of secrets.
+ 
+ Consumer Contract v13 and Strict Profile v3 remain mandatory. Application guidance may strengthen them but may not weaken them.
+ 
+diff --git a/.ai/architecture.md b/.ai/architecture.md
+index b8cc4a4..c016975 100644
+--- a/.ai/architecture.md
++++ b/.ai/architecture.md
+@@ -1,119 +1,15 @@
+ # Application architecture
+ 
+-## Entry and composition
++`public/index.php -> bootstrap.php -> DirectoryComposition -> RequestBoundary -> Application -> Router -> explicit Routes/HealthRoutes/UserRoutes`. Bootstrap constructs one connection, distinct budget/trace, deny-all authentication, named tenant/action policies and one sink. The coordinator owns response selection and one summary; the front controller separately emits. The installed Alpha 7 starter's pre-coordinator failure boundary is not claimed here.
+ 
+-- Front controller: `public/index.php`
+-- Composition root: `bootstrap.php`
+-- Root route manifest: `src/Routes.php`
+-- Application source root: `src/`
++Feature-first source: shared account values/policy interfaces in `src/Accounts`, shared positive `UserId` in `src/Users`, operation-specific `CreateUser` and `ListUsers` directories. Routes use the narrow `positive-int` representation; the adapter immediately wraps `account_id` in `AccountId`. Identifiers use validated private constructors and `fromInteger/toInteger`, with no actor/user equivalence. Nothing discovers classes or routes.
+ 
+-## Dependency direction
++Create's action-specific adapter runs authenticate, resolve tenant, authorize, media check, typed command parsing, then its concrete transaction handler. This handler is the single SQL owner for the independently meaningful three-write transaction. List's adapter follows the same policy order before its page parser and one-statement handler. Policies are separate constructor dependencies and replaceable without framework edits.
+ 
+-This diagram records construction and dependency ownership, not request-time control flow.
++Create accepts exact `application/json` and at most 1024 bytes/depth 8. Exact fields `id:int`, `name:string`, `email:string` all pass shape/type validation before values. Positive IDs are client-selected; names are 1–80 UTF-8 bytes with no ASCII controls or trim padding; email is <=254 bytes and an unchanged PHP FILTER_VALIDATE_EMAIL result. No normalization; duplicate JSON keys retain PHP's last-value limitation. Shape/type failure is generic 400; unacceptable value 422; body overflow 413; media 415. Named conflict is 409. Validation occurs before protected SQL. Success is 201 with exact `data:{id,name,email}`. See data for transactional semantics.
+ 
+-```text
+-public/index.php
+-├── requires bootstrap.php -> TerminalRequestCoordinator
+-│   ├── RequestBoundary -> Application -> Router
+-│   │   └── Routes -> HealthRoutes -> dependency-free HealthHandler
+-│   ├── UnknownFailureBoundary
+-│   ├── CorrelationId
+-│   └── RequestSummarySink
+-└── constructs ResponseEmitter
+-```
++List accepts only optional canonical positive decimal `after_user_id` within PHP_INT_MAX. Missing means first page; null, empty, arrays, unknown keys, leading zeroes and overflow fail 400 before protected SQL. One query fetches <=21, immediate `UserSummary` projection validates every row, and I/O-free mapping emits <=20 with `next_after_user_id` set only when lookahead exists. SQLite returns native integer IDs; strings are rejected. Ordering is ascending ID, static-fixture keyset pagination, no concurrent snapshot guarantee.
+ 
+-Dependencies may point only in the direction shown above. Record a deliberate exception in `docs/decisions/` before implementation.
++Health/404/405 retain explicit no-store. Protected responses and shared mapped 400/413 responses use private no-store (deliberate stronger cache restriction than the starter). Unknown failures remain generic private no-store. Summary ownership is `.ai/observability.md`; configuration is `.ai/configuration.md`.
+ 
+-## Named boundaries
+-
+-| Boundary | Path | Responsibility |
+-| --- | --- | --- |
+-| HTTP runtime | `public/index.php` | Load request-scoped composition, read PHP runtime globals, invoke the terminal coordinator, and emit its unchanged response. |
+-| Application configuration | `.ai/configuration.md` | Owns the health-only `NOT_APPLICABLE(CONFIGURATION)` marker and any later external-input-to-typed-value contract. |
+-| WebSocket runtime | `NOT_APPLICABLE(WEBSOCKETS)` | The health-only starter has no WebSocket process, listener, protocol, or connection state. |
+-| Application-owned request-handler decorators | `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)` | `HealthRoutes` constructs dependency-free `HealthHandler` inline for the sole route. |
+-| Terminal request summary | `src/Observability/` | Own correlation, finite database-source observation, the closed redacted event, one injected sink, and failure-isolated attempt semantics. |
+-| Inbound operation data | `NOT_APPLICABLE(INPUT)` | The public health operation accepts no application-owned fields and constructs no request or command. |
+-| Typed session services | `NOT_APPLICABLE` | The starter does not configure session state. |
+-| Typed cache services | `NOT_APPLICABLE(CACHE)` | The starter does not cache server-side data. |
+-| Durable jobs | `NOT_APPLICABLE(JOBS)` | The starter has no deferred work or worker runtime. |
+-| Database | `NOT_APPLICABLE` | The starter application has no database. |
+-| External services | `NOT_APPLICABLE` | The starter application has no external integrations. |
+-
+-## Configuration boundary
+-
+-`.ai/configuration.md` is the single writable authority and currently records `NOT_APPLICABLE(CONFIGURATION)`: the starter has no environment read, configuration reader, secret, database credential, or typed configuration value. Before adoption, record the complete source, factories, validation, authority, injection, failure, rotation/restart, redaction, and tests there. This architecture retains only the dependency rule: keep every direct `\getenv('EXACT_LITERAL_KEY')` call in the one recorded PHP file, validate into process-specific final readonly types before application-controlled I/O, and inject only concrete values through `bootstrap.php`.
+-
+-## Inbound data boundaries
+-
+-`NOT_APPLICABLE(INPUT)`: `GET /health` accepts no application-owned body, query, form, or header fields. The outer `RequestBoundary` still bounds and validates PHP runtime transport data, but no operation-specific parser or typed command is needed for this health-only state.
+-
+-Before an operation accepts external data, record one path from its bounded raw representation through an operation-specific named parser factory into a final readonly request or command with a private constructor, then into downstream typed behavior. Add a separate typed operation seam only when HTTP adaptation and an independently meaningful business or transaction responsibility need separate ownership. Record byte, depth, field, list, item, and scalar bounds; required, optional, absent, explicit-null, and unknown-field behavior; exact boolean, integer, string, enum, date, list, and object representations; deterministic validation order; field-specific normalization or explicit none; parser position relative to request policy; public failure and redaction; exclusion from operation-owned downstream work; and the native JSON duplicate-key limitation where applicable.
+-
+-For application-owned structured request-body content, the parser completes the whole exact-field, nullability, native-type, and nested-shape phase before applying any value grammar, range, length, enum, date, canonical-representation, or cross-field rule. The default public contract maps the first phase to generic `400 invalid_request` and a failure after that complete phase to an exact application-owned exception registered as generic `422 unprocessable_content`; a payload containing both an unacceptable value and another wrong-typed field remains `400`. Record any deliberate application override explicitly. Query, header, route, and transport representations retain their separately recorded contracts. Keep `413` whole-body overflow, `415` unsupported media, persisted-state conflicts, request policy, routing, multipart transport, and unexpected failures separate. Both body responses omit submitted field names and values, credentials, internal messages, and rule details. Do not add a core unacceptable-value exception, generic validator, result wrapper, rule-string language, reflection hydration, mass assignment, error renderer, sanitization magic, or automatic request binding.
+-
+-## Optional application-owned WebSockets
+-
+-`NOT_APPLICABLE(WEBSOCKETS)`: the health-only starter has no WebSocket dependency, listener, process, event loop, handshake, connection state, message command, or delivery policy. The existing `GET /health` execution path is HTTP only.
+-
+-Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and replace `.ai/websockets.md` with one approved application-specific contract. Record one explicitly selected mature third-party runtime, separate process entrypoint and composition root, exact handshake and current authorization path, complete bounded message-to-final-readonly-command boundary, one narrowly named typed operation, finite connection and sequential send path, backpressure, lifecycle, redaction, deployment, supervisor, and scaling decisions. Keep frames outside PHPThis `Request`, `Response`, `Router`, `RequestBoundary`, `ResponseEmitter`, and terminal request-summary types. Do not add a generic WebSocket abstraction or adapt the runtime into the HTTP execution model.
+-
+-## Optional application-owned request-handler decorators
+-
+-`NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`: `src/HealthRoutes.php` constructs dependency-free `HealthHandler` inline in the exact route declaration; `src/Routes.php` only includes that existing named route-area list. The starter has no route-local wrapping concern, decorator side effect, early response, response replacement, or nesting order.
+-
+-Before adoption, record every final application-owned request-handler decorator, its one downstream `RequestHandler`, affected routes, complete unrolled outer-to-inner construction, zero-or-one delegation with the exact same immutable `Request` instance, unchanged exception propagation, explicit immutable `Response` replacement with complete field preservation, and named bounded side effects and tests. Do not add a generic or framework middleware interface, pipeline, iterable registry, priorities, discovery, `$next` abstraction, context bag, hidden binding, or hidden I/O. Never wrap `Application`, `RequestBoundary`, the terminal coordinator, or `ResponseEmitter`, and do not move session, cache, request-policy, or terminal-observability ownership into a decorator.
+-
+-## Identity and authorization
+-
+-- Request-policy composition: `NOT_APPLICABLE(REQUEST_POLICY)` because the starter has only one public liveness route.
+-- Identity, authentication, authorization, and tenant boundaries: `NOT_APPLICABLE(public liveness route only)`.
+-- Session state, authentication regeneration, idle or absolute expiry, logout, revocation, and CSRF: `NOT_APPLICABLE(public liveness route only)`.
+-- Deny-by-default rule: only explicit routes are accepted; other paths return `404`, and unsupported methods on a known path return `405`.
+-
+-Before protecting a route, record its named action, concrete principal and tenant types, credential source and lifecycle, action-specific adapter, replaceable policies, fixed `authenticate -> resolve tenant -> authorize -> handler` order, generic denial responses, current authorization source, separate policy and protected query budgets and traces, explicitly tenant-scoped protected SQL, authorization-to-write race policy, redaction, and tests. Do not replace or obscure that adapter with an application-owned request-handler decorator, generic or framework middleware, a request-context bag, hidden tenant resolution, or an implicit scope.
+-
+-## Terminal request summary
+-
+-`.ai/observability.md` is the single project authority for starter correlation, source registration, sink, scope, and evidence facts. The types remain application-owned under `src/Observability/`.
+-
+-Request-time control flow is separate from dependency ownership:
+-
+-```text
+-public/index.php
+-  -> TerminalRequestCoordinator::handle(...)
+-     -> RequestBoundary::handle(...) -> selected Response
+-     -> RequestSummarySink::emit(...) (one failure-isolated attempt)
+-     <- returns the selected Response
+-  -> ResponseEmitter::emit(...) with the returned Response
+-```
+-
+-The coordinator invokes the request boundary and sink, then returns the selected response. The front controller separately gives that returned response to `ResponseEmitter`; the coordinator does not own or invoke the emitter, and the sink is not downstream of `Response` in the dependency graph.
+-
+-## Cache policies
+-
+-### HTTP response cache
+-
+-`HTTP_CACHE_POLICY(NO_STORE)`: `GET /health`, route misses, method rejections, and mapped invalid or oversized input emit `Cache-Control: no-store` at their explicit response-producing path; the generic unknown-failure response emits `Cache-Control: private, no-store`. No current response is intentionally storable, so freshness, validators, conditional requests, and `Vary` are not applicable. Every response path added later starts with explicit `no-store` and requires its own recorded and tested decision before it may use `private` or `public`; no helper, application-owned request-handler decorator, generic or framework middleware default, or response post-processor supplies that policy.
+-
+-### Optional server-side data cache
+-
+-`NOT_APPLICABLE(CACHE)`: the starter has no cache-aside call path, typed cache projection, authoritative rebuild source, cacheable data classification, backend, key schema, or cache decision record. Before adoption, record narrowly named typed service ownership and keep hit, miss, authoritative read, write, and invalidation visible. Cached values must remain derived reproducible data and must not contain sessions, authentication state, authorization decisions, permissions, credentials, or secrets.
+-
+-## Optional CRUD reference profile
+-
+-`NOT_APPLICABLE(RESOURCE_ROUTE_IDENTIFIERS)`: this starter has only the exact public `GET /health` liveness operation. It has no path parameter, resource identifier, CRUD route, create/list/update/delete operation, resource lookup, resource authorization, audit event, or CRUD directory convention.
+-
+-Before adding resource behavior, record adoption of or one coherent alternative to `vendor/phpthis/framework/docs/crud.md`, plus the identifier, explicit route, authorization, and audit policy. Every resource path identifier uses the narrowest fixed declaration: `positive-int`, `uuid`, or `ulid` for that canonical representation, and `token` only for a genuinely opaque identifier. Record the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, the application-owned route-specific identifier that immediately wraps the unchanged value, and any narrower domain rule enforced before database work. Routing performs no normalization, domain binding, record lookup, identifier generation, persistence choice, or type fallback. An alternate layout cannot weaken the installed consumer contract or Strict Profile.
+-
+-Before exposing one resource through a second access surface, record the selected surface-grouping rule and permitted sharing here. Give every surface its own named route-area list with explicit route entries. Separate its action-specific policy composition when authentication, named authorization action, tenant resolution, or policy budget or trace differs. Separate its HTTP handler and boundary types when accepted input, tenant, resource or data scope, SQL, projection or disclosure, failure behavior, HTTP cache policy, handler query budget or trace, side effects, or audit effects differ. Keep its SQL owner separate when data scope or SQL differs. Do not share an existing independently meaningful typed business or transaction operation, including any typed operation seam, when its typed input, data scope or SQL, transaction or concurrency policy, result contract, side effects, or audit effects differ. A route or method difference alone does not require duplicating an otherwise identical handler or operation. A directory, namespace, route prefix, or route-list label never establishes authority; every protected route retains its explicit action-specific request policy and scoped protected work. Stable domain values and genuine invariants may be shared. Narrowly typed authentication, tenant-resolution, or denial implementations may be shared when their contracts are identical, while every protected named action retains its own action-specific authorization contract. Share one existing independently meaningful typed business or transaction operation, including any typed operation seam, only when its complete responsibility remains identical and each surface reaches it only after its own applicable validation and, when protected, current authorization. Do not put role, audience, mode, or permission branching inside a shared handler or business operation to select SQL, behavior, side effects, or disclosure. Do not add a superset projection filtered for another surface or SQL broader than the receiving surface's recorded contract. Do not add generic services or repositories, discovery, or automatic binding. Do not impose a forced surface directory hierarchy.
+-
+-If existing identifier classes establish a coherent convention, record and preserve it here. Otherwise, follow the optional identifier convention in `vendor/phpthis/framework/docs/request-handling.md`: use separate final readonly domain-specific classes, a private scalar value and constructor, a representation-named boundary factory, an optional generation path only when this application owns it, and an explicit representation accessor. Every public construction path preserves the complete adopted acceptance invariant; validate each supplied value independently, and make generated values satisfy the separately recorded generated-version policy in `.ai/data.md`. Inspect the nearest identifier using the same representation before adding another. Do not replace nominally distinct identifiers with a generic `Id`, base class, trait, generic identifier interface, or framework helper merely because their implementations resemble one another. After this application records the same complete representation invariant for multiple identifiers, those concrete types may explicitly compose one narrowly named application-owned representation primitive for shared validation and canonical scalar representation; generation remains a separate explicitly versioned policy, and operations still require the concrete domain identifier, never the shared primitive. A recorded alternative may replace only property storage and visibility, constructor visibility, validated construction mechanism, and factory or accessor naming choices. It remains subject to the complete Consumer Contract and Strict Profile, including the final-class requirement, independent boundary validation, and distinct concrete route-specific domain types. This convention selects no generator, algorithm, package, exception type, or persistence representation.
+-
+-## Placement rules
+-
+-- Group routes in narrowly named `src/*Routes.php` route-area classes. A qualifying dependency-free simple endpoint may be constructed inline only in an existing named route-area manifest so the root `Routes::create()` remains unchanged; every handler with a constructor dependency stays visibly constructed in the root and passed into its route area.
+-- Place handlers at `src/*Handler.php`.
+-- Add commands and projections only at explicit external-data boundaries.
+-- Keep terminal coordinator, summary, source, correlation, and sink types under `src/Observability/` and wire them manually in `bootstrap.php`.
+-- Keep `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)` until one route-local concern and its complete bounded contract are recorded. Do not invent providers, generic or framework middleware infrastructure, policy registries, request-context bags, discovery, helper layers, or a generic cache service.
++`NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`, `NOT_APPLICABLE(WEBSOCKETS)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(FILE_TRANSFER)`, `NOT_APPLICABLE(SESSION)`: none adopted. No generic persistence, validators, middleware, framework extensions, or additional runtime dependencies.
+diff --git a/.ai/cli.md b/.ai/cli.md
+index 4cbb604..00f11a1 100644
+--- a/.ai/cli.md
++++ b/.ai/cli.md
+@@ -1,6 +1,6 @@
+ # Application CLI and scheduler contract
+ 
+-`NOT_APPLICABLE(CLI)`: the health-only starter has no operational application console, command map, typed command argument, scheduled pass, application clock, overlap lock, cron policy, supervisor, or CLI-specific output. Composer scripts and `vendor/bin/phpthis check` are development and validity gates, not an adopted application CLI.
++`NOT_APPLICABLE(CLI)`: this retained consumer has no operational application console, command map, typed command argument, scheduled pass, application clock, overlap lock, cron policy, supervisor, or CLI-specific output. Composer scripts and `vendor/bin/phpthis check` are development and validity gates, not an adopted application CLI.
+ 
+ `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`: the starter has no local launcher command, process-profile map, private-child handoff, or launcher PHP file. A launcher used only for an adopted HTTP development process would not by itself adopt an operational application CLI.
+ 
+diff --git a/.ai/configuration.md b/.ai/configuration.md
+index 03122fc..3b2caed 100644
+--- a/.ai/configuration.md
++++ b/.ai/configuration.md
+@@ -1,22 +1,3 @@
+-# Application configuration context
++# Application configuration
+ 
+-`NOT_APPLICABLE(CONFIGURATION)`
+-
+-`NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`
+-
+-This file is the starter application's single writable authority for configuration. Other `.ai/` guides link here and retain only concern-specific facts. The health-only skeleton reads no process environment, secret, database credential, migration authority, or application setting. It therefore has no configuration reader, typed configuration value, local environment launcher, selected process profile, local configuration file, or launcher PHP file. Do not add artificial configuration code or a speculative launcher.
+-
+-Record only adopted external input contracts after the early scope gate is resolved. Database-engine selection does not authorize a connection attempt, server provisioning, or migration adoption. Unselected worker, migration, administrative, deployment, and production configuration profiles remain explicitly not applicable; do not store task scope or task history here.
+-
+-When the application introduces an external setting, replace this marker with:
+-
+-- one application-owned PHP file containing every direct `\getenv('EXACT_LITERAL_KEY')` read;
+-- exact input names without values, their source owner, required/optional policy, grammar, and byte bounds;
+-- one separately named factory, final readonly output type, and process identity for each adopted process profile; every migration history is a separate profile even when histories target the same engine;
+-- explicit composition injection sites for adopted infrastructure, or an explicit deferred marker when configuration-only scope stops before connection composition; each migration history records its own exact input names and never inherits, combines, or falls back to another history's, runtime's, or administrative credentials;
+-- pre-I/O failure, rotation/restart, and redaction policy; and
+-- automated parsing, separation, non-disclosure, and child-process parser or adopted-entrypoint evidence.
+-
+-Read the installed `vendor/phpthis/framework/docs/configuration.md` before adding this boundary. Do not add a framework configuration service, string-keyed bag, global helper, facade, container binding, automatic dotenv loader, secret-manager abstraction, or hidden reload.
+-
+-Only after configuration and at least one process profile are adopted may the application replace the launcher marker. Read installed `vendor/phpthis/framework/docs/configuration/local-environment-launcher.md`, then record the application-owned PHP launcher path; shared canonical `ApplicationEnvironment` reader; exact ignored local file; exact profile and key sets; byte-precise declarative grammar and bounds; complete inherited-versus-file precedence without merging or fallback; exact selected-profile child environment without wholesale inheritance; fresh reload; fixed redacted failure; and evidence. `.ai/cli.md` owns any command handoff, `.ai/operations.md` owns explicit PHP CLI invocation and production non-use, and `.ai/testing.md` owns real-launcher tests including array-form shell-free `proc_open` with inherited standard-stream descriptor resources. Do not add a framework launcher, automatic PHP loading, dotenv dependency, configuration cache, or `config:clear` command.
++`NOT_APPLICABLE(CONFIGURATION)` and `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`: no external process settings, secrets, env reader or configuration types are adopted. Bootstrap's fixture location and deny-all policies are code-owned constants; request input cannot select a different DSN/profile. PHP native settings for the isolated HTTP test process are explicit in tests/front_controller.py and operational instructions, separate from application configuration. Any later environment inputs require the installed one-file typed-boundary pattern before I/O; do not create unused factories now.
+diff --git a/.ai/data.md b/.ai/data.md
+index a173a63..40ec67b 100644
+--- a/.ai/data.md
++++ b/.ai/data.md
+@@ -1,23 +1,13 @@
+-# Application data contract
++# Application data
+ 
+-`NOT_APPLICABLE(DATABASE)`
++Selected scope: project-local disposable SQLite fixture, not an external server or migration foundation. SQLite through ext-pdo_sqlite; recorded runtime versions belong in the campaign manifest. Only the synthetic fixture in ignored `tmp/directory.sqlite` is authorized. Code-owned DSN in bootstrap; no credentials, environment input, ATTACH, dynamic namespace, or production connection. SQLite main namespace and unqualified constant table names; no DB roles, ownership, grants or future-object defaults.
+ 
+-The exact standalone declaration above is present-state application context: the starter opens no database connection. A direct canonical `PHPThis\Database\Connection::connect` call cannot coexist with it. Replace the declaration and complete the database contract before adopting a connection. The starter also has no persisted resource, CRUD-shaped behavior, SQL, structural selector, bounded data list, database identity or privilege, CRUD resource route, pagination, mutation policy, deletion policy, resource authorization, or audit event.
++`tests/DirectoryFixture.php` is the sole reset/DDL/seed owner and runs outside HTTP. `composer test` resets this disposable file, so no durable user data belongs there. It creates directory mode 0700/file 0600 and 2 or 500 synthetic users plus one foreign-account row. Fixture schema: users(id PK,name,email); account_users(account_id,user_id UNIQUE, composite PK); account_memberships(principal_id,account_id composite PK); user_events(account_id,user_id,principal_id,event). Seed generation is one set-based SQLite CTE, never PHP-loop SQL. No migration ledger, foreign-key enforcement or persistent upgrade of schema is claimed.
+ 
+-`NOT_APPLICABLE(MIGRATIONS)`: `.ai/migrations.md` owns each future history's source and namespace; exact initial baseline; engine/version decision; command plus typed-configuration/process-identity and database-authority references; manifest and checksum-covered DDL/data/authority effects; bounded exact-engine ledger metadata; exact atomicity and ledger-consistency transitions; stable coordination namespace, collision, creation/acquisition/use/release permissions, reachable-topology exclusion, and lost-owner behavior; transition implementation; relationship to other histories; per-history compatibility, handoff, recovery, and evidence. `.ai/configuration.md` owns exact no-fallback configuration and process identity, this file owns effective authority facts and accountable transition ownership, and `.ai/operations.md` alone owns the application-wide release and cross-history recovery execution sequence. Do not infer migration adoption or placement, namespace selection, a namespace or object control or ownership model, or active authority from a database definition or provisioning source.
++Runtime statement authority is visible in CreateUserHandler (three inserts) and ListUsersHandler (one bounded join/membership read). Each request has its own connection, budget 3/trace 3; focused List tests constrain budget to 1. Actor policy reads are zero. Tenant and actor membership predicates remain explicit. Create checks affected rows, commits all three writes or rolls back; ID conflicts and a vanished membership both fail closed with generic 409 from the first insert. An earlier policy denial performs zero statements. No retry, auto-ID, transaction callback or cross-connection atomicity. A last-write trigger failure proves complete rollback. Membership is rechecked in the write statement; fixture policy facts otherwise never change concurrently.
+ 
+-`NOT_APPLICABLE(UUID_POLICY)`: the health-only starter has no UUID resource identifier, accepted UUID domain policy, generated UUID, generator, UUID persistence representation, or UUID ordering assumption.
++The user primary key and account-user/account-membership composite indexes support the joins/keyset path. A fixed one-statement count does not prove indexed filtering or production latency. Maximum fixture is 500, page 20 plus lookahead, no performance certification beyond that sample. Names/emails are unchanged bound values and each placeholder occurrence has a distinct name. SQLite-specific types, functions, conflict syntax and plans are not cross-engine claims.
+ 
+-Before UUID adoption, replace that declaration with `UUID_POLICY(ADOPTED)` and record each policy group's concrete identifiers, accepted canonical versions, generated version and purpose or explicit not applicability, generation owner and exact application source path, selected package and version, database facility and engine version, or external owner, generated-value metadata and time-disclosure decision, accepted metadata-bearing UUID exposure and handling, same-timestamp ordering scope, clock-regression behavior, failure and no-fallback policy, narrower domain rules, persistence representation and ordering assumptions, and evidence source. Keep acceptance separate from generation. The reference acceptance policy is canonical lowercase RFC-variant versions 1 through 8. Version 7 is recommended for newly generated database row identifiers when embedded approximate creation-time disclosure is accepted; version 4 is the random-only alternative when that disclosure from newly generated values is unacceptable; version 5 is only for a recorded deterministic namespace and exact-name-byte policy. Choosing version 4 does not prevent metadata disclosure if accepted or persisted time-bearing versions such as 1, 6, or 7 are exposed. A generated-version choice does not reject or convert other accepted versions, and PHPThis selects no generator, package, database facility, schema rule, or persistence representation.
++SQLite runtime and fixture reset share this local user's file/process authority. This permits DDL, attachment and arbitrary files available to that OS user; separate Connection objects do NOT isolate it. No fabricated denied-DDL or production least-privilege claim. Runtime source never issues DDL or attachment. Production authority, deployments and traffic enablement are deferred. See operations for the only local sequence and tests for statement/rollback/redaction evidence.
+ 
+-`NOT_APPLICABLE(CACHE)`: the starter has no typed cache projection, authoritative rebuild source, versioned key schema, environment or tenant cache namespace, payload parser or bound, TTL or staleness bound, invalidation policy, or corruption and eviction behavior.
+-
+-`NOT_APPLICABLE(REQUEST_POLICY)`: the starter has no authentication, tenant-resolution, authorization, or protected-handler connection, query budget, trace, protected write, or authorization-to-write race.
+-
+-Before adding data access, record every connection's engine and version, PDO extension, non-secret configuration reference, database definition or provisioning source, database/catalog/schema/attachment namespace selection and qualification as supported, namespace and object control or ownership model or explicit N/A, dialect authority, integration command, scale, query budget, indexes, and transaction constraints. An engine-default namespace, an application-specific namespace, or explicit not applicability where the engine has no namespace or ownership model are all valid recorded decisions; none is inferred or prescribed. Record exact external input names and typed factories without values in `.ai/configuration.md`. Also record each SQL structural choice and finite code-owned mapping, every bounded-list shape and maximum cardinality, each cursor's version, stable tie-break and snapshot policy, and each named operation's complete statement source, runtime identity, exact required targets and capabilities, selected prohibited capabilities, and effective authority resolution source. Record only applicable mechanisms, which may include direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority. Record one accountable non-HTTP owner and authoritative implementation reference for every adopted authority activation and deactivation, `GRANT` and `REVOKE` only where supported, exact-engine positive and negative evidence with its verification date, and one separately named no-fallback identity/configuration profile per adopted migration history plus a separate administrative profile when adopted. Keep the transition source and complete implementation path in `.ai/migrations.md` when migration adoption owns it. Configuration, connectivity, target existence, and migration completion do not activate runtime authority. Activate and verify required authority before dependent code receives traffic; drain or remove dependent code before authority deactivation or namespace/object removal.
+-
+-Every SQL data value must use a distinct named binding for each occurrence. SQL must execute through a direct `Connection` call and resolve natively in PHPStan to finite non-blank compile-time constants. Unknown selectors and unsupported list shapes must fail before database work; do not introduce a sanitizer. Before CRUD-shaped behavior, also record all operation semantics above; the optional layout does not decide them.
+-
+-`NOT_APPLICABLE(RESOURCE_ROUTE_IDENTIFIERS)`: before adopting a resource route, record its narrowest fixed declaration among `positive-int`, `uuid`, `ulid`, and genuinely opaque `token`, the matching `PathParameters` accessor, the application-owned route-specific identifier wrapper, and any narrower validation performed before database work. Route matching returns unchanged routing metadata; it does not normalize, bind or look up a record, generate an identifier, choose persistence, or fall back between types.
+-
+-Before cache adoption, record each narrowly named service and owned projection, the authoritative source that can reproduce it, a versioned environment- and tenant-scoped key schema, bounded parsed payload shape, finite TTL and staleness limit, post-commit invalidation and failure policy, and corruption, eviction, and miss behavior. Treat cache payloads as untrusted external input and never as a source of truth.
++`NOT_APPLICABLE(MIGRATIONS)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(SESSION)`: no histories, jobs, cached data or session storage.
+diff --git a/.ai/file-transfers.md b/.ai/file-transfers.md
+index 9317410..907d2c8 100644
+--- a/.ai/file-transfers.md
++++ b/.ai/file-transfers.md
+@@ -1,6 +1,6 @@
+ # Application file-transfer contract
+ 
+-This file is the single authoritative file-transfer policy for the checked health-only starter. Its exact current adoption marker is:
++This file is the single authoritative file-transfer policy for the retained synthetic consumer. Its exact current adoption marker is:
+ 
+ NOT_APPLICABLE(FILE_TRANSFER)
+ 
+diff --git a/.ai/jobs.md b/.ai/jobs.md
+index ed31560..84dc2fa 100644
+--- a/.ai/jobs.md
++++ b/.ai/jobs.md
+@@ -1,6 +1,6 @@
+ # Application durable-job contract
+ 
+-`NOT_APPLICABLE(JOBS)`: the health-only starter performs no deferred work and has no job table, outbox, broker, envelope, publisher, relay, consumer, worker, lease, acknowledgement, retry, redrive, dead letter, supervisor, jobs verification script or external side effect.
++`NOT_APPLICABLE(JOBS)`: this retained consumer performs no deferred work and has no job table, outbox, broker, envelope, publisher, relay, consumer, worker, lease, acknowledgement, retry, redrive, dead letter, supervisor, jobs verification script or external side effect.
+ 
+ Before adopting jobs, read installed `vendor/phpthis/framework/docs/jobs/README.md`. Accepted ADR 052 supplies the optional backend-neutral contract and verification structure. Replace this statement only after an accountable human selects and records the exact backend, client, topology, security, publication/recovery, envelope, dispatch, delivery ordering/concurrency and ownership-window/liveness, effect, retry/terminal, privileged-operation, lifecycle, operations, redaction and real-service evidence decisions. The canonical application evidence script is `jobs:verify`, wired through `test` into `check`; it is not a runtime command or PHPThis checker API and must fail closed without required real-service evidence.
+ 
+diff --git a/.ai/migrations.md b/.ai/migrations.md
+index dbea342..a81359e 100644
+--- a/.ai/migrations.md
++++ b/.ai/migrations.md
+@@ -1,6 +1,6 @@
+ # Application migration contract
+ 
+-`NOT_APPLICABLE(MIGRATIONS)`: the health-only starter has no database, migration source directory or namespace, migration command, namespace or object transition, elevated identity, authority activation path, manifest, checksum policy, ledger, transaction or DDL atomicity policy, coordination topology, per-history release constraints, partial-failure recovery policy, or migration evidence. No migration directory, code, or dependency is included, and HTTP startup performs no data-definition or authority-transition work.
++`NOT_APPLICABLE(MIGRATIONS)`: this retained consumer uses only a disposable test fixture and has no migration source directory or namespace, migration command, namespace or object transition, elevated identity, authority activation path, manifest, checksum policy, ledger, transaction or DDL atomicity policy, coordination topology, per-history release constraints, partial-failure recovery policy, or migration evidence. No migration directory, code, or dependency is included, and HTTP startup performs no data-definition or authority-transition work.
+ 
+ Database migrations are specialized application-owned database evolution. On first adoption with no established structure, PHPThis recommends `src/Database/Migrations/` and the skeleton's matching `App\Database\Migrations` namespace. Record the actual adopted directory and namespace in this file. A coherent consumer-selected alternative is authoritative; neither PHPThis nor the consumer checker enforces the recommendation or discovers migration files, and AI must not relocate an established structure without explicit human approval.
+ 
+diff --git a/.ai/observability.md b/.ai/observability.md
+index 4e95cc2..cfcd69c 100644
+--- a/.ai/observability.md
++++ b/.ai/observability.md
+@@ -1,22 +1,7 @@
+-# Application terminal-summary context
++# Application observability
+ 
+-The starter follows installed ADR 023 with application types under `src/Observability/`, manually composed in `bootstrap.php` and invoked by `public/index.php`.
++Keep the shipped application-owned `src/Observability` schema v1 coordinator/sink. It generates one 32-hex X-Request-ID, selects response then attempts one failure-isolated summary. DirectoryComposition registers exactly one `directory` source with this request's distinct budget/trace; I/O-free policies contribute no sources. Counts include attempted statements, no parameter values or SQL. Summary fields retain status/outcome, bounded fingerprint aggregates and only the unknown class. Response emission and network delivery are outside the coordinator; Alpha 7 has no guaranteed pre-coordinator summary/correlation.
+ 
+-- Correlation: `CorrelationId::generate()` supplies 16 random bytes encoded as 32 lowercase hexadecimal characters; `TerminalRequestCoordinator` owns the single `X-Request-ID` response field.
+-- Sink: `ErrorLogRequestSummarySink` is the explicitly injected starter boundary and calls deployment-configured `error_log` synchronously before the coordinator returns. The coordinator isolates its one invocation attempt from the selected response, but the starter records no destination or latency bound; delivery is not guaranteed, and external-service independence is not established.
+-- Database sources: `NOT_APPLICABLE(no database)`. The list is empty and aggregate query evidence is zero.
+-- Scope: coordinator handling through response selection and the sink attempt. Earlier composition failures, process-fatal errors, response emission, and network delivery are outside the claim.
+-- Evidence: `composer test` exercises real composition, generated IDs, success and mapped input summaries, unknown-failure class-only capture, exactly one sink attempt, throwing-sink response isolation, request-scoped freshness, and the real front controller. The framework repository's observability proof covers the complete schema.
++`ErrorLogRequestSummarySink` writes to PHP's configured destination, no remote collector/durability claim. HTTP tests select a private scratch file (owned temp directory), suppress native error display, enable E_ALL/log_errors and omit exception arguments; remove it with the fixture. The separate built-in server access log can contain request paths; it is private disposable test output, not a redacted application event. Both are outside public document root. No deployed destination, retention or latency policy exists.
+ 
+-Before database adoption, register every executable request-scoped connection in at most eight unique sources with distinct budgets and traces. Do not move terminal observability into an application-owned request-handler decorator or add an ORM, query builder, SQL/binding helper, framework logger, generic or framework logging middleware, facade, global helper, per-query event, or hidden instrumentation.
+-
+-## Optional operational log-record profile
+-
+-`NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)`: ADR 051's accepted optional profile is not adopted or implemented by this starter.
+-
+-- Record and levels: `ErrorLogRequestSummarySink` encodes the accepted version-1 summary directly. It adds no `record_schema_version`, `occurred_at`, `level`, or `summary` envelope and has no `debug`, `info`, `warning`, `error`, or `critical` policy.
+-- Daily file: `NOT_APPLICABLE(DAILY_LOG_FILE)`. The skeleton creates, reserves, and ignores no log directory. No path, UTC filename boundary, permissions, writer topology, rotation, retention, compression, quota, disk-full, or local tail workflow is selected. An adopter that selects the recommended local `var/log` path adds the exact project-root `/var/log/` ignore at that time.
+-- Stdout/stderr: `NOT_APPLICABLE(SELECTED_LOG_STREAM)`. PHP's deployment-configured `error_log` destination is not evidence that this application selected either stream or that a supervisor collects it.
+-- Grafana: `NOT_APPLICABLE(GRAFANA_LOG_DELIVERY)`. No Alloy, Loki, Grafana Cloud Logs tenant/account, remote retention/deletion, region/data-residency, labels, positions, collector credentials, access owner, retry, backpressure, outage, incident owner, or alert policy is selected.
+-
+-Adoption requires an accountable application decision plus application-owned code and evidence. Do not infer these optional capabilities from the existing sink or change the request-summary schema, framework runtime, dependencies, or one-attempt failure boundary.
++Evidence: retained starter tests for exact response/correlation, one attempt and throwing sink; directory and real HTTP checks for source counts, known denial status and unknown class, and absence of synthetic credential/payload/SQL markers. `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)`, `NOT_APPLICABLE(GRAFANA_LOG_DELIVERY)`: optional destination envelope/collector not adopted.
+diff --git a/.ai/operations.md b/.ai/operations.md
+index ab737a4..ea69b64 100644
+--- a/.ai/operations.md
++++ b/.ai/operations.md
+@@ -1,91 +1,9 @@
+-# Application operations contract
++# Evaluation operations
+ 
+-## Local development
++Requirements: PHP 8.4.x with pdo_sqlite, Composer, and Python 3 standard library for real HTTP process tests. Install exactly the committed lock with `composer install --no-interaction --prefer-dist`; then `composer check`. No real credentials or external services. Capture actual PHP/SQLite versions when repeating; a changed runtime is a new measurement.
+ 
+-- Dependency install command: `composer install`
+-- Complete check command: `composer check`
+-- Local start command: `php -S 127.0.0.1:8080 -t public`
+-- Local stop action: stop the foreground development server.
+-- Required local services: none.
+-- Local environment launcher: `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`; the starter has no launcher PHP file, selected process profile, or local configuration file.
+-- Production configuration delivery: `NOT_APPLICABLE(no deployment policy)`; no local launcher or file may be inferred as a production path.
++Only local sequence: install -> `php tests/fixture.php` creates/resets the synthetic fixture -> complete check -> optional loopback inspection. Tests own and delete their temporary HTTP processes/files. Normal bootstrap denies all auth, including test markers, and never initializes schema. Missing fixture fails composition before health; health is liveness after eager SQLite connection, not independent readiness. Never point fixture code at another database or retain valuable data under tmp.
+ 
+-## Runtime
++Manual evaluation server (after fixture setup): `php -d display_errors=0 -d display_startup_errors=0 -d error_reporting=-1 -d log_errors=1 -d zend.exception_ignore_args=1 -d error_log=/tmp/phpthis-directory-private.log -S 127.0.0.1:8080 -t public public/index.php`. First reserve the log with mode 0600 in a private directory under your control and use that path instead of the example; do not expose native logs over HTTP. No production launch, traffic, deploy, migrate, schedule or credential action is approved. The automatic HTTP harness already creates a private temporary directory and bounded owned process.
+ 
+-- Supported PHP version: 8.4
+-- Web runtime: PHP's built-in server for local verification only.
+-- WebSocket runtime: `NOT_APPLICABLE(WEBSOCKETS)`; `.ai/websockets.md` owns any future application-owned process and protocol decision.
+-- Worker runtime: `NOT_APPLICABLE(JOBS)`; `.ai/jobs.md` owns any future durable-job lifecycle decision.
+-- Operational application console and scheduler: `NOT_APPLICABLE(CLI)`; `.ai/cli.md` owns any future adoption.
+-- Database migrations: `NOT_APPLICABLE(MIGRATIONS)`; `.ai/migrations.md` owns any future adoption.
+-- Required extensions: `ext-pdo` and `ext-session` through the installed framework; the starter application opens no database connection and configures no session lifecycle.
+-
+-## Configuration runtime
+-
+-`.ai/configuration.md` is the single writable configuration authority and currently records `NOT_APPLICABLE(CONFIGURATION)`: the starter has no deployment input, secret-delivery path, rotation, reload, or configuration-startup failure. Record any later source, factory, validation, injection, profile/input-name/credential separation, failure, rotation/restart, redaction, and configuration-test facts there rather than duplicating them in this operations guide. PHPThis performs no automatic dotenv load, secret-manager lookup, or hidden reload.
+-
+-If a local environment launcher is later adopted, record here only its explicit PHP CLI invocation, absolute project-root/`PHP_BINARY`/private-child resolution, working-directory behavior, owner, and explicit production non-use. The shared canonical environment reader plus file, key, profile, and precedence facts remain in `.ai/configuration.md`; command handoff remains in `.ai/cli.md`; tests remain in `.ai/testing.md`. Do not add a launcher until configuration and a real process profile are selected.
+-
+-## Session runtime
+-
+-`NOT_APPLICABLE`: the starter does not construct `SessionLifecycle` or create session storage. PHP 8.4 `ext-session` remains an installed framework platform requirement. Before adoption, record the native file handler and save-path ownership, exact PHP settings and dated source, cookie policy, deployment topology and concurrency evidence, and garbage collection in this section.
+-
+-## Request-policy runtime
+-
+-`NOT_APPLICABLE(REQUEST_POLICY)`: the public health-only starter accepts no credential and has no identity, tenant, authorization, credential verifier, expiry, rotation, revocation, or policy-source dependency. Before protecting a route, record those runtime facts, authorization-header forwarding, fail-closed dependency behavior, status-only known-denial summaries, and class-only unexpected-failure redaction without copying secrets or sensitive identifiers.
+-
+-## WebSocket runtime
+-
+-`NOT_APPLICABLE(WEBSOCKETS)`: the starter declares no listener, event-loop process, supervisor, proxy, TLS termination, connection registry, capacity, or scaling policy. Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md` and record here the exact runtime package and version, separate entrypoint and process identity, listener and trusted-proxy boundary, startup and readiness contract, heartbeat, idle and absolute lifetime, send and close deadlines, connection and rate limits, graceful stop, forced-stop owner, deployment topology, capacity, scaling, incident policy, and dated operational source. Record WebSocket process configuration only in `.ai/configuration.md`, and record the connection-summary destination and its backpressure and outage behavior in the appropriate observability context without copying credentials, identifiers, headers, or frames.
+-
+-## HTTP cache runtime
+-
+-`HTTP_CACHE_POLICY(NO_STORE)`: every currently shipped response includes the `no-store` directive. Application behavior tests assert exact `Cache-Control: no-store` for health, route miss, method rejection, and mapped client failure, and exact `Cache-Control: private, no-store` for unknown failure. The starter records no production reverse-proxy, gateway, or CDN topology; before deployment, verify that every intermediary preserves the field. New response paths require an explicit application-owned policy and test.
+-
+-## Server-side cache runtime
+-
+-`NOT_APPLICABLE(CACHE)`: the starter configures no cache backend, client, extension, package, storage, or server-side caching. Before adoption, record here the backend product and supported version, dependency, deployment topology and environment isolation, capacity and eviction behavior, finite TTL policy, invalidation and stale-refill behavior, backend failure and recovery behavior, stampede owner and bounded lock or lease behavior, and dated operational source. Record cache process configuration only in `.ai/configuration.md`. Cache availability must not establish application correctness.
+-
+-## Durable-job runtime
+-
+-`NOT_APPLICABLE(JOBS)`: the starter has no job table, outbox, broker, worker process, supervisor, timeout, forced termination, restart, clean-stop, concurrency, prefetch, backpressure, capacity, retention, terminal inspection, replay, or incident policy. Under accepted ADR 052, an adoption records the exact selected finite-work or bounded long-running process shape, concurrency, prefetch or backpressure, supervision, shutdown, deployment replacement and recovery without importing another backend's lifecycle. It also records the selected service/application time owner and exact units/rounding/precision/skew for visibility, lease, TTL, delay, retry and retention, plus unique-run cleanup, finite abandoned-run lifetime and run-ID-scoped stale-run reconciliation because hard termination may skip `finally`. Only deliberate adoption of the current ADR 024 checked SQLite profile uses its externally supervised fresh one-delivery process shape. Record the selected publication, envelope, effect/idempotency, retry/terminal, redaction and evidence contract in `.ai/jobs.md`; never add a hidden polling or retry loop, broad cleanup, discovery, or unrecorded signal behavior.
+-
+-## Application CLI and scheduler
+-
+-`NOT_APPLICABLE(CLI)`: the starter exposes no operational application console or scheduled pass. `composer check`, `composer test`, and `vendor/bin/phpthis check` are development and validity commands; they are not an application command map.
+-
+-Before adoption, read installed `vendor/phpthis/framework/docs/cli.md` and replace `.ai/cli.md` with the sole console path, every finite command and operation, exact typed argument grammar and bounds, exit and stdout/stderr JSON contract, fresh composition, one-pass maximum, output redaction, and real-console evidence. When a scheduled pass is adopted, additionally record its clock and timezone, cadence, missed-run and catch-up policy, external invocation frequency, application-private overlap mechanism and namespace, topology, contention and failure behavior, timeout, restart, and incident owner. Otherwise mark those schedule-only facts not applicable. Record CLI process configuration, startup failure, rotation/restart, and secret redaction only in `.ai/configuration.md`. A migration-only console records writer coordination or serialization in `.ai/migrations.md`; keep distributed scheduler coordination explicitly not applicable unless a separate backend-specific decision and evidence establish it.
+-
+-## Database migrations
+-
+-`NOT_APPLICABLE(MIGRATIONS)`: the starter has no migration process, elevated identity, database path, coordination topology, authority-transition owner or activation stage, data-definition timeout, maintenance window, release sequence, backup, restore, or recovery procedure. HTTP startup performs no data-definition or authority-transition work.
+-
+-- Accepted database-authority and release decision reference: `NOT_APPLICABLE(DATABASE)`.
+-- Pre-traffic authority gate, exact evidence, and accountable owner: `NOT_APPLICABLE(DATABASE)`; the starter has no connection, authority transition, dependent rollout stage, or database traffic.
+-
+-Before adoption, read installed `vendor/phpthis/framework/docs/migrations.md` and complete `.ai/migrations.md` plus `.ai/testing.md` per history. Record exact configuration and process identity only in `.ai/configuration.md`, effective authority facts and accountable transition ownership only in `.ai/data.md`, transition implementation and per-history constraints only in `.ai/migrations.md`, and the application-wide sequence and operational runbooks only here. This file records only stable-history-keyed operational owners, mappings, runbooks, and evidence references; it does not restate migration, configuration, identity, or authority policy. Record `GRANT` and `REVOKE` only where the exact engine supports them and the application selects them.
+-
+-Record here, keyed by stable history name or explicit intersecting-history set, the deployment runner; coordination/serialization operator, runbook, and evidence reference; maintenance window, capacity, timeout, termination, and incident mapping; backup, restore, forward-recovery, failed-deployment, and cross-history partial-deployment runbooks; authority-transition operator, release-stage runbook, and evidence reference; application-owned sequence through authority verification, rollout, traffic enablement, later deactivation, dependent-code drain, and namespace/object removal; and each pre-traffic gate. These are operational mappings and references, not duplicate migration, configuration, identity, or authority policy. Activation or verification failure stops its dependent stage. Shared-data execution still requires separate explicit human authorization.
+-
+-## Deployment
+-
+-`NOT_APPLICABLE`: the skeleton defines no environment, release, rollback, database-authority activation, traffic enablement, later authority deactivation, or production runtime policy. Add verified operational sources before deployment work. No universal deployment order is inferred; an adopted database path must activate and verify required authority before dependent traffic and drain dependent code before authority deactivation or namespace/object removal.
+-
+-## Logging and observability
+-
+-- Terminal request-summary runtime authority: `.ai/observability.md`; do not duplicate its correlation, sink, source, scope, or delivery facts here.
+-- `GET /health` is the starter liveness route; no readiness route exists. Its shared bootstrap opens no database, cache, queue, or network connection, but the terminal coordinator invokes `ErrorLogRequestSummarySink` synchronously before returning.
+-- Current evidence proves that the HTTP composition and handler can run, mapped and unknown responses retain their recorded behavior, and exactly one terminal-summary sink attempt occurs. It does not establish external-service-independent liveness because the deployment-configured `error_log` destination and its latency are unverified. It also does not prove database connectivity, exact-statement authority, migration state, dependency health, capacity, or production readiness.
+-- Current probe record: code-owned request work is the shared bootstrap, request boundary, selected route and `HealthHandler`, and one synchronous terminal request-summary sink invocation attempt; a throwing sink cannot alter the selected response. Sink destination and latency, deployment probe cadence, timeout, restart, traffic-gating, and operations-owner policy are `NOT_APPLICABLE(no deployment policy)`. Application evidence is `tests/run.php` through `composer test`, covering success, mapped failure, unknown failure, captured summaries, throwing-sink isolation, and the real front controller.
+-- Database sources are `NOT_APPLICABLE(no database)`; query aggregates remain zero and the source list remains empty.
+-- HTTP cache storage and revalidation metrics are `NOT_APPLICABLE(no-store responses only)`; behavior tests verify the emitted policy, while production intermediary verification remains deployment-owned.
+-- Cache-operation summaries and hit, miss, failure, invalidation, and stampede metrics are `NOT_APPLICABLE(CACHE)`.
+-- Optional operational log record, levels, daily file, selected stdout/stderr stream, and Grafana delivery are `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)` as recorded in `.ai/observability.md`. The starter creates, reserves, and ignores no log directory and has no log rotation, retention, file permission, collector, Loki or Grafana tenant/account, remote lifecycle, region/data-residency, access, or incident operations policy.
+-
+-Before adopting this route as a deployment probe, record and verify every synchronous destination, including the terminal sink. Before adding a connection that requires an external service or other required external-service I/O to the shared HTTP composition root, reclassify every affected probe and update `.ai/operations.md` and `.ai/testing.md` with its exact claim, inherited dependencies, bounded work, composition or dependency failure behavior, local or deployment operations owner, and evidence. `Connection::connect()` constructs PDO eagerly and may fail during composition; whether it requires an external service depends on the selected driver and DSN. In the current front-controller shape, that failure occurs outside the terminal request-summary coordinator and receives none of its response, correlation-header, or summary guarantees. Do not preserve a liveness claim through a hidden bypass or second HTTP execution path.
+-
+-The sink invocation attempt does not guarantee durable delivery. `.ai/observability.md` owns the current destination and redaction facts and the optional profile's explicit not-applicable state.
+-
+-## Prohibited operational actions
+-
+-The skeleton authorizes no deployment, shared-data migration, credential rotation, user contact, or external-system mutation. An AI may inspect documented local state and run project checks, but it must not perform any of those actions unless the human explicitly authorizes that exact action after the application records the relevant operational policy.
++Reproduction tags, upgrade procedure, fixed scenario and next public-release trigger: `docs/lifecycle-plan.md`. Preserve the same application; no skeleton replacement. `NOT_APPLICABLE(MIGRATIONS)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(SESSION)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(WEBSOCKETS)`, `NOT_APPLICABLE(FILE_TRANSFER)`.
+diff --git a/.ai/project.md b/.ai/project.md
+index 2fb0430..81374ab 100644
+--- a/.ai/project.md
++++ b/.ai/project.md
+@@ -1,28 +1,9 @@
+-# Project contract
++# Retained synthetic account directory
+ 
+-## Purpose
++Owner: PHPThis maintainer (balgf). Codex implements the bounded evaluation authorized in framework issue #71. Scenario choices in `docs/lifecycle-plan.md` are evaluation design, not independently accepted production decisions. The retained Git history begins with the public Alpha 7 skeleton and lock.
+ 
+-This starter application exists to provide a verified PHPThis composition root and one checked health endpoint before product-specific behavior is introduced.
++Objective: an account administrator creates a directory entry and pages through that account's users. Actors (`account_memberships`) and created users (`account_users`) are distinct even when integer IDs coincide. Current HTTP composition authenticates nobody. Synthetic policies exist only in tests.
+ 
+-Primary users: the humans directing and reviewing the application and the AI authoring it.
++The public health body remains `{"status":"ok"}` plus newline. Bootstrap eagerly connects the fixture before health; health is liveness after composition, not independent dependency readiness. Create/List behavior and invariants belong in architecture/data/request-policy guides. `composer check` is the complete gate.
+ 
+-Accountable human decision owner: the person or team adapting this skeleton; replace this generic role before product work.
+-
+-## Non-goals
+-
+-- Production readiness or deployment policy.
+-- Database access, external integrations, authentication, or business-domain behavior.
+-
+-## Canonical vocabulary
+-
+-| Term | Exact meaning | Do not alias as |
+-| --- | --- | --- |
+-| `health endpoint` | The public `GET /health` liveness route. | readiness endpoint |
+-| `complete check` | The `composer check` application validity gate. | smoke test |
+-
+-## Critical invariants
+-
+-- `GET /health` returns status `200`, JSON content type, and the exact body `{"status":"ok"}` followed by one newline.
+-- The starter route performs no database access, external side effect, or mutable application work.
+-
+-Replace this generic purpose, vocabulary, and invariants with verified product facts before feature work.
++No production use, real users/credentials, migration history, job/worker, session, cache, email, upload, WebSocket, frontend, Update/Delete, or deployment is adopted. This is retained maintenance evidence; a single campaign proves no longitudinal cost. The next concrete maintenance trigger is the next matching public framework/skeleton release; see `docs/lifecycle-plan.md`.
+diff --git a/.ai/request-policy.md b/.ai/request-policy.md
+index e5f51aa..de321bb 100644
+--- a/.ai/request-policy.md
++++ b/.ai/request-policy.md
+@@ -1,22 +1,9 @@
+-# Application request policy
++# Request policy
+ 
+-`NOT_APPLICABLE(REQUEST_POLICY)`: the health-only starter has no credential, principal, tenant, protected action, policy query, protected data query, or authorization decision.
++Normal bootstrap uses `DenyAllAuthentication`; it accepts no credentials. There is no credential parser, lifecycle, issuance, revocation, expiry, provider, RFC 6750 claim, production TLS/auth or cookie/CSRF policy. `tests/PolicyFixtures.php` supplies I/O-free synthetic writer/reader markers only inside test composition. `tests/front_controller.py` injects that authenticator into a scratch bootstrap and uses the byte-identical real front controller on loopback; it never changes normal bootstrap.
+ 
+-Before protecting a route, read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md`, then replace this file with verified application facts:
++Every Create/List adapter independently injects AuthenticateAccountRequest, ResolveAccountTenant and the operation's CanCreateUser/CanListUsers interface. Exact order: authenticate -> AccountId -> tenant -> named action authorization -> typed input -> protected handler. Principal is immutable and carries actor ID/account/capability; Tenant carries resolved AccountId. Neither becomes Request/global/cache state. SameAccountTenant rejects a different requested account. List requires same account; Create additionally requires mayCreate. Protected SQL separately checks scoped current actor membership.
+ 
+-- route, named action, action-specific adapter, and protected operation;
+-- concrete immutable principal and tenant-context types;
+-- manually wired, independently replaceable authenticator, tenant resolver, and authorizer;
+-- fixed `authenticate -> resolve tenant -> authorize -> protected operation` order;
+-- one strict TLS-protected `Authorization: Bearer` source with no alternate or fallback source, plus the raw-boundary duplicate, proxy/SAPI forwarding, parser grammar, and credential byte-bound policy;
+-- selected JWT, opaque/PAT/API-token, or external-verification profile; pinned maintained dependency; verifier and timing-safe comparison where applicable; exact configuration; and explicit unsupported credential kinds;
+-- issuance or one-time disclosure, refresh or replacement, authoritative clock, expiry, rotation, revocation, owner, tenant, scope, rate-limit, audit, and redaction policy;
+-- separately named verifier database, trusted-key source, or external-provider I/O with finite timeout, response, budget, trace, cache-staleness, and fail-closed outage policy;
+-- frontend credential storage and XSS boundary, or cookie/session and CSRF policy; exact CORS and preflight behavior when cross-origin;
+-- generic definitive-invalid `401`, verifier-uncertainty `5xx` with no refresh signal, ordinary forbidden, and cross-tenant disclosure policy; preserve the bare non-RFC-6750-compatible reference challenge or record the fixed non-sensitive auth-param and exact status/error evidence for an application RFC 6750 compatibility claim;
+-- status-only known-denial summary, class-only unexpected-failure, redaction, and response-cache policy;
+-- I/O-free policies or separately named policy connections, budgets, and traces;
+-- protected connection, budget, trace, tenant/resource SQL scope, and authorization race policy;
+-- denial, order, zero-protected-work, redaction, replacement, parser, lifecycle, dependency-outage, and frontend or non-browser credential tests.
++Missing/rejected authentication is generic 401 with `WWW-Authenticate: Bearer`; ordinary forbidden and cross-account decisions share generic 403. Unexpected policy failures are generic 500 with only a class in the summary. Policies perform no I/O; denial therefore has zero protected SQL, transaction writes or other side effects. Every response after policy uses private no-store. A successful policy is never a global SQL scope.
+ 
+-Do not replace or obscure the action-specific adapter with an application-owned request-handler decorator, generic or framework middleware, a policy registry, a request-context bag, service location, discovery, hidden tenant resolution, an implicit or global authorization scope, or stored authorization decisions.
++Synthetic account 1 actor 101 is unrelated to a new user with ID 101. Memberships and user associations are separate tables. Replacements, every failing stage and call order are exercised by directory tests. Real production security is deliberately unsupported by this evaluation; no test marker may be activated outside the owned test process.
+diff --git a/.ai/testing.md b/.ai/testing.md
+index bd63e31..215bd98 100644
+--- a/.ai/testing.md
++++ b/.ai/testing.md
+@@ -1,63 +1,9 @@
+-# Application testing contract
++# Complete evaluation gate
+ 
+-## Complete validity gate
++`composer check` runs installed `phpthis check` plus application `test`. Do not skip/suppress diagnostics. Test sequence is explicit in composer.json: disposable fixture, preserved starter summary/front-controller tests, directory integration, real loopback HTTP via Python stdlib. A nonzero child fails the gate. PHP files, including tests, receive maximum-level analysis. No paid API requests.
+ 
+-Run from the application root:
++`php tests/directory.php` resets only the synthetic SQLite fixture. It proves permitted Create/List, exact policy call order and independent replacements/outages, unauthenticated/forbidden/cross-account zero work, body shape/value/media/bounds, canonical cursor, conflict, final-write rollback, actor/user separation, redacted response/summary/trace, exact scoped projection and bounded keyset continuation. Small/500-row List fixtures both use one statement; Create uses three fixed writes. Fixtures/inspection connections are separate from request observation and never used as evidence of runtime privilege isolation.
+ 
+-```bash
+-composer check
+-```
++`python3 tests/front_controller.py` requires the fixture left by directory tests. It copies the actual front controller byte-for-byte to private scratch, links the current installed autoloader (app source stays the same), runs the default deny-all bootstrap and then an explicitly synthetic-policy bootstrap. It checks real health/denial/Create/List/cross-account status, headers, body, correlation, one terminal event per request, counts and redaction. Only loopback ports selected dynamically and owned child processes are used. This is PHP's built-in HTTP SAPI, not production proxy/HTTPS evidence.
+ 
+-Its exact definition is in `composer.json`: `phpthis check` owns application-wide guardrails, the PHPThis Strict Profile, and maximum-level PHPStan; `composer test` owns behavior evidence.
+-
+-## Automated behavior evidence
+-
+-Every observable behavior change must add or update application-owned automated tests. The application owns the test library, runner, file placement, and organization; PHPThis does not require PHPUnit, Pest, a `tests/` directory, or a particular test category. Composer `scripts.test` must execute this evidence and return a non-zero status when it fails. Static analysis, documentation, manual verification, and a no-op test command are not behavior evidence.
+-
+-When an application-owned test or validation entrypoint spans unrelated concerns or becomes difficult to review, prefer a small deterministic entrypoint that invokes cohesive concern-owned modules in an explicit order, with narrowly shared support. Preserve deterministic execution and failure behavior, and keep focused evidence directly runnable where the selected tool allows. Keep that composition explicit; do not introduce runtime discovery or a plugin framework merely to organize the runner. Modularize only application-owned code; do not copy, replace, or modularize the installed `vendor/bin/phpthis check` entrypoint. This is advisory organization guidance, not a validity rule: PHPThis sets no line-count threshold, prescribes no directory layout, test library, or module interface, and adds no checker rule. The application owns whether and how to split the entrypoint; its documented complete project check remains the authoritative gate.
+-
+-## Focused commands
+-
+-- Framework-owned profile and static analysis: `vendor/bin/phpthis check`
+-- Application behavior tests: `composer test`
+-- Configuration boundary and real-entrypoint tests: `NOT_APPLICABLE(CONFIGURATION)`
+-- Local environment launcher subprocess tests: `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`
+-- Inbound-data boundary tests: `NOT_APPLICABLE(INPUT)`
+-- WebSocket integration and lifecycle tests: `NOT_APPLICABLE(WEBSOCKETS)`
+-- Database integration tests: `NOT_APPLICABLE(no database)`
+-- Request-policy tests: `NOT_APPLICABLE(public liveness route only)`
+-- Application-owned request-handler decorator tests: `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`
+-- HTTP cache policy tests: `composer test`
+-- Cache integration tests: `NOT_APPLICABLE(CACHE)`
+-- Durable-job canonical Composer evidence script `jobs:verify`: `NOT_APPLICABLE(JOBS)`
+-- Durable-job literal `jobs:verify` -> `test` -> complete `check` wiring: `NOT_APPLICABLE(JOBS)`
+-- Application CLI and scheduler tests: `NOT_APPLICABLE(CLI)`
+-- Database migration tests: `NOT_APPLICABLE(MIGRATIONS)`
+-
+-Focused commands shorten feedback but never replace the complete gate.
+-
+-## Starter evidence
+-
+-- Automated tests for every observable behavior change cover expected success, expected failure, boundary validation, and applicable authorization, external side effects, and resource limits.
+-- `NOT_APPLICABLE(CONFIGURATION_EVIDENCE)`: before configuration adoption, prove every implemented parser or factory's valid final readonly construction; missing, empty, malformed, and oversized rejection before application-controlled I/O; fixed output containing none of the supplied bytes; and child-process environment delivery without application `putenv`. Configuration-only scope records infrastructure injection and connection evidence as deferred without dead wiring. A selected connection or process proves typed delivery at its real entrypoint. HTTP exclusion and no-fallback evidence is required when an elevated profile is adopted; otherwise elevated configuration evidence remains not applicable. Provisioning and production evidence is required only for explicitly selected scopes.
+-- `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER_EVIDENCE)`: before launcher adoption, read installed `vendor/phpthis/framework/docs/configuration/local-environment-launcher.md` and exercise the real PHP launcher in fresh subprocesses through its exact `php ./bin/application <command>`-style invocation from inside and outside the project directory. Prove exact command/profile/private-child mapping; shared canonical `ApplicationEnvironment` ownership; absolute root, `PHP_BINARY`, and child resolution before file access; every ignored-file type, size, line, ending, grammar, key, value, duplicate, unknown, control, empty, and maximum-plus-one rule; opaque semicolon and shell-metacharacter preservation; complete inherited-versus-file precedence without partial merge or fallback; selected-only application keys; array-form shell-free `proc_open` with inherited `STDIN`, `STDOUT`, and `STDERR` descriptor resources, no wholesale environment inheritance, no launcher-side stream interception, and no secret argument; fixed exit and stream bytes; unchanged child results after handoff; redaction; no command, `exit`, substitution, backtick, expansion, redirection, or `PATH` side effect; and cleanup in `finally`.
+-- Test the exact health response, unknown route, unsupported method, malformed runtime input, oversized declared body, and real front controller. This proves the current HTTP composition and response path, not external-service-independent liveness: the coordinator invokes deployment-configured `error_log` synchronously and no destination or latency bound is recorded. Before deployment adoption, verify that sink and every other synchronous dependency. If eager infrastructure is adopted, update the recorded probe claim and test its inherited dependencies, bounded work, and composition or dependency failure behavior; do not treat connection construction as database-authority or complete-readiness evidence.
+-- Test the terminal summary on health success, mapped failure, and unknown failure: exactly 32 lowercase-hex correlation characters, the identical `X-Request-ID`, generic outcome and status, class-only unknown failure, zero database aggregates and sources, complete request-value redaction, exactly one sink invocation attempt, and an unchanged response when the sink throws. This proves an attempt, not durable delivery or network emission.
+-- `NOT_APPLICABLE(OPERATIONAL_LOG_RECORD)`: current evidence deliberately does not claim ADR 051's optional destination envelope, UTC wall-clock timestamp, five-level mapping, worst-case source/fingerprint/extension fit, 65,536-byte LF-inclusive record bound, daily-file permissions/rotation/retention/disk behavior, selected stdout/stderr collection, or Alloy/Loki/Grafana delivery and remote lifecycle. Add that evidence only when the application deliberately adopts the application-owned profile without changing request-summary version `1`.
+-- `NOT_APPLICABLE(INPUT_EVIDENCE)`: the health-only operation accepts no application-owned fields and constructs no typed request or command. Before adding product input, prove the exact final readonly value used by downstream behavior; absent and explicit-null behavior; unknown, wrongly typed, coercive, malformed, nested, and oversized representations; exact boolean, integer, enum, date, string, list, and object policy as applicable; and every recorded preservation, rejection, or explicit normalization. For application-owned structured request-body content, separately assert generic `400` for malformed or invalid complete shape/native types and generic `422` for correctly shaped and typed but unacceptable values, unless `.ai/architecture.md` records another explicit finite API contract. Include a mixed unacceptable-value plus wrong-native-type case and property-order variants that remain `400`, proving the complete structural phase precedes value rules. Query, header, route, and transport representations retain their separately recorded contracts. Assert exact generic response bytes, `no-store`, status-only known-failure summaries, and absence of submitted field names and values, credentials, and internal messages from bodies, headers, summaries, logs, and traces on both body paths. Keep `413`, `415`, persisted-state conflicts, and unexpected failures separate. Every rejection proves no operation-owned downstream I/O or mutation and zero typed-seam calls when one exists. Record and separately bound any request-policy work ordered before parsing, and record the native JSON duplicate-key limitation unless a separately accepted parser proves rejection.
+-- `NOT_APPLICABLE(WEBSOCKETS)`: before adoption, read `.ai/websockets.md` and add pure parser, current authentication and authorization, finite dispatch, typed-operation delivery, encoding, connection-summary redaction, and every recorded message, rate, connection, send, idle, heartbeat, lifetime, and shutdown-bound test. Real child-process and socket tests prove readiness without a blind sleep, accepted and denied handshakes, ordered success, malformed and oversized traffic, transport close behavior, backpressure, reconnect without unrecorded replay, occupied-listener failure, signal shutdown, bounded process exit, and cleanup in `finally`. Prove frames never become PHPThis HTTP `Request` or `Response` values and record the exact tested topology without generalizing it to production TLS, proxy, supervisor, capacity, scaling, or availability behavior.
+-- `NOT_APPLICABLE(REQUEST_POLICY_EVIDENCE)`: before protecting a route, test unauthenticated, ordinary forbidden, cross-tenant, permitted, and unexpected policy-failure paths, exact policy order, every failing stage, zero protected queries and writes on denial, explicit principal and tenant delivery, generic disclosure and cache policy, status-only denial summaries, class-only unexpected-failure summaries, redaction from responses, summaries, and traces, and independent replacement of every policy implementation. A concrete credential parser also tests malformed and rejected input, and any policy I/O has a budget and trace distinct from protected work.
+-- `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR_EVIDENCE)`: `HealthHandler` is constructed directly. Before adoption, prove the final decorator class and one downstream `RequestHandler`, direct route-local construction and complete unrolled order, zero-or-one downstream invocation, the exact same immutable `Request` instance, applicable early-return and delegated outcomes, unchanged exception identity, complete field preservation in any explicit immutable `Response` replacement, and every named side effect's applicable attempt, byte, time, statement, query-budget, and ordering bound. A short circuit performs no downstream query, mutation, or external effect, and no decorator wraps or owns `Application`, `RequestBoundary`, the terminal coordinator, `ResponseEmitter`, sessions, cache policy, request policy, or terminal observability.
+-- `NOT_APPLICABLE(RESOURCE_ROUTE_IDENTIFIER_EVIDENCE)`: the health-only starter has no path parameter, resource handler, UUID policy, generator, or database work. Before adding a resource route, prove its canonical `positive-int`, `uuid`, `ulid`, or genuinely opaque `token` representation reaches the handler through the matching `PathParameters` accessor. Invalid, normalized-only, alternate, or type-fallback spellings must select `404` with zero handler and database work; a canonical valid path with the wrong method must select `405`. A successful handler immediately wraps the unchanged value in an application-owned route-specific identifier and applies narrower domain checks before database work. UUID route and shared-representation evidence accepts the recorded canonical versions, including versions 1 through 8 and RFC variant nibbles `8`, `9`, `a`, and `b` under the reference policy, and rejects malformed, uppercase, compact, braced, URN, encoded, Nil, Max, version 0, versions 9 through 15, and non-RFC-variant spellings without normalization. When multiple concrete identifiers compose one recorded application-owned representation primitive, test its accepted and rejected canonical representations once, then test every concrete identifier's supplied construction and representation accessor; operation signatures continue to require the concrete identifier. Test generation separately from acceptance: prove the exact recorded generator source contract, every concrete identifier's adopted generated path, the chosen version and variant bits, applicable randomness and clock inputs for versions 4 or 7 or the namespace UUID, exact name bytes, and canonicalization for version 5, failure propagation with no fallback or partial mutation, and exact-engine behavior when generation is database-owned. Version and variant bits alone are insufficient. For version 7, test only the recorded timestamp, same-timestamp, clock-regression, process or node, and ordering claims; finite generated samples do not prove uniqueness or total creation order.
+-- `NOT_APPLICABLE(CRUD_EVIDENCE)`: the starter has no CRUD-shaped operations. For each operation later added, test its applicable route, identifier, conflict, pagination, missing-resource, concurrency, deletion, authorization, and audit policies; keep absent operations and concerns explicitly not applicable. For a resource exposed through multiple access surfaces, prove that each named route-area list selects its intended handler and its applicable policy path or recorded not-applicable policy; when protected, denial performs no protected work; and no surface executes SQL or side effects or emits fields outside its recorded operation contract and, when applicable, named authorization action and tenant or resource scope.
+-- `NOT_APPLICABLE(DATABASE_EVIDENCE)`: the exact standalone `NOT_APPLICABLE(DATABASE)` line in `.ai/data.md` remains while no direct canonical `PHPThis\Database\Connection::connect` call exists. Before database adoption, replace that declaration and add exact-engine integration and scale tests, adversarial bound-data tests, unknown-selector and oversized-list rejection before database work, query-budget and trace assertions, and dated per-operation authority evidence. Execute every intended statement under the runtime identity before traffic; safely verify selected prohibited namespace, data-definition, identity or role, authority-administration, migration-ledger, database or global, and unrelated-target capabilities using only mechanisms the engine supports. Resolve effective authority from the recorded source, which may involve direct privileges, roles or inheritance, public or default access, database or global privileges, ownership chains, IAM, or filesystem and process authority. Prove each adopted authority activation and deactivation has one visible non-HTTP owner and path, record `GRANT` and `REVOKE` only where supported, and prove elevated configuration remains unavailable to HTTP. A cursor or bounded list additionally proves its recorded omitted and empty-input behavior, every supported cardinality and order, stable equal-key traversal in static fixtures, the recorded snapshot policy, and exact zero- versus non-zero-statement bounds. Configuration, connectivity, target existence, migration success, PHT006, tenant predicates, and adversarial bindings are not universal authority, authorization, or injection proof; do not treat base PDO transport evidence as application-SQL certification.
+-- `NOT_APPLICABLE(SESSION_EVIDENCE)`: before session adoption, prove anonymous access without storage; invalid, duplicated, attacker-selected, stale, and obsolete identifier rejection; exact state bounds; callback rollback; lock release; unissued-ID cleanup; delayed-response cookie safety; explicit invalidation; isolated save-path enforcement; and concurrent requests. Assert the live cookie's exact configured name and identifier, `Path=/`, recorded `Secure`, `HttpOnly=true`, SameSite, absent `Expires`, absent `Max-Age`, and exact serialized header. Assert the deletion cookie's same name and scope, empty value, exact past `Expires`, `Max-Age=0`, and exact serialized header. Cleanup evidence proves exact primary identity after success; redacted retention after cleanup failure; coherent begun-request and earlier pending state after failed update or regeneration cleanup; invalidation commit-failure precedence without a stale live cookie; terminal reset after finish or abort; no retry after cleanup failure; and normal finalization of a registered original response after successful operation cleanup. Add evidence for the recorded production `Secure`/HTTPS profile or isolated-development exception and the limit that `HttpOnly` does not prevent script-initiated authenticated requests. Add authentication-time regeneration, idle and absolute expiry, CSRF, authorization, XSS, CSP/output, logging, and revocation tests only when those recorded policies apply; mark each absent concern explicitly not applicable.
+-- `HTTP_RESPONSE_FRAMING`: every added response proves its final status, body, and headers. Ordinary content may omit `Content-Length`; when present its canonical decimal value equals the exact body byte length. `204`, `205`, and `304` have empty bodies and no `Content-Length`; `Transfer-Encoding` is not used. A `HEAD` route is explicit and returns an empty body without inferred representation length. A later cookie-emitting response also proves its intended exact cookie name, value, path, security and lifetime attributes, serialized header, and cache policy; it does not treat `Path`, `Secure`, `HttpOnly`, SameSite, or a prefix as authorization, CSRF, XSS, or transport proof.
+-- `HTTP_CACHE_EVIDENCE(NO_STORE)`: application behavior tests prove exact `Cache-Control: no-store` policy for health success, route miss, method rejection, and mapped invalid and oversized input, plus exact `Cache-Control: private, no-store` for unknown failure. No current response is storable, so freshness, validators, conditional requests, `Vary`, and public-cache isolation tests are not applicable. Every response path added later requires exact policy evidence; deployment separately verifies that each configured intermediary preserves the field.
+-- `NOT_APPLICABLE(CACHE_EVIDENCE)`: before cache adoption, prove cold miss and authoritative rebuild, warm hit without hidden database work, finite expiry, bounded payload parsing, corruption handling, backend failure and recovery, environment and tenant isolation, versioned-key rollover, post-commit invalidation and invalidation failure, a concurrent miss racing an authoritative write, and the recorded stampede behavior under concurrent requests. Inspect bounded hit, miss, write, invalidation, failure, and stampede summaries without logging keys or payloads; cold-cache database tests must still prove constant query scaling.
+-- `NOT_APPLICABLE(JOBS_EVIDENCE)`: accepted ADR 052 supplies optional backend-neutral requirements, while ADR 024 remains the current first and only checked backend-specific SQLite profile. Before durable-job adoption, record the exact selected backend/client/topology and prove its publication, recovery, loss, expiry and cancellation boundaries, including the minimum positive invariant that after reported success the intent/message survives producer/request termination and remains recoverable or deliverable until acknowledgement, terminal outcome, or explicit finite cancel/expiry inside a named proved durability/fault envelope; assert restart/failover only when exercised; keep ambiguous/failed publication and catastrophic out-of-envelope loss separate; and reject Redis Pub/Sub, process memory or another fire-and-forget path as durable evidence. Prove bounded stored-envelope parsing and finite dispatch; domain publication authority, tenant/owner/principal/action binding and stale-revocation behavior before effect; payload classification, privacy, full-envelope access and configured retention; actual acknowledgement, receipt, visibility, lease, reclaim, group, offset, ordering and redelivery mechanisms; required ordering/partition/sequence key and concurrency scope plus service enforcement or monotonic/version guard, rejection or reconciliation for stale/out-of-order/replayed work, or explicit order-independent non-applicability; maximum handler duration relative to any ownership window plus exact extension, renewal, heartbeat or session-liveness owner/cadence/bounds, renewal failure/expiry and actual stale-owner behavior; rejection or fencing only where supported, otherwise bounded overlapping stale work and duplicate-safe recovery; explicit non-applicability only when no ownership or session-liveness mechanism applies; the assumption that delivery may occur more than once plus duplicate-safe semantic effects, while an explicit recorded terminal rejection/exhaustion, finite cancel/expiry, or bounded catastrophic loss outside the successful-publication envelope may yield zero handler executions; exact semantic-effect/idempotency uniqueness scope, durable retention/deletion owner and protection horizon beyond retry, redrive, selected terminal retention including any adopted dead-letter/DLQ, replay, and provider deduplication, explicit post-horizon behavior, and backup/restore preservation or fail-closed reconciliation of corresponding queued-message and effect/idempotency state; finite version-controlled retry/redrive, selected terminal state or destination including any adopted dead-letter/DLQ or explicit non-applicability, counter precedence and terminal routing; privileged inspection/replay/cancel/delete authorization, audit and redaction; selected service/application time ownership, representation, units, rounding, precision and skew for visibility/lease/ownership renewal or heartbeat/TTL/delay/retry/retention; lifecycle, backpressure, outage and deployment replacement; isolated real-service evidence, bounded ordinary cleanup, finite abandoned-run lifetime and exact run-ID-scoped stale-run reconciliation without broad deletion; capacity, lag, retention and recovery. Wire the fail-closed application-owned `jobs:verify` script through `test` into `check`, with no release skip or mock fallback. Apply commit-visible same-connection publication, SQLite lease-token fencing, one-delivery processes and constant transition statement counts only when deliberately adopting the current ADR 024 checked SQLite profile; do not infer them for another backend.
+-- `NOT_APPLICABLE(CLI_EVIDENCE)`: before an operational console is adopted, execute the real console in fresh subprocesses and prove every finite command and exact argument bound, rejection before application I/O, exact exit and stdout/stderr bytes, every expected outcome, operational and unexpected failure redaction, one-pass resource bounds, and fresh HTTP and CLI state. When a scheduled pass is adopted, additionally prove explicit-clock cadence boundaries, not-due exclusion from work, its recorded overlap mechanism and cleanup or release, plus every missed-run, catch-up, repeated-slot, supervisor, and topology limit. A migration-only console proves its writer coordination or serialization through the migration evidence below, not through scheduler-overlap evidence. Do not treat Composer or `vendor/bin/phpthis check` as this evidence.
+-- `NOT_APPLICABLE(MIGRATION_EVIDENCE)`: before migrations are adopted, execute each history's real application console command in fresh subprocesses against its exact engine/version and prove its exact initial baseline, including every pre-provisioned object, already-present application-managed object, effect, or ledger row, and every state required absent; validate the accepted ledger prefix; prove every pending checksum-covered statement, code-owned binding value or finite binding-derivation policy, and DDL/data/authority effect in manifest order; the exact position/identifier/checksum ledger plus every selected extra metadata field's source, representation, bound, validation, and non-authoritative use; unchanged no-op rerun; binding/policy, statement, malformed, and overflowing history rejection; finite exact-engine ledger-metadata acceptance; and rejection of missing, incompatible, or additional unrecorded ledger-related objects before history parsing or pending work without imposing SQLite byte-for-byte comparison. Cover every supported migration-writer topology and every concurrently reachable topology pair. Prove application-local and database/server coordination with concurrent real-console processes; prove deployment/external serialization at its owning boundary and that bypassing it cannot obtain the history's migration identity/configuration. Evidence proves each stable coordination identifier/namespace, collision boundary, creation/access permissions, shared exclusion or pairwise authority gate, and protected interval. It proves coordination remains effective through every checksum-covered effect and either accepted ledger completion or a finite fail-closed failure outcome; no partial state is recorded as applied; detected loss stops before the next mutation; and an expiring or lost owner cannot overlap a successor because prior in-flight database work is fenced, the prior session/work is confirmed invalidated or terminated, or another exact-engine exclusion proves termination. The next owner reacquires coordination and re-detects exact state before mutating. It also proves each history's finite explicit command, separate engine decision, separately named configuration factory/final readonly type/process identity without inheritance, fallback, or combined credentials, exact transaction/implicit-commit/DDL atomicity behavior, recovery, output, and evidence; migration-effect/ledger consistency at every failure boundary; exact finite stable redacted output; fresh migration composition; and no data-definition or authority-transition work during HTTP startup. Multiple histories prove disjoint managed objects, data, authority transitions, and coordination domains before they are called independent, or explicit dependency, shared serialization/release/recovery, and every cross-history partial-deployment state. Prove migration success does not stand in for runtime-authority activation, required authority is verified before dependent traffic, transition or verification failure stops that stage, and dependent code is drained before later authority deactivation or namespace/object removal. When ADR 027's SQLite reference shape is adopted, additionally prove its explicit timestamp and stricter ledger definition, `applied`/`up_to_date` success names, nonblocking same-host `flock` contention and cleanup, active-transaction rollback with earlier commits preserved, and forward continuation. Do not generalize that SQLite transaction, file-lock, rollback, output, or filesystem-authority evidence to another engine or host topology.
+-- Migration evidence separately proves exact creation, acquisition, use, and release permissions or authority for every coordination mechanism. It consumes exact configuration/process-identity facts from `.ai/configuration.md`, effective database-authority facts and accountable transition ownership from `.ai/data.md`, transition implementation and per-history constraints from `.ai/migrations.md`, and application-wide sequence/runbook facts from `.ai/operations.md`; it does not create a second writable policy.
+-- Do not add runtime or checker assertions for optional CRUD directory and naming choices.
+-- Use generated or explicitly approved synthetic fixtures. Never copy production payloads, credentials, customer identifiers, tokens, or private keys into tests.
++Additional upgrade-specific tests must first fail on the unchanged older front controller, then pass after repair. Keep the initial failure in retained campaign artifacts, not as a diagnostic exception. Campaign log/lock/hash/size records are maintainer evidence, not new framework validity rules.
+diff --git a/.ai/websockets.md b/.ai/websockets.md
+index e081301..968a446 100644
+--- a/.ai/websockets.md
++++ b/.ai/websockets.md
+@@ -1,6 +1,6 @@
+ # Application WebSocket contract
+ 
+-`NOT_APPLICABLE(WEBSOCKETS)`: the health-only starter has no WebSocket dependency, listener, route, event loop, connection state, message contract, or WebSocket process.
++`NOT_APPLICABLE(WEBSOCKETS)`: this retained consumer has no WebSocket dependency, listener, route, event loop, connection state, message contract, or WebSocket process.
+ 
+ Before adoption, read installed `vendor/phpthis/framework/docs/websockets.md`, obtain accountable human approval for the consequential security and operational choices, and replace this marker with verified application-owned facts. Name the accepted decision record and record:
+ 
+diff --git a/.ai/workbench.md b/.ai/workbench.md
+index 26cc691..dd1f4a7 100644
+--- a/.ai/workbench.md
++++ b/.ai/workbench.md
+@@ -1,6 +1,6 @@
+ # Optional development Workbench
+ 
+-`NOT_APPLICABLE(WORKBENCH)`: the health-only starter does not install or expose PHPThis Workbench.
++`NOT_APPLICABLE(WORKBENCH)`: this retained consumer does not install or expose PHPThis Workbench.
+ 
+ Before adoption, read installed `vendor/phpthis/framework/docs/workbench.md`, obtain accountable-human approval, verify that the separate `phpthis/workbench` package is available from the approved Composer source, and prove a clean consumer installation. Then replace this marker with:
+ 
+diff --git a/.gitignore b/.gitignore
+index ccde76b..7396a75 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -10,3 +10,5 @@
+ *.key
+ *.p12
+ *.pfx
++
++__pycache__/
+diff --git a/AGENTS.md b/AGENTS.md
+index acbac58..fd3f8cb 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -1,6 +1,6 @@
+ # AI coding instructions for this PHPThis application
+ 
+-This file is the universal entrypoint for AI-authored changes in the checked health-only starter. Concern-specific rules live in the current guide routed by `.ai/README.md`; do not copy them into this universal entrypoint.
++This file is the universal entrypoint for AI-authored changes in the retained synthetic account directory. Concern-specific rules live in the current guide routed by `.ai/README.md`; do not copy them into this universal entrypoint.
+ 
+ Before product feature work, replace generic starter facts in the applicable `.ai/` guides with verified application facts or explicit not-applicable statements.
+ 
+diff --git a/README.md b/README.md
+index feb4600..b131d01 100644
+--- a/README.md
++++ b/README.md
+@@ -1,46 +1,5 @@
+-# PHPThis application skeleton
++# Retained account-directory consumer
+ 
+-This is the minimal checked starting point for an application built with PHPThis. It exposes one explicit route, `GET /health`, and contains project-owned AI context, behavior tests, the application-owned terminal request-summary path, and the complete consumer validity gate.
++Synthetic lifecycle evaluation for [PHPThis #71](https://github.com/balgf/PHPThis/issues/71), owned by its maintainer. Start with `AGENTS.md`; install the exact lock and run `composer check` (PHP 8.4/pdo_sqlite, Composer, Python 3). Tests reset only ignored local fixtures. Normal HTTP authentication denies everyone; synthetic successes are test-only. No production use or real data.
+ 
+-PHPThis uses AI-first authoring with human accountability. After installation, ask the AI working in this project how the application works or request the next feature. It must begin with `AGENTS.md`, the installed PHPThis contract and knowledge map, this application's `.ai/` context, and the concrete source and tests. PHPThis does not use a traditional framework manual as the primary learning interface.
+-
+-A useful first request is:
+-
+-> Read `AGENTS.md`, inspect the installed PHPThis version, explain the current request path with file references, and identify the project facts I must decide before we add the first feature.
+-
+-## Create a new application
+-
+-Use the published Composer project. Consumers do not clone or copy the PHPThis framework repository.
+-
+-```bash
+-composer create-project --stability=alpha phpthis/skeleton my-app
+-cd my-app
+-composer check
+-```
+-
+-This creates the application root from `phpthis/skeleton` and installs `phpthis/framework` under `vendor/phpthis/framework`.
+-
+-Package availability is an external fact: verify tagged repositories and Packagist rather than inferring publication from this tracked README.
+-
+-## Install and check an existing application checkout
+-
+-```bash
+-composer install
+-composer check
+-```
+-
+-`composer check` first runs the framework-owned Strict Profile and maximum-level PHPStan configuration, then runs the application's automated behavior tests. This starter's zero-dependency `tests/run.php` is one concrete implementation, not a required framework, filename, or directory. Every observable behavior change must add or update automated tests; the application remains free to choose its test library, runner, and file placement.
+-Commit the generated `composer.lock` with the application so dependency versions remain reproducible.
+-
+-## Run locally
+-
+-```bash
+-php -S 127.0.0.1:8080 -t public
+-curl -i http://127.0.0.1:8080/health
+-```
+-
+-Before adding product behavior, replace this skeleton's generic project facts in `.ai/` with facts verified for the real application.
+-
+-Every selected response carries an application-generated 128-bit lowercase-hex `X-Request-ID`. The visible front-controller path makes exactly one attempt to send a closed redacted terminal summary to its application-owned sink; sink failure cannot alter the response, and an invocation attempt is not a durable-delivery guarantee. Database adoption uses a finite list of distinct budget and trace sources without changing the framework into a logger or SQL abstraction.
+-
+-The AI may implement routine, in-scope work under human direction. It must surface consequential product, architecture, security, data, migration, deployment, and external-side-effect choices for human judgment. The human accepts those decisions and remains accountable for the result.
++`docs/lifecycle-plan.md` contains the frozen scope/search prompt, upgrade identities, acceptance and next public-release maintenance trigger. `.ai/README.md` routes current app facts. Git tags preserve pristine, baseline, changed and upgraded checkpoints. The framework repository retains the portable bundle/report; this application's context is never replaced from a newer skeleton.
+diff --git a/bootstrap.php b/bootstrap.php
+index 8d582b2..154d89f 100644
+--- a/bootstrap.php
++++ b/bootstrap.php
+@@ -1,47 +1,20 @@
+ <?php
+ 
+ declare(strict_types=1);
+-
+-use App\Routes;
+-use App\Observability\CorrelationId;
++use App\Accounts\DenyAllAuthentication;
++use App\Accounts\SameAccountTenant;
++use App\DirectoryComposition;
+ use App\Observability\ErrorLogRequestSummarySink;
+-use App\Observability\TerminalRequestCoordinator;
+-use PHPThis\Application;
+-use PHPThis\Http\ErrorResponseRegistry;
+-use PHPThis\Http\InvalidRequest;
+-use PHPThis\Http\RequestBodyTooLarge;
+-use PHPThis\Http\RequestBoundary;
+-use PHPThis\Http\RequestReader;
+-use PHPThis\Http\Response;
+-use PHPThis\Http\UnknownFailureBoundary;
+-use PHPThis\Routing\Router;
+-
++use App\Users\CreateUser\AccountCreateAuthorization;
++use App\Users\ListUsers\AccountListAuthorization;
++use PHPThis\Database\Connection;
++use PHPThis\Database\QueryBudget;
++use PHPThis\Database\QueryTrace;
+ require __DIR__ . '/vendor/autoload.php';
+-
+-$jsonHeaders = [
+-    'Content-Type' => 'application/json; charset=utf-8',
+-    'Cache-Control' => 'no-store',
+-];
+-
+-return new TerminalRequestCoordinator(
+-    new RequestBoundary(
+-        new RequestReader(1_024, 'php://input'),
+-        new Application(new Router(Routes::create())),
+-        new ErrorResponseRegistry([
+-            InvalidRequest::class => new Response(
+-                400,
+-                $jsonHeaders,
+-                "{\"error\":{\"code\":\"invalid_request\",\"message\":\"Request is invalid.\"}}\n",
+-            ),
+-            RequestBodyTooLarge::class => new Response(
+-                413,
+-                $jsonHeaders,
+-                "{\"error\":{\"code\":\"request_body_too_large\",\"message\":\"Request body is too large.\"}}\n",
+-            ),
+-        ]),
+-    ),
+-    new UnknownFailureBoundary(),
+-    CorrelationId::generate(),
+-    new ErrorLogRequestSummarySink(),
+-    [],
+-);
++$databasePath = __DIR__ . '/tmp/directory.sqlite';
++if (!is_file($databasePath)) { throw new RuntimeException('Evaluation fixture is absent.'); }
++$budget = new QueryBudget(3);
++$trace = new QueryTrace(3);
++$connection = Connection::connect('sqlite:' . $databasePath, $budget, $trace);
++return DirectoryComposition::create($connection, $budget, $trace, new DenyAllAuthentication(), new SameAccountTenant(),
++    new AccountCreateAuthorization(), new AccountListAuthorization(), new ErrorLogRequestSummarySink());
+diff --git a/composer.json b/composer.json
+index 3b663b6..7b17f4e 100644
+--- a/composer.json
++++ b/composer.json
+@@ -1,11 +1,12 @@
+ {
+-    "name": "phpthis/skeleton",
+-    "description": "A Composer project for starting a checked PHPThis application with phpthis/framework.",
++    "name": "phpthis-evaluation/account-directory",
++    "description": "Retained synthetic consumer lifecycle evidence",
+     "type": "project",
+     "license": "MIT",
+     "require": {
+         "php": "~8.4.0",
+-        "phpthis/framework": "0.1.0-alpha.7"
++        "phpthis/framework": "0.1.0-alpha.7",
++        "ext-pdo_sqlite": "*"
+     },
+     "require-dev": {
+         "phpstan/phpstan": "^2.1",
+@@ -18,7 +19,12 @@
+     },
+     "scripts": {
+         "profile": "phpthis check",
+-        "test": "php tests/run.php",
++        "test": [
++            "@php tests/fixture.php",
++            "@php tests/run.php",
++            "@php tests/directory.php",
++            "python3 tests/front_controller.py"
++        ],
+         "check": [
+             "@profile",
+             "@test"
+diff --git a/composer.lock b/composer.lock
+index bda7d82..5e1c80f 100644
+--- a/composer.lock
++++ b/composer.lock
+@@ -4,7 +4,7 @@
+         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+         "This file is @generated automatically"
+     ],
+-    "content-hash": "bc5ffff292c889c87374accb4c1f6b12",
++    "content-hash": "9226ebbfad82e3d61e5d3c59c6075f40",
+     "packages": [
+         {
+             "name": "phpthis/framework",
+@@ -185,7 +185,8 @@
+     "prefer-stable": false,
+     "prefer-lowest": false,
+     "platform": {
+-        "php": "~8.4.0"
++        "php": "~8.4.0",
++        "ext-pdo_sqlite": "*"
+     },
+     "platform-dev": {},
+     "plugin-api-version": "2.9.0"
+diff --git a/docs/lifecycle-plan.md b/docs/lifecycle-plan.md
+new file mode 100644
+index 0000000..a9f587f
+--- /dev/null
++++ b/docs/lifecycle-plan.md
+@@ -0,0 +1,31 @@
++# Retained account-directory evaluation — issue 71
++
++Frozen before application implementation. Owner: PHPThis maintainer (balgf), with Codex as implementation assistant. This is a synthetic, maintainer-led evaluation, not a production application, independent adoption study, paid API trial, or longitudinal result.
++
++## Retention and identities
++
++Working consumer: sibling `consumer-lifecycle/account-directory/`; its Git bundle, checkpoint manifest, diffs, and logs will be retained here. Dependencies and generated SQLite fixtures are excluded from Git. Baseline public skeleton `v0.1.0-alpha.7` at `c0e8f5c2a7eb45e24e97dc672bd22dcc13c8684d`, framework at `de07cbd449ed3e905331aeea105e528fbaa83ac3` (Contract 13, Profile 3). Upgrade target: `909977b762ff08f823be1e2c16a4dbb704e4f93a` (Contract 18, Profile 4), public Git source evaluation only. Preserve all application history and the changed application during upgrade; do not regenerate the skeleton. Exact runtime versions and lock hashes belong in the manifest.
++
++## Bounded initial product
++
++An account administrator can create a directory entry and read an account-scoped page. Use the existing protected Create/List pattern, explicit replaceable I/O-free policies, separate actor membership and created-user associations, typed JSON/query/projection boundaries, and SQLite direct constant statements. Checked-in HTTP authentication denies all; tests inject synthetic writer/reader policies without implementing real credential security. Only synthetic records, one local SQLite file, one PHP process per request, and loopback HTTP tests. No production traffic, external provider, framework feature, jobs, sessions, cache, migration history, frontend, Update/Delete, or deployment claim.
++
++Create accepts exact JSON `id`, `name`, `email`; client-selected positive integer IDs are unique, names are 1–80 UTF-8 bytes without ASCII padding/control bytes, and emails are unmodified PHP FILTER_VALIDATE_EMAIL values up to 254 bytes. A conflict returns generic 409. Three explicit transaction writes create user, account relation, and audit event; injected last-write failure must roll back everything. List emits at most 20 ascending IDs, one-row lookahead, optional canonical `after_user_id`, one statement regardless of fixture size. Private no-store applies after policy. Production authorization, credential lifecycle and database privilege separation are absent, not inferred from test policies.
++
++## Frozen behavior-change prompt
++
++On the SAME Alpha 7 dependency and existing application, add optional `search` to the account-scoped user list. Omitted search preserves existing results. A present search is a non-empty UTF-8 string of at most 80 bytes; reject arrays, invalid UTF-8, ASCII controls and padding before protected SQL. Match an exact case-sensitive substring in name OR email (SQLite `instr`), with literal percent/underscore/SQL-looking text preserved as bound data. Keep account isolation, ascending keyset order, 20-row bound, and one-statement query budget. Use distinct named placeholders per occurrence as Alpha 7 already requires. No schema change or package update. Add tests before implementation and retain the first failing test result.
++
++## Frozen acceptance
++
++At baseline, behavior change, and repaired upgrade: complete `composer check`; preserve health and starter summary/emission checks; real front-controller health/denial plus synthetic-policy Create/List tests; permitted/unauthenticated/forbidden/cross-account and unexpected policy-failure outcomes; exact policy order and independently replaceable interfaces; invalid shape 400, unacceptable body value 422, media 415, overflow 413, conflicts 409; denial and invalid-input zero protected statements; rollback; response/summary/trace redaction; identical one-query lists for small and 500-row fixtures; bounded pagination. Search additionally covers name/email, no match, omitted search, literal wildcard/SQL-looking values, filter validation and continuation.
++
++Upgrade in place with an exact locked Git reference, derive applicability from the INSTALLED target guide, retain the first failed compatibility checkpoint, and repair Contract 18's missing outer HTTP failure boundary. Generic-only startup failure must emit a fixed private no-store 500 and one class-only outer event, with native error display disabled and no input-selected details. Preserve ordinary coordinator summaries and independent emission handling; no diagnostic suppression or wholesale context replacement. Record Contract 14–18 applicability, including already-distinct placeholders (15), normal source paths (16), no pending output (17), and absent optional profiles.
++
++## Review and measurement
++
++The user authorized one fresh qualitative review sub-agent with only the retained Alpha 7 consumer and published installed guidance. Give it no maintainer source, implementation history, or solution hints. Record its prompt, evidence, findings, file inventory and any additional help; repair demonstrated gaps. No paid API campaign. Retain actual hashes/diffs/lock changes, source/context size, touched and known-read inventory, observed command durations, repair attempts and interventions. Do not estimate model tokens or claim complete tool telemetry when unavailable.
++
++## Next maintenance trigger
++
++When the next public PHPThis framework AND matching skeleton release are available, the maintainer should reopen this same consumer, preserve its state, and repeat the upgrade table and complete gate against that exact public release. This is a version-triggered plan, not an installed background monitor or a claim that time has passed. Future product changes use a new frozen prompt on this same history.
+diff --git a/src/Accounts/AccountId.php b/src/Accounts/AccountId.php
+new file mode 100644
+index 0000000..4caaa8f
+--- /dev/null
++++ b/src/Accounts/AccountId.php
+@@ -0,0 +1,14 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++final readonly class AccountId
++{
++    private function __construct(private int $value) {}
++    public static function fromInteger(int $value): self
++    {
++        if ($value < 1) { throw new \InvalidArgumentException('Invalid account ID.'); }
++        return new self($value);
++    }
++    public function toInteger(): int { return $this->value; }
++}
+diff --git a/src/Accounts/AuthenticateAccountRequest.php b/src/Accounts/AuthenticateAccountRequest.php
+new file mode 100644
+index 0000000..057afbf
+--- /dev/null
++++ b/src/Accounts/AuthenticateAccountRequest.php
+@@ -0,0 +1,9 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++use PHPThis\Http\Request;
++interface AuthenticateAccountRequest
++{
++    public function authenticate(Request $request): Principal;
++}
+diff --git a/src/Accounts/DenyAllAuthentication.php b/src/Accounts/DenyAllAuthentication.php
+new file mode 100644
+index 0000000..6f0a365
+--- /dev/null
++++ b/src/Accounts/DenyAllAuthentication.php
+@@ -0,0 +1,9 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++use PHPThis\Http\Request;
++final class DenyAllAuthentication implements AuthenticateAccountRequest
++{
++    public function authenticate(Request $request): Principal { throw new Unauthenticated(); }
++}
+diff --git a/src/Accounts/Forbidden.php b/src/Accounts/Forbidden.php
+new file mode 100644
+index 0000000..20937f1
+--- /dev/null
++++ b/src/Accounts/Forbidden.php
+@@ -0,0 +1,5 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++final class Forbidden extends \RuntimeException {}
+diff --git a/src/Accounts/Principal.php b/src/Accounts/Principal.php
+new file mode 100644
+index 0000000..72f7604
+--- /dev/null
++++ b/src/Accounts/Principal.php
+@@ -0,0 +1,11 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++final readonly class Principal
++{
++    public function __construct(public int $id, public AccountId $account, public bool $mayCreate)
++    {
++        if ($id < 1) { throw new \InvalidArgumentException('Invalid principal.'); }
++    }
++}
+diff --git a/src/Accounts/ResolveAccountTenant.php b/src/Accounts/ResolveAccountTenant.php
+new file mode 100644
+index 0000000..2cbc895
+--- /dev/null
++++ b/src/Accounts/ResolveAccountTenant.php
+@@ -0,0 +1,8 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++interface ResolveAccountTenant
++{
++    public function resolve(Principal $principal, AccountId $requested): Tenant;
++}
+diff --git a/src/Accounts/SameAccountTenant.php b/src/Accounts/SameAccountTenant.php
+new file mode 100644
+index 0000000..c5913b1
+--- /dev/null
++++ b/src/Accounts/SameAccountTenant.php
+@@ -0,0 +1,12 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++final class SameAccountTenant implements ResolveAccountTenant
++{
++    public function resolve(Principal $principal, AccountId $requested): Tenant
++    {
++        if ($principal->account->toInteger() !== $requested->toInteger()) { throw new Forbidden(); }
++        return new Tenant($requested);
++    }
++}
+diff --git a/src/Accounts/Tenant.php b/src/Accounts/Tenant.php
+new file mode 100644
+index 0000000..e435495
+--- /dev/null
++++ b/src/Accounts/Tenant.php
+@@ -0,0 +1,8 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++final readonly class Tenant
++{
++    public function __construct(public AccountId $account) {}
++}
+diff --git a/src/Accounts/Unauthenticated.php b/src/Accounts/Unauthenticated.php
+new file mode 100644
+index 0000000..fdceb90
+--- /dev/null
++++ b/src/Accounts/Unauthenticated.php
+@@ -0,0 +1,5 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Accounts;
++final class Unauthenticated extends \RuntimeException {}
+diff --git a/src/DirectoryComposition.php b/src/DirectoryComposition.php
+new file mode 100644
+index 0000000..2e4f39d
+--- /dev/null
++++ b/src/DirectoryComposition.php
+@@ -0,0 +1,57 @@
++<?php
++
++declare(strict_types=1);
++namespace App;
++use App\Accounts\AuthenticateAccountRequest;
++use App\Accounts\ResolveAccountTenant;
++use App\Accounts\Unauthenticated;
++use App\Accounts\Forbidden;
++use App\Users\CreateUser\CanCreateUser;
++use App\Users\CreateUser\AuthorizeCreateUser;
++use App\Users\CreateUser\CreateUserHandler;
++use App\Users\CreateUser\CreateUserConflict;
++use App\Users\CreateUser\UnacceptableCreateUser;
++use App\Users\CreateUser\UnsupportedCreateMedia;
++use App\Users\ListUsers\CanListUsers;
++use App\Users\ListUsers\AuthorizeListUsers;
++use App\Users\ListUsers\ListUsersHandler;
++use App\Observability\CorrelationId;
++use App\Observability\QuerySummarySource;
++use App\Observability\RequestSummarySink;
++use App\Observability\TerminalRequestCoordinator;
++use PHPThis\Application;
++use PHPThis\Database\Connection;
++use PHPThis\Database\QueryBudget;
++use PHPThis\Database\QueryTrace;
++use PHPThis\Http\ErrorResponseRegistry;
++use PHPThis\Http\InvalidRequest;
++use PHPThis\Http\RequestBodyTooLarge;
++use PHPThis\Http\RequestBoundary;
++use PHPThis\Http\RequestReader;
++use PHPThis\Http\Response;
++use PHPThis\Http\UnknownFailureBoundary;
++use PHPThis\Routing\Router;
++final class DirectoryComposition
++{
++    public static function create(Connection $connection, QueryBudget $budget, QueryTrace $trace,
++        AuthenticateAccountRequest $authentication, ResolveAccountTenant $tenants,
++        CanCreateUser $createAuthorization, CanListUsers $listAuthorization, RequestSummarySink $sink,
++        string $bodyStream = 'php://input'): TerminalRequestCoordinator
++    {
++        $headers = ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'];
++        $routes = Routes::create(
++            new AuthorizeCreateUser($authentication, $tenants, $createAuthorization, new CreateUserHandler($connection)),
++            new AuthorizeListUsers($authentication, $tenants, $listAuthorization, new ListUsersHandler($connection)));
++        return new TerminalRequestCoordinator(new RequestBoundary(new RequestReader(1024, $bodyStream),
++            new Application(new Router($routes)), new ErrorResponseRegistry([
++                InvalidRequest::class => new Response(400, $headers, "{\"error\":\"invalid_request\"}\n"),
++                RequestBodyTooLarge::class => new Response(413, $headers, "{\"error\":\"request_body_too_large\"}\n"),
++                Unauthenticated::class => new Response(401, $headers + ['WWW-Authenticate' => 'Bearer'], "{\"error\":\"unauthenticated\"}\n"),
++                Forbidden::class => new Response(403, $headers, "{\"error\":\"forbidden\"}\n"),
++                UnacceptableCreateUser::class => new Response(422, $headers, "{\"error\":\"unprocessable_content\",\"message\":\"Request content is unacceptable.\"}\n"),
++                UnsupportedCreateMedia::class => new Response(415, $headers, "{\"error\":\"unsupported_media_type\"}\n"),
++                CreateUserConflict::class => new Response(409, $headers, "{\"error\":\"create_conflict\"}\n"),
++            ])), new UnknownFailureBoundary(), CorrelationId::generate(), $sink,
++            [new QuerySummarySource('directory', $budget, $trace)]);
++    }
++}
+diff --git a/src/Routes.php b/src/Routes.php
+index 172d87d..2c862d0 100644
+--- a/src/Routes.php
++++ b/src/Routes.php
+@@ -1,16 +1,16 @@
+ <?php
+ 
+ declare(strict_types=1);
+-
+ namespace App;
+-
++use App\Users\UserRoutes;
++use App\Users\CreateUser\AuthorizeCreateUser;
++use App\Users\ListUsers\AuthorizeListUsers;
+ use PHPThis\Routing\Route;
+-
+ final class Routes
+ {
+     /** @return list<Route> */
+-    public static function create(): array
++    public static function create(AuthorizeCreateUser $create, AuthorizeListUsers $list): array
+     {
+-        return [...HealthRoutes::create()];
++        return [...HealthRoutes::create(), ...UserRoutes::create($create, $list)];
+     }
+ }
+diff --git a/src/Users/CreateUser/AccountCreateAuthorization.php b/src/Users/CreateUser/AccountCreateAuthorization.php
+new file mode 100644
+index 0000000..01541a7
+--- /dev/null
++++ b/src/Users/CreateUser/AccountCreateAuthorization.php
+@@ -0,0 +1,16 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++use App\Accounts\Forbidden;
++use App\Accounts\Principal;
++use App\Accounts\Tenant;
++final class AccountCreateAuthorization implements CanCreateUser
++{
++    public function authorize(Principal $principal, Tenant $tenant): void
++    {
++        if (!$principal->mayCreate || $principal->account->toInteger() !== $tenant->account->toInteger()) {
++            throw new Forbidden();
++        }
++    }
++}
+diff --git a/src/Users/CreateUser/AuthorizeCreateUser.php b/src/Users/CreateUser/AuthorizeCreateUser.php
+new file mode 100644
+index 0000000..0cd2579
+--- /dev/null
++++ b/src/Users/CreateUser/AuthorizeCreateUser.php
+@@ -0,0 +1,25 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++use App\Accounts\AccountId;
++use App\Accounts\AuthenticateAccountRequest;
++use App\Accounts\ResolveAccountTenant;
++use PHPThis\Http\Request;
++use PHPThis\Http\RequestHandler;
++use PHPThis\Http\Response;
++final readonly class AuthorizeCreateUser implements RequestHandler
++{
++    public function __construct(private AuthenticateAccountRequest $authentication, private ResolveAccountTenant $tenants,
++        private CanCreateUser $authorization, private CreateUserHandler $handler) {}
++    public function handle(Request $request): Response
++    {
++        $principal = $this->authentication->authenticate($request);
++        $account = AccountId::fromInteger($request->pathParameters->positiveInteger('account_id'));
++        $tenant = $this->tenants->resolve($principal, $account);
++        $this->authorization->authorize($principal, $tenant);
++        if (($request->headers['content-type'] ?? '') !== 'application/json') { throw new UnsupportedCreateMedia(); }
++        $command = CreateUserCommand::fromJson($request->body);
++        return $this->handler->handle($principal, $tenant, $account, $command);
++    }
++}
+diff --git a/src/Users/CreateUser/CanCreateUser.php b/src/Users/CreateUser/CanCreateUser.php
+new file mode 100644
+index 0000000..5f10bfa
+--- /dev/null
++++ b/src/Users/CreateUser/CanCreateUser.php
+@@ -0,0 +1,7 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++use App\Accounts\Principal;
++use App\Accounts\Tenant;
++interface CanCreateUser { public function authorize(Principal $principal, Tenant $tenant): void; }
+diff --git a/src/Users/CreateUser/CreateUserCommand.php b/src/Users/CreateUser/CreateUserCommand.php
+new file mode 100644
+index 0000000..a59f03d
+--- /dev/null
++++ b/src/Users/CreateUser/CreateUserCommand.php
+@@ -0,0 +1,30 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++use App\Users\UserId;
++use PHPThis\Http\InvalidRequest;
++use PHPThis\Http\RequestBodyTooLarge;
++final readonly class CreateUserCommand
++{
++    private function __construct(public UserId $id, public string $name, public string $email) {}
++    public static function fromJson(string $body): self
++    {
++        if (strlen($body) > 1024) { throw new RequestBodyTooLarge(); }
++        try { $value = json_decode($body, false, 8, JSON_THROW_ON_ERROR); }
++        catch (\JsonException) { throw new InvalidRequest(); }
++        if (!$value instanceof \stdClass) { throw new InvalidRequest(); }
++        $fields = get_object_vars($value);
++        if (count($fields) !== 3 || !array_key_exists('id', $fields)
++            || !array_key_exists('name', $fields) || !array_key_exists('email', $fields)
++            || !is_int($fields['id']) || !is_string($fields['name']) || !is_string($fields['email'])) {
++            throw new InvalidRequest();
++        }
++        if ($fields['id'] < 1 || $fields['name'] === '' || strlen($fields['name']) > 80
++            || trim($fields['name']) !== $fields['name'] || preg_match('/[\x00-\x1f\x7f]/', $fields['name']) === 1
++            || strlen($fields['email']) > 254 || filter_var($fields['email'], FILTER_VALIDATE_EMAIL) !== $fields['email']) {
++            throw new UnacceptableCreateUser();
++        }
++        return new self(UserId::fromInteger($fields['id']), $fields['name'], $fields['email']);
++    }
++}
+diff --git a/src/Users/CreateUser/CreateUserConflict.php b/src/Users/CreateUser/CreateUserConflict.php
+new file mode 100644
+index 0000000..741ec1d
+--- /dev/null
++++ b/src/Users/CreateUser/CreateUserConflict.php
+@@ -0,0 +1,5 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++final class CreateUserConflict extends \RuntimeException {}
+diff --git a/src/Users/CreateUser/CreateUserHandler.php b/src/Users/CreateUser/CreateUserHandler.php
+new file mode 100644
+index 0000000..4f00382
+--- /dev/null
++++ b/src/Users/CreateUser/CreateUserHandler.php
+@@ -0,0 +1,40 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++use App\Accounts\AccountId;
++use App\Accounts\Forbidden;
++use App\Accounts\Principal;
++use App\Accounts\Tenant;
++use PHPThis\Database\Connection;
++use PHPThis\Http\Response;
++final readonly class CreateUserHandler
++{
++    public function __construct(private Connection $connection) {}
++    public function handle(Principal $principal, Tenant $tenant, AccountId $requested, CreateUserCommand $command): Response
++    {
++        if ($requested->toInteger() !== $tenant->account->toInteger()
++            || $principal->account->toInteger() !== $tenant->account->toInteger() || !$principal->mayCreate) {
++            throw new Forbidden();
++        }
++        $response = new Response(201, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
++            json_encode(['data' => ['id' => $command->id->toInteger(), 'name' => $command->name, 'email' => $command->email]], JSON_THROW_ON_ERROR) . "\n");
++        $this->connection->beginTransaction();
++        try {
++            $inserted = $this->connection->executeStatement(
++                'INSERT INTO users (id, name, email) SELECT :user_id, :name, :email WHERE EXISTS (SELECT 1 FROM account_memberships WHERE principal_id = :principal_id AND account_id = :actor_account) ON CONFLICT(id) DO NOTHING',
++                ['user_id' => $command->id->toInteger(), 'name' => $command->name, 'email' => $command->email,
++                    'principal_id' => $principal->id, 'actor_account' => $tenant->account->toInteger()]);
++            if ($inserted !== 1) { throw new CreateUserConflict(); }
++            $linked = $this->connection->executeStatement('INSERT INTO account_users (account_id, user_id) VALUES (:account_id, :user_id)',
++                ['account_id' => $tenant->account->toInteger(), 'user_id' => $command->id->toInteger()]);
++            $recorded = $this->connection->executeStatement('INSERT INTO user_events (account_id, user_id, principal_id, event) VALUES (:account_id, :user_id, :principal_id, :event)',
++                ['account_id' => $tenant->account->toInteger(), 'user_id' => $command->id->toInteger(), 'principal_id' => $principal->id, 'event' => 'user.created']);
++            if ($linked !== 1 || $recorded !== 1) { throw new \RuntimeException('Incomplete create.'); }
++            $this->connection->commit();
++        } finally {
++            if ($this->connection->inTransaction()) { $this->connection->rollBack(); }
++        }
++        return $response;
++    }
++}
+diff --git a/src/Users/CreateUser/UnacceptableCreateUser.php b/src/Users/CreateUser/UnacceptableCreateUser.php
+new file mode 100644
+index 0000000..10c814e
+--- /dev/null
++++ b/src/Users/CreateUser/UnacceptableCreateUser.php
+@@ -0,0 +1,5 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++final class UnacceptableCreateUser extends \RuntimeException {}
+diff --git a/src/Users/CreateUser/UnsupportedCreateMedia.php b/src/Users/CreateUser/UnsupportedCreateMedia.php
+new file mode 100644
+index 0000000..36a892d
+--- /dev/null
++++ b/src/Users/CreateUser/UnsupportedCreateMedia.php
+@@ -0,0 +1,5 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\CreateUser;
++final class UnsupportedCreateMedia extends \RuntimeException {}
+diff --git a/src/Users/ListUsers/AccountListAuthorization.php b/src/Users/ListUsers/AccountListAuthorization.php
+new file mode 100644
+index 0000000..49ca6c8
+--- /dev/null
++++ b/src/Users/ListUsers/AccountListAuthorization.php
+@@ -0,0 +1,14 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\ListUsers;
++use App\Accounts\Forbidden;
++use App\Accounts\Principal;
++use App\Accounts\Tenant;
++final class AccountListAuthorization implements CanListUsers
++{
++    public function authorize(Principal $principal, Tenant $tenant): void
++    {
++        if ($principal->account->toInteger() !== $tenant->account->toInteger()) { throw new Forbidden(); }
++    }
++}
+diff --git a/src/Users/ListUsers/AuthorizeListUsers.php b/src/Users/ListUsers/AuthorizeListUsers.php
+new file mode 100644
+index 0000000..943eb4e
+--- /dev/null
++++ b/src/Users/ListUsers/AuthorizeListUsers.php
+@@ -0,0 +1,24 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\ListUsers;
++use App\Accounts\AccountId;
++use App\Accounts\AuthenticateAccountRequest;
++use App\Accounts\ResolveAccountTenant;
++use PHPThis\Http\Request;
++use PHPThis\Http\RequestHandler;
++use PHPThis\Http\Response;
++final readonly class AuthorizeListUsers implements RequestHandler
++{
++    public function __construct(private AuthenticateAccountRequest $authentication, private ResolveAccountTenant $tenants,
++        private CanListUsers $authorization, private ListUsersHandler $handler) {}
++    public function handle(Request $request): Response
++    {
++        $principal = $this->authentication->authenticate($request);
++        $account = AccountId::fromInteger($request->pathParameters->positiveInteger('account_id'));
++        $tenant = $this->tenants->resolve($principal, $account);
++        $this->authorization->authorize($principal, $tenant);
++        $page = ListUsersPage::fromQuery($request->query);
++        return $this->handler->handle($principal, $tenant, $account, $page);
++    }
++}
+diff --git a/src/Users/ListUsers/CanListUsers.php b/src/Users/ListUsers/CanListUsers.php
+new file mode 100644
+index 0000000..8292aa7
+--- /dev/null
++++ b/src/Users/ListUsers/CanListUsers.php
+@@ -0,0 +1,7 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\ListUsers;
++use App\Accounts\Principal;
++use App\Accounts\Tenant;
++interface CanListUsers { public function authorize(Principal $principal, Tenant $tenant): void; }
+diff --git a/src/Users/ListUsers/ListUsersHandler.php b/src/Users/ListUsers/ListUsersHandler.php
+new file mode 100644
+index 0000000..99dd5f3
+--- /dev/null
++++ b/src/Users/ListUsers/ListUsersHandler.php
+@@ -0,0 +1,35 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\ListUsers;
++use App\Accounts\AccountId;
++use App\Accounts\Forbidden;
++use App\Accounts\Principal;
++use App\Accounts\Tenant;
++use PHPThis\Database\Connection;
++use PHPThis\Http\Response;
++final readonly class ListUsersHandler
++{
++    public function __construct(private Connection $connection) {}
++    public function handle(Principal $principal, Tenant $tenant, AccountId $requested, ListUsersPage $page): Response
++    {
++        if ($requested->toInteger() !== $tenant->account->toInteger()
++            || $principal->account->toInteger() !== $tenant->account->toInteger()) { throw new Forbidden(); }
++        $rows = $this->connection->selectAllRows(
++            'SELECT u.id, u.name, u.email FROM account_users AS au JOIN users AS u ON u.id = au.user_id WHERE au.account_id = :requested_account AND au.account_id = :tenant_account AND EXISTS (SELECT 1 FROM account_memberships WHERE principal_id = :principal_id AND account_id = :actor_account) AND u.id > :after_id ORDER BY u.id ASC LIMIT :row_limit',
++            ['requested_account' => $requested->toInteger(), 'tenant_account' => $tenant->account->toInteger(),
++                'principal_id' => $principal->id, 'actor_account' => $tenant->account->toInteger(),
++                'after_id' => $page->after?->toInteger() ?? 0, 'row_limit' => 21]);
++        $data = [];
++        $lastId = null;
++        foreach ($rows as $row) {
++            $user = UserSummary::fromDatabaseRow($row);
++            if (count($data) < 20) {
++                $data[] = ['id' => $user->id->toInteger(), 'name' => $user->name, 'email' => $user->email];
++                $lastId = $user->id->toInteger();
++            }
++        }
++        return new Response(200, ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'private, no-store'],
++            json_encode(['data' => $data, 'next_after_user_id' => count($rows) > 20 ? $lastId : null], JSON_THROW_ON_ERROR) . "\n");
++    }
++}
+diff --git a/src/Users/ListUsers/ListUsersPage.php b/src/Users/ListUsers/ListUsersPage.php
+new file mode 100644
+index 0000000..aa1a8ac
+--- /dev/null
++++ b/src/Users/ListUsers/ListUsersPage.php
+@@ -0,0 +1,21 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\ListUsers;
++use App\Users\UserId;
++use PHPThis\Http\InvalidRequest;
++final readonly class ListUsersPage
++{
++    private function __construct(public ?UserId $after) {}
++    /** @param array<string, mixed> $query */
++    public static function fromQuery(array $query): self
++    {
++        if (array_diff(array_keys($query), ['after_user_id']) !== []) { throw new InvalidRequest(); }
++        if (!array_key_exists('after_user_id', $query)) { return new self(null); }
++        $raw = $query['after_user_id'];
++        if (!is_string($raw) || preg_match('/\A[1-9][0-9]{0,18}\z/D', $raw) !== 1) { throw new InvalidRequest(); }
++        $id = filter_var($raw, FILTER_VALIDATE_INT);
++        if (!is_int($id) || $id < 1) { throw new InvalidRequest(); }
++        return new self(UserId::fromInteger($id));
++    }
++}
+diff --git a/src/Users/ListUsers/UserSummary.php b/src/Users/ListUsers/UserSummary.php
+new file mode 100644
+index 0000000..b361de1
+--- /dev/null
++++ b/src/Users/ListUsers/UserSummary.php
+@@ -0,0 +1,21 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users\ListUsers;
++use App\Users\UserId;
++final readonly class UserSummary
++{
++    private function __construct(public UserId $id, public string $name, public string $email) {}
++    /** @param array<string, mixed> $row */
++    public static function fromDatabaseRow(array $row): self
++    {
++        if (count($row) !== 3 || !is_int($row['id'] ?? null) || !is_string($row['name'] ?? null)
++            || !is_string($row['email'] ?? null) || $row['id'] < 1 || $row['name'] === '' || strlen($row['name']) > 80
++            || preg_match('//u', $row['name']) !== 1 || preg_match('/[\x00-\x1f\x7f]/', $row['name']) === 1
++            || trim($row['name']) !== $row['name'] || strlen($row['email']) > 254
++            || filter_var($row['email'], FILTER_VALIDATE_EMAIL) !== $row['email']) {
++            throw new \UnexpectedValueException('Invalid stored user.');
++        }
++        return new self(UserId::fromInteger($row['id']), $row['name'], $row['email']);
++    }
++}
+diff --git a/src/Users/UserId.php b/src/Users/UserId.php
+new file mode 100644
+index 0000000..74c2d91
+--- /dev/null
++++ b/src/Users/UserId.php
+@@ -0,0 +1,14 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users;
++final readonly class UserId
++{
++    private function __construct(private int $value) {}
++    public static function fromInteger(int $value): self
++    {
++        if ($value < 1) { throw new \InvalidArgumentException('Invalid user ID.'); }
++        return new self($value);
++    }
++    public function toInteger(): int { return $this->value; }
++}
+diff --git a/src/Users/UserRoutes.php b/src/Users/UserRoutes.php
+new file mode 100644
+index 0000000..a65e744
+--- /dev/null
++++ b/src/Users/UserRoutes.php
+@@ -0,0 +1,16 @@
++<?php
++
++declare(strict_types=1);
++namespace App\Users;
++use App\Users\CreateUser\AuthorizeCreateUser;
++use App\Users\ListUsers\AuthorizeListUsers;
++use PHPThis\Routing\Route;
++final class UserRoutes
++{
++    /** @return list<Route> */
++    public static function create(AuthorizeCreateUser $create, AuthorizeListUsers $list): array
++    {
++        return [new Route('POST', '/accounts/{account_id:positive-int}/users', $create),
++            new Route('GET', '/accounts/{account_id:positive-int}/users', $list)];
++    }
++}
+diff --git a/tests/DirectoryFixture.php b/tests/DirectoryFixture.php
+new file mode 100644
+index 0000000..fa0270e
+--- /dev/null
++++ b/tests/DirectoryFixture.php
+@@ -0,0 +1,41 @@
++<?php
++
++declare(strict_types=1);
++namespace EvaluationTests;
++use PHPThis\Database\Connection;
++use PHPThis\Database\QueryBudget;
++use PHPThis\Database\QueryTrace;
++final class DirectoryFixture
++{
++    public static function dsn(): string { return 'sqlite:' . dirname(__DIR__) . '/tmp/directory.sqlite'; }
++    public static function reset(int $users): void
++    {
++        if ($users < 1 || $users > 500) { throw new \InvalidArgumentException('Fixture bound.'); }
++        $directory = dirname(__DIR__) . '/tmp';
++        if (!is_dir($directory) && !mkdir($directory, 0700)) { throw new \RuntimeException('Fixture directory.'); }
++        $file = $directory . '/directory.sqlite';
++        if (is_file($file) && !unlink($file)) { throw new \RuntimeException('Fixture reset.'); }
++        $connection = Connection::connect(self::dsn(), new QueryBudget(10), new QueryTrace(10));
++        if (!chmod($file, 0600)) { throw new \RuntimeException('Fixture permissions.'); }
++        $connection->executeStatement('CREATE TABLE users (id INTEGER PRIMARY KEY CHECK (id > 0), name TEXT NOT NULL, email TEXT NOT NULL)');
++        $connection->executeStatement('CREATE TABLE account_users (account_id INTEGER NOT NULL, user_id INTEGER NOT NULL UNIQUE, PRIMARY KEY (account_id, user_id))');
++        $connection->executeStatement('CREATE TABLE account_memberships (principal_id INTEGER NOT NULL, account_id INTEGER NOT NULL, PRIMARY KEY (principal_id, account_id))');
++        $connection->executeStatement('CREATE TABLE user_events (account_id INTEGER NOT NULL, user_id INTEGER NOT NULL, principal_id INTEGER NOT NULL, event TEXT NOT NULL)');
++        $connection->executeStatement('INSERT INTO account_memberships (principal_id, account_id) VALUES (101, 1), (202, 2)');
++        $connection->executeStatement("WITH RECURSIVE fixture(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM fixture WHERE n < :count) INSERT INTO users (id, name, email) SELECT n, 'User ' || n, 'user' || n || '@example.test' FROM fixture", ['count' => $users]);
++        $connection->executeStatement('INSERT INTO account_users (account_id, user_id) SELECT :account, id FROM users', ['account' => 1]);
++        $connection->executeStatement('INSERT INTO users (id, name, email) VALUES (:id, :name, :email)', ['id' => 9001, 'name' => 'Foreign private marker', 'email' => 'foreign@example.test']);
++        $connection->executeStatement('INSERT INTO account_users (account_id, user_id) VALUES (:account, :user)', ['account' => 2, 'user' => 9001]);
++    }
++    /** @return array<string, mixed> */
++    public static function counts(): array
++    {
++        $connection = Connection::connect(self::dsn(), new QueryBudget(1), new QueryTrace(1));
++        return $connection->selectOneRow('SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM account_users) AS links, (SELECT COUNT(*) FROM user_events) AS events, (SELECT COUNT(*) FROM account_memberships) AS memberships') ?? throw new \RuntimeException('Missing fixture counts.');
++    }
++    public static function failAudit(): void
++    {
++        $connection = Connection::connect(self::dsn(), new QueryBudget(1), new QueryTrace(1));
++        $connection->executeStatement("CREATE TRIGGER fail_audit BEFORE INSERT ON user_events BEGIN SELECT RAISE(ABORT, 'fixture-private-failure'); END");
++    }
++}
+diff --git a/tests/PolicyFixtures.php b/tests/PolicyFixtures.php
+new file mode 100644
+index 0000000..e4fe73e
+--- /dev/null
++++ b/tests/PolicyFixtures.php
+@@ -0,0 +1,61 @@
++<?php
++
++declare(strict_types=1);
++namespace EvaluationTests;
++use App\Accounts\AccountId;
++use App\Accounts\AuthenticateAccountRequest;
++use App\Accounts\Principal;
++use App\Accounts\ResolveAccountTenant;
++use App\Accounts\SameAccountTenant;
++use App\Accounts\Tenant;
++use App\Accounts\Unauthenticated;
++use App\Users\CreateUser\AccountCreateAuthorization;
++use App\Users\CreateUser\CanCreateUser;
++use App\Users\ListUsers\AccountListAuthorization;
++use App\Users\ListUsers\CanListUsers;
++use PHPThis\Http\Request;
++final class PolicyLog { /** @var list<string> */ public array $calls = []; }
++final readonly class SyntheticAuthentication implements AuthenticateAccountRequest
++{
++    public function __construct(private PolicyLog $log, private bool $fail = false) {}
++    public function authenticate(Request $request): Principal
++    {
++        $this->log->calls[] = 'authenticate';
++        if ($this->fail) { throw new \RuntimeException('policy-private-marker'); }
++        return match ($request->headers['authorization'] ?? '') {
++            'Bearer fixture-writer' => new Principal(101, AccountId::fromInteger(1), true),
++            'Bearer fixture-reader' => new Principal(101, AccountId::fromInteger(1), false),
++            default => throw new Unauthenticated(),
++        };
++    }
++}
++final readonly class SyntheticTenantResolution implements ResolveAccountTenant
++{
++    public function __construct(private PolicyLog $log, private bool $fail = false) {}
++    public function resolve(Principal $principal, AccountId $requested): Tenant
++    {
++        $this->log->calls[] = 'tenant';
++        if ($this->fail) { throw new \RuntimeException('policy-private-marker'); }
++        return new SameAccountTenant()->resolve($principal, $requested);
++    }
++}
++final readonly class SyntheticCreateAuthorization implements CanCreateUser
++{
++    public function __construct(private PolicyLog $log, private bool $fail = false) {}
++    public function authorize(Principal $principal, Tenant $tenant): void
++    {
++        $this->log->calls[] = 'create';
++        if ($this->fail) { throw new \RuntimeException('policy-private-marker'); }
++        new AccountCreateAuthorization()->authorize($principal, $tenant);
++    }
++}
++final readonly class SyntheticListAuthorization implements CanListUsers
++{
++    public function __construct(private PolicyLog $log, private bool $fail = false) {}
++    public function authorize(Principal $principal, Tenant $tenant): void
++    {
++        $this->log->calls[] = 'list';
++        if ($this->fail) { throw new \RuntimeException('policy-private-marker'); }
++        new AccountListAuthorization()->authorize($principal, $tenant);
++    }
++}
+diff --git a/tests/directory.php b/tests/directory.php
+new file mode 100644
+index 0000000..a9274d4
+--- /dev/null
++++ b/tests/directory.php
+@@ -0,0 +1,156 @@
++<?php
++
++declare(strict_types=1);
++
++require dirname(__DIR__) . '/vendor/autoload.php';
++require __DIR__ . '/DirectoryFixture.php';
++require __DIR__ . '/PolicyFixtures.php';
++
++use App\DirectoryComposition;
++use App\Observability\RequestSummary;
++use App\Observability\RequestSummarySink;
++use EvaluationTests\DirectoryFixture;
++use EvaluationTests\PolicyLog;
++use EvaluationTests\SyntheticAuthentication;
++use EvaluationTests\SyntheticTenantResolution;
++use EvaluationTests\SyntheticCreateAuthorization;
++use EvaluationTests\SyntheticListAuthorization;
++use PHPThis\Database\Connection;
++use PHPThis\Database\QueryBudget;
++use PHPThis\Database\QueryTrace;
++use PHPThis\Http\Response;
++
++final class DirectoryRecordingSink implements RequestSummarySink
++{
++    public ?RequestSummary $summary = null;
++    public int $attempts = 0;
++    public function emit(RequestSummary $summary): void
++    {
++        $this->summary = $summary;
++        $this->attempts++;
++    }
++}
++
++function directoryExpect(mixed $expected, mixed $actual, string $label): void
++{
++    if ($actual !== $expected) {
++        throw new RuntimeException($label . ': ' . json_encode([$expected, $actual], JSON_THROW_ON_ERROR));
++    }
++}
++
++/** @param array<string, mixed> $query
++ * @return array{response: Response, statements: int, summary: RequestSummary, order: list<string>, trace: string}
++ */
++function directoryRequest(string $method = 'GET', string $path = '/accounts/1/users',
++    string $credential = 'Bearer fixture-writer', string $body = '', array $query = [],
++    string $media = 'application/json', ?string $failStage = null): array
++{
++    $budget = new QueryBudget($method === 'POST' ? 3 : 1);
++    $trace = new QueryTrace(3);
++    $connection = Connection::connect(DirectoryFixture::dsn(), $budget, $trace);
++    $sink = new DirectoryRecordingSink();
++    $log = new PolicyLog();
++    $coordinator = DirectoryComposition::create($connection, $budget, $trace,
++        new SyntheticAuthentication($log, $failStage === 'authenticate'),
++        new SyntheticTenantResolution($log, $failStage === 'tenant'),
++        new SyntheticCreateAuthorization($log, $failStage === 'authorize'),
++        new SyntheticListAuthorization($log, $failStage === 'authorize'),
++        $sink, 'data://text/plain;base64,' . base64_encode($body));
++    $response = $coordinator->handle(['REQUEST_METHOD' => $method, 'REQUEST_URI' => $path,
++        'HTTP_AUTHORIZATION' => $credential, 'CONTENT_TYPE' => $media,
++        'CONTENT_LENGTH' => (string) strlen($body)], $query);
++    directoryExpect(1, $sink->attempts, 'exactly one sink attempt');
++    $summary = $sink->summary;
++    if (!$summary instanceof RequestSummary) {
++        throw new RuntimeException('Missing summary.');
++    }
++    directoryExpect($budget->used(), $summary->queryStatements, 'observed statement count');
++    directoryExpect('private, no-store', $response->headers['Cache-Control'] ?? null, 'private cache policy');
++    return ['response' => $response, 'statements' => $budget->used(), 'summary' => $summary,
++        'order' => $log->calls, 'trace' => json_encode($trace->snapshot(), JSON_THROW_ON_ERROR)];
++}
++
++DirectoryFixture::reset(2);
++$small = directoryRequest();
++directoryExpect(200, $small['response']->status, 'small list');
++directoryExpect(1, $small['statements'], 'small list query bound');
++directoryExpect(['authenticate', 'tenant', 'list'], $small['order'], 'list policy order');
++directoryExpect('{"data":[{"id":1,"name":"User 1","email":"user1@example.test"},{"id":2,"name":"User 2","email":"user2@example.test"}],"next_after_user_id":null}' . "\n", $small['response']->body, 'exact scoped list');
++
++$missing = directoryRequest(credential: '');
++directoryExpect(401, $missing['response']->status, 'missing credentials');
++directoryExpect(0, $missing['statements'], 'no unauthenticated SQL');
++directoryExpect(['authenticate'], $missing['order'], 'stop after authentication');
++$rejected = directoryRequest(credential: 'Bearer rejected-private-marker');
++directoryExpect(401, $rejected['response']->status, 'rejected credentials');
++directoryExpect(0, $rejected['statements'], 'no rejected SQL');
++$cross = directoryRequest(path: '/accounts/2/users');
++directoryExpect(403, $cross['response']->status, 'cross account');
++directoryExpect(0, $cross['statements'], 'no cross-account SQL');
++directoryExpect(['authenticate', 'tenant'], $cross['order'], 'stop after tenant');
++$forbidden = directoryRequest('POST', credential: 'Bearer fixture-reader', body: '{"id":8001,"name":"Example","email":"example@example.test"}');
++directoryExpect(403, $forbidden['response']->status, 'reader cannot create');
++directoryExpect(0, $forbidden['statements'], 'no forbidden SQL');
++directoryExpect(['authenticate', 'tenant', 'create'], $forbidden['order'], 'create policy order');
++$failure = directoryRequest(failStage: 'authenticate');
++directoryExpect(500, $failure['response']->status, 'authenticator outage');
++directoryExpect(['authenticate'], $failure['order'], 'no later outage stages');
++directoryExpect(0, $failure['statements'], 'no outage SQL');
++$tenantFailure = directoryRequest(failStage: 'tenant');
++directoryExpect(500, $tenantFailure['response']->status, 'tenant outage');
++directoryExpect(['authenticate', 'tenant'], $tenantFailure['order'], 'no later tenant stages');
++directoryExpect(0, $tenantFailure['statements'], 'no tenant outage SQL');
++$authorizeFailure = directoryRequest(failStage: 'authorize');
++directoryExpect(500, $authorizeFailure['response']->status, 'authorizer outage');
++directoryExpect(0, $authorizeFailure['statements'], 'no authorizer outage SQL');
++
++directoryExpect(400, directoryRequest('POST', body: '{"id":8001,"name":"","email":false}')['response']->status, 'structural precedence');
++$badValue = directoryRequest('POST', body: '{"id":8001,"name":"","email":"ok@example.test"}');
++directoryExpect(422, $badValue['response']->status, 'unacceptable body value');
++directoryExpect(0, $badValue['statements'], 'no invalid-value SQL');
++$badShape = directoryRequest('POST', body: '[]');
++directoryExpect(400, $badShape['response']->status, 'wrong body shape');
++directoryExpect(0, $badShape['statements'], 'no invalid-shape SQL');
++directoryExpect(415, directoryRequest('POST', body: '{}', media: 'text/plain')['response']->status, 'wrong media');
++directoryExpect(413, directoryRequest('POST', body: str_repeat('x', 1025))['response']->status, 'body bound');
++$badCursor = directoryRequest(query: ['after_user_id' => '01']);
++directoryExpect(400, $badCursor['response']->status, 'noncanonical cursor');
++directoryExpect(0, $badCursor['statements'], 'no invalid-cursor SQL');
++directoryExpect(['users' => 3, 'links' => 3, 'events' => 0, 'memberships' => 2], DirectoryFixture::counts(), 'denials preserve all tables');
++
++$created = directoryRequest('POST', body: json_encode(['id' => 101, 'name' => "Literal %_ ' OR 1=1 --", 'email' => 'Synthetic+Label@example.test'], JSON_THROW_ON_ERROR));
++directoryExpect(201, $created['response']->status, 'create success');
++directoryExpect(3, $created['statements'], 'fixed create writes');
++directoryExpect(['users' => 4, 'links' => 4, 'events' => 1, 'memberships' => 2], DirectoryFixture::counts(), 'created user does not become actor');
++$conflict = directoryRequest('POST', body: '{"id":101,"name":"Duplicate","email":"duplicate@example.test"}');
++directoryExpect(409, $conflict['response']->status, 'conflicting ID');
++directoryExpect(1, $conflict['statements'], 'conflict stops writes');
++DirectoryFixture::failAudit();
++$rollback = directoryRequest('POST', body: '{"id":8002,"name":"Rollback","email":"rollback@example.test"}');
++directoryExpect(500, $rollback['response']->status, 'last write failure');
++directoryExpect(3, $rollback['statements'], 'last write attempted');
++directoryExpect(['users' => 4, 'links' => 4, 'events' => 1, 'memberships' => 2], DirectoryFixture::counts(), 'complete transaction rollback');
++$redacted = json_encode([$rejected['response']->body, $rejected['response']->headers, $rejected['summary']->toArray(),
++    $rollback['response']->body, $rollback['summary']->toArray(), $rollback['trace'], $failure['summary']->toArray()], JSON_THROW_ON_ERROR);
++if (str_contains($redacted, 'rejected-private-marker') || str_contains($redacted, 'fixture-private-failure')
++    || str_contains($redacted, 'policy-private-marker') || str_contains($redacted, 'rollback@example.test')
++    || str_contains($redacted, 'INSERT INTO')) {
++    throw new RuntimeException('Private values leaked into observations.');
++}
++DirectoryFixture::reset(500);
++$large = directoryRequest();
++directoryExpect(1, $large['statements'], 'large list constant query bound');
++$decoded = json_decode($large['response']->body, true, 8, JSON_THROW_ON_ERROR);
++if (!is_array($decoded) || !is_array($decoded['data'] ?? null)) {
++    throw new RuntimeException('Invalid list response.');
++}
++directoryExpect(20, count($decoded['data']), 'bounded large page');
++directoryExpect(20, $decoded['next_after_user_id'] ?? null, 'lookahead continuation');
++$page2 = directoryRequest(query: ['after_user_id' => '20']);
++directoryExpect(1, $page2['statements'], 'continuation query bound');
++if (!str_starts_with($page2['response']->body, '{"data":[{"id":21,')) {
++    throw new RuntimeException('Continuation must start after last emitted ID.');
++}
++$last = directoryRequest(query: ['after_user_id' => '499']);
++directoryExpect('{"data":[{"id":500,"name":"User 500","email":"user500@example.test"}],"next_after_user_id":null}' . "\n", $last['response']->body, 'last page without cross-account leak');
++fwrite(STDOUT, "PASS retained Create/List: success, policy order/replacement, denial, input, rollback, redaction, query counts 1/1 (2/500 rows)\n");
+diff --git a/tests/fixture.php b/tests/fixture.php
+new file mode 100644
+index 0000000..4384136
+--- /dev/null
++++ b/tests/fixture.php
+@@ -0,0 +1,7 @@
++<?php
++
++declare(strict_types=1);
++require dirname(__DIR__) . '/vendor/autoload.php';
++require __DIR__ . '/DirectoryFixture.php';
++EvaluationTests\DirectoryFixture::reset(2);
++fwrite(STDOUT, "PASS disposable fixture setup\n");
+diff --git a/tests/front_controller.py b/tests/front_controller.py
+new file mode 100644
+index 0000000..c613b3d
+--- /dev/null
++++ b/tests/front_controller.py
+@@ -0,0 +1,99 @@
++#!/usr/bin/env python3
++"""Real loopback SAPI checks; only owned scratch fixtures and child processes."""
++import http.client
++import json
++import os
++from pathlib import Path
++import shutil
++import socket
++import subprocess
++import tempfile
++import time
++
++APP = Path(__file__).resolve().parent.parent
++PHP = shutil.which("php")
++assert PHP, "PHP is required"
++
++def request(port, method, path, body=None, credential=None):
++    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
++    headers = {"Content-Type": "application/json"}
++    if credential:
++        headers["Authorization"] = credential
++    connection.request(method, path, body=body, headers=headers)
++    response = connection.getresponse()
++    result = response.status, dict(response.getheaders()), response.read()
++    connection.close()
++    return result
++
++def exercise(root, synthetic):
++    with socket.socket() as sock:
++        sock.bind(("127.0.0.1", 0))
++        port = sock.getsockname()[1]
++    application_log = root / "application.log"
++    with (root / "server.log").open("wb") as output:
++        process = subprocess.Popen([PHP, "-d", "display_errors=0", "-d", "display_startup_errors=0",
++            "-d", "error_reporting=-1", "-d", "log_errors=1", "-d", "zend.exception_ignore_args=1",
++            "-d", f"error_log={application_log}", "-S", f"127.0.0.1:{port}",
++            "-t", str(root / "public"), str(root / "public/index.php")], cwd=root, stdout=output, stderr=output)
++        try:
++            deadline = time.monotonic() + 5
++            while True:
++                try:
++                    with socket.create_connection(("127.0.0.1", port), timeout=.2):
++                        break
++                except OSError:
++                    if process.poll() is not None or time.monotonic() > deadline:
++                        raise AssertionError("HTTP process failed to become ready")
++                    time.sleep(.02)
++            status, headers, body = request(port, "GET", "/health")
++            assert status == 200 and body == b'{"status":"ok"}\n'
++            assert headers["Cache-Control"] == "no-store"
++            assert len(headers["X-Request-ID"]) == 32
++            status, headers, body = request(port, "GET", "/accounts/1/users")
++            assert status == 401 and body == b'{"error":"unauthenticated"}\n'
++            assert headers["Cache-Control"] == "private, no-store"
++            if synthetic:
++                status, headers, body = request(port, "POST", "/accounts/1/users",
++                    json.dumps({"id": 8001, "name": "HTTP private marker", "email": "http@example.test"}), "Bearer fixture-writer")
++                assert status == 201 and json.loads(body)["data"]["id"] == 8001
++                status, headers, body = request(port, "GET", "/accounts/1/users", credential="Bearer fixture-writer")
++                assert status == 200 and len(json.loads(body)["data"]) == 20
++                status, headers, body = request(port, "GET", "/accounts/2/users", credential="Bearer fixture-writer")
++                assert status == 403 and b"Foreign private marker" not in body
++            else:
++                status, _, _ = request(port, "POST", "/accounts/1/users", '{}', "Bearer fixture-writer")
++                assert status == 401, "normal composition must deny test credentials"
++        finally:
++            process.terminate()
++            try:
++                process.wait(timeout=5)
++            except subprocess.TimeoutExpired:
++                process.kill()
++                process.wait(timeout=5)
++    logs = application_log.read_text()
++    assert "HTTP private marker" not in logs and "http@example.test" not in logs
++    assert "fixture-writer" not in logs and "Foreign private marker" not in logs
++    summaries = [json.loads(line[line.index('{'):]) for line in logs.splitlines() if '{"schema_version"' in line]
++    assert len(summaries) == (5 if synthetic else 3)
++    assert [item["query_count"] for item in summaries] == ([0, 0, 3, 1, 0] if synthetic else [0, 0, 0])
++    assert all(item["schema_version"] == 1 for item in summaries)
++
++with tempfile.TemporaryDirectory(prefix="phpthis-directory-http-") as scratch:
++    root = Path(scratch)
++    (root / "public").mkdir()
++    (root / "tmp").mkdir(mode=0o700)
++    shutil.copy2(APP / "public/index.php", root / "public/index.php")
++    shutil.copy2(APP / "bootstrap.php", root / "bootstrap.php")
++    shutil.copy2(APP / "tmp/directory.sqlite", root / "tmp/directory.sqlite")
++    os.symlink(APP / "vendor", root / "vendor", target_is_directory=True)
++    assert (root / "public/index.php").read_bytes() == (APP / "public/index.php").read_bytes()
++    exercise(root, False)
++    (root / "application.log").unlink()
++    # Explicit test-only policy injection. App classes and dependencies come from the same installed vendor autoloader.
++    bootstrap = (APP / "bootstrap.php").read_text()
++    bootstrap = bootstrap.replace("new DenyAllAuthentication()", "new \\EvaluationTests\\SyntheticAuthentication(new \\EvaluationTests\\PolicyLog())")
++    fixture_path = str(APP / "tests/PolicyFixtures.php").replace("'", "\\'")
++    bootstrap = bootstrap.replace("$databasePath =", f"require '{fixture_path}';\n$databasePath =")
++    (root / "bootstrap.php").write_text(bootstrap)
++    exercise(root, True)
++print("PASS real HTTP: unchanged front controller, deny-all default, injected Create/List, tenant denial, summary counts/redaction")
+diff --git a/tests/run.php b/tests/run.php
+index e4e490d..6725d76 100644
+--- a/tests/run.php
++++ b/tests/run.php
+@@ -6,7 +6,7 @@ use App\Observability\CorrelationId;
+ use App\Observability\RequestSummary;
+ use App\Observability\RequestSummarySink;
+ use App\Observability\TerminalRequestCoordinator;
+-use App\Routes;
++use App\HealthRoutes;
+ use PHPThis\Application;
+ use PHPThis\Http\ErrorResponseRegistry;
+ use PHPThis\Http\InvalidRequest;
+@@ -65,7 +65,7 @@ function applicationTestCoordinator(
+     );
+ }
+ 
+-$application = new Application(new Router(Routes::create()));
++$application = new Application(new Router(HealthRoutes::create()));
+ $health = $application->handle(new Request('GET', '/health'));
+ 
+ $expectSame(200, $health->status, 'GET /health must return 200.');
+@@ -143,7 +143,7 @@ $invalidCoordinator = require dirname(__DIR__) . '/bootstrap.php';
+ $invalid = $invalidCoordinator->handle([], []);
+ $expectSame(400, $invalid->status, 'Invalid PHP runtime input must map to 400.');
+ $expectSame(
+-    'no-store',
++    'private, no-store',
+     $invalid->headers['Cache-Control'] ?? null,
+     'Mapped invalid input must return the explicit no-store policy.',
+ );
+@@ -166,7 +166,7 @@ $oversized = $oversizedCoordinator->handle([
+ ], []);
+ $expectSame(413, $oversized->status, 'An oversized declared body must map to 413.');
+ $expectSame(
+-    'no-store',
++    'private, no-store',
+     $oversized->headers['Cache-Control'] ?? null,
+     'Mapped oversized input must return the explicit no-store policy.',
+ );

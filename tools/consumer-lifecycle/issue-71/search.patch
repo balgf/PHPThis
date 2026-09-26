@@ -1,0 +1,177 @@
+diff --git a/.ai/architecture.md b/.ai/architecture.md
+index c016975..fd71219 100644
+--- a/.ai/architecture.md
++++ b/.ai/architecture.md
+@@ -8,8 +8,10 @@ Create's action-specific adapter runs authenticate, resolve tenant, authorize, m
+ 
+ Create accepts exact `application/json` and at most 1024 bytes/depth 8. Exact fields `id:int`, `name:string`, `email:string` all pass shape/type validation before values. Positive IDs are client-selected; names are 1–80 UTF-8 bytes with no ASCII controls or trim padding; email is <=254 bytes and an unchanged PHP FILTER_VALIDATE_EMAIL result. No normalization; duplicate JSON keys retain PHP's last-value limitation. Shape/type failure is generic 400; unacceptable value 422; body overflow 413; media 415. Named conflict is 409. Validation occurs before protected SQL. Success is 201 with exact `data:{id,name,email}`. See data for transactional semantics.
+ 
+-List accepts only optional canonical positive decimal `after_user_id` within PHP_INT_MAX. Missing means first page; null, empty, arrays, unknown keys, leading zeroes and overflow fail 400 before protected SQL. One query fetches <=21, immediate `UserSummary` projection validates every row, and I/O-free mapping emits <=20 with `next_after_user_id` set only when lookahead exists. SQLite returns native integer IDs; strings are rejected. Ordering is ascending ID, static-fixture keyset pagination, no concurrent snapshot guarantee.
++List accepts optional literal `search` and optional canonical positive decimal `after_user_id` within PHP_INT_MAX. Missing means first page; null, empty, arrays, unknown keys, leading zeroes and overflow fail 400 before protected SQL. One query fetches <=21, immediate `UserSummary` projection validates every row, and I/O-free mapping emits <=20 with `next_after_user_id` set only when lookahead exists. SQLite returns native integer IDs; strings are rejected. Ordering is ascending ID, static-fixture keyset pagination, no concurrent snapshot guarantee.
+ 
+ Health/404/405 retain explicit no-store. Protected responses and shared mapped 400/413 responses use private no-store (deliberate stronger cache restriction than the starter). Unknown failures remain generic private no-store. Summary ownership is `.ai/observability.md`; configuration is `.ai/configuration.md`.
+ 
+ `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`, `NOT_APPLICABLE(WEBSOCKETS)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(FILE_TRANSFER)`, `NOT_APPLICABLE(SESSION)`: none adopted. No generic persistence, validators, middleware, framework extensions, or additional runtime dependencies.
++
++Search is omitted for the original unfiltered result. When present it is 1–80 UTF-8 bytes, no ASCII controls/padding, and matches case-sensitive literal substrings in name OR email using SQLite instr. Percent, underscore and SQL-looking text remain data. Null/empty/array/invalid UTF-8/unknown fields fail 400 before SQL. Search is explicitly carried with the same keyset continuation by the caller.
+diff --git a/.ai/data.md b/.ai/data.md
+index 40ec67b..d794a3e 100644
+--- a/.ai/data.md
++++ b/.ai/data.md
+@@ -11,3 +11,5 @@ The user primary key and account-user/account-membership composite indexes suppo
+ SQLite runtime and fixture reset share this local user's file/process authority. This permits DDL, attachment and arbitrary files available to that OS user; separate Connection objects do NOT isolate it. No fabricated denied-DDL or production least-privilege claim. Runtime source never issues DDL or attachment. Production authority, deployments and traffic enablement are deferred. See operations for the only local sequence and tests for statement/rollback/redaction evidence.
+ 
+ `NOT_APPLICABLE(MIGRATIONS)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(SESSION)`: no histories, jobs, cached data or session storage.
++
++Search adds no schema or dependency. Its one complete statement uses separate name_search/email_search binding names and a bound absence flag. SQLite instr substring scans are not an indexed full-text feature; 500-row count evidence proves fixed round trips only.
+diff --git a/.ai/testing.md b/.ai/testing.md
+index 215bd98..b9429fe 100644
+--- a/.ai/testing.md
++++ b/.ai/testing.md
+@@ -7,3 +7,5 @@
+ `python3 tests/front_controller.py` requires the fixture left by directory tests. It copies the actual front controller byte-for-byte to private scratch, links the current installed autoloader (app source stays the same), runs the default deny-all bootstrap and then an explicitly synthetic-policy bootstrap. It checks real health/denial/Create/List/cross-account status, headers, body, correlation, one terminal event per request, counts and redaction. Only loopback ports selected dynamically and owned child processes are used. This is PHP's built-in HTTP SAPI, not production proxy/HTTPS evidence.
+ 
+ Additional upgrade-specific tests must first fail on the unchanged older front controller, then pass after repair. Keep the initial failure in retained campaign artifacts, not as a diagnostic exception. Campaign log/lock/hash/size records are maintainer evidence, not new framework validity rules.
++
++Search evidence additionally preserves unfiltered output and checks name/email, case sensitivity, no match, literal wildcard/SQL-looking data, rejected representations before SQL, account isolation, keyset continuation and one query on 2/500-row fixtures.
+diff --git a/src/Users/ListUsers/ListUsersHandler.php b/src/Users/ListUsers/ListUsersHandler.php
+index 99dd5f3..9caa8e6 100644
+--- a/src/Users/ListUsers/ListUsersHandler.php
++++ b/src/Users/ListUsers/ListUsersHandler.php
+@@ -16,10 +16,11 @@ final readonly class ListUsersHandler
+         if ($requested->toInteger() !== $tenant->account->toInteger()
+             || $principal->account->toInteger() !== $tenant->account->toInteger()) { throw new Forbidden(); }
+         $rows = $this->connection->selectAllRows(
+-            'SELECT u.id, u.name, u.email FROM account_users AS au JOIN users AS u ON u.id = au.user_id WHERE au.account_id = :requested_account AND au.account_id = :tenant_account AND EXISTS (SELECT 1 FROM account_memberships WHERE principal_id = :principal_id AND account_id = :actor_account) AND u.id > :after_id ORDER BY u.id ASC LIMIT :row_limit',
++            'SELECT u.id, u.name, u.email FROM account_users AS au JOIN users AS u ON u.id = au.user_id WHERE au.account_id = :requested_account AND au.account_id = :tenant_account AND EXISTS (SELECT 1 FROM account_memberships WHERE principal_id = :principal_id AND account_id = :actor_account) AND u.id > :after_id AND (:search_absent = 1 OR instr(u.name, :name_search) > 0 OR instr(u.email, :email_search) > 0) ORDER BY u.id ASC LIMIT :row_limit',
+             ['requested_account' => $requested->toInteger(), 'tenant_account' => $tenant->account->toInteger(),
+                 'principal_id' => $principal->id, 'actor_account' => $tenant->account->toInteger(),
+-                'after_id' => $page->after?->toInteger() ?? 0, 'row_limit' => 21]);
++                'after_id' => $page->after?->toInteger() ?? 0, 'search_absent' => $page->search === null,
++                'name_search' => $page->search ?? '', 'email_search' => $page->search ?? '', 'row_limit' => 21]);
+         $data = [];
+         $lastId = null;
+         foreach ($rows as $row) {
+diff --git a/src/Users/ListUsers/ListUsersPage.php b/src/Users/ListUsers/ListUsersPage.php
+index aa1a8ac..4cb722b 100644
+--- a/src/Users/ListUsers/ListUsersPage.php
++++ b/src/Users/ListUsers/ListUsersPage.php
+@@ -6,16 +6,27 @@ use App\Users\UserId;
+ use PHPThis\Http\InvalidRequest;
+ final readonly class ListUsersPage
+ {
+-    private function __construct(public ?UserId $after) {}
++    private function __construct(public ?UserId $after, public ?string $search) {}
+     /** @param array<string, mixed> $query */
+     public static function fromQuery(array $query): self
+     {
+-        if (array_diff(array_keys($query), ['after_user_id']) !== []) { throw new InvalidRequest(); }
+-        if (!array_key_exists('after_user_id', $query)) { return new self(null); }
+-        $raw = $query['after_user_id'];
+-        if (!is_string($raw) || preg_match('/\A[1-9][0-9]{0,18}\z/D', $raw) !== 1) { throw new InvalidRequest(); }
+-        $id = filter_var($raw, FILTER_VALIDATE_INT);
+-        if (!is_int($id) || $id < 1) { throw new InvalidRequest(); }
+-        return new self(UserId::fromInteger($id));
++        if (array_diff(array_keys($query), ['after_user_id', 'search']) !== []) { throw new InvalidRequest(); }
++        $after = null;
++        if (array_key_exists('after_user_id', $query)) {
++            $raw = $query['after_user_id'];
++            if (!is_string($raw) || preg_match('/\A[1-9][0-9]{0,18}\z/D', $raw) !== 1) { throw new InvalidRequest(); }
++            $id = filter_var($raw, FILTER_VALIDATE_INT);
++            if (!is_int($id) || $id < 1) { throw new InvalidRequest(); }
++            $after = UserId::fromInteger($id);
++        }
++        $search = null;
++        if (array_key_exists('search', $query)) {
++            $rawSearch = $query['search'];
++            if (!is_string($rawSearch) || $rawSearch === '' || strlen($rawSearch) > 80
++                || trim($rawSearch) !== $rawSearch || preg_match('//u', $rawSearch) !== 1
++                || preg_match('/[\x00-\x1f\x7f]/', $rawSearch) === 1) { throw new InvalidRequest(); }
++            $search = $rawSearch;
++        }
++        return new self($after, $search);
+     }
+ }
+diff --git a/tests/directory.php b/tests/directory.php
+index a9274d4..1e6adb4 100644
+--- a/tests/directory.php
++++ b/tests/directory.php
+@@ -154,3 +154,54 @@ if (!str_starts_with($page2['response']->body, '{"data":[{"id":21,')) {
+ $last = directoryRequest(query: ['after_user_id' => '499']);
+ directoryExpect('{"data":[{"id":500,"name":"User 500","email":"user500@example.test"}],"next_after_user_id":null}' . "\n", $last['response']->body, 'last page without cross-account leak');
+ fwrite(STDOUT, "PASS retained Create/List: success, policy order/replacement, denial, input, rollback, redaction, query counts 1/1 (2/500 rows)\n");
++
++// Frozen maintenance task: literal case-sensitive name-or-email search, same Alpha 7 lock.
++DirectoryFixture::reset(2);
++$filteredSmall = directoryRequest(query: ['search' => 'User 1']);
++directoryExpect(200, $filteredSmall['response']->status, 'name search accepted');
++directoryExpect("{\"data\":[{\"id\":1,\"name\":\"User 1\",\"email\":\"user1@example.test\"}],\"next_after_user_id\":null}\n", $filteredSmall['response']->body, 'name search exact');
++directoryExpect(1, $filteredSmall['statements'], 'small filtered count');
++$emailMatch = directoryRequest(query: ['search' => 'user2@']);
++directoryExpect("{\"data\":[{\"id\":2,\"name\":\"User 2\",\"email\":\"user2@example.test\"}],\"next_after_user_id\":null}\n", $emailMatch['response']->body, 'email search exact');
++$noMatch = directoryRequest(query: ['search' => 'USER']);
++directoryExpect("{\"data\":[],\"next_after_user_id\":null}\n", $noMatch['response']->body, 'case-sensitive no match');
++directoryExpect(1, $noMatch['statements'], 'empty search result query');
++$searchArray = directoryRequest(query: ['search' => ['User']]);
++directoryExpect(400, $searchArray['response']->status, 'search rejects array');
++directoryExpect(0, $searchArray['statements'], 'array rejected before query');
++$searchEmpty = directoryRequest(query: ['search' => '']);
++directoryExpect(400, $searchEmpty['response']->status, 'search rejects empty');
++directoryExpect(0, $searchEmpty['statements'], 'empty rejected before query');
++$searchLong = directoryRequest(query: ['search' => str_repeat('x', 81)]);
++directoryExpect(400, $searchLong['response']->status, 'search byte bound');
++directoryExpect(0, $searchLong['statements'], 'oversized search no query');
++directoryExpect(400, directoryRequest(query: ['search' => null])['response']->status, 'search null rejected');
++directoryExpect(400, directoryRequest(query: ['search' => ' padded'])['response']->status, 'search no normalization');
++directoryExpect(400, directoryRequest(query: ['search' => "control\x01"])['response']->status, 'search no controls');
++directoryExpect(400, directoryRequest(query: ['search' => "\xff"])['response']->status, 'search UTF-8');
++$literalCreate = directoryRequest('POST', body: json_encode(['id' => 8001, 'name' => "Literal %_ ' OR 1=1 --", 'email' => 'literal@example.test'], JSON_THROW_ON_ERROR));
++directoryExpect(201, $literalCreate['response']->status, 'literal-search fixture');
++$literal = directoryRequest(query: ['search' => '%_']);
++directoryExpect(1, $literal['statements'], 'wildcards remain data');
++if (!str_starts_with($literal['response']->body, '{"data":[{"id":8001,') || !str_contains($literal['response']->body, '"next_after_user_id":null')) {
++    throw new RuntimeException('Percent and underscore must be literal substrings.');
++}
++$injection = directoryRequest(query: ['search' => "' OR 1=1 --"]);
++directoryExpect($literal['response']->body, $injection['response']->body, 'SQL-looking search remains data');
++$crossSearch = directoryRequest(path: '/accounts/2/users', query: ['search' => 'Foreign']);
++directoryExpect(403, $crossSearch['response']->status, 'filtered cross-account denial');
++directoryExpect(0, $crossSearch['statements'], 'filtered denial no query');
++DirectoryFixture::reset(500);
++$filteredLarge = directoryRequest(query: ['search' => 'User 1']);
++directoryExpect(1, $filteredLarge['statements'], 'large filtered count remains one');
++if (!str_contains($filteredLarge['response']->body, '"next_after_user_id":108')) {
++    throw new RuntimeException('Filtered lookahead must retain the last emitted ID.');
++}
++$filteredNext = directoryRequest(query: ['search' => 'User 1', 'after_user_id' => '108']);
++if (!str_starts_with($filteredNext['response']->body, '{"data":[{"id":109,')) {
++    throw new RuntimeException('Filtered continuation must preserve the filter and keyset.');
++}
++directoryExpect(1, $filteredNext['statements'], 'filtered continuation count');
++$unfiltered = directoryRequest();
++directoryExpect($large['response']->body, $unfiltered['response']->body, 'omitted search preserves old behavior');
++fwrite(STDOUT, "PASS retained search: name/email, case, literal data, validation, tenant scope, continuation, query counts 1/1\n");
+diff --git a/tests/front_controller.py b/tests/front_controller.py
+index c613b3d..06929a3 100644
+--- a/tests/front_controller.py
++++ b/tests/front_controller.py
+@@ -58,6 +58,8 @@ def exercise(root, synthetic):
+                 assert status == 201 and json.loads(body)["data"]["id"] == 8001
+                 status, headers, body = request(port, "GET", "/accounts/1/users", credential="Bearer fixture-writer")
+                 assert status == 200 and len(json.loads(body)["data"]) == 20
++                status, headers, body = request(port, "GET", "/accounts/1/users?search=HTTP", credential="Bearer fixture-writer")
++                assert status == 200 and [item["id"] for item in json.loads(body)["data"]] == [8001]
+                 status, headers, body = request(port, "GET", "/accounts/2/users", credential="Bearer fixture-writer")
+                 assert status == 403 and b"Foreign private marker" not in body
+             else:
+@@ -74,8 +76,8 @@ def exercise(root, synthetic):
+     assert "HTTP private marker" not in logs and "http@example.test" not in logs
+     assert "fixture-writer" not in logs and "Foreign private marker" not in logs
+     summaries = [json.loads(line[line.index('{'):]) for line in logs.splitlines() if '{"schema_version"' in line]
+-    assert len(summaries) == (5 if synthetic else 3)
+-    assert [item["query_count"] for item in summaries] == ([0, 0, 3, 1, 0] if synthetic else [0, 0, 0])
++    assert len(summaries) == (6 if synthetic else 3)
++    assert [item["query_count"] for item in summaries] == ([0, 0, 3, 1, 1, 0] if synthetic else [0, 0, 0])
+     assert all(item["schema_version"] == 1 for item in summaries)
+ 
+ with tempfile.TemporaryDirectory(prefix="phpthis-directory-http-") as scratch:

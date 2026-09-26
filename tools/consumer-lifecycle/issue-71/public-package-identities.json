@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-09-26T13:45:10.469670+00:00",
+  "packages": [
+    {
+      "package": "phpthis/framework",
+      "registry_url": "https://repo.packagist.org/p2/phpthis/framework.json",
+      "version": "v0.1.0-alpha.7",
+      "source": {
+        "url": "https://github.com/balgf/PHPThis.git",
+        "type": "git",
+        "reference": "de07cbd449ed3e905331aeea105e528fbaa83ac3"
+      },
+      "dist": {
+        "url": "https://api.github.com/repos/balgf/PHPThis/zipball/de07cbd449ed3e905331aeea105e528fbaa83ac3",
+        "type": "zip",
+        "shasum": "",
+        "reference": "de07cbd449ed3e905331aeea105e528fbaa83ac3"
+      },
+      "time": "2026-08-15T21:51:11+00:00"
+    },
+    {
+      "package": "phpthis/skeleton",
+      "registry_url": "https://repo.packagist.org/p2/phpthis/skeleton.json",
+      "version": "v0.1.0-alpha.7",
+      "source": {
+        "url": "https://github.com/balgf/PHPThis-skeleton.git",
+        "type": "git",
+        "reference": "c0e8f5c2a7eb45e24e97dc672bd22dcc13c8684d"
+      },
+      "dist": {
+        "url": "https://api.github.com/repos/balgf/PHPThis-skeleton/zipball/c0e8f5c2a7eb45e24e97dc672bd22dcc13c8684d",
+        "type": "zip",
+        "shasum": "",
+        "reference": "c0e8f5c2a7eb45e24e97dc672bd22dcc13c8684d"
+      },
+      "time": "2026-08-17T21:54:27+00:00"
+    }
+  ]
+}
