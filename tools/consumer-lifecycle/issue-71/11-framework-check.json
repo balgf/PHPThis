@@ -1,0 +1,9 @@
+{
+  "started_at": "2026-09-26T13:57:37.122236+00:00",
+  "finished_at": "2026-09-26T14:04:00.392380+00:00",
+  "elapsed_seconds": 383.269,
+  "commit": "3ed3f28c5356b9ad079e22da2e8945dfdcf39fdf",
+  "exit_code": 0,
+  "command": "composer install --no-interaction --no-progress --prefer-dist; composer check",
+  "services": "two owned loopback Redis processes on 17479/17480; no persistence; cleanup on exit"
+}

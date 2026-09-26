@@ -59,7 +59,9 @@ Repeat checkout/install/check for `baseline-alpha7` and `search-alpha7` to repro
 
 A clean temporary replay of `reviewed-source` also passed a fresh locked install and the full gate, with identical captured file hashes and a clean Git tree ([replay log](issue-71/10-bundle-replay.log)); its owned temporary checkout was then removed.
 
-From the framework checkout, `python3 tools/consumer-lifecycle/capture.py <consumer> <new-output-stem>` captures a fresh complete gate, hashes, installed dependency identity, runtime and wall time. It refuses to overwrite evidence. Existing installed-consumer proof ownership in tools/test-consumer-project.php and tests/consumer-profile.php remains unchanged; this optional retained evaluation is not another consumer validity stage or framework feature.
+From the framework checkout, `python3 tools/consumer-lifecycle/capture.py <consumer> <new-output-stem>` captures a fresh complete gate, hashes, lockfile dependency identity, runtime and wall time. It refuses to overwrite evidence. Existing installed-consumer proof ownership in tools/test-consumer-project.php and tests/consumer-profile.php remains unchanged; this optional retained evaluation is not another consumer validity stage or framework feature.
+
+The complete local framework gate also passed at 3ed3f28c5356b9ad079e22da2e8945dfdcf39fdf: 189 tests / 195 assertions, isolated consumer installation, all 231 release files and Git-export parity, database transport and scaling controls ([gate log](issue-71/11-framework-check.log), [record](issue-71/11-framework-check.json)). It used two disposable local Redis processes that were cleaned up. Final pushed-revision CI supplies the repository merge checks; no consumer source or framework runtime changed after this gate.
 
 ## Effort and limits
 
