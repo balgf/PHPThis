@@ -158,7 +158,7 @@ composer check
 ### 3. Publish the framework prerelease
 
 - [ ] Confirm the authorization record names framework tag creation and push and the framework Packagist update as separate permitted operations against the exact proved framework candidate commit.
-- [ ] Create the approved framework prerelease tag as a signed annotated tag from the proven commit, verify its signature and exact target, then push that exact tag to the approved remote without moving or reusing an existing tag.
+- [ ] Create the approved framework prerelease tag from the proven commit as a signed annotated tag, verify its signature and exact target, then push that exact tag to the approved remote without moving or reusing an existing tag.
 - [ ] Submit or refresh `phpthis/framework` on Packagist and wait until the exact prerelease is indexed with a preferred distribution artifact.
 - [ ] Record the framework tag, commit, Packagist version, distribution reference, and observed timestamp and result of each framework publication operation in the release evidence.
 
