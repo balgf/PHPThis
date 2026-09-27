@@ -4,7 +4,7 @@ Decision records capture constraints that an AI must not reinterpret from scratc
 
 Proposed records:
 
-- `062-bounded-alpha-8-release-scope.md`
+None.
 
 Accepted records:
 
@@ -69,6 +69,7 @@ Accepted records:
 - `059-bounded-application-source-prefix-discovery.md`
 - `060-reject-pending-output-before-response-emission.md`
 - `061-fail-closed-outer-http-failure-disclosure-profiles.md`
+- `062-bounded-alpha-8-release-scope.md`
 
 ## Current and successor relationships
 

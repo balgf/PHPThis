@@ -20,7 +20,7 @@ It remains under export-excluded `tools/` and changes no framework runtime, publ
 6. `scoring.php`
 7. `controller.php`
 
-There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 30 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner. Issue #73 introduces the Gemini evaluation adapter (`gemini-exec` and `fake-gemini`).
+There is no module or task discovery, runner selector, provider facade, dependency-injection container, arbitrary command setting, or arbitrary output-path setting. `process.php` is the only controller file that owns native process primitives. The explicitly versioned task inventory remains the sole task authority. The legacy smoke command in v0.2 accepts only `change.simple-ping` revision 31 with `comparative_claims: false`. Issue #69 separately admits the three pinned v2 comparison tasks through the same lifecycle and fixed native process owner. Issue #73 introduces the Gemini evaluation adapter (`gemini-exec` and `fake-gemini`).
 
 ## Ordinary checks
 
@@ -89,7 +89,7 @@ The bounded smoke protocol uses these fixed limits and explicitly reviewed input
 
 | Setting | Value |
 | --- | --- |
-| Task | `change.simple-ping`, revision 30 |
+| Task | `change.simple-ping`, revision 31 |
 | Provider and reasoning | OpenAI `gpt-5.4-2026-03-05`, high reasoning, standard/default service tier |
 | Run count | One fresh invocation per approval; another invocation requires another approval |
 | Shared model allowance | 1,000,000 cumulative input/output tokens, reserved before each create request; at most 200,000 counted input tokens per request |

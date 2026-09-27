@@ -99,7 +99,7 @@ function distributionGuardrailFailures(
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
         if (!is_array($packagePaths) || count($packagePaths) !== 234) {
-            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 234 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, accepted ADR 059 bounded source-prefix discovery, accepted ADR 060 pending-output response-emission preflight, accepted ADR 061 outer HTTP failure disclosure, the optional reviewer walkthrough, the conditional design-goal companion, optional RAG guidance, and proposed Alpha 8 scope/notes; immutable Alpha 7 remains the historical 218-file artifact.';
+            $failures[] = 'The current post-Alpha-7 release inventory must contain exactly 234 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, accepted ADR 059 bounded source-prefix discovery, accepted ADR 060 pending-output response-emission preflight, accepted ADR 061 outer HTTP failure disclosure, the optional reviewer walkthrough, the conditional design-goal companion, optional RAG guidance, and accepted Alpha 8 scope/notes; immutable Alpha 7 remains the historical 218-file artifact.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -1692,9 +1692,9 @@ function distributionGuardrailFailures(
 
     if (
         !is_string($skeletonCi)
-        || substr_count($skeletonCi, '- run: composer check') !== 1
-        || str_contains($skeletonCi, '- run: vendor/bin/phpthis check')
-        || str_contains($skeletonCi, '- run: composer test')
+        || substr_count($skeletonCi, 'run: composer check') !== 1
+        || str_contains($skeletonCi, 'run: vendor/bin/phpthis check')
+        || str_contains($skeletonCi, 'run: composer test')
     ) {
         $failures[] = 'Skeleton CI must invoke the canonical composer check exactly once without duplicating its component stages.';
     }

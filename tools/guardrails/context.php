@@ -1752,9 +1752,9 @@ function contextGuardrailFailures(string $root): array
             'Issue #53 must hold any later exact candidate evidence and enumerable accountable-human operation authorizations.',
         ],
         'docs/decisions/README.md' => [
-            'Proposed records:',
-            '`062-bounded-alpha-8-release-scope.md`',
+            "Proposed records:\n\nNone.",
             'Accepted records:',
+            '`062-bounded-alpha-8-release-scope.md`',
             '`054-bounded-alpha-7-release-scope.md`',
             '`059-bounded-application-source-prefix-discovery.md`',
             '`060-reject-pending-output-before-response-emission.md`',
@@ -3151,7 +3151,7 @@ function contextGuardrailFailures(string $root): array
             'ADR 061 introduces Contract version 18',
         ],
         'docs/decisions/README.md' => [
-            "Proposed records:\n\n- `062-bounded-alpha-8-release-scope.md`",
+            "Proposed records:\n\nNone.",
             '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
             'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
         ],

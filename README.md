@@ -31,7 +31,7 @@ The framework supplies a small execution foundation and strict verification boun
 | Coordinated release status | Alpha 7 is the latest completed and announced coordinated release recorded by closed [Issue #53](https://github.com/balgf/PHPThis/issues/53), including both GitHub prereleases, the final announcement, and Issue closure |
 | Current post-tag `main` | Unreleased development source containing accepted ADRs 055 through 061, Consumer Contract version 18, Strict Profile version 4, PHT008, and accepted executable guard, checker, runtime-boundary, and maintainer-evidence changes; it is not part of `v0.1.0-alpha.7` or a later candidate |
 
-Alpha 8 preparation is tracked in [Issue #81](https://github.com/balgf/PHPThis/issues/81), with [proposed scope](docs/decisions/062-bounded-alpha-8-release-scope.md) and [draft upgrade notes](docs/releases/0.1.0-alpha.8.md). No Alpha 8 candidate or package is approved or published by this preparation.
+Alpha 8 preparation is tracked in [Issue #81](https://github.com/balgf/PHPThis/issues/81), with [accepted scope](docs/decisions/062-bounded-alpha-8-release-scope.md) and [accepted upgrade notes](docs/releases/0.1.0-alpha.8.md). No Alpha 8 candidate or package is approved or published by this preparation.
 
 Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation. The [Alpha 7 release notes](docs/releases/0.1.0-alpha.7.md) describe the framework changes and compatibility boundary.
 

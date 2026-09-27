@@ -97,9 +97,9 @@ Both exact candidate commits remain `PENDING`. This source-preparation approval 
 
 The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection above are preserved acceptance-time history, not current publication state. Issue #53 owns the later exact candidates, approvals, CI, tags, package versions, clean public-distribution proof, and remaining operation authority.
 
-## Alpha 8 preparation proposal
+## Approved Alpha 8 scope and source preparation
 
-[Issue #81](https://github.com/balgf/PHPThis/issues/81) tracks preparation of proposed `0.1.0-alpha.8`. [Proposed ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md) bounds the rollup from Alpha 7, and [draft notes](docs/releases/0.1.0-alpha.8.md) describe Contract 13 → 18 / Profile 3 → 4 migration. Scope acceptance, planned publication date, exact framework/skeleton candidates and publication authorizations remain pending. Preparation is underway; Alpha 7 remains the latest published pair. The canonical checklist below remains unchecked and reusable.
+[Issue #81](https://github.com/balgf/PHPThis/issues/81) tracks preparation of `0.1.0-alpha.8`. [Accepted ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md) bounds the rollup from Alpha 7, and [accepted source-preparation notes](docs/releases/0.1.0-alpha.8.md) describe Contract 13 → 18 / Profile 3 → 4 migration. The maintainer accepted the reviewable scope, version/tag names and upgrade notes on 2026-09-27 (Asia/Manila) and authorized continued source preparation through framework and skeleton pull requests. The planned publication date, exact framework/skeleton candidates, signing identity and publication authorizations remain pending. Preparation is underway; Alpha 7 remains the latest published pair. The canonical checklist below remains unchecked and reusable.
 
 ## Reusable release state model
 
@@ -171,7 +171,7 @@ At the end of this step, record the framework side as published but the overall 
 ### 4. Publish the skeleton prerelease
 
 - [ ] Confirm the authorization record permits preparing, proving, committing, and pushing the dedicated skeleton candidate. That preparation authority does not authorize a skeleton tag or package update.
-- [ ] Export the contents of `skeleton/` as the root of its dedicated repository; do not publish it as a nested directory of the framework package.
+- [ ] Export the contents of `skeleton/` as the root of its dedicated repository; do not publish it as a nested directory of the framework package. Preserve the dedicated repository’s reviewed security workflow, ruleset payloads and repository-specific operations record when synchronizing the starter. Reconcile shared CI with the source template and re-verify the effective remote protections; an export must not remove them.
 - [ ] Record the approved skeleton repository URL and confirm its package name remains `phpthis/skeleton`.
 - [ ] Remove the framework-maintainer source-evaluation section from the exported skeleton README so the published package remains consumer-only and does not link to framework-repository files it does not contain.
 - [ ] Remove the pre-alpha VCS `repositories` override from the exported `composer.json`.

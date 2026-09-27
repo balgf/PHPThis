@@ -138,6 +138,6 @@ Framework-owned authentication or authorization engines, credential issuance and
 
 ## Phase 8: Alpha 8 preparation
 
-- In progress: [Issue #81](https://github.com/balgf/PHPThis/issues/81), [proposed ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md) and [draft release notes](docs/releases/0.1.0-alpha.8.md) bound the accepted post-Alpha-7 rollup and Contract 13 → 18 / Profile 3 → 4 migration. Exact candidates and the planned publication date remain pending.
-- Required before publication: approve the scope, prove exact clean framework/skeleton candidates and effective release protections, verify signing, and complete the canonical release and public-installation gates.
+- In progress: [Issue #81](https://github.com/balgf/PHPThis/issues/81), [accepted ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md) and [accepted source-preparation notes](docs/releases/0.1.0-alpha.8.md) bound the accepted post-Alpha-7 rollup and Contract 13 → 18 / Profile 3 → 4 migration. Exact candidates and the planned publication date remain pending.
+- Required before publication: approve and prove exact clean framework/skeleton candidates and effective release protections, verify signing, and complete the canonical release and public-installation gates.
 - Required after the public pair exists: repeat the retained #71 consumer upgrade against those exact identities; existing source and fixture evidence retain their stated limits.
