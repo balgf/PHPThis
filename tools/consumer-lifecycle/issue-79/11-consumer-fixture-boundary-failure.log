@@ -1,0 +1,4 @@
+FAIL PHT007 tests/fixtures/transport/public/index.php:6 indexes $_SERVER; pass the HTTP transport array unchanged or read configuration with \getenv in the single configuration boundary.
+FAIL tests/fixtures/transport/public/index.php:6 reads a PHP superglobal outside public/index.php.
+Script phpthis check handling the profile event returned with error code 1
+Script @profile was called via check

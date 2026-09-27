@@ -1,0 +1,80 @@
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Nothing to install, update or remove
+Generating autoload files
+26 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+PASS guardrails: 1483 Markdown files, 242 PHP files, 2618 core lines
+Instructions for interpreting errors
+---------
+
+Each error has an associated identifier, like `argument.type`
+or `return.missing`.
+
+Each error identifier has documentation at URL https://phpstan.org/error-identifiers/<identifier>
+This page contains code example, explanation why is this an error
+and instruction how to fix it.
+Before fixing the error, fetch the documentation page for its identifier.
+
+The error usually indicates a real bug or incorrect type in the code. Fix the underlying cause, do not just make the error go away.
+Do not add `@phpstan-ignore` comments, `@phpstan-ignore-next-line` comments, or baseline entries to suppress the error.
+Do not use assert() or inline @var PHPDoc tag to override PHPStan's inferred type.
+Do not add type casts just to silence errors.
+Do not widen parameter or return types just to make the error go away.
+ ------ ---------------------------------------------------------------------- 
+  Line   tools/consumer-lifecycle/issue-79/compatibility-probe.php             
+ ------ ---------------------------------------------------------------------- 
+  14     Instantiated class FixtureModels not found.                           
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  15     Call to static method factory() on an unknown class OpenAI.           
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  15     Cannot call method make() on mixed.                                   
+         🪪  method.nonObject                                                  
+  15     Cannot call method withApiKey() on mixed.                             
+         🪪  method.nonObject                                                  
+  15     Cannot call method withBaseUri() on mixed.                            
+         🪪  method.nonObject                                                  
+  15     Cannot call method withHttpClient() on mixed.                         
+         🪪  method.nonObject                                                  
+  18     Cannot call method create() on mixed.                                 
+         🪪  method.nonObject                                                  
+  18     Cannot call method embeddings() on mixed.                             
+         🪪  method.nonObject                                                  
+  22     Access to property $requests on an unknown class FixtureModels.       
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  22     Access to static property $attempts on an unknown class               
+         RejectDiscovery.                                                      
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  27     Access to static property $attempts on an unknown class               
+         RejectDiscovery.                                                      
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  27     Access to static property $attempts on an unknown class               
+         RejectDiscovery.                                                      
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  30     Instantiated class                                                    
+         LLPhant\Embeddings\VectorStores\Qdrant\QdrantVectorStore not found.   
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  30     Instantiated class Qdrant\Config not found.                           
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  34     Access to static property $attempts on an unknown class               
+         RejectDiscovery.                                                      
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  34     Strict comparison using !== between 1 and 1 will always evaluate to   
+         false.                                                                
+         🪪  notIdentical.alwaysFalse                                          
+ ------ ---------------------------------------------------------------------- 
+
+
+ [ERROR] Found 16 errors                                                        
+
+Script php -d disable_functions=proc_open vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress --memory-limit=1G handling the analyse event returned with error code 1
+Script @analyse was called via check

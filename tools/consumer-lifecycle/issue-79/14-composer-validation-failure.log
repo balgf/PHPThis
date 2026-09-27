@@ -1,0 +1,6 @@
+./composer.json is valid, but with a few warnings
+See https://getcomposer.org/doc/04-schema.md for details on the schema
+# General warnings
+- The package "phpthis/framework" is pointing to a commit-ref, this is bad practice and can cause unforeseen issues.
+- require.theodo-group/llphant : exact version constraints (1.0.3) should be avoided if the package follows semantic versioning
+- require.hkulekci/qdrant : exact version constraints (1.0.0) should be avoided if the package follows semantic versioning

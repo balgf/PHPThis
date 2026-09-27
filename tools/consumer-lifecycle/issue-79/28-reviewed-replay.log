@@ -1,0 +1,78 @@
+$ git clone /Users/balfernandez/Projects/PHPThis/codebase/tools/consumer-lifecycle/issue-79/rag-document-qa.bundle /private/tmp/phpthis-79-reviewed-replay-oldbeomb/consumer
+Cloning into '/private/tmp/phpthis-79-reviewed-replay-oldbeomb/consumer'...
+$ git checkout reviewed-rag
+Note: switching to 'reviewed-rag'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 2f25183 Retain isolated negative controls for excluded discovery paths
+$ composer validate --strict
+./composer.json is valid
+$ composer install --no-interaction --prefer-dist --no-progress
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Package operations: 26 installs, 0 updates, 0 removals
+  - Installing php-http/discovery (1.20.0): Extracting archive
+  - Installing symfony/deprecation-contracts (v3.7.1): Extracting archive
+  - Installing guzzlehttp/promises (2.5.3): Extracting archive
+  - Installing webmozart/assert (1.12.1): Extracting archive
+  - Installing psr/log (3.0.2): Extracting archive
+  - Installing psr/http-message (2.0): Extracting archive
+  - Installing symfony/polyfill-php80 (v1.37.0): Extracting archive
+  - Installing ralouphie/getallheaders (3.0.3): Extracting archive
+  - Installing psr/http-factory (1.1.0): Extracting archive
+  - Installing guzzlehttp/psr7 (2.13.1): Extracting archive
+  - Installing psr/http-client (1.0.3): Extracting archive
+  - Installing guzzlehttp/guzzle (7.15.5): Extracting archive
+  - Installing hkulekci/qdrant (v1.0.0): Extracting archive
+  - Installing phpoffice/math (0.3.0): Extracting archive
+  - Installing phpstan/phpstan (2.2.16): Extracting archive
+  - Installing phpstan/phpstan-strict-rules (2.0.12): Extracting archive
+  - Installing phpthis/framework (dev-main a6a08c8): Extracting archive
+  - Installing psr/container (2.0.2): Extracting archive
+  - Installing symfony/polyfill-mbstring (v1.38.2): Extracting archive
+  - Installing symfony/service-contracts (v3.7.3): Extracting archive
+  - Installing yethee/tiktoken (0.10.0): Extracting archive
+  - Installing smalot/pdfparser (v2.12.5): Extracting archive
+  - Installing phpoffice/phpword (1.4.0): Extracting archive
+  - Installing php-http/multipart-stream-builder (1.4.2): Extracting archive
+  - Installing openai-php/client (v0.19.2): Extracting archive
+  - Installing theodo-group/llphant (1.0.3): Extracting archive
+Generating autoload files
+9 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+$ composer check
+PASS application guardrails: 63 PHP files
+ADVISORY possible application duplication: 10 groups (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected
+
+ [OK] No errors                                                                 
+
+PASS PHPThis application check
+{"schema_version":1,"event":"application.request_summary","correlation_id":"7d71071acfdcfe79cd11a01b55e07d9c","duration_us":18,"response_status":200,"outcome":"success","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"a1e27027df6009c983b695e3ba0827fe","duration_us":54,"response_status":400,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"416abb15259cdd699a1213c884826003","duration_us":56,"response_status":413,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+PASS application behavior and front controller
+PASS RAG input, vector and document boundary tests
+PASS policy order, scoped retrieval, citation validation, no-discovery, failure and call-budget tests
+PASS routed HTTP success, mapped failures, private cache policy and terminal-summary redaction
+PASS maximum ingestion batch, pre-write failure and retrieval cardinality bounds
+{"case":"\/large.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":0.617208}]}
+{"case":"\/redirect.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":0.4445}]}
+{"case":"\/unavailable.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":0.294541}]}
+{"case":"\/slow.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":101.102417}]}
+PASS real transport timeout, response cap, no redirect, failure redaction and service refusal
+PASS excluded openai path enters discovery before HTTP
+PASS excluded qdrant path enters discovery before HTTP

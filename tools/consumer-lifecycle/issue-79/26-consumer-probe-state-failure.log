@@ -1,0 +1,35 @@
+PASS application guardrails: 63 PHP files
+ADVISORY possible application duplication: 10 groups (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected
+Instructions for interpreting errors
+---------
+
+Each error has an associated identifier, like `argument.type`
+or `return.missing`.
+
+Each error identifier has documentation at URL https://phpstan.org/error-identifiers/<identifier>
+This page contains code example, explanation why is this an error
+and instruction how to fix it.
+Before fixing the error, fetch the documentation page for its identifier.
+
+The error usually indicates a real bug or incorrect type in the code. Fix the underlying cause, do not just make the error go away.
+Do not add `@phpstan-ignore` comments, `@phpstan-ignore-next-line` comments, or baseline entries to suppress the error.
+Do not use assert() or inline @var PHPDoc tag to override PHPStan's inferred type.
+Do not add type casts just to silence errors.
+Do not widen parameter or return types just to make the error go away.
+ ------ --------------------------------------------------------------------- 
+  Line   tests/rejected-integrations.php                                      
+ ------ --------------------------------------------------------------------- 
+  28     Result of || is always true.                                         
+         🪪  booleanOr.alwaysTrue                                             
+  28     Strict comparison using !== between 0 and 1 will always evaluate to  
+         true.                                                                
+         🪪  notIdentical.alwaysTrue                                          
+  31     Unreachable statement - code above always terminates.                
+         🪪  deadCode.unreachable                                             
+ ------ --------------------------------------------------------------------- 
+
+
+ [ERROR] Found 3 errors                                                         
+
+Script phpthis check handling the profile event returned with error code 1
+Script @profile was called via check

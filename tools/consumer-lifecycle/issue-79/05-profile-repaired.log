@@ -1,0 +1,6 @@
+PASS application guardrails: 51 PHP files
+ADVISORY possible application duplication: 4 groups (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected
+
+ [OK] No errors                                                                 
+
+PASS PHPThis application check

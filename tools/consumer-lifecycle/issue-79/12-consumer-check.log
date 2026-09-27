@@ -1,0 +1,18 @@
+PASS application guardrails: 62 PHP files
+ADVISORY possible application duplication: 10 groups (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected
+
+ [OK] No errors                                                                 
+
+PASS PHPThis application check
+{"schema_version":1,"event":"application.request_summary","correlation_id":"0464bf6fba2d6208d3056c83ad5f7f7f","duration_us":14,"response_status":200,"outcome":"success","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"c830b6ccc6d94bc17c51abbacb4a4793","duration_us":32,"response_status":400,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"14c4545162b863971de637623c2e5ad7","duration_us":47,"response_status":413,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+PASS application behavior and front controller
+PASS RAG input, vector and document boundary tests
+PASS policy order, scoped retrieval, citation validation, no-discovery, failure and call-budget tests
+PASS routed HTTP success, mapped failures, private cache policy and terminal-summary redaction
+{"case":"\/large.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":0.689}]}
+{"case":"\/redirect.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":0.50725}]}
+{"case":"\/unavailable.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":0.31675}]}
+{"case":"\/slow.php","trace":[{"service":"qdrant","outcome":"failed","elapsed_ms":101.470458}]}
+PASS real transport timeout, response cap, no redirect, failure redaction and service refusal

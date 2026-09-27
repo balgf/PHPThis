@@ -208,6 +208,7 @@ try {
         throw new RuntimeException('The installed request-summary destination-record proof did not complete.');
     }
     proveInstalledTransactionalEmailGuidanceDistribution($project, $installedFramework);
+    proveInstalledRagGuidanceDistribution($project, $installedFramework);
     proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project, $installedFramework);
     proveInstalledTestRunnerModularizationGuidanceDistribution($project, $installedFramework);
     proveInstalledStatelessAuthenticationGuidanceDistribution($project, $installedFramework);

@@ -1,0 +1,19 @@
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Nothing to install, update or remove
+Generating autoload files
+26 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+PASS guardrails: 1483 Markdown files, 241 PHP files, 2618 core lines
+
+ [OK] No errors                                                                 
+
+PASS bounded maintainer process support: streams, limits, redaction, and cleanup
+
+Fatal error: Uncaught RuntimeException: The pinned source-skeleton fixture digest changed without a task revision. in /Users/balfernandez/Projects/PHPThis/codebase/tools/test-agent-evaluation.php:574
+Stack trace:
+#0 /Users/balfernandez/Projects/PHPThis/codebase/tools/test-agent-evaluation.php(29): agentEvaluationTest(false, 'The pinned sour...')
+#1 {main}
+  thrown in /Users/balfernandez/Projects/PHPThis/codebase/tools/test-agent-evaluation.php on line 574
+Script php tools/test-agent-evaluation.php handling the test:agent-evaluation event returned with error code 255
+Script @test:agent-evaluation was called via check

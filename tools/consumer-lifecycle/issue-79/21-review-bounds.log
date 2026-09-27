@@ -1,0 +1,4 @@
+PASS RAG input, vector and document boundary tests
+PASS policy order, scoped retrieval, citation validation, no-discovery, failure and call-budget tests
+PASS routed HTTP success, mapped failures, private cache policy and terminal-summary redaction
+PASS maximum ingestion batch, pre-write failure and retrieval cardinality bounds

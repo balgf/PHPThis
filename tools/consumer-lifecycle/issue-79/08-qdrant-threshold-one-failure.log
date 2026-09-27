@@ -1,0 +1,29 @@
+IMAGE qdrant/qdrant@sha256:12364fe851b9f17356fc88189fc06d1b521262e04659ec7345975b00c9246a10
+{"title":"qdrant - vector search engine","version":"1.19.1","commit":"6ab21cac18ebb6f4ae29102c7f8f5cc11affd5de"}
+Collection operation failed.
+           _                 _    
+  __ _  __| |_ __ __ _ _ __ | |_  
+ / _` |/ _` | '__/ _` | '_ \| __| 
+| (_| | (_| | | | (_| | | | | |_  
+ \__, |\__,_|_|  \__,_|_| |_|\__| 
+    |_|                           
+
+Version: 1.19.1, build: 6ab21cac
+Access web UI at http://localhost:6333/dashboard
+Agentic Skills: https://skills.qdrant.tech/
+
+2026-09-27T06:44:47.295964Z  WARN qdrant: There is a potential issue with the filesystem for storage path ./storage. Details: Data will be lost on system restart - tmpfs is memory-based
+2026-09-27T06:44:47.295977Z  INFO storage::content_manager::consensus::persistent: Initializing new raft state at ./storage/raft_state.json
+2026-09-27T06:44:47.296614Z  INFO qdrant: Distributed mode disabled
+2026-09-27T06:44:47.296628Z  INFO qdrant: Telemetry reporting disabled
+2026-09-27T06:44:47.300698Z  WARN qdrant::startup: Failed to create init file indicator: failed to create file `.qdrant-initialized`: Read-only file system (os error 30)
+2026-09-27T06:44:47.300875Z  INFO qdrant::actix: REST transport settings: keep_alive=5s, client_request_timeout=5s, client_disconnect_timeout=5s
+2026-09-27T06:44:47.300885Z  INFO qdrant::actix: TLS disabled for REST API
+2026-09-27T06:44:47.300922Z  INFO qdrant::actix: Qdrant HTTP listening on 6333
+2026-09-27T06:44:47.300930Z  INFO actix_server::builder: starting 1 workers
+2026-09-27T06:44:47.300934Z  INFO actix_server::server: Actix runtime found; starting in Actix runtime
+2026-09-27T06:44:47.300935Z  INFO actix_server::server: starting service: "actix-web-service-0.0.0.0:6333", workers: 1, listening on: 0.0.0.0:6333
+2026-09-27T06:44:47.303427Z  INFO qdrant::tonic: Qdrant gRPC listening on 6334
+2026-09-27T06:44:47.303441Z  INFO qdrant::tonic: TLS disabled for gRPC API
+2026-09-27T06:44:47.410955Z  INFO actix_web::middleware::logger: 172.19.0.1 "PUT /collections/phpthis_rag_fixture_v1 HTTP/1.1" 422 137 "-" "-" 0.000165
+CLEANUP owned Qdrant container and isolated network removed

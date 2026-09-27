@@ -1,0 +1,12 @@
+PASS application guardrails: 16 PHP files
+PASS application duplication advisory: no possible groups (minimum 48 normalized tokens)
+
+In TcpServer.php line 167:
+                                                                            
+  Failed to listen on "tcp://127.0.0.1:0": Operation not permitted (EPERM)  
+                                                                            
+
+analyse [-c|--configuration CONFIGURATION] [-l|--level LEVEL] [--no-progress] [--debug] [-a|--autoload-file AUTOLOAD-FILE] [--error-format ERROR-FORMAT] [-b|--generate-baseline [GENERATE-BASELINE]] [--allow-empty-baseline] [--memory-limit MEMORY-LIMIT] [--xdebug] [--tmp-file TMP-FILE] [--instead-of INSTEAD-OF] [--fix] [--watch] [--pro] [--fail-without-result-cache] [--] [<paths>...]
+
+Script phpthis check handling the profile event returned with error code 1
+Script @profile was called via check

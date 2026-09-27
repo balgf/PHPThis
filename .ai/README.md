@@ -33,6 +33,7 @@ An ordinary route change starts with `.ai/routing.md`; read a decision record on
 | Change request, response, or generic response-cookie behavior | `.ai/http.md` | `src/Http/`, `src/Application.php`, and nearest behavior tests |
 | Define or change a structured JSON resource success representation, including nested child data | `.ai/http.md` | public HTTP guides, exact response path, frontend decoder, and behavior evidence; add database, cache, integration, or testing guides only when entered |
 | Change frontend integration or application-owned HTML rendering | `.ai/http.md` | `docs/frontend-integration.md`, exact HTTP paths, and behavior evidence; add other concern guides only when entered |
+| Change RAG, LLPhant or vector-database integration guidance | `.ai/rag.md` | `docs/rag.md`, application integration context and retained consumer evidence |
 | Change email guidance or application email context | `.ai/email.md` | `docs/email.md`, integration record, selected transport, and evidence |
 | Change PHP runtime ingestion or the outer boundary | `.ai/request-boundary.md` | reader, boundary, front controller, and boundary tests |
 | Parse or change external values | `.ai/types.md` | operation-specific boundary value, failure map, and adversarial tests |

@@ -1,0 +1,10 @@
+IMAGE qdrant/qdrant@sha256:12364fe851b9f17356fc88189fc06d1b521262e04659ec7345975b00c9246a10
+{"title":"qdrant - vector search engine","version":"1.19.1","commit":"6ab21cac18ebb6f4ae29102c7f8f5cc11affd5de"}
+PASS explicit collection create
+{"case":"small-exact","stored_points":6,"trace":[{"service":"embedding","outcome":"ok","elapsed_ms":0.009625},{"service":"qdrant","outcome":"ok","elapsed_ms":1.261625},{"service":"generation","outcome":"ok","elapsed_ms":0.014167}]}
+{"case":"larger-exact","stored_points":134,"trace":[{"service":"embedding","outcome":"ok","elapsed_ms":0.0095},{"service":"qdrant","outcome":"ok","elapsed_ms":0.801958},{"service":"generation","outcome":"ok","elapsed_ms":0.011042}]}
+{"case":"larger-approximate-eligible","indexed_vectors":134,"trace":[{"service":"embedding","outcome":"ok","elapsed_ms":0.011417},{"service":"qdrant","outcome":"ok","elapsed_ms":3.491417},{"service":"generation","outcome":"ok","elapsed_ms":0.011708}],"limit":"Server may select a payload-index or scan path; no ANN-speed or semantic-quality claim."}
+PASS real Qdrant isolation, exact/approximate selection, repeat/shrink/delete, dimensions and fixed external call counts
+PASS explicit collection delete
+PASS real missing collection maps to failure without creation, generation or retry
+CLEANUP owned Qdrant container and isolated network removed

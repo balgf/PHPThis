@@ -72,3 +72,7 @@ Mandatory installed framework contract/map text was 124,005 bytes / 15,644 white
 ## Next concrete maintenance trigger
 
 When the next matching public framework AND skeleton release is available, the maintainer repeats this same retained consumer's upgrade table and full gate against those exact public identities. This is written into its frozen lifecycle plan, not an installed background monitor. Retain new product changes as new frozen prompts on the same history. A future public-target repetition and actual elapsed maintenance period are distinct results; this campaign establishes the retained evaluation only.
+
+## Optional RAG integration consumer
+
+[Issue 79](issue-79/README.md) retains a separate LLPhant/Qdrant consumer, pinned dependencies/server, deterministic provider fixtures, real disposable Qdrant evidence, failure/repair logs and clean-bundle replay. It introduces no framework dependency or ordinary-gate service requirement. [Public adoption guidance](../../docs/rag.md) owns the supported subset and limits.

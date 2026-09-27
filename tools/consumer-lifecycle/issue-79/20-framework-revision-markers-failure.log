@@ -1,0 +1,13 @@
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Nothing to install, update or remove
+Generating autoload files
+26 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+FAIL agent-evaluation source and boundary artifact tools/agent-evaluation/tasks.php is missing marker: 'revision' => 29
+FAIL agent-evaluation source and boundary artifact tools/agent-evaluation/tasks.php is missing marker: 'manifest_sha256' => '2763bdb2ccf21cde598ebf9b926ee98c89092426107e41d3e003a39625158654'
+FAIL agent-evaluation source and boundary artifact tools/agent-evaluation/tasks/change.simple-ping/task.json is missing marker: "revision": 29
+FAIL agent-evaluation source and boundary artifact tools/agent-evaluation/tasks/change.simple-ping/task.json is missing marker: "tree": "f9f24878d13a2f550b6de3b07b178da079b53833"
+FAIL agent-evaluation source and boundary artifact tools/agent-evaluation/tasks/change.simple-ping/task.json is missing marker: "fixture_sha256": "7c74a07eb8d4d394258147410f5b01b4395586316dd51bf7f2bca0ce793ac159"
+Script php tools/guardrails.php handling the guard event returned with error code 1
+Script @guard was called via check

@@ -2457,8 +2457,8 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 231',
-            'current post-Alpha-7 release inventory must contain exactly 231 reviewed files',
+            'count($packagePaths) !== 232',
+            'current post-Alpha-7 release inventory must contain exactly 232 reviewed files',
             'ADR 058 concern-local context routing',
             'accepted ADR 059 bounded source-prefix discovery',
             'accepted ADR 060 pending-output response-emission preflight',

@@ -1,0 +1,8 @@
+FAIL The installed-consumer entrypoint must invoke its exact 53 proof functions once, unconditionally, and in the reviewed order.
+FAIL Installed-consumer harness module tools/test-consumer-project/application.php must remain declaration-only with its exact ordered function inventory.
+FAIL Installed protected file-transfer proof wiring or completion sentinel changed.
+FAIL Installed Amazon S3 verification proof wiring or completion sentinel changed.
+FAIL The installed field-validation error proof must retain one unconditional entrypoint call and one terminal owning-module completion sentinel.
+FAIL The installed structured JSON and nested-resource runtime proof must retain one unconditional entrypoint call and one terminal owning-module completion sentinel.
+FAIL The current post-Alpha-7 release inventory must contain exactly 231 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, accepted ADR 059 bounded source-prefix discovery, accepted ADR 060 pending-output response-emission preflight, accepted ADR 061 outer HTTP failure disclosure, the optional reviewer walkthrough, and the conditional design-goal companion; immutable Alpha 7 remains the historical 218-file artifact.
+Script php tools/guardrails.php handling the guard event returned with error code 1
