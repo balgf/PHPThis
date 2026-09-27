@@ -4732,7 +4732,7 @@ function repositoryGuardrailFailures(string $root): array
             'This decision selects no release identity and authorizes no tag, package, release, or announcement.',
         ],
         'docs/decisions/README.md' => [
-            "Proposed records:\n\n- None.",
+            "Proposed records:\n\n- `062-bounded-alpha-8-release-scope.md`",
             '`059-bounded-application-source-prefix-discovery.md`',
             '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
             'Accepted [ADR 059](059-bounded-application-source-prefix-discovery.md) coordinates Consumer Contract version 16',
@@ -4767,7 +4767,7 @@ function repositoryGuardrailFailures(string $root): array
             'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
         ],
         'docs/guardrails.md' => [
-            'The accepted ADR 059 source-prefix guard now pins the 232-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion and optional RAG guidance',
+            'The accepted ADR 059 source-prefix guard now pins the 234-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion, optional RAG guidance and proposed Alpha 8 scope/notes',
             'every other application symlink fails before target-content inspection',
             'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
@@ -4892,7 +4892,7 @@ function repositoryGuardrailFailures(string $root): array
             'This fixture maintenance records no model result and makes no comparative claim.',
         ],
         'docs/decisions/README.md' => [
-            "Proposed records:\n\n- None.",
+            "Proposed records:\n\n- `062-bounded-alpha-8-release-scope.md`",
             'Accepted records:',
             '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
             'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',

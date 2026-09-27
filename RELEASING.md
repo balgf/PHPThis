@@ -97,6 +97,10 @@ Both exact candidate commits remain `PENDING`. This source-preparation approval 
 
 The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection above are preserved acceptance-time history, not current publication state. Issue #53 owns the later exact candidates, approvals, CI, tags, package versions, clean public-distribution proof, and remaining operation authority.
 
+## Alpha 8 preparation proposal
+
+[Issue #81](https://github.com/balgf/PHPThis/issues/81) tracks preparation of proposed `0.1.0-alpha.8`. [Proposed ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md) bounds the rollup from Alpha 7, and [draft notes](docs/releases/0.1.0-alpha.8.md) describe Contract 13 → 18 / Profile 3 → 4 migration. Scope acceptance, planned publication date, exact framework/skeleton candidates and publication authorizations remain pending. Preparation is underway; Alpha 7 remains the latest published pair. The canonical checklist below remains unchecked and reusable.
+
 ## Reusable release state model
 
 Keep these four states distinct:

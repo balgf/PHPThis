@@ -4,7 +4,7 @@ Decision records capture constraints that an AI must not reinterpret from scratc
 
 Proposed records:
 
-- None.
+- `062-bounded-alpha-8-release-scope.md`
 
 Accepted records:
 

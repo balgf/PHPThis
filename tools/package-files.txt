@@ -100,6 +100,7 @@ docs/decisions/058-concern-local-ai-context-routing.md
 docs/decisions/059-bounded-application-source-prefix-discovery.md
 docs/decisions/060-reject-pending-output-before-response-emission.md
 docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md
+docs/decisions/062-bounded-alpha-8-release-scope.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
@@ -153,6 +154,7 @@ docs/releases/0.1.0-alpha.4.md
 docs/releases/0.1.0-alpha.5.md
 docs/releases/0.1.0-alpha.6.md
 docs/releases/0.1.0-alpha.7.md
+docs/releases/0.1.0-alpha.8.md
 docs/request-handling.md
 docs/request-policy.md
 docs/reviewer-walkthrough.md

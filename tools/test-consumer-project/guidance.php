@@ -841,6 +841,21 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
 
 function proveInstalledReleaseGuidanceDistribution(string $installedFramework): void
 {
+    requireInstalledArtifactMarkers([
+        $installedFramework . '/docs/decisions/062-bounded-alpha-8-release-scope.md' => [
+            'Status: proposed',
+            'Both exact candidate commits and the planned publication date remain `PENDING`.',
+            'Issue #81',
+        ],
+        $installedFramework . '/docs/releases/0.1.0-alpha.8.md' => [
+            'Source-preparation status: proposed',
+            'Consumer Contract **13 → 18**, Strict Profile **3 → 4**',
+            '## Upgrade from Alpha 7',
+            'Alpha 7 remains the latest published coordinated release.',
+        ],
+        $installedFramework . '/RELEASING.md' => ['## Alpha 8 preparation proposal'],
+    ], 'proposed Alpha 8 release scope and migration');
+
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
         $installedFramework . '/RELEASING.md' => [
@@ -1086,7 +1101,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'ADR 054, the tagged Alpha 7 notes, and the approved Alpha 7 source-preparation subsection retain their acceptance-time `PENDING` and non-authority statements as historical evidence.',
             '`RELEASING.md` is the detailed current mutable release-state owner',
             'Current guidance records closed Issue #53\'s completed and announced coordinated Alpha 7 evidence, including both GitHub prereleases, the final announcement, and Issue closure.',
-            'The accepted ADR 059 source-prefix guard now pins the 232-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion and optional RAG guidance',
+            'The accepted ADR 059 source-prefix guard now pins the 234-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion, optional RAG guidance and proposed Alpha 8 scope/notes',
             'accepted ADRs 055 through 061, current Contract 18/Profile 4/PHT008',
             'the executable guard/checker/runtime-boundary and maintainer-evidence character of the accepted delta',
             'Concern-specific capability and evidence contracts remain in their routed guides rather than being repeated in the README.',
