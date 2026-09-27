@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "evidence_issue": "https://github.com/balgf/PHPThis/issues/81",
+  "method": "Receipts, logs, patch and bundle copied byte-for-byte; README newly describes their retained provenance.",
+  "consumer_commit": "797d138aa5ae090b55e256524b228455d2d950f9",
+  "files": {
+    "README.md": {
+      "bytes": 4149,
+      "sha256": "c07a9329d53c8c220ca76ddc3c60ac8f5da9295b899f568844c154cf03446c9c"
+    },
+    "account-directory-public-alpha8.bundle": {
+      "bytes": 114402,
+      "sha256": "3002d47d9d6c081f1e342df28cd68344c19905e387d1e8acd4f83b5d2a78f15c"
+    },
+    "alpha8-release-evidence.json": {
+      "bytes": 7937,
+      "sha256": "6090e82846e8a01cec2389f6a6d4b0623f264bb843f8a865ee8baf9fb9ba1d57"
+    },
+    "public-alpha8-check.json": {
+      "bytes": 14651,
+      "sha256": "63d2ed72171fbd8a57cd45d3695b39c6b055e7088d99322291d2f4b1d3804148"
+    },
+    "public-alpha8-check.log": {
+      "bytes": 3411,
+      "sha256": "e37f08fb324531656b046656dd8fcb40ee28a32612c319afe96dc1318f381017"
+    },
+    "public-alpha8.patch": {
+      "bytes": 13741,
+      "sha256": "359d390ae2dd39f87fbdd01ff191f170c9666a0584998b82eeccab9bb3a2aebc"
+    },
+    "public-install-01-create-project.log": {
+      "bytes": 985,
+      "sha256": "141ae684551c9b4adcd1330a8bc413d8d8308a2e56bc8fa382d24cdc4fdc7a59"
+    },
+    "public-install-02-validate.log": {
+      "bytes": 25,
+      "sha256": "43add299dc97ecbd90ec2dc456ef5a0bd824bb9abdae2a3d7cdb520e21f8e86d"
+    },
+    "public-install-03-complete-check.log": {
+      "bytes": 1252,
+      "sha256": "355c6ffdf3f3de35ddcf257b6609bdc4bc95761144ac82654771a986cdd5326c"
+    },
+    "public-install-04-locked-audit.log": {
+      "bytes": 44,
+      "sha256": "dac04dda7966b04d2eb83ba22b729e4025f820bba102192effa983b1fa377af8"
+    },
+    "public-install-proof.json": {
+      "bytes": 3169,
+      "sha256": "b3ccdcb3248b00e387939fe08882e71dc344ac62e62cbb4e8e22779d94feac1a"
+    },
+    "retained-consumer-public-proof.json": {
+      "bytes": 1987,
+      "sha256": "26f833f8e7096d17418ba79505bada18a03be334fda2bfbcf2189a0dc76e6aa6"
+    },
+    "retained-consumer-update.log": {
+      "bytes": 706,
+      "sha256": "2c20fde17a23527b004b7bf707932b1b03d722281116b4f2b8f0b57d4cac2373"
+    },
+    "retained-consumer-validation-audit.log": {
+      "bytes": 69,
+      "sha256": "92a86683df034fc3bdeb19e724304b12bae52d0f9c27d1f193778b654462d019"
+    }
+  }
+}
