@@ -164,7 +164,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             'It adds no framework-core type or line, runtime dependency, framework configuration service, middleware, logger, discovery mechanism, global handler, Strict Profile rule, or `PHT` diagnostic.',
         ],
         $installedFramework . '/docs/decisions/README.md' => [
-            "Proposed records:\n\n- None.",
+            "Proposed records:\n\nNone.",
             '`059-bounded-application-source-prefix-discovery.md`',
             '`060-reject-pending-output-before-response-emission.md`',
             '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
@@ -202,7 +202,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             "The bounded task-routed context guard pins ADR 044's exact simple-endpoint definition and four-file locality metric",
             'The installed proof checks the copied local skeleton plus packaged public guidance and application template, including the starter',
             'The guard adds no context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate.',
-            'The accepted ADR 059 source-prefix guard now pins the 232-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion and optional RAG guidance',
+            'The accepted ADR 059 source-prefix guard now pins the 234-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion, optional RAG guidance and accepted Alpha 8 scope/notes',
             'every other application symlink fails before target-content inspection',
             'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
             'The accepted ADR 060 response-emission guard pins Consumer Contract version 17',
