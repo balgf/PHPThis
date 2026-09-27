@@ -1,0 +1,578 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-09-26T13:51:30.057915+00:00",
+  "owner": "balgf / PHPThis maintainer",
+  "consumer": "synthetic account directory",
+  "retained_history": "account-directory.bundle",
+  "bundle_sha256": "7989410ad6f3451acbdf22608f666dff2cdb25ade90588f991e1f63855933d04",
+  "bundle_bytes": 111669,
+  "runtime": {
+    "php": "8.4.19",
+    "pdo_sqlite": "8.4.19",
+    "sqlite": "3.51.2",
+    "python": "3.14.6",
+    "scope": "observed local evaluation only"
+  },
+  "checkpoints": [
+    {
+      "tag": "pristine-alpha7",
+      "commit": "871a73b8307e7e5584a1f40046c5129cbf6a2758",
+      "committed_at": "2026-09-26T14:35:23+08:00",
+      "framework_version": "v0.1.0-alpha.7",
+      "framework_source": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
+      "consumer_contract": 13,
+      "strict_profile": 3,
+      "lock_sha256": "c8ab8258e4223f4e5d5a6d743a12adc6d26a3c055262732f4edb33a9464894b0",
+      "runtime_code": {
+        "files": 11,
+        "bytes": 13781,
+        "lines": 498
+      },
+      "context": {
+        "files": 19,
+        "bytes": 127550,
+        "lines": 715
+      },
+      "tests": {
+        "files": 1,
+        "bytes": 11582,
+        "lines": 308
+      },
+      "all_tracked": {
+        "files": 39,
+        "bytes": 166821,
+        "lines": 1868
+      },
+      "gate": {
+        "log": "00-pristine-check.log",
+        "record": "00-pristine-check.json",
+        "exit_code": 0,
+        "elapsed_seconds": 1.021
+      }
+    },
+    {
+      "tag": "frozen-plan",
+      "commit": "5079f4f191c9b0f6f091004cc242858279b6d446",
+      "committed_at": "2026-09-26T14:35:34+08:00",
+      "framework_version": "v0.1.0-alpha.7",
+      "framework_source": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
+      "consumer_contract": 13,
+      "strict_profile": 3,
+      "lock_sha256": "c8ab8258e4223f4e5d5a6d743a12adc6d26a3c055262732f4edb33a9464894b0",
+      "runtime_code": {
+        "files": 11,
+        "bytes": 13781,
+        "lines": 498
+      },
+      "context": {
+        "files": 19,
+        "bytes": 127550,
+        "lines": 715
+      },
+      "tests": {
+        "files": 1,
+        "bytes": 11582,
+        "lines": 308
+      },
+      "all_tracked": {
+        "files": 40,
+        "bytes": 172545,
+        "lines": 1899
+      }
+    },
+    {
+      "tag": "baseline-alpha7",
+      "commit": "17f5011e827f9c19e6bdab96a68763a1267b2afa",
+      "committed_at": "2026-09-26T14:48:47+08:00",
+      "framework_version": "v0.1.0-alpha.7",
+      "framework_source": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
+      "consumer_contract": 13,
+      "strict_profile": 3,
+      "lock_sha256": "67fc726ca455babb584de3db41bcb05e8a5fb54bb4a8d3a0a953936ee87c8141",
+      "runtime_code": {
+        "files": 37,
+        "bytes": 31242,
+        "lines": 894
+      },
+      "context": {
+        "files": 19,
+        "bytes": 65843,
+        "lines": 399
+      },
+      "tests": {
+        "files": 6,
+        "bytes": 32732,
+        "lines": 672
+      },
+      "all_tracked": {
+        "files": 71,
+        "bytes": 147388,
+        "lines": 2311
+      },
+      "gate": {
+        "log": "02-baseline.log",
+        "record": "02-baseline.json",
+        "exit_code": 0,
+        "elapsed_seconds": 1.461,
+        "captured_files_match_commit": true
+      }
+    },
+    {
+      "tag": "search-red",
+      "commit": "bdd599da805380eb38b847ba98a1ff5d39825962",
+      "committed_at": "2026-09-26T14:50:10+08:00",
+      "framework_version": "v0.1.0-alpha.7",
+      "framework_source": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
+      "consumer_contract": 13,
+      "strict_profile": 3,
+      "lock_sha256": "67fc726ca455babb584de3db41bcb05e8a5fb54bb4a8d3a0a953936ee87c8141",
+      "runtime_code": {
+        "files": 37,
+        "bytes": 31242,
+        "lines": 894
+      },
+      "context": {
+        "files": 19,
+        "bytes": 65843,
+        "lines": 399
+      },
+      "tests": {
+        "files": 6,
+        "bytes": 36902,
+        "lines": 723
+      },
+      "all_tracked": {
+        "files": 71,
+        "bytes": 151558,
+        "lines": 2362
+      },
+      "expected_failure_log": "03-search-initial-failure.log"
+    },
+    {
+      "tag": "search-alpha7",
+      "commit": "09bee88144d4a393ad9af7a57c04ac50b90c2ae3",
+      "committed_at": "2026-09-26T14:51:08+08:00",
+      "framework_version": "v0.1.0-alpha.7",
+      "framework_source": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
+      "consumer_contract": 13,
+      "strict_profile": 3,
+      "lock_sha256": "67fc726ca455babb584de3db41bcb05e8a5fb54bb4a8d3a0a953936ee87c8141",
+      "runtime_code": {
+        "files": 37,
+        "bytes": 32010,
+        "lines": 906
+      },
+      "context": {
+        "files": 19,
+        "bytes": 66793,
+        "lines": 405
+      },
+      "tests": {
+        "files": 6,
+        "bytes": 37136,
+        "lines": 725
+      },
+      "all_tracked": {
+        "files": 71,
+        "bytes": 153510,
+        "lines": 2382
+      },
+      "gate": {
+        "log": "04-search-alpha7.log",
+        "record": "04-search-alpha7.json",
+        "exit_code": 0,
+        "elapsed_seconds": 2.49,
+        "captured_files_match_commit": true
+      }
+    },
+    {
+      "tag": "upgrade-red",
+      "commit": "94757a75bf33829d79d445a0f5316c2304e22a76",
+      "committed_at": "2026-09-26T21:39:31+08:00",
+      "framework_version": "dev-main",
+      "framework_source": "909977b762ff08f823be1e2c16a4dbb704e4f93a",
+      "consumer_contract": 18,
+      "strict_profile": 4,
+      "lock_sha256": "adba280fb4c9f0b0c2d876a2c8e05c1b4fb4678cc5a19ed31a5c22bec467220e",
+      "runtime_code": {
+        "files": 37,
+        "bytes": 32010,
+        "lines": 906
+      },
+      "context": {
+        "files": 19,
+        "bytes": 66793,
+        "lines": 405
+      },
+      "tests": {
+        "files": 7,
+        "bytes": 42411,
+        "lines": 817
+      },
+      "all_tracked": {
+        "files": 72,
+        "bytes": 162110,
+        "lines": 2566
+      },
+      "gate": {
+        "log": "06-upgrade-initial-failure.log",
+        "record": "06-upgrade-initial-failure.json",
+        "exit_code": 1,
+        "elapsed_seconds": 3.045,
+        "captured_files_match_commit": true
+      }
+    },
+    {
+      "tag": "upgraded-source",
+      "commit": "78600be1f15161ed5bcf90421b8d943847c2aa4c",
+      "committed_at": "2026-09-26T21:44:04+08:00",
+      "framework_version": "dev-main",
+      "framework_source": "909977b762ff08f823be1e2c16a4dbb704e4f93a",
+      "consumer_contract": 18,
+      "strict_profile": 4,
+      "lock_sha256": "adba280fb4c9f0b0c2d876a2c8e05c1b4fb4678cc5a19ed31a5c22bec467220e",
+      "runtime_code": {
+        "files": 37,
+        "bytes": 32823,
+        "lines": 925
+      },
+      "context": {
+        "files": 19,
+        "bytes": 68727,
+        "lines": 414
+      },
+      "tests": {
+        "files": 8,
+        "bytes": 46612,
+        "lines": 902
+      },
+      "all_tracked": {
+        "files": 74,
+        "bytes": 172895,
+        "lines": 2697
+      },
+      "gate": {
+        "log": "08-upgrade-repaired.log",
+        "record": "08-upgrade-repaired.json",
+        "exit_code": 0,
+        "elapsed_seconds": 2.279,
+        "captured_files_match_commit": true
+      }
+    },
+    {
+      "tag": "reviewed-source",
+      "commit": "ca26ddfc18acb3528969f91289834cdee2d96e69",
+      "committed_at": "2026-09-26T21:49:45+08:00",
+      "framework_version": "dev-main",
+      "framework_source": "909977b762ff08f823be1e2c16a4dbb704e4f93a",
+      "consumer_contract": 18,
+      "strict_profile": 4,
+      "lock_sha256": "adba280fb4c9f0b0c2d876a2c8e05c1b4fb4678cc5a19ed31a5c22bec467220e",
+      "runtime_code": {
+        "files": 37,
+        "bytes": 32823,
+        "lines": 925
+      },
+      "context": {
+        "files": 19,
+        "bytes": 69453,
+        "lines": 418
+      },
+      "tests": {
+        "files": 9,
+        "bytes": 50752,
+        "lines": 962
+      },
+      "all_tracked": {
+        "files": 75,
+        "bytes": 178305,
+        "lines": 2763
+      },
+      "gate": {
+        "log": "09-final-consumer.log",
+        "record": "09-final-consumer.json",
+        "exit_code": 0,
+        "elapsed_seconds": 3.38,
+        "captured_files_match_commit": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "name": "baseline",
+      "before": "pristine-alpha7",
+      "after": "baseline-alpha7",
+      "diff": "baseline.patch",
+      "diff_sha256": "f4fa474a225532499275ee1ff96ef0dd83bcc6ece1ef019b78c8d6ce926bffa7",
+      "files_touched": [
+        ".ai/README.md",
+        ".ai/architecture.md",
+        ".ai/cli.md",
+        ".ai/configuration.md",
+        ".ai/data.md",
+        ".ai/file-transfers.md",
+        ".ai/jobs.md",
+        ".ai/migrations.md",
+        ".ai/observability.md",
+        ".ai/operations.md",
+        ".ai/project.md",
+        ".ai/request-policy.md",
+        ".ai/testing.md",
+        ".ai/websockets.md",
+        ".ai/workbench.md",
+        ".gitignore",
+        "AGENTS.md",
+        "README.md",
+        "bootstrap.php",
+        "composer.json",
+        "composer.lock",
+        "docs/lifecycle-plan.md",
+        "src/Accounts/AccountId.php",
+        "src/Accounts/AuthenticateAccountRequest.php",
+        "src/Accounts/DenyAllAuthentication.php",
+        "src/Accounts/Forbidden.php",
+        "src/Accounts/Principal.php",
+        "src/Accounts/ResolveAccountTenant.php",
+        "src/Accounts/SameAccountTenant.php",
+        "src/Accounts/Tenant.php",
+        "src/Accounts/Unauthenticated.php",
+        "src/DirectoryComposition.php",
+        "src/Routes.php",
+        "src/Users/CreateUser/AccountCreateAuthorization.php",
+        "src/Users/CreateUser/AuthorizeCreateUser.php",
+        "src/Users/CreateUser/CanCreateUser.php",
+        "src/Users/CreateUser/CreateUserCommand.php",
+        "src/Users/CreateUser/CreateUserConflict.php",
+        "src/Users/CreateUser/CreateUserHandler.php",
+        "src/Users/CreateUser/UnacceptableCreateUser.php",
+        "src/Users/CreateUser/UnsupportedCreateMedia.php",
+        "src/Users/ListUsers/AccountListAuthorization.php",
+        "src/Users/ListUsers/AuthorizeListUsers.php",
+        "src/Users/ListUsers/CanListUsers.php",
+        "src/Users/ListUsers/ListUsersHandler.php",
+        "src/Users/ListUsers/ListUsersPage.php",
+        "src/Users/ListUsers/UserSummary.php",
+        "src/Users/UserId.php",
+        "src/Users/UserRoutes.php",
+        "tests/DirectoryFixture.php",
+        "tests/PolicyFixtures.php",
+        "tests/directory.php",
+        "tests/fixture.php",
+        "tests/front_controller.py",
+        "tests/run.php"
+      ],
+      "numstat": [
+        "1\t1\t.ai/README.md",
+        "7\t111\t.ai/architecture.md",
+        "1\t1\t.ai/cli.md",
+        "2\t21\t.ai/configuration.md",
+        "7\t17\t.ai/data.md",
+        "1\t1\t.ai/file-transfers.md",
+        "1\t1\t.ai/jobs.md",
+        "1\t1\t.ai/migrations.md",
+        "4\t19\t.ai/observability.md",
+        "5\t87\t.ai/operations.md",
+        "5\t24\t.ai/project.md",
+        "5\t18\t.ai/request-policy.md",
+        "5\t59\t.ai/testing.md",
+        "1\t1\t.ai/websockets.md",
+        "1\t1\t.ai/workbench.md",
+        "2\t0\t.gitignore",
+        "1\t1\tAGENTS.md",
+        "3\t44\tREADME.md",
+        "15\t42\tbootstrap.php",
+        "10\t4\tcomposer.json",
+        "3\t2\tcomposer.lock",
+        "31\t0\tdocs/lifecycle-plan.md",
+        "14\t0\tsrc/Accounts/AccountId.php",
+        "9\t0\tsrc/Accounts/AuthenticateAccountRequest.php",
+        "9\t0\tsrc/Accounts/DenyAllAuthentication.php",
+        "5\t0\tsrc/Accounts/Forbidden.php",
+        "11\t0\tsrc/Accounts/Principal.php",
+        "8\t0\tsrc/Accounts/ResolveAccountTenant.php",
+        "12\t0\tsrc/Accounts/SameAccountTenant.php",
+        "8\t0\tsrc/Accounts/Tenant.php",
+        "5\t0\tsrc/Accounts/Unauthenticated.php",
+        "57\t0\tsrc/DirectoryComposition.php",
+        "5\t5\tsrc/Routes.php",
+        "16\t0\tsrc/Users/CreateUser/AccountCreateAuthorization.php",
+        "25\t0\tsrc/Users/CreateUser/AuthorizeCreateUser.php",
+        "7\t0\tsrc/Users/CreateUser/CanCreateUser.php",
+        "30\t0\tsrc/Users/CreateUser/CreateUserCommand.php",
+        "5\t0\tsrc/Users/CreateUser/CreateUserConflict.php",
+        "40\t0\tsrc/Users/CreateUser/CreateUserHandler.php",
+        "5\t0\tsrc/Users/CreateUser/UnacceptableCreateUser.php",
+        "5\t0\tsrc/Users/CreateUser/UnsupportedCreateMedia.php",
+        "14\t0\tsrc/Users/ListUsers/AccountListAuthorization.php",
+        "24\t0\tsrc/Users/ListUsers/AuthorizeListUsers.php",
+        "7\t0\tsrc/Users/ListUsers/CanListUsers.php",
+        "35\t0\tsrc/Users/ListUsers/ListUsersHandler.php",
+        "21\t0\tsrc/Users/ListUsers/ListUsersPage.php",
+        "21\t0\tsrc/Users/ListUsers/UserSummary.php",
+        "14\t0\tsrc/Users/UserId.php",
+        "16\t0\tsrc/Users/UserRoutes.php",
+        "41\t0\ttests/DirectoryFixture.php",
+        "61\t0\ttests/PolicyFixtures.php",
+        "156\t0\ttests/directory.php",
+        "7\t0\ttests/fixture.php",
+        "99\t0\ttests/front_controller.py",
+        "4\t4\ttests/run.php"
+      ]
+    },
+    {
+      "name": "search",
+      "before": "baseline-alpha7",
+      "after": "search-alpha7",
+      "diff": "search.patch",
+      "diff_sha256": "c65deaf862fb62d3f5a7138304cf12931f87a21307024b0d22b804caed728e0d",
+      "files_touched": [
+        ".ai/architecture.md",
+        ".ai/data.md",
+        ".ai/testing.md",
+        "src/Users/ListUsers/ListUsersHandler.php",
+        "src/Users/ListUsers/ListUsersPage.php",
+        "tests/directory.php",
+        "tests/front_controller.py"
+      ],
+      "numstat": [
+        "3\t1\t.ai/architecture.md",
+        "2\t0\t.ai/data.md",
+        "2\t0\t.ai/testing.md",
+        "3\t2\tsrc/Users/ListUsers/ListUsersHandler.php",
+        "19\t8\tsrc/Users/ListUsers/ListUsersPage.php",
+        "51\t0\ttests/directory.php",
+        "4\t2\ttests/front_controller.py"
+      ]
+    },
+    {
+      "name": "upgrade",
+      "before": "search-alpha7",
+      "after": "upgraded-source",
+      "diff": "upgrade.patch",
+      "diff_sha256": "ff97d587982f459fa0c7d192bd8393566f3a49162d1a8cb17664445c2e119ee4",
+      "files_touched": [
+        ".ai/README.md",
+        ".ai/architecture.md",
+        ".ai/configuration.md",
+        ".ai/observability.md",
+        ".ai/operations.md",
+        ".ai/rules.md",
+        ".ai/testing.md",
+        "AGENTS.md",
+        "bootstrap.php",
+        "composer.json",
+        "composer.lock",
+        "docs/upgrade-source.md",
+        "public/index.php",
+        "tests/compatibility.php",
+        "tests/outer_failure.py"
+      ],
+      "numstat": [
+        "2\t1\t.ai/README.md",
+        "1\t1\t.ai/architecture.md",
+        "2\t0\t.ai/configuration.md",
+        "3\t1\t.ai/observability.md",
+        "2\t0\t.ai/operations.md",
+        "1\t1\t.ai/rules.md",
+        "2\t0\t.ai/testing.md",
+        "1\t1\tAGENTS.md",
+        "1\t1\tbootstrap.php",
+        "13\t4\tcomposer.json",
+        "94\t10\tcomposer.lock",
+        "17\t0\tdocs/upgrade-source.md",
+        "22\t3\tpublic/index.php",
+        "85\t0\ttests/compatibility.php",
+        "92\t0\ttests/outer_failure.py"
+      ]
+    },
+    {
+      "name": "review-fixes",
+      "before": "upgraded-source",
+      "after": "reviewed-source",
+      "diff": "review-fixes.patch",
+      "diff_sha256": "62cb566df894d78dcd553ceb978f3230aeeb6f4757920ac375a838935e75c4bc",
+      "files_touched": [
+        ".ai/data.md",
+        ".ai/testing.md",
+        "README.md",
+        "tests/DirectoryFixture.php",
+        "tests/directory-boundaries.php",
+        "tests/directory.php"
+      ],
+      "numstat": [
+        "2\t0\t.ai/data.md",
+        "2\t0\t.ai/testing.md",
+        "2\t0\tREADME.md",
+        "7\t0\ttests/DirectoryFixture.php",
+        "51\t0\ttests/directory-boundaries.php",
+        "2\t0\ttests/directory.php"
+      ]
+    }
+  ],
+  "installed_package_checks": [
+    {
+      "label": "public-alpha7",
+      "reference": "de07cbd449ed3e905331aeea105e528fbaa83ac3",
+      "files": 218,
+      "installed_bytes_match_git_export": true,
+      "inventory_sha256": "83a76b4ff1aba5b4149bfc07ed7c000a6184ad9e456e77d4c90e3a81a1bd0fec",
+      "universal_framework_docs": {
+        "bytes": 124005,
+        "whitespace_words": 15644,
+        "files": {
+          "docs/consumer-contract.md": {
+            "bytes": 94853,
+            "sha256": "5a83cc5f8517f5258005ac612fd00a193685e7473bbb806f2d431a36d4cceeb3"
+          },
+          "docs/knowledge-map.md": {
+            "bytes": 29152,
+            "sha256": "c8d1761bedf3589f7a04aadc069792eb4bfbf2c94adc7d3841b63e77e5e5ad1a"
+          }
+        }
+      }
+    },
+    {
+      "label": "source-target",
+      "reference": "909977b762ff08f823be1e2c16a4dbb704e4f93a",
+      "files": 231,
+      "installed_bytes_match_git_export": true,
+      "inventory_sha256": "823392f6a02f798562094541cc79d09c2d0c6adab52e23e6b56012c5db93f117",
+      "universal_framework_docs": {
+        "bytes": 42289,
+        "whitespace_words": 5548,
+        "files": {
+          "docs/consumer-contract.md": {
+            "bytes": 27373,
+            "sha256": "4ca8420df14a6650688a99ba6d8fc3b0c06ca9e93dd4652541b18236528dcb28"
+          },
+          "docs/knowledge-map.md": {
+            "bytes": 14916,
+            "sha256": "6eeb15abb7d46600b4c460db1e05003783337c1c28aa6803ba00b66b2ad96e5a"
+          }
+        }
+      }
+    }
+  ],
+  "model_usage": null,
+  "paid_api_campaign": false,
+  "active_implementation_seconds": null,
+  "active_review_seconds": null,
+  "effort_limits": "Command durations and Git timestamps are observed. The interruption is included in elapsed wall time; active labor and model usage were not measured. Read inventory is a retrospective lower bound plus reviewer self-report.",
+  "public_skeleton_check": {
+    "observed_at": "2026-09-26T13:56:00.596454+00:00",
+    "reference": "c0e8f5c2a7eb45e24e97dc672bd22dcc13c8684d",
+    "dist_url": "https://api.github.com/repos/balgf/PHPThis-skeleton/zipball/c0e8f5c2a7eb45e24e97dc672bd22dcc13c8684d",
+    "dist_sha256": "67508e01f17dccfd5d8b527d093e2f1c4fc2765caa47332312d03392047869ce",
+    "files": 39,
+    "pristine_tag_matches_dist": true
+  },
+  "bundle_replay": {
+    "record": "10-bundle-replay.json",
+    "log": "10-bundle-replay.log",
+    "install_log": "10-bundle-install.log",
+    "exit_code": 0,
+    "captured_files_match_final_consumer": true,
+    "clean_git_tree_after_gate": true,
+    "owned_temporary_fixture_removed": true
+  }
+}

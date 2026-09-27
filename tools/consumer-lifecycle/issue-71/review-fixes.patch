@@ -1,0 +1,115 @@
+diff --git a/.ai/data.md b/.ai/data.md
+index d794a3e..64dba56 100644
+--- a/.ai/data.md
++++ b/.ai/data.md
+@@ -13,3 +13,5 @@ SQLite runtime and fixture reset share this local user's file/process authority.
+ `NOT_APPLICABLE(MIGRATIONS)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(SESSION)`: no histories, jobs, cached data or session storage.
+ 
+ Search adds no schema or dependency. Its one complete statement uses separate name_search/email_search binding names and a bound absence flag. SQLite instr substring scans are not an indexed full-text feature; 500-row count evidence proves fixed round trips only.
++
++If an I/O-free synthetic policy succeeds after its storage membership disappears, List deliberately returns an empty 200 page (one query); Create returns generic 409 after its guarded first insert (one statement), rolls back, and changes no tables. This fail-closed fixture behavior is explicitly tested; it is not a live identity-provider revocation model.
+diff --git a/.ai/testing.md b/.ai/testing.md
+index 4677837..30b89b8 100644
+--- a/.ai/testing.md
++++ b/.ai/testing.md
+@@ -11,3 +11,5 @@ Additional upgrade-specific tests must first fail on the unchanged older front c
+ Search evidence additionally preserves unfiltered output and checks name/email, case sensitivity, no match, literal wildcard/SQL-looking data, rejected representations before SQL, account isolation, keyset continuation and one query on 2/500-row fixtures.
+ 
+ Source-upgrade gate adds `php tests/compatibility.php` (raw-target/direct path rejection and unchanged empty/top/lower PHP buffers) and `python3 tests/outer_failure.py` (generic missing-fixture failure, input non-selection, anonymous/event isolation and effective web-SAPI settings). Initial red checkpoint is retained separately; no assertion is skipped for it.
++
++`tests/directory-boundaries.php`, explicitly included by directory.php, retains unfamiliar-review regressions: absent storage membership despite successful policy, cursor overflow/null/array/empty/unknown-key rejection, both structural/value property orders, exact 80-byte ASCII/UTF-8 acceptance and 81-byte UTF-8 rejection, fixed query counts and unchanged tables.
+diff --git a/README.md b/README.md
+index b131d01..94ff640 100644
+--- a/README.md
++++ b/README.md
+@@ -3,3 +3,5 @@
+ Synthetic lifecycle evaluation for [PHPThis #71](https://github.com/balgf/PHPThis/issues/71), owned by its maintainer. Start with `AGENTS.md`; install the exact lock and run `composer check` (PHP 8.4/pdo_sqlite, Composer, Python 3). Tests reset only ignored local fixtures. Normal HTTP authentication denies everyone; synthetic successes are test-only. No production use or real data.
+ 
+ `docs/lifecycle-plan.md` contains the frozen scope/search prompt, upgrade identities, acceptance and next public-release maintenance trigger. `.ai/README.md` routes current app facts. Git tags preserve pristine, baseline, changed and upgraded checkpoints. The framework repository retains the portable bundle/report; this application's context is never replaced from a newer skeleton.
++
++The immutable Alpha 7 framework archive contains preparation-time README/setup wording that still calls Alpha 6 current. For this retained application, use the committed lock and the exact references in the frozen lifecycle plan; do not downgrade because of that snapshot. Current-source evaluation is a separate pinned checkpoint, never evidence of a newly published release. Maintainer example paths in installed guides refer to the source repository at the locked framework revision; they are deliberately absent from the Composer archive.
+diff --git a/tests/DirectoryFixture.php b/tests/DirectoryFixture.php
+index fa0270e..1b3fad4 100644
+--- a/tests/DirectoryFixture.php
++++ b/tests/DirectoryFixture.php
+@@ -33,6 +33,13 @@ final class DirectoryFixture
+         $connection = Connection::connect(self::dsn(), new QueryBudget(1), new QueryTrace(1));
+         return $connection->selectOneRow('SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM account_users) AS links, (SELECT COUNT(*) FROM user_events) AS events, (SELECT COUNT(*) FROM account_memberships) AS memberships') ?? throw new \RuntimeException('Missing fixture counts.');
+     }
++    public static function removeWriterMembership(): void
++    {
++        $connection = Connection::connect(self::dsn(), new QueryBudget(1), new QueryTrace(1));
++        $removed = $connection->executeStatement('DELETE FROM account_memberships WHERE principal_id = :principal AND account_id = :account',
++            ['principal' => 101, 'account' => 1]);
++        if ($removed !== 1) { throw new \RuntimeException('Missing writer fixture membership.'); }
++    }
+     public static function failAudit(): void
+     {
+         $connection = Connection::connect(self::dsn(), new QueryBudget(1), new QueryTrace(1));
+diff --git a/tests/directory-boundaries.php b/tests/directory-boundaries.php
+new file mode 100644
+index 0000000..841499e
+--- /dev/null
++++ b/tests/directory-boundaries.php
+@@ -0,0 +1,51 @@
++<?php
++
++declare(strict_types=1);
++use EvaluationTests\DirectoryFixture;
++
++DirectoryFixture::reset(2);
++$beforeInvalidInput = DirectoryFixture::counts();
++
++/** @param array<string, mixed> $query */
++function expectRejectedDirectoryQuery(array $query, string $label): void
++{
++    $result = directoryRequest(query: $query);
++    directoryExpect(400, $result['response']->status, $label);
++    directoryExpect(0, $result['statements'], $label . ' before protected SQL');
++}
++expectRejectedDirectoryQuery(['after_user_id' => '9223372036854775808'], 'cursor overflow');
++expectRejectedDirectoryQuery(['after_user_id' => null], 'cursor null');
++expectRejectedDirectoryQuery(['after_user_id' => ['1']], 'cursor array');
++expectRejectedDirectoryQuery(['after_user_id' => ''], 'cursor empty');
++expectRejectedDirectoryQuery(['unknown-private-marker' => 'value-private-marker'], 'unknown query key');
++$structuralFirst = directoryRequest('POST', body: '{"email":false,"name":"","id":8002}');
++directoryExpect(400, $structuralFirst['response']->status, 'wrong type before unacceptable value');
++directoryExpect(0, $structuralFirst['statements'], 'wrong type first no SQL');
++$valueFirst = directoryRequest('POST', body: '{"name":"","id":8002,"email":false}');
++directoryExpect(400, $valueFirst['response']->status, 'wrong type after unacceptable value');
++directoryExpect(0, $valueFirst['statements'], 'wrong type last no SQL');
++directoryExpect($structuralFirst['response']->body, $valueFirst['response']->body, 'same generic structural response');
++$asciiBoundary = directoryRequest(query: ['search' => str_repeat('x', 80)]);
++directoryExpect(200, $asciiBoundary['response']->status, '80 ASCII bytes accepted');
++directoryExpect(1, $asciiBoundary['statements'], 'accepted boundary executes one query');
++$utf8Boundary = directoryRequest(query: ['search' => str_repeat('é', 40)]);
++directoryExpect(200, $utf8Boundary['response']->status, '80 UTF-8 bytes accepted');
++directoryExpect(1, $utf8Boundary['statements'], 'UTF-8 boundary executes one query');
++expectRejectedDirectoryQuery(['search' => str_repeat('é', 40) . 'x'], '81 UTF-8 bytes rejected');
++directoryExpect($beforeInvalidInput, DirectoryFixture::counts(), 'all boundary probes leave tables unchanged');
++
++// Policies succeed using their synthetic snapshot, while storage membership has disappeared.
++DirectoryFixture::removeWriterMembership();
++$withoutMembership = DirectoryFixture::counts();
++$staleList = directoryRequest();
++directoryExpect(['authenticate', 'tenant', 'list'], $staleList['order'], 'stale actor reaches list SQL');
++directoryExpect(200, $staleList['response']->status, 'missing membership list is an empty page');
++directoryExpect("{\"data\":[],\"next_after_user_id\":null}\n", $staleList['response']->body, 'SQL membership predicate excludes all rows');
++directoryExpect(1, $staleList['statements'], 'list rechecks storage in one statement');
++$staleCreate = directoryRequest('POST', body: '{"id":8002,"name":"Stale actor","email":"stale@example.test"}');
++directoryExpect(['authenticate', 'tenant', 'create'], $staleCreate['order'], 'stale actor reaches create SQL');
++directoryExpect(409, $staleCreate['response']->status, 'missing membership create conflict');
++directoryExpect(1, $staleCreate['statements'], 'create stops at first guarded insert');
++directoryExpect($withoutMembership, DirectoryFixture::counts(), 'stale membership cannot mutate any table');
++DirectoryFixture::reset(500); // Restore the documented starting fixture for the next HTTP module.
++fwrite(STDOUT, "PASS review regressions: SQL membership rechecks, cursor shapes/overflow, structural precedence, 80/81-byte UTF-8 search\n");
+diff --git a/tests/directory.php b/tests/directory.php
+index 1e6adb4..043c254 100644
+--- a/tests/directory.php
++++ b/tests/directory.php
+@@ -205,3 +205,5 @@ directoryExpect(1, $filteredNext['statements'], 'filtered continuation count');
+ $unfiltered = directoryRequest();
+ directoryExpect($large['response']->body, $unfiltered['response']->body, 'omitted search preserves old behavior');
+ fwrite(STDOUT, "PASS retained search: name/email, case, literal data, validation, tenant scope, continuation, query counts 1/1\n");
++
++require __DIR__ . '/directory-boundaries.php';

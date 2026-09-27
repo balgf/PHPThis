@@ -1,0 +1,61 @@
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Nothing to install, update or remove
+Generating autoload files
+26 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+PASS guardrails: 1481 Markdown files, 241 PHP files, 2618 core lines
+
+ [OK] No errors                                                                 
+
+PASS bounded maintainer process support: streams, limits, redaction, and cleanup
+PASS agent evaluation kit self-test: inventory, hashes, run records, score gates, and negative controls
+PASS agent evaluation controller self-test: lifecycle, isolation contracts, evidence, and cleanup controls
+PASS strict profile: PHT001 through PHT008
+PASS application duplication advisory: 16 direct tests
+PASS installed guidance references: custom Composer vendor directory and negative controls
+PASS installed version-neutral release guidance distribution
+PASS installed historical and reference clarity distribution
+PASS installed native date and time guidance distribution
+PASS installed frontend integration guidance distribution
+PASS installed application-owned operation coordination guidance distribution
+PASS installed structured JSON success-envelope and nested-resource guidance distribution
+PASS installed field-validation error guidance distribution
+PASS installed protected file-transfer reference
+PASS installed Amazon S3 file-transfer verification structure
+PASS installed backend-neutral jobs verification structure
+PASS installed request-summary destination-record reference
+PASS installed application-owned transactional email guidance distribution
+PASS installed one-shot worker supervision guidance distribution
+PASS installed test-runner modularization guidance distribution
+PASS installed stateless authentication guidance distribution
+PASS installed agent evaluation guidance distribution
+PASS installed database setup guidance distribution
+PASS installed startup and probe guidance distribution
+PASS installed session cleanup and response framing distribution
+PASS installed bounded response-cookie profile distribution
+PASS installed bounded task-routed context guidance distribution
+PASS installed CRUD access-surface guidance distribution
+PASS installed identifier representation guidance distribution
+PASS installed database authority lifecycle guidance distribution
+PASS installed engine-specific migration-invariant guidance distribution
+PASS installed migration alternative structure
+PASS installed migration structure guidance distribution
+PASS installed Workbench guidance distribution
+PASS installed database-context connection consistency
+PASS isolated consumer: 231 release files, clean install, complete check, and adversarial controls; git-export-parity=verified
+PASS database transport: sqlite 3.51.2; SQLite mismatch and recovery control passed
+PASS query scaling: users accepted 1/page and rejected 3 -> 51; parent.child accepted 1/page and rejected 2 -> 51; budget stopped statement 4; mapping/JSON 0 database calls
+PHPUnit 13.2.5 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.19
+Configuration: /Users/balfernandez/Projects/PHPThis/codebase/phpunit.xml.dist
+
+...............................................................  63 / 189 ( 33%)
+............................................................... 126 / 189 ( 66%)
+............................................................... 189 / 189 (100%)
+
+
+Time: 00:17.638, Memory: 90.00 MB
+
+[30;42mOK (189 tests, 195 assertions)[0m

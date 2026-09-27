@@ -1,0 +1,11 @@
+{
+  "started_at": "2026-09-26T06:35:22.084802+00:00",
+  "finished_at": "2026-09-26T06:35:23.105467+00:00",
+  "elapsed_seconds": 1.021,
+  "command": [
+    "composer",
+    "check"
+  ],
+  "exit_code": 0,
+  "composer_lock_sha256": "c8ab8258e4223f4e5d5a6d743a12adc6d26a3c055262732f4edb33a9464894b0"
+}

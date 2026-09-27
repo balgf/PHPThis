@@ -1,0 +1,10 @@
+PASS application guardrails: 12 PHP files
+PASS application duplication advisory: no possible groups (minimum 48 normalized tokens)
+
+ [OK] No errors                                                                 
+
+PASS PHPThis application check
+{"schema_version":1,"event":"application.request_summary","correlation_id":"82113785d633bfc2f92aaf492855fc05","duration_us":14,"response_status":200,"outcome":"success","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"839ae2d6650b7eba2f19cec9734e333b","duration_us":60,"response_status":400,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"0221b0ed02ce476fdc17d0d4eebf1315","duration_us":67,"response_status":413,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[]}
+PASS application behavior and front controller

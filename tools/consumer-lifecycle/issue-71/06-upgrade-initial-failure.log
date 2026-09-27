@@ -1,0 +1,24 @@
+PASS application guardrails: 42 PHP files
+ADVISORY possible application duplication: 1 group (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected
+
+ [OK] No errors                                                                 
+
+PASS PHPThis application check
+PASS disposable fixture setup
+{"schema_version":1,"event":"application.request_summary","correlation_id":"78126e631522d0f451b0d8eead9b49d8","duration_us":14,"response_status":200,"outcome":"success","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[{"name":"directory","budget_limit":3,"budget_used":0,"budget_exceeded":false,"query_trace":{"schema_version":1,"event":"database.query_summary","statements":0,"failures":0,"tracked_fingerprints":0,"repeated_fingerprints":0,"maximum_executions_per_fingerprint":0,"total_execute_duration_us":0,"slowest_execute_duration_us":0,"truncated":false,"untracked_statements":0,"queries":[]}}]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"abcd7b49907d05fd1ea5f93761a60d17","duration_us":39,"response_status":400,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[{"name":"directory","budget_limit":3,"budget_used":0,"budget_exceeded":false,"query_trace":{"schema_version":1,"event":"database.query_summary","statements":0,"failures":0,"tracked_fingerprints":0,"repeated_fingerprints":0,"maximum_executions_per_fingerprint":0,"total_execute_duration_us":0,"slowest_execute_duration_us":0,"truncated":false,"untracked_statements":0,"queries":[]}}]}
+{"schema_version":1,"event":"application.request_summary","correlation_id":"cd878b1d8ec3545d7659e6ef5e16c930","duration_us":44,"response_status":413,"outcome":"known_failure","unknown_failure_class":null,"query_count":0,"query_failures":0,"query_execute_duration_us":0,"query_budget_exceeded":false,"database_sources":[{"name":"directory","budget_limit":3,"budget_used":0,"budget_exceeded":false,"query_trace":{"schema_version":1,"event":"database.query_summary","statements":0,"failures":0,"tracked_fingerprints":0,"repeated_fingerprints":0,"maximum_executions_per_fingerprint":0,"total_execute_duration_us":0,"slowest_execute_duration_us":0,"truncated":false,"untracked_statements":0,"queries":[]}}]}
+PASS application behavior and front controller
+PASS retained Create/List: success, policy order/replacement, denial, input, rollback, redaction, query counts 1/1 (2/500 rows)
+PASS retained search: name/email, case, literal data, validation, tenant scope, continuation, query counts 1/1
+PASS real HTTP: unchanged front controller, deny-all default, injected Create/List, tenant denial, summary counts/redaction
+Traceback (most recent call last):
+  File "/Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/outer_failure.py", line 89, in <module>
+    check("original bootstrap missing fixture", (APP / "bootstrap.php").read_text())
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/balfernandez/Projects/PHPThis/consumer-lifecycle/account-directory/tests/outer_failure.py", line 60, in check
+    assert body == GENERIC, (scenario, "generic body", body)
+           ^^^^^^^^^^^^^^^
+AssertionError: ('original bootstrap missing fixture', 'generic body', b'')
+Script python3 tests/outer_failure.py handling the test event returned with error code 1
+Script @test was called via check
