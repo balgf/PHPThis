@@ -145,6 +145,7 @@ docs/observability/log-levels.md
 docs/observability/sink-failure.md
 docs/observability/testing.md
 docs/performance.md
+docs/rag.md
 docs/releases/0.1.0-alpha.1.md
 docs/releases/0.1.0-alpha.2.md
 docs/releases/0.1.0-alpha.3.md

@@ -1,0 +1,5 @@
+
+Fatal error: Uncaught Error: Class "App\Rag\Question" not found in /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/rag-document-qa/tests/rag.php:31
+Stack trace:
+#0 {main}
+  thrown in /Users/balfernandez/Projects/PHPThis/consumer-lifecycle/rag-document-qa/tests/rag.php on line 31

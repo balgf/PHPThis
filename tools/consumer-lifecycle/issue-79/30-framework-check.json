@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-09-27T07:18:49.096962+00:00",
+  "command": "composer install --no-interaction --no-progress --prefer-dist && composer check",
+  "exit_code": 0,
+  "framework_base": "a6a08c80ecb54eb282b00359e7f476506e12bc0b",
+  "source_state": "Working-tree candidate; changed non-evidence files hashed below. This record and final service log were added after the gate. CI separately checks the committed PR revision.",
+  "phpunit": {
+    "tests": 189,
+    "assertions": 195
+  },
+  "redis_fixture": {
+    "host": "127.0.0.1",
+    "cache_port": 17479,
+    "lease_port": 17480,
+    "configuration": "Two owned local Redis processes with persistence disabled; environment selects endpoints; trap stops both processes and removes the temporary directory."
+  },
+  "consumer_distribution": {
+    "release_files": 232,
+    "git_export_parity": "skipped-dirty",
+    "release_evidence": false
+  },
+  "changed_source_sha256": {
+    ".ai/README.md": "2df9acdf417795cd30f8419664ee4e0cb774cc8bd08016f574bd04bc863c4ac9",
+    ".ai/rag.md": "5d3638ecdc03af54348aa56668977fce4128817a9f68ce113db54ff7e5552284",
+    "docs/guardrails.md": "1d63f97b685842740784780646d487fd66d8c405dea8e783a8a578b7d6fe5f87",
+    "docs/knowledge-map.md": "d8ed39732ae3598ee87a9d389bbb319346c536c652633cd9b1d278e9f80b8ad7",
+    "docs/rag.md": "c7a676b4178e86ab9dcf53c8dc46225288413d6700adb59d7ab4c5444533da9a",
+    "skeleton/.ai/README.md": "1965d07b2f9d08b0d6146bf9ca95310455c4012d4c7cb5bc270852660fbb2d0e",
+    "skeleton/.ai/integrations.md": "0030e7b7a04505be4d1e54ddb3b719813334a80a316f081b168454b2348282a2",
+    "templates/application/.ai/README.md": "239f5d6740d39ef23d2c2b295ab3798b8683398a7740aec657b618c0fe2a5384",
+    "templates/application/.ai/integrations.md": "c59dbf342a9830a0994531523ab6cc2341723e2d2f9cc63976ce7e06a8ac2454",
+    "tools/agent-evaluation-controller/README.md": "d90a46d9b08dcf0a9edcf132beeb42afe0e962434f77d67e6d83c35f02ff3bf5",
+    "tools/agent-evaluation-controller/contract.php": "2cd582d7ca012578e3e6c13941e47b7f3d2d303c8ee4e51cdf7adae59ae5c82c",
+    "tools/agent-evaluation/tasks.php": "da4e658426d2c54e92ca10815e1fada15fb9c40de1cfa568e6f5d4ea4a8b7dd1",
+    "tools/agent-evaluation/tasks/change.simple-ping/task.json": "0df884949f14787e31c44cb0856c531550bbb72604fbae5e888e3a4004adaea6",
+    "tools/guardrails/boundaries.php": "8f2fe2f61889c6479d510d1d14926c1ee2a3ebf8d0957e540566a9787c4fe9c4",
+    "tools/guardrails/context.php": "5cbbe39c419958236ba493a75a175c950e9c9f05148ff6b0c167eb208dfc84c5",
+    "tools/guardrails/distribution.php": "1d4e0f6cf495a10f38859b50954031114cc394a5b41819251adea1d3fe002c4f",
+    "tools/guardrails/repository.php": "570ecf1f5b541d659f04cd9eb76f3c422dab813b05fbbd87884330a67a7e75fb",
+    "tools/package-files.txt": "d5339eafaab92962e9bf6730808b169ed1c9f8e72fd1f5c96f5c4b3f5ede9d98",
+    "tools/test-consumer-project.php": "e0bf147b6d8b152c0e7ebd7a807186c3bf40ae2265b10bcb9c6bd98f01b69615",
+    "tools/test-consumer-project/application.php": "fdf1a047854ba3bad37705c66836d237ca453b73cb6e274aa6774dfd21a7c46b",
+    "tools/test-consumer-project/data.php": "122eade23cb55a7d6f80d999f9f5d5d1698e028b36c200435685c772a94bdcea",
+    "tools/test-consumer-project/guidance.php": "0d3e316576238e7a0919d478e57bbce245ba942908e96ebb59df577622196906"
+  },
+  "log_sha256": "059fc414c2c4814defd8229bc07d8a299a6baa9b1d91231f33034eb208c16f07",
+  "qdrant_consumer_head": "2f251837f2f6379df00c0e71a92a0d370d63a004",
+  "qdrant_log_sha256": "c0a40f6632c9ac8cdbcf1030d1d7b560d3295e781e70d8ed9b9de8750f087723",
+  "model_calls": "No paid or live model calls."
+}

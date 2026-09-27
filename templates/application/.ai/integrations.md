@@ -48,3 +48,10 @@ A remote cache backend is an external integration even though cached data is dis
 - Required audit or observability event: {{INTEGRATION_OBSERVABILITY_POLICY}}
 
 An integration call must remain visible at a named boundary. Do not add implicit retries, silent fallbacks, or success responses after an unknown failure.
+
+## RAG and vector-database boundary
+
+- Adoption or `NOT_APPLICABLE(RAG)`: {{RAG_ADOPTION_OR_NOT_APPLICABLE}}
+- Selected subset, dependency/provider/model identities, explicit composition, authority, lifecycle, resource bounds, failure policy and evidence record: {{RAG_RECIPE_RECORD_OR_NOT_APPLICABLE}}
+
+Before adoption, read installed `vendor/phpthis/framework/docs/rag.md`. Reference the existing configuration, request-policy, data, operations and testing owners; do not copy their rules here. PHPThis provides no model client, vector store or agent runtime. Synthetic fixtures do not establish live-provider or production support.

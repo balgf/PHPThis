@@ -1144,6 +1144,7 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
             'proveInstalledRequestSummaryDestinationRecordReference',
         ],
         'tools/test-consumer-project/application.php' => [
+            'proveInstalledRagGuidanceDistribution',
             'proveInstalledTransactionalEmailGuidanceDistribution',
             'proveInstalledOneShotWorkerSupervisionGuidanceDistribution',
             'proveInstalledAgentEvaluationGuidanceDistribution',
@@ -1320,6 +1321,7 @@ function consumerProjectHarnessExpectedProofCalls(): array
         'proveInstalledBackendNeutralJobsVerificationReference',
         'proveInstalledRequestSummaryDestinationRecordReference',
         'proveInstalledTransactionalEmailGuidanceDistribution',
+        'proveInstalledRagGuidanceDistribution',
         'proveInstalledOneShotWorkerSupervisionGuidanceDistribution',
         'proveInstalledTestRunnerModularizationGuidanceDistribution',
         'proveInstalledStatelessAuthenticationGuidanceDistribution',
@@ -1380,6 +1382,7 @@ function consumerProjectHarnessExpectedProofStatements(): array
         'proveInstalledBackendNeutralJobsVerificationReference' => '$installedJobsVerificationProof=proveInstalledBackendNeutralJobsVerificationReference($project,$installedFramework,$composerBinary,$environment);',
         'proveInstalledRequestSummaryDestinationRecordReference' => '$installedDestinationRecordProof=proveInstalledRequestSummaryDestinationRecordReference($project,$installedFramework,$environment);',
         'proveInstalledTransactionalEmailGuidanceDistribution' => 'proveInstalledTransactionalEmailGuidanceDistribution($project,$installedFramework);',
+        'proveInstalledRagGuidanceDistribution' => 'proveInstalledRagGuidanceDistribution($project,$installedFramework);',
         'proveInstalledOneShotWorkerSupervisionGuidanceDistribution' => 'proveInstalledOneShotWorkerSupervisionGuidanceDistribution($project,$installedFramework);',
         'proveInstalledTestRunnerModularizationGuidanceDistribution' => 'proveInstalledTestRunnerModularizationGuidanceDistribution($project,$installedFramework);',
         'proveInstalledStatelessAuthenticationGuidanceDistribution' => 'proveInstalledStatelessAuthenticationGuidanceDistribution($project,$installedFramework);',
@@ -1717,7 +1720,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === 'd25cc42e55467c74a3d5cccded32b9a8216f3eea67e819c225204b180ae991b3';
+            === '99b578bbcc73e49f0a5a9a2356dbeac9701b05d7ccf98e2f2ed1d052745bc0ea';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -2295,7 +2298,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
-        $failures[] = 'The installed-consumer entrypoint must invoke its exact 53 proof functions once, unconditionally, and in the reviewed order.';
+        $failures[] = 'The installed-consumer entrypoint must invoke its exact 54 proof functions once, unconditionally, and in the reviewed order.';
     }
 
     if (!consumerProjectHarnessEntrypointTerminalLifecycleIsCanonical($entrypoint)) {
@@ -3676,6 +3679,7 @@ function repositoryGuardrailFailures(string $root): array
         'docs/crud.md',
         'docs/date-time.md',
         'docs/email.md',
+        'docs/rag.md',
         'docs/file-transfers/README.md',
         'docs/file-transfers/amazon-s3.md',
         'docs/file-transfers/amazon-s3-verification.md',
@@ -4200,8 +4204,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 29",
-            "'manifest_sha256' => '2763bdb2ccf21cde598ebf9b926ee98c89092426107e41d3e003a39625158654'",
+            "'revision' => 30",
+            "'manifest_sha256' => '0df884949f14787e31c44cb0856c531550bbb72604fbae5e888e3a4004adaea6'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
             'agentEvaluationComparisonSchedule',
             'agentEvaluationComparisonFixture',
@@ -4285,11 +4289,11 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 29',
+            '"revision": 30',
             '"model_tokens": 1000000',
             '"source-skeleton"',
-            '"tree": "f9f24878d13a2f550b6de3b07b178da079b53833"',
-            '"fixture_sha256": "7c74a07eb8d4d394258147410f5b01b4395586316dd51bf7f2bca0ce793ac159"',
+            '"tree": "4e1f54a3a603d4b4554d4dce3bd79bf9a8dc8126"',
+            '"fixture_sha256": "a5f48f4402495793197e31182770e66f8ba0b7e4b6f578eee2bd6bafbf354026"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -4482,7 +4486,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 29 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 30 with `comparative_claims: false`.',
             'Missing or unverifiable live controls fail closed',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -4497,8 +4501,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 29;',
-            'Controller v0.2 supports only change.simple-ping revision 29 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 30;',
+            'Controller v0.2 supports only change.simple-ping revision 30 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
@@ -4763,7 +4767,7 @@ function repositoryGuardrailFailures(string $root): array
             'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
         ],
         'docs/guardrails.md' => [
-            'The accepted ADR 059 source-prefix guard now pins the 231-file current inventory, including packaged accepted ADR 061 and the conditional design-goal companion',
+            'The accepted ADR 059 source-prefix guard now pins the 232-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion and optional RAG guidance',
             'every other application symlink fails before target-content inspection',
             'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',

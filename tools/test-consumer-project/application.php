@@ -2,6 +2,26 @@
 
 declare(strict_types=1);
 
+function proveInstalledRagGuidanceDistribution(string $project, string $installedFramework): void
+{
+    requireInstalledArtifactMarkers([
+        $installedFramework . '/docs/rag.md' => [
+            '# Application-owned RAG with LLPhant and Qdrant',
+            'PHPThis supplies no model client, vector store, agent runtime, discovery, or new framework dependency.',
+            'deterministic protocol fixtures',
+            'PHPThis SQL query budgets do not count model or Qdrant requests',
+            'single-writer, non-atomic replacement',
+        ],
+        $installedFramework . '/docs/knowledge-map.md' => ['| Adopt or review application-owned RAG, LLPhant or Qdrant | `docs/rag.md` |'],
+        $project . '/.ai/README.md' => ['| Adopt or change RAG, LLPhant or Qdrant | installed `vendor/phpthis/framework/docs/rag.md` |'],
+        $project . '/.ai/integrations.md' => ['`NOT_APPLICABLE(RAG)`', 'Before adoption, read installed `vendor/phpthis/framework/docs/rag.md`'],
+        $installedFramework . '/templates/application/.ai/README.md' => ['| Adopt or change RAG, LLPhant or Qdrant | installed `vendor/phpthis/framework/docs/rag.md` |'],
+        $installedFramework . '/templates/application/.ai/integrations.md' => ['{{RAG_ADOPTION_OR_NOT_APPLICABLE}}', '{{RAG_RECIPE_RECORD_OR_NOT_APPLICABLE}}'],
+    ], 'application-owned RAG guidance');
+    requireInstalledNativeRuntimeDependencyBoundary($project, $installedFramework);
+    fwrite(STDOUT, "PASS installed application-owned RAG guidance distribution\n");
+}
+
 function proveInstalledTransactionalEmailGuidanceDistribution(
     string $project,
     string $installedFramework,

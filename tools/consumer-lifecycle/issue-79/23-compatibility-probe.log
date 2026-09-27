@@ -1,0 +1,2 @@
+PASS OpenAI 0.19.2 injected HTTP path still enters message-factory discovery before HTTP
+PASS LLPhant 1.0.3 Qdrant adapter enters client discovery during construction

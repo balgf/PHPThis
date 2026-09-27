@@ -1,0 +1,567 @@
+{
+  "started_at": "2026-09-27T07:01:41.127911+00:00",
+  "elapsed_seconds": 6.732,
+  "exit_code": 0,
+  "consumer_head": "0225b09e5fc8a5ff99e213e223e38139dcba50f6",
+  "clean_worktree": true,
+  "bundle_sha256": "88b654d1151b71b3bcce597be4b49ad1c74f78d964fa13d416eba285550db0ba",
+  "php": "8.4.19",
+  "http_runtime": {
+    "version_number": 528896,
+    "age": 11,
+    "features": 1472153501,
+    "feature_list": {
+      "AsynchDNS": true,
+      "CharConv": false,
+      "Debug": false,
+      "GSS-Negotiate": false,
+      "IDN": true,
+      "IPv6": true,
+      "krb4": false,
+      "Largefile": true,
+      "libz": true,
+      "NTLM": true,
+      "NTLMWB": false,
+      "SPNEGO": true,
+      "SSL": true,
+      "SSPI": false,
+      "TLS-SRP": true,
+      "HTTP2": true,
+      "GSSAPI": true,
+      "KERBEROS5": true,
+      "UNIX_SOCKETS": true,
+      "PSL": true,
+      "HTTPS_PROXY": true,
+      "MULTI_SSL": false,
+      "BROTLI": true,
+      "ALTSVC": true,
+      "HTTP3": true,
+      "UNICODE": false,
+      "ZSTD": true,
+      "HSTS": true,
+      "GSASL": false
+    },
+    "ssl_version_number": 0,
+    "version": "8.18.0",
+    "host": "aarch64-apple-darwin25.2.0",
+    "ssl_version": "OpenSSL/3.6.1",
+    "libz_version": "1.3.1",
+    "protocols": [
+      "dict",
+      "file",
+      "ftp",
+      "ftps",
+      "gopher",
+      "gophers",
+      "http",
+      "https",
+      "imap",
+      "imaps",
+      "mqtt",
+      "pop3",
+      "pop3s",
+      "rtsp",
+      "scp",
+      "sftp",
+      "smb",
+      "smbs",
+      "smtp",
+      "smtps",
+      "telnet",
+      "tftp"
+    ],
+    "ares": "",
+    "ares_num": 0,
+    "libidn": "2.3.8",
+    "iconv_ver_num": 0,
+    "libssh_version": "libssh2/1.11.1",
+    "brotli_ver_num": 16785408,
+    "brotli_version": "brotli/1.2.0"
+  },
+  "dependencies": [
+    {
+      "name": "guzzlehttp/guzzle",
+      "version": "7.15.5",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/guzzle/guzzle.git",
+        "reference": "ee80339fd9177ba44c49cdb653ff02a4d1106b9a"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/guzzle/guzzle/zipball/ee80339fd9177ba44c49cdb653ff02a4d1106b9a",
+        "reference": "ee80339fd9177ba44c49cdb653ff02a4d1106b9a",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "guzzlehttp/promises",
+      "version": "2.5.3",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/guzzle/promises.git",
+        "reference": "cde49999552d185d64715fe9c1f77a2aadd2f9f1"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/guzzle/promises/zipball/cde49999552d185d64715fe9c1f77a2aadd2f9f1",
+        "reference": "cde49999552d185d64715fe9c1f77a2aadd2f9f1",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "guzzlehttp/psr7",
+      "version": "2.13.1",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/guzzle/psr7.git",
+        "reference": "95e7828100de18b4e269fb1703be530082d5166d"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/guzzle/psr7/zipball/95e7828100de18b4e269fb1703be530082d5166d",
+        "reference": "95e7828100de18b4e269fb1703be530082d5166d",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "hkulekci/qdrant",
+      "version": "v1.0.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/hkulekci/qdrant-php.git",
+        "reference": "37357400e91a22db0c58b9193940a3aa54f95ec3"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/hkulekci/qdrant-php/zipball/37357400e91a22db0c58b9193940a3aa54f95ec3",
+        "reference": "37357400e91a22db0c58b9193940a3aa54f95ec3",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "openai-php/client",
+      "version": "v0.19.2",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/openai-php/client.git",
+        "reference": "12e3513527e22d5657f4f9809796f8fe254fd0a9"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/openai-php/client/zipball/12e3513527e22d5657f4f9809796f8fe254fd0a9",
+        "reference": "12e3513527e22d5657f4f9809796f8fe254fd0a9",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "php-http/discovery",
+      "version": "1.20.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/php-http/discovery.git",
+        "reference": "82fe4c73ef3363caed49ff8dd1539ba06044910d"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/php-http/discovery/zipball/82fe4c73ef3363caed49ff8dd1539ba06044910d",
+        "reference": "82fe4c73ef3363caed49ff8dd1539ba06044910d",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "php-http/multipart-stream-builder",
+      "version": "1.4.2",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/php-http/multipart-stream-builder.git",
+        "reference": "10086e6de6f53489cca5ecc45b6f468604d3460e"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/php-http/multipart-stream-builder/zipball/10086e6de6f53489cca5ecc45b6f468604d3460e",
+        "reference": "10086e6de6f53489cca5ecc45b6f468604d3460e",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "phpoffice/math",
+      "version": "0.3.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/PHPOffice/Math.git",
+        "reference": "fc31c8f57a7a81f962cbf389fd89f4d9d06fc99a"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/PHPOffice/Math/zipball/fc31c8f57a7a81f962cbf389fd89f4d9d06fc99a",
+        "reference": "fc31c8f57a7a81f962cbf389fd89f4d9d06fc99a",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "phpoffice/phpword",
+      "version": "1.4.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/PHPOffice/PHPWord.git",
+        "reference": "6d75328229bc93790b37e93741adf70646cea958"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/PHPOffice/PHPWord/zipball/6d75328229bc93790b37e93741adf70646cea958",
+        "reference": "6d75328229bc93790b37e93741adf70646cea958",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "phpthis/framework",
+      "version": "dev-main",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/balgf/PHPThis.git",
+        "reference": "a6a08c80ecb54eb282b00359e7f476506e12bc0b"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/balgf/PHPThis/zipball/a6a08c80ecb54eb282b00359e7f476506e12bc0b",
+        "reference": "a6a08c80ecb54eb282b00359e7f476506e12bc0b",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "psr/container",
+      "version": "2.0.2",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/php-fig/container.git",
+        "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/php-fig/container/zipball/c71ecc56dfe541dbd90c5360474fbc405f8d5963",
+        "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "psr/http-client",
+      "version": "1.0.3",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/php-fig/http-client.git",
+        "reference": "bb5906edc1c324c9a05aa0873d40117941e5fa90"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/php-fig/http-client/zipball/bb5906edc1c324c9a05aa0873d40117941e5fa90",
+        "reference": "bb5906edc1c324c9a05aa0873d40117941e5fa90",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "psr/http-factory",
+      "version": "1.1.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/php-fig/http-factory.git",
+        "reference": "2b4765fddfe3b508ac62f829e852b1501d3f6e8a"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/php-fig/http-factory/zipball/2b4765fddfe3b508ac62f829e852b1501d3f6e8a",
+        "reference": "2b4765fddfe3b508ac62f829e852b1501d3f6e8a",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "psr/http-message",
+      "version": "2.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/php-fig/http-message.git",
+        "reference": "402d35bcb92c70c026d1a6a9883f06b2ead23d71"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/php-fig/http-message/zipball/402d35bcb92c70c026d1a6a9883f06b2ead23d71",
+        "reference": "402d35bcb92c70c026d1a6a9883f06b2ead23d71",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "psr/log",
+      "version": "3.0.2",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/php-fig/log.git",
+        "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+        "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "ralouphie/getallheaders",
+      "version": "3.0.3",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/ralouphie/getallheaders.git",
+        "reference": "120b605dfeb996808c31b6477290a714d356e822"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/ralouphie/getallheaders/zipball/120b605dfeb996808c31b6477290a714d356e822",
+        "reference": "120b605dfeb996808c31b6477290a714d356e822",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "smalot/pdfparser",
+      "version": "v2.12.5",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/smalot/pdfparser.git",
+        "reference": "2cfa0d92bd557875c9f52a75fde0e8392302a354"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/smalot/pdfparser/zipball/2cfa0d92bd557875c9f52a75fde0e8392302a354",
+        "reference": "2cfa0d92bd557875c9f52a75fde0e8392302a354",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "symfony/deprecation-contracts",
+      "version": "v3.7.1",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/symfony/deprecation-contracts.git",
+        "reference": "f3202fa1b5097b0af062dc978b32ecf63404e31d"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/f3202fa1b5097b0af062dc978b32ecf63404e31d",
+        "reference": "f3202fa1b5097b0af062dc978b32ecf63404e31d",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "symfony/polyfill-mbstring",
+      "version": "v1.38.2",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/symfony/polyfill-mbstring.git",
+        "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
+        "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "symfony/polyfill-php80",
+      "version": "v1.37.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/symfony/polyfill-php80.git",
+        "reference": "dfb55726c3a76ea3b6459fcfda1ec2d80a682411"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/symfony/polyfill-php80/zipball/dfb55726c3a76ea3b6459fcfda1ec2d80a682411",
+        "reference": "dfb55726c3a76ea3b6459fcfda1ec2d80a682411",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "symfony/service-contracts",
+      "version": "v3.7.3",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/symfony/service-contracts.git",
+        "reference": "15e6a07ec2a2c75ceb1b21dd98105ee8456d2257"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/symfony/service-contracts/zipball/15e6a07ec2a2c75ceb1b21dd98105ee8456d2257",
+        "reference": "15e6a07ec2a2c75ceb1b21dd98105ee8456d2257",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "theodo-group/llphant",
+      "version": "1.0.3",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/LLPhant/LLPhant.git",
+        "reference": "52fcd7afd58e6d289b9e304ea357695ece9dc518"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/52fcd7afd58e6d289b9e304ea357695ece9dc518",
+        "reference": "52fcd7afd58e6d289b9e304ea357695ece9dc518",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "webmozart/assert",
+      "version": "1.12.1",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/webmozarts/assert.git",
+        "reference": "9be6926d8b485f55b9229203f962b51ed377ba68"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/webmozarts/assert/zipball/9be6926d8b485f55b9229203f962b51ed377ba68",
+        "reference": "9be6926d8b485f55b9229203f962b51ed377ba68",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "yethee/tiktoken",
+      "version": "0.10.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/yethee/tiktoken-php.git",
+        "reference": "59a93e34b90469021a4b8ed3a98765e8dc23f3cc"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/yethee/tiktoken-php/zipball/59a93e34b90469021a4b8ed3a98765e8dc23f3cc",
+        "reference": "59a93e34b90469021a4b8ed3a98765e8dc23f3cc",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "phpstan/phpstan",
+      "version": "2.2.16",
+      "source": null,
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/phpstan/phpstan/zipball/46a6d9060e5a7763adfcc21ebcb8b504ebdbcb92",
+        "reference": "46a6d9060e5a7763adfcc21ebcb8b504ebdbcb92",
+        "shasum": ""
+      }
+    },
+    {
+      "name": "phpstan/phpstan-strict-rules",
+      "version": "2.0.12",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/phpstan/phpstan-strict-rules.git",
+        "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/2bc5ae19ae965663b62ac907ee6342c3903ec93b",
+        "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b",
+        "shasum": ""
+      }
+    }
+  ],
+  "files": {
+    ".ai/README.md": "4ca7b3d38c219c104f3bfb8f2c532904dfe3183e8de3db308b6110585387b577",
+    ".ai/architecture.md": "5690e0df18ec34364c6157d66debcc1bfc3eee7ee8edeef125e6ee81c74dc44c",
+    ".ai/change-workflow.md": "484e421fb5b1169eece192d786ba770900f18871b70ac291ea527eded1e89676",
+    ".ai/cli.md": "b7eb7346a003d12b47ab2429ef985bb22dc1f4cea3b885daedffb29080db7db5",
+    ".ai/configuration.md": "674c00dbbb58bff325fb3cf440e3b6db913ec4ecae384a80a367196cbf35c406",
+    ".ai/data.md": "669da218e727bddcfdfb2aac53863e7fdad7696f8b8bb31ca1319cfbcf2561e1",
+    ".ai/file-transfers.md": "edd71d91b5e9b30ee5a7e820e4a4fc8add6e8f16a1770bb998cc47c203b048b1",
+    ".ai/integrations.md": "4b5702acfebd9cb84853f6cd3f746dcf844871002e75f1b07cf93221a04ac64e",
+    ".ai/jobs.md": "49f4411cb25fe79bf7013ee8e7aa3335b0fdd4f38161fc0c6db6737f6af551e3",
+    ".ai/migrations.md": "2c884714ce68bff47490b4e8432baf73bf6c3c9b6c04461d07cf27734535613c",
+    ".ai/observability.md": "613cfaabdd03f4fba455ae40942c06539b05167dc8da24be8e66a81cbfd718e6",
+    ".ai/operations.md": "ea511c4ed435a32cd5e663e17131629a9d634ea25182314eac61f1811654bdb1",
+    ".ai/project.md": "1157f335ed5c21d8c8adb11dddd6691fd13b34bbafefad118d2cdb9c0f210375",
+    ".ai/request-policy.md": "620ad2fe65b231c69e6b9452509d6bfc52ab22cff8e2a1ddd7caeeb08fd8a140",
+    ".ai/rules.md": "c79d9133c708bb043839ce8e7c289812d89a97ae5c04e518cb2ce387cad9cdaf",
+    ".ai/testing.md": "f9e2285d153f25cb462adaa7dbd85a08a6ffc4d600e0b881b7f4a8f60b3d3d9c",
+    ".ai/websockets.md": "280c2babbf705dc638cb6351b01175916e88c15f516b798ff2680fb0b088971e",
+    ".ai/workbench.md": "e7087ab6d3a9e98b74f5e9f124b6ccf0dd35ad1792cb2a921e5a37525ce7c298",
+    ".github/workflows/ci.yml": "70dc7eb176a5cfc10ef0beafaa61b0f9ae73a6d1c7cb1760215d4806c867e168",
+    ".gitignore": "de00c2d34b305aa518df7ff72e6d5d926611631573effd0f9eceb034c844983c",
+    "AGENTS.md": "68c96f20535778e188aadfdc9bd5ceea95124ca6373648d24e7b71a2c42e84f0",
+    "LICENSE": "aaa909a38302359fef8f537cd94dd8883a01f5c2d5773b1a9652a0382d499026",
+    "PLAN.md": "a53f54f38d841845b7f0211f9035272b00c19757bff5bae74c420e681ea594fc",
+    "README.md": "0b5b49bd90b0dc1debf7ee0c548170147c22cb4624c61559ce7f4c77dcfc583d",
+    "bin/qdrant.php": "7ed6514c954f3e92dca9c1f1a5ef665aecdb0d8d10e2e9d7f76aa7a5899224d3",
+    "bootstrap.php": "9510597fb9c85b82d603f365c4217ce86ed1ddcaa0754202162d71e70584cb0a",
+    "composer.json": "1af8d7fdbcdafcf4a1408badcdb017442e411e7a06fbcae7ffb24e66bced3240",
+    "composer.lock": "5835e501764b776fcb3b3e26789fd47e80a040ffb2119c445c0212d606591602",
+    "docs/decisions/README.md": "adc5c88f09383d8bb0ec4acd7f4a23cdfab44bbf1e40155b9bc10ca3076dabd7",
+    "public/index.php": "db73bfd393ee7bf3da846e5f18a2bcc44e1d50a68fb39f47f209a5bb547da3f7",
+    "src/HealthHandler.php": "ed95782c8e09f9a51c932cde94f56e61c6fb57307bb57d9b26583a637d30d323",
+    "src/HealthRoutes.php": "51da44163c7ca3d64f3903d69938616f88ae5771ce319fbe17f8155da2fd42e5",
+    "src/Observability/CorrelationId.php": "3e783693c02e545f027a7f1ce182c1c824bf81845a1f9c2dd5727a09a22f8c8e",
+    "src/Observability/ErrorLogOuterFailureSink.php": "3f18458d84e7b56aed16987431ee99b04a5496f4490311f5fa7247ec663b0fcb",
+    "src/Observability/ErrorLogRequestSummarySink.php": "5c2d65ef1b4f814f21955dfdd315446e5a765257e951f945736a482957a3c24e",
+    "src/Observability/FailureClass.php": "e40fe219b0418c09eab7c67e8e1e41c93580e7cd3d01d69ee91b66eba0b8ae2c",
+    "src/Observability/QuerySummarySource.php": "b48d19a46e2314d1bc0790bc4affddb08dd12cf436635fef20595c3c8a295fc0",
+    "src/Observability/README.md": "c63cfe37d52a16e98fdff2e411c933944b7c5b99802148db11cbd292bd5c3181",
+    "src/Observability/RequestSummary.php": "bb9a8729b4c16424d8863a168a1d33ffaf96deebe368adfcf367b9affd58306d",
+    "src/Observability/RequestSummarySink.php": "886195ba3ef07580375e39ad0572245a7a927bf5f90f9755d1d10f1b72cedd77",
+    "src/Observability/TerminalRequestCoordinator.php": "8830e1f8e1f241d2a744d8c0ceec2143bca15fdf3d9ac13e86229d14cd2ee2c3",
+    "src/QuestionHandler.php": "0e517f954f90489b6613e422b77867df120c43bbb4a3aa7c3939cc8d2b78e145",
+    "src/QuestionRoutes.php": "ee1894f2627d010ac57976aa3d010b913ec0fef3b73505eaf1028db6d5c85b4e",
+    "src/Rag/Answer.php": "7ca1aaa0b56b2696acbb28479832c5424ec2d6644eb86d370ed279ee795db0e7",
+    "src/Rag/AnthropicHttpClient.php": "09c2ffc9b394dc5dda203a012fef56214f2fb955560373dc4ccd832b8b75363f",
+    "src/Rag/AskQuestion.php": "5ac11c9376b5b6f9682b089b30a9bd0d925d1ebec53b3ea9796f83fa1c3e8dde",
+    "src/Rag/BoundedHttpClient.php": "0746fa29d7e36051aabdd5a913bc14cab44e9660d6cd136d652580f613b5cbff",
+    "src/Rag/DenyQuestionAuthenticator.php": "0ebfac579ab7d6b884c358362706a6d42e951b5e37fb2633b6e251fd133febeb",
+    "src/Rag/DenyQuestionAuthorizer.php": "d570919a2d891f94bf100cd582a83d4cf8ea7f3a27c49c4b3257a3ef8dfb7951",
+    "src/Rag/DenyQuestionTenantResolver.php": "7fe9e1be820fb2a9271f12896fc293eba94b2cb53434c20c55ca144e5fafb54a",
+    "src/Rag/DocumentGrant.php": "2c7a2ab627a22bc5877091c0e816a765eb23706bc0ff99a5dc66f446270faf79",
+    "src/Rag/DocumentId.php": "ef784304d84971a56e8e3af26699e6e900faa7de3476a5a5fa4fc41500fb3d44",
+    "src/Rag/DocumentText.php": "5dcfdc69ec1e6b5148cd255aaffc5e81147cf9f1b77cad0279a959de6af1eebb",
+    "src/Rag/ExternalService.php": "0962142ca9d633d9bb0ff935832d4f5e74c22e6fff82b07f66d58206fd12ae21",
+    "src/Rag/ExternalTrace.php": "a171d0d3efd0eb9be06284c702a38757cead7cfbfec0e6bc1742ae65fe27ac4b",
+    "src/Rag/Forbidden.php": "a1f293586a1591fb46923104ae588ae4366be02b1dad3d2f96c2d9bfd5cb784a",
+    "src/Rag/IngestDocument.php": "5cee463d62fdf89e50e401eba53330ddb712b4a43e46504aba63ff49b673b6e4",
+    "src/Rag/IntegrationUnavailable.php": "b876c0354443058d3a754546f8d3eebf2f91419aac0166df104a3f410dfda1b1",
+    "src/Rag/InvalidQuestion.php": "92c74e60c1036b40c7d116cc10bfd99096d47798e8d7acf4cbeb961695d1c368",
+    "src/Rag/LlphantModels.php": "b6a229d55114fefad42e5b1e8c23c07750942a31afb0d76e57111cd7518e5abb",
+    "src/Rag/LoopbackHttpClient.php": "e092e93da4053f5ea9ecf6a48ef6e220a3f8c961f4c25af3534ac82cb2c2db52",
+    "src/Rag/OllamaEmbeddingHttpClient.php": "89761bc694bd930b1a359f72a7d2f133d39e18f12f95a44cb17a54aee25df922",
+    "src/Rag/Principal.php": "fa024fee5c721c9eb5d043efca504059c144134ab64f8e42beeea7ea0cce564d",
+    "src/Rag/QdrantDocuments.php": "3d162f98556f16cdcbdaa51b8249560905ff074b1bf9122d138a80a50f4d8127",
+    "src/Rag/QdrantSetup.php": "0236bf521fc4e9754da1eb9a83ab27715c237b8647efabef99f924655de0f0cc",
+    "src/Rag/Question.php": "254ba839bd8e21c0bf300f3a3cdb4476e0ac5de70c785ef25d282618390105be",
+    "src/Rag/QuestionAuthenticator.php": "8f16165cbddd3f712c2d2ea4f0549fa7dc1f722fdc5923adbbc39f30ac9bbaef",
+    "src/Rag/QuestionAuthorizer.php": "f9000fdc74076689b2b2231bec44e883bc7c643c617c6f217bc6ef938466ca3b",
+    "src/Rag/QuestionErrors.php": "d5fc78efe9e33e6dfe96acbe32f991872d2624417eae306fc194e5d58a6f7686",
+    "src/Rag/QuestionTenantResolver.php": "1a975585b8297a717f1f3935dc17022bfc00f242c3eaea1392b0d7aecc70f100",
+    "src/Rag/RetrievedChunk.php": "49bfd9da2aa01bbb1464149883382c6f63699986dd3a70c9ed82cabebb4d24da",
+    "src/Rag/RetrievedContext.php": "10c361b65bde0fc13ac26e42dc104f6e3d23a71c6155c0887c26eb298244701c",
+    "src/Rag/Tenant.php": "eebc3d88aac359007b217c0923ed6af4051e19bfc7600d975d809c7504eac03d",
+    "src/Rag/UnacceptableQuestion.php": "d5161d9374329d2ac59c4ccfbc27bb4e874d91fe1fa2789321bf9fc973318b06",
+    "src/Rag/Unauthenticated.php": "edd30120c1928aeed3f26568024cc23c0355a77f69a690b6d07ec010d8eff022",
+    "src/Rag/UnavailableHttpClient.php": "6110cc0f485c64fbbf7ab3b08181a6da2ec72f02b84437ba7554b84a5948d2c8",
+    "src/Rag/Vector.php": "eb56755519d7f9103517f60734c69412b5d533c4e8d45ca0cf695d9c8ff4925a",
+    "src/Routes.php": "b652e9ce7d777464539c5b1dd102d80c8efaffbc74951d0385d9980682ccb326",
+    "tests/fixtures/failing-bootstrap.php": "28108ce9709a3687f9bb89a54318f1082af3ac29c9086acc7dfd2064e9907f36",
+    "tests/fixtures/transport/public/large.php": "1a3d1028d2651692a6eba9c448dca95ad5a249f1907ed8eec03e3c921512f016",
+    "tests/fixtures/transport/public/redirect.php": "3a616afe76909acd82a828a2ea03c0526b174a89135872ecb6faf7246401a76b",
+    "tests/fixtures/transport/public/slow.php": "9e002ad86a1d05c6bffed17d8896d2a79a206833c03778700185fbc2ecaa07e6",
+    "tests/fixtures/transport/public/unavailable.php": "2c6b521ca0965bd11747aa949763c2bbf9d305b51590ed8a4a95985712519a61",
+    "tests/process-support.php": "e41d1bc3d67abf8394e732231fa4c8ca10ae626a31a0f6a1097882bd50a86064",
+    "tests/qdrant-missing.php": "a8da02772925d556b80da53bbcfd0c924d242d37cd50e5be5373a2e8dede8acd",
+    "tests/qdrant.php": "9f974070d06f32bf5a0abc1f6e0b4688ba063402881a2ae48b471b2a9c2e3da2",
+    "tests/qdrant.sh": "29cab318b670d94ce4fbd34ac2fb52451cc8587f259acc3f9aca346a961728c8",
+    "tests/rag-support.php": "cd6f41a58db5d3ee625736a10c4a7276bab115d11aec1b263db3ae5151fde52d",
+    "tests/rag.php": "5b231f8be3c7fce39d1cfdb854871b69b1fb12e7f0df465f078b2e481be3fa35",
+    "tests/run.php": "e37b87029bb95968da1819d3fe9f2ac344d4c5a6d13eb029d90ae990c8ace281",
+    "tests/transport.php": "b520b0f93c8d620179c0639acdd594dddd15e52652763c1745180e2c6003ddee"
+  },
+  "model_calls": "deterministic fixtures only; no provider requests or paid usage",
+  "qdrant_image": "qdrant/qdrant@sha256:12364fe851b9f17356fc88189fc06d1b521262e04659ec7345975b00c9246a10",
+  "qdrant_server_version": "1.19.1",
+  "qdrant_server_commit": "6ab21cac18ebb6f4ae29102c7f8f5cc11affd5de",
+  "limits": "Gate wall time includes clone, validation, dependency install and tests. It is not authoring effort, provider latency or performance evidence."
+}

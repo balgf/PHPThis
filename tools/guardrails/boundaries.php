@@ -7,6 +7,25 @@ function boundaryGuardrailFailures(string $root): array
 {
     $failures = [];
 
+    $ragDistributionMarkers = [
+        '.ai/README.md' => ['| Change RAG, LLPhant or vector-database integration guidance | `.ai/rag.md` |'],
+        '.ai/rag.md' => ['`docs/rag.md`, the single adoption-guide owner'],
+        'docs/knowledge-map.md' => ['| Adopt or review application-owned RAG, LLPhant or Qdrant | `docs/rag.md` |'],
+        'docs/rag.md' => ['PHPThis supplies no model client, vector store, agent runtime, discovery, or new framework dependency.', 'deterministic protocol fixtures'],
+        'skeleton/.ai/integrations.md' => ['`NOT_APPLICABLE(RAG)`'],
+        'templates/application/.ai/integrations.md' => ['{{RAG_ADOPTION_OR_NOT_APPLICABLE}}', '{{RAG_RECIPE_RECORD_OR_NOT_APPLICABLE}}'],
+        'tools/package-files.txt' => ['docs/rag.md'],
+        'tools/test-consumer-project.php' => ['proveInstalledRagGuidanceDistribution($project, $installedFramework);'],
+    ];
+    foreach ($ragDistributionMarkers as $path => $markers) {
+        $contents = file_get_contents($root . '/' . $path);
+        foreach ($markers as $marker) {
+            if (!is_string($contents) || !str_contains($contents, $marker)) {
+                $failures[] = 'Missing RAG distribution route or boundary in ' . $path . ': ' . $marker;
+            }
+        }
+    }
+
     $protectedFileTransferProofMarkers = [
         'docs/file-transfers/security.md' => [
             '`SameSite` and an opaque identifier are not permission.',

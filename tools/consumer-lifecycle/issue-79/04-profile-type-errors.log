@@ -1,0 +1,53 @@
+PASS application guardrails: 50 PHP files
+ADVISORY possible application duplication: 2 groups (minimum 48 normalized tokens); run `phpthis check --debug` for details; application validity is unaffected
+Instructions for interpreting errors
+---------
+
+Each error has an associated identifier, like `argument.type`
+or `return.missing`.
+
+Each error identifier has documentation at URL https://phpstan.org/error-identifiers/<identifier>
+This page contains code example, explanation why is this an error
+and instruction how to fix it.
+Before fixing the error, fetch the documentation page for its identifier.
+
+The error usually indicates a real bug or incorrect type in the code. Fix the underlying cause, do not just make the error go away.
+Do not add `@phpstan-ignore` comments, `@phpstan-ignore-next-line` comments, or baseline entries to suppress the error.
+Do not use assert() or inline @var PHPDoc tag to override PHPStan's inferred type.
+Do not add type casts just to silence errors.
+Do not widen parameter or return types just to make the error go away.
+ ------ ----------------------------------------------------------------------- 
+  Line   src/Rag/DocumentText.php                                               
+ ------ ----------------------------------------------------------------------- 
+  10     Method App\Rag\DocumentText::__construct() has parameter $chunks with  
+         no value type specified in iterable type array.                        
+         🪪  missingType.iterableValue                                          
+         💡  See:                                                               
+         https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-i  
+         terable-type                                                           
+ ------ ----------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------- 
+  Line   src/Rag/IngestDocument.php                                           
+ ------ --------------------------------------------------------------------- 
+  18     Parameter #1 $text of method App\Rag\LlphantModels::embed() expects  
+         string, mixed given.                                                 
+         🪪  argument.type                                                    
+ ------ --------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   src/Rag/LoopbackHttpClient.php                                         
+ ------ ----------------------------------------------------------------------- 
+  31     Parameter #2 $options of function curl_setopt_array expects            
+         array{10002: non-empty-string, 10036: non-empty-string|null, 10023:    
+         array<int, string>, 10015: array|string, 10004: string, 52: bool, 156  
+         : int, 155: int, ...}, array{10002: string, 10036: string, 10023:      
+         array{'Content-Type:…', 'Accept: application…'}, 10015: string,        
+         10004: '', 52: false, 156: int<min, 200>, 155: int, ...} given.        
+         🪪  argument.type                                                      
+         💡  Offset 10002 (non-empty-string) does not accept type string.       
+         💡  Offset 10036 (non-empty-string|null) does not accept type string.  
+ ------ ----------------------------------------------------------------------- 
+
+ [ERROR] Found 3 errors                                                         
+

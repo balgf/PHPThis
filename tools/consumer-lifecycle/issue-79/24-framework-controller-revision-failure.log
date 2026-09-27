@@ -1,0 +1,24 @@
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Nothing to install, update or remove
+Generating autoload files
+26 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+PASS guardrails: 1483 Markdown files, 241 PHP files, 2618 core lines
+
+ [OK] No errors                                                                 
+
+PASS bounded maintainer process support: streams, limits, redaction, and cleanup
+PASS agent evaluation kit self-test: inventory, hashes, run records, score gates, and negative controls
+
+Fatal error: Uncaught RuntimeException: Controller v0.2 supports only change.simple-ping revision 29 without comparative claims. in /Users/balfernandez/Projects/PHPThis/codebase/tools/agent-evaluation-controller/contract.php:201
+Stack trace:
+#0 /Users/balfernandez/Projects/PHPThis/codebase/tools/agent-evaluation-controller/contract.php(253): agentEvaluationControllerRequireFixedTask(Array)
+#1 /Users/balfernandez/Projects/PHPThis/codebase/tools/agent-evaluation-controller/contract.php(34): agentEvaluationControllerRequireAdmittedTask(Array)
+#2 /Users/balfernandez/Projects/PHPThis/codebase/tools/agent-evaluation-controller/controller.php(1378): agentEvaluationControllerValidateRequest(Array, Array)
+#3 /Users/balfernandez/Projects/PHPThis/codebase/tools/agent-evaluation-controller/controller.php(1151): agentEvaluationControllerExecuteControlled('/Users/balferna...', '/private/var/fo...', '/private/var/fo...', Array, Array, NULL, NULL, Object(SensitiveParameterValue))
+#4 /Users/balfernandez/Projects/PHPThis/codebase/tools/test-agent-evaluation-controller.php(53): agentEvaluationControllerExecuteSynthetic('/Users/balferna...', '/private/var/fo...', '/private/var/fo...', Array, Array)
+#5 {main}
+  thrown in /Users/balfernandez/Projects/PHPThis/codebase/tools/agent-evaluation-controller/contract.php on line 201
+Script php tools/test-agent-evaluation-controller.php handling the test:agent-evaluation-controller event returned with error code 255
+Script @test:agent-evaluation-controller was called via check
