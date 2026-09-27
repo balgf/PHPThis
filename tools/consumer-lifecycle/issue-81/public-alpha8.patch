@@ -1,0 +1,227 @@
+diff --git a/.ai/README.md b/.ai/README.md
+index 4707786..289c85c 100644
+--- a/.ai/README.md
++++ b/.ai/README.md
+@@ -28,7 +28,7 @@ An ordinary route change starts with installed `vendor/phpthis/framework/docs/re
+ | --- | --- | --- |
+ | Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |
+ | Explain current framework or application behavior | `.ai/architecture.md` | installed knowledge route, execution path, and nearest tests |
+-| Upgrade the installed framework | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | `docs/upgrade-source.md`, current concern guidance, retained app source and tests; never replace app context from a new skeleton |
++| Upgrade the installed framework | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` | `docs/upgrade-public-alpha8.md`, historical `docs/upgrade-source.md` only for the previous repair, current concern guidance, retained app source and tests; never replace app context from a new skeleton |
+ | Change application structure or dependencies | `.ai/architecture.md` | composition root and affected boundary |
+ | Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`; add installed `vendor/phpthis/framework/docs/database.md` when nested data enters an I/O plan | exact application response construction and `Content-Type`, operation-owned `data` and optional `meta` fields, semantic relationship names, fixed bounded query/cache/external-call counts independent of parent-page cardinality, I/O-free mapping and encoding, parent pagination, exact nested decoder fixtures, compatibility decision, `.ai/data.md`, and `.ai/testing.md`; add no generic wrapper, relationship loader, serializer, paginator, or generator |
+ | Build or change frontend integration or application-owned HTML rendering | installed `vendor/phpthis/framework/docs/frontend-integration.md` | `.ai/architecture.md`, `.ai/testing.md`, and exact HTTP paths; add other concern guides only when entered |
+diff --git a/.ai/operations.md b/.ai/operations.md
+index 9b4a315..43c25e6 100644
+--- a/.ai/operations.md
++++ b/.ai/operations.md
+@@ -8,4 +8,4 @@ Manual evaluation server (after fixture setup): `php -d display_errors=0 -d disp
+ 
+ Reproduction tags, upgrade procedure, fixed scenario and next public-release trigger: `docs/lifecycle-plan.md`. Preserve the same application; no skeleton replacement. `NOT_APPLICABLE(MIGRATIONS)`, `NOT_APPLICABLE(JOBS)`, `NOT_APPLICABLE(SESSION)`, `NOT_APPLICABLE(CACHE)`, `NOT_APPLICABLE(WEBSOCKETS)`, `NOT_APPLICABLE(FILE_TRANSFER)`.
+ 
+-Current source evaluation is pinned by composer.lock to framework 909977b762ff08f823be1e2c16a4dbb704e4f93a; it is not public-release certification. The actual built-in HTTP SAPI settings are asserted by outer_failure.py: every E_ALL bit, native/error startup display off, private log on, exception arguments omitted. No other deployment/profile exists. Missing fixture now returns the exact generic private no-store 500 plus one protected outer event; bootstrap never creates it.
++Current public evaluation is pinned by composer.lock to phpthis/framework v0.1.0-alpha.8, source/distribution 36643c068dda3619f939ac04d861c1316a0af8e9. This is retained synthetic maintainer-led evidence, not production certification; docs/upgrade-public-alpha8.md records this repetition and docs/upgrade-source.md preserves the earlier source repair. The actual built-in HTTP SAPI settings are asserted by outer_failure.py: every E_ALL bit, native/error startup display off, private log on, exception arguments omitted. No other deployment/profile exists. Missing fixture now returns the exact generic private no-store 500 plus one protected outer event; bootstrap never creates it.
+diff --git a/composer.json b/composer.json
+index 598e71e..aefea96 100644
+--- a/composer.json
++++ b/composer.json
+@@ -6,7 +6,7 @@
+     "require": {
+         "php": "~8.4.0",
+         "ext-pdo_sqlite": "*",
+-        "phpthis/framework": "dev-main#909977b762ff08f823be1e2c16a4dbb704e4f93a"
++        "phpthis/framework": "0.1.0-alpha.8"
+     },
+     "require-dev": {
+         "phpstan/phpstan": "^2.1",
+@@ -35,12 +35,5 @@
+     "config": {
+         "allow-plugins": false,
+         "sort-packages": true
+-    },
+-    "repositories": [
+-        {
+-            "name": "phpthis-source",
+-            "type": "vcs",
+-            "url": "https://github.com/balgf/PHPThis.git"
+-        }
+-    ]
++    }
+ }
+diff --git a/composer.lock b/composer.lock
+index c306bf9..8794ee8 100644
+--- a/composer.lock
++++ b/composer.lock
+@@ -4,20 +4,20 @@
+         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+         "This file is @generated automatically"
+     ],
+-    "content-hash": "639ed9dfae2687a3d3846adf93164130",
++    "content-hash": "5cb699d7021a58411798125b6095aaf1",
+     "packages": [
+         {
+             "name": "phpthis/framework",
+-            "version": "dev-main",
++            "version": "v0.1.0-alpha.8",
+             "source": {
+                 "type": "git",
+                 "url": "https://github.com/balgf/PHPThis.git",
+-                "reference": "909977b762ff08f823be1e2c16a4dbb704e4f93a"
++                "reference": "36643c068dda3619f939ac04d861c1316a0af8e9"
+             },
+             "dist": {
+                 "type": "zip",
+-                "url": "https://api.github.com/repos/balgf/PHPThis/zipball/909977b762ff08f823be1e2c16a4dbb704e4f93a",
+-                "reference": "909977b762ff08f823be1e2c16a4dbb704e4f93a",
++                "url": "https://api.github.com/repos/balgf/PHPThis/zipball/36643c068dda3619f939ac04d861c1316a0af8e9",
++                "reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+                 "shasum": ""
+             },
+             "require": {
+@@ -32,7 +32,6 @@
+                 "phpstan/phpstan-strict-rules": "^2.0",
+                 "phpunit/phpunit": "^13.0"
+             },
+-            "default-branch": true,
+             "bin": [
+                 "bin/phpthis"
+             ],
+@@ -42,90 +41,7 @@
+                     "PHPThis\\": "src/"
+                 }
+             },
+-            "autoload-dev": {
+-                "psr-4": {
+-                    "Example\\": "example/src/"
+-                }
+-            },
+-            "archive": {
+-                "exclude": [
+-                    "/.ai",
+-                    "/.DS_Store",
+-                    "/.git",
+-                    "/.github",
+-                    "/.gitattributes",
+-                    "/.gitignore",
+-                    "/.phpunit.cache",
+-                    "/AGENTS.md",
+-                    "/autoload.php",
+-                    "/composer.lock",
+-                    "/example",
+-                    "/phpstan.neon",
+-                    "/phpunit.xml.dist",
+-                    "/skeleton",
+-                    "/tests",
+-                    "/tmp",
+-                    "/tools",
+-                    "/vendor"
+-                ]
+-            },
+-            "scripts": {
+-                "analyse": [
+-                    "php -d disable_functions=proc_open vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress --memory-limit=1G"
+-                ],
+-                "benchmark:routing": [
+-                    "php tools/benchmark-routing.php"
+-                ],
+-                "example:setup": [
+-                    "php tools/setup-example.php"
+-                ],
+-                "guard": [
+-                    "php tools/guardrails.php"
+-                ],
+-                "test": [
+-                    "php vendor/bin/phpunit --configuration=phpunit.xml.dist"
+-                ],
+-                "test:agent-evaluation": [
+-                    "php tools/test-agent-evaluation.php"
+-                ],
+-                "test:agent-evaluation-controller": [
+-                    "php tools/test-agent-evaluation-controller.php"
+-                ],
+-                "test:process": [
+-                    "php tools/test-process-support.php"
+-                ],
+-                "test:coverage": [
+-                    "php vendor/bin/phpunit --configuration=phpunit.xml.dist --coverage-text --coverage-clover=.phpunit.cache/coverage.xml"
+-                ],
+-                "test:duplication": [
+-                    "php tools/test-application-duplication.php"
+-                ],
+-                "test:consumer": [
+-                    "php tools/test-consumer-project.php"
+-                ],
+-                "test:database-drivers": [
+-                    "php tools/test-database-drivers.php"
+-                ],
+-                "test:query-scaling": [
+-                    "php tools/test-query-scaling.php"
+-                ],
+-                "test:profile": [
+-                    "php tools/test-strict-profile.php"
+-                ],
+-                "check": [
+-                    "@guard",
+-                    "@analyse",
+-                    "@test:process",
+-                    "@test:agent-evaluation",
+-                    "@test:agent-evaluation-controller",
+-                    "@test:profile",
+-                    "@test:duplication",
+-                    "@test:consumer",
+-                    "@test:database-drivers",
+-                    "@test:query-scaling",
+-                    "@test"
+-                ]
+-            },
++            "notification-url": "https://packagist.org/downloads/",
+             "license": [
+                 "MIT"
+             ],
+@@ -137,10 +53,10 @@
+                 "web-framework"
+             ],
+             "support": {
+-                "source": "https://github.com/balgf/PHPThis/tree/main",
+-                "issues": "https://github.com/balgf/PHPThis/issues"
++                "issues": "https://github.com/balgf/PHPThis/issues",
++                "source": "https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.8"
+             },
+-            "time": "2026-09-26T06:21:15+00:00"
++            "time": "2026-09-27T13:13:20+00:00"
+         }
+     ],
+     "packages-dev": [
+@@ -264,7 +180,7 @@
+     "aliases": [],
+     "minimum-stability": "stable",
+     "stability-flags": {
+-        "phpthis/framework": 20
++        "phpthis/framework": 15
+     },
+     "prefer-stable": false,
+     "prefer-lowest": false,
+diff --git a/docs/upgrade-public-alpha8.md b/docs/upgrade-public-alpha8.md
+new file mode 100644
+index 0000000..2fd0412
+--- /dev/null
++++ b/docs/upgrade-public-alpha8.md
+@@ -0,0 +1,18 @@
++# Retained public Alpha 8 upgrade
++
++This is the same synthetic account-directory history from reviewed-source ca26ddfc18acb3528969f91289834cdee2d96e69, whose source target was 909977b762ff08f823be1e2c16a4dbb704e4f93a. The next matching public framework/skeleton pair now exists. Preserve the earlier lifecycle plan and source-upgrade report as historical evidence; no new skeleton replaces this application.
++
++Current dependency: public phpthis/framework v0.1.0-alpha.8 through normal Packagist preferred distribution, source/dist 36643c068dda3619f939ac04d861c1316a0af8e9. Matching public skeleton v0.1.0-alpha.8 is 1b1f3afed72880fc7852e67016349e87fc8c4c66. Framework release issue 81 owns the signed tags, artifact verification and clean public create-project evidence.
++
++The installed current contract, knowledge map and upgrade companion are authoritative. Contract 18 / Strict Profile 4 and PHT001-PHT008 remain unchanged from the earlier source checkpoint. The only dependency update is phpthis/framework; the VCS repository override is removed, and PHPStan 2.2.7 / strict-rules 2.0.12 remain locked.
++
++| Boundary | Applicability to this retained public repetition |
++| --- | --- |
++| Contract 14, configuration/request paths | No process configuration input was adopted. Existing literal paths and raw target rejection/preservation tests remain applicable. |
++| Contract 15 / PHT008 | Existing direct constant statements already have distinct named occurrences; policy/order, protected zero-work and one-query list controls remain intact. |
++| Contract 16, source discovery | Existing readable regular PHP/Python files; no application symlink or extensionless entrypoint is adopted. |
++| Contract 17, pending output | Existing single response-emission path and empty/top/lower buffer plus no-fallback tests are retained. |
++| Contract 18, outer HTTP failure | The earlier generic-first front-controller/bootstrap repair is retained. Real built-in-SAPI failure/event/isolation tests remain required; no disclosure inputs or development-details renderer is adopted. |
++| Native PDO construction | The unchanged direct SQLite Connection composition exercises the public native PDO::connect path through the complete consumer tests. SQLite fixture authority and engine evidence remain local only. |
++
++Source, domain operations, SQL, policy, context and tests are preserved except for these targeted dependency/provenance notes. No test, behavior, schema or external service was added or removed. Complete evidence must include strict Composer validation, the entire zero-argument composer check, locked audit, exact installed distribution inventory, a source/test byte comparison and the actual captured runtime. The public repetition is synthetic maintainer evidence; it establishes no independent adoption, live-provider, production, cross-engine, ANN-performance or general productivity claim. The next matching public release remains the lifecycle plan's next maintenance trigger.

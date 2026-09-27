@@ -1,0 +1,89 @@
+{
+  "verified_at_utc": "2026-09-27T14:54:04.082337+00:00",
+  "clean_environment": {
+    "root": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ",
+    "application": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/app",
+    "composer_home": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/composer-home",
+    "composer_cache": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/composer-cache",
+    "credential_configuration": "absent; isolated public-only Composer environment"
+  },
+  "php_version": "8.4.19",
+  "composer_version": "Composer version 2.10.2 2026-07-01 11:24:45",
+  "skeleton_version": "v0.1.0-alpha.8",
+  "skeleton_source_reference": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+  "skeleton_dist_reference": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+  "skeleton_distribution_installation": true,
+  "skeleton_file_count": 47,
+  "skeleton_byte_parity": true,
+  "framework_version": "v0.1.0-alpha.8",
+  "framework_source_reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+  "framework_dist_reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+  "framework_distribution_installation": true,
+  "framework_file_count": 234,
+  "framework_byte_parity": true,
+  "installed_checker_executable": true,
+  "unresolved_template_tokens": false,
+  "consumer_phpstan_configuration_or_baseline": false,
+  "locked_dependency_graph_verified": true,
+  "commands": [
+    {
+      "command": [
+        "composer",
+        "create-project",
+        "--stability=alpha",
+        "--prefer-dist",
+        "--no-interaction",
+        "--no-progress",
+        "phpthis/skeleton",
+        "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/app",
+        "0.1.0-alpha.8"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.071,
+      "log": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/01-create-project.log",
+      "log_sha256": "141ae684551c9b4adcd1330a8bc413d8d8308a2e56bc8fa382d24cdc4fdc7a59"
+    },
+    {
+      "command": [
+        "composer",
+        "validate",
+        "--strict"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.264,
+      "log": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/02-validate.log",
+      "log_sha256": "43add299dc97ecbd90ec2dc456ef5a0bd824bb9abdae2a3d7cdb520e21f8e86d"
+    },
+    {
+      "command": [
+        "composer",
+        "check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.374,
+      "log": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/03-complete-check.log",
+      "log_sha256": "355c6ffdf3f3de35ddcf257b6609bdc4bc95761144ac82654771a986cdd5326c"
+    },
+    {
+      "command": [
+        "composer",
+        "audit",
+        "--locked",
+        "--no-interaction",
+        "--format=plain"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.147,
+      "log": "/private/tmp/phpthis-alpha8-public-proof-x1vf6typ/04-locked-audit.log",
+      "log_sha256": "dac04dda7966b04d2eb83ba22b729e4025f820bba102192effa983b1fa377af8"
+    }
+  ],
+  "loopback_health": {
+    "status": 200,
+    "content_type": "application/json; charset=utf-8",
+    "cache_control": "no-store",
+    "body": "{\"status\":\"ok\"}\n",
+    "correlation_header_valid": true
+  },
+  "server_cleaned_up": true
+}

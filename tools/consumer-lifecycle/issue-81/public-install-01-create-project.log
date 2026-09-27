@@ -1,0 +1,18 @@
+Creating a "phpthis/skeleton" project at "./app"
+Installing phpthis/skeleton (v0.1.0-alpha.8)
+  - Downloading phpthis/skeleton (v0.1.0-alpha.8)
+  - Installing phpthis/skeleton (v0.1.0-alpha.8): Extracting archive
+Created project in /private/tmp/phpthis-alpha8-public-proof-x1vf6typ/app
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Package operations: 3 installs, 0 updates, 0 removals
+  - Downloading phpstan/phpstan (2.2.7)
+  - Downloading phpstan/phpstan-strict-rules (2.0.12)
+  - Downloading phpthis/framework (v0.1.0-alpha.8)
+  - Installing phpstan/phpstan (2.2.7): Extracting archive
+  - Installing phpstan/phpstan-strict-rules (2.0.12): Extracting archive
+  - Installing phpthis/framework (v0.1.0-alpha.8): Extracting archive
+Generating autoload files
+1 package you are using is looking for funding.
+Use the `composer fund` command to find out more!
+No security vulnerability advisories found.

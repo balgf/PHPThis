@@ -26,16 +26,16 @@ The framework supplies a small execution foundation and strict verification boun
 
 | Boundary | Recorded state |
 | --- | --- |
-| Latest framework tag | Alpha 7, [`v0.1.0-alpha.7`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.7), Consumer Contract version 13, Strict Profile version 3, and diagnostics `PHT001` through `PHT007` |
-| Latest proved application starter | Alpha 7 is the latest matching framework/skeleton pair with complete clean Packagist-only public-distribution evidence in [Issue #53](https://github.com/balgf/PHPThis/issues/53) |
-| Coordinated release status | Alpha 7 is the latest completed and announced coordinated release recorded by closed [Issue #53](https://github.com/balgf/PHPThis/issues/53), including both GitHub prereleases, the final announcement, and Issue closure |
-| Current post-tag `main` | Unreleased development source containing accepted ADRs 055 through 061, Consumer Contract version 18, Strict Profile version 4, PHT008, and accepted executable guard, checker, runtime-boundary, and maintainer-evidence changes; it is not part of `v0.1.0-alpha.7` or a later candidate |
+| Latest framework tag | Alpha 8, [`v0.1.0-alpha.8`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.8), Consumer Contract version 18, Strict Profile version 4, and diagnostics `PHT001` through `PHT008` |
+| Latest proved application starter | Alpha 8 is the matching public framework/skeleton pair with complete clean Packagist-only installation evidence in [Issue #81](https://github.com/balgf/PHPThis/issues/81) |
+| Coordinated release evidence | [Issue #81](https://github.com/balgf/PHPThis/issues/81) records Alpha 8 exact candidates, approvals, signed tags, packages, public proof and continuing GitHub prerelease/announcement state; closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) preserves the completed Alpha 7 predecessor |
+| Current post-tag `main` | Mutable availability/evidence follow-ups do not change the immutable Alpha 8 tag, artifacts or accepted scope; inspect the requested tag for historical authority |
 
-Alpha 8 preparation is tracked in [Issue #81](https://github.com/balgf/PHPThis/issues/81), with [accepted scope](docs/decisions/062-bounded-alpha-8-release-scope.md) and [accepted upgrade notes](docs/releases/0.1.0-alpha.8.md). No Alpha 8 candidate or package is approved or published by this preparation.
+Alpha 8 package/public-install evidence is tracked in [Issue #81](https://github.com/balgf/PHPThis/issues/81), with [accepted scope](docs/decisions/062-bounded-alpha-8-release-scope.md) and [upgrade notes](docs/releases/0.1.0-alpha.8.md). The tagged notes retain source-preparation facts; the external issue owns later candidate approvals and observed publication results.
 
-Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation. The [Alpha 7 release notes](docs/releases/0.1.0-alpha.7.md) describe the framework changes and compatibility boundary.
+Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation. The [Alpha 8 release notes](docs/releases/0.1.0-alpha.8.md) describe the compatibility changes and carried-forward limits.
 
-The Alpha 7 framework tag is immutable. The post-tag `main` source is unreleased and is not part of the published Alpha 7 packages. The [release process](RELEASING.md) owns the detailed dated external-evidence record and historical source-preparation boundaries. This summary establishes no later candidate or publication state and authorizes no tag, package, release, or announcement.
+Framework and skeleton Alpha 8 tags preserve the exact approved source. Current `main` documentation is mutable and is not historical artifact authority. The [release process](RELEASING.md) owns publication gates; recorded package proof authorizes no production deployment or later release operation.
 
 ## Start a PHPThis application
 
@@ -44,7 +44,7 @@ Consumers install PHPThis through Composer. Do not clone or copy the PHPThis fra
 Create the latest proved public framework/skeleton pair explicitly:
 
 ```bash
-composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.7'
+composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.8'
 cd my-app
 composer check
 php -d error_reporting=-1 -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -d zend.exception_ignore_args=1 -S 127.0.0.1:8080 -t public
@@ -53,7 +53,7 @@ curl -i http://127.0.0.1:8080/health
 
 `phpthis/skeleton` becomes the application root and Composer installs `phpthis/framework` under `vendor/phpthis/framework`. The runtime requires PHP 8.4.x, PDO, and `ext-session`.
 
-Do not infer a matching starter release from a framework tag alone. Issue #53 records the exact Alpha 7 skeleton and clean public-install evidence; verify the current package-host state before installation. Existing applications may assess Alpha 7 against the [upgrade notes](docs/releases/0.1.0-alpha.7.md#upgrade-from-alpha-6). The [getting-started guide](docs/getting-started.md) covers the Composer path, existing-application adoption, and source evaluation.
+Do not infer a matching starter release from a framework tag alone. Issue #81 records the exact Alpha 8 skeleton and clean public-install evidence; verify current package-host state before installation. Existing applications must reconcile the [Alpha 7 to Alpha 8 upgrade](docs/releases/0.1.0-alpha.8.md#upgrade-from-alpha-7). The [getting-started guide](docs/getting-started.md) covers installation, existing-application adoption and source evaluation.
 
 ## Ask the project AI
 
@@ -76,7 +76,7 @@ The AI may author code and draft decisions. A human still supplies intent, appro
 - [Knowledge map](docs/knowledge-map.md) — the smallest relevant guide, source, and evidence route for each task.
 - [Reviewer walkthrough](docs/reviewer-walkthrough.md) — an optional human companion tracing one request, its evidence, and a diagnostic repair at a pinned source revision.
 - [Request handling](docs/request-handling.md) and [database boundaries](docs/database.md) — the core HTTP and PDO patterns.
-- [Alpha 7 release notes](docs/releases/0.1.0-alpha.7.md) — compatibility changes and the carried-forward boundary.
+- [Alpha 8 release notes](docs/releases/0.1.0-alpha.8.md) — compatibility changes and the carried-forward boundary.
 - [Architecture decisions](docs/decisions/README.md) — accepted rationale and reconsideration triggers.
 - [Security policy](SECURITY.md) and [release process](RELEASING.md) — experimental support limits and publication gates.
 

@@ -69,9 +69,15 @@ The manifest retains elapsed capture durations (gate plus evidence work), commit
 
 Mandatory installed framework contract/map text was 124,005 bytes / 15,644 whitespace words in Alpha 7 and 42,289 bytes / 5,548 words in the pinned source. This measures file volume only; no token, comprehension, success-rate or productivity improvement is inferred. Deferred application guide templates remain in the consumer without being adopted.
 
+## Public Alpha 8 repetition
+
+The matching public Alpha 8 pair triggered the next retained repetition. Starting from reviewed-source ca26ddfc18acb3528969f91289834cdee2d96e69, consumer public-alpha8 `797d138aa5ae090b55e256524b228455d2d950f9` pins public framework v0.1.0-alpha.8 at `36643c068dda3619f939ac04d861c1316a0af8e9` with matching skeleton `1b1f3afed72880fc7852e67016349e87fc8c4c66`. Only the framework dependency, VCS override and targeted provenance notes changed; all application runtime source and tests remain byte-identical. Existing source-upgrade reports and failed checkpoints remain historical evidence.
+
+Strict metadata validation, the locked audit and the complete unchanged consumer gate pass on PHP 8.4.19 / SQLite 3.51.2 / Python 3.14.6. All 234 installed framework files match the proved public distribution. Capture took 4.456 seconds for gate/evidence work, not active authoring time; model usage remains unavailable. This is synthetic maintainer-led evidence with no independent-adoption, production, cross-engine or generalized productivity claim. [Issue #81](https://github.com/balgf/PHPThis/issues/81) owns the exact public pair, complete clean create-project proof and publication approvals. The export-excluded issue-81 ledger retains this repetition's portable history, diff and captured gate.
+
 ## Next concrete maintenance trigger
 
-When the next matching public framework AND skeleton release is available, the maintainer repeats this same retained consumer's upgrade table and full gate against those exact public identities. This is written into its frozen lifecycle plan, not an installed background monitor. Retain new product changes as new frozen prompts on the same history. A future public-target repetition and actual elapsed maintenance period are distinct results; this campaign establishes the retained evaluation only.
+After the Alpha 8 public repetition above, the next matching public framework AND skeleton release triggers the same retained consumer's upgrade table and full gate against those new exact public identities. This is written into its frozen lifecycle plan, not an installed background monitor. Retain new product changes as new frozen prompts on the same history. A later version-triggered repetition and actual elapsed maintenance period remain distinct results; neither source nor public-package evidence proves longitudinal maintenance cost.
 
 ## Optional RAG integration consumer
 

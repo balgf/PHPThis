@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-09-27T15:08:55.388016+00:00",
+  "release": "0.1.0-alpha.8",
+  "planned_date": "2026-09-27",
+  "planned_timezone": "Asia/Manila",
+  "evidence_issue": "https://github.com/balgf/PHPThis/issues/81",
+  "framework": {
+    "repository": "balgf/PHPThis",
+    "tag": "v0.1.0-alpha.8",
+    "tag_object": "c2573c0365e5a3302297af4dae93d0352681d92b",
+    "source_commit": "36643c068dda3619f939ac04d861c1316a0af8e9",
+    "approved_public_signer": "SHA256:B/fI12cx9OEHkN7QTmI3ymU7f9nGMVus7f41UKDBRAM",
+    "tag_created_at_utc": "2026-09-27T13:31:22.515099+00:00",
+    "tag_pushed_at_utc": "2026-09-27T13:31:24.553904+00:00",
+    "signature_verified": true,
+    "packagist_distribution": {
+      "verified_at_utc": "2026-09-27T13:34:40.584751+00:00",
+      "package": "phpthis/framework",
+      "version": "v0.1.0-alpha.8",
+      "source_reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+      "distribution_reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+      "distribution_url": "https://api.github.com/repos/balgf/PHPThis/zipball/36643c068dda3619f939ac04d861c1316a0af8e9",
+      "distribution_sha256": "b981f64bb046914c02359250acf59fca50808c5c5ecde16cb8856857daa0541f",
+      "file_count": 234,
+      "complete_source_byte_parity": true,
+      "bin_phpthis_executable": true
+    },
+    "ci": "https://github.com/balgf/PHPThis/actions/runs/36322692387",
+    "security": "https://github.com/balgf/PHPThis/actions/runs/36322692253"
+  },
+  "skeleton": {
+    "repository": "balgf/PHPThis-skeleton",
+    "tag": "v0.1.0-alpha.8",
+    "tag_object": "82eb9e8aa9e98d0842daa50f1555f10ddba0228b",
+    "source_commit": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+    "approved_public_signer": "SHA256:B/fI12cx9OEHkN7QTmI3ymU7f9nGMVus7f41UKDBRAM",
+    "tag_created_at_utc": "2026-09-27T14:49:58.978948+00:00",
+    "tag_pushed_at_utc": "2026-09-27T14:50:01.021065+00:00",
+    "signature_verified": true,
+    "packagist_distribution": {
+      "verified_at_utc": "2026-09-27T14:51:16.126396+00:00",
+      "package": "phpthis/skeleton",
+      "version": "v0.1.0-alpha.8",
+      "source_reference": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+      "distribution_reference": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+      "distribution_url": "https://api.github.com/repos/balgf/PHPThis-skeleton/zipball/1b1f3afed72880fc7852e67016349e87fc8c4c66",
+      "distribution_sha256": "8e23ad8c7b67e92408336886c3cdd52ae1fb5491a2ab3cfff8001c59f94887e0",
+      "file_count": 47,
+      "complete_source_byte_parity": true
+    },
+    "ci": "https://github.com/balgf/PHPThis-skeleton/actions/runs/36327344385",
+    "security": "https://github.com/balgf/PHPThis-skeleton/actions/runs/36327344383"
+  },
+  "public_installation": {
+    "verified_at_utc": "2026-09-27T14:54:04.082337+00:00",
+    "php_version": "8.4.19",
+    "composer_version": "Composer version 2.10.2 2026-07-01 11:24:45",
+    "skeleton_version": "v0.1.0-alpha.8",
+    "skeleton_source_reference": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+    "skeleton_dist_reference": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+    "skeleton_distribution_installation": true,
+    "skeleton_file_count": 47,
+    "skeleton_byte_parity": true,
+    "framework_version": "v0.1.0-alpha.8",
+    "framework_source_reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+    "framework_dist_reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+    "framework_distribution_installation": true,
+    "framework_file_count": 234,
+    "framework_byte_parity": true,
+    "installed_checker_executable": true,
+    "unresolved_template_tokens": false,
+    "consumer_phpstan_configuration_or_baseline": false,
+    "locked_dependency_graph_verified": true,
+    "loopback_health": {
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "cache_control": "no-store",
+      "body": "{\"status\":\"ok\"}\n",
+      "correlation_header_valid": true
+    },
+    "server_cleaned_up": true
+  },
+  "public_installation_method": "New empty directory; initially empty isolated Composer home/cache; no credentials or repository overrides; preferred public distribution archives.",
+  "public_installation_commands": [
+    {
+      "command": [
+        "composer",
+        "create-project",
+        "--stability=alpha",
+        "--prefer-dist",
+        "phpthis/skeleton",
+        "NEW_EMPTY_APP",
+        "0.1.0-alpha.8"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.071,
+      "log_sha256": "141ae684551c9b4adcd1330a8bc413d8d8308a2e56bc8fa382d24cdc4fdc7a59"
+    },
+    {
+      "command": [
+        "composer",
+        "validate",
+        "--strict"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.264,
+      "log_sha256": "43add299dc97ecbd90ec2dc456ef5a0bd824bb9abdae2a3d7cdb520e21f8e86d"
+    },
+    {
+      "command": [
+        "composer",
+        "check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.374,
+      "log_sha256": "355c6ffdf3f3de35ddcf257b6609bdc4bc95761144ac82654771a986cdd5326c"
+    },
+    {
+      "command": [
+        "composer",
+        "audit",
+        "--locked",
+        "--no-interaction",
+        "--format=plain"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.147,
+      "log_sha256": "dac04dda7966b04d2eb83ba22b729e4025f820bba102192effa983b1fa377af8"
+    }
+  ],
+  "retained_consumer": {
+    "verified_at_utc": "2026-09-27T15:05:03.281675+00:00",
+    "input_retained_commit": "ca26ddfc18acb3528969f91289834cdee2d96e69",
+    "input_bundle_sha256": "7989410ad6f3451acbdf22608f666dff2cdb25ade90588f991e1f63855933d04",
+    "consumer_commit": "797d138aa5ae090b55e256524b228455d2d950f9",
+    "consumer_tag": "public-alpha8",
+    "framework_version": "v0.1.0-alpha.8",
+    "framework_source_reference": "36643c068dda3619f939ac04d861c1316a0af8e9",
+    "matching_skeleton_source_reference": "1b1f3afed72880fc7852e67016349e87fc8c4c66",
+    "consumer_contract": 18,
+    "strict_profile": 4,
+    "dependency_installation": "public preferred distribution",
+    "framework_inventory_count": 234,
+    "installed_public_byte_parity": true,
+    "complete_gate_exit_code": 0,
+    "strict_validation": true,
+    "locked_audit": true,
+    "captured_files_match_commit": true,
+    "worktree_clean": true,
+    "application_runtime_and_tests_byte_unchanged": true,
+    "changed_files": [
+      ".ai/README.md",
+      ".ai/operations.md",
+      "composer.json",
+      "composer.lock",
+      "docs/upgrade-public-alpha8.md"
+    ],
+    "php": "8.4.19",
+    "sqlite": "3.51.2",
+    "python": "Python 3.14.6",
+    "gate_capture_elapsed_seconds": 4.456,
+    "gate_log_sha256": "e37f08fb324531656b046656dd8fcb40ee28a32612c319afe96dc1318f381017",
+    "capture_record_sha256": "63d2ed72171fbd8a57cd45d3695b39c6b055e7088d99322291d2f4b1d3804148",
+    "lock_sha256": "4754130ca55981ea5a62a78241d2653f0790c592cbcae1dee0c2bd0a1b8ec1ec",
+    "patch_sha256": "359d390ae2dd39f87fbdd01ff191f170c9666a0584998b82eeccab9bb3a2aebc",
+    "output_bundle_sha256": "3002d47d9d6c081f1e342df28cd68344c19905e387d1e8acd4f83b5d2a78f15c",
+    "output_bundle_bytes": 114402,
+    "model_usage": null,
+    "limits": "Retained synthetic maintainer-led evidence; no new feature or review agent, paid API use, independent adoption, active labor/token measurement, production or cross-engine claim."
+  },
+  "limits": [
+    "Experimental PHP 8.4.x evaluation software; no production readiness or prerelease compatibility guarantee.",
+    "Cryptographic tag verification uses the approved public signer; Composer does not automatically verify these signatures or future release attestations.",
+    "Retained consumer evidence is synthetic and maintainer-led; no fresh reviewer, independent adoption, model usage, live provider, retrieval quality or performance claim.",
+    "GitHub prerelease operations and final announcement are pending separate approval; this receipt proves tags/packages/installations, not completion of those future operations."
+  ]
+}
