@@ -70,6 +70,7 @@ Accepted records:
 - `060-reject-pending-output-before-response-emission.md`
 - `061-fail-closed-outer-http-failure-disclosure-profiles.md`
 - `062-bounded-alpha-8-release-scope.md`
+- `063-maintainability-review-over-size-proxies.md`
 
 ## Current and successor relationships
 
@@ -91,6 +92,7 @@ A partially superseded record remains accepted outside the exact scope named bel
 | [ADR 026](026-bounded-file-transfers.md) | Headers-only prior-output detection before local-file emission | [ADR 060](060-reject-pending-output-before-response-emission.md) |
 | [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example's same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |
 | [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |
+| [ADR 049](049-bounded-response-cookie-profile.md) | Physical core-line allocation only; response-cookie behavior remains accepted | [ADR 063](063-maintainability-review-over-size-proxies.md) |
 
 ADR 013's current executable-example identifier placement is additionally refined by [ADR 046](046-canonical-executable-example-boundaries.md); the canonical current tree remains in [Optional CRUD reference profile](../crud.md#reference-placement). This refinement does not additionally supersede ADR 013's optional structure decision.
 

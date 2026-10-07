@@ -612,6 +612,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 026](026-bounded-file-transfers.md) | Headers-only prior-output detection before local-file emission | [ADR 060](060-reject-pending-output-before-response-emission.md) |',
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
+        '| [ADR 049](049-bounded-response-cookie-profile.md) | Physical core-line allocation only; response-cookie behavior remains accepted | [ADR 063](063-maintainability-review-over-size-proxies.md) |',
     ];
     $indexPath = $installedFramework . '/docs/decisions/README.md';
 
@@ -793,7 +794,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
 
     $requiredMarkers = [
         $installedFramework . '/docs/guardrails.md' => [
-            'The tagged Alpha 6 framework source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines.',
+            'decisions/063-maintainability-review-over-size-proxies.md',
             'Repeated documentation-marker checks use explicit shared repository-module helpers rather than duplicated loops',
             'The decision-navigation and vocabulary guard uses one fixed reviewed map of partial-supersession relationships.',
             'The maintained SQLite negative control supplies an impossible version, requires the exact bounded failure and removal of its pre-DDL fixture, then proves clean recovery through the normal certification run.',
@@ -1101,7 +1102,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'ADR 054, the tagged Alpha 7 notes, and the approved Alpha 7 source-preparation subsection retain their acceptance-time `PENDING` and non-authority statements as historical evidence.',
             '`RELEASING.md` is the detailed current mutable release-state owner',
             'Current guidance records Issue #81\'s exact Alpha 8 signed tags, public packages, clean installation and retained-consumer repetition',
-            'The accepted ADR 059 source-prefix guard now pins the 234-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion, optional RAG guidance and accepted Alpha 8 scope/notes',
+            'The accepted ADR 059 source-prefix guard now pins the 235-file current inventory, including the ADR 063 maintainer-review decision',
             'accepted ADRs 055 through 062 and current Contract 18/Profile 4/PHT008',
             'immutable source authority separate from mutable availability/evidence follow-ups',
             'Concern-specific capability and evidence contracts remain in their routed guides rather than being repeated in the README.',

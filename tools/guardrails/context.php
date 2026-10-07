@@ -761,7 +761,6 @@ function contextGuardrailFailures(string $root): array
             'PASS installed session cleanup and response framing distribution',
         ],
         'docs/guardrails.md' => [
-            'ADR 045 used the remaining seven-line margin for its bounded session-cleanup failure and response-framing correction. The tagged Alpha 6 framework source removes the redundant public-prerelease `PathParameters::onePositiveInteger()` convenience factory and occupies 2,595 lines. Accepted post-tag documentation, guardrail, and maintainer-only evaluation-tooling changes before Issue #43 add no core',
             'The ADR 045 guard pins the bounded session-cleanup failure precedence and ordinary-response framing contract.',
             'A dedicated selectable behavior also proves rejection at `199`, acceptance at `599`, explicit application-owned `HEAD`, and an exact `405` with zero GET-handler calls when only GET is declared; its subprocess must keep stderr empty.',
             'superseded-identifier restart and distinct-new-identifier cleanup',
@@ -2457,13 +2456,13 @@ function contextGuardrailFailures(string $root): array
             'docs/coordination.md',
         ],
         'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 234',
-            'current post-Alpha-7 release inventory must contain exactly 234 reviewed files',
+            'count($packagePaths) !== 235',
+            'current framework package inventory must contain exactly 235 reviewed files',
             'ADR 058 concern-local context routing',
             'accepted ADR 059 bounded source-prefix discovery',
             'accepted ADR 060 pending-output response-emission preflight',
             'accepted ADR 061 outer HTTP failure disclosure',
-            'immutable Alpha 7 remains the historical 218-file artifact',
+            'immutable Alpha 8 remains the historical 234-file artifact',
         ],
         'tools/guardrails/repository.php' => [
             "'docs/coordination.md',",

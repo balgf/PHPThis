@@ -2837,6 +2837,7 @@ function decisionSuccessorRelationshipFailures(string $root): array
         '| [ADR 026](026-bounded-file-transfers.md) | Headers-only prior-output detection before local-file emission | [ADR 060](060-reject-pending-output-before-response-emission.md) |',
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
+        '| [ADR 049](049-bounded-response-cookie-profile.md) | Physical core-line allocation only; response-cookie behavior remains accepted | [ADR 063](063-maintainability-review-over-size-proxies.md) |',
     ];
     $actualRows = [];
     $tableEndIndex = null;
@@ -3665,6 +3666,7 @@ function repositoryGuardrailFailures(string $root): array
         '.ai/websockets.md',
         '.ai/workbench.md',
         'docs/consumer-contract.md',
+        'docs/decisions/063-maintainability-review-over-size-proxies.md',
         'docs/consumer-profile.md',
         'docs/configuration.md',
         'docs/configuration/local-environment-launcher.md',
@@ -4767,7 +4769,7 @@ function repositoryGuardrailFailures(string $root): array
             'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
         ],
         'docs/guardrails.md' => [
-            'The accepted ADR 059 source-prefix guard now pins the 234-file current inventory, including packaged accepted ADR 061, the conditional design-goal companion, optional RAG guidance and accepted Alpha 8 scope/notes',
+            'The accepted ADR 059 source-prefix guard now pins the 235-file current inventory, including the ADR 063 maintainer-review decision',
             'every other application symlink fails before target-content inspection',
             'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',

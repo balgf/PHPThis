@@ -343,7 +343,7 @@ PHP;
         ],
         'docs/guardrails.md' => [
             'The bounded response-cookie profile guard pins the exact accepted name/value, path, expiration, maximum-age, count, aggregate-byte, duplicate-name, and case-insensitive prefix constraints',
-            'These controls enforce the accepted 2,620-line ceiling but do not prove browser behavior',
+            'These cookie controls do not prove browser behavior',
         ],
         'docs/knowledge-map.md' => [
             '| Construct, emit, or review a generic response cookie |',
