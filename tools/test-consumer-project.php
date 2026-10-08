@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/process-support.php';
+require_once __DIR__ . '/guidance-support.php';
 require_once __DIR__ . '/test-consumer-project/support.php';
 require_once __DIR__ . '/test-consumer-project/guidance.php';
 require_once __DIR__ . '/test-consumer-project/http.php';

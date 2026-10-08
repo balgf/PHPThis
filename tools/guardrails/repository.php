@@ -399,13 +399,12 @@ function canonicalCrudTreeFailures(string $root): array
     }
 
     $matches = [];
-    $matched = preg_match(
-        '~For the checked-in `example/src/Users` reference, this is the single canonical current tree\..*?'
-        . '```text\R(?<tree>.*?)\R```~s',
+    $matched = preg_match_all(
+        '~^```text\R(?<tree>src/\R  Users/\R.*?)\R```~ms',
         $documentation,
         $matches,
     );
-    $tree = $matches['tree'] ?? null;
+    $tree = $matches['tree'][0] ?? null;
 
     if ($matched !== 1 || !is_string($tree)) {
         return ['docs/crud.md must contain one parseable canonical current example/src/Users tree.'];
@@ -1720,7 +1719,7 @@ function consumerProjectHarnessEntrypointProofCallsAreCanonical(string $source):
         && $outerTryBodyClosed
         && $actualCalls === $expectedCalls
         && consumerProjectHarnessTokenNormalizedFingerprint($source)
-            === '99b578bbcc73e49f0a5a9a2356dbeac9701b05d7ccf98e2f2ed1d052745bc0ea';
+            === '8f65635698ed3642ed128898957b9f9f6e9b90040c4cad4380efe731d9eddff9';
 }
 
 function consumerProjectHarnessOuterTryBlockIsCanonical(string $source, string $block): bool
@@ -2210,6 +2209,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     $entrypointTokens = token_get_all($entrypoint);
     $expectedIncludeStatements = [
         "require_once__DIR__.'/process-support.php';",
+        "require_once__DIR__.'/guidance-support.php';",
         ...array_map(
             static fn (string $path): string => "require_once__DIR__.'/" . substr($path, strlen('tools/')) . "';",
             $expectedModulePaths,
@@ -2294,7 +2294,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
         || $actualIncludeStatements !== $expectedIncludeStatements
         || $functionCount !== 0
     ) {
-        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level process-support plus twelve-module require_once preamble and contain no function declarations.';
+        $failures[] = 'The installed-consumer entrypoint must retain its exact literal top-level process/guidance support plus twelve-module require_once preamble and contain no function declarations.';
     }
 
     if (!consumerProjectHarnessEntrypointProofCallsAreCanonical($entrypoint)) {
@@ -4022,6 +4022,7 @@ function repositoryGuardrailFailures(string $root): array
         'tools/guardrails/operations.php',
         'tools/guardrails/distribution.php',
         'tools/process-support.php',
+        'tools/guidance-support.php',
         'tools/agent-evaluation.php',
         'tools/agent-evaluation/README.md',
         'tools/agent-evaluation/context-observation-v1.md',
@@ -4769,7 +4770,6 @@ function repositoryGuardrailFailures(string $root): array
             'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
         ],
         'docs/guardrails.md' => [
-            'The accepted ADR 059 source-prefix guard now pins the 235-file current inventory, including the ADR 063 maintainer-review decision',
             'every other application symlink fails before target-content inspection',
             'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
@@ -4815,8 +4815,6 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project/data.php' => [
             "'Contract version: 18'",
-            "'### Contract version 17'",
-            "'### Contract version 16'",
             "'/docs/decisions/059-bounded-application-source-prefix-discovery.md'",
             "'Status: accepted'",
             "'Every other regular file has at most its first 4,096 bytes classified plus one lookahead byte.'",

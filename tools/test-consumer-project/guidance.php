@@ -1102,7 +1102,6 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'ADR 054, the tagged Alpha 7 notes, and the approved Alpha 7 source-preparation subsection retain their acceptance-time `PENDING` and non-authority statements as historical evidence.',
             '`RELEASING.md` is the detailed current mutable release-state owner',
             'Current guidance records Issue #81\'s exact Alpha 8 signed tags, public packages, clean installation and retained-consumer repetition',
-            'The accepted ADR 059 source-prefix guard now pins the 235-file current inventory, including the ADR 063 maintainer-review decision',
             'accepted ADRs 055 through 062 and current Contract 18/Profile 4/PHT008',
             'immutable source authority separate from mutable availability/evidence follow-ups',
             'Concern-specific capability and evidence contracts remain in their routed guides rather than being repeated in the README.',

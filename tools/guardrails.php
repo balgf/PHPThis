@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+require_once __DIR__ . '/guidance-support.php';
 require_once __DIR__ . '/guardrails/repository.php';
 require_once __DIR__ . '/guardrails/context.php';
 require_once __DIR__ . '/guardrails/boundaries.php';

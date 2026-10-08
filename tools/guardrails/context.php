@@ -64,374 +64,64 @@ function contextGuardrailFailures(string $root): array
 {
     $failures = [];
 
-    $simpleEndpointDefinition = 'A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision.';
-    $simpleEndpointLocality = 'After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.';
-    $ordinaryImplementationRoute = 'Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.';
-    $frameworkOrdinaryRoute = 'An ordinary route change starts with `.ai/routing.md`; read a decision record only when reviewing or changing the decision it records.';
-    $installedOrdinaryRoute = 'An ordinary route change starts with installed `vendor/phpthis/framework/docs/request-handling.md`; read a decision record only when reviewing or changing the decision it records.';
-    $slimUniversalEntrypoint = 'Concern-specific rules live in the current guide routed by `.ai/README.md`; do not copy them into this universal entrypoint.';
-    $finalClassContract = 'Every named class is final. Express extension points with interfaces, never non-final classes.';
-    $databaseLoopContract = 'Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.';
-    $privateConstructorScope = 'An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.';
+    $failures = [...$failures, ...taskRoutedGuidanceFailures($root, $root . '/skeleton')];
 
-    $boundedTaskRoutedContextArtifactMarkers = [
-        'docs/decisions/044-bounded-task-routed-ai-context.md' => [
-            'Status: accepted',
-            $simpleEndpointDefinition,
-            $simpleEndpointLocality,
-            $ordinaryImplementationRoute,
-            'Consumer Contract version 10 and Strict Profile version 3 remain unchanged.',
-            'A report-only context-size or repeated-rule advisory was considered and is not adopted.',
-            'Human review remains responsible for whether task routes stay compact and unambiguous.',
-            'No context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate is added.',
-            'No runtime API, dependency, automatic discovery, generated policy, consumer validity diagnostic',
+    $maintainerRoutes = [
+        'AGENTS.md' => ['VISION.md', '.ai/README.md', '.ai/rules.md', '.ai/change-workflow.md', '.ai/strict-profile.md'],
+        '.ai/README.md' => [
+            'VISION.md', '.ai/rules.md', '.ai/change-workflow.md', '.ai/strict-profile.md',
+            '.ai/routing.md', '.ai/email.md', '.ai/configuration.md', '.ai/operations.md',
+            '.ai/jobs.md', '.ai/migrations.md', '.ai/file-transfers.md', '.ai/websockets.md',
+            '.ai/application-context.md', '.ai/testing.md', 'RELEASING.md',
         ],
+        '.ai/rules.md' => [],
+        '.ai/types.md' => [],
+        '.ai/crud.md' => [],
+        '.ai/application-context.md' => ['.ai/README.md', 'docs/knowledge-map.md', 'docs/getting-started.md'],
+        '.ai/testing.md' => [],
+    ];
+    foreach ($maintainerRoutes as $relativePath => $routes) {
+        $references = [];
+        foreach ($routes as $route) {
+            $references[$route] = $root . '/' . $route;
+        }
+        $failures = [...$failures, ...guidanceDocumentFailures($root . '/' . $relativePath, $references)];
+    }
+    $failures = [...$failures, ...guidanceDocumentFailures($root . '/.ai/strict-profile.md', [
+        '../docs/strict-profile.md#phpthis-owned-rule-catalogue' => $root . '/docs/strict-profile.md',
+        'static-analysis.md' => $root . '/.ai/static-analysis.md',
+    ])];
+
+    requireGuardrailArtifactMarkers($root, [
+        'docs/decisions/044-bounded-task-routed-ai-context.md' => ['Status: accepted'],
+        'docs/decisions/058-concern-local-ai-context-routing.md' => ['Status: accepted'],
+        'docs/consumer-contract.md' => ['Contract version: 18'],
         'docs/decisions/README.md' => [
             '`044-bounded-task-routed-ai-context.md`',
+            '`058-concern-local-ai-context-routing.md`',
         ],
-        'docs/knowledge-map.md' => [
-            $simpleEndpointDefinition,
-            $simpleEndpointLocality,
-            '| Add a simple application endpoint | `docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged, and this is the complete four-file task-specific set after universal entrypoints |',
-            'Read an ADR only when reviewing or changing the decision it records',
-            '`docs/design-goals.md` for detailed goals and non-goals',
-        ],
-        'docs/consumer-contract.md' => [
-            'Ordinary implementation starts with the current operational guide selected by those routers.',
-            'Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context.',
-            'ADR 044 defines bounded task-routed AI context',
-        ],
-        'docs/getting-started.md' => [
-            'begin ordinary implementation with one current operational guide',
-            'current guide, existing named route-area manifest, dependency-free handler, and nearest behavior test',
-        ],
-        'VISION.md' => [
-            $simpleEndpointDefinition,
-            $simpleEndpointLocality,
-            $ordinaryImplementationRoute,
-            '[Detailed design goals](docs/design-goals.md)',
-            'They remain binding within their concerns',
-        ],
-        'docs/design-goals.md' => [
-            '# Detailed design goals',
-            'Read this companion when reviewing framework direction, a concern\'s design goal, or its rationale.',
-            'Current operational rules remain in the selected concern guide.',
-            '## Problem',
-            '## Performance-obscuring shorthand',
-            '## Success measures',
-            '## Non-goals',
-        ],
-        'AGENTS.md' => [
-            $slimUniversalEntrypoint,
-            '## Early database setup gate',
-            'Start with the one current operational guide selected by `.ai/README.md`.',
-            'final named classes, interface extension points',
-            $databaseLoopContract,
-            '## Project gate',
-        ],
-        '.ai/README.md' => [
-            $frameworkOrdinaryRoute,
-            'Use the exact simple-endpoint definition and four-file locality metric in the already-read `VISION.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            '| Add or change a qualifying simple endpoint | `.ai/routing.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
-        ],
-        '.ai/rules.md' => [
-            $finalClassContract,
-            $databaseLoopContract,
-            $privateConstructorScope,
-        ],
-        '.ai/strict-profile.md' => [
-            'every named repository class is `final`. Use an interface for an extension point',
-            'inside the header or body of any `for`, `foreach`, `while`, or `do` loop',
-            '[full rule catalogue](../docs/strict-profile.md#phpthis-owned-rule-catalogue)',
-            '[enforcement guide](static-analysis.md)',
-            'Load those details when implementing, repairing, or reviewing the affected rule',
-        ],
-        '.ai/types.md' => [
-            'Every parser-owned operation-specific request, command, page-request, or projection factory must:',
-            'Use a private constructor so invalid instances cannot be created.',
-            'This is not a universal constructor rule for application identifiers or other domain values',
-        ],
-        'docs/type-safety.md' => [
-            'A parser-owned request, command, page-request, or projection value uses a private constructor',
-            'This is not a universal constructor rule for application identifiers or other domain values',
-            'Parser-owned request, command, page-request, and projection factories use private constructors',
-        ],
-        '.ai/crud.md' => [
-            'single canonical current reference tree',
-            'Update and Delete remain prose-only decisions',
-            'do not scaffold absent operations from this guide',
-        ],
-        'docs/crud.md' => [
-            'this is the single canonical current tree',
-            'contains no speculative Update or Delete scaffold',
-            'AuthorizeCreateUser.php',
-            'UnacceptableCreateUserValues.php',
-            'UserSummary.php',
-            '/users/{user_id:positive-int}',
-        ],
-        'ROADMAP.md' => [
-            '/users/{user_id:positive-int}',
-        ],
-        'docs/database.md' => [
-            '/accounts/{account_id:positive-int}/documents',
-        ],
-        'docs/evaluation.md' => [
-            '/users/{user_id:positive-int}',
-        ],
-        'example/.ai/file-transfers.md' => [
-            'human-readable response-template shorthand',
-            'GET /document-files/{file_id:token}',
-        ],
-        'templates/application/AGENTS.md' => [
-            $slimUniversalEntrypoint,
-            '## Early database setup gate',
-            'Start with the one current operational guide selected by `.ai/README.md`.',
-            '## Project gate',
-        ],
-        'templates/application/.ai/README.md' => [
-            $installedOrdinaryRoute,
-            'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
-            '| Add or change tests outside routine behavior evidence while implementing a qualifying simple endpoint, or change testing tools, shared support, or evidence organization | `.ai/testing.md` | nearest behavior test and complete project gate; routine behavior evidence while implementing a qualifying simple endpoint stays on the simple-endpoint row without loading a second guide |',
-        ],
-        'templates/application/.ai/rules.md' => [
-            $finalClassContract,
-            $databaseLoopContract,
-            $privateConstructorScope,
-        ],
-        'skeleton/AGENTS.md' => [
-            $slimUniversalEntrypoint,
-            '## Early database setup gate',
-            'Start with the one current operational guide selected by `.ai/README.md`.',
-            '## Project gate',
-        ],
-        'skeleton/.ai/README.md' => [
-            $installedOrdinaryRoute,
-            'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
-            '| Add or change tests outside routine behavior evidence while implementing a qualifying simple endpoint, or change testing tools, shared support, or evidence organization | `.ai/testing.md` | nearest behavior test and complete project gate; routine behavior evidence while implementing a qualifying simple endpoint stays on the simple-endpoint row without loading a second guide |',
-        ],
-        'skeleton/.ai/rules.md' => [
-            $finalClassContract,
-            $databaseLoopContract,
-            $privateConstructorScope,
-        ],
-        'skeleton/.ai/architecture.md' => [
-            'A qualifying dependency-free simple endpoint may be constructed inline only in an existing named route-area manifest so the root `Routes::create()` remains unchanged; every handler with a constructor dependency stays visibly constructed in the root and passed into its route area.',
-        ],
-        'skeleton/src/Routes.php' => [
-            'return [...HealthRoutes::create()];',
-        ],
+        'skeleton/src/Routes.php' => ['return [...HealthRoutes::create()];'],
         'skeleton/src/HealthRoutes.php' => [
             'public static function create(): array',
             "return [new Route('GET', '/health', new HealthHandler())];",
         ],
-        'skeleton/src/HealthHandler.php' => [
-            'final class HealthHandler implements RequestHandler',
-        ],
-        '.ai/testing.md' => [
-            'ADR 058 explicitly revisits ADR 044 after growth in the fixed universal set and umbrella context',
-            'Words, bytes, or tokens do not determine program validity.',
-            'Do not add a context report script, repeated-rule advisory, `ApplicationChecker` rule, `PHT` diagnostic, consumer-size threshold or validity gate, automatic context discovery, or generated policy.',
-        ],
-        'docs/guardrails.md' => [
-            "The bounded task-routed context guard pins ADR 044's exact simple-endpoint definition and four-file locality metric",
-            'The installed proof checks the copied local skeleton plus packaged public guidance and application template, including the starter',
-            'The guard adds no context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate.',
-        ],
+        'skeleton/src/HealthHandler.php' => ['final class HealthHandler implements RequestHandler'],
+        'docs/crud.md' => ['/users/{user_id:positive-int}'],
+        'ROADMAP.md' => ['/users/{user_id:positive-int}'],
+        'docs/database.md' => ['/accounts/{account_id:positive-int}/documents'],
+        'docs/evaluation.md' => ['/users/{user_id:positive-int}'],
+        'example/.ai/file-transfers.md' => ['GET /document-files/{file_id:token}'],
         'tools/package-files.txt' => [
             'docs/decisions/044-bounded-task-routed-ai-context.md',
+            'docs/decisions/058-concern-local-ai-context-routing.md',
             'docs/design-goals.md',
+            'docs/ai-context-routing-review.md',
+            'docs/consumer-contract-upgrades.md',
         ],
         'tools/test-consumer-project.php' => [
             'proveInstalledBoundedTaskRoutedContextGuidanceDistribution($project, $installedFramework);',
         ],
-        'tools/test-consumer-project/data.php' => [
-            'function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(',
-            'PASS installed bounded task-routed context guidance distribution',
-        ],
-    ];
-
-    requireGuardrailArtifactMarkers(
-        $root,
-        $boundedTaskRoutedContextArtifactMarkers,
-        'bounded task-routed context',
-        $failures,
-    );
-
-    $concernLocalContextArtifactMarkers = [
-        'docs/decisions/058-concern-local-ai-context-routing.md' => [
-            '# ADR 058: Concern-local AI context routing',
-            'Status: accepted',
-            'On 2026-08-24 in Asia/Manila, the accountable human approved Issue #59',
-            'Unique requirements are transferred to the concern owner before they are removed from the universal contract',
-            '`docs/consumer-contract-upgrades.md` owns the complete Contract version 1 through version 15 migration and historical narrative.',
-            'The four task-specific files are never described as total context.',
-            'No maximum, score, trend threshold, warning, Composer failure, application-checker rule, generated report, automatic discovery, `PHT` diagnostic, or consumer validity effect follows from these numbers.',
-            '[bounded AI-context routing review](../ai-context-routing-review.md)',
-            'Contract version 15 and Strict Profile version 4 remain unchanged',
-        ],
-        'docs/decisions/README.md' => [
-            '`058-concern-local-ai-context-routing.md`',
-            '| [ADR 044](044-bounded-task-routed-ai-context.md)',
-            '[ADR 058](058-concern-local-ai-context-routing.md)',
-        ],
-        'docs/consumer-contract.md' => [
-            'Contract version: 18',
-            'Load [the contract upgrade and history companion](consumer-contract-upgrades.md) only when upgrading an application across contract versions, reviewing contract evolution, or changing that history.',
-            '## Universal safety and unsupported claims',
-            '## Mandatory application context',
-            '## Normative concern routing',
-            '| Configuration, secrets, database-setup scope, startup and probes | `docs/configuration.md` |',
-            '| Database migrations | `docs/migrations.md` |',
-            '| Durable jobs | `docs/jobs/README.md` |',
-            '| File transfers, including local storage and Amazon S3 | `docs/file-transfers/README.md` |',
-            '| WebSockets | `docs/websockets.md` |',
-            '| Contract upgrade or historical review | `docs/consumer-contract-upgrades.md` |',
-            'Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.',
-            'Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
-        ],
-        'docs/consumer-contract-upgrades.md' => [
-            '# PHPThis consumer contract upgrades',
-            'Load it only when upgrading an application across contract versions, reviewing contract evolution, or changing the decision history.',
-            '## Contract evolution',
-            '### Contract version 18',
-            '### Contract version 17',
-            '### Contract version 16',
-            '### Contract version 15',
-            '### Contract version 14',
-            '### Contract version 13',
-            '### Contract version 12',
-            'Contract version 1 replaced consumer-owned PHPStan configuration with the installed checker and added the runnable skeleton.',
-        ],
-        'docs/knowledge-map.md' => [
-            'Within each row, begin with the first current operational guide.',
-            'Contract upgrades and historical review additionally load `docs/consumer-contract-upgrades.md`.',
-            'Measure or report universal context separately; its cost is never hidden inside or used to weaken that four-file routing claim.',
-            '| Add a simple application endpoint | `docs/request-handling.md` |',
-            '| Add, explain, or review configuration or secrets | `docs/configuration.md` |',
-            '| Adopt or review backend-neutral durable jobs | `docs/jobs/README.md` |',
-            '| Adopt, secure, store, or return a file, including Amazon S3 | `docs/file-transfers/README.md` |',
-            '| Propose, add, or review a WebSocket path | `docs/websockets.md` |',
-            '| Upgrade across Consumer Contract versions or review contract history | `docs/consumer-contract-upgrades.md` |',
-            '## Answer protocol',
-            'Do not invent missing product requirements, schema meaning, authorization policy, production limits, or external-service behavior.',
-        ],
-        '.ai/README.md' => [
-            'A concern-specific skeleton or template change starts at its concern row.',
-            'Report fixed universal-entrypoint word and byte cost separately; neither measure affects validity or permits skipping universal safety.',
-            '| Change email guidance or application email context | `.ai/email.md` |',
-            '| Change configuration guidance, application configuration context, or value-free Composer aliases | `.ai/configuration.md` |',
-            '| Change local environment launcher guidance or its checked reference | `.ai/configuration.md` |',
-            '| Change startup, liveness, dependency health, or readiness semantics | `.ai/operations.md` |',
-            '| Change application-owned atomic-lock, mutex, mutual-exclusion, lease, critical-section, or coordination guidance | `.ai/operations.md` |',
-            '| Change durable deferred work | `.ai/jobs.md` |',
-            '| Change database migrations | `.ai/migrations.md` |',
-            '| Change uploads or file responses, or adopt/review Amazon S3 | `.ai/file-transfers.md` |',
-            '| Change application-owned WebSockets | `.ai/websockets.md` |',
-            '| Change the current Consumer Contract, knowledge router, context ownership, shared template/skeleton authority, or package context inventory | `.ai/application-context.md` |',
-            '| Prepare or publish a release | `RELEASING.md` |',
-        ],
-        '.ai/application-context.md' => [
-            '# Application-context distribution contract',
-            'Use this guide only for cross-artifact application-context ownership and distribution',
-            '## Ownership and authority',
-            '## Distribution surfaces',
-            '## Concern routing',
-            'Do not duplicate its normative policy here.',
-            '## Verification',
-            'Context-size measurements are advisory evidence only',
-            'never make words, bytes, or tokens a validity threshold, checker rule, `PHT` diagnostic, or substitute for route-clarity and unsupported-claim review.',
-        ],
-        '.ai/configuration.md' => [
-            '# Application configuration contract',
-            '## Value-free Composer aliases',
-            '## Optional local environment launcher',
-            'Do not add framework configuration runtime',
-            'Do not add a framework or skeleton launcher',
-        ],
-        '.ai/operations.md' => [
-            '# Application operations contract',
-            '## Standalone operation coordination',
-            '## Startup and probes',
-            '## Optional local launcher operation',
-            '`RELEASING.md` is the sole route for those tasks.',
-        ],
-        '.ai/email.md' => [
-            '# Application-owned email contract',
-            'PHPThis provides no framework mailer, renderer, notification system, queue, worker, webhook receiver, provider, or email runtime dependency.',
-            'Require the application\'s `.ai/integrations.md` to record exactly `NOT_APPLICABLE(EMAIL)` or one adopted policy.',
-        ],
-        'VISION.md' => [
-            'Any report of this metric states the universal read cost separately',
-            'The four files are the task-specific authoring set, not the total context read.',
-            'another concern\'s guide, policy, source, or evidence is never skipped',
-        ],
-        'skeleton/.ai/README.md' => [
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` when upgrading to the current accepted contract.',
-            'Read the complete installed upgrade companion only when reviewing its history.',
-            'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.',
-            '| Upgrade the installed Consumer Contract to current version 18 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` |',
-            '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
-        ],
-        'templates/application/.ai/README.md' => [
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` when upgrading to the current accepted contract.',
-            'Read the complete installed upgrade companion only when reviewing its history.',
-            'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.',
-            '| Upgrade the installed Consumer Contract to current version 18 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` |',
-            '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
-        ],
-        'docs/ai-context-routing-review.md' => [
-            '# Bounded AI-context routing review',
-            '| 1 | Application: “Add a dependency-free `GET /ping` literal endpoint beside the existing health route.” |',
-            '| 10 | Maintainer: “Add configuration for an S3-backed durable job and document its operational probe.” |',
-            'Findings: 0 unsupported claims across 10 fixed routes.',
-            'It does not measure answer quality, token use, compliance probability, or comparative model performance.',
-        ],
-        'docs/evaluation.md' => [
-            'ADR 058\'s [bounded AI-context routing review](ai-context-routing-review.md)',
-            'not a model run, context-strategy comparison, token result, or proof that an arbitrary agent follows the selected route.',
-        ],
-        'docs/guardrails.md' => [
-            'ADR 058 reaches ADR 044\'s reconsideration condition and adds a separate concern-local routing guard.',
-            'Only explicit path-and-marker pairs reviewed as obsolete under ADR 058 may retire legacy expectations',
-            'An unlisted current or future marker must still fail.',
-            'The installed consumer proof independently rereads the new contract, upgrade companion, knowledge map, ADR, route review, `VISION.md`, and both application routers from the mirrored package.',
-        ],
-        'tools/package-files.txt' => [
-            'docs/ai-context-routing-review.md',
-            'docs/consumer-contract-upgrades.md',
-            'docs/decisions/058-concern-local-ai-context-routing.md',
-        ],
-        'tools/guardrails/repository.php' => [
-            'function guardrailLegacyUmbrellaMarkerRequirementIsRetired(',
-            'string $legacyMarker,',
-            '$retiredMarkers = [',
-            'return in_array($legacyMarker, $retiredMarkers[$legacyRelativePath] ?? [], true);',
-            'Unique requirements are transferred to the concern owner before they are removed from the universal contract',
-        ],
-        'tools/test-consumer-project/support.php' => [
-            'function installedLegacyUmbrellaMarkerRequirementIsRetired(string $path, string $marker): bool',
-            "'docs/consumer-contract.md'",
-            "'docs/knowledge-map.md'",
-            '$retiredMarkers = [',
-            'return in_array($marker, $retiredMarkers[$legacyRelativePath], true);',
-            'Unique requirements are transferred to the concern owner before they are removed from the universal contract',
-        ],
-        'tools/test-consumer-project/data.php' => [
-            "\$installedFramework . '/docs/consumer-contract-upgrades.md'",
-            "\$installedFramework . '/docs/decisions/058-concern-local-ai-context-routing.md'",
-            "\$installedFramework . '/docs/ai-context-routing-review.md'",
-            'PASS installed bounded task-routed context guidance distribution',
-        ],
-    ];
-
-    requireGuardrailArtifactMarkers(
-        $root,
-        $concernLocalContextArtifactMarkers,
-        'concern-local context routing',
-        $failures,
-    );
+    ], 'task-routed context contracts', $failures);
 
     if (!guardrailLegacyUmbrellaMarkerRequirementIsRetired(
         $root,
@@ -449,88 +139,12 @@ function contextGuardrailFailures(string $root): array
         $failures[] = 'The ADR 058 legacy-marker retirement control accepts an unlisted current marker.';
     }
 
-    $concernLocalContextForbiddenMarkers = [
-        'docs/consumer-contract.md' => [
-            '## Contract evolution',
-            '## Application configuration',
-            '## Application-owned WebSocket profile',
-            '## Optional bounded file transfers',
-            '## Optional application-owned durable jobs',
-            '## Optional application-owned database migrations',
-        ],
-        '.ai/application-context.md' => [
-            'ADR 054 and `v0.1.0-alpha.7` define the latest immutable framework tag',
-            '`NOT_APPLICABLE(JOBS)`',
-            '`NOT_APPLICABLE(MIGRATIONS)`',
-            '`NOT_APPLICABLE(WEBSOCKETS)`',
-            '`LOCAL_ADR026`',
-            '`AMAZON_S3_ADR053`',
-            'Keep transactional email composition and delivery application-owned.',
-            'Keep every application Composer alias value-free',
-        ],
-    ];
-
-    forbidGuardrailArtifactMarkers(
-        $root,
-        $concernLocalContextForbiddenMarkers,
-        'concern-local context routing',
-        $failures,
-    );
-
-    $boundedTaskRoutedContextForbiddenMarkers = [
-        'AGENTS.md' => [
-            'Keep optional WebSockets application-owned and separate from PHPThis HTTP:',
-            'Keep optional Workbench use development-only and explicit:',
-            'Keep migrations application-owned and engine/version-specific under ADR 043',
-        ],
-        '.ai/rules.md' => [
-            'Keep optional WebSockets application-owned:',
-            'Keep optional Workbench use development-only and explicit:',
-            'Keep ADR 027 schema migration explicit and application-owned:',
-        ],
-        'templates/application/AGENTS.md' => [
-            '`NOT_APPLICABLE(WEBSOCKETS)`',
-            '`NOT_APPLICABLE(WORKBENCH)`',
-            'each history\'s exact initial baseline',
-        ],
-        'templates/application/.ai/rules.md' => [
-            'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
-            'Keep every adopted operational command behind the sole application console',
-            'Keep every adopted application-owned request-handler decorator',
-        ],
-        'skeleton/AGENTS.md' => [
-            '`NOT_APPLICABLE(WEBSOCKETS)`',
-            '`NOT_APPLICABLE(WORKBENCH)`',
-            '`NOT_APPLICABLE(CLI)`',
-            'each history\'s exact initial baseline',
-        ],
-        'skeleton/.ai/rules.md' => [
-            'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
-            'Keep `NOT_APPLICABLE(CLI)`',
-            'Keep `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`',
-        ],
-        'skeleton/src/Routes.php' => [
-            'HealthRoutes::create(new HealthHandler())',
-        ],
-        'skeleton/src/HealthHandler.php' => [
-            'function __construct',
-        ],
-        '.ai/crud.md' => [
-            'UpdateUser/',
-            'DeleteUser/',
-        ],
-        'docs/crud.md' => [
-            'UpdateUser/',
-            'DeleteUser/',
-        ],
-    ];
-
-    forbidGuardrailArtifactMarkers(
-        $root,
-        $boundedTaskRoutedContextForbiddenMarkers,
-        'bounded task-routed context',
-        $failures,
-    );
+    forbidGuardrailArtifactMarkers($root, [
+        'skeleton/src/Routes.php' => ['HealthRoutes::create(new HealthHandler())'],
+        'skeleton/src/HealthHandler.php' => ['function __construct'],
+        '.ai/crud.md' => ['UpdateUser/', 'DeleteUser/'],
+        'docs/crud.md' => ['UpdateUser/', 'DeleteUser/'],
+    ], 'simple-endpoint composition and current CRUD tree', $failures);
 
     $sessionCleanupAndResponseFramingArtifactMarkers = [
         'docs/decisions/045-bounded-session-cleanup-and-response-framing.md' => [
@@ -2454,15 +2068,6 @@ function contextGuardrailFailures(string $root): array
         ],
         'tools/package-files.txt' => [
             'docs/coordination.md',
-        ],
-        'tools/guardrails/distribution.php' => [
-            'count($packagePaths) !== 235',
-            'current framework package inventory must contain exactly 235 reviewed files',
-            'ADR 058 concern-local context routing',
-            'accepted ADR 059 bounded source-prefix discovery',
-            'accepted ADR 060 pending-output response-emission preflight',
-            'accepted ADR 061 outer HTTP failure disclosure',
-            'immutable Alpha 8 remains the historical 234-file artifact',
         ],
         'tools/guardrails/repository.php' => [
             "'docs/coordination.md',",
