@@ -99,7 +99,7 @@ function distributionGuardrailFailures(
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
         if (!is_array($packagePaths) || count($packagePaths) !== 235) {
-            $failures[] = 'The current framework package inventory must contain exactly 235 reviewed files after adding application-owned operation-coordination guidance, the value-free Composer configuration decision, the bounded request-target/path correction, PHT008 distinct-placeholder enforcement, ADR 058 concern-local context routing, accepted ADR 059 bounded source-prefix discovery, accepted ADR 060 pending-output response-emission preflight, accepted ADR 061 outer HTTP failure disclosure, the optional reviewer walkthrough, the conditional design-goal companion, optional RAG guidance, accepted Alpha 8 scope/notes, and ADR 063 maintainer review; immutable Alpha 8 remains the historical 234-file artifact.';
+            $failures[] = 'The current framework package inventory must contain exactly 235 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {

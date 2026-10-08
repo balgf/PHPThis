@@ -125,6 +125,115 @@ final class MaintainabilityGuardrailsTest extends TestCase
         yield 'PHP without strict types' => ['src/Application.php', 'declare(strict_types=1);', '', false];
     }
 
+    public function testContextGuidanceCanBeRewordedAndConsolidated(): void
+    {
+        $this->replace('VISION.md', 'A simple endpoint is an unprotected route', 'For this metric, a simple endpoint means an unprotected route');
+        $this->replace('docs/design-goals.md', '## Problem', '## Why this exists');
+        $this->replace('docs/crud.md', 'For the checked-in `example/src/Users` reference, this is the single canonical current tree.', 'This tree lists the current `example/src/Users` reference.');
+        foreach (['.ai/rules.md', 'skeleton/.ai/rules.md', 'templates/application/.ai/rules.md'] as $rules) {
+            $this->replace($rules, 'Every named class is final. Express extension points with interfaces, never non-final classes.', 'Declare each named class final and use interfaces for extension points.');
+        }
+        foreach (['.ai/README.md', 'skeleton/.ai/README.md', 'templates/application/.ai/README.md'] as $router) {
+            $this->replace($router, '| Add or change a qualifying simple endpoint |', '| Implement a qualifying simple endpoint |');
+        }
+        $path = 'docs/knowledge-map.md';
+        $contents = file_get_contents($this->fixture . '/' . $path);
+        self::assertIsString($contents);
+        $contents = preg_replace(
+            '/^A simple endpoint is .*$/m',
+            'Apply the simple-endpoint definition and locality metric in `VISION.md`, including its separate universal read cost.',
+            $contents,
+            1,
+            $definitionCount,
+        );
+        self::assertIsString($contents);
+        self::assertSame(1, $definitionCount);
+        $contents = preg_replace(
+            '/^\| Add a simple application endpoint \|.*$/m',
+            'For a qualifying simple endpoint, start with [request handling](docs/request-handling.md), then the existing route-area manifest, dependency-free handler, and nearest behavior test. Root composition stays unchanged.',
+            $contents,
+            1,
+            $routeCount,
+        );
+        self::assertIsString($contents);
+        self::assertSame(1, $routeCount);
+        $this->write($path, $contents);
+        $this->assertGuardPasses();
+        $proof = $this->contextProof();
+        self::assertSame(0, $proof['exit_code'], $proof['stderr']);
+        self::assertStringContainsString('PASS installed bounded task-routed context guidance distribution', $proof['stdout']);
+    }
+
+    /** @return iterable<string, array{string, string, string}> */
+    public static function brokenGuidance(): iterable
+    {
+        yield 'missing route' => ['docs/knowledge-map.md', 'docs/request-handling.md', 'docs/type-safety.md'];
+        yield 'link label cannot hide a broken target' => ['docs/knowledge-map.md', '`docs/request-handling.md`', '[docs/request-handling.md](missing.md)'];
+        yield 'comment cannot supply a missing route' => ['docs/knowledge-map.md', '`docs/request-handling.md`', '<!-- `docs/request-handling.md` -->'];
+        yield 'code sample cannot supply a missing route' => ['docs/knowledge-map.md', '`docs/request-handling.md`', "\n```text\n`docs/request-handling.md`\n```\n"];
+        yield 'missing upgrade anchor' => ['docs/consumer-contract-upgrades.md', '### Contract version 18', '### Previous contract'];
+        yield 'comment cannot supply an upgrade anchor' => ['docs/consumer-contract-upgrades.md', '### Contract version 18', "### Previous contract\n\n<!--\n### Contract version 18\n-->\n"];
+        yield 'empty required guidance' => ['docs/design-goals.md', '', ''];
+    }
+
+    public function testCrudTreeStillMatchesAllCurrentSourceFiles(): void
+    {
+        $this->replace('docs/crud.md', '      UserSummary.php', '      MissingSummary.php');
+        $result = $this->guard();
+        self::assertSame(1, $result['exit_code'], $result['stderr']);
+        self::assertStringContainsString('docs/crud.md', $result['stderr']);
+        self::assertStringContainsString('UserSummary.php', $result['stderr']);
+        self::assertStringContainsString('MissingSummary.php', $result['stderr']);
+    }
+
+    public function testDuplicateCrudTreeFails(): void
+    {
+        $path = 'docs/crud.md';
+        $contents = file_get_contents($this->fixture . '/' . $path);
+        self::assertIsString($contents);
+        $this->write($path, $contents . "\n```text\nsrc/\n  Users/\n    UserId.php\n```\n");
+        $result = $this->guard();
+        self::assertSame(1, $result['exit_code'], $result['stderr']);
+        self::assertStringContainsString('one parseable canonical current example/src/Users tree', $result['stderr']);
+    }
+
+    #[DataProvider('brokenGuidance')]
+    public function testBrokenGuidanceFailsSourceAndConsumerProofs(string $path, string $before, string $after): void
+    {
+        if ($before === '') {
+            $this->write($path, '');
+        } else {
+            $this->replace($path, $before, $after);
+        }
+        $guard = $this->guard();
+        self::assertSame(1, $guard['exit_code'], $guard['stderr']);
+        self::assertStringContainsString($path, $guard['stderr']);
+        $proof = $this->contextProof();
+        self::assertNotSame(0, $proof['exit_code']);
+        self::assertStringContainsString($path, $proof['stderr']);
+    }
+
+    private function replace(string $path, string $before, string $after): void
+    {
+        $contents = file_get_contents($this->fixture . '/' . $path);
+        self::assertIsString($contents);
+        self::assertStringContainsString($before, $contents);
+        $this->write($path, str_replace($before, $after, $contents));
+    }
+
+    /** @return array{exit_code: int, stdout: string, stderr: string} */
+    private function contextProof(): array
+    {
+        return runBoundedMaintainerProcess(
+            [PHP_BINARY, '-d', 'display_errors=stderr', '-r', "require 'tools/guidance-support.php'; require 'tools/test-consumer-project/support.php'; require 'tools/test-consumer-project/data.php'; proveInstalledBoundedTaskRoutedContextGuidanceDistribution(getcwd() . '/skeleton', getcwd());"],
+            $this->fixture,
+            null,
+            30_000,
+            65_536,
+            262_144,
+        );
+    }
+
     #[DataProvider('invalidChanges')]
     public function testEmptyMarkdownCannotRepairRequiredChecks(
         string $relativePath,

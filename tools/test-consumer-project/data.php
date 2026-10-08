@@ -19,44 +19,13 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         throw new RuntimeException('Installed legacy-marker retirement must accept only exact reviewed ADR 058 pairs.');
     }
 
-    $simpleEndpointDefinition = 'A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision.';
-    $simpleEndpointLocality = 'After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.';
-    $ordinaryImplementationRoute = 'Ordinary implementation starts with one current operational guide. Read an ADR only when reviewing or changing the decision it records; do not load historical ADRs merely to apply the current guide.';
-    $installedOrdinaryRoute = 'An ordinary route change starts with installed `vendor/phpthis/framework/docs/request-handling.md`; read a decision record only when reviewing or changing the decision it records.';
-    $slimUniversalEntrypoint = 'Concern-specific rules live in the current guide routed by `.ai/README.md`; do not copy them into this universal entrypoint.';
-    $finalClassContract = 'Every named class is final. Express extension points with interfaces, never non-final classes.';
-    $databaseLoopContract = 'Never execute a database call inside `for`, `foreach`, `while`, `do`, or recursive traversal.';
-    $privateConstructorScope = 'An operation-specific request, command, or projection parsed from external `mixed` uses a private constructor. This requirement does not set identifier constructor visibility; an application-owned identifier follows its recorded coherent convention.';
-    $universalCostContract = 'Four files is the task-specific authoring set, not total context, and never permits skipped safety or evidence.';
+    $guidanceFailures = taskRoutedGuidanceFailures($installedFramework, $project);
+    if ($guidanceFailures !== []) {
+        throw new RuntimeException(implode("\n", $guidanceFailures));
+    }
 
-    /** @var array<string, list<string>> $artifactMarkers */
-    $artifactMarkers = [
-        $project . '/AGENTS.md' => [
-            $slimUniversalEntrypoint,
-            '## Early database setup gate',
-            'Start with the one current operational guide selected by `.ai/README.md`.',
-            '## Project gate',
-        ],
-        $project . '/.ai/README.md' => [
-            $installedOrdinaryRoute,
-            'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` when upgrading to the current accepted contract.',
-            'Read the complete installed upgrade companion only when reviewing its history.',
-            $universalCostContract,
-            '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
-            '| Add or change tests outside routine behavior evidence while implementing a qualifying simple endpoint, or change testing tools, shared support, or evidence organization | `.ai/testing.md` | nearest behavior test and complete project gate; routine behavior evidence while implementing a qualifying simple endpoint stays on the simple-endpoint row without loading a second guide |',
-            '| Upgrade the installed Consumer Contract to current version 18 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` | exact installed and target contract/profile versions, sole front controller, generic-first outer failure selection, response-emitter and early-output inventory, effective web-SAPI settings, affected source, then the complete gate |',
-            '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
-        ],
-        $project . '/.ai/rules.md' => [
-            $finalClassContract,
-            $databaseLoopContract,
-            $privateConstructorScope,
-        ],
-        $project . '/.ai/architecture.md' => [
-            'A qualifying dependency-free simple endpoint may be constructed inline only in an existing named route-area manifest so the root `Routes::create()` remains unchanged; every handler with a constructor dependency stays visibly constructed in the root and passed into its route area.',
-        ],
+    requireInstalledArtifactMarkers([
+        $installedFramework . '/docs/consumer-contract.md' => ['Contract version: 18'],
         $project . '/src/Routes.php' => [
             'return [...HealthRoutes::create()];',
         ],
@@ -66,79 +35,6 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         ],
         $project . '/src/HealthHandler.php' => [
             'final class HealthHandler implements RequestHandler',
-        ],
-        $installedFramework . '/VISION.md' => [
-            $simpleEndpointDefinition,
-            $simpleEndpointLocality,
-            $ordinaryImplementationRoute,
-            'The four files are the task-specific authoring set, not the total context read.',
-            '[Detailed design goals](docs/design-goals.md)',
-            'They remain binding within their concerns',
-        ],
-        $installedFramework . '/docs/design-goals.md' => [
-            '# Detailed design goals',
-            'Read this companion when reviewing framework direction, a concern\'s design goal, or its rationale.',
-            'Current operational rules remain in the selected concern guide.',
-            '## Problem',
-            '## Performance-obscuring shorthand',
-            '## Success measures',
-            '## Non-goals',
-            'at most one operation-specific typed seam',
-            'without adding a framework real-time runtime or adapting frames into HTTP values',
-            'Providing a framework-owned production shell, container-backed console, administrative execution path, generic dispatcher, or remotely accessible Workbench.',
-        ],
-        $installedFramework . '/docs/decisions/044-bounded-task-routed-ai-context.md' => [
-            '# ADR 044: Bounded task-routed AI context',
-            $simpleEndpointDefinition,
-            $simpleEndpointLocality,
-            $ordinaryImplementationRoute,
-            'Consumer Contract version 10 and Strict Profile version 3 remain unchanged.',
-            'A report-only context-size or repeated-rule advisory was considered and is not adopted.',
-            'Human review remains responsible for whether task routes stay compact and unambiguous.',
-            'No context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate is added.',
-        ],
-        $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 18',
-            'Ordinary implementation starts with the current operational guide selected by those routers.',
-            'Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context.',
-            'Load [the contract upgrade and history companion](consumer-contract-upgrades.md) only when upgrading an application across contract versions, reviewing contract evolution, or changing that history.',
-            '## Universal safety and unsupported claims',
-            '## Normative concern routing',
-            '| Contract upgrade or historical review | `docs/consumer-contract-upgrades.md` |',
-            'Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.',
-            'give every application PHP file a case-insensitive `.php` extension',
-            'keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes',
-            'do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions',
-            'Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
-        ],
-        $installedFramework . '/docs/consumer-contract-upgrades.md' => [
-            '# PHPThis consumer contract upgrades',
-            'Load it only when upgrading an application across contract versions, reviewing contract evolution, or changing the decision history.',
-            '### Contract version 18',
-            'Through [ADR 061](decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md)',
-            '### Contract version 17',
-            'Through [ADR 060](decisions/060-reject-pending-output-before-response-emission.md)',
-            '### Contract version 16',
-            'Through [ADR 059](decisions/059-bounded-application-source-prefix-discovery.md)',
-            'Replace every application symlink outside the resolved Composer dependency directory and VCS directories',
-            'Make every non-`.php` regular file readable.',
-            'Version 16 adds no runtime API, dependency, configurable ignore, second manifest, new PHPStan configuration path, Strict Profile rule, or `PHT` diagnostic.',
-            '### Contract version 15',
-            'Contract version 1 replaced consumer-owned PHPStan configuration with the installed checker and added the runnable skeleton.',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '`docs/design-goals.md` for detailed goals and non-goals',
-            $simpleEndpointDefinition,
-            $simpleEndpointLocality,
-            'Measure or report universal context separately; its cost is never hidden inside or used to weaken that four-file routing claim.',
-            '| Add a simple application endpoint | `docs/request-handling.md` |',
-            '| Upgrade across Consumer Contract versions or review contract history | `docs/consumer-contract-upgrades.md` |',
-        ],
-        $installedFramework . '/docs/decisions/058-concern-local-ai-context-routing.md' => [
-            '# ADR 058: Concern-local AI context routing',
-            'Status: accepted',
-            'The four task-specific files are never described as total context.',
-            'Contract version 15 and Strict Profile version 4 remain unchanged',
         ],
         $installedFramework . '/docs/decisions/059-bounded-application-source-prefix-discovery.md' => [
             '# ADR 059: Bounded application source-prefix discovery',
@@ -163,84 +59,13 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
             'Consumer Contract version 18 carries Contract version 17 and Strict Profile version 4 forward',
             'It adds no framework-core type or line, runtime dependency, framework configuration service, middleware, logger, discovery mechanism, global handler, Strict Profile rule, or `PHT` diagnostic.',
         ],
-        $installedFramework . '/docs/decisions/README.md' => [
-            "Proposed records:\n\nNone.",
-            '`059-bounded-application-source-prefix-discovery.md`',
-            '`060-reject-pending-output-before-response-emission.md`',
-            '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
-            'Accepted [ADR 059](059-bounded-application-source-prefix-discovery.md) coordinates Consumer Contract version 16',
-            'Accepted [ADR 060](060-reject-pending-output-before-response-emission.md) coordinates Consumer Contract version 17',
-            'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
-        ],
-        $installedFramework . '/docs/ai-context-routing-review.md' => [
-            '# Bounded AI-context routing review',
-            'Findings: 0 unsupported claims across 10 fixed routes.',
-            'It does not measure answer quality, token use, compliance probability, or comparative model performance.',
-        ],
-        $installedFramework . '/docs/strict-profile.md' => [
-            'Every named class in checked PHP is `final`; abstract classes also fail.',
-            '`for`, `foreach`, `while`, or `do` header or body',
-            'Mark the class final or expose an interface as the explicit extension point.',
-        ],
-        $installedFramework . '/docs/type-safety.md' => [
-            'A parser-owned request, command, page-request, or projection value uses a private constructor',
-            'This is not a universal constructor rule for application identifiers or other domain values',
-            'Parser-owned request, command, page-request, and projection factories use private constructors',
-        ],
-        $installedFramework . '/docs/crud.md' => [
-            'this is the single canonical current tree',
-            'contains no speculative Update or Delete scaffold',
-            'AuthorizeCreateUser.php',
-            'UnacceptableCreateUserValues.php',
-            'UserSummary.php',
-            '/users/{user_id:positive-int}',
-        ],
-        $installedFramework . '/docs/database.md' => [
-            '/accounts/{account_id:positive-int}/documents',
-        ],
-        $installedFramework . '/docs/guardrails.md' => [
-            "The bounded task-routed context guard pins ADR 044's exact simple-endpoint definition and four-file locality metric",
-            'The installed proof checks the copied local skeleton plus packaged public guidance and application template, including the starter',
-            'The guard adds no context report script, `ApplicationChecker` rule, `PHT` diagnostic, or consumer-size validity gate.',
-            'The accepted ADR 059 source-prefix guard now pins the 235-file current inventory, including the ADR 063 maintainer-review decision',
-            'every other application symlink fails before target-content inspection',
-            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
-            'The accepted ADR 060 response-emission guard pins Consumer Contract version 17',
-            'The accepted ADR 061 outer-HTTP-failure guard pins Consumer Contract version 18',
-            'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
-        ],
         $installedFramework . '/docs/static-analysis.md' => [
             '## Consumer source manifest',
             'Every other regular file has at most its first 4,096 bytes classified plus one lookahead byte.',
             'every other symlink entry fails before target-content inspection and a linked directory is never traversed',
             'These source-discovery failures belong to Consumer Contract version 16, not to a new Strict Profile rule or `PHT` diagnostic.',
         ],
-        $installedFramework . '/templates/application/AGENTS.md' => [
-            $slimUniversalEntrypoint,
-            '## Early database setup gate',
-            'Start with the one current operational guide selected by `.ai/README.md`.',
-            '## Project gate',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            $installedOrdinaryRoute,
-            'Use the exact simple-endpoint definition and four-file locality metric in the already-read installed `vendor/phpthis/framework/docs/knowledge-map.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
-            'Read installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` when upgrading to the current accepted contract.',
-            'Read the complete installed upgrade companion only when reviewing its history.',
-            $universalCostContract,
-            '| Add or change a qualifying simple endpoint | installed `vendor/phpthis/framework/docs/request-handling.md` | existing named route-area manifest, dependency-free handler, and nearest behavior test; root route composition remains unchanged |',
-            '| Add or change tests outside routine behavior evidence while implementing a qualifying simple endpoint, or change testing tools, shared support, or evidence organization | `.ai/testing.md` | nearest behavior test and complete project gate; routine behavior evidence while implementing a qualifying simple endpoint stays on the simple-endpoint row without loading a second guide |',
-            '| Upgrade the installed Consumer Contract to current version 18 | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18` | exact installed and target contract/profile versions, sole front controller, generic-first outer failure selection, response-emitter and early-output inventory, effective web-SAPI settings, affected source, then the complete gate |',
-            '| Review Consumer Contract history | installed `vendor/phpthis/framework/docs/consumer-contract-upgrades.md` |',
-        ],
-        $installedFramework . '/templates/application/.ai/rules.md' => [
-            $finalClassContract,
-            $databaseLoopContract,
-            $privateConstructorScope,
-        ],
-    ];
-
-    requireInstalledArtifactMarkers($artifactMarkers, 'bounded task-routed context');
+    ], 'context contracts and starter composition');
 
     /** @var array<string, list<string>> $pendingOutputEmissionArtifactMarkers */
     $pendingOutputEmissionArtifactMarkers = [
@@ -317,17 +142,6 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
 
     /** @var array<string, list<string>> $forbiddenMarkers */
     $forbiddenMarkers = [
-        $project . '/AGENTS.md' => [
-            '`NOT_APPLICABLE(WEBSOCKETS)`',
-            '`NOT_APPLICABLE(WORKBENCH)`',
-            '`NOT_APPLICABLE(CLI)`',
-            'each history\'s exact initial baseline',
-        ],
-        $project . '/.ai/rules.md' => [
-            'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
-            'Keep `NOT_APPLICABLE(CLI)`',
-            'Keep `NOT_APPLICABLE(REQUEST_HANDLER_DECORATOR)`',
-        ],
         $project . '/src/Routes.php' => [
             'HealthRoutes::create(new HealthHandler())',
         ],
@@ -337,16 +151,6 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         $installedFramework . '/docs/crud.md' => [
             'UpdateUser/',
             'DeleteUser/',
-        ],
-        $installedFramework . '/templates/application/AGENTS.md' => [
-            '`NOT_APPLICABLE(WEBSOCKETS)`',
-            '`NOT_APPLICABLE(WORKBENCH)`',
-            'each history\'s exact initial baseline',
-        ],
-        $installedFramework . '/templates/application/.ai/rules.md' => [
-            'Keep `NOT_APPLICABLE(WEBSOCKETS)`',
-            'Keep every adopted operational command behind the sole application console',
-            'Keep every adopted application-owned request-handler decorator',
         ],
         $installedFramework . '/docs/decisions/059-bounded-application-source-prefix-discovery.md' => [
             'Status: proposed',
