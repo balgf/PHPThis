@@ -18,6 +18,7 @@
     <testsuites>
         <testsuite name="framework">
             <file>tests/FrameworkBehaviorTest.php</file>
+            <file>tests/MaintainabilityGuardrailsTest.php</file>
         </testsuite>
     </testsuites>
 

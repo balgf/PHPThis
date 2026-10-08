@@ -18,7 +18,7 @@ PHPThis therefore does not publish a traditional framework manual as its primary
 4. **Literal:** executed behavior is represented by ordinary PHP calls and values.
 5. **One-way:** each framework operation has one canonical execution pattern; optional application structure is selected and documented once.
 6. **Typed:** all files use strict types; inputs and outputs cross explicit boundaries.
-7. **Bounded:** database work, dependency depth, and core size have measurable limits.
+7. **Bounded:** database work and dependency depth have measurable limits; runtime growth has explicit scope review.
 8. **Verified:** important rules are executable checks, not prose alone.
 9. **Inspectable:** SQL, routes, dependencies, errors, and side effects remain visible.
 10. **Checked:** accepted PHP is a versioned subset with stable, executable diagnostics.
@@ -45,8 +45,8 @@ Ordinary implementation starts with one current operational guide. Read an ADR o
 - PHPStan passes at `level: max` with strict rules and no baseline.
 - Every PHPThis-owned profile rule has a permanent identifier and passing and failing fixtures.
 - All framework PHP files pass the strict-types and no-magic guardrails.
-- Markdown files continue to outnumber PHP files.
-- Core source remains at or below the 2,620-line limit enforced by repository guardrails. Unused capacity remains unallocated and does not authorize additional mechanisms.
+- Every observable change names its current documentation owner and behavior evidence, or explains why no public documentation update applies.
+- The accountable maintainer reviews runtime growth for its concrete need, public API, dependencies, visible execution path, readability, and complexity shifted to tools or applications. File and physical-line counts are informational; [ADR 063](docs/decisions/063-maintainability-review-over-size-proxies.md) replaces the former numerical gates.
 
 ## Conditional design detail
 

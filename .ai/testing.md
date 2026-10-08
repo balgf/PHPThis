@@ -1,5 +1,7 @@
 # Testing contract
 
+`tests/MaintainabilityGuardrailsTest.php` runs in the existing PHPUnit suite and invokes the real guards in disposable repository copies. It covers advisory size counts, harmless consolidation and whitespace, and retained contract, route, package and strict-types failures that empty Markdown cannot repair. Run it with `composer test -- --filter MaintainabilityGuardrailsTest`.
+
 The bounded restriction-cost review for Issue #67 lives in `tools/restriction-review/README.md`. Its optional fixed-source reproductions distinguish size proxies, deliberate profile exclusions, application-policy conflicts, and behavior-test coverage. They add no Composer stage, consumer requirement, validity rule, or accepted replacement decision. Use that report only when reviewing those restrictions or its recorded maintenance evidence; ordinary implementation keeps the current concern owner and complete gate.
 
 The backend-neutral jobs structure proof removes one required verifier module and requires exact redacted failure without a native path-bearing warning, restores the module, pins the exact reference's scoped error-handler restoration and absence of broad suppression, and executes the named `composer jobs:verify` command directly before proving its transitive complete-gate route. This remains structure-only evidence under `NOT_APPLICABLE(JOBS)` and `REFERENCE_ONLY(JOBS_VERIFICATION_STRUCTURE)`.
