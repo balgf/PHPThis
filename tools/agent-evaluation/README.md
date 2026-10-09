@@ -76,6 +76,8 @@ The filename `public/holdout.php.fixture` is retained as a task-local scorer nam
 
 ## Hashes
 
+Smoke revision 32 adopts Issue #84's approved starter reading route. Only the task revision, source-skeleton tree/digest and matching admission identities change; prompts, rubric, scorer, budgets, workspace policy, comparison fixtures and retained observations stay fixed. [Revision 31 and its source](https://github.com/balgf/PHPThis/tree/884e7154984d774f9da8f595c820c2b978c8118a/tools/agent-evaluation) remain reproducible from that commit. Prepare fresh dependencies for any future revision-32 trial; this offline update authorizes no paid run or model-performance claim.
+
 Paths in a manifest are relative to that task directory. Every recorded SHA-256 is the lowercase hexadecimal digest of the referenced file's exact bytes. Validation must fail on a missing file, a digest mismatch, an unlisted task, an unsupported schema version, or an unexpected manifest field.
 
 The task manifest itself is not mounted as application context unless a separately recorded condition explicitly says so. The exact prompt bytes are the user request. Workspace policy, budgets, and scorers belong to the evaluation controller.

@@ -25,9 +25,11 @@ PHPThis therefore does not publish a traditional framework manual as its primary
 
 ## Locality metric
 
+`AGENTS.md` is the single universal entrypoint per audience; its task router selects current guidance. Existing applications adopt that read order explicitly. First-contribution project orientation and every entered concern add reading.
+
 A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision.
 
-After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.
+After the audience’s `AGENTS.md`, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test.
 
 Any report of this metric states the universal read cost separately, using the exact framework or application revision, ordered universal-file inventory, and recorded word and byte method. The four files are the task-specific authoring set, not the total context read. Universal authority remains mandatory and another concern's guide, policy, source, or evidence is never skipped to preserve either the file count or a smaller reported context size.
 

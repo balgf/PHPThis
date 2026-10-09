@@ -8,16 +8,11 @@ The root `AGENTS.md` and `.ai/` directory in the PHPThis framework repository ar
 
 ## Authority and read order
 
-For application work:
+Start with the application's `AGENTS.md`, then the current guide it selects, relevant source and tests. The framework and application entrypoints each own their universal authority, rules and workflow. First contributors and work involving product vocabulary, invariants or ownership also read `.ai/project.md` and the applicable architecture records. Add every entered concern; never omit needed context to meet a file count.
 
-1. Read this contract from the installed PHPThis package.
-2. Use the installed `docs/knowledge-map.md` to route the framework question or task.
-3. Read the application's root `AGENTS.md` and `.ai/README.md`.
-4. Read the application's `.ai/rules.md`, `.ai/change-workflow.md`, and `.ai/project.md`.
-5. Start with the one current operational guide selected by `.ai/README.md`.
-6. Inspect the concrete source and tests on the execution path.
+Read this full contract when installing, deliberately adopting context, upgrading, or resolving a contract conflict. Use installed `docs/knowledge-map.md` when the concern is unknown. Read ADRs for decision review and `docs/consumer-contract-upgrades.md` for version changes or history.
 
-Ordinary implementation starts with the current operational guide selected by those routers. Read another guide only when that guide routes the chosen concern there. Read a decision record only when reviewing or changing the decision it records; historical rationale is not ordinary implementation context. Load [the contract upgrade and history companion](consumer-contract-upgrades.md) only when upgrading an application across contract versions, reviewing contract evolution, or changing that history.
+Existing applications keep their owned read order until the accountable owner explicitly adopts a replacement. Reconcile stronger local rules and unresolved decisions from old entrypoints before shortening them. Dependency installation alone changes no application instructions. Required context files remain required even when they become compatibility pointers. [ADR 064](decisions/064-one-entrypoint-per-audience.md) records this reading-policy change; validity, runtime behavior and Strict Profile v4 remain unchanged.
 
 The PHPThis Strict Profile and executable application checks are the hard floor. Tests demonstrate behavior but do not authorize a contract violation. When application instructions conflict with this contract, preserve the contract and report the conflict.
 
@@ -25,7 +20,7 @@ Files under `vendor/` belong to installed dependencies. Do not edit them to cust
 
 ## AI authoring and human accountability
 
-AI is the expected primary code author and knowledge interface for a PHPThis application. This does not make AI output authoritative and does not exclude human-authored contributions. When asked how PHPThis works or how application code should be written, the AI must inspect the installed version, this contract, the matching application context, and the relevant source and tests. Model memory alone is not evidence.
+AI is the expected primary code author and knowledge interface for a PHPThis application. This does not make AI output authoritative and does not exclude human-authored contributions. When asked how PHPThis works or how application code should be written, the AI must inspect the installed version, the applicable contract through its routed current guide, matching application facts, and relevant source and tests. Model memory alone is not evidence.
 
 An answer must distinguish:
 
@@ -37,7 +32,7 @@ Name the supporting paths, symbols, diagnostics, or check output. Report missing
 
 Humans direct the work and remain accountable for outcomes. Consequential product, architecture, security, data, migration, deployment, and external-side-effect choices must be made visible for human judgment. An AI may investigate options and draft a decision record, but it cannot approve its own consequential choice or infer authorization from silence. After explicit accountable-human approval, the AI may record the decision as accepted.
 
-For an ambiguous database setup request, inspect the prompt and existing project state first. Unless another environment is named, treat the request as local development context, not authority to connect to or probe a server, mutate local services, or change data. Ask all unresolved choices in one concise message: database scope is configuration only, connection to an existing server, or project-local server provisioning; schema scope is deferred migrations or an application-owned migration foundation. Do not perform external database I/O, provision or mutate a server, infer migrations from database-engine selection, or include production hardening, backups, high availability, deployment credentials, recovery, or unrelated operations unless requested. A current not-applicable marker describes present behavior and does not resolve a new adoption request; do not repeat a choice resolved by the prompt or an explicit accepted project decision.
+Database setup starts with `docs/configuration.md` and its scope rules before external action. Resolve database and schema scope separately, reuse accepted choices, and keep unrequested production operations outside the task.
 
 PHPThis therefore has no traditional framework manual as its canonical knowledge interface. Its current contract, routed guides, source, diagnostics, and tests ground ordinary work. Decision records and upgrade history remain human-readable evidence but are conditional context.
 
@@ -143,7 +138,7 @@ docs/
     README.md
 ```
 
-The application context records facts the framework cannot infer: domain vocabulary, accountable human decision roles, real source paths, architectural boundaries, data scale, resource limits, external side effects, runtime assumptions, verification commands, and prohibited operations. Each concern has one current application owner selected by `.ai/README.md`; other guides link to that owner rather than copying it. Optional concern files such as `.ai/cli.md`, `.ai/file-transfers.md`, `.ai/jobs.md`, `.ai/migrations.md`, `.ai/request-policy.md`, and `.ai/workbench.md` may already be committed with an explicit not-applicable record. Before adopting the concern, add a missing file or replace and complete that record; retain a valid non-adopter record while the concern remains unadopted.
+The application context records facts the framework cannot infer: domain vocabulary, accountable human decision roles, real source paths, architectural boundaries, data scale, resource limits, external side effects, runtime assumptions, verification commands, and prohibited operations. Each concern has one current application owner selected by `AGENTS.md`; other guides link to that owner rather than copying it. Optional concern files such as `.ai/cli.md`, `.ai/file-transfers.md`, `.ai/jobs.md`, `.ai/migrations.md`, `.ai/request-policy.md`, and `.ai/workbench.md` may already be committed with an explicit not-applicable record. Before adopting the concern, add a missing file or replace and complete that record; retain a valid non-adopter record while the concern remains unadopted.
 
 Keep current context compact and task-routed. Do not load every concern guide, historical decision, or this contract's upgrade companion for every change. Do not store credentials, tokens, private keys, customer data, production payloads, or other secrets in AI instructions. Detailed rationale and decision history belong in the application's `docs/decisions/` directory.
 
@@ -178,6 +173,6 @@ The current guide named in the second column owns the full normative requirement
 | Static analysis, `PHT` diagnostics, and duplication review | `docs/static-analysis.md` and `docs/strict-profile.md` | Maximum-level framework-owned validity; duplication remains report-only and no baseline, ignore, consumer configuration, or automatic refactor is permitted. |
 | Contract upgrade or historical review | `docs/consumer-contract-upgrades.md` | Conditional context only; updating PHPThis never authorizes overwriting application-owned context or external release actions. |
 
-A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision. After the universal entrypoints above, a simple-endpoint change has exactly four task-specific files: `docs/request-handling.md`, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test. Report universal context cost separately from that four-file task-specific metric; no size result permits skipping authority, safety, or evidence.
+The complete simple-endpoint definition and four-file task route live in `docs/request-handling.md`. The application entrypoint is universal reading; report it separately from all task-specific context. First-contribution orientation and other entered concerns remain additional reading.
 
 Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`. Version 18 carries version 17 forward and adds the application-owned generic-first outer HTTP failure boundary and optional bounded development-details profile without adding a framework runtime, Strict Profile rule, or `PHT` diagnostic.

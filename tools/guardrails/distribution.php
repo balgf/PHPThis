@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 235) {
-            $failures[] = 'The current framework package inventory must contain exactly 235 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 236) {
+            $failures[] = 'The current framework package inventory must contain exactly 236 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -418,29 +418,6 @@ function distributionGuardrailFailures(
     }
 
     $maintainerTestArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change maintainer tests or evidence organization | `.ai/testing.md` | applicable concern-owned test file, behavior names, and complete gate |',
-        ],
-        '.ai/testing.md' => [
-            'PHPUnit 13 as a maintainer-only development runner',
-            'exactly 188 named behaviors',
-            '`tests/run.php` is the explicit ordered loader',
-            '`tests/composition.php`, `tests/http-boundary.php`, `tests/routing.php`, `tests/input-projection.php`, `tests/crud.php`, and `tests/database-boundary.php`',
-            'the newly added outer HTTP failure concern lives in `tests/outer-http-failure.php`',
-            'Narrowly shared PHPUnit support lives in `tests/request-reader-support.php`, `tests/process-support.php`, and `tests/create-user-support.php`',
-            '`tests/process-support.php` delegates captured child execution to the maintainer-only owner at `tools/process-support.php`',
-            '`tests/behavior-names.txt` locks the complete behavior order',
-            "composer test -- --group routing",
-            'migrated query-trace comparison slice',
-            'Applications continue to own their test library, runner, organization',
-            '`tools/process-support.php` is the shared maintainer primitive for ordinary one-shot dual-pipe capture paths',
-            'supply a finite deadline plus separate stdout and stderr caps',
-            'drains both output pipes concurrently without a shell',
-            'Other platforms prove only direct-child cleanup.',
-            '`tools/test-process-support.php` is the directly runnable adversarial proof',
-            '`test:process` follows analysis and precedes the agent-evaluation stages',
-            '300,000-millisecond and 16,777,216-byte-per-stream bounds',
-        ],
         'tests/run.php' => [
             "require dirname(__DIR__) . '/autoload.php';",
             "require __DIR__ . '/request-reader-support.php';",
@@ -610,11 +587,6 @@ function distributionGuardrailFailures(
             'runBoundedMaintainerProcess(',
             '30_000,',
             '1_048_576,',
-        ],
-        'ROADMAP.md' => [
-            'adopt PHPUnit 13 only for the framework-maintainer suite',
-            'exact-name and coherent-group selection',
-            'application-owned consumer test choices',
         ],
     ];
 
@@ -1042,9 +1014,6 @@ function distributionGuardrailFailures(
     }
 
     $consumerProfileArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Review the consumer capability profile | `.ai/consumer-profile.md` | checked-in application proof and affected current guides |',
-        ],
         '.ai/consumer-profile.md' => [
             'framework behavior lives only in `src/` and the Consumer Contract',
             'commit-visible job publication',
@@ -1077,12 +1046,6 @@ function distributionGuardrailFailures(
         ],
         'docs/decisions/README.md' => [
             '`029-alpha-2-consumer-profile-rollup.md`',
-        ],
-        'docs/evaluation.md' => [
-            'The Alpha 2 rollup is recorded in `docs/consumer-profile.md` and ADR 029.',
-        ],
-        'docs/knowledge-map.md' => [
-            'Assess the Alpha 2 consumer profile or a capability exit',
         ],
         'example/src/Users/UserRoutes.php' => [
             'new Route(\'POST\', \'/accounts/{account_id:positive-int}/users\', $createUserHandler)',
@@ -1126,9 +1089,6 @@ function distributionGuardrailFailures(
         'tools/package-files.txt' => [
             'docs/consumer-profile.md',
             'docs/decisions/029-alpha-2-consumer-profile-rollup.md',
-        ],
-        'ROADMAP.md' => [
-            'ADR 029 records every Alpha 2 capability exit',
         ],
     ];
 
@@ -1182,9 +1142,6 @@ function distributionGuardrailFailures(
     }
 
     $fileTransferArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change uploads or file responses, or adopt/review Amazon S3 | `.ai/file-transfers.md` | common bounded multipart policy plus exactly one `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile and its complete application evidence |',
-        ],
         '.ai/file-transfers.md' => [
             'A `null` multipart limit disables multipart input.',
             'Do not add a generic storage interface, facade, disk registry, binding helper',
@@ -1550,16 +1507,6 @@ function distributionGuardrailFailures(
         $failures,
     );
 
-    foreach (['templates/application/.ai/README.md', 'skeleton/.ai/README.md'] as $applicationContextIndex) {
-        $applicationContextIndexContents = file_get_contents($root . '/' . $applicationContextIndex);
-
-        if (!is_string($applicationContextIndexContents)) {
-            $failures[] = "Cannot read {$applicationContextIndex}.";
-        } elseif (!str_contains($applicationContextIndexContents, 'vendor/phpthis/framework/docs/crud.md')) {
-            $failures[] = "{$applicationContextIndex} must route CRUD work through the installed framework guide.";
-        }
-    }
-
     $visionPath = $root . '/VISION.md';
 
     if (is_file($visionPath)) {
@@ -1584,68 +1531,10 @@ function distributionGuardrailFailures(
         }
     }
 
-    $applicationAgentInstructionsPath = $root . '/templates/application/AGENTS.md';
-
-    if (is_file($applicationAgentInstructionsPath)) {
-        $applicationAgentInstructions = file_get_contents($applicationAgentInstructionsPath);
-
-        if (!is_string($applicationAgentInstructions)) {
-            $failures[] = 'Cannot read templates/application/AGENTS.md.';
-        } else {
-            if (!str_contains(
-                $applicationAgentInstructions,
-                'vendor/phpthis/framework/docs/consumer-contract.md',
-            )) {
-                $failures[] = 'Application AGENTS.md must point to the installed PHPThis consumer contract.';
-            }
-
-            if (!str_contains(
-                $applicationAgentInstructions,
-                'vendor/phpthis/framework/docs/knowledge-map.md',
-            )) {
-                $failures[] = 'Application AGENTS.md must point to the installed PHPThis knowledge map.';
-            }
-
-            if (!str_contains($applicationAgentInstructions, 'primary code author and knowledge interface')) {
-                $failures[] = 'Application AGENTS.md must define the AI authoring role.';
-            }
-
-            if (!str_contains($applicationAgentInstructions, 'only an accountable human may accept it')) {
-                $failures[] = 'Application AGENTS.md must preserve human acceptance of consequential decisions.';
-            }
-
-            if (!str_contains($applicationAgentInstructions, 'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules')) {
-                $failures[] = 'Application AGENTS.md must identify Consumer Contract v18 and Strict Profile v4 as the minimum accepted rules.';
-            }
-        }
-    }
-
-    $skeletonAgentInstructionsPath = $root . '/skeleton/AGENTS.md';
-
-    if (is_file($skeletonAgentInstructionsPath)) {
-        $skeletonAgentInstructions = file_get_contents($skeletonAgentInstructionsPath);
-
-        if (!is_string($skeletonAgentInstructions)) {
-            $failures[] = 'Cannot read skeleton/AGENTS.md.';
-        } elseif (
-            !str_contains($skeletonAgentInstructions, 'vendor/phpthis/framework/docs/knowledge-map.md')
-            || !str_contains($skeletonAgentInstructions, 'primary code author and knowledge interface')
-            || !str_contains($skeletonAgentInstructions, 'only an accountable human may accept it')
-            || !str_contains($skeletonAgentInstructions, 'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules')
-        ) {
-            $failures[] = 'Skeleton AGENTS.md must preserve current Contract v18 authority, the installed knowledge route, AI authoring role, and human decision boundary.';
-        }
-    }
+    // Entrypoint authority and task routes are reviewed in contextGuardrailFailures
+    // and taskRoutedGuidanceFailures rather than pinned to sentence spellings.
 
     $scaffoldParityMarkers = [
-        'templates/application/AGENTS.md' => [
-            'If Composer uses a non-default vendor directory, replace the leading `vendor/` segment in every installed path.',
-            'Never substitute a framework-maintainer checkout for installed application authority.',
-        ],
-        'skeleton/AGENTS.md' => [
-            'If Composer uses a non-default vendor directory, replace the leading `vendor/` segment in every installed path.',
-            'Never substitute a framework-maintainer checkout for installed application authority.',
-        ],
         'templates/application/.ai/operations.md' => [
             'Required extensions: `ext-pdo` and `ext-session`',
             'A database adoption additionally records its actual `ext-pdo_*` driver.',

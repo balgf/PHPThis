@@ -57,7 +57,7 @@ Do not infer a matching starter release from a framework tag alone. Issue #81 re
 
 ## Ask the project AI
 
-Every application owns a thin `AGENTS.md` and task-routed `.ai/` context. Ask the AI working in that application to inspect those files, the installed PHPThis contract, and the concrete source and tests before explaining or changing behavior.
+Every application owns a thin `AGENTS.md` and task-routed `.ai/` context. Ask the AI working in that application to start with `AGENTS.md`, follow its current task guide, and inspect the relevant application facts, source and tests. Read the full installed Consumer Contract for installation, deliberate adoption, upgrades or conflicts.
 
 Useful requests include:
 

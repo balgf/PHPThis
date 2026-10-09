@@ -8,9 +8,7 @@ function boundaryGuardrailFailures(string $root): array
     $failures = [];
 
     $ragDistributionMarkers = [
-        '.ai/README.md' => ['| Change RAG, LLPhant or vector-database integration guidance | `.ai/rag.md` |'],
         '.ai/rag.md' => ['`docs/rag.md`, the single adoption-guide owner'],
-        'docs/knowledge-map.md' => ['| Adopt or review application-owned RAG, LLPhant or Qdrant | `docs/rag.md` |'],
         'docs/rag.md' => ['PHPThis supplies no model client, vector store, agent runtime, discovery, or new framework dependency.', 'deterministic protocol fixtures'],
         'skeleton/.ai/integrations.md' => ['`NOT_APPLICABLE(RAG)`'],
         'templates/application/.ai/integrations.md' => ['{{RAG_ADOPTION_OR_NOT_APPLICABLE}}', '{{RAG_RECIPE_RECORD_OR_NOT_APPLICABLE}}'],
@@ -117,12 +115,6 @@ PHP;
             'Accepted ADR 053, `docs/file-transfers/amazon-s3.md`, and `docs/file-transfers/amazon-s3-verification.md` define the optional `AMAZON_S3_ADR053` profile under Consumer Contract version 13.',
             '`NOT_APPLICABLE(FILE_TRANSFER)` plus `REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_VERIFICATION_STRUCTURE)`',
             'cannot establish adoption',
-        ],
-        '.ai/testing.md' => [
-            'exactly twelve declaration-only modules',
-            '`amazon-s3-file-transfers.php`',
-            'exact 53-proof-call order',
-            'without installing or loading AWS code or contacting a service',
         ],
         'docs/decisions/053-application-owned-amazon-s3-file-transfers.md' => [
             '# ADR 053: Application-owned Amazon S3 file transfers',
@@ -261,12 +253,9 @@ PHP;
     }
 
     $sessionContractMarkers = [
-        '.ai/README.md' => '`.ai/session.md`',
-        'docs/knowledge-map.md' => '`docs/sessions.md`',
         'templates/application/.ai/architecture.md' => '{{SESSION_ADOPTION_AND_KEY_SCHEMA_OR_NOT_APPLICABLE}}',
         'templates/application/.ai/operations.md' => '{{SESSION_NATIVE_FILE_STORAGE_POLICY_OR_NOT_APPLICABLE}}',
         'templates/application/.ai/testing.md' => 'Adopted session transport',
-        'skeleton/.ai/README.md' => 'vendor/phpthis/framework/docs/sessions.md',
         'skeleton/.ai/operations.md' => 'ext-session',
         'skeleton/.ai/testing.md' => 'NOT_APPLICABLE(SESSION_EVIDENCE)',
     ];
@@ -297,9 +286,6 @@ PHP;
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',
             '`Domain`, `Partitioned`/CHIPS, and `Priority` remain unsupported.',
         ],
-        '.ai/README.md' => [
-            '| Change request, response, or generic response-cookie behavior |',
-        ],
         '.ai/http.md' => [
             'the name and cookie-safe ASCII value together occupy at most 4,096 bytes',
             '`Path` is an absolute 1-to-1,024-byte string',
@@ -314,12 +300,6 @@ PHP;
             'Absence of both lifetime attributes on the live cookie is not a reliable browser-close deadline',
             'Production authentication and session cookies normally use `Secure`',
             '`HttpOnly` prevents ordinary script access to the cookie bytes, but it does not stop script-initiated authenticated requests',
-        ],
-        '.ai/testing.md' => [
-            'case-insensitive `__Secure-`, `__Host-`, `__Http-`, and `__Host-Http-` constraints without name rewriting',
-            'source behavior and isolated installed-consumer positive and negative controls for every public invariant',
-            "assert the live cookie's exact configured name",
-            "Assert the deletion cookie's same identity and scope",
         ],
         '.ai/application-context.md' => [
             'the exact cookie name and prefix, canonical casing, host-only scope',
@@ -344,9 +324,6 @@ PHP;
         'docs/guardrails.md' => [
             'The bounded response-cookie profile guard pins the exact accepted name/value, path, expiration, maximum-age, count, aggregate-byte, duplicate-name, and case-insensitive prefix constraints',
             'These cookie controls do not prove browser behavior',
-        ],
-        'docs/knowledge-map.md' => [
-            '| Construct, emit, or review a generic response cookie |',
         ],
         'templates/application/.ai/operations.md' => [
             'Exact cookie name and prefix, canonical casing, host-only scope',
@@ -421,13 +398,10 @@ PHP;
     );
 
     $cacheContractMarkers = [
-        '.ai/README.md' => '`.ai/cache.md`',
         '.ai/http.md' => '`.ai/cache.md`',
-        'docs/knowledge-map.md' => '`docs/caching.md`',
         'templates/application/.ai/architecture.md' => '{{CACHE_ADOPTION_OR_NOT_APPLICABLE}}',
         'templates/application/.ai/operations.md' => '{{CACHE_RUNTIME_ADOPTION_OR_NOT_APPLICABLE}}',
         'templates/application/.ai/testing.md' => 'Adopted cache behavior',
-        'skeleton/.ai/README.md' => 'vendor/phpthis/framework/docs/caching.md',
         'skeleton/.ai/architecture.md' => 'NOT_APPLICABLE(CACHE)',
         'skeleton/.ai/testing.md' => 'NOT_APPLICABLE(CACHE_EVIDENCE)',
     ];
@@ -472,9 +446,6 @@ PHP;
         'templates/application/.ai/testing.md' => [
             'HTTP cache policy evidence',
             'a concurrent miss racing an authoritative write',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Change HTTP or server-side caching | installed `vendor/phpthis/framework/docs/caching.md` | response path or data, integration, operations, and testing facts |',
         ],
         'skeleton/.ai/testing.md' => [
             'HTTP_CACHE_EVIDENCE(NO_STORE)',
@@ -830,10 +801,6 @@ PHP;
             'Do not add a framework WebSocket server, client, event loop, connection manager, daemon, supervisor, generic channel, broadcaster, pub/sub, event bus, middleware, context bag, service locator, discovery mechanism, hidden retry, replay, deduplication, acknowledgement, reconnect, or exactly-once behavior.',
             'ADR 034 documents one independent application-owned WebSocket proof without accepting a framework WebSocket runtime, changing application validity, or making its recipe limits universal.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Propose, add, explain, or review a WebSocket path |',
-            'verify that frames never become PHPThis HTTP `Request` or `Response` values and no framework WebSocket runtime exists',
-        ],
         'docs/architecture.md' => [
             'ADR 034 keeps WebSockets outside that HTTP graph.',
             'There is no WebSocket namespace or runtime in core.',
@@ -852,11 +819,6 @@ PHP;
             '| WebSocket command |',
             '| best-effort WebSocket delivery |',
         ],
-        'docs/evaluation.md' => [
-            'ADR 034 adds an independent consumer proof for one application-owned WebSocket path without adding a framework implementation.',
-            '365 application-owned assertions',
-            'This establishes that the explicit boundary is viable for that pinned local recipe',
-        ],
         'docs/guardrails.md' => [
             'accepted ADR 034, the WebSocket review profile, project-owned AI routes, and package inventory preserve the optional application-owned WebSocket boundary',
             'keeps `.ai/websockets.md` optional under current Contract version 18 as well as its originating Contract version 9',
@@ -864,13 +826,6 @@ PHP;
         'docs/design-goals.md' => [
             'An application that needs WebSockets can keep its pinned mature runtime',
             'without adding a framework real-time runtime or adapting frames into HTTP values',
-        ],
-        'ROADMAP.md' => [
-            'Complete: ADR 034',
-            'Accountable-human review accepted the exact local recipe as evidence; no framework runtime, dependency, API, contract version, Strict Profile rule, or core-line increase is added.',
-        ],
-        '.ai/README.md' => [
-            '| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, typed operation, and real socket tests |',
         ],
         '.ai/application-context.md' => [
             'Include `.ai/websockets.md` in the current skeleton and template with `NOT_APPLICABLE(WEBSOCKETS)`',
@@ -881,13 +836,6 @@ PHP;
             'WebSockets are an optional consuming-application capability, not a PHPThis runtime feature.',
             'A frame becomes one operation-specific final readonly command, not an HTTP request.',
             'Do not add framework-owned WebSocket, event-loop, connection-manager, daemon, or supervisor primitives.',
-        ],
-        '.ai/testing.md' => [
-            'An application that adopts WebSockets must test its parser, current authentication and authorization',
-            'Real child-process and socket evidence must cover readiness without a blind sleep',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, configuration, operation, and socket tests |',
         ],
         'templates/application/.ai/websockets.md' => [
             '`NOT_APPLICABLE(WEBSOCKETS)`',
@@ -910,9 +858,6 @@ PHP;
         'templates/application/.ai/testing.md' => [
             'WebSocket integration and lifecycle tests: `NOT_APPLICABLE(WEBSOCKETS)`',
             'Real child-process and socket tests prove readiness without a blind sleep',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Change application-owned WebSockets | `.ai/websockets.md` | selected runtime, separate process, configuration, operation, and socket tests |',
         ],
         'skeleton/.ai/websockets.md' => [
             '`NOT_APPLICABLE(WEBSOCKETS)`',
@@ -1035,16 +980,10 @@ PHP;
     );
 
     $requestPolicyArtifactMarkers = [
-        '.ai/README.md' => [
-            '`.ai/request-policy.md`',
-        ],
         '.ai/request-policy.md' => [
             'authenticate -> resolve tenant -> authorize -> protected handler',
             'PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.',
             'Cache-Control: private, no-store',
-        ],
-        'docs/knowledge-map.md' => [
-            '`docs/request-policy.md`',
         ],
         'docs/request-policy.md' => [
             'PHPThis keeps authentication, tenant resolution, and authorization application-owned.',
@@ -1115,9 +1054,6 @@ PHP;
     }
 
     $typedInputBoundaryArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Parse or change external values | `.ai/types.md` | operation-specific boundary value, failure map, and adversarial tests |',
-        ],
         '.ai/application-context.md' => [
             'every adopted inbound operation',
             '`NOT_APPLICABLE(INPUT)`',
@@ -1134,11 +1070,6 @@ PHP;
         '.ai/errors.md' => [
             'For application-owned structured request-body content',
             'defaults through its exact application-owned failure to `422`',
-            'Query, header, route, and transport representations retain their separately recorded contracts.',
-        ],
-        '.ai/testing.md' => [
-            'For application-owned structured request-body content',
-            'property-order variants that both remain `400`',
             'Query, header, route, and transport representations retain their separately recorded contracts.',
         ],
         'docs/type-safety.md' => [
@@ -1260,14 +1191,6 @@ PHP;
             'mixed unacceptable-value plus wrong-native-type case in property-order variants that both remain `400`',
             'Query, header, route, and transport representations retain their separately recorded contracts',
         ],
-        'templates/application/.ai/change-workflow.md' => [
-            'For structured request-body content, record the complete structural phase before value rules',
-            'do not apply that body-content default implicitly to query, header, route, or transport representations.',
-            'Structured request-body tests must prove mixed structural and value failures remain `400` in property-order variants',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Change a non-simple route or request input | installed `vendor/phpthis/framework/docs/request-handling.md` | route manifest and only the application guides for concerns actually entered |',
-        ],
         'skeleton/.ai/architecture.md' => [
             'NOT_APPLICABLE(INPUT)',
             'operation-specific named parser factory',
@@ -1281,11 +1204,6 @@ PHP;
             'zero typed-seam calls when one exists',
             'property-order variants that remain `400`',
             'Query, header, route, and transport representations retain their separately recorded contracts.',
-        ],
-        'skeleton/.ai/change-workflow.md' => [
-            'complete structural phase before value rules',
-            'mixed structural and value failures remain `400` in property-order variants',
-            'Do not apply that body-content default implicitly to query, header, route, or transport representations.',
         ],
         'example/.ai/README.md' => [
             'ADR 042 for Create request-body classification',
@@ -1319,12 +1237,6 @@ PHP;
             'When an operation adopts the optional field-issue profile, route to installed `vendor/phpthis/framework/docs/errors.md#optional-application-owned-field-issues`',
             'record its exact operation, code-owned path templates and code allowlists, cross-field choice, client and localization owners, compatibility rollout, and evidence',
             'without copying the profile into a second normative context owner',
-        ],
-        '.ai/testing.md' => [
-            'When an application adopts `docs/errors.md#optional-application-owned-field-issues`',
-            'absent per-issue message, `null` and unknown-member rejection, code-owned path grammar and code allowlists',
-            'mixed structural/value failures that remain generic `400`',
-            'tests do not introduce a reusable validator, error bag, response wrapper, renderer, generator, or client library',
         ],
         'docs/errors.md' => [
             '## Optional application-owned field issues',
@@ -1362,11 +1274,6 @@ PHP;
             'The generic `400`/`422` contract remains valid',
             '[Optional application-owned field issues](errors.md#optional-application-owned-field-issues)',
             'without adding a validator, error bag, response wrapper, or dynamic error renderer',
-        ],
-        'docs/knowledge-map.md' => [
-            '| Adopt, change, or review field-addressable value issues |',
-            'exact finite code-owned path templates and code allowlists, literal bounded response construction before operation-owned I/O',
-            'preserve the generic `400`/`422` default and verify that no validator, error bag, response wrapper, renderer, generator, core API, dependency, checker diagnostic, or universal schema was introduced',
         ],
         'docs/guardrails.md' => [
             'application-owned field-validation error guidance',
@@ -1624,9 +1531,6 @@ PHP;
     }
 
     $nativeDateTimeGuidanceArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change date, time, timezone, duration, or clock behavior | `.ai/types.md` | `docs/date-time.md`',
-        ],
         '.ai/application-context.md' => [
             'Route application date and time work through installed `vendor/phpthis/framework/docs/date-time.md`.',
             'A selected third-party date-time or clock package remains an explicit application-owned dependency',
@@ -1692,19 +1596,10 @@ PHP;
             'global `setTestNow()` state',
             'PHPThis adds no date-time facade, generic parser, normalization helper, clock API, persistence mapping, checker rule, or `PHT` diagnostic.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Parse, persist, format, calculate, schedule, or test date and time behavior | `docs/date-time.md`',
-        ],
         'docs/type-safety.md' => [
             '[Native date and time](date-time.md)',
             'A date or timestamp has a complete lexical and component grammar',
             'PHP format tokens and generic date guessing are not standards validation.',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
         ],
         'tools/package-files.txt' => [
             'docs/date-time.md',
@@ -1736,9 +1631,6 @@ PHP;
     );
 
     $frontendIntegrationGuidanceArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change frontend integration or application-owned HTML rendering | `.ai/http.md` | `docs/frontend-integration.md`, exact HTTP paths, and behavior evidence; add other concern guides only when entered |',
-        ],
         '.ai/application-context.md' => [
             'Keep frontend delivery and optional HTML rendering application-owned.',
             "Prefer a separately built frontend that consumes the application's explicit HTTP API through a same-origin deployment",
@@ -1808,17 +1700,6 @@ PHP;
             'Cover preflight and the actual response, permitted and denied origins, credentialed or uncredentialed behavior as selected, mapped and unknown failures, routing-owned `404` and `405`, exposed `X-Request-ID`, and exact cache and `Vary` headers.',
             'This guide adds no framework runtime, Composer dependency, HTTP type, route behavior, CORS behavior, HTML renderer, templating engine, static-file server, OpenAPI or JSON Schema generator, client generator, checker rule, Consumer Contract change, or Strict Profile change.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Design, implement, or review frontend integration, a frontend/API handoff, browser CORS, static assets, or application-owned HTML rendering |',
-            '`docs/frontend-integration.md`; add only the concern guides it routes to',
-            'verify that no framework frontend runtime, CORS middleware, renderer, templating or asset engine, machine-readable API generator, or client generator was implied',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Build or change frontend integration or application-owned HTML rendering | installed `vendor/phpthis/framework/docs/frontend-integration.md` | `.ai/architecture.md`, `.ai/testing.md`, and exact HTTP paths; add other concern guides only when entered |',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Build or change frontend integration or application-owned HTML rendering | installed `vendor/phpthis/framework/docs/frontend-integration.md` | `.ai/architecture.md`, `.ai/testing.md`, and exact HTTP paths; add other concern guides only when entered |',
-        ],
         'tools/package-files.txt' => [
             'docs/frontend-integration.md',
         ],
@@ -1852,11 +1733,6 @@ PHP;
     );
 
     $structuredJsonSuccessEnvelopeArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation, including nested child data | `.ai/http.md` |',
-            'prove one fixed bounded operation-owned I/O plan plus I/O-free mapping and encoding',
-            'preserve the advisory application-owned boundary without a generic wrapper, relationship loader, serializer, paginator, or generator',
-        ],
         '.ai/http.md' => [
             "For a new application's successful structured JSON resource representations",
             'one resource uses a top-level `data` object',
@@ -1880,14 +1756,6 @@ PHP;
             'every operation-owned scope or authorization predicate that applies to either side.',
             'A finite batch plan may instead use a fixed number of reviewed statements when one join is inappropriate',
             'Parent pagination remains authoritative.',
-        ],
-        '.ai/testing.md' => [
-            'A nested-resource response proof covers empty, one-parent, and maximum-parent pages;',
-            'Snapshot each relevant counter immediately after data loading and again after mapping and JSON encoding to prove those phases add no I/O.',
-            'Frontend-style decoder fixtures reject missing, unknown, wrongly typed, out-of-bound, and malformed nested shapes while accepting semantically identical JSON object members in another order.',
-            'operation-owned scope-isolation and authorization-denial evidence where applicable, with each inapplicable concern explicitly recorded as N/A',
-            'Retain or add one intentionally invalid `.php.fixture` negative control that performs one child query per parent.',
-            'This negative control does not let `PHT003` claim detection of indirect database, cache, or integration I/O.',
         ],
         'docs/frontend-integration.md' => [
             '## Recommended structured JSON resource success envelope',
@@ -1949,25 +1817,6 @@ PHP;
             'The existing isolated N+1 negative control in `tools/test-query-scaling.php` demonstrates both query growth and budget containment',
             'This guidance adds no PHPThis runtime relationship mechanism, ORM, lazy loading, resource serializer, paginator, or new Strict Profile diagnostic.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Define, change, or review a structured JSON resource success representation, including nested child objects or collections |',
-            'exact application response construction and `Content-Type`',
-            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
-            'authorization and tenant-scope applicability and policy',
-            'preserve the advisory application-owned boundary',
-            '| Choose or assess HTTP caching or server-side derived-data caching |',
-            '| Adopt, change, or review the optional Redis cache and schedule-lease recipe |',
-            '| Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract |',
-            '| Adopt, change, or review ADR 024\'s optional SQLite durable-job recipe |',
-            '| Connect to, read, write, or assess SQL safety or database authority |',
-            '| Adopt, change, or review ADR 022\'s optional SQLite protected document-list recipe |',
-            '| Add or assess an application-owned cursor or bounded list filter |',
-            '| Adopt, change, or review ADR 022\'s optional versioned document cursor and bounded category-filter recipe |',
-            'verify fail-closed no-skip/no-mock release behavior and that PHPThis provides no runtime, adapter, generic validator or backend checker',
-            'do not generalize its transaction, lease, query bounds, one-shot lifecycle or outcomes to another backend or a framework queue or worker API',
-            'do not infer the optional document-list recipe',
-            'do not treat those names or semantics as a generic paginator or filter contract',
-        ],
         'docs/consumer-contract.md' => [
             'An application deliberately adopting ADR 024\'s checked SQLite recipe',
             'These are obligations of that deliberately adopted recipe, not defaults for every application-owned deferred-work design.',
@@ -1982,16 +1831,6 @@ PHP;
             'performs a child query inside the parent loop, grows from 2 statements for one parent to 51 for 50',
             'Its phase counts grow from `[1, 2, 2]` to `[1, 51, 51]`;',
             'Each negative source uses a `.php.fixture` suffix and is never accepted application code.',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
-            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
-            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
-            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
-            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
         ],
         'example/src/Users/GetUser/GetUserHandler.php' => [
             "['data' => ['id' => \$user->id->value, 'name' => \$user->name]]",
@@ -2517,9 +2356,6 @@ PHP;
     }
 
     $transactionalEmailGuidanceArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change email guidance or application email context | `.ai/application-context.md` | `docs/email.md`, task routes, integration context, package inventory, focused guardrails, and installed-consumer evidence |',
-        ],
         '.ai/application-context.md' => [
             '`docs/email.md`',
             'Keep transactional email composition and delivery application-owned.',
@@ -2582,21 +2418,11 @@ PHP;
             '## Unsupported framework boundary',
             'Adopting email changes no Consumer Contract or Strict Profile requirement.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Compose, deliver, or review transactional email | `docs/email.md`;',
-            'verify that the welcome-delivery example remains a database-effect proof and that no framework mailer, renderer, queue, worker, or webhook receiver was implied',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
-        ],
         'skeleton/.ai/integrations.md' => [
             '`NOT_APPLICABLE`: the starter application contacts no external services and performs no external side effects.',
             '`NOT_APPLICABLE(EMAIL)`',
             'Before adoption, read installed `vendor/phpthis/framework/docs/email.md`',
             'Do not add a framework mailer, renderer, notification system, queue, worker, or webhook receiver.',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
         ],
         'templates/application/.ai/integrations.md' => [
             '## Transactional email boundary',
@@ -2807,9 +2633,6 @@ PHP;
     requireGuardrailArtifactMarkers($root, $finiteDataPathArtifactMarkers, 'finite-data-path', $failures);
 
     $observabilityArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051\'s exact optional level/envelope/destination policy without changing request-summary v1/v2 or current Contract v15 |',
-        ],
         '.ai/observability.md' => [
             'application.request_summary',
             'at most eight finite code-owned database sources',
@@ -2835,14 +2658,6 @@ PHP;
             'at most eight database sources',
             'make exactly one sink invocation attempt',
             'Exactly one sink invocation attempt is not durable delivery.',
-        ],
-        'docs/knowledge-map.md' => [
-            '`docs/observability/README.md`',
-            'ADR 023',
-            'Adopt or review log levels, destination-record encoding, daily files, stdout/stderr, or Grafana delivery',
-            '`docs/observability/destination-record.md`',
-            'ADR 051',
-            'preserve request-summary v1/v2 and current Contract v15',
         ],
         'docs/logging.md' => [
             '[0-9a-f]{32}',
@@ -3377,9 +3192,6 @@ function statelessAuthenticationGuidanceFailures(string $root): array
 {
     $failures = [];
     $artifactMarkers = [
-        '.ai/README.md' => [
-            '| Change authentication, stateless Bearer/JWT/PAT/external-IdP policy, tenant resolution, or authorization | `.ai/request-policy.md` | `docs/stateless-authentication.md`, action-specific policy path, protected work, and denial tests |',
-        ],
         '.ai/application-context.md' => [
             'route adoption through installed `vendor/phpthis/framework/docs/stateless-authentication.md` plus the application\'s `.ai/request-policy.md`.',
             'Require one strict Bearer header over TLS with no query, body, cookie, path, alternate-header, or fallback source',
@@ -3440,10 +3252,6 @@ function statelessAuthenticationGuidanceFailures(string $root): array
             'Missing, malformed, oversized, expired, not-yet-valid, revoked, definitively inactive, wrong-issuer, wrong-audience, wrong-type, invalid-signature, and otherwise definitively rejected credentials share the application\'s generic `401` Bearer response.',
             'Production acceptance requires evidence for the consuming application\'s selected parser, verifier, credential lifecycle, external dependencies, deployment, and clients.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Add, explain, or review stateless Bearer, JWT, opaque/PAT/API-token, external-provider authentication, tenant resolution, or authorization | `docs/stateless-authentication.md`, `docs/request-policy.md`, `docs/security.md`, `docs/errors.md`, `docs/decisions/020-application-owned-request-policy.md` |',
-            'verify that PHPThis adds no JWT, PAT, OAuth, identity-provider, or authentication runtime/API',
-        ],
         'docs/request-policy.md' => [
             '[Application-owned stateless authentication](stateless-authentication.md)',
             '`WWW-Authenticate: Bearer` is response semantics, not token support.',
@@ -3457,18 +3265,12 @@ function statelessAuthenticationGuidanceFailures(string $root): array
             'Selected external key retrieval or RFC 7662 introspection owns authenticated TLS I/O, bounds, timeouts, cache-staleness, outage, and fail-closed behavior.',
             '[Application-owned stateless authentication](stateless-authentication.md)',
         ],
-        'skeleton/.ai/README.md' => [
-            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
-        ],
         'skeleton/.ai/request-policy.md' => [
             '`NOT_APPLICABLE(REQUEST_POLICY)`',
             'read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md`',
             'one strict TLS-protected `Authorization: Bearer` source with no alternate or fallback source',
             'selected JWT, opaque/PAT/API-token, or external-verification profile',
             'preserve the bare non-RFC-6750-compatible reference challenge',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
         ],
         'templates/application/.ai/request-policy.md' => [
             'Read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md` first.',

@@ -1,5 +1,7 @@
 # Application configuration context
 
+Before database setup or configuration work, read installed `vendor/phpthis/framework/docs/configuration.md#scope-database-setup-before-implementation`. Resolve database and schema scope separately before external action, reuse accepted choices, and keep unrequested production work outside the task.
+
 `NOT_APPLICABLE(CONFIGURATION)`
 
 `NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`

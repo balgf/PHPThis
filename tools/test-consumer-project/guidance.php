@@ -613,6 +613,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
         '| [ADR 049](049-bounded-response-cookie-profile.md) | Physical core-line allocation only; response-cookie behavior remains accepted | [ADR 063](063-maintainability-review-over-size-proxies.md) |',
+        '| [ADR 058](058-concern-local-ai-context-routing.md) | Mandatory read order and universal instruction ownership retained from ADR 044; authority, safety and the task-specific locality definition remain accepted | [ADR 064](064-one-entrypoint-per-audience.md) |',
     ];
     $indexPath = $installedFramework . '/docs/decisions/README.md';
 
@@ -803,8 +804,6 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
             'Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists.',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            "Read the application's `.ai/rules.md`, `.ai/change-workflow.md`, and `.ai/project.md`.",
-            'Start with the one current operational guide selected by `.ai/README.md`.',
             "ADR 028 replaces only the executable example's schedule file lock with one application-owned Redis owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
         ],
         $installedFramework . '/docs/cli.md' => [
@@ -813,12 +812,6 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         $installedFramework . '/docs/consumer-profile.md' => [
             'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.11`',
             'no unlisted engine version inherits certification',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Choose or assess HTTP caching or server-side derived-data caching |',
-            'application response headers and, for an adopted server-side cache',
-            '| Adopt, change, or review the optional Redis cache and schedule-lease recipe |',
-            'the deliberately adopted application recipe',
         ],
         $installedFramework . '/src/Routing/PathParameters.php' => [
             'public static function fromValues(',
@@ -854,102 +847,10 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             '## Upgrade from Alpha 7',
             'Alpha 7 remains the latest published coordinated release.',
         ],
-        $installedFramework . '/RELEASING.md' => ['## Approved Alpha 8 scope and source preparation'],
     ], 'accepted Alpha 8 release scope and migration');
 
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $installedFramework . '/RELEASING.md' => [
-            'Alpha 8 and `v0.1.0-alpha.8` are the latest immutable framework tag/source boundary',
-            'Closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) preserves the completed and announced Alpha 7 predecessor',
-            'framework `36643c068dda3619f939ac04d861c1316a0af8e9`',
-            'skeleton `1b1f3afed72880fc7852e67016349e87fc8c4c66`',
-            '[final announcement](https://github.com/balgf/PHPThis/issues/53#issuecomment-5323310887)',
-            'Current wording was reconciled against Alpha 8 package/public-proof evidence on 2026-09-27 (Asia/Manila)',
-            'continuing host state must still be verified externally.',
-            '## Immutable release history',
-            'Historical release authority means the exact bytes reachable from the approved tag.',
-            'A later `main` file at the same path may contain a clarification, but it is current documentation rather than evidence of the tagged release.',
-            '## Reusable release state model',
-            '**Latest recorded release:**',
-            '**Unreleased `main`:**',
-            '**Proposed next candidate:**',
-            '**Approved candidate:**',
-            'only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation.',
-            'The skeleton candidate commit may remain explicitly `PENDING`',
-            'Keep the planned release date distinct from the observed timestamp of every external publication operation.',
-            'Authorization is enumerable, not implied by reaching a checklist step.',
-            'source preparation; exact-candidate freeze and approval; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement.',
-            '## Version-neutral release gate',
-            'Preparing a proposal or accepted source scope, proving or publishing an approved candidate, and inspecting an older release are different tasks.',
-            'candidate-specific announcement',
-            'An unexplained collision stops the release and requires a new approved version.',
-            'When resuming a recorded partial publication, require every existing tag and artifact to match its recorded commit and distribution evidence exactly',
-            'Existing state never authorizes overwrite, tag movement, deletion and recreation, or artifact replacement.',
-            'record the framework side as published but the overall release as partial and unproved',
-            'preserve and record that exact partial-publication state',
-            '### 2. Prove the framework candidate',
-            'Do not push it before the local proof in Step 2 passes.',
-            'finishes with `git-export-parity=verified` for this exact clean candidate.',
-            'Treat `git-export-parity=skipped-dirty` only as a successful development run of the independent Composer archive, isolated installation, installed checker, application behavior, and adversarial controls.',
-            'It does not satisfy this candidate gate, approve the candidate, or authorize push, tag, package, release, or any later operation.',
-            'Failure to inspect Git status or to create, read, or compare the clean Git archive remains a hard failure rather than a third proof state',
-            'fixed terminal output must expose no Git status bytes, source bytes, absolute paths, or untracked filenames.',
-            'After the complete local gate passes, confirm the authorization record permits pushing the exact framework candidate commit',
-            'GitHub CI passes both the PHP 8.4 validity job and the SQLite/MySQL/PostgreSQL PDO transport job for that exact pushed candidate commit.',
-            '### 3. Publish the framework prerelease',
-            'push that exact tag to the approved remote',
-            '### 4. Publish the skeleton prerelease',
-            'push the exact skeleton candidate commit without modification',
-            'Confirm skeleton CI passes for that exact pushed candidate commit',
-            'push that exact tag to the approved remote without moving or reusing an existing tag',
-            '### 5. Prove the public distribution path',
-            "composer create-project --stability=alpha --prefer-dist phpthis/skeleton phpthis-release-proof 'APPROVED_SKELETON_VERSION'",
-            '### 6. Announce or stop',
-            'publish both approved GitHub prereleases for the already-pushed proven tags',
-            'Exact framework candidate commit:',
-            'Exact-candidate approval record:',
-            'Exact skeleton candidate commit:',
-            'Planned release date:',
-            'Observed external operation timestamps and results:',
-            'Local Git-export parity state (`verified` required):',
-            'Accountable-human authorization records by exact operation:',
-            'Partial-publication state or NOT_APPLICABLE:',
-            '## Approved Alpha 6 identity and source preparation',
-            'Composer version: `0.1.0-alpha.6`',
-            'Framework tag: `v0.1.0-alpha.6`',
-            'Skeleton tag: `v0.1.0-alpha.6`',
-            'Planned release date: `2026-08-09` (Asia/Manila)',
-            'Bounded scope: `docs/decisions/047-bounded-alpha-6-release-scope.md`',
-            'Release notes: `docs/releases/0.1.0-alpha.6.md`',
-            'The source-preparation approval above did not itself authorize any external operation.',
-            'Issue #37 subsequently records the complete coordinated Alpha 6 release: the exact framework and skeleton candidates, both tags and packages, clean exact `composer create-project` proof, both GitHub prereleases, and announcement.',
-            'Accepted implementation and guidance after `v0.1.0-alpha.6` now include ADRs 048 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling.',
-            'Those changes are not part of the immutable Alpha 6 framework source.',
-            'ADR 054 separately accepts the Alpha 7 identity and source-preparation scope while selecting no exact candidate or external release operation.',
-            'This tracked process does not replace the external evidence or establish live host availability.',
-            '## Approved Alpha 7 identity and source preparation',
-            'The accountable human approved the following release identity, planned date, bounded scope, release notes, and source-preparation state on 2026-08-14 (Asia/Manila):',
-            'Composer version: `0.1.0-alpha.7`',
-            'Framework tag: `v0.1.0-alpha.7`',
-            'Skeleton tag: `v0.1.0-alpha.7`',
-            'Planned release date: `2026-08-18` (Asia/Manila)',
-            'Bounded scope: `docs/decisions/054-bounded-alpha-7-release-scope.md`',
-            'Release notes: `docs/releases/0.1.0-alpha.7.md`',
-            'Exact framework candidate commit: `PENDING`',
-            'Exact skeleton candidate commit: `PENDING`',
-            'This approval accepts a bounded Alpha 7 deferral of unavailable model/context token telemetry, with no lexical-token proxy, and creates no general evaluation precedent.',
-            'It excludes the real WebSocket consumer migration and its temporary proposed decision 002',
-            'Both exact candidate commits remain `PENDING`.',
-            'This source-preparation approval does not authorize exact-candidate approval, repository commit or push, framework or skeleton tag creation or push, package-host write, dedicated-skeleton change, GitHub release, announcement, issue closure, or production-service mutation.',
-            'The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection above are preserved acceptance-time history, not current publication state.',
-            'Closed Issue #53 preserves the completed Alpha 7 predecessor.',
-            'Alpha 8 already contains accepted ADRs 055 through 062, Contract 18, Profile 4 and PHT008.',
-            'Mutable documentation or maintainer evidence after that tag does not change its source, artifacts or scope and authorizes no later release operation.',
-            'The issue owns later operation authorizations and observed results; frozen preparation wording is not continuing publication state.',
-            'Those completed histories authorize no production use or later release operation.',
-            'For a current candidate, neither partial evidence nor checklist position authorizes the next external write',
-        ],
         $installedFramework . '/docs/decisions/047-bounded-alpha-6-release-scope.md' => [
             'Status: accepted',
             'On 2026-08-09 in Asia/Manila, the accountable human approved this bounded Alpha 6 scope, exact release identity, planned date, release notes, candidate-specific announcement draft, and source preparation.',
@@ -1033,18 +934,6 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             '[Alpha 8 release notes](docs/releases/0.1.0-alpha.8.md)',
             '[Security policy](SECURITY.md) and [release process](RELEASING.md)',
         ],
-        $installedFramework . '/ROADMAP.md' => [
-            'Closed Issue #53 now records the completed coordinated Alpha 7 release',
-            'Complete: ADR 061 and Consumer Contract version 18 retain Strict Profile version 4 and `PHT001` through `PHT008`',
-            'Accepted [ADR 061](docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md)',
-            'release treatment remains separately gated.',
-            'The first three bullets preserve the 2026-08-14 source-preparation checkpoint',
-            'Both exact candidate commits remain `PENDING`; no commit, push, tag, package, dedicated-skeleton change, GitHub prerelease, announcement, issue closure, or production mutation is authorized.',
-            'Complete for the coordinated Alpha 7 release:',
-            'Issue #53 records the framework and skeleton GitHub prereleases, the final candidate-specific announcement, and Issue closure',
-            'The [release process](RELEASING.md) owns the detailed current record.',
-            'That completed history grants no authority for a later release operation.',
-        ],
         $installedFramework . '/SECURITY.md' => [
             'Alpha 8 and `v0.1.0-alpha.8` preserve the latest immutable framework tag/source boundary',
             'Closed Issue #53 preserves the completed and announced Alpha 7 predecessor.',
@@ -1077,16 +966,6 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             '[Alpha 7 to Alpha 8 notes](releases/0.1.0-alpha.8.md#upgrade-from-alpha-7)',
             'Audit every response-emitter path, remove unintended earlier output at its owner, keep intentional buffers empty at emitter entry, and retain no-fallback behavior for `ResponseEmissionFailed(true)`.',
             'Establish the Contract-version-18 generic-first outer HTTP failure boundary, keep native display off in every HTTP profile, and adopt detailed disclosure only through the complete isolated-profile and safe-message contract.',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            'Assess or prepare a proposed PHPThis release',
-            'Prove or publish an approved PHPThis candidate',
-            'Inspect an installed or historical PHPThis release',
-            'exact framework and skeleton candidate commits recorded at their respective freeze points',
-            'planned release date separate from observed publication timestamps',
-            'distinct exact-candidate approval and separately enumerable preparation, commit/push, tag creation/push, package, GitHub-prerelease, and announcement authorization',
-            'clean-tree local proof before push and exact pushed-commit CI',
-            'exact-version clean public installation evidence',
         ],
         $installedFramework . '/docs/guardrails.md' => [
             'A separate installed distribution proof checks the version-neutral release guidance',
@@ -1198,10 +1077,6 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
 
     forbidInstalledArtifactMarkers(
         [
-            $installedFramework . '/RELEASING.md' => [
-                '## Proposed Alpha 7 source preparation',
-                'Issue #53 tracks a proposal to prepare the following release identity and source scope for accountable-human review:',
-            ],
             $installedFramework . '/docs/decisions/054-bounded-alpha-7-release-scope.md' => [
                 'Status: proposed',
                 'On 2026-08-13 in Asia/Manila, the accountable human asked maintainers to begin Alpha 7 preparation.',
@@ -1218,9 +1093,6 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
 
     forbidInstalledArtifactMarkers(
         [
-            $installedFramework . '/RELEASING.md' => [
-                'post-tag `main` adopts ADR 056, ADR 057, and ADR 059, Consumer Contract version 16',
-            ],
             $installedFramework . '/README.md' => [
                 'Unreleased development source adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16',
                 'unreleased development work adopting ADR 056, ADR 057, and ADR 059, Consumer Contract version 16',
@@ -1242,16 +1114,6 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
                 'Alpha 7 remains partial pending both GitHub prereleases and the final announcement',
                 'Alpha 6 remains the latest fully completed and announced coordinated release',
                 'unreleased development work adopting ADR 056, ADR 057, ADR 059, and ADR 060',
-            ],
-            $installedFramework . '/RELEASING.md' => [
-                'Alpha 7 remains an unannounced partial coordinated release',
-                'Alpha 6 remains the latest fully completed and announced coordinated release',
-                'post-tag `main` adopts ADR 056, ADR 057, ADR 059, and ADR 060',
-                'either GitHub prerelease, the final announcement, Issue #53 closure',
-            ],
-            $installedFramework . '/ROADMAP.md' => [
-                'both GitHub prereleases and the final announcement remain separately gated',
-                'Open and separately gated: the framework GitHub prerelease',
             ],
             $installedFramework . '/SECURITY.md' => [
                 'Alpha 7 remains an unannounced partial coordinated release',
@@ -1402,9 +1264,6 @@ function proveInstalledStatelessAuthenticationGuidanceDistribution(
 
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
-        ],
         $project . '/.ai/request-policy.md' => [
             '`NOT_APPLICABLE(REQUEST_POLICY)`',
             'read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md`',
@@ -1413,10 +1272,6 @@ function proveInstalledStatelessAuthenticationGuidanceDistribution(
             'preserve the bare non-RFC-6750-compatible reference challenge',
         ],
         $installedFramework . '/docs/stateless-authentication.md' => $guideMarkers,
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Add, explain, or review stateless Bearer, JWT, opaque/PAT/API-token, external-provider authentication, tenant resolution, or authorization | `docs/stateless-authentication.md`, `docs/request-policy.md`, `docs/security.md`, `docs/errors.md`, `docs/decisions/020-application-owned-request-policy.md` |',
-            'verify that PHPThis adds no JWT, PAT, OAuth, identity-provider, or authentication runtime/API',
-        ],
         $installedFramework . '/docs/request-policy.md' => [
             '[Application-owned stateless authentication](stateless-authentication.md)',
             '`WWW-Authenticate: Bearer` is response semantics, not token support.',
@@ -1429,9 +1284,6 @@ function proveInstalledStatelessAuthenticationGuidanceDistribution(
             'that bare challenge and generic error policy are deliberately disclosure-minimizing and non-RFC-6750-compatible',
             'Selected external key retrieval or RFC 7662 introspection owns authenticated TLS I/O, bounds, timeouts, cache-staleness, outage, and fail-closed behavior.',
             '[Application-owned stateless authentication](stateless-authentication.md)',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Change authentication, stateless Bearer/JWT/PAT/external-provider, tenant, or authorization policy | `.ai/request-policy.md` | installed `vendor/phpthis/framework/docs/stateless-authentication.md`, action-specific composition, protected work, lifecycle, and denial tests |',
         ],
         $installedFramework . '/templates/application/.ai/request-policy.md' => [
             'Read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md` first.',
@@ -1675,9 +1527,6 @@ function proveInstalledNativeDateTimeGuidanceDistribution(
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
-        ],
         $installedFramework . '/docs/date-time.md' => [
             '# Native date and time',
             "PHPThis recommends PHP's native date and time API.",
@@ -1732,16 +1581,10 @@ function proveInstalledNativeDateTimeGuidanceDistribution(
             'global `setTestNow()` state',
             'PHPThis adds no date-time facade, generic parser, normalization helper, clock API, persistence mapping, checker rule, or `PHT` diagnostic.',
         ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Parse, persist, format, calculate, schedule, or test date and time behavior | `docs/date-time.md`',
-        ],
         $installedFramework . '/docs/type-safety.md' => [
             '[Native date and time](date-time.md)',
             'A date or timestamp has a complete lexical and component grammar',
             'PHP format tokens and generic date guessing are not standards validation.',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Change date, time, timezone, duration, or clock behavior | installed `vendor/phpthis/framework/docs/date-time.md`',
         ],
     ];
 
@@ -1800,9 +1643,6 @@ function proveInstalledFrontendIntegrationGuidanceDistribution(
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Build or change frontend integration or application-owned HTML rendering | installed `vendor/phpthis/framework/docs/frontend-integration.md` | `.ai/architecture.md`, `.ai/testing.md`, and exact HTTP paths; add other concern guides only when entered |',
-        ],
         $installedFramework . '/docs/frontend-integration.md' => [
             '# Frontend integration',
             'A browser or other frontend may use React, Vue, Svelte, plain JavaScript, a native mobile stack, another client stack, or no client framework at all;',
@@ -1858,14 +1698,6 @@ function proveInstalledFrontendIntegrationGuidanceDistribution(
             'When cross-origin access is adopted, prove it at an exact local or otherwise non-production browser boundary.',
             'Cover preflight and the actual response, permitted and denied origins, credentialed or uncredentialed behavior as selected, mapped and unknown failures, routing-owned `404` and `405`, exposed `X-Request-ID`, and exact cache and `Vary` headers.',
             'This guide adds no framework runtime, Composer dependency, HTTP type, route behavior, CORS behavior, HTML renderer, templating engine, static-file server, OpenAPI or JSON Schema generator, client generator, checker rule, Consumer Contract change, or Strict Profile change.',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Design, implement, or review frontend integration, a frontend/API handoff, browser CORS, static assets, or application-owned HTML rendering |',
-            '`docs/frontend-integration.md`; add only the concern guides it routes to',
-            'verify that no framework frontend runtime, CORS middleware, renderer, templating or asset engine, machine-readable API generator, or client generator was implied',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Build or change frontend integration or application-owned HTML rendering | installed `vendor/phpthis/framework/docs/frontend-integration.md` | `.ai/architecture.md`, `.ai/testing.md`, and exact HTTP paths; add other concern guides only when entered |',
         ],
         $installedFramework . '/docs/guardrails.md' => [
             'frontend integration guidance, installed task routes, exact package inventory, and Composer dependency checks keep browser clients and cross-origin policy application-owned',
@@ -1930,10 +1762,6 @@ function proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
-            'record exact mechanism, topology, loss/fencing/idempotency limits, operations, and evidence rather than a framework helper',
-        ],
         $project . '/.ai/operations.md' => [
             '## Operation-specific coordination',
             '`NOT_APPLICABLE(OPERATION_COORDINATION)`',
@@ -1972,16 +1800,9 @@ function proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution
             'ADR 028 remains one bounded Redis schedule-lease example, not a portable mechanism.',
             'This operation-coordination guidance adds no accepted PHP syntax, checker rule, Contract or Strict Profile version, diagnostic, runtime API, or dependency.',
         ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Adopt, change, explain, or review an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | `docs/coordination.md`;',
-            'verify that no framework helper, portable distributed-lock claim, or duplicate context owner was introduced',
-        ],
         $installedFramework . '/docs/redis-coordination.md' => [
             'start with [Application-owned operation coordination](coordination.md).',
             'ADR 028 remains a bounded `schedule:run` reference only',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
         ],
         $installedFramework . '/templates/application/.ai/operations.md' => [
             '## Operation-specific coordination',

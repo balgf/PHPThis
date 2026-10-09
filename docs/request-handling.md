@@ -45,7 +45,7 @@ Ordinary composition constructs a handler in root `Routes::create()` and passes 
 
 That exception changes only visible construction placement. The route still enters the same explicit finite list, `Router`, `Application`, and `RequestHandler::handle(Request): Response` path. It adds no closure handler, discovery, automatic wiring, alternate router, or second execution pattern. A handler with any constructor dependency and every endpoint needing a new route area or root-composition change remains non-simple and follows ordinary root construction.
 
-The nearest behavior test proves the endpoint's exact success response and each applicable routing or method failure. After universal entrypoints, the complete task-specific set remains this guide, the existing named route-area manifest, the dependency-free handler, and that nearest test; do not add a fifth task-specific file merely to restate the route.
+The nearest behavior test proves the endpoint's exact success response and each applicable routing or method failure. After the application `AGENTS.md`, the complete task-specific set remains this guide, the existing named route-area manifest, the dependency-free handler, and that nearest test; report universal reading separately with the exact revision, inventory and word/byte method. Query, form and application-owned header input also make the endpoint non-simple. The already-adopted outer HTTP boundary and terminal-summary path remain in force. If first-contribution project facts, root-composition inspection or another concern is needed, include it and do not claim the four-file shape.
 
 For example, an application whose account domain permits only UUID version 7 can make that narrower policy visible immediately after routing:
 

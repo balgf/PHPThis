@@ -10,12 +10,6 @@ function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
 ): string {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
-            'operation-owned `data` and optional `meta` fields',
-            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
-            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
-        ],
         $installedFramework . '/docs/frontend-integration.md' => [
             '## Recommended structured JSON resource success envelope',
             'Put one resource in a top-level `data` object.',
@@ -75,34 +69,10 @@ function proveInstalledStructuredJsonSuccessEnvelopeDistribution(
             'The existing isolated N+1 negative control in `tools/test-query-scaling.php` demonstrates both query growth and budget containment',
             'This guidance adds no PHPThis runtime relationship mechanism, ORM, lazy loading, resource serializer, paginator, or new Strict Profile diagnostic.',
         ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Define, change, or review a structured JSON resource success representation, including nested child objects or collections |',
-            'exact application response construction and `Content-Type`',
-            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
-            'authorization and tenant-scope applicability and policy',
-            'preserve the advisory application-owned boundary',
-            '| Choose or assess HTTP caching or server-side derived-data caching |',
-            '| Adopt, change, or review the optional Redis cache and schedule-lease recipe |',
-            '| Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract |',
-            '| Adopt, change, or review ADR 024\'s optional SQLite durable-job recipe |',
-            '| Connect to, read, write, or assess SQL safety or database authority |',
-            '| Adopt, change, or review ADR 022\'s optional SQLite protected document-list recipe |',
-            '| Add or assess an application-owned cursor or bounded list filter |',
-            '| Adopt, change, or review ADR 022\'s optional versioned document cursor and bounded category-filter recipe |',
-            'verify fail-closed no-skip/no-mock release behavior and that PHPThis provides no runtime, adapter, generic validator or backend checker',
-            'do not generalize its transaction, lease, query bounds, one-shot lifecycle or outcomes to another backend or a framework queue or worker API',
-            'do not infer the optional document-list recipe',
-            'do not treat those names or semantics as a generic paginator or filter contract',
-        ],
         $installedFramework . '/docs/consumer-contract.md' => [
             'An application deliberately adopting ADR 024\'s checked SQLite recipe',
             'These are obligations of that deliberately adopted recipe, not defaults for every application-owned deferred-work design.',
             'Delivery under that checked recipe remains at least once.',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Define or change a structured JSON resource success representation, including nested child data | installed `vendor/phpthis/framework/docs/frontend-integration.md`, then installed `vendor/phpthis/framework/docs/request-handling.md`;',
-            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
-            'add no generic wrapper, relationship loader, serializer, paginator, or generator',
         ],
         $installedFramework . '/docs/guardrails.md' => [
             'structured JSON success-envelope guidance, task routes, exact checked example shapes, isolated installed response and decoder controls, and dependency checks preserve the advisory application-owned `data` and optional `meta` convention',
@@ -883,11 +853,6 @@ function proveInstalledFieldValidationErrorGuidanceDistribution(
             'The generic `400`/`422` contract remains valid',
             '[Optional application-owned field issues](errors.md#optional-application-owned-field-issues)',
             'without adding a validator, error bag, response wrapper, or dynamic error renderer',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Adopt, change, or review field-addressable value issues |',
-            'exact finite code-owned path templates and code allowlists, literal bounded response construction before operation-owned I/O',
-            'preserve the generic `400`/`422` default and verify that no validator, error bag, response wrapper, renderer, generator, core API, dependency, checker diagnostic, or universal schema was introduced',
         ],
         $installedFramework . '/docs/guardrails.md' => [
             'application-owned field-validation error guidance',
@@ -2351,9 +2316,6 @@ PHP,
         $installedFramework . '/docs/security.md' => [
             'Production authentication/session cookies normally use `Secure`',
             'Treat `HttpOnly` as protection from ordinary script access to cookie bytes, not from script-initiated authenticated requests.',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Construct, emit, or review a generic response cookie |',
         ],
         $installedFramework . '/templates/application/.ai/operations.md' => [
             'Exact cookie name and prefix, canonical casing, host-only scope',

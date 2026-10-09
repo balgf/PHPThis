@@ -114,14 +114,6 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
 
     forbidInstalledArtifactMarkers(
         [
-            $project . '/.ai/README.md' => [
-                'Upgrade the installed Consumer Contract to current version 16',
-                'consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract',
-            ],
-            $installedFramework . '/templates/application/.ai/README.md' => [
-                'Upgrade the installed Consumer Contract to current version 16',
-                'consumer-contract-upgrades.md#contract-version-16` when upgrading to the current accepted contract',
-            ],
             $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
                 'Status: proposed',
             ],
@@ -439,9 +431,6 @@ function proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
-        ],
         $project . '/.ai/migrations.md' => [
             'each separately tracked history\'s exact initial baseline',
             'required position, identifier, and checksum',
@@ -562,16 +551,6 @@ function proveInstalledEngineSpecificMigrationInvariantGuidanceDistribution(
             'one accepted engine-specific migration policy following ADR 043',
             'engine-specific ledger-consistency boundary and every non-atomic state',
             "ADR 027's per-migration transaction, rollback, and same-host `flock` are required only when adopting its SQLite reference boundary",
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            'ADR 043, ADR 027 for the SQLite reference proof',
-            '`.ai/configuration.md` for exact no-fallback process configuration and identity',
-            '`.ai/data.md` for effective database-authority facts, accountable transition ownership',
-            '`.ai/operations.md` for the application-wide release order and operational runbooks',
-            'scope transaction, rollback, and lock claims to their proved engine and topology',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
         ],
         $installedFramework . '/templates/application/.ai/migrations.md' => [
             '{{MIGRATION_CONSOLE_EXECUTABLE_OR_NOT_APPLICABLE}}',

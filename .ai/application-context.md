@@ -2,14 +2,14 @@
 
 Use this guide only for cross-artifact application-context ownership and distribution: the current Consumer Contract, its conditional upgrade/history route, `docs/knowledge-map.md`, the context entrypoint in `docs/getting-started.md`, task routing, application template and skeleton context inventories, package inventory, and the guard or installed-consumer evidence that keeps those surfaces coherent. A concern-specific skeleton or template edit starts with that concern's routed guide; add this guide only when the edit also changes an inventory, router, shared authority statement, or distribution boundary.
 
-ADR 009, ADR 011, ADR 013, ADR 044, and ADR 058 own the context, template, optional CRUD-profile, and task-routing decisions. Read one only when reviewing or changing the decision it records. Concern-specific decisions remain conditional context for their routed guides.
+ADR 009, ADR 011, ADR 013, ADR 044, ADR 058, and ADR 064 own the context, template, optional CRUD-profile, and task-routing decisions. Read one only when reviewing or changing the decision it records. Concern-specific decisions remain conditional context for their routed guides.
 
 ## Ownership and authority
 
 - Keep one current owner for every mutable authoring rule. Universal entrypoints retain only universal authority, safety, scope, validity, and verification. Concern-specific detail belongs in its routed current guide; contract evolution and historical ADRs are loaded only for upgrade or decision work.
-- Keep the six maintainer entrypoints and their read order. `VISION.md` retains universal principles and the exact locality metric; `docs/design-goals.md` owns the conditional design detail. `.ai/strict-profile.md` summarizes every current diagnostic and routes exact coverage, repairs, history, and enforcement to the existing catalogue and static-analysis guide. A summary changes neither rule coverage nor validity.
+- Use `AGENTS.md` as the single mandatory entrypoint for each audience, then its selected concern guide, source and tests. Keep required context files as compatibility routes. Existing applications adopt this policy explicitly after reconciling stronger local rules and unresolved decisions; dependency installation never rewrites their instructions. First contributors still read project facts and applicable architecture. `VISION.md` retains universal principles and the exact locality metric; `docs/design-goals.md` owns the conditional design detail. `.ai/strict-profile.md` summarizes every current diagnostic and routes exact coverage, repairs, history, and enforcement to the existing catalogue and static-analysis guide. A summary changes neither rule coverage nor validity.
 - Preserve AI as the primary author and knowledge interface while keeping human intent, consequential approval, and accountability explicit.
-- Require framework explanations to use the installed current contract, knowledge map, source, and tests rather than model memory.
+- Ground framework explanations in the installed current guide, source and tests. Use the full contract and knowledge map when the task router selects them.
 - Keep role, authority, and human-decision language aligned across the Consumer Contract, skeleton, and application template.
 - Application rules may strengthen but never weaken the installed Consumer Contract or Strict Profile.
 - Use `application AI context` for project-owned instructions. Reserve `harness` for executable test and evaluation infrastructure.
@@ -29,10 +29,10 @@ ADR 009, ADR 011, ADR 013, ADR 044, and ADR 058 own the context, template, optio
 
 ## Concern routing
 
-- Route a concern-specific public guide, application record, template, skeleton marker, checked reference, or test through that concern's row in `.ai/README.md`. Do not duplicate its normative policy here.
+- Route a concern-specific public guide, application record, template, skeleton marker, checked reference, or test through that concern's row in `AGENTS.md`. Do not duplicate its normative policy here.
 - Add this guide to concern work only when adding, removing, or renaming a packaged context file; changing the knowledge or task router; changing shared template/skeleton authority; or changing package, guard, or installed-consumer coherence.
 - When a concern gains or loses a context file, update the current contract and knowledge routes, template and skeleton inventories, package allowlist, focused distribution guardrails, and installed-consumer proof together. Do not add runtime policy discovery or generated policy.
 
 ## Verification
 
-For a context-distribution change, inspect unresolved placeholders in the documentation-only template, execute the isolated skeleton-consumer proof, verify the exact framework archive inventory, and run `composer check`. Verify routing by representative tasks and confirm that each task reaches one current concern owner without requiring an unsupported claim from omitted context. Context-size measurements are advisory evidence only: report the fixed universal set separately from task-specific files and never make words, bytes, or tokens a validity threshold, checker rule, `PHT` diagnostic, or substitute for route-clarity and unsupported-claim review.
+For a context-distribution change, inspect unresolved placeholders in the documentation-only template, execute the isolated skeleton-consumer proof, verify the exact framework archive inventory, and run `composer check`. Verify routing by representative tasks and confirm that each task reaches one current concern owner without requiring an unsupported claim from omitted context. Report first-contribution project/architecture reading and every entered concern in addition to universal reading. Context-size measurements are advisory evidence only: report the fixed universal set separately from task-specific files and never make words, bytes, or tokens a validity threshold, checker rule, `PHT` diagnostic, or substitute for route-clarity and unsupported-claim review.

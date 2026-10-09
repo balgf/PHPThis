@@ -73,9 +73,6 @@ function operationGuardrailFailures(string $root): array
     $failures = [];
 
     $durableJobArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change durable deferred work | `.ai/jobs.md` | accepted ADR 052 optional common contract and exact selected adoption, or the current accepted ADR 024 checked SQLite profile; exact publication/recovery, delivery, effect, worker, operations, real-service and gate evidence |',
-        ],
         '.ai/jobs.md' => [
             '# Durable jobs contract',
             'PHPThis accepts the optional [backend-neutral contract](../docs/jobs.md) and [verification structure](../docs/jobs/verification.md) under ADR 052.',
@@ -88,10 +85,6 @@ function operationGuardrailFailures(string $root): array
             'PHPThis provides no core queue, worker, job, dispatcher, scheduler, command map, supervisor, event bus, transport adapter, generic backend validator or backend-specific checker.',
             'Keep `.ai/jobs.md` in the current skeleton and template with exactly `NOT_APPLICABLE(JOBS)` or one complete adopted backend policy.',
             'a non-adopter adds no speculative mechanism.',
-        ],
-        '.ai/testing.md' => [
-            'exact finite retry delays from freshly observed failure time',
-            'completion rollback when handler time reaches lease expiry',
         ],
         'docs/decisions/052-backend-neutral-application-owned-durable-jobs.md' => [
             'Status: accepted',
@@ -219,11 +212,6 @@ function operationGuardrailFailures(string $root): array
             'it does not inspect or run a process manager, drain a real production queue, certify a filesystem or SQLite deployment, measure throughput or contention, activate an alarm',
             'continued absence from framework core and package runtime APIs',
         ],
-        'docs/knowledge-map.md' => [
-            'Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract',
-            'verify fail-closed no-skip/no-mock release behavior and that PHPThis provides no runtime, adapter, generic validator or backend checker',
-            "Adopt, change, or review ADR 024's optional SQLite durable-job recipe | `docs/jobs/sqlite.md`, `docs/jobs/operations.md`, `docs/jobs/testing.md`, `docs/security.md`, ADR 024 | the deliberately adopted current checked profile's exact SQLite version and schema",
-        ],
         'docs/security.md' => [
             'Under the current ADR 024 checked SQLite profile, treat every stored job-row envelope as untrusted input',
             '## Durable-job limits',
@@ -235,10 +223,6 @@ function operationGuardrailFailures(string $root): array
             '| one-shot worker (ADR 024 SQLite profile) |',
             '| at-least-once delivery (ADR 024 SQLite profile) |',
             '| dead letter (ADR 024 SQLite profile) |',
-        ],
-        'ROADMAP.md' => [
-            'ADR 024 accepts one application-owned SQLite durable-job proof',
-            'ADR 024 accepts one SQLite-specific application recipe, not core job, worker, dispatcher, broker, or exactly-once contracts',
         ],
         'example/.ai/README.md' => [
             "Change the example's checked SQLite durable-job publication, envelope, worker lifecycle, retry, or dead letter",
@@ -414,9 +398,6 @@ function operationGuardrailFailures(string $root): array
     }
 
     $applicationCliArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change an application command or scheduled pass | `.ai/cli.md` | console composition, one-pass operation, and real-console tests |',
-        ],
         '.ai/application-context.md' => [
             '`NOT_APPLICABLE(CLI)`',
             'installed `vendor/phpthis/framework/docs/cli.md`',
@@ -428,11 +409,6 @@ function operationGuardrailFailures(string $root): array
             'Reject an unknown command separately from invalid, duplicate, misplaced, oversized, or unsupported arguments before application I/O.',
             'HTTP and CLI may share immutable configuration and explicit application construction code',
             'application-private Redis lease',
-        ],
-        '.ai/testing.md' => [
-            'execute its real console in fresh subprocesses',
-            'explicit-clock cadence boundaries',
-            'Do not mock a generic console or scheduler',
         ],
         'docs/cli.md' => [
             '# Application CLI and scheduler',
@@ -487,15 +463,6 @@ function operationGuardrailFailures(string $root): array
         ],
         'docs/decisions/README.md' => [
             '025-application-owned-explicit-cli-and-scheduler.md',
-        ],
-        'docs/knowledge-map.md' => [
-            'Add or assess an operational application command or scheduled pass',
-            '`docs/cli.md`',
-            'no framework CLI, scheduler, lock, or lease API exists',
-        ],
-        'ROADMAP.md' => [
-            'ADR 025 accepts one application-owned explicit console and cron-friendly scheduled pass',
-            'ADR 028 accepts one Redis-specific application cache and schedule lease',
         ],
         'example/.ai/README.md' => [
             'Change an application command, argument, exit, stream, cadence, or overlap policy',
@@ -761,10 +728,6 @@ function operationGuardrailFailures(string $root): array
             'Existing applications need not add `.ai/workbench.md` when they do not adopt the package',
             'ADR 041 left the then-current Strict Profile version 3 unchanged; Consumer Contract version 15 carries the Workbench contract forward under Strict Profile version 4',
         ],
-        'docs/knowledge-map.md' => [
-            '| Adopt, use, or review PHPThis Workbench |',
-            'verify that no container, discovery, generic dispatch, second publisher, core runtime, batch, HTTP, remote, or production shell was introduced',
-        ],
         'docs/cli.md' => [
             'The optional separate `phpthis/workbench` development package is an unchecked expression workspace',
             'ADR 041\'s separately installed Workbench does not change that boundary',
@@ -799,13 +762,6 @@ function operationGuardrailFailures(string $root): array
             'A human can inspect one explicitly composed development object or operation through a fresh strict process',
             'Providing a framework-owned production shell, container-backed console, administrative execution path, generic dispatcher, or remotely accessible Workbench.',
         ],
-        'ROADMAP.md' => [
-            'Complete: ADR 041 accepts PHPThis Workbench as a separate optional development-only package',
-            'ADR 041 accepts only a separate development Workbench package',
-        ],
-        '.ai/README.md' => [
-            '| Change the optional development Workbench | `.ai/workbench.md` | separate package, checked bootstrap, explicit workspace, and retained tests |',
-        ],
         '.ai/application-context.md' => [
             'Include `.ai/workbench.md` in the current skeleton and template with `NOT_APPLICABLE(WORKBENCH)`',
             'Contract version 15 carries version 14 and that optional file forward, and it is not a checker requirement.',
@@ -824,13 +780,6 @@ function operationGuardrailFailures(string $root): array
             '`docs/jobs/README.md`, and the deliberately selected checked profile or exact application adoption record',
             'no sandbox, redaction, dry-run, output-bound, production-safety, authorization, or validity claim',
         ],
-        '.ai/testing.md' => [
-            'An application that adopts ADR 041 Workbench keeps its bootstrap and concrete workspace type inside the ordinary application manifest and complete check.',
-            'Entered expressions and displayed values remain unchecked exploratory evidence.',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |',
-        ],
         'templates/application/.ai/workbench.md' => [
             '{{WORKBENCH_ADOPTION_OR_NOT_APPLICABLE}}',
             '{{WORKBENCH_EXCLUDED_AUTHORITY_OR_NOT_APPLICABLE}}',
@@ -841,9 +790,6 @@ function operationGuardrailFailures(string $root): array
             'installed `vendor/phpthis/framework/docs/jobs/README.md` and `.ai/jobs.md`',
             'exact application adoption record under accepted ADR 052.',
             'Workbench is arbitrary development code, not a sandbox',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |',
         ],
         'skeleton/.ai/workbench.md' => [
             '`NOT_APPLICABLE(WORKBENCH)`',
@@ -1151,9 +1097,6 @@ function operationGuardrailFailures(string $root): array
     }
 
     $engineSpecificMigrationInvariantArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change database migrations | `.ai/migrations.md` | command, configuration, authority, manifest, ledger, coordination, and exact-engine tests |',
-        ],
         '.ai/application-context.md' => [
             'exact recorded initial baseline',
             'shared exclusion or pairwise authority gating across concurrently reachable topologies',
@@ -1177,10 +1120,6 @@ function operationGuardrailFailures(string $root): array
             'cross-history partial-deployment evidence',
             'typed-configuration/process-identity reference to `.ai/configuration.md`, database-authority reference to `.ai/data.md`',
             'These are conditional SQLite/example and host-topology mechanics, not engine-neutral requirements.',
-        ],
-        'ROADMAP.md' => [
-            'ADR 043 separates universal application-owned migration invariants from ADR 027\'s SQLite-only transaction, rollback, ledger-definition, and same-host `flock` proof',
-            'ADR 043 accepts engine-neutral application-owned migration invariants, not a reusable ledger, coordinator, transaction, lock, or recovery implementation',
         ],
         'docs/cli.md' => [
             'ADR 043 separates its transaction, rollback, and same-host `flock` choices from the universal application-owned migration invariants.',
@@ -1232,13 +1171,6 @@ function operationGuardrailFailures(string $root): array
             'record the application-wide sequence through exact-engine verification, rollout, traffic enablement, later deactivation, and namespace removal only in `.ai/operations.md`',
             'ADR 027\'s per-migration transaction, rollback, and same-host `flock` are required only when adopting its SQLite reference boundary',
         ],
-        'docs/knowledge-map.md' => [
-            'ADR 043, ADR 027 for the SQLite reference proof',
-            '`.ai/configuration.md` for exact no-fallback process configuration and identity',
-            '`.ai/data.md` for effective database-authority facts, accountable transition ownership',
-            '`.ai/operations.md` for the application-wide release order and operational runbooks',
-            'scope transaction, rollback, and lock claims to their proved engine and topology',
-        ],
         'docs/migrations.md' => [
             '[universal application-owned migration invariants](decisions/043-engine-specific-application-migration-invariants.md)',
             'Ledger consistency is universal; one transaction shape is not.',
@@ -1263,9 +1195,6 @@ function operationGuardrailFailures(string $root): array
             'exact no-fallback configuration/process identity owned by `.ai/configuration.md`',
             'exact creation, acquisition, use, and release permissions or authority',
             'ADR 039\'s alternative migration-placement proof remains separate and unchanged.',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
         ],
         'skeleton/.ai/migrations.md' => [
             'each separately tracked history\'s exact initial baseline',
@@ -1297,9 +1226,6 @@ function operationGuardrailFailures(string $root): array
             'When ADR 027\'s SQLite reference shape is adopted',
             'Do not generalize that SQLite transaction, file-lock, rollback, output, or filesystem-authority evidence to another engine or host topology.',
             'Migration evidence separately proves exact creation, acquisition, use, and release permissions or authority',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Change database migrations | `.ai/migrations.md` | configuration, authority, manifest, ledger, operations, and exact-engine tests |',
         ],
         'templates/application/.ai/migrations.md' => [
             '{{MIGRATION_CONSOLE_EXECUTABLE_OR_NOT_APPLICABLE}}',
@@ -1408,9 +1334,6 @@ function operationGuardrailFailures(string $root): array
     );
 
     $retiredUnqualifiedMigrationRequirements = [
-        '.ai/README.md' => [
-            'bounded ledger, per-migration transactions, migration and authority-management capabilities',
-        ],
         '.ai/application-context.md' => [
             'bounded ledger, per-migration transaction, exact elevated required and prohibited capabilities, authority-transition ownership, same-host lock',
         ],
@@ -1426,15 +1349,9 @@ function operationGuardrailFailures(string $root): array
         'docs/getting-started.md' => [
             'bounded ledger, per-migration transactions, lock topology, immutable forward recovery',
         ],
-        'docs/knowledge-map.md' => [
-            'bounded ledger, per-migration transactions, migration and authority-management capabilities',
-        ],
         'docs/migrations.md' => [
             '## Explicit transaction path',
             'Acquire the application-private nonblocking migration lock before database work. After bounded ledger bootstrap and complete history validation, execute each pending migration through its own visible transaction:',
-        ],
-        'skeleton/AGENTS.md' => [
-            'bounded ledger, per-migration transaction, same-host lock, immutable forward recovery',
         ],
         'skeleton/.ai/migrations.md' => [
             'one explicit transaction per migration and ledger insert, immutable history, forward correction, and backup or restore policy',
@@ -1442,9 +1359,6 @@ function operationGuardrailFailures(string $root): array
         ],
         'skeleton/.ai/testing.md' => [
             'nonblocking same-host lock contention with no state change, per-migration rollback with earlier commits preserved',
-        ],
-        'templates/application/AGENTS.md' => [
-            'bounded ledger, per-migration transactions, same-host lock topology, immutable forward recovery',
         ],
         'templates/application/.ai/migrations.md' => [
             'Commit each pending migration and its ledger row in one visible transaction.',
@@ -1470,9 +1384,6 @@ function operationGuardrailFailures(string $root): array
     }
 
     $migrationArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change database migrations | `.ai/migrations.md` | command, configuration, authority, manifest, ledger, coordination, and exact-engine tests |',
-        ],
         '.ai/application-context.md' => [
             '`NOT_APPLICABLE(MIGRATIONS)`',
             'Contract version 9 does not make that additional file a checker requirement',
@@ -1491,10 +1402,6 @@ function operationGuardrailFailures(string $root): array
             'never run any migration command during HTTP startup or through framework `bin/phpthis`.',
             'Do not scan files, discover classes, resolve strings, or load runtime `.sql` files.',
             'Never call a database method in a loop',
-        ],
-        '.ai/testing.md' => [
-            'An application that adopts ADR 027 migrations must execute the real console in fresh subprocesses',
-            'zero migration work during HTTP startup',
         ],
         'docs/migrations.md' => [
             '# Explicit application migrations',
@@ -1571,11 +1478,6 @@ function operationGuardrailFailures(string $root): array
             '027-application-owned-explicit-sqlite-migrations.md',
             '039-recommended-database-migration-structure.md',
         ],
-        'docs/knowledge-map.md' => [
-            'Add, place, apply, explain, or recover a database migration',
-            '`docs/migrations.md`, `docs/database.md`, `docs/security.md`',
-            'connection-owned subdivision only for a named connection with a separately tracked migration history',
-        ],
         'docs/guardrails.md' => [
             "ADR 039's migration-structure recommendation",
             'exact seven-file `example/src/Database/Migrations/` source set and namespace',
@@ -1583,10 +1485,6 @@ function operationGuardrailFailures(string $root): array
             'Composer-autoload and installed-checker proof using the alternative `src/Infrastructure/ChangeHistory/` source and `App\\Infrastructure\\ChangeHistory` namespace',
             'installed-consumer proof separately runs the canonical checker with a coherent nonrecommended source directory and matching namespace',
             'places one valid final class there, proves Composer can autoload it, and requires the installed canonical checker to pass',
-        ],
-        'ROADMAP.md' => [
-            'ADR 027 accepts one application-owned SQLite migration ledger',
-            'not a core schema API, migration discovery, down-migration engine, HTTP bootstrap behavior, or portable DDL contract',
         ],
         'example/.ai/README.md' => [
             'Change database schema migrations, migration history, migration placement, or migration recovery',

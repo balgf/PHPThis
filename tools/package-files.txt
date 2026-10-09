@@ -102,6 +102,7 @@ docs/decisions/060-reject-pending-output-before-response-emission.md
 docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md
 docs/decisions/062-bounded-alpha-8-release-scope.md
 docs/decisions/063-maintainability-review-over-size-proxies.md
+docs/decisions/064-one-entrypoint-per-audience.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md

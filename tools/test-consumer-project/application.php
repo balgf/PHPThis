@@ -12,10 +12,7 @@ function proveInstalledRagGuidanceDistribution(string $project, string $installe
             'PHPThis SQL query budgets do not count model or Qdrant requests',
             'single-writer, non-atomic replacement',
         ],
-        $installedFramework . '/docs/knowledge-map.md' => ['| Adopt or review application-owned RAG, LLPhant or Qdrant | `docs/rag.md` |'],
-        $project . '/.ai/README.md' => ['| Adopt or change RAG, LLPhant or Qdrant | installed `vendor/phpthis/framework/docs/rag.md` |'],
         $project . '/.ai/integrations.md' => ['`NOT_APPLICABLE(RAG)`', 'Before adoption, read installed `vendor/phpthis/framework/docs/rag.md`'],
-        $installedFramework . '/templates/application/.ai/README.md' => ['| Adopt or change RAG, LLPhant or Qdrant | installed `vendor/phpthis/framework/docs/rag.md` |'],
         $installedFramework . '/templates/application/.ai/integrations.md' => ['{{RAG_ADOPTION_OR_NOT_APPLICABLE}}', '{{RAG_RECIPE_RECORD_OR_NOT_APPLICABLE}}'],
     ], 'application-owned RAG guidance');
     requireInstalledNativeRuntimeDependencyBoundary($project, $installedFramework);
@@ -28,9 +25,6 @@ function proveInstalledTransactionalEmailGuidanceDistribution(
 ): void {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
-        ],
         $project . '/.ai/integrations.md' => [
             '`NOT_APPLICABLE`: the starter application contacts no external services and performs no external side effects.',
             '`NOT_APPLICABLE(EMAIL)`',
@@ -91,13 +85,6 @@ function proveInstalledTransactionalEmailGuidanceDistribution(
             'Use only a local fake, captured transport, or explicitly approved provider sandbox for integration evidence.',
             '## Unsupported framework boundary',
             'Adopting email changes no Consumer Contract or Strict Profile requirement.',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Compose, deliver, or review transactional email | `docs/email.md`;',
-            'verify that the welcome-delivery example remains a database-effect proof and that no framework mailer, renderer, queue, worker, or webhook receiver was implied',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Compose or deliver transactional email | installed `vendor/phpthis/framework/docs/email.md` | `.ai/integrations.md` and the operation-specific composer and transport; add configuration, jobs, operations, and testing context only when entered |',
         ],
         $installedFramework . '/templates/application/.ai/integrations.md' => [
             '## Transactional email boundary',
@@ -201,14 +188,6 @@ function proveInstalledOneShotWorkerSupervisionGuidanceDistribution(
             'It is a bounded scheduled pass, not the ordinary queue-draining worker;',
             'continual consumption directly supervises fresh `jobs:run-one` processes under [the durable-job operations guide](../jobs/operations.md).',
         ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract |',
-            '`docs/jobs.md`, `docs/jobs/verification.md`, `docs/jobs/README.md`, accepted ADR 052, and `docs/security.md`',
-            'verify fail-closed no-skip/no-mock release behavior and that PHPThis provides no runtime, adapter, generic validator or backend checker',
-            '| Adopt, change, or review ADR 024\'s optional SQLite durable-job recipe |',
-            '`docs/jobs/sqlite.md`, `docs/jobs/operations.md`, `docs/jobs/testing.md`, `docs/security.md`, ADR 024',
-            'do not generalize its transaction, lease, query bounds, one-shot lifecycle or outcomes to another backend or a framework queue or worker API',
-        ],
         $installedFramework . '/templates/application/.ai/jobs.md' => [
             '{{JOBS_WORKER_LIFECYCLE_OR_NOT_APPLICABLE}}',
             'Before adoption, read installed `vendor/phpthis/framework/docs/jobs.md` and `vendor/phpthis/framework/docs/jobs/verification.md`',
@@ -236,31 +215,6 @@ function proveInstalledAgentEvaluationGuidanceDistribution(
 {
     requireInstalledArtifactMarkers(
         [
-            $installedFramework . '/docs/evaluation.md' => [
-                '## Agent Evaluation Kit v0.1 and controller v0.2',
-                'It is maintainer tooling and is not part of the installed framework package.',
-                'Its scorer source is visible',
-                'It cannot show that one model, skill, prompt, context strategy, or framework condition is better than another.',
-                '`explain.file-profile-s3`',
-                'mounted read-only during generation',
-                'dirty, untracked, and Git-metadata bytes are excluded',
-                'It runs no application check or public scorer',
-                'structural automated checks remain separate from six-dimension human semantic review',
-                'ADR 048 accepts the separately located `tools/agent-evaluation-controller.php` entrypoint',
-                '`prepare -> generate -> freeze -> score -> validate -> retain -> cleanup`',
-                'deterministic test-only `fake-codex` runner',
-                'The normal `composer check` path uses only synthetic fixtures',
-                'The sole accepted real runner is `codex-exec`',
-                'There is no native macOS, `sandbox-exec`, direct-host, arbitrary-shell, discovered-runner, or second-runner fallback.',
-                'Issue #68 implements the opt-in adapter',
-                '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
-                '`AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY`',
-                '`AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK`',
-                '`comparative_claims` to `false`',
-                'The scorer must not be available to the agent during generation',
-                'Human semantic review remains separate.',
-                '`AGENT_EVALUATION_EXTERNAL_HOLDOUT_AFTER_GENERATION`',
-            ],
             $installedFramework . '/docs/guardrails.md' => [
                 'The Agent Evaluation Kit guard requires',
                 'The schema-v3 explanation guard additionally pins `explain.file-profile-s3`',
@@ -307,33 +261,12 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
 {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/AGENTS.md' => [
-            '## Early database setup gate',
-            'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
-            'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
-            'Resume the ordinary read order after scope is resolved.',
-            'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
-        ],
-        $project . '/.ai/change-workflow.md' => [
-            '## Ambiguous database setup scope',
-            'configuration only, connection to an existing server, or project-local server provisioning',
-            'deferred migrations or an application-owned migration foundation',
-            '> Please setup PostgreSQL as our main DB.',
-            'Treat a current `NOT_APPLICABLE` marker as present-state evidence',
-        ],
-        $project . '/.ai/README.md' => [
-            '| Select or set up a database engine | `.ai/change-workflow.md` | prompt and current configuration/data facts before any external action |',
-        ],
         $project . '/.ai/configuration.md' => [
             'Database-engine selection does not authorize a connection attempt, server provisioning, or migration adoption.',
             'one separately named factory, final readonly output type, and process identity for each adopted process profile',
         ],
         $project . '/.ai/testing.md' => [
             'Provisioning and production evidence is required only for explicitly selected scopes.',
-        ],
-        $installedFramework . '/docs/consumer-contract.md' => [
-            'Ask all unresolved choices in one concise message',
-            'Do not perform external database I/O, provision or mutate a server',
         ],
         $installedFramework . '/docs/configuration.md' => [
             '## Scope database setup before implementation',
@@ -344,34 +277,9 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
             'When migrations are deferred, omit the migration inputs, type, factory, entrypoint, and tests',
             'Provisioning and production evidence is required only for an explicitly selected scope.',
         ],
-        $installedFramework . '/docs/evaluation.md' => [
-            '## Database setup scope-gate evaluation',
-            'A starter not-applicable marker does not answer that adoption question.',
-            'no connection attempt or other external database I/O',
-            'they do not prove that a particular model follows them or meets a duration target',
-        ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            '| Select or set up a database engine |',
-            'load and prove only the selected slice',
-        ],
         $installedFramework . '/docs/guardrails.md' => [
             "It also verifies that the local skeleton and installed framework distribute ADR 037's database setup guidance.",
             'This distribution proof does not establish that an AI asks the scope question, avoids external database I/O, or meets a duration target',
-        ],
-        $installedFramework . '/templates/application/.ai/change-workflow.md' => [
-            '## Ambiguous database setup scope',
-            '> Please setup PostgreSQL as our main DB.',
-            'An explicit request such as “Provision a project-local PostgreSQL server, configure it, and do not add migrations” proceeds without this scope question.',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Select or set up a database engine | `.ai/change-workflow.md` | prompt and current configuration/data facts before any external action |',
-        ],
-        $installedFramework . '/templates/application/AGENTS.md' => [
-            '## Early database setup gate',
-            'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
-            'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
-            'Resume the ordinary read order after scope is resolved.',
-            'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
         ],
         $installedFramework . '/templates/application/.ai/configuration.md' => [
             'Record only adopted external input contracts.',
@@ -404,9 +312,6 @@ function proveInstalledWorkbenchGuidanceDistribution(
 {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Change the development Workbench | `.ai/workbench.md` | approved package, checked bootstrap, explicit workspace, and retained tests |',
-        ],
         $project . '/.ai/workbench.md' => [
             '`NOT_APPLICABLE(WORKBENCH)`',
             'the dedicated development operating-system identity, inherited environment, independently loaded child CLI configuration',
@@ -514,9 +419,6 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
 {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
-        $project . '/.ai/README.md' => [
-            '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
-        ],
         $project . '/.ai/operations.md' => [
             '`GET /health` is the starter liveness route; no readiness route exists.',
             'It does not establish external-service-independent liveness because the deployment-configured `error_log` destination and its latency are unverified.',
@@ -541,10 +443,6 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
             'Failure isolation that preserves a selected response does not by itself bound a synchronous sink\'s latency or make that probe external-service-independent.',
             'Do not disguise a dependency bypass as the ordinary application bootstrap or add a second hidden HTTP execution path.',
         ],
-        $installedFramework . '/docs/knowledge-map.md' => [
-            'Define, change, or review startup, liveness, dependency health, or readiness semantics',
-            'verify that no framework probe API, lazy connection, hidden bypass, or second HTTP execution path was introduced',
-        ],
         $installedFramework . '/docs/vocabulary.md' => [
             '| external-service-independent liveness |',
             '| readiness | application-owned operational claim that its recorded conditions for receiving traffic are satisfied |',
@@ -553,9 +451,6 @@ function proveInstalledStartupProbeGuidanceDistribution(string $project, string 
             'A separate installed distribution proof checks the eager-composition and probe-semantics clarification',
             'the current starter does not claim external-service independence while its deployment-configured `error_log` destination and latency remain unverified',
             'does not connect to a service, prove that a deployment classified a probe correctly, establish dependency availability or traffic readiness',
-        ],
-        $installedFramework . '/templates/application/.ai/README.md' => [
-            '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
         ],
         $installedFramework . '/templates/application/.ai/operations.md' => [
             '{{HEALTH_AND_READINESS_PATHS}}',

@@ -130,18 +130,19 @@ final class MaintainabilityGuardrailsTest extends TestCase
         $this->replace('VISION.md', 'A simple endpoint is an unprotected route', 'For this metric, a simple endpoint means an unprotected route');
         $this->replace('docs/design-goals.md', '## Problem', '## Why this exists');
         $this->replace('docs/crud.md', 'For the checked-in `example/src/Users` reference, this is the single canonical current tree.', 'This tree lists the current `example/src/Users` reference.');
-        foreach (['.ai/rules.md', 'skeleton/.ai/rules.md', 'templates/application/.ai/rules.md'] as $rules) {
-            $this->replace($rules, 'Every named class is final. Express extension points with interfaces, never non-final classes.', 'Declare each named class final and use interfaces for extension points.');
+        foreach (['AGENTS.md', 'skeleton/AGENTS.md', 'templates/application/AGENTS.md'] as $entrypoint) {
+            $this->replace($entrypoint, 'final named classes', 'named classes declared final');
         }
-        foreach (['.ai/README.md', 'skeleton/.ai/README.md', 'templates/application/.ai/README.md'] as $router) {
-            $this->replace($router, '| Add or change a qualifying simple endpoint |', '| Implement a qualifying simple endpoint |');
+        $this->replace('AGENTS.md', '| Routes or a simple endpoint |', '| Routing changes and simple endpoints |');
+        foreach (['skeleton/AGENTS.md', 'templates/application/AGENTS.md'] as $router) {
+            $this->replace($router, '| Endpoint, route, request or response |', '| HTTP endpoint or route work |');
         }
         $path = 'docs/knowledge-map.md';
         $contents = file_get_contents($this->fixture . '/' . $path);
         self::assertIsString($contents);
         $contents = preg_replace(
-            '/^A simple endpoint is .*$/m',
-            'Apply the simple-endpoint definition and locality metric in `VISION.md`, including its separate universal read cost.',
+            '/^For a simple endpoint, .*$/m',
+            'For simple endpoints follow `docs/request-handling.md`; `VISION.md` and `docs/design-goals.md` explain the locality goal and rationale. Count universal reading separately.',
             $contents,
             1,
             $definitionCount,
@@ -168,6 +169,10 @@ final class MaintainabilityGuardrailsTest extends TestCase
     public static function brokenGuidance(): iterable
     {
         yield 'missing route' => ['docs/knowledge-map.md', 'docs/request-handling.md', 'docs/type-safety.md'];
+        yield 'entrypoint loses database setup route' => ['skeleton/AGENTS.md', '.ai/configuration.md', '.ai/testing.md'];
+        yield 'entrypoint loses project facts' => ['skeleton/AGENTS.md', '.ai/project.md', '.ai/testing.md'];
+        yield 'template loses HTTP route' => ['templates/application/AGENTS.md', 'docs/request-handling.md', 'docs/type-safety.md'];
+        yield 'setup scope anchor missing' => ['docs/configuration.md', '## Scope database setup before implementation', '## Database selection'];
         yield 'link label cannot hide a broken target' => ['docs/knowledge-map.md', '`docs/request-handling.md`', '[docs/request-handling.md](missing.md)'];
         yield 'comment cannot supply a missing route' => ['docs/knowledge-map.md', '`docs/request-handling.md`', '<!-- `docs/request-handling.md` -->'];
         yield 'code sample cannot supply a missing route' => ['docs/knowledge-map.md', '`docs/request-handling.md`', "\n```text\n`docs/request-handling.md`\n```\n"];

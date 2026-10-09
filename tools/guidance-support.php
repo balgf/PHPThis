@@ -76,7 +76,13 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
             'VISION.md', 'docs/design-goals.md', 'docs/consumer-contract.md',
             'docs/request-handling.md', 'docs/configuration.md', 'docs/migrations.md',
             'docs/jobs/README.md', 'docs/file-transfers/README.md', 'docs/websockets.md',
-            'docs/consumer-contract-upgrades.md',
+            'docs/consumer-contract-upgrades.md', 'docs/type-safety.md', 'docs/errors.md',
+            'docs/security.md', 'docs/static-analysis.md', 'docs/strict-profile.md',
+            'docs/sessions.md', 'docs/caching.md', 'docs/coordination.md', 'docs/cli.md',
+            'docs/frontend-integration.md', 'docs/email.md', 'docs/rag.md', 'docs/workbench.md',
+            'docs/observability/README.md', 'docs/logging.md', 'docs/date-time.md',
+            'docs/request-policy.md', 'docs/stateless-authentication.md', 'docs/crud.md',
+            'docs/database.md', 'docs/performance.md', 'RELEASING.md',
         ],
         'docs/consumer-contract.md' => [
             'docs/knowledge-map.md', 'docs/request-handling.md', 'docs/configuration.md',
@@ -85,12 +91,16 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
         ],
         'docs/consumer-contract-upgrades.md' => [],
         'docs/getting-started.md' => [],
+        'docs/evaluation.md' => ['docs/knowledge-map.md'],
+        'RELEASING.md' => ['docs/decisions/README.md', 'docs/decisions/062-bounded-alpha-8-release-scope.md', 'docs/releases/0.1.0-alpha.8.md'],
+        'ROADMAP.md' => ['RELEASING.md', 'docs/evaluation.md', 'docs/knowledge-map.md'],
         'docs/strict-profile.md' => [],
         'docs/type-safety.md' => [],
         'docs/crud.md' => [],
         'docs/ai-context-routing-review.md' => [],
         'docs/decisions/044-bounded-task-routed-ai-context.md' => [],
         'docs/decisions/058-concern-local-ai-context-routing.md' => [],
+        'docs/decisions/064-one-entrypoint-per-audience.md' => [],
     ];
     foreach ($documents as $relativePath => $routes) {
         $references = [];
@@ -100,27 +110,34 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
         $failures = [...$failures, ...guidanceDocumentFailures($framework . '/' . $relativePath, $references)];
     }
 
+    $failures = [...$failures, ...guidanceDocumentFailures($framework . '/docs/evaluation.md', [
+        'ai-context-routing-review.md' => $framework . '/docs/ai-context-routing-review.md',
+    ])];
+
     foreach ([$application, $framework . '/templates/application'] as $context) {
-        $installed = 'vendor/phpthis/framework/';
         $entrypointReferences = [
-            '.ai/README.md' => $context . '/.ai/README.md',
+            'vendor/phpthis/framework/docs/consumer-contract.md' => $framework . '/docs/consumer-contract.md',
+        ];
+        foreach (['knowledge-map', 'consumer-contract', 'request-handling', 'type-safety', 'frontend-integration', 'sessions', 'caching', 'date-time', 'errors', 'crud', 'static-analysis'] as $guide) {
+            $entrypointReferences['docs/' . $guide . '.md'] = $framework . '/docs/' . $guide . '.md';
+        }
+        foreach (['project', 'architecture', 'configuration', 'data', 'request-policy', 'file-transfers', 'integrations', 'operations', 'observability', 'jobs', 'cli', 'migrations', 'websockets', 'workbench', 'testing'] as $guide) {
+            $entrypointReferences['.ai/' . $guide . '.md'] = $context . '/.ai/' . $guide . '.md';
+        }
+        $failures = [...$failures, ...guidanceDocumentFailures($context . '/AGENTS.md', $entrypointReferences)];
+        $compatibilityReferences = [
+            'AGENTS.md' => $context . '/AGENTS.md',
             '.ai/rules.md' => $context . '/.ai/rules.md',
             '.ai/change-workflow.md' => $context . '/.ai/change-workflow.md',
-            '.ai/project.md' => $context . '/.ai/project.md',
-            $installed . 'docs/consumer-contract.md' => $framework . '/docs/consumer-contract.md',
-            $installed . 'docs/knowledge-map.md' => $framework . '/docs/knowledge-map.md',
+            'vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-18' => $framework . '/docs/consumer-contract-upgrades.md',
         ];
-        $failures = [...$failures, ...guidanceDocumentFailures($context . '/AGENTS.md', $entrypointReferences)];
-        $routerReferences = [
-            $installed . 'docs/request-handling.md' => $framework . '/docs/request-handling.md',
-            $installed . 'docs/knowledge-map.md' => $framework . '/docs/knowledge-map.md',
-            $installed . 'docs/consumer-contract-upgrades.md' => $framework . '/docs/consumer-contract-upgrades.md',
-            $installed . 'docs/consumer-contract-upgrades.md#contract-version-18' => $framework . '/docs/consumer-contract-upgrades.md',
-        ];
-        foreach (['rules', 'change-workflow', 'project', 'architecture', 'configuration', 'data', 'request-policy', 'file-transfers', 'integrations', 'operations', 'observability', 'jobs', 'cli', 'migrations', 'websockets', 'workbench', 'testing'] as $guide) {
-            $routerReferences['.ai/' . $guide . '.md'] = $context . '/.ai/' . $guide . '.md';
+        $failures = [...$failures, ...guidanceDocumentFailures($context . '/.ai/README.md', $compatibilityReferences)];
+        foreach (['rules', 'change-workflow'] as $guide) {
+            $failures = [...$failures, ...guidanceDocumentFailures($context . '/.ai/' . $guide . '.md', ['AGENTS.md' => $context . '/AGENTS.md'])];
         }
-        $failures = [...$failures, ...guidanceDocumentFailures($context . '/.ai/README.md', $routerReferences)];
+        $failures = [...$failures, ...guidanceDocumentFailures($context . '/.ai/configuration.md', [
+            'vendor/phpthis/framework/docs/configuration.md#scope-database-setup-before-implementation' => $framework . '/docs/configuration.md',
+        ])];
     }
     return $failures;
 }

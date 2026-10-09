@@ -1,5 +1,7 @@
 # Application configuration context
 
+Before database setup or configuration work, read installed `vendor/phpthis/framework/docs/configuration.md#scope-database-setup-before-implementation`. Resolve database and schema scope separately before external action, reuse accepted choices, and keep unrequested production work outside the task.
+
 This file is the application's single writable authority for configuration. Other `.ai/` guides link here and retain only their concern-specific runtime, topology, behavior, or evidence facts. Record names and contracts only. Never place credentials, tokens, private keys, DSNs containing secrets, customer values, or production payloads in this file.
 
 Record only adopted external input contracts. Database setup and migration adoption are decisions owned by the application change workflow, `.ai/data.md`, `.ai/migrations.md`, and accepted decision records; do not store task scope or task history here. Unselected worker, migration, administrative, deployment, and production configuration profiles remain explicitly not applicable.
