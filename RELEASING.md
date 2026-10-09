@@ -1,120 +1,20 @@
 # PHPThis release process
 
-Historical scopes are preserved in ADRs 018, 029, 031, 035, 040, 047 and 054 for Alpha 1 through Alpha 7. Alpha 8 and `v0.1.0-alpha.8` are the latest immutable framework tag/source boundary, accepted in [ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md). [Issue #81](https://github.com/balgf/PHPThis/issues/81) records approved framework `36643c068dda3619f939ac04d861c1316a0af8e9`, skeleton `1b1f3afed72880fc7852e67016349e87fc8c4c66`, both signed tags, exact Packagist distributions and clean public installation. It owns the continuing GitHub prerelease, announcement and closure evidence and authorizations. Closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) preserves the completed and announced Alpha 7 predecessor, including both GitHub prereleases and its [final announcement](https://github.com/balgf/PHPThis/issues/53#issuecomment-5323310887). Current wording was reconciled against Alpha 8 package/public-proof evidence on 2026-09-27 (Asia/Manila); continuing host state must still be verified externally.
+Use this checklist for a proposed or approved release. Copy it into the release work item, retain evidence there, and leave this reusable checklist unchecked. Source preparation, candidate approval and each external publication operation require their recorded scope and authority.
 
-This is the maintainer release gate, not an application programming manual. Copy the checklist into the release work item and attach evidence there. Keep this canonical checklist unchecked and reusable.
+## Current state and historical evidence
 
-Tags, GitHub releases, repository creation, and Packagist publication are consequential external writes. Perform each only after explicit accountable-human authorization for that release. Do not announce a release until the post-publication proof passes.
+Alpha 8 (`v0.1.0-alpha.8`) is the latest recorded immutable source boundary. [Issue #81](https://github.com/balgf/PHPThis/issues/81) records framework `36643c068dda3619f939ac04d861c1316a0af8e9`, skeleton `1b1f3afed72880fc7852e67016349e87fc8c4c66`, signed tags, Packagist distributions and clean public installation. Package/public-proof wording was reconciled on 2026-09-27 (Asia/Manila). Verify continuing GitHub, Packagist and announcement state in the work item and hosts when needed.
 
-## Immutable release history
+Historical authority is the exact approved tag. Read its matching notes under `docs/releases/` and scope decision via `docs/decisions/README.md`; later `main` never replaces tagged evidence. [ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md) and [Alpha 8 notes](docs/releases/0.1.0-alpha.8.md) preserve their acceptance-time source-preparation wording. [Alpha 6 #37](https://github.com/balgf/PHPThis/issues/37) and [Alpha 7 #53](https://github.com/balgf/PHPThis/issues/53) retain their completed publication and announcement receipts. The [pre-consolidation release record](https://github.com/balgf/PHPThis/blob/884e7154984d774f9da8f595c820c2b978c8118a/RELEASING.md) preserves earlier identities and dates without duplicating them in the current procedure.
 
-Historical release authority means the exact bytes reachable from the approved tag. A later `main` file at the same path may contain a clarification, but it is current documentation rather than evidence of the tagged release. Never rewrite or move the historical tag to make those copies agree; inspect the tag itself.
+## Candidate and authorization
 
-## Approved Alpha 1 identity
+Commits after the latest tag are unreleased development. Assess that exact delta before proposing the next version, scope, notes and planned date. A proposed scope may precede an exact candidate; only an explicit human record accepts it.
 
-The accountable human approved the following release identity on 2026-07-19 (Asia/Manila):
+Candidate approval names the version, both tag names, exact framework commit, planned date, scope, notes, announcement text and permitted operations. The skeleton commit may be `PENDING` during framework preparation; record and approve its exact commit before any skeleton tag or package write. Keep approvals and evolving proof in the external work item so recording evidence does not change candidate bytes. Source changes create a new candidate requiring fresh proof and approval.
 
-- Composer version: `0.1.0-alpha.1`
-- Framework tag: `v0.1.0-alpha.1`
-- Skeleton tag: `v0.1.0-alpha.1`
-- Release notes: `docs/releases/0.1.0-alpha.1.md`
-
-This approved the version and tag names only. The exact candidate commit, release date, and accountable-human publication authorization belong in the external release evidence attached to the release work item; embedding them in tracked release notes would change the candidate commit. That approval did not itself authorize creation of either tag, either package-host entry, either GitHub release, or the announcement. Alpha 1 remained subject to the complete gate recorded by its tagged source, and its publication state must be verified from external evidence.
-
-## Approved Alpha 2 identity
-
-The accountable human approved the following release identity and gated publication sequence on 2026-07-21 (Asia/Manila):
-
-- Composer version: `0.1.0-alpha.2`
-- Framework tag: `v0.1.0-alpha.2`
-- Skeleton tag: `v0.1.0-alpha.2`
-- Release notes: `docs/releases/0.1.0-alpha.2.md`
-
-This approves the exact version and tag names and authorizes the following operations only after their preceding gates pass: commit and push the framework candidate; create and push both approved tags; submit or refresh both Packagist packages; create both GitHub prereleases; and announce Alpha 2 only after the clean public-installation proof succeeds. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
-
-## Approved Alpha 3 identity
-
-The accountable human approved the following release identity and gated publication sequence on 2026-07-21 (Asia/Manila):
-
-- Composer version: `0.1.0-alpha.3`
-- Framework tag: `v0.1.0-alpha.3`
-- Skeleton tag: `v0.1.0-alpha.3`
-- Release notes: `docs/releases/0.1.0-alpha.3.md`
-
-This approves the exact version and tag names and authorizes the following ordered operations only after their preceding gates pass: commit and push the framework candidate; create and push the framework tag; submit or refresh the framework Packagist package and verify its distribution; update, prove, commit, push, and tag the dedicated skeleton; submit or refresh the skeleton Packagist package and verify its distribution; prove the clean public installation path; create both GitHub prereleases; and announce Alpha 3. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
-
-## Approved Alpha 4 identity
-
-The accountable human approved the following release identity and gated publication sequence on 2026-07-23 (Asia/Manila):
-
-- Composer version: `0.1.0-alpha.4`
-- Framework tag: `v0.1.0-alpha.4`
-- Skeleton tag: `v0.1.0-alpha.4`
-- Release notes: `docs/releases/0.1.0-alpha.4.md`
-
-This approves the exact version and tag names and authorizes the following ordered operations only after their preceding gates pass: commit and push the framework candidate; create and push the framework tag; submit or refresh the framework Packagist package and verify its distribution; update, prove, commit, push, and tag the dedicated skeleton; submit or refresh the skeleton Packagist package and verify its distribution; prove the clean public installation path; create both GitHub prereleases; and announce Alpha 4. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
-
-## Approved Alpha 5 identity
-
-The accountable human approved preparation of the following bounded release scope and exact identity on 2026-08-01 (Asia/Manila):
-
-- Composer version: `0.1.0-alpha.5`
-- Framework tag: `v0.1.0-alpha.5`
-- Skeleton tag: `v0.1.0-alpha.5`
-- Release notes: `docs/releases/0.1.0-alpha.5.md`
-
-This approval authorizes source preparation and local verification only. It does not authorize committing or pushing the candidate, creating or pushing either tag, changing the dedicated skeleton repository, submitting or refreshing either Packagist package, creating either GitHub prerelease, or announcing Alpha 5. Those external operations require later explicit accountable-human authorization after the candidate evidence is reviewed. The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence attached to the release work item. If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.
-
-## Approved Alpha 6 identity and source preparation
-
-The accountable human approved preparation of the following bounded release scope, exact identity, planned date, release notes, and candidate-specific announcement draft on 2026-08-09 (Asia/Manila):
-
-- Composer version: `0.1.0-alpha.6`
-- Framework tag: `v0.1.0-alpha.6`
-- Skeleton tag: `v0.1.0-alpha.6`
-- Planned release date: `2026-08-09` (Asia/Manila)
-- Bounded scope: `docs/decisions/047-bounded-alpha-6-release-scope.md`
-- Release notes: `docs/releases/0.1.0-alpha.6.md`
-
-The source-preparation approval above did not itself authorize any external operation. Issue #37 subsequently records the complete coordinated Alpha 6 release: the exact framework and skeleton candidates, both tags and packages, clean exact `composer create-project` proof, both GitHub prereleases, and announcement. Accepted implementation and guidance after `v0.1.0-alpha.6` now include ADRs 048 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling. Those changes are not part of the immutable Alpha 6 framework source. ADR 054 separately accepts the Alpha 7 identity and source-preparation scope while selecting no exact candidate or external release operation. Issue #52 separately authorized its repository commit/push and closure, not a tag, release, package publication, or AWS environment mutation. This tracked process does not replace the external evidence or establish live host availability. If any mandatory check fails, the next release operation remains unauthorized until the recorded candidate passes and receives its required approval.
-
-## Approved Alpha 7 identity and source preparation
-
-The accountable human approved the following release identity, planned date, bounded scope, release notes, and source-preparation state on 2026-08-14 (Asia/Manila):
-
-- Composer version: `0.1.0-alpha.7`
-- Framework tag: `v0.1.0-alpha.7`
-- Skeleton tag: `v0.1.0-alpha.7`
-- Planned release date: `2026-08-18` (Asia/Manila)
-- Bounded scope: `docs/decisions/054-bounded-alpha-7-release-scope.md`
-- Release notes: `docs/releases/0.1.0-alpha.7.md`
-- Exact framework candidate commit: `PENDING`
-- Exact skeleton candidate commit: `PENDING`
-
-This approval accepts a bounded Alpha 7 deferral of unavailable model/context token telemetry, with no lexical-token proxy, and creates no general evaluation precedent. It excludes the real WebSocket consumer migration and its temporary proposed decision 002: their unresolved PHT007 environment-policy conflict remains unapproved application policy outside Alpha 7.
-
-Both exact candidate commits remain `PENDING`. This source-preparation approval does not authorize exact-candidate approval, repository commit or push, framework or skeleton tag creation or push, package-host write, dedicated-skeleton change, GitHub release, announcement, issue closure, or production-service mutation. Each later operation remains separately gated and requires explicit accountable-human authorization after the exact candidate evidence is reviewed.
-
-The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection above are preserved acceptance-time history, not current publication state. Issue #53 owns the later exact candidates, approvals, CI, tags, package versions, clean public-distribution proof, and remaining operation authority.
-
-## Approved Alpha 8 scope and source preparation
-
-[Accepted ADR 062](docs/decisions/062-bounded-alpha-8-release-scope.md) and [tagged source-preparation notes](docs/releases/0.1.0-alpha.8.md) preserve their acceptance-time pending identities and source-preparation authority. [Issue #81](https://github.com/balgf/PHPThis/issues/81) subsequently records the approved exact candidates, planned 2026-09-27 date, approved ED25519 identity, verified controls, signed tags, both Packagist versions, clean public installation and retained-consumer repetition. The issue owns later operation authorizations and observed results; frozen preparation wording is not continuing publication state. The canonical checklist below remains unchecked and reusable.
-
-## Reusable release state model
-
-Keep these four states distinct:
-
-1. **Latest recorded release:** Alpha 8 and `v0.1.0-alpha.8` preserve the latest immutable framework boundary. Issue #81 records both public package identities and the clean public path and owns continuing GitHub prerelease/announcement/closure state. Closed Issue #53 preserves the completed Alpha 7 predecessor. Inspect requested historical source from its exact tag and verify continuing host state separately.
-2. **Unreleased `main`:** commits after the latest framework tag are ongoing development and establish no later publication state. Alpha 8 already contains accepted ADRs 055 through 062, Contract 18, Profile 4 and PHT008. Mutable documentation or maintainer evidence after that tag does not change its source, artifacts or scope and authorizes no later release operation.
-3. **Proposed next candidate:** a maintainer may assess an unreleased delta and draft or accept a bounded scope, version, tags, notes, and planned date before an exact candidate exists. A prior exact candidate, tag, package, or completed proof does not approve a later candidate or authorize its repository, tag, package, dedicated-skeleton, GitHub release, or announcement operation.
-4. **Approved candidate:** only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation. The skeleton candidate commit may remain explicitly `PENDING` until the dedicated skeleton is updated and proved, but it must be recorded and approved before any skeleton tag or package write. Record the framework and skeleton candidate approvals plus evolving evidence in the external release work item so proof does not require modifying either candidate commit. Keep the planned release date distinct from the observed timestamp of every external publication operation.
-
-Issue #37 records Alpha 6 as complete and announced. Closed Issue #53 records Alpha 7 as complete and announced, including both GitHub prereleases, the final announcement, and Issue closure. Those completed histories authorize no production use or later release operation. For a current candidate, neither partial evidence nor checklist position authorizes the next external write; each operation still requires its exact accountable-human authorization.
-
-Authorization is enumerable, not implied by reaching a checklist step. Record separately whether the accountable human authorizes source preparation; exact-candidate freeze and approval; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement. An earlier scope, candidate, or publication approval does not authorize a later operation unless that exact operation is named.
-
-Preparing a proposal or accepted source scope, proving or publishing an approved candidate, and inspecting an older release are different tasks. Preparation starts from the exact diff after the latest recorded tag and stops before external writes. Proof and publication use only the approved candidate record in the external release work item. Historical inspection uses the exact requested tag and its tagged notes and scope decision; current `main` may contain later clarifications and is not historical release evidence.
+Record authority separately for source preparation; exact candidate approval; framework commit/push; framework tag creation/push; framework Packagist update; skeleton preparation/commit/push; skeleton tag creation/push; skeleton Packagist update; each GitHub prerelease; and final announcement. A single approval may name several operations. Earlier approval, partial evidence or checklist position grants no unnamed operation. Record observed publication timestamps separately from the planned date.
 
 ## Version-neutral release gate
 

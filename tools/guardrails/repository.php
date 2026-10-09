@@ -664,89 +664,6 @@ function guardrailLegacyUmbrellaMarkerRequirementIsRetired(
             'uuid(name): string',
             'zero downstream calls or call its one downstream handler exactly once',
         ],
-        'docs/knowledge-map.md' => [
-            'ADR 023',
-            'ADR 043, ADR 027 for the SQLite reference proof',
-            'ADR 051',
-            'Add or assess an operational application command or scheduled pass',
-            'Add, place, apply, explain, or recover a database migration',
-            'Adopt or review log levels, destination-record encoding, daily files, stdout/stderr, or Grafana delivery',
-            'Adopt, change, or review ADR 024\'s optional SQLite durable-job recipe | `docs/jobs/sqlite.md`, `docs/jobs/operations.md`, `docs/jobs/testing.md`, `docs/security.md`, ADR 024 | the deliberately adopted current checked profile\'s exact SQLite version and schema',
-            'Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract',
-            'Define, change, or review startup, liveness, dependency health, or readiness semantics',
-            '`.ai/configuration.md` for exact no-fallback process configuration and identity',
-            '`.ai/data.md` for effective database-authority facts, accountable transition ownership',
-            '`.ai/operations.md` for the application-wide release order and operational runbooks',
-            '`docs/frontend-integration.md`; add only the concern guides it routes to',
-            '`docs/migrations.md`, `docs/database.md`, `docs/security.md`',
-            '`docs/observability/destination-record.md`',
-            'authorization and tenant-scope applicability and policy',
-            'clean-tree local proof before push and exact pushed-commit CI',
-            'connection-owned subdivision only for a named connection with a separately tracked migration history',
-            'distinct exact-candidate approval and separately enumerable preparation, commit/push, tag creation/push, package, GitHub-prerelease, and announcement authorization',
-            'do not generalize its transaction, lease, query bounds, one-shot lifecycle or outcomes to another backend or a framework queue or worker API',
-            'do not infer the optional document-list recipe',
-            'do not treat those names or semantics as a generic paginator or filter contract',
-            'exact application response construction and `Content-Type`',
-            'exact finite code-owned path templates and code allowlists, literal bounded response construction before operation-owned I/O',
-            'exact framework and skeleton candidate commits recorded at their respective freeze points',
-            'exact-version clean public installation evidence',
-            'fixed bounded query/cache/external-call counts independent of parent-page cardinality',
-            'for an adopted server-side cache, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md`',
-            'load and prove only the selected slice',
-            'no framework CLI, scheduler, lock, or lease API exists',
-            'planned release date separate from observed publication timestamps',
-            'preserve request-summary v1/v2 and current Contract v15',
-            'preserve the advisory application-owned boundary',
-            'preserve the generic `400`/`422` default and verify that no validator, error bag, response wrapper, renderer, generator, core API, dependency, checker diagnostic, or universal schema was introduced',
-            'scope transaction, rollback, and lock claims to their proved engine and topology',
-            'supported database/catalog/schema/attachment namespace selection and qualification, namespace and object control-or-ownership model, per-operation runtime authority, activation and deactivation ownership, exact-engine positive and negative evidence',
-            'the deliberately adopted application recipe, distinct cache and lease processes',
-            'verify fail-closed no-skip/no-mock release behavior and that PHPThis provides no runtime, adapter, generic validator or backend checker',
-            'verify that PHPThis adds no JWT, PAT, OAuth, identity-provider, or authentication runtime/API',
-            'verify that frames never become PHPThis HTTP `Request` or `Response` values and no framework WebSocket runtime exists',
-            'verify that no container, discovery, generic dispatch, second publisher, core runtime, batch, HTTP, remote, or production shell was introduced',
-            'verify that no framework frontend runtime, CORS middleware, renderer, templating or asset engine, machine-readable API generator, or client generator was implied',
-            'verify that no framework helper, portable distributed-lock claim, or duplicate context owner was introduced',
-            'verify that no framework loader, automatic bootstrap, dotenv dependency, configuration cache, `config:clear` command, launcher-specific Contract/Profile/PHT/checker change beyond ADR 055\'s separate command-text rule',
-            'verify that no framework probe API, lazy connection, hidden bypass, or second HTTP execution path was introduced',
-            'verify that the welcome-delivery example remains a database-effect proof and that no framework mailer, renderer, queue, worker, or webhook receiver was implied',
-            'when a connection is adopted, record supported database/catalog/schema/attachment namespace selection and qualification',
-            '| Add or assess an application-owned cursor or bounded list filter |',
-            '| Add, explain, or review stateless Bearer, JWT, opaque/PAT/API-token, external-provider authentication, tenant resolution, or authorization | `docs/stateless-authentication.md`, `docs/request-policy.md`, `docs/security.md`, `docs/errors.md`, `docs/decisions/020-application-owned-request-policy.md` |',
-            '| Adopt, change, explain, or review an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | `docs/coordination.md`;',
-            '| Adopt, change, or review ADR 022\'s optional SQLite protected document-list recipe |',
-            '| Adopt, change, or review ADR 022\'s optional versioned document cursor and bounded category-filter recipe |',
-            '| Adopt, change, or review ADR 024\'s optional SQLite durable-job recipe |',
-            '| Adopt, change, or review field-addressable value issues |',
-            '| Adopt, change, or review the accepted optional backend-neutral application-owned durable-job contract |',
-            '| Adopt, change, or review the optional Redis cache and schedule-lease recipe |',
-            '| Choose or assess HTTP caching or server-side derived-data caching |',
-            '| Compose, deliver, or review transactional email | `docs/email.md`;',
-            '| Construct, emit, or review a generic response cookie |',
-            '| Define, change, or review a structured JSON resource success representation, including nested child objects or collections |',
-            '| Design, implement, or review frontend integration, a frontend/API handoff, browser CORS, static assets, or application-owned HTML rendering |',
-            '| Parse, persist, format, calculate, schedule, or test date and time behavior | `docs/date-time.md`',
-            '| Propose, add, explain, or review a WebSocket path |',
-        ],
-        '.ai/README.md' => [
-            'Use the exact simple-endpoint definition and four-file locality metric in the already-read `VISION.md`. A qualifying endpoint fits an existing named route-area manifest whose dependency-free handler is constructed inline, so root route composition remains unchanged.',
-            '`docs/coordination.md`, knowledge and application task routes, template and skeleton operations records',
-            '`fake-codex`',
-            '`tools/agent-evaluation-controller/`',
-            'accepted ADR 050, checked application-owned reference',
-            'do not add a model-provider integration or execute untrusted candidate code without a separately accepted sandbox boundary',
-            'future `codex-exec` must fail closed',
-            'preserve the advisory application-owned boundary without a generic wrapper, relationship loader, serializer, paginator, or generator',
-            'prove one fixed bounded operation-owned I/O plan plus I/O-free mapping and encoding',
-            '| Change application-owned atomic-lock, mutex, mutual-exclusion, lease, critical-section, or coordination guidance | `.ai/application-context.md` |',
-            '| Change correlation or terminal summaries, or adopt optional log levels and destinations | `.ai/observability.md` | front-controller coordinator, sink, finite sources, summary tests, and ADR 051\'s exact optional level/envelope/destination policy without changing request-summary v1/v2 or current Contract v15 |',
-            '| Change durable deferred work | `.ai/jobs.md` | accepted ADR 052 optional common contract and exact selected adoption, or the current accepted ADR 024 checked SQLite profile; exact publication/recovery, delivery, effect, worker, operations, real-service and gate evidence |',
-            '| Change email guidance or application email context | `.ai/application-context.md` | `docs/email.md`, task routes, integration context, package inventory, focused guardrails, and installed-consumer evidence |',
-            '| Change local environment launcher guidance or its checked reference | `.ai/application-context.md` |',
-            '| Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |',
-            '| Change uploads or file responses, or adopt/review Amazon S3 | `.ai/file-transfers.md` | common bounded multipart policy plus exactly one `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile and its complete application evidence |',
-        ],
         '.ai/application-context.md' => [
             'A selected third-party date-time or clock package remains an explicit application-owned dependency',
             'Add no framework lock, mutex, lease, fencing-token, coordination helper, facade, driver, registry, discovery, runtime dependency, checker rule, Contract/Profile change, or `PHT` diagnostic.',
@@ -2838,6 +2755,7 @@ function decisionSuccessorRelationshipFailures(string $root): array
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
         '| [ADR 049](049-bounded-response-cookie-profile.md) | Physical core-line allocation only; response-cookie behavior remains accepted | [ADR 063](063-maintainability-review-over-size-proxies.md) |',
+        '| [ADR 058](058-concern-local-ai-context-routing.md) | Mandatory read order and universal instruction ownership retained from ADR 044; authority, safety and the task-specific locality definition remain accepted | [ADR 064](064-one-entrypoint-per-audience.md) |',
     ];
     $actualRows = [];
     $tableEndIndex = null;
@@ -3273,8 +3191,6 @@ function repositoryGuardrailFailures(string $root): array
             'the `eval(...)` language construct and variable variables are absent, while legal declarations, aliases, accesses, and named arguments whose identifier is `eval` remain accepted',
         ],
         'docs/consumer-contract.md' => [
-            "Read the application's `.ai/rules.md`, `.ai/change-workflow.md`, and `.ai/project.md`.",
-            'Start with the one current operational guide selected by `.ai/README.md`.',
             "ADR 028 replaces only the executable example's schedule file lock with one application-owned Redis owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
         ],
         'docs/cli.md' => [
@@ -3283,14 +3199,6 @@ function repositoryGuardrailFailures(string $root): array
         'docs/consumer-profile.md' => [
             'the exact maintained matrix: SQLite `3.45.1`, MySQL `8.4.11`, and PostgreSQL `17.11`',
             'no unlisted engine version inherits certification',
-        ],
-        'docs/knowledge-map.md' => [
-            'for an adopted server-side cache, `.ai/architecture.md`, `.ai/data.md`, `.ai/integrations.md`, `.ai/operations.md`, `.ai/testing.md`',
-            'the deliberately adopted application recipe, distinct cache and lease processes',
-        ],
-        'ROADMAP.md' => [
-            'the final post-Issue-35 correctness sweep restricts the forbidden `eval` check to the actual language construct while accepting legal same-named identifiers',
-            'It changes no framework core, Consumer Contract version 11, Strict Profile version 3, runtime dependency, or consumer API.',
         ],
         'verification/SyntaxProfile.php' => [
             'private static function isEvalLanguageConstruct(array $tokens, int $index): bool',
@@ -3376,13 +3284,6 @@ function repositoryGuardrailFailures(string $root): array
         'docs/guardrails.md' => [
             'The entrypoint explicitly loads five concern modules in one fixed order: repository, context, boundaries, operations, and distribution.',
             'There is no module discovery, rule registry, container, configuration language, shared content cache, or package/runtime integration.',
-        ],
-        '.ai/testing.md' => [
-            '`tools/guardrails.php` is likewise a small explicit ordered entrypoint over exactly five concern modules under `tools/guardrails/`',
-            'Do not add discovery, a rule registry, a container, a configuration language, or a shared content cache merely to organize this maintainer command.',
-        ],
-        'ROADMAP.md' => [
-            'Issue 36 keeps `php tools/guardrails.php` as one deterministic command while moving its checks into five explicit concern modules',
         ],
     ];
 
@@ -4115,16 +4016,11 @@ function repositoryGuardrailFailures(string $root): array
     }
 
     $automatedBehaviorEvidenceMarkers = [
-        '.ai/testing.md' => 'PHPThis requires executable behavior evidence, not PHPUnit specifically.',
         'docs/consumer-contract.md' => '## Automated behavior evidence',
         'docs/decisions/010-framework-owned-consumer-check.md' => 'No generic checker can determine whether an arbitrary application-owned suite adequately proves the requested behavior.',
         'docs/getting-started.md' => 'Every observable behavior change must add or update automated tests.',
-        'templates/application/AGENTS.md' => 'Every observable behavior change must add or update application-owned automated tests.',
         'templates/application/.ai/testing.md' => '## Automated behavior evidence',
-        'templates/application/.ai/change-workflow.md' => 'automated behavior evidence must remain apparent to the next agent',
-        'skeleton/AGENTS.md' => 'Every observable behavior change must add or update application-owned automated tests.',
         'skeleton/.ai/testing.md' => '## Automated behavior evidence',
-        'skeleton/.ai/change-workflow.md' => 'automated behavior evidence must remain apparent to the next agent',
         'skeleton/README.md' => 'the application remains free to choose its test library, runner, and file placement',
     ];
 
@@ -4137,33 +4033,9 @@ function repositoryGuardrailFailures(string $root): array
     }
 
     $agentEvaluationArtifactMarkers = [
-        '.ai/README.md' => [
-            'Change the maintainer-only agent evaluation kit',
-            'do not add a model-provider integration or execute untrusted candidate code without a separately accepted sandbox boundary',
-        ],
-        '.ai/testing.md' => [
-            'The maintainer-only PHPThis Agent Evaluation Kit lives under `tools/agent-evaluation/`',
-            '`tools/agent-evaluation.php` is its small explicit ordered entrypoint over exactly four cohesive modules',
-            'The repository does not call a model provider or execute AI-authored candidate code as part of `composer check`.',
-            'Issue #70 adds the separate schema-v3 `explain.file-profile-s3` task',
-            'a read-only `/candidate` mount with no candidate-relative writable scratch or cache mount',
-        ],
-        'ROADMAP.md' => [
-            'Agent Evaluation Kit v0.1 data contract',
-            'official evaluation still requires an external post-generation holdout and repeated isolated trials',
-        ],
         'composer.json' => [
             '"test:agent-evaluation": "php tools/test-agent-evaluation.php"',
             '"@test:agent-evaluation"',
-        ],
-        'docs/evaluation.md' => [
-            '## Agent Evaluation Kit v0.1',
-            'Schema v3 adds the non-comparative `explain.file-profile-s3` task',
-            'It runs no application check or public scorer',
-            '`correct_completion` remains unknown until that review is accountable and complete',
-            '`AGENT_EVALUATION_PUBLIC_SMOKE_ONLY`',
-            '`AGENT_EVALUATION_EXTERNAL_HOLDOUT_AFTER_GENERATION`',
-            'at least ten trials per condition before reporting a rate',
         ],
         'docs/guardrails.md' => [
             'The Agent Evaluation Kit guard',
@@ -4415,27 +4287,6 @@ function repositoryGuardrailFailures(string $root): array
     );
 
     $agentEvaluationControllerArtifactMarkers = [
-        '.ai/README.md' => [
-            'Change the maintainer-only agent evaluation kit or controller',
-            '`tools/agent-evaluation-controller/`',
-            '`fake-codex`',
-            'future `codex-exec` must fail closed',
-        ],
-        '.ai/testing.md' => [
-            'ADR 048 separately accepts `tools/agent-evaluation-controller.php` as the small ordered v0.2 entrypoint.',
-            'It requires exactly `contract.php`, `workspace.php`, `process.php`, `codex.php`, `scoring.php`, and `controller.php`',
-            'only `process.php` owns process-execution primitives',
-            '`prepare -> generate -> freeze -> score -> validate -> retain -> cleanup`',
-            '`test:agent-evaluation-controller` follows `test:agent-evaluation` and precedes the profile stage',
-            'The complete gate uses only synthetic fixtures',
-            'Issue #68 implements that opt-in path',
-        ],
-        'ROADMAP.md' => [
-            'ADR 048 accepts the isolated Agent Evaluation Controller v0.2 boundary',
-            'complete deterministic `fake-codex` lifecycle',
-            'The sole future real adapter is opt-in `codex-exec`',
-            'with no native macOS fallback',
-        ],
         'composer.json' => [
             '"test:agent-evaluation-controller": "php tools/test-agent-evaluation-controller.php"',
             '"@test:agent-evaluation-controller"',
@@ -4454,17 +4305,6 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'docs/decisions/README.md' => [
             '048-isolated-agent-evaluation-controller.md',
-        ],
-        'docs/evaluation.md' => [
-            '## Agent Evaluation Kit v0.1 and controller v0.2',
-            'ADR 048 accepts the separately located `tools/agent-evaluation-controller.php` entrypoint',
-            '`prepare -> generate -> freeze -> score -> validate -> retain -> cleanup`',
-            'deterministic test-only `fake-codex` runner',
-            'The sole accepted real runner is `codex-exec`',
-            'Issue #68 implements the opt-in adapter and fixed host proxy.',
-            '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
-            '`AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY`',
-            '`AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK`',
         ],
         'docs/guardrails.md' => [
             'The separate ADR 048 controller guard pins `tools/agent-evaluation-controller.php`',
@@ -4619,10 +4459,7 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/test-consumer-project/application.php' => [
             'function proveInstalledAgentEvaluationGuidanceDistribution(',
-            '## Agent Evaluation Kit v0.1 and controller v0.2',
-            'The sole accepted real runner is `codex-exec`',
             '`explain.file-profile-s3`',
-            'mounted read-only during generation',
             'The schema-v3 explanation guard additionally pins `explain.file-profile-s3`',
             'str_starts_with($archiveFile, \'tools/agent-evaluation-controller/\')',
             '$installedFramework . \'/tools/agent-evaluation-controller\'',
@@ -4746,12 +4583,6 @@ function repositoryGuardrailFailures(string $root): array
             'fail conservatively for continuing ambiguous prefixes and unreadable non-`.php` files',
             'reject every symlink outside dependency and VCS exclusions before target-content inspection',
             'ordinary Contract v16 checker failures with no configurable ignore, Strict Profile rule, or `PHT` diagnostic',
-        ],
-        '.ai/testing.md' => [
-            'Consumer Contract v16 source-discovery evidence invokes only the installed public checker.',
-            'distinguishes a 4,096-byte non-source EOF, an exact-boundary detected tag, a disproving lookahead byte, and a 4,097-byte or partial-prefix ambiguity',
-            'linked directories and canonical-source, detected-source, broken, and ordinary non-source file symlinks all fail before target-content inspection',
-            'every created fixture and changed permission is restored in `finally`',
         ],
         'docs/consumer-contract.md' => [
             'Contract version: 18',
@@ -4897,11 +4728,6 @@ function repositoryGuardrailFailures(string $root): array
             '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
             'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
         ],
-        'ROADMAP.md' => [
-            'Complete: ADR 061 and Consumer Contract version 18 retain Strict Profile version 4 and `PHT001` through `PHT008`',
-            'Accepted [ADR 061](docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md)',
-            'release treatment remains separately gated.',
-        ],
         'docs/consumer-contract.md' => [
             'Contract version: 18',
             '## Outer HTTP failure boundary',
@@ -4936,12 +4762,6 @@ function repositoryGuardrailFailures(string $root): array
             '`display_errors=Off`, `display_startup_errors=Off`, `log_errors=On`',
             '`zend.exception_ignore_args=On`',
             '(error_reporting() & E_ALL) === E_ALL',
-        ],
-        '.ai/testing.md' => [
-            'ADR 061 evidence uses real processes and a real web SAPI.',
-            'Retain a code-owned-generic success control without disclosure inputs',
-            'query, header, cookie, caller-address, and body values cannot change mode',
-            'composer test -- --group http-boundary',
         ],
         'skeleton/public/index.php' => [
             '$genericFailureResponse = (new UnknownFailureBoundary())->respond();',
@@ -5003,9 +4823,6 @@ function repositoryGuardrailFailures(string $root): array
             'docs/decisions/README.md' => [
                 "Proposed records:\n\n- `061-fail-closed-outer-http-failure-disclosure-profiles.md`",
             ],
-            'ROADMAP.md' => [
-                'implementation, Consumer Contract version 18, and release treatment remain pending accountable-human approval.',
-            ],
         ],
         'stale proposed outer HTTP failure disclosure boundary',
         $failures,
@@ -5036,10 +4853,6 @@ function repositoryGuardrailFailures(string $root): array
         '.ai/file-transfers.md' => [
             'Before file access, `ResponseEmitter` applies the common response-output guard',
             'all-empty active and nested buffers remain valid',
-        ],
-        '.ai/testing.md' => [
-            'Use real PHP output buffers to allow empty active and nested levels; reject pending top-level bytes and lower-level bytes hidden below an empty top level as `ResponseEmissionFailed(true)`',
-            'Ordinary emission evidence uses real empty and non-empty active buffers and proves pending bytes remain untouched',
         ],
         'docs/consumer-contract.md' => [
             'Contract version: 18',
@@ -5099,16 +4912,6 @@ function repositoryGuardrailFailures(string $root): array
             'Installed emitter rejected empty nested buffering infrastructure.',
             'PASS installed response-emission preflight',
         ],
-        'skeleton/.ai/README.md' => [
-            'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
-            'consumer-contract-upgrades.md#contract-version-18',
-            'Upgrade the installed Consumer Contract to current version 18',
-        ],
-        'templates/application/.ai/README.md' => [
-            'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
-            'consumer-contract-upgrades.md#contract-version-18',
-            'Upgrade the installed Consumer Contract to current version 18',
-        ],
     ];
 
     requireGuardrailArtifactMarkers(
@@ -5142,14 +4945,12 @@ function repositoryGuardrailFailures(string $root): array
 
     $duplicationAdvisoryArtifactMarkers = [
         '.ai/static-analysis.md' => '48-token minimum',
-        '.ai/testing.md' => 'The duplication advisory requires a fast direct scanner suite',
         'bin/phpthis' => "verification/ApplicationDuplicationScanner.php",
         'composer.json' => '"test:duplication": "php tools/test-application-duplication.php"',
         'docs/consumer-contract.md' => 'A duplication report never establishes invalidity or automatically requires refactoring.',
         'docs/decisions/030-report-only-consumer-duplication-advisory.md' => 'Status: accepted',
         'docs/decisions/README.md' => '030-report-only-consumer-duplication-advisory.md',
         'docs/guardrails.md' => '`php tools/test-application-duplication.php`',
-        'docs/knowledge-map.md' => 'Review a possible duplication advisory',
         'docs/static-analysis.md' => '## Report-only duplication review',
         'docs/strict-profile.md' => 'possible-duplication output is deliberately absent from this catalogue',
         'tools/package-files.txt' => 'verification/ApplicationDuplicationScanner.php',

@@ -1,12 +1,10 @@
 # PHPThis knowledge map
 
-This is the installed framework knowledge router for an AI working in a PHPThis application. It is not a tutorial manual. Start with `docs/consumer-contract.md`, combine it with the application's own `AGENTS.md` and `.ai/` context, and load only the smallest relevant row below.
+Use this installed router when the framework concern is unknown. `AGENTS.md` is the application's mandatory entrypoint; it owns universal rules and routes project facts. Read `docs/consumer-contract.md` for installation, adoption, upgrades or conflicts. Current concern guides carry the applicable contract; source and tests ground claims about behavior.
 
-Framework contracts define what is supported. Human-approved application decisions and context define desired local policy and may strengthen the framework contract, but cannot weaken it. Concrete source and tests establish what the installed version and application actually do.
+Start with the first guide in the selected row and add guides as their concerns are entered. Read ADRs for decision review and `docs/consumer-contract-upgrades.md` for contract changes or history. Application policy may strengthen the framework requirements.
 
-Within each row, begin with the first current operational guide. Read a conditional guide only when the task enters that concern. Read an ADR only when reviewing or changing the decision it records; ordinary implementation does not load historical rationale. Contract upgrades and historical review additionally load `docs/consumer-contract-upgrades.md`.
-
-A simple endpoint is an unprotected route on one exact literal path that fits an existing named route-area manifest, uses a dependency-free handler, accepts no application-owned body or path parameters, performs no database, session, server-side cache, process-configuration, request-handler-decorator, or external I/O work, and requires no new product, architecture, security, data, release, or operational decision. After universal entrypoints, a simple-endpoint change has exactly four task-specific files: one current operational guide, the existing named route-area manifest, the dependency-free handler, and the nearest behavior test. That guide is `docs/request-handling.md`. Measure or report universal context separately; its cost is never hidden inside or used to weaken that four-file routing claim.
+For a simple endpoint, `docs/request-handling.md` owns the complete definition, construction exception and four-file task route. Report universal and task-specific reading separately, including any first-contribution project orientation. `VISION.md` owns the locality goal and `docs/design-goals.md` its rationale.
 
 ## Question and task routing
 
@@ -69,7 +67,7 @@ A simple endpoint is an unprotected route on one exact literal path that fits an
 When answering how PHPThis works or how code should be written:
 
 1. Identify the installed PHPThis version or exact dependency revision when available.
-2. Inspect the consumer contract, the relevant application guide, and the concrete source and tests. Do not treat model memory as framework authority.
+2. Inspect the applicable current guide, application facts, and concrete source and tests; load the full Consumer Contract for adoption, upgrades or conflicts. Do not treat model memory as framework authority.
 3. Distinguish current framework behavior, application-owned policy, and a new proposal. Never present a proposal as an existing feature.
 4. Name the files, symbols, diagnostics, or checks that support the answer so a human can audit it.
 5. State when PHPThis deliberately has no canonical mechanism instead of borrowing a pattern from another framework.

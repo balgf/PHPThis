@@ -67,18 +67,25 @@ function contextGuardrailFailures(string $root): array
     $failures = [...$failures, ...taskRoutedGuidanceFailures($root, $root . '/skeleton')];
 
     $maintainerRoutes = [
-        'AGENTS.md' => ['VISION.md', '.ai/README.md', '.ai/rules.md', '.ai/change-workflow.md', '.ai/strict-profile.md'],
-        '.ai/README.md' => [
-            'VISION.md', '.ai/rules.md', '.ai/change-workflow.md', '.ai/strict-profile.md',
-            '.ai/routing.md', '.ai/email.md', '.ai/configuration.md', '.ai/operations.md',
-            '.ai/jobs.md', '.ai/migrations.md', '.ai/file-transfers.md', '.ai/websockets.md',
-            '.ai/application-context.md', '.ai/testing.md', 'RELEASING.md',
+        'AGENTS.md' => [
+            'VISION.md', 'docs/knowledge-map.md', 'RELEASING.md',
+            '.ai/routing.md', '.ai/http.md', '.ai/request-boundary.md', '.ai/types.md',
+            '.ai/configuration.md', '.ai/database.md', '.ai/request-policy.md',
+            '.ai/session.md', '.ai/cache.md', '.ai/file-transfers.md', '.ai/jobs.md',
+            '.ai/cli.md', '.ai/migrations.md', '.ai/operations.md', '.ai/observability.md',
+            '.ai/email.md', '.ai/rag.md', '.ai/websockets.md', '.ai/workbench.md',
+            '.ai/crud.md', '.ai/errors.md', '.ai/static-analysis.md', '.ai/strict-profile.md',
+            '.ai/testing.md', '.ai/application-context.md', '.ai/consumer-profile.md',
         ],
-        '.ai/rules.md' => [],
-        '.ai/types.md' => [],
-        '.ai/crud.md' => [],
-        '.ai/application-context.md' => ['.ai/README.md', 'docs/knowledge-map.md', 'docs/getting-started.md'],
-        '.ai/testing.md' => [],
+        '.ai/README.md' => ['AGENTS.md', '.ai/application-context.md', 'docs/knowledge-map.md'],
+        '.ai/rules.md' => ['AGENTS.md', '.ai/strict-profile.md'],
+        '.ai/change-workflow.md' => ['AGENTS.md', '.ai/configuration.md', 'RELEASING.md'],
+        '.ai/application-context.md' => ['AGENTS.md', 'docs/knowledge-map.md', 'docs/getting-started.md'],
+        '.ai/testing.md' => [
+            'AGENTS.md', 'docs/evaluation.md', 'tools/guidance-support.php',
+            'tests/MaintainabilityGuardrailsTest.php', 'tools/agent-evaluation/README.md',
+            'tools/agent-evaluation-controller/README.md',
+        ],
     ];
     foreach ($maintainerRoutes as $relativePath => $routes) {
         $references = [];
@@ -95,10 +102,12 @@ function contextGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, [
         'docs/decisions/044-bounded-task-routed-ai-context.md' => ['Status: accepted'],
         'docs/decisions/058-concern-local-ai-context-routing.md' => ['Status: accepted'],
+        'docs/decisions/064-one-entrypoint-per-audience.md' => ['Status: accepted'],
         'docs/consumer-contract.md' => ['Contract version: 18'],
         'docs/decisions/README.md' => [
             '`044-bounded-task-routed-ai-context.md`',
             '`058-concern-local-ai-context-routing.md`',
+            '`064-one-entrypoint-per-audience.md`',
         ],
         'skeleton/src/Routes.php' => ['return [...HealthRoutes::create()];'],
         'skeleton/src/HealthRoutes.php' => [
@@ -107,13 +116,12 @@ function contextGuardrailFailures(string $root): array
         ],
         'skeleton/src/HealthHandler.php' => ['final class HealthHandler implements RequestHandler'],
         'docs/crud.md' => ['/users/{user_id:positive-int}'],
-        'ROADMAP.md' => ['/users/{user_id:positive-int}'],
         'docs/database.md' => ['/accounts/{account_id:positive-int}/documents'],
-        'docs/evaluation.md' => ['/users/{user_id:positive-int}'],
         'example/.ai/file-transfers.md' => ['GET /document-files/{file_id:token}'],
         'tools/package-files.txt' => [
             'docs/decisions/044-bounded-task-routed-ai-context.md',
             'docs/decisions/058-concern-local-ai-context-routing.md',
+            'docs/decisions/064-one-entrypoint-per-audience.md',
             'docs/design-goals.md',
             'docs/ai-context-routing-review.md',
             'docs/consumer-contract-upgrades.md',
@@ -190,15 +198,6 @@ function contextGuardrailFailures(string $root): array
         '.ai/strict-profile.md' => [
             'Consumer Contract version 18 carries version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
             'Runtime and deployment obligations remain in the [current Consumer Contract](../docs/consumer-contract.md) and routed guides; they are not additional PHT rules.',
-        ],
-        '.ai/testing.md' => [
-            'Inject native cleanup faults only through the isolated framework test boundary',
-            'preservation of begun-request and earlier pending state after failed update or regeneration cleanup',
-            'invalidation commit-failure precedence with no stale live cookie',
-            'terminal reset after finish or abort; no retry after cleanup failure',
-            'normal finalization of a registered original response when operation cleanup succeeds.',
-            'Response tests cover final-status bounds, rejection of `Transfer-Encoding`, ordinary omitted or exact canonical `Content-Length`',
-            '`HEAD` remains a separately declared application route with an empty body and no inferred representation length; the emitter does not receive request knowledge.',
         ],
         'docs/request-handling.md' => [
             'An ordinary final response has a status from `200` through `599`, no `Transfer-Encoding`, and one explicit string body.',
@@ -441,12 +440,6 @@ function contextGuardrailFailures(string $root): array
             'all-empty active and nested buffers remain valid.',
             'It inspects without cleaning, flushing, rewriting, or incorporating prior bytes.',
         ],
-        '.ai/testing.md' => [
-            'Use real PHP output buffers to allow empty active and nested levels',
-            'lower-level bytes hidden below an empty top level as `ResponseEmissionFailed(true)`',
-            'prove zero status, header, cookie, body, or file-access work.',
-            'Ordinary emission evidence uses real empty and non-empty active buffers and proves pending bytes remain untouched',
-        ],
         '.ai/strict-profile.md' => [
             'Consumer Contract version 18 carries version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
             'Runtime and deployment obligations remain in the [current Consumer Contract](../docs/consumer-contract.md) and routed guides; they are not additional PHT rules.',
@@ -474,20 +467,11 @@ function contextGuardrailFailures(string $root): array
             'fix earlier output at its owner rather than cleaning, discarding, or incorporating it.',
             'The entry snapshot does not expose custom output-handler private state, later output',
         ],
-        'docs/evaluation.md' => [
-            'ADR 026 adds a bounded file-transfer proof, and ADR 060 extends its preflight evidence.',
-            'use real PHP buffers to reject pending top-level and nested lower-level bytes while allowing empty active buffers',
-            'prove zero file-open or response-output work',
-        ],
         'docs/guardrails.md' => [
             'The accepted ADR 060 response-emission guard pins Consumer Contract version 17',
             'real top-level and nested PHP-buffer evidence, empty-buffer success, `ResponseEmissionFailed(true)`',
             'rejection before status, headers, cookies, body, or file access.',
             'Acceptance authorizes no commit, push, issue closure, tag, package, release, or announcement.',
-        ],
-        'ROADMAP.md' => [
-            'Complete: ADR 060 and Consumer Contract version 17 retain Strict Profile version 4 and `PHT001` through `PHT008`',
-            'All-empty active buffers remain valid; prior bytes and buffer lifecycle remain application-owned',
         ],
         'example/.ai/file-transfers.md' => [
             'The emitter first rejects already-sent headers or pending bytes in any active PHP-managed output-buffer level as `ResponseEmissionFailed(true)`',
@@ -671,9 +655,6 @@ function contextGuardrailFailures(string $root): array
         'tools/package-files.txt' => [
             'docs/decisions/046-canonical-executable-example-boundaries.md',
         ],
-        'ROADMAP.md' => [
-            'ADR 046 consolidates the executable example around one exact-class response owner, one application-owned semantic user identifier, cadence-first scheduled preflight, and valid-UTF-8 authoritative document projections',
-        ],
         'docs/guardrails.md' => [
             "The ADR 046 guard pins the executable example's canonical application boundaries without turning them into framework runtime or consumer-validity rules.",
             'It retains the composition-root exact-class registry through `ApplicationComposition::errorResponses()` with no handler-local or test-local duplicate;',
@@ -822,24 +803,11 @@ function contextGuardrailFailures(string $root): array
     }
 
     $versionNeutralReleaseContractMarkers = [
-        '.ai/README.md' => [
-            '| Prepare or publish a release | `RELEASING.md` | proposal or approved scope as applicable, explicit authority, exact candidate commits only after approval, CI, packages, and public-install proof |',
-        ],
         '.ai/application-context.md' => [
             'Keep `RELEASING.md` as the detailed current mutable release-state owner.',
             'Consumer-facing summaries may project only their audience-specific boundary and must link back instead of copying the complete evidence.',
             'Reconcile that owner, every summary, the guard markers, and installed-consumer proof together; preserve tagged and explicitly historical source-preparation text unchanged.',
             'Record a source and verification date for volatile scale or operational claims.',
-        ],
-        '.ai/testing.md' => [
-            'The local package-archive proof always compares the complete Composer archive inventory with the explicit release allowlist.',
-            'Its independent Git-export subproof returns exactly `verified` only after Git status inspection reports a clean worktree',
-            'any tracked-unstaged, staged, or untracked state returns exactly `skipped-dirty`.',
-            'A `skipped-dirty` development run continues the Composer archive, isolated installation, installed checker, application behavior, and adversarial controls',
-            'Status inspection failure or clean Git-archive creation, reading, or comparison failure remains a hard failure.',
-            'fixed state and terminal outputs expose no Git status bytes, source bytes, absolute paths, or untracked filenames.',
-            'Only a terminal `git-export-parity=verified` result is local Git-export release evidence',
-            'Prerelease publication separately verifies the actual version-pinned Packagist-preferred dist because a local archive cannot prove hosting-provider output.',
         ],
         '.github/workflows/ci.yml' => [
             'name: PHP ${{ matrix.php }} validity',
@@ -866,92 +834,6 @@ function contextGuardrailFailures(string $root): array
             '[Knowledge map](docs/knowledge-map.md)',
             '[Alpha 8 release notes](docs/releases/0.1.0-alpha.8.md)',
             '[Security policy](SECURITY.md) and [release process](RELEASING.md)',
-        ],
-        'RELEASING.md' => [
-            'Alpha 8 and `v0.1.0-alpha.8` are the latest immutable framework tag/source boundary',
-            'Closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) preserves the completed and announced Alpha 7 predecessor',
-            'framework `36643c068dda3619f939ac04d861c1316a0af8e9`',
-            'skeleton `1b1f3afed72880fc7852e67016349e87fc8c4c66`',
-            '[final announcement](https://github.com/balgf/PHPThis/issues/53#issuecomment-5323310887)',
-            'Current wording was reconciled against Alpha 8 package/public-proof evidence on 2026-09-27 (Asia/Manila)',
-            'continuing host state must still be verified externally.',
-            '## Immutable release history',
-            'Historical release authority means the exact bytes reachable from the approved tag.',
-            'A later `main` file at the same path may contain a clarification, but it is current documentation rather than evidence of the tagged release.',
-            'The `PENDING` candidate values and non-authority statements in ADR 054, the tagged Alpha 7 source-preparation notes, and the approved Alpha 7 source-preparation subsection above are preserved acceptance-time history, not current publication state.',
-            '## Reusable release state model',
-            '**Latest recorded release:**',
-            '**Unreleased `main`:**',
-            '**Proposed next candidate:**',
-            '**Approved candidate:**',
-            'only an explicit accountable-human record may approve the exact version, framework and skeleton tags, framework candidate commit, planned release date, bounded scope, release notes, candidate-specific announcement text, and each authorized next operation.',
-            'The skeleton candidate commit may remain explicitly `PENDING`',
-            'Keep the planned release date distinct from the observed timestamp of every external publication operation.',
-            'Closed Issue #53 preserves the completed Alpha 7 predecessor.',
-            'Alpha 8 already contains accepted ADRs 055 through 062, Contract 18, Profile 4 and PHT008.',
-            'Mutable documentation or maintainer evidence after that tag does not change its source, artifacts or scope and authorizes no later release operation.',
-            'The issue owns later operation authorizations and observed results; frozen preparation wording is not continuing publication state.',
-            'Those completed histories authorize no production use or later release operation.',
-            'For a current candidate, neither partial evidence nor checklist position authorizes the next external write',
-            'Authorization is enumerable, not implied by reaching a checklist step.',
-            'source preparation; exact-candidate freeze and approval; framework commit and push; framework tag creation and push; framework Packagist update; skeleton commit and push; skeleton tag creation and push; skeleton Packagist update; either GitHub prerelease; and the final announcement.',
-            'Preparing a proposal or accepted source scope, proving or publishing an approved candidate, and inspecting an older release are different tasks.',
-            '## Version-neutral release gate',
-            'candidate-specific announcement',
-            'An unexplained collision stops the release and requires a new approved version.',
-            'When resuming a recorded partial publication, require every existing tag and artifact to match its recorded commit and distribution evidence exactly',
-            'Existing state never authorizes overwrite, tag movement, deletion and recreation, or artifact replacement.',
-            'record the framework side as published but the overall release as partial and unproved',
-            'preserve and record that exact partial-publication state',
-            '### 2. Prove the framework candidate',
-            'Do not push it before the local proof in Step 2 passes.',
-            'finishes with `git-export-parity=verified` for this exact clean candidate.',
-            'Treat `git-export-parity=skipped-dirty` only as a successful development run of the independent Composer archive, isolated installation, installed checker, application behavior, and adversarial controls.',
-            'It does not satisfy this candidate gate, approve the candidate, or authorize push, tag, package, release, or any later operation.',
-            'Failure to inspect Git status or to create, read, or compare the clean Git archive remains a hard failure rather than a third proof state',
-            'fixed terminal output must expose no Git status bytes, source bytes, absolute paths, or untracked filenames.',
-            'After the complete local gate passes, confirm the authorization record permits pushing the exact framework candidate commit',
-            'GitHub CI passes both the PHP 8.4 validity job and the SQLite/MySQL/PostgreSQL PDO transport job for that exact pushed candidate commit.',
-            '### 3. Publish the framework prerelease',
-            'push that exact tag to the approved remote',
-            '### 4. Publish the skeleton prerelease',
-            'push the exact skeleton candidate commit without modification',
-            'Confirm skeleton CI passes for that exact pushed candidate commit',
-            'push that exact tag to the approved remote without moving or reusing an existing tag',
-            '### 5. Prove the public distribution path',
-            "composer create-project --stability=alpha --prefer-dist phpthis/skeleton phpthis-release-proof 'APPROVED_SKELETON_VERSION'",
-            '### 6. Announce or stop',
-            'publish both approved GitHub prereleases for the already-pushed proven tags',
-            'Exact framework candidate commit:',
-            'Exact-candidate approval record:',
-            'Exact skeleton candidate commit:',
-            'Planned release date:',
-            'Observed external operation timestamps and results:',
-            'Local Git-export parity state (`verified` required):',
-            'Accountable-human authorization records by exact operation:',
-            'Partial-publication state or NOT_APPLICABLE:',
-        ],
-        'ROADMAP.md' => [
-            'Issue #37 records the exact framework and skeleton candidates, both tags and packages, clean exact `create-project` proof, both GitHub prereleases, and announcement.',
-            'That completed Alpha 6 history grants no authority for a later release operation.',
-            'At the completed Alpha 6 boundary, Alpha 6 and `v0.1.0-alpha.6` were the latest immutable framework tag and source boundary',
-            'At the Alpha 7 source-preparation checkpoint, accepted post-Alpha-6 source included ADRs 048 through 054, Consumer Contract version 13',
-            'Closed Issue #53 now records the completed coordinated Alpha 7 release',
-            'both GitHub prereleases, the final announcement, and Issue closure.',
-            'Complete for Alpha 7 source-preparation evidence:',
-            'Model/context token telemetry was unavailable, and the accountable human accepted `UNAVAILABLE` with no lexical-token proxy as a bounded Alpha 7 deferral only.',
-            'The real WebSocket migration and temporary proposed decision 002 remain outside Alpha 7 and unapproved',
-            '## Phase 7: Alpha 7 release',
-            'The first three bullets preserve the 2026-08-14 source-preparation checkpoint',
-            'Complete for source-preparation authority: on 2026-08-14 (Asia/Manila), the accountable human accepted ADR 054, `0.1.0-alpha.7`, both `v0.1.0-alpha.7` tag names, the planned `2026-08-18` date, the release notes, and the bounded source-preparation state.',
-            'Both exact candidate commits remain `PENDING`; no commit, push, tag, package, dedicated-skeleton change, GitHub prerelease, announcement, issue closure, or production mutation is authorized.',
-            'Complete for the exact framework candidate, tag, required CI, automatic Packagist indexing, and preferred-distribution proof',
-            'Complete for the exact dedicated-skeleton export, lock, candidate, required CI, tag, and automatic Packagist indexing',
-            'Complete for the clean Packagist-only public-distribution path, exact generated and installed inventories, complete application gate, and loopback `GET /health`.',
-            'Complete for the coordinated Alpha 7 release:',
-            'Issue #53 records the framework and skeleton GitHub prereleases, the final candidate-specific announcement, and Issue closure',
-            'The [release process](RELEASING.md) owns the detailed current record.',
-            'That completed history grants no authority for a later release operation.',
         ],
         'SECURITY.md' => [
             'Alpha 8 and `v0.1.0-alpha.8` preserve the latest immutable framework tag/source boundary',
@@ -1007,16 +889,6 @@ function contextGuardrailFailures(string $root): array
             'This syntactic drift detector does not infer arbitrary semantic freshness.',
             'verifies no continuing live GitHub or Packagist state',
         ],
-        'docs/knowledge-map.md' => [
-            'Assess or prepare a proposed PHPThis release',
-            'Prove or publish an approved PHPThis candidate',
-            'Inspect an installed or historical PHPThis release',
-            'exact framework and skeleton candidate commits recorded at their respective freeze points',
-            'planned release date separate from observed publication timestamps',
-            'distinct exact-candidate approval and separately enumerable preparation, commit/push, tag creation/push, package, GitHub-prerelease, and announcement authorization',
-            'clean-tree local proof before push and exact pushed-commit CI',
-            'exact-version clean public installation evidence',
-        ],
         'tools/package-files.txt' => [
             'README.md',
             'RELEASING.md',
@@ -1049,16 +921,6 @@ function contextGuardrailFailures(string $root): array
             'Alpha 6 remains the latest fully completed and announced coordinated release',
             'unreleased development work adopting ADR 056, ADR 057, ADR 059, and ADR 060',
         ],
-        'RELEASING.md' => [
-            'Alpha 7 remains an unannounced partial coordinated release',
-            'Alpha 6 remains the latest fully completed and announced coordinated release',
-            'post-tag `main` adopts ADR 056, ADR 057, ADR 059, and ADR 060',
-            'either GitHub prerelease, the final announcement, Issue #53 closure',
-        ],
-        'ROADMAP.md' => [
-            'both GitHub prereleases and the final announcement remain separately gated',
-            'Open and separately gated: the framework GitHub prerelease',
-        ],
         'SECURITY.md' => [
             'Alpha 7 remains an unannounced partial coordinated release',
             'Alpha 6 remains the latest fully completed and announced coordinated release',
@@ -1083,15 +945,6 @@ function contextGuardrailFailures(string $root): array
     );
 
     $historicalAlpha1IdentityArtifactMarkers = [
-        'RELEASING.md' => [
-            '## Approved Alpha 1 identity',
-            'Composer version: `0.1.0-alpha.1`',
-            'Framework tag: `v0.1.0-alpha.1`',
-            'Skeleton tag: `v0.1.0-alpha.1`',
-            'The exact candidate commit, release date, and accountable-human publication authorization belong in the external release evidence',
-            'That approval did not itself authorize creation of either tag, either package-host entry, either GitHub release, or the announcement.',
-            'Alpha 1 remained subject to the complete gate recorded by its tagged source',
-        ],
         'docs/releases/0.1.0-alpha.1.md' => [
             'Release identity: `0.1.0-alpha.1`. Publication state is external',
             'external release evidence recorded with the release work item using the checklist in `RELEASING.md`',
@@ -1111,15 +964,6 @@ function contextGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, $historicalAlpha1IdentityArtifactMarkers, 'historical Alpha 1 identity', $failures);
 
     $historicalAlpha2IdentityArtifactMarkers = [
-        'RELEASING.md' => [
-            '## Approved Alpha 2 identity',
-            'Composer version: `0.1.0-alpha.2`',
-            'Framework tag: `v0.1.0-alpha.2`',
-            'Skeleton tag: `v0.1.0-alpha.2`',
-            'The accountable human approved the following release identity and gated publication sequence on 2026-07-21',
-            'This approves the exact version and tag names and authorizes the following operations only after their preceding gates pass',
-            'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
-        ],
         'docs/releases/0.1.0-alpha.2.md' => [
             'Release identity: `0.1.0-alpha.2`. Publication state is external',
             'Identity and gated publication authorization do not announce either tag, either package, or the public installation path.',
@@ -1139,16 +983,6 @@ function contextGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, $historicalAlpha2IdentityArtifactMarkers, 'historical Alpha 2 identity', $failures);
 
     $historicalAlpha3IdentityArtifactMarkers = [
-        'RELEASING.md' => [
-            '## Approved Alpha 3 identity',
-            'Composer version: `0.1.0-alpha.3`',
-            'Framework tag: `v0.1.0-alpha.3`',
-            'Skeleton tag: `v0.1.0-alpha.3`',
-            'The accountable human approved the following release identity and gated publication sequence on 2026-07-21',
-            'prove the clean public installation path; create both GitHub prereleases; and announce Alpha 3.',
-            'The exact candidate commits, release date, artifact references, and gate evidence belong in the external release evidence',
-            'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
-        ],
         'docs/releases/0.1.0-alpha.3.md' => [
             'Release identity: `0.1.0-alpha.3`. Publication state is external',
             'Identity and gated publication authorization do not announce either tag, either package, or the public installation path.',
@@ -1174,15 +1008,6 @@ function contextGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, $historicalAlpha3IdentityArtifactMarkers, 'historical Alpha 3 identity', $failures);
 
     $historicalAlpha4IdentityArtifactMarkers = [
-        'RELEASING.md' => [
-            '## Approved Alpha 4 identity',
-            'Composer version: `0.1.0-alpha.4`',
-            'Framework tag: `v0.1.0-alpha.4`',
-            'Skeleton tag: `v0.1.0-alpha.4`',
-            'The accountable human approved the following release identity and gated publication sequence on 2026-07-23',
-            'prove the clean public installation path; create both GitHub prereleases; and announce Alpha 4.',
-            'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
-        ],
         'docs/releases/0.1.0-alpha.4.md' => [
             'Release identity: `0.1.0-alpha.4`. Publication state is external',
             'Identity and gated publication authorization do not announce either tag, either package, or the public installation path.',
@@ -1213,16 +1038,6 @@ function contextGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, $historicalAlpha4IdentityArtifactMarkers, 'historical Alpha 4 identity', $failures);
 
     $historicalAlpha5IdentityArtifactMarkers = [
-        'RELEASING.md' => [
-            '## Approved Alpha 5 identity',
-            'Composer version: `0.1.0-alpha.5`',
-            'Framework tag: `v0.1.0-alpha.5`',
-            'Skeleton tag: `v0.1.0-alpha.5`',
-            'The accountable human approved preparation of the following bounded release scope and exact identity on 2026-08-01',
-            'This approval authorizes source preparation and local verification only.',
-            'Those external operations require later explicit accountable-human authorization after the candidate evidence is reviewed.',
-            'If any mandatory check fails, the next external operation remains unauthorized until a new candidate passes.',
-        ],
         'docs/releases/0.1.0-alpha.5.md' => [
             'Release identity: `0.1.0-alpha.5`. Publication state is external',
             'Identity and candidate-preparation approval do not announce or authorize either tag, either package, the dedicated-skeleton update, a GitHub release, or the public installation path.',
@@ -1254,21 +1069,6 @@ function contextGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, $historicalAlpha5IdentityArtifactMarkers, 'historical Alpha 5 identity', $failures);
 
     $historicalAlpha6PreparationArtifactMarkers = [
-        'RELEASING.md' => [
-            '## Approved Alpha 6 identity and source preparation',
-            'Composer version: `0.1.0-alpha.6`',
-            'Framework tag: `v0.1.0-alpha.6`',
-            'Skeleton tag: `v0.1.0-alpha.6`',
-            'Planned release date: `2026-08-09` (Asia/Manila)',
-            'Bounded scope: `docs/decisions/047-bounded-alpha-6-release-scope.md`',
-            'Release notes: `docs/releases/0.1.0-alpha.6.md`',
-            'The source-preparation approval above did not itself authorize any external operation.',
-            'Issue #37 subsequently records the complete coordinated Alpha 6 release: the exact framework and skeleton candidates, both tags and packages, clean exact `composer create-project` proof, both GitHub prereleases, and announcement.',
-            'Accepted implementation and guidance after `v0.1.0-alpha.6` now include ADRs 048 through 053, Consumer Contract version 13, and the unchanged 2,618-line core under the accepted 2,620-line ceiling.',
-            'Those changes are not part of the immutable Alpha 6 framework source.',
-            'ADR 054 separately accepts the Alpha 7 identity and source-preparation scope while selecting no exact candidate or external release operation.',
-            'This tracked process does not replace the external evidence or establish live host availability.',
-        ],
         'docs/decisions/047-bounded-alpha-6-release-scope.md' => [
             'Status: accepted',
             'On 2026-08-09 in Asia/Manila, the accountable human approved this bounded Alpha 6 scope, exact release identity, planned date, release notes, candidate-specific announcement draft, and source preparation.',
@@ -1310,22 +1110,6 @@ function contextGuardrailFailures(string $root): array
     );
 
     $approvedAlpha7PreparationArtifactMarkers = [
-        'RELEASING.md' => [
-            '## Approved Alpha 7 identity and source preparation',
-            'The accountable human approved the following release identity, planned date, bounded scope, release notes, and source-preparation state on 2026-08-14 (Asia/Manila):',
-            'Composer version: `0.1.0-alpha.7`',
-            'Framework tag: `v0.1.0-alpha.7`',
-            'Skeleton tag: `v0.1.0-alpha.7`',
-            'Planned release date: `2026-08-18` (Asia/Manila)',
-            'Bounded scope: `docs/decisions/054-bounded-alpha-7-release-scope.md`',
-            'Release notes: `docs/releases/0.1.0-alpha.7.md`',
-            'Exact framework candidate commit: `PENDING`',
-            'Exact skeleton candidate commit: `PENDING`',
-            'This approval accepts a bounded Alpha 7 deferral of unavailable model/context token telemetry, with no lexical-token proxy, and creates no general evaluation precedent.',
-            'It excludes the real WebSocket consumer migration and its temporary proposed decision 002',
-            'Both exact candidate commits remain `PENDING`.',
-            'This source-preparation approval does not authorize exact-candidate approval, repository commit or push, framework or skeleton tag creation or push, package-host write, dedicated-skeleton change, GitHub release, announcement, issue closure, or production-service mutation.',
-        ],
         'docs/decisions/054-bounded-alpha-7-release-scope.md' => [
             'Status: accepted',
             'Publication state is external.',
@@ -1383,8 +1167,6 @@ function contextGuardrailFailures(string $root): array
             "\$installedFramework . '/docs/releases/0.1.0-alpha.7.md'",
             '# PHPThis 0.1.0-alpha.7',
             'Source-preparation status: accepted on 2026-08-14 (Asia/Manila)',
-            'Exact framework candidate commit: `PENDING`',
-            'Exact skeleton candidate commit: `PENDING`',
             'PASS installed version-neutral release guidance distribution',
         ],
     ];
@@ -1399,10 +1181,6 @@ function contextGuardrailFailures(string $root): array
     forbidGuardrailArtifactMarkers(
         $root,
         [
-            'RELEASING.md' => [
-                '## Proposed Alpha 7 source preparation',
-                'Issue #53 tracks a proposal to prepare the following release identity and source scope for accountable-human review:',
-            ],
             'docs/decisions/054-bounded-alpha-7-release-scope.md' => [
                 'Status: proposed',
                 'On 2026-08-13 in Asia/Manila, the accountable human asked maintainers to begin Alpha 7 preparation.',
@@ -1421,10 +1199,6 @@ function contextGuardrailFailures(string $root): array
     $currentConsumerContractVersionMarkers = [
         'docs/consumer-contract.md' => 'Contract version: 18',
         'docs/getting-started.md' => 'contract-version-18 Composer scripts',
-        'skeleton/.ai/README.md' => 'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
-        'skeleton/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v18 and Strict Profile v4',
-        'templates/application/.ai/README.md' => 'Consumer Contract v18 and Strict Profile v4 remain mandatory.',
-        'templates/application/.ai/rules.md' => 'These rules supplement installed PHPThis Consumer Contract v18 and Strict Profile v4',
     ];
 
     foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1478,12 +1252,6 @@ function contextGuardrailFailures(string $root): array
             'ADR 057 before changing distinct-placeholder enforcement',
             'PHT008 requires one distinct exact case-sensitive named parameter',
         ],
-        '.ai/testing.md' => [
-            'exact 53-proof-call order',
-            '`PHT008` fixtures must reject a repeated exact case-sensitive named placeholder',
-            'one such opener disables lexical exclusions for the rest of that alternative',
-            'proveRepeatedSqlPlaceholderIsRejected(...)',
-        ],
         'docs/database.md' => [
             'PHT008 then checks every PHT006-finite SQL alternative independently.',
             '`Connection` performs no corresponding SQL-text parse or runtime PHT008 rejection.',
@@ -1496,18 +1264,12 @@ function contextGuardrailFailures(string $root): array
             '`PHT008` owns non-ignorable detection',
             'It scans ambiguous SQLite bracket text',
         ],
-        'templates/application/AGENTS.md' => [
-            'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules.',
-        ],
         'templates/application/.ai/data.md' => [
             'Every data value is bound with a distinct exact case-sensitive named placeholder and separate binding for each occurrence',
         ],
         'templates/application/.ai/testing.md' => [
             'PHT006, PHT008, explicit tenant predicates',
             'PHT008 is static and does not imply runtime SQL-text rejection.',
-        ],
-        'skeleton/AGENTS.md' => [
-            'Consumer Contract v18 and Strict Profile v4 are the minimum accepted rules.',
         ],
         'skeleton/.ai/data.md' => [
             'Every SQL data value must use a distinct exact case-sensitive named placeholder and binding for each occurrence',
@@ -1572,9 +1334,6 @@ function contextGuardrailFailures(string $root): array
         'tools/package-files.txt' => [
             'docs/decisions/057-distinct-named-sql-placeholder-occurrences.md',
             'verification/phpstan/DistinctNamedSqlPlaceholderRule.php',
-        ],
-        'ROADMAP.md' => [
-            'Complete: ADR 057, Consumer Contract version 15, Strict Profile version 4, and PHT008',
         ],
     ];
 
@@ -1768,10 +1527,6 @@ function contextGuardrailFailures(string $root): array
             "Keep ADR 055's Composer/configuration consistency check ordinary and separate from PHT007.",
             'reports only the input name',
         ],
-        '.ai/testing.md' => [
-            "ADR 055's ordinary Composer/configuration consistency check also has no `PHT` identifier.",
-            'Every mutation restores the consumer manifest in `finally`.',
-        ],
         'tools/package-files.txt' => [
             'docs/configuration.md',
             'docs/decisions/036-one-typed-application-configuration-boundary.md',
@@ -1844,14 +1599,6 @@ function contextGuardrailFailures(string $root): array
             'execute the real PHP file separately in fresh subprocesses',
             'Clean every file and sentinel in `finally`.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Adopt, change, or review a local development environment launcher | `docs/configuration/local-environment-launcher.md`',
-            "verify that no framework loader, automatic bootstrap, dotenv dependency, configuration cache, `config:clear` command, launcher-specific Contract/Profile/PHT/checker change beyond ADR 055's separate command-text rule",
-        ],
-        '.ai/README.md' => [
-            '| Change local environment launcher guidance or its checked reference | `.ai/application-context.md` |',
-            'accepted ADR 050, checked application-owned reference',
-        ],
         '.ai/application-context.md' => [
             'Preserve accepted ADR 050 and its optional application-owned boundary.',
             "Do not add a framework or skeleton launcher, automatic PHP loading, dotenv dependency, configuration cache, `config:clear`, any launcher-specific Contract/Profile/PHT/checker change beyond ADR 055's separate command-text consistency rule",
@@ -1859,13 +1606,6 @@ function contextGuardrailFailures(string $root): array
         '.ai/cli.md' => [
             'an optional application-owned PHP launcher invoked as `php ./bin/application <command>`',
             'array-form shell-free `proc_open` with inherited `STDIN`, `STDOUT`, and `STDERR` descriptor resources',
-        ],
-        '.ai/testing.md' => [
-            'exactly `php ./bin/application jobs:run-one` and `php ./bin/application database:migrate`',
-            'This installed proof certifies launcher transport only',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Adopt or change a local development environment launcher | installed `vendor/phpthis/framework/docs/configuration/local-environment-launcher.md`',
         ],
         'templates/application/.ai/configuration.md' => [
             '{{LOCAL_ENVIRONMENT_LAUNCHER_ADOPTION_OR_NOT_APPLICABLE}}',
@@ -1884,9 +1624,6 @@ function contextGuardrailFailures(string $root): array
         'templates/application/.ai/testing.md' => [
             '{{LOCAL_ENVIRONMENT_LAUNCHER_TEST_COMMAND_OR_NOT_APPLICABLE}}',
             'no wholesale environment inheritance, no launcher-side stream interception, and no secret argument',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Adopt or change a local development environment launcher | installed `vendor/phpthis/framework/docs/configuration/local-environment-launcher.md`',
         ],
         'skeleton/.ai/configuration.md' => [
             '`NOT_APPLICABLE(LOCAL_ENVIRONMENT_LAUNCHER)`',
@@ -1987,19 +1724,11 @@ function contextGuardrailFailures(string $root): array
     );
 
     $applicationOwnedOperationCoordinationArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change application-owned atomic-lock, mutex, mutual-exclusion, lease, critical-section, or coordination guidance | `.ai/application-context.md` |',
-            '`docs/coordination.md`, knowledge and application task routes, template and skeleton operations records',
-        ],
         '.ai/application-context.md' => [
             '`docs/coordination.md`',
             'Use the existing `.ai/operations.md` `OPERATION_COORDINATION` section as the sole record for a standalone named operation; do not add `.ai/coordination.md`.',
             'Keep scheduler policy in `.ai/cli.md`, migration-writer policy in `.ai/migrations.md`, durable-job ownership in `.ai/jobs.md`',
             'Add no framework lock, mutex, lease, fencing-token, coordination helper, facade, driver, registry, discovery, runtime dependency, checker rule, Contract/Profile change, or `PHT` diagnostic.',
-        ],
-        '.ai/testing.md' => [
-            'proveInstalledApplicationOwnedOperationCoordinationGuidanceDistribution(...)` after the frontend-integration proof',
-            'exact 53-proof-call order',
         ],
         'docs/coordination.md' => [
             '# Application-owned operation coordination',
@@ -2027,16 +1756,9 @@ function contextGuardrailFailures(string $root): array
             'ADR 028 remains one bounded Redis schedule-lease example, not a portable mechanism.',
             'This operation-coordination guidance adds no accepted PHP syntax, checker rule, Contract or Strict Profile version, diagnostic, runtime API, or dependency.',
         ],
-        'docs/knowledge-map.md' => [
-            '| Adopt, change, explain, or review an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | `docs/coordination.md`;',
-            'verify that no framework helper, portable distributed-lock claim, or duplicate context owner was introduced',
-        ],
         'docs/redis-coordination.md' => [
             'start with [Application-owned operation coordination](coordination.md).',
             'ADR 028 remains a bounded `schedule:run` reference only',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
         ],
         'templates/application/.ai/operations.md' => [
             '## Operation-specific coordination',
@@ -2047,9 +1769,6 @@ function contextGuardrailFailures(string $root): array
         'templates/application/.ai/testing.md' => [
             '{{OPERATION_COORDINATION_TEST_COMMAND_OR_NOT_APPLICABLE}}',
             'Every standalone operation-coordination adoption proves the exact record in `.ai/operations.md`',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Adopt or change an atomic lock, mutex, mutual exclusion, lease, critical section, or application coordination boundary | installed `vendor/phpthis/framework/docs/coordination.md` |',
         ],
         'skeleton/.ai/operations.md' => [
             '## Operation-specific coordination',
@@ -2113,9 +1832,6 @@ function contextGuardrailFailures(string $root): array
     }
 
     $startupProbeSemanticsArtifactMarkers = [
-        '.ai/README.md' => [
-            '| Change startup, liveness, dependency health, or readiness semantics | `.ai/application-context.md` | bootstrap, front controller, exact probe claim, and behavior tests; add `.ai/database.md` only when a database dependency is entered |',
-        ],
         '.ai/application-context.md' => [
             'That sink\'s destination may itself involve network or remote-filesystem I/O.',
             'Until its destination and latency are verified, describe the starter only as the current liveness route and HTTP composition proof, not as external-service-independent liveness.',
@@ -2132,10 +1848,6 @@ function contextGuardrailFailures(string $root): array
             'Failure isolation that preserves a selected response does not by itself bound a synchronous sink\'s latency or make that probe external-service-independent.',
             'Do not disguise a dependency bypass as the ordinary application bootstrap or add a second hidden HTTP execution path.',
         ],
-        'docs/knowledge-map.md' => [
-            'Define, change, or review startup, liveness, dependency health, or readiness semantics',
-            'verify that no framework probe API, lazy connection, hidden bypass, or second HTTP execution path was introduced',
-        ],
         'docs/vocabulary.md' => [
             '| external-service-independent liveness |',
             '| readiness | application-owned operational claim that its recorded conditions for receiving traffic are satisfied |',
@@ -2144,9 +1856,6 @@ function contextGuardrailFailures(string $root): array
             'A separate installed distribution proof checks the eager-composition and probe-semantics clarification',
             'the current starter does not claim external-service independence while its deployment-configured `error_log` destination and latency remain unverified',
             'does not connect to a service, prove that a deployment classified a probe correctly, establish dependency availability or traffic readiness',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
         ],
         'templates/application/.ai/operations.md' => [
             '{{HEALTH_AND_READINESS_PATHS}}',
@@ -2157,9 +1866,6 @@ function contextGuardrailFailures(string $root): array
             'Every adopted health, readiness, or non-HTTP probe proves the exact claim recorded in `.ai/operations.md`',
             'A caught sink failure proves response isolation, not a latency bound or independence from that sink\'s destination.',
             'Connection construction alone is not exact-statement database-authority or complete-readiness evidence.',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Change liveness, readiness, deployment, or runtime operation | `.ai/operations.md` | entrypoint, exact probe claim, owners, bounds, and evidence |',
         ],
         'skeleton/.ai/operations.md' => [
             '`GET /health` is the starter liveness route; no readiness route exists.',
@@ -2189,12 +1895,6 @@ function contextGuardrailFailures(string $root): array
     requireGuardrailArtifactMarkers($root, $startupProbeSemanticsArtifactMarkers, 'startup and probe semantics', $failures);
 
     $databaseSetupScopeArtifactMarkers = [
-        'AGENTS.md' => [
-            '## Early database setup gate',
-            'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
-            'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
-            'Resume the ordinary read order after scope is resolved.',
-        ],
         'docs/decisions/037-database-setup-scope-gate.md' => [
             'Status: accepted',
             '> Please setup PostgreSQL as our main DB.',
@@ -2206,9 +1906,6 @@ function contextGuardrailFailures(string $root): array
             '`037-database-setup-scope-gate.md`',
         ],
         'docs/consumer-contract.md' => [
-            'For an ambiguous database setup request, inspect the prompt and existing project state first.',
-            'Ask all unresolved choices in one concise message',
-            'Do not perform external database I/O, provision or mutate a server',
             'ADR 037 adds the early database setup scope gate as an AI-authoring workflow clarification',
         ],
         'docs/configuration.md' => [
@@ -2220,17 +1917,6 @@ function contextGuardrailFailures(string $root): array
             'For PostgreSQL or another engine, first record the exact accepted initial baseline',
             'When migrations are deferred, omit the migration inputs, type, factory, entrypoint, and tests',
             'Provisioning and production evidence is required only for an explicitly selected scope.',
-        ],
-        'docs/evaluation.md' => [
-            '## Database setup scope-gate evaluation',
-            'A starter not-applicable marker does not answer that adoption question.',
-            'no connection attempt or other external database I/O',
-            'they do not prove that a particular model follows them or meets a duration target',
-        ],
-        'docs/knowledge-map.md' => [
-            '| Select or set up a database engine |',
-            'load and prove only the selected slice',
-            'when a connection is adopted, record supported database/catalog/schema/attachment namespace selection and qualification',
         ],
         'docs/guardrails.md' => [
             "accepted ADR 037, its early application scope gate, configuration-only typed-boundary meaning, external-I/O prohibition before approval, conditional process profiles, package inventory, and installed-consumer guidance-distribution evidence remain present",
@@ -2245,38 +1931,6 @@ function contextGuardrailFailures(string $root): array
         '.ai/configuration.md' => [
             'Give runtime, migration, administrative, worker, and other adopted identities distinct input names and final types without inheritance, combined credentials, or fallback.',
             'configuration-only scope records connection composition as explicitly deferred.',
-        ],
-        'templates/application/AGENTS.md' => [
-            '## Early database setup gate',
-            'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
-            'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
-            'Resume the ordinary read order after scope is resolved.',
-            'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
-        ],
-        'skeleton/AGENTS.md' => [
-            '## Early database setup gate',
-            'Ask one combined clarification: configuration only, connection to an existing server, or project-local server provisioning; and deferred migrations or an application-owned migration foundation.',
-            'Local development is context, not authorization to connect to or probe a server, install, provision, or mutate anything.',
-            'Resume the ordinary read order after scope is resolved.',
-            'An explicit request proceeds without a redundant question; `.ai/change-workflow.md` owns the complete gate.',
-        ],
-        'templates/application/.ai/README.md' => [
-            '| Select or set up a database engine |',
-            'prompt and current configuration/data facts before any external action',
-        ],
-        'skeleton/.ai/README.md' => [
-            '| Select or set up a database engine |',
-            'prompt and current configuration/data facts before any external action',
-        ],
-        'templates/application/.ai/change-workflow.md' => [
-            '## Ambiguous database setup scope',
-            '> Please setup PostgreSQL as our main DB.',
-            'Treat a current `NOT_APPLICABLE` marker as present-state evidence',
-        ],
-        'skeleton/.ai/change-workflow.md' => [
-            '## Ambiguous database setup scope',
-            '> Please setup PostgreSQL as our main DB.',
-            'Treat a current `NOT_APPLICABLE` marker as present-state evidence',
         ],
         'templates/application/.ai/configuration.md' => [
             'Record only adopted external input contracts.',
@@ -2322,12 +1976,6 @@ function contextGuardrailFailures(string $root): array
         '.ai/database.md' => [
             'Runtime, migration, and administrative factories use distinct names and never fall back.',
             'Inject only the runtime type into visible HTTP `Connection::connect` construction;',
-        ],
-        'templates/application/.ai/README.md' => [
-            'authority separation, explicit composition, rotation/restart',
-        ],
-        'skeleton/.ai/README.md' => [
-            'authority separation, explicit composition, rotation/restart',
         ],
         'templates/application/.ai/data.md' => [
             '{{CONNECTION_1_MIGRATION_IDENTITY_REFERENCE}}',
@@ -2377,10 +2025,6 @@ function contextGuardrailFailures(string $root): array
             'Before dependent code receives traffic, positive evidence executes its exact runtime statements under the runtime identity',
             'PHPThis does not prescribe migration-first or code-first rollout.',
             'No proof establishes production coordination duration or loss behavior, availability, free-space behavior, crash recovery, backup restore, live effective authority, release ordering',
-        ],
-        'docs/knowledge-map.md' => [
-            '| Connect to, read, write, or assess SQL safety or database authority |',
-            'supported database/catalog/schema/attachment namespace selection and qualification, namespace and object control-or-ownership model, per-operation runtime authority, activation and deactivation ownership, exact-engine positive and negative evidence',
         ],
         'docs/guardrails.md' => [
             'application-owned canonical `PHPThis\Database\Connection::connect` calls cannot coexist with a standalone `NOT_APPLICABLE(DATABASE)` declaration',
@@ -2629,8 +2273,6 @@ function contextGuardrailFailures(string $root): array
 
     $externalReleaseStateMarkers = [
         'README.md' => 'Package availability and current release state are external facts',
-        'RELEASING.md' => 'continuing host state must still be verified externally.',
-        'ROADMAP.md' => 'Live GitHub and Packagist state remains external',
         'SECURITY.md' => 'This tracked policy does not prove continuing live publication state',
         'docs/getting-started.md' => 'Package availability remains an external fact',
         'docs/releases/0.1.0-alpha.1.md' => 'Publication state is external',
@@ -2689,11 +2331,6 @@ function contextGuardrailFailures(string $root): array
             'It is not the normal consumer installation path.',
             'git clone https://github.com/balgf/PHPThis.git phpthis-source',
         ],
-        'RELEASING.md' => [
-            'Export the contents of `skeleton/` as the root of its dedicated repository',
-            'Remove the framework-maintainer source-evaluation section from the exported skeleton README',
-            'Remove the pre-alpha VCS `repositories` override from the exported `composer.json`',
-        ],
         'composer.json' => [
             'start applications with phpthis/skeleton',
         ],
@@ -2740,13 +2377,6 @@ function contextGuardrailFailures(string $root): array
     }
 
     $outerHttpFailureContextMarkers = [
-        'docs/knowledge-map.md' => [
-            '| Configure or review outer HTTP failure disclosure | `docs/errors.md#outer-http-failures` |',
-            '`docs/configuration.md#http-failure-disclosure-selection`',
-            '`docs/request-handling.md#outer-http-failure-boundary`',
-            'application `.ai/operations.md` owns effective web-SAPI and isolation evidence',
-            'Native PHP display remains off in every profile.',
-        ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 18',
             'Through [ADR 061](decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md)',
@@ -2758,16 +2388,6 @@ function contextGuardrailFailures(string $root): array
             "Proposed records:\n\nNone.",
             '`061-fail-closed-outer-http-failure-disclosure-profiles.md`',
             'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
-        ],
-        'skeleton/.ai/README.md' => [
-            'consumer-contract-upgrades.md#contract-version-18',
-            '| Change outer HTTP failure disclosure or web-SAPI error display | installed `vendor/phpthis/framework/docs/errors.md#outer-http-failures`, then `.ai/configuration.md` |',
-            'code-owned `GENERIC`, effective SAPI settings, and real-SAPI evidence',
-        ],
-        'templates/application/.ai/README.md' => [
-            'consumer-contract-upgrades.md#contract-version-18',
-            '| Change outer HTTP failure disclosure or web-SAPI error display | installed `vendor/phpthis/framework/docs/errors.md#outer-http-failures`, then `.ai/configuration.md` |',
-            'exact generic/detail selection, effective SAPI settings, bounded disclosure, and real-SAPI evidence',
         ],
         'tools/package-files.txt' => [
             'docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md',

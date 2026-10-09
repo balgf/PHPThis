@@ -2,6 +2,8 @@
 
 Status: accepted
 
+Read-order and universal-instruction ownership are now governed by [ADR 064](064-one-entrypoint-per-audience.md). The historical decision below remains intact.
+
 ## Context
 
 ADR 044 established universal authority and safety entrypoints, one current operational owner per concern, conditional decision history, and an exact four-file task-specific metric for a qualifying simple endpoint. It also rejected a context-size report or validity mechanism because counts alone do not establish clear routing, correct claims, or safe implementation.
