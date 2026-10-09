@@ -26,7 +26,7 @@ Session, file-transfer, cache, job, CLI, migration, coordination, logging, WebSo
 
 ## Agent evaluation
 
-The maintainer-only [kit](https://github.com/balgf/PHPThis/tree/main/tools/agent-evaluation) owns frozen tasks, schemas, rubrics, prompt/source identities and retained revision notes. The [controller](https://github.com/balgf/PHPThis/tree/main/tools/agent-evaluation-controller) owns preparation, generation, freeze, scoring, retention and cleanup. These tools are excluded from installed packages.
+The maintainer-only [kit](https://github.com/balgf/PHPThis/tree/main/tools/agent-evaluation) owns frozen tasks, schemas, rubrics, prompt/source identities and retained revision notes. The [controller](https://github.com/balgf/PHPThis/tree/main/tools/agent-evaluation-controller) owns preparation, generation, freeze, scoring, retention and cleanup. These tools are excluded from installed packages. The current smoke fixture pins the shorter starter guidance as revision 32; earlier trials remain tied to their original task and source revisions.
 
 Ordinary `composer check` uses synthetic fixtures: no provider request, paid model call, credential, OCI engine or AI-authored candidate execution. Separately invoked deterministic OCI tests prove the recorded transport/isolation boundary without paid calls. A real trial requires exact approved model/settings, task/context revisions, resource limits, spending ceiling and operations. Use only the accepted digest-pinned OCI adapters and host-only quota proxy; generation is proxy-only and scoring has no network or provider credential. Failed or unverifiable isolation, freeze, accounting or cleanup controls fail closed. The controller guide owns the exact commands and diagnostic grammar.
 
