@@ -613,6 +613,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
         '| [ADR 049](049-bounded-response-cookie-profile.md) | Physical core-line allocation only; response-cookie behavior remains accepted | [ADR 063](063-maintainability-review-over-size-proxies.md) |',
+        '| [ADR 058](058-concern-local-ai-context-routing.md) | Mandatory read order and universal instruction ownership retained from ADR 044; authority, safety and the task-specific locality definition remain accepted | [ADR 064](064-one-entrypoint-per-audience.md) |',
     ];
     $indexPath = $installedFramework . '/docs/decisions/README.md';
 
@@ -803,8 +804,6 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
             'Any consumer upgrading from Alpha 5 or an earlier PHPThis revision or package must replace each call with `PathParameters::fromValues([$name => $value], [])`; an unchanged old call fails because the method no longer exists.',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            "Read the application's `.ai/rules.md`, `.ai/change-workflow.md`, and `.ai/project.md`.",
-            'Start with the one current operational guide selected by `.ai/README.md`.',
             "ADR 028 replaces only the executable example's schedule file lock with one application-owned Redis owner-token lease and extends successful and Redis-failure `schedule:run` output with one bounded `coordination` list.",
         ],
         $installedFramework . '/docs/cli.md' => [
