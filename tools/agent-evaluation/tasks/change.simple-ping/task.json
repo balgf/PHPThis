@@ -13,8 +13,8 @@
     },
     "base": {
         "fixture": "source-skeleton",
-        "tree": "710deabbbc31db1a5cf14758a7fa67b35e88a82d",
-        "fixture_sha256": "93044c1a9d83db081b499866aa3b33160525486eefd35ece89b82f8ff7e637bf"
+        "tree": "3a7293248f007614b81d427a326b9c837ffbf035",
+        "fixture_sha256": "a6e8e8b4364e17f914cbc2812cc7ea32be38e937673617bc8c09a7a4770146a0"
     },
     "workspace_policy": {
         "allowed_existing_paths": [
