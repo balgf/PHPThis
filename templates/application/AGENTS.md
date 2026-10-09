@@ -12,7 +12,7 @@ Resolve missing facts and authority before acting; do not repeat choices already
 
 Read this file, choose the current guide below, then inspect the relevant source and nearest tests. For a first contribution or work involving product vocabulary, invariants or ownership, read `.ai/project.md` and the relevant architecture/context records before implementation. Before feature work, replace generic starter facts or template placeholders with verified facts or explicit not-applicable records. Preserve the recorded dependency direction and domain terms. Every additional concern keeps its guide, even when this exceeds a locality example.
 
-Framework paths below are relative to installed `vendor/phpthis/framework/`. Use the actual Composer vendor directory. If dependencies are missing, follow `.ai/operations.md` to install them before making framework claims. Read ADRs when reviewing their decision and upgrade history when upgrading. For explanation-only requests, inspect and cite evidence without editing files.
+Framework paths below are relative to installed `vendor/phpthis/framework`. Use the actual Composer vendor directory. If dependencies are missing, follow `.ai/operations.md` to install them before making framework claims. Read ADRs when reviewing their decision and upgrade history when upgrading. For explanation-only requests, inspect and cite evidence without editing files.
 
 | Task | First current guide |
 | --- | --- |
