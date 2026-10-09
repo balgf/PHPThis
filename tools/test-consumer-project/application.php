@@ -268,10 +268,6 @@ function proveInstalledDatabaseSetupGuidanceDistribution(string $project, string
         $project . '/.ai/testing.md' => [
             'Provisioning and production evidence is required only for explicitly selected scopes.',
         ],
-        $installedFramework . '/docs/consumer-contract.md' => [
-            'Ask all unresolved choices in one concise message',
-            'Do not perform external database I/O, provision or mutate a server',
-        ],
         $installedFramework . '/docs/configuration.md' => [
             '## Scope database setup before implementation',
             '> Please setup PostgreSQL as our main DB.',
