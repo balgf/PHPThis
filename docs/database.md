@@ -60,7 +60,62 @@ PHT006 requires direct calls to `selectAllRows`, `selectOneRow`, and `executeSta
 
 PHT008 then checks every PHT006-finite SQL alternative independently. Within one alternative, every occurrence of a portable named data placeholder must have a distinct exact case-sensitive name. Reusing the same logical value therefore still requires separate names and separate bindings, for example `:requested_account_id` and `:same_requested_account_id`. The rule recognizes `:[A-Za-z_][A-Za-z0-9_]*` through a fail-closed common lexical subset, not a dialect parser. It ignores doubled-terminator single- and double-quoted segments; boundary-valid PostgreSQL `E'...'` escape strings; terminated non-nested block comments whose opener is neither `/*!` nor `/*+`; `--` only when the following byte is `0x00` through `0x20` or input ends; and structural multi-colon runs. Ambiguous SQLite bracket text, backslash quote escapes in ordinary quotes, every backtick and `#` spelling, PostgreSQL dollar-quote-looking text, no-space `--`, MySQL executable or optimizer-hint block comments, nested block comments, and unterminated lexical forms are scanned fail-closed; after one of those openers appears outside an already ignored region, the rest of that SQL alternative receives no lexical exclusions. Rewrite ambiguous text into an accepted form when placeholder-looking text would otherwise trigger the rule. PHT008 does not parse SQL, choose an engine dialect, inspect positional `?` placeholders, normalize name case, or compare placeholders with the parameter array. `Connection` performs no corresponding SQL-text parse or runtime PHT008 rejection.
 
-Statements remain static by default. If one operation needs variable structure, parse the external value into a concrete typed choice and map it to a finite, code-owned set of complete reviewed statements. Prefer complete statements; use a finite operation-local constant fragment only when it keeps the call clearer and the resulting SQL still has a finite constant-string type. Reject an unknown choice before database work. Keep complete raw SQL and its explicit named parameter array visible together at the direct call whenever practical. Do not add an ORM, repository, generic SQL sanitizer, identifier quoting helper, query builder, SQL/binding/placeholder helper, generic paginator, runtime SQL generator, arbitrary SQL string, transaction callback, SQL template engine, or dialect abstraction.
+### Finite SQL recipes
+
+Parse external structural choices into a concrete operation-request value, then select reviewed SQL at the direct `Connection` call. Keep data in explicit named bindings. The checked [document-list handler](https://github.com/balgf/PHPThis/blob/main/example/src/Documents/ListDocuments/ListDocumentsHandler.php) demonstrates these choices:
+
+| Task | Supported recipe |
+| --- | --- |
+| Optional filter | Select a complete statement with or without its predicate. A constant predicate controlled by bound data is also possible: the example's `:cursor_is_absent = 1 OR ...` disables cursor comparison on the first page. Verify null behavior, results and the actual engine's plan. |
+| Finite sort choices | Map accepted choices to literal column/direction/tie-break combinations. The example supports `rank_asc` and `rank_desc`; its cursor must match the selected order. A bound value cannot stand for an `ORDER BY` column or direction. |
+| Bounded `IN` list | Review each allowed cardinality: `IN (:category_1)`, `IN (:category_1, :category_2)`, or `IN (:category_1, :category_2, :category_3)` here. Bind each element separately; a scalar placeholder does not expand a PHP array into a list. |
+| Same value used twice | Use distinct placeholders and bind the value twice. The example binds `$cursorRank` to both `cursor_primary_sort_rank` and `cursor_tie_sort_rank`. Recheck both SQL occurrences and both array entries when changing that predicate. |
+
+Choose input semantics explicitly. The example's [request parser](https://github.com/balgf/PHPThis/blob/main/example/src/Documents/ListDocuments/ListDocumentsPageRequest.php) and [behavior tests](https://github.com/balgf/PHPThis/blob/main/tests/request-policy.php) establish this particular contract:
+
+| Input | Document-list behavior |
+| --- | --- |
+| Categories omitted | No category filter. |
+| `[]` or PHP's parsed `['']` from `?categories[]=` | Empty page, zero protected list statements, after the existing authentication/tenant/authorization sequence. |
+| One to three valid, distinct category values | One statement with that exact number of placeholders. Category names are data, not structural selectors; a valid value absent from the database simply matches no rows. |
+| More than three values, duplicate values, malformed values or an empty string mixed with a category | Invalid request before the protected list query. |
+| Unknown query field, unsupported order or incompatible cursor | Invalid request before the protected list query. An omitted order alone selects the recorded `rank_asc` default. |
+
+Record and test the consuming operation's own policy. Do not silently truncate a selection, discard unknown filters, substitute an order, pad a list or split it into repeated queries to fit the recipe.
+
+### Complete statements or constant fragments
+
+Prefer complete statements when their predicates or bindings differ; all alternatives remain visible beside their parameter arrays. [ADR 022](decisions/022-application-owned-finite-data-paths.md) deliberately keeps eight complete statements in the document-list proof. That application choice does not ban every constant fragment.
+
+[ADR 014](decisions/014-sql-data-and-finite-structure.md) also permits an operation-local choice among literal fragments when it makes the call clearer. The final concatenation must still infer natively to a finite constant-string set. For example, this bounded SQLite query has two complete SQL alternatives and one visible binding array; `$order` is the operation's validated sort choice:
+
+```php
+$orderBy = match ($order) {
+    'oldest' => ' ORDER BY id ASC',
+    'newest' => ' ORDER BY id DESC',
+    default => throw new \InvalidArgumentException('Unknown order.'),
+};
+$rows = $connection->selectAllRows(
+    'SELECT id FROM users' . $orderBy . ' LIMIT :fetch_limit',
+    ['fetch_limit' => 51],
+);
+```
+
+Immediately parse the returned rows through the operation's concrete projection. This fragment demonstrates SQL selection only; an endpoint still owns its input parsing, authorization, pagination and response contract. A general string, a PHPDoc assertion or a validated external identifier does not become a constant fragment. Do not move SQL or bindings into a generic helper, query builder or template engine.
+
+### Maintenance limits and evidence
+
+Arbitrary structural combinations and runtime-generated placeholder lists are unsupported. Finite alternatives can still become expensive to maintain: two sort orders multiplied by four category shapes give this example eight statements. If another independent optional predicate uses separate present/absent statements, that family becomes sixteen. Constant fragments may reduce repeated text while leaving the same combinations to review and test. A bound presence flag may avoid a new SQL shape, but still adds semantic and execution-plan cases.
+
+When the family becomes too large to review safely, stop and make an explicit application design decision: narrow or separate the operation's supported choices, or propose a specifically evidenced capability change. Preserve the agreed behavior until that decision is accepted. Suppressions, generated SQL and helpers that hide SQL or bindings are not escape routes.
+
+An unsupported requirement is different from a checker defect. If PHPStan cannot preserve the native finite type of an otherwise permitted construct, retain a small reproducer showing the intended alternatives and report it for review. Passing an arbitrary runtime string, a PHPDoc-only narrowing or an ambiguous PHT008 lexical form is a documented restriction; runtime success alone does not establish a false positive. See the [Strict Profile](strict-profile.md) for diagnostic boundaries.
+
+The [SQL maintenance experiment](https://github.com/balgf/PHPThis/blob/main/tools/restriction-review/README.md#4-complete-statements-and-repeated-repairs) shows why both checks matter: repairing seven of eight repeated-placeholder sites leaves one PHT008 finding; renaming every occurrence while omitting one binding passes PHT008 but fails four behavior cases. It measures a synthetic repair, not reviewer time or comparative defect rates. Check every affected statement and binding against every supported shape.
+
+Use complementary evidence: PHT006 checks finite native SQL types; PHT008 checks distinct named occurrences; exact-engine behavior tests check bindings and results. PHT003's lexical no-query-in-loop check misses indirect N+1 paths, and a fixed query count proves neither binding correctness nor bounded database cost. The [nested-resource guidance](#n1-safe-nested-resource-plans) covers indirect I/O and cost review; the existing [profile controls](https://github.com/balgf/PHPThis/blob/main/tools/test-strict-profile.php) and document-list tests cover the relevant accepted and rejected shapes.
+
+### Parameters and returned values
 
 Only named data parameters are accepted. Parameter-array keys use an optional leading colon followed by a letter or underscore and then letters, digits, or underscores. Invalid keys and inputs containing both prefixed and unprefixed forms of the same key fail before a query budget or trace records database work. Every application or external data value remains a parameter even after validation, and each placeholder occurrence uses a distinct PHT008 name because repeated named placeholders behave differently across native PDO drivers. Prepared statements cannot bind identifiers, keywords, operators, ordering directions, or arbitrary SQL fragments.
 
@@ -112,9 +167,9 @@ The sample `GET /users` path binds the validated last-emitted user ID, or the co
 
 ## Finite application data-path proof
 
-ADR 022 extends the application evidence with protected `GET /accounts/{account_id:positive-int}/documents`. It does not extend `Connection`. `ListDocumentsPageRequest` accepts only `order=rank_asc|rank_desc`, an optional exact `v1:<order>:<sort_rank>:<document_key>` cursor, and an optional actual query-list `categories` value with maximum cardinality three. Omitted categories mean no filter. A direct empty list or parsed `['']` shape maps to an empty selection and returns an empty page without calling the protected connection; native PHP inputs such as `?categories[]=` produce that parsed shape. An empty string mixed with a category remains invalid.
+ADR 022 extends the application evidence with protected `GET /accounts/{account_id:positive-int}/documents`. It does not extend `Connection`. The [finite SQL recipes](#finite-sql-recipes) above describe its sort/category choices and rejection policy. `ListDocumentsPageRequest` also validates the exact `v1:<order>:<sort_rank>:<document_key>` cursor.
 
-For each direction, `ListDocumentsHandler` contains four complete raw SQLite statements: no category predicate, or exactly one, two, or three category placeholders. These eight statements and their explicit named parameter arrays remain at direct `selectAllRows` call sites. They bind the requested account, resolved tenant account, principal identifier, membership tenant account, cursor-presence flag, cursor rank twice for the composite predicate, cursor document key, applicable category values, and 51-row fetch limit through distinct portable placeholder names. `cursor_is_absent=1` explicitly disables the comparison on a first page, so invalid stored rank or key representations are not silently removed before projection parsing. Nothing generates a statement or placeholder list at runtime.
+Each of the eight direct `selectAllRows` calls visibly binds requested account, resolved tenant, principal membership, cursor presence and values, applicable categories, and the 51-row fetch limit. `cursor_is_absent=1` explicitly disables comparison on a first page, so invalid stored rank or key representations are not silently removed before projection parsing.
 
 The stable composite order is numeric `sort_rank`, then case-sensitive `document_key COLLATE BINARY`, both in the selected direction. The response emits at most 50 parsed `DocumentSummary` values and derives `next_cursor` from the last emitted row only when the extra row proves another result. Tests cover both directions, cursor compatibility, equal-rank tie breaks, every category cardinality, SQL-looking bound data, rejection before SQL, and one statement per non-empty page across fixture sizes.
 
