@@ -2,6 +2,8 @@
 
 Use `PHPThis\Database\Connection`. It is an instrumented PDO boundary, not a query builder.
 
+For optional filters, sorting, bounded lists, repeated values and statement-family maintenance, start with the [finite SQL recipes](../docs/database.md#finite-sql-recipes) in the current database guide.
+
 Read `docs/decisions/012-pdo-transport-application-owned-dialects.md` before changing connection behavior or driver certification, ADR 057 before changing distinct-placeholder enforcement, ADR 038 before changing application database-authority guidance, and ADR 039 before changing migration ownership or placement guidance. Preserve native PDO DSNs and application-owned SQL; do not add a driver enum, connection registry, dialect interface, SQL rewriting, portability helper, role registry, permission helper, or runtime authority introspection.
 
 Read ADR 022 before changing the protected document-list proof. That application path deliberately keeps complete raw SQLite SQL and explicit named parameter arrays together at direct `Connection` calls. Do not replace them with an ORM, query builder, repository, generic paginator, SQL/binding/placeholder helper, generated or dynamic SQL, transaction callback, or dialect abstraction.
