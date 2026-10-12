@@ -4950,10 +4950,12 @@ function agentEvaluationControllerTestPilotAdmission(string $root): void
         agentEvaluationJsonValue(agentEvaluationJson($policy), 'pilot policy round trip'), 'pilot policy round trip'));
     foreach (['order', 'task', 'revision', 'extra-start'] as $mutation) {
         $changed = $policy;
-        if ($mutation === 'order') { $changed['schedule'] = array_reverse($changed['schedule']); }
-        if ($mutation === 'task') { $changed['schedule'][0]['task_id'] = 'change.protected-endpoint'; }
+        $slots = agentEvaluationControllerPilotSchedule();
+        if ($mutation === 'order') { $slots = array_reverse($slots); }
+        if ($mutation === 'task') { $slots[0]['task_id'] = 'change.protected-endpoint'; }
         if ($mutation === 'revision') { $changed['task_revision'] = 7; }
-        if ($mutation === 'extra-start') { $changed['schedule'][] = $changed['schedule'][0]; }
+        if ($mutation === 'extra-start') { $slots[] = $slots[0]; }
+        $changed['schedule'] = $slots;
         agentEvaluationControllerExpectFailureContains(
             static function () use ($changed): void { agentEvaluationControllerValidateCalibrationPolicy($changed); },
             'Pilot policy must bind revision eight and the fixed two-start filtered-collection schedule.',
