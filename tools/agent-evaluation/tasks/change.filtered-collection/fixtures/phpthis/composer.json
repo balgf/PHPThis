@@ -5,7 +5,7 @@
         "php": "~8.4.0",
         "ext-pdo": "*",
         "ext-pdo_sqlite": "*",
-        "phpthis/framework": "dev-main#094f61ef29636536ccfd706e514e4ffa11511ae6"
+        "phpthis/framework": "dev-main#1245e4b3ae6b8888b9f93d7c320039e3f8bda0e2"
     },
     "require-dev": {
         "phpstan/phpstan": "^2.1",

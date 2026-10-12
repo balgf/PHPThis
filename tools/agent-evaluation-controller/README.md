@@ -189,6 +189,26 @@ Stable boundary markers:
 
 ## Common-change comparison preparation
 
+### Two-start feasibility pilot v1
+
+Issue #96 authorizes offline preparation to decide whether a repeated study of one maintenance task is worth further effort. `pilot-v1` admits only `change.filtered-collection` revision 8, with exactly two fresh starts: PHPThis, then ordinary PHP. Its policy, attempts, scores and report use distinct `pilot-*-v1` identities and `comparative_claims: false`. It reports no rate or causal guidance improvement.
+
+```bash
+php tools/agent-evaluation-controller.php pilot-prepare /absolute/path/pilot-configuration.json
+php tools/agent-evaluation-controller.php pilot-run /absolute/path/pilot-configuration.json
+php tools/agent-evaluation-controller.php pilot-report /absolute/path/pilot-configuration.json
+```
+
+These commands reuse the existing bounded campaign implementation. The configuration retains its `calibration` policy field for compatibility, with kind `pilot-v1`, task revision 8 and the fixed two-slot schedule. The shared profile condition is `pilot-v1`; exactly two prepared inputs are required. Evidence lives in the sibling `agent-evaluation-pilots/<campaign-id>/`. Calibration commands reject a pilot policy, and pilot commands reject a calibration policy.
+
+The model remains `gpt-5.4-2026-03-05`, high reasoning and standard service. Each start has the calibration-v2 limits: 1,000,000 cumulative tokens, 200,000 counted input tokens per request, 1,200 seconds, 4 MiB command output, zero controller repair turns and a USD 1 ceiling. Execution requires a separate exact two-start / USD 2 approval; pending preparation uses a zero ceiling. The pilot suffix follows the current `AGENTS.md` task route. Historical suffixes and six-/60-start schedules remain unchanged.
+
+Freeze source, task/context, dependency, effective-prompt, image/toolchain, private-holdout and scorer identities before execution approval. Verify both complete application gates and private positive/adverse controls without model calls. Review dated prices, account access and outstanding reservations. Preparation never reads the provider credential or creates a campaign.
+
+Retain all attempts and unrun work. Unknown usage stays reserved and stops later starts; cleanup must be verified before continuing. There is no automatic retry, replacement or post-holdout repair. Report automated components and accountable semantic review separately, including genuinely observed interventions, review effort, elapsed time and provider usage. The existing stop, replay and cleanup checks apply to pilot records.
+
+### Fixed comparison v1
+
 The separate [bounded comparison protocol](../agent-evaluation/comparison-v1.md) owns the fixed 60-slot design and limits. The following commands use the same controller; they do not install another runner:
 
 ```bash

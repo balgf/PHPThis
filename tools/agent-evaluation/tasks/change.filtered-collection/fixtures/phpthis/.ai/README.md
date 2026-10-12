@@ -1,18 +1,18 @@
-# Current knowledge map
+# Filtered-collection task route
 
-After the required entrypoints in `AGENTS.md`, start with `.ai/data.md` for this filtered collection task. Also read `.ai/architecture.md` and `.ai/request-policy.md` if not already read. `API.md` fixes behavior; `.ai/testing.md` owns the complete gate and observation transport, `.ai/observability.md` the recorded measurements, and `.ai/operations.md` the local runtime. Other local guides record explicit non-adoption.
+Start with `.ai/data.md` for the supplied database and `.ai/request-policy.md` for authority order. Read `.ai/testing.md` before adding tests. `API.md` and the prompt fix the requested behavior; `.ai/project.md` and `.ai/architecture.md` explain the product facts and execution path for a first contribution.
 
-## Installed task route
+The fixed driver already owns scratch SQLite provisioning, schema and data. `.ai/configuration.md`, `.ai/operations.md` and `.ai/observability.md` own those concerns if entered; other records state explicit non-adoption. Preserve protected source, the response contract and the complete application gate.
 
-These initial excerpts are verified against the installed `composer.lock` framework reference `094f61ef29636536ccfd706e514e4ffa11511ae6`. Keep the full consumer-contract read and complete Strict Profile. The installed knowledge map permits the smallest relevant row; these sections address this existing handler and its fixed synthetic policy, SQLite driver, schema, and API. They do not waive requirements or introduce a read limit. If the installed reference or headings differ, reroute through the installed knowledge map before relying on the slices.
+## Installed PHPThis requirements
 
-Read these current sections:
+The dependency is pinned to framework commit `1245e4b3ae6b8888b9f93d7c320039e3f8bda0e2`. Paths below are relative to `vendor/phpthis/framework/docs/`. Locate these named sections within the exact file rather than relying on historical line numbers:
 
-- `database.md`: introduction; SQL data and finite structure; Database authority before its activation lifecycle; Query trace policy. `sed -n '1,8p;57,78p;123,156p' "vendor/phpthis/framework/docs/database.md"`
-- `crud.md`: introduction and Authority boundary; Operation-specific decisions. `sed -n '1,16p;109,122p' "vendor/phpthis/framework/docs/crud.md"`
-- `request-handling.md`: Query parameters; opening Routing metadata; Protected request policy; Operation input boundaries. `sed -n '24,41p;121,126p;161,170p' "vendor/phpthis/framework/docs/request-handling.md"`
-- `request-policy.md`: the complete current guide. `sed -n '1,52p' "vendor/phpthis/framework/docs/request-policy.md"`
-- `type-safety.md`: introduction and Database projections; Validation, normalization, encoding, and authorization through Query parameters; Static generics and Enforcement; Canonical scalar and collection recipes. `sed -n '1,18p;27,56p;63,71p' "vendor/phpthis/framework/docs/type-safety.md"`
-- `errors.md`: the introductory error and failure contract, before Outer HTTP failures. `sed -n '1,25p' "vendor/phpthis/framework/docs/errors.md"`
+- `database.md`: introduction, SQL data and finite structure, Database authority, and Query trace policy.
+- `crud.md`: introduction, Authority boundary, and Operation-specific decisions.
+- `request-handling.md`: Query parameters, Routing metadata, Protected request policy, and Operation input boundaries.
+- `request-policy.md`: the complete current guide.
+- `type-safety.md`: introduction, Database projections, Canonical scalar and collection recipes, Validation/normalization/encoding/authorization, Stable failures, Query parameters, Static generics, and Enforcement.
+- `errors.md`: the introductory contract before Outer HTTP failures.
 
-Follow additional current owners whenever the work enters their concern. Credential profiles, production security or authority, new transport/composition, optional recipes, and contract history are conditional context; consuming the supplied synthetic policy does not adopt those profiles. A PHPThis diagnostic routes to its installed profile/rule documentation and source; PHPStan diagnostics follow the exact offline reference. Inspect concrete source and public tests on every changed execution path. No new policy, recipe implementation, or observation bypass is authorized.
+Expand the route for a changed boundary, concrete uncertainty or diagnostic. A PHPThis diagnostic routes to its installed profile/rule documentation and source; PHPStan uses the pinned local reference. No new optional profile or observation bypass is adopted by this task.

@@ -64,7 +64,7 @@ function agentEvaluationControllerValidateRequest(array $request, array $task): 
  *   isolation: array<string, mixed>
  * }
  */
-function agentEvaluationControllerValidateProfile(array $profile, array $task, bool $synthetic, bool $calibration = false, int $calibrationRevision = 1): array
+function agentEvaluationControllerValidateProfile(array $profile, array $task, bool $synthetic, bool $calibration = false, int|string $calibrationRevision = 1): array
 {
     agentEvaluationControllerRequireAdmittedTask($task);
     $explanation = ($task['schema_version'] ?? null) === 3;
@@ -168,6 +168,10 @@ function agentEvaluationControllerValidateProfile(array $profile, array $task, b
     if ($calibration) {
         if ($synthetic || ($task['schema_version'] ?? null) !== 2) {
             throw new RuntimeException('Calibration requires an admitted live comparison fixture.');
+        }
+        if ($calibrationRevision === 'pilot-v1' && (($task['id'] ?? null) !== 'change.filtered-collection'
+            || ($task['revision'] ?? null) !== 8)) {
+            throw new RuntimeException('Pilot admission requires filtered-collection fixture revision eight.');
         }
         $taskBudgets = agentEvaluationControllerCalibrationBudgets($calibrationRevision);
     }
@@ -399,7 +403,7 @@ function agentEvaluationControllerWorkspacePolicyEvidence(array $policy, bool $z
 }
 
 /** @param array<string, mixed> $policy */
-function agentEvaluationControllerGenerationPrompt(string $sourcePrompt, array $policy, ?int $calibrationRevision = null): string
+function agentEvaluationControllerGenerationPrompt(string $sourcePrompt, array $policy, int|string|null $calibrationRevision = null): string
 {
     if ($sourcePrompt === '' || strlen($sourcePrompt) > AGENT_EVALUATION_CONTROLLER_MAX_PROMPT_BYTES || str_contains($sourcePrompt, "\0")) {
         throw new RuntimeException('AGENT_EVALUATION_CONTROLLER_LIVE_PROMPT_INVALID');
@@ -427,7 +431,7 @@ POLICY;
  *
  * @param array<string, mixed> $taskDocument
  */
-function agentEvaluationControllerValidatePromptEvidence(string $evidenceRoot, array $taskDocument, ?string $condition, ?int $calibrationRevision = null): void
+function agentEvaluationControllerValidatePromptEvidence(string $evidenceRoot, array $taskDocument, ?string $condition, int|string|null $calibrationRevision = null): void
 {
     $policy = null;
     if (($taskDocument['schema_version'] ?? null) === 2) {
@@ -809,7 +813,7 @@ function agentEvaluationControllerValidateLiveConfiguration(
     ?array $comparisonTask = null,
     int $approvedRuns = 1,
     bool $calibration = false,
-    int $calibrationRevision = 1,
+    int|string $calibrationRevision = 1,
     bool $explanation = false,
 ): array
 {
@@ -818,7 +822,7 @@ function agentEvaluationControllerValidateLiveConfiguration(
             throw new RuntimeException('Explanation live configuration must bind its one explicit schema-v3 run.');
         }
     } elseif ((!$calibration && !in_array($approvedRuns, [1, 60], true))
-        || ($calibration && ($approvedRuns !== 6 || $comparisonTask === null))
+        || ($calibration && ($approvedRuns !== agentEvaluationControllerCalibrationRunCount($calibrationRevision) || $comparisonTask === null))
         || ($comparisonTask === null) !== ($approvedRuns === 1)) {
         throw new RuntimeException('Live configuration must bind one smoke run or the fixed 60-slot comparison.');
     }
