@@ -20,8 +20,8 @@ const AGENT_EVALUATION_TASK_REVISIONS = [
     ],
     'change.filtered-collection' => [
         'schema_version' => 2,
-        'revision' => 7,
-        'manifest_sha256' => '492beb6546c111cc57706766e3fd44a0da85ba9d5dbd7a298a6eb9df03eb8e32',
+        'revision' => 8,
+        'manifest_sha256' => '20ab541db7a5d1cd3851bf58e0beaafeb19594e129d2170126e8cd58d1eccde6',
     ],
     'explain.file-profile-s3' => [
         'schema_version' => 3,

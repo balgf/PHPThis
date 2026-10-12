@@ -1,7 +1,7 @@
 {
     "schema_version": 2,
     "id": "change.filtered-collection",
-    "revision": 7,
+    "revision": 8,
     "kind": "implementation",
     "protocol": {
         "id": "bounded-comparison-v1",
@@ -21,11 +21,11 @@
             "id": "phpthis",
             "base": {
                 "path": "fixtures/phpthis",
-                "fixture_sha256": "3dcd52e6a924b8a6d9738297e2d01ed04abdcb21ec6fa4e3de987bccde7b213e"
+                "fixture_sha256": "3fd4e2b0702614da3c98d8d0d184e8f6d5a263ff62236e827068cd6159b97a79"
             },
             "context_manifest": {
                 "path": "context/phpthis.json",
-                "sha256": "e46823c323f335b73ef959a04e8a687ae43d65bea6f87833433907e82bc6fef0"
+                "sha256": "232411d4e4fadc6dbb5437e16a07e5ca5db818b5d01d7fa042ac291bb0817ae4"
             },
             "workspace_policy": {
                 "allowed_existing_paths": [
@@ -75,11 +75,11 @@
             "id": "plain-php",
             "base": {
                 "path": "fixtures/plain-php",
-                "fixture_sha256": "2b0e7160abca0fe1b387049d9b35c81bdb6c5563229623bfbe493c753acc9c0e"
+                "fixture_sha256": "55a1535fd24cf01c009bb0bf1c2ae160c62ed25ca7d47877df2912495aa0f4e0"
             },
             "context_manifest": {
                 "path": "context/plain-php.json",
-                "sha256": "9bc25e7c31d0664590c9242b9772422e8652408769e76d72282de14c82c10650"
+                "sha256": "d3c3d9b165bb2625b3127f60a55110e071e8093b287f0251df456a58a2bb1c21"
             },
             "workspace_policy": {
                 "allowed_existing_paths": [

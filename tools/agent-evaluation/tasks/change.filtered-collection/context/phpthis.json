@@ -3,7 +3,7 @@
     "files": [
         {
             "path": ".ai/README.md",
-            "sha256": "f4bf2570d1905ec5fd1b6a6b08a7164041f774ec4bfde24ce855849495c3e3e7"
+            "sha256": "fdd43d968cb56b421f0f4548b5293261ac8f8ad04ada113113e96bef3927d560"
         },
         {
             "path": ".ai/architecture.md",
@@ -11,7 +11,7 @@
         },
         {
             "path": ".ai/change-workflow.md",
-            "sha256": "6d666620381fb962978663e61e79cfb4f751d833b21df9f56541d73e73e6fb76"
+            "sha256": "3e0cb08fdca4a35d4b2b30936a33acf3266ecc5070ef990cda803c1744b16725"
         },
         {
             "path": ".ai/configuration.md",
@@ -43,7 +43,7 @@
         },
         {
             "path": ".ai/rules.md",
-            "sha256": "1f000b533df49f4af51c5a8dd2c3aa22a20f4b4cb4d575bf9c9d81aa2cea4efe"
+            "sha256": "7c7febf35ba81c873d6ec9bc35455cb067f0c108b4b18ec45815e804abc40ea2"
         },
         {
             "path": ".ai/testing.md",
@@ -51,7 +51,7 @@
         },
         {
             "path": "AGENTS.md",
-            "sha256": "bf7e30d5e7502681129f3164127da0a6f7bf7a8d32eb8ca3eeaaa71651d2f673"
+            "sha256": "b307567e6836b49d62e393049a33d5293f91d4b7e8134b83ec65a1883ffb2fc0"
         },
         {
             "path": "API.md",
@@ -59,7 +59,7 @@
         },
         {
             "path": "composer.json",
-            "sha256": "2e0ed39858128520de0c58e010d27564ac806d2968a966bccfbd8706e8e7ce5a"
+            "sha256": "47dd93cfd67af909a4d1eff5d133b16826ae08ad03265dc709cdc4120e1e6d2b"
         },
         {
             "path": "docs/decisions/README.md",

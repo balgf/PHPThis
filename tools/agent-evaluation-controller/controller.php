@@ -14,10 +14,10 @@ const AGENT_EVALUATION_CONTROLLER_PHASES = [
 const AGENT_EVALUATION_CONTROLLER_EVIDENCE_VERSION = 1;
 
 /** @return array{model_tokens:int,wall_seconds:int,repair_turns:int,command_output_bytes:int} */
-function agentEvaluationControllerCalibrationBudgets(int $revision = 1): array
+function agentEvaluationControllerCalibrationBudgets(int|string $revision = 1): array
 {
-    if (!in_array($revision, [1, 2], true)) {
-        throw new RuntimeException('Calibration revision must be one or two.');
+    if (!in_array($revision, [1, 2, 'pilot-v1'], true)) {
+        throw new RuntimeException('Bounded execution must select calibration v1/v2 or pilot-v1.');
     }
     return ['model_tokens' => $revision === 1 ? 200_000 : 1_000_000, 'wall_seconds' => 1_200, 'repair_turns' => 0, 'command_output_bytes' => 4_194_304];
 }
@@ -36,9 +36,21 @@ function agentEvaluationControllerSingleRunSpending(): array
         'cached_cents_per_million' => 25, 'output_cents_per_million' => 1500];
 }
 
-function agentEvaluationControllerCalibrationPrompt(int $revision = 1): string
+function agentEvaluationControllerCalibrationPrompt(int|string $revision = 1): string
 {
     agentEvaluationControllerCalibrationBudgets($revision);
+    if ($revision === 'pilot-v1') {
+        return "Pilot working allowance: you have 1,000,000 cumulative input plus output tokens across all model requests, "
+            . "at most 200,000 counted input tokens per request, 1,200 seconds, and a host-enforced API token-charge ceiling of USD 1.00 for this attempt. "
+            . "Repeated context, including cached input, counts toward the cumulative allowance. "
+            . "Read AGENTS.md, follow its current task route, then inspect API.md, the existing handler and nearest public tests. "
+            . "Follow every additional concern needed by the change; no mandatory contract, task requirement or check is waived. "
+            . "Use targeted discovery in src, tests, evaluation and .ai, and open installed guidance through the selected route. "
+            . "Batch focused reads and bound command output. Do not recursively inventory the entire candidate, vendor tree or framework documentation. "
+            . "Implement once the contract and relevant source are understood, run composer check promptly, and repair public findings within the allowance. "
+            . "Protected files, edit limits and the complete application gate remain binding. "
+            . "The host may reject a request before dispatch when its input exceeds the per-request cap or the remaining token or monetary allowance.\n";
+    }
     if ($revision === 2) {
         return "Calibration working allowance: you have 1,000,000 cumulative input plus output tokens across all model requests, "
             . "at most 200,000 counted input tokens per request, 1,200 seconds, and a host-enforced API token-charge ceiling of USD 1.00 for this attempt. "
@@ -63,30 +75,61 @@ function agentEvaluationControllerCalibrationPrompt(int $revision = 1): string
 }
 
 /** @return array<string,mixed> */
-function agentEvaluationControllerCalibrationPolicy(int $revision = 1): array
+function agentEvaluationControllerCalibrationPolicy(int|string $revision = 1): array
 {
-    return ['kind' => 'calibration-v' . $revision, 'comparative_claims' => false,
+    return ['kind' => agentEvaluationControllerCalibrationKind($revision), 'comparative_claims' => false,
         'budgets' => agentEvaluationControllerCalibrationBudgets($revision), 'spending' => agentEvaluationControllerCalibrationSpending(),
         'prompt_sha256' => hash('sha256', agentEvaluationControllerCalibrationPrompt($revision)),
-        ...($revision === 2 ? ['request_input_tokens' => 200_000] : [])];
+        ...($revision !== 1 ? ['request_input_tokens' => 200_000] : []),
+        ...($revision === 'pilot-v1' ? ['task_revision' => 8, 'schedule' => agentEvaluationControllerPilotSchedule()] : [])];
+}
+
+function agentEvaluationControllerCalibrationKind(int|string $revision, string $record = ''): string
+{
+    agentEvaluationControllerCalibrationBudgets($revision);
+    return $revision === 'pilot-v1' ? 'pilot' . $record . '-v1' : 'calibration' . $record . '-v' . $revision;
+}
+
+function agentEvaluationControllerCalibrationRunCount(int|string $revision): int
+{
+    agentEvaluationControllerCalibrationBudgets($revision);
+    return $revision === 'pilot-v1' ? 2 : 6;
+}
+
+/** @return list<array{slot:int,round:int,task_id:string,condition:string}> */
+function agentEvaluationControllerPilotSchedule(): array
+{
+    return [
+        ['slot' => 1, 'round' => 0, 'task_id' => 'change.filtered-collection', 'condition' => 'phpthis'],
+        ['slot' => 2, 'round' => 0, 'task_id' => 'change.filtered-collection', 'condition' => 'plain-php'],
+    ];
+}
+
+/** @return list<array{slot:int,round:int,task_id:string,condition:string}> */
+function agentEvaluationControllerCalibrationSchedule(string $kit, int|string $revision): array
+{
+    $count = agentEvaluationControllerCalibrationRunCount($revision);
+    return $revision === 'pilot-v1' ? agentEvaluationControllerPilotSchedule() : array_slice(agentEvaluationComparisonSchedule($kit), 0, $count);
 }
 
 /** @param array<string,mixed> $policy */
-function agentEvaluationControllerCalibrationRevision(array $policy): int
+function agentEvaluationControllerCalibrationRevision(array $policy): int|string
 {
     return match ($policy['kind'] ?? null) {
         'calibration-v1' => 1,
         'calibration-v2' => 2,
+        'pilot-v1' => 'pilot-v1',
         default => throw new RuntimeException('Calibration policy kind is not admitted.'),
     };
 }
 
 /** @param array<string,mixed> $attempt */
-function agentEvaluationControllerCalibrationAttemptRevision(array $attempt): int
+function agentEvaluationControllerCalibrationAttemptRevision(array $attempt): int|string
 {
     return match ($attempt['kind'] ?? null) {
         'calibration-attempt-v1' => 1,
         'calibration-attempt-v2' => 2,
+        'pilot-attempt-v1' => 'pilot-v1',
         default => throw new RuntimeException('Calibration attempt kind is not admitted.'),
     };
 }
@@ -96,10 +139,18 @@ function agentEvaluationControllerValidateCalibrationPolicy(array $policy): void
 {
     $revision = agentEvaluationControllerCalibrationRevision($policy);
     agentEvaluationRequireExactKeys($policy, ['kind', 'comparative_claims', 'budgets', 'spending', 'prompt_sha256',
-        ...($revision === 2 ? ['request_input_tokens'] : [])], 'calibration policy');
-    if ($policy['comparative_claims'] !== false || ($revision === 2 && $policy['request_input_tokens'] !== 200_000)
+        ...($revision !== 1 ? ['request_input_tokens'] : []),
+        ...($revision === 'pilot-v1' ? ['task_revision', 'schedule'] : [])], 'calibration policy');
+    if ($policy['comparative_claims'] !== false || ($revision !== 1 && $policy['request_input_tokens'] !== 200_000)
         || $policy['prompt_sha256'] !== hash('sha256', agentEvaluationControllerCalibrationPrompt($revision))) {
         throw new RuntimeException('Calibration must bind its fixed separate purpose and explicit budget instructions.');
+    }
+    if ($revision === 'pilot-v1') {
+        $schedule = array_map(static fn (mixed $slot): array => agentEvaluationValueObject($slot, 'pilot slot'),
+            agentEvaluationRequireList($policy, 'schedule', 'pilot policy'));
+        if ($policy['task_revision'] !== 8 || $schedule !== agentEvaluationControllerPilotSchedule()) {
+            throw new RuntimeException('Pilot policy must bind revision eight and the fixed two-start filtered-collection schedule.');
+        }
     }
     agentEvaluationValidateRunBudgets(agentEvaluationRequireObject($policy, 'budgets', 'calibration policy'), agentEvaluationControllerCalibrationBudgets($revision));
     $spending = agentEvaluationRequireObject($policy, 'spending', 'calibration policy');
@@ -126,7 +177,7 @@ function agentEvaluationControllerPlannedCalibrationAttempt(array $configuration
     $revision = agentEvaluationControllerCalibrationRevision($policy);
     $attempt = agentEvaluationControllerPlannedComparisonAttempt($configuration, $slot, $input);
     unset($attempt['protocol_sha256']);
-    return [...$attempt, 'schema_version' => 1, 'kind' => 'calibration-attempt-v' . $revision, 'comparative_claims' => false,
+    return [...$attempt, 'schema_version' => 1, 'kind' => agentEvaluationControllerCalibrationKind($revision, '-attempt'), 'comparative_claims' => false,
         'source_protocol_sha256' => $configuration['protocol_sha256'],
         'calibration_sha256' => hash('sha256', agentEvaluationJson(agentEvaluationControllerCalibrationPolicy($revision)))];
 }
@@ -255,7 +306,9 @@ function agentEvaluationControllerValidateCalibrationEvidence(array $attempt, st
             || ($manifest['run_id'] ?? null) !== ($attempt['run_id'] ?? null) || ($manifest['task_id'] ?? null) !== ($attempt['task_id'] ?? null)
             || ($manifest['task_revision'] ?? null) !== ($attempt['task_revision'] ?? null) || ($manifest['condition'] ?? null) !== ($attempt['condition'] ?? null)
             || ($manifest['synthetic'] ?? null) !== false || ($manifest['comparative_claims'] ?? null) !== false
-            || ($manifest['comparison_execution'] ?? null) !== false || ($manifest['calibration_execution'] ?? null) !== true
+            || ($manifest['comparison_execution'] ?? null) !== false
+            || ($manifest['calibration_execution'] ?? null) !== ($revision !== 'pilot-v1')
+            || ($revision === 'pilot-v1' && ($manifest['pilot_execution'] ?? null) !== true)
             || ($manifest['expected_phase_order'] ?? null) !== AGENT_EVALUATION_CONTROLLER_PHASES
             || ($complete && ($manifest['observed_phases'] ?? null) !== AGENT_EVALUATION_CONTROLLER_PHASES)) {
             throw new RuntimeException('Calibration evidence manifest must retain its exact separate lifecycle identity.');
@@ -315,16 +368,20 @@ function agentEvaluationControllerRunCalibration(string $root, array $campaign):
     $configuration = agentEvaluationRequireObject($campaign, 'configuration', 'calibration');
     $policy = agentEvaluationRequireObject($configuration, 'calibration', 'calibration');
     agentEvaluationControllerValidateCalibrationPolicy($policy);
+    $revision = agentEvaluationControllerCalibrationRevision($policy);
+    $count = agentEvaluationControllerCalibrationRunCount($revision);
     $approval = agentEvaluationRequireObject($configuration, 'approval', 'calibration');
-    if ($approval['runs'] !== 6 || $approval['spending_ceiling_usd'] !== '6.00'
+    if ($approval['runs'] !== $count || $approval['spending_ceiling_usd'] !== $count . '.00'
         || str_contains(strtolower(agentEvaluationRequireString($approval, 'reference', 'calibration')), 'pending')) {
-        throw new RuntimeException('Calibration execution requires approval of exactly six runs and six dollars.');
+        throw new RuntimeException($revision === 'pilot-v1'
+            ? 'Pilot execution requires approval of exactly two runs and two dollars.'
+            : 'Calibration execution requires approval of exactly six runs and six dollars.');
     }
     $credential = \getenv('OPENAI_API_KEY');
     if (!is_string($credential) || $credential === '' || strlen($credential) > 4096 || preg_match('/[\x00-\x20\x7F]/', $credential) === 1) {
         throw new RuntimeException('Calibration requires the host-only OPENAI_API_KEY.');
     }
-    $parent = dirname($root) . '/agent-evaluation-calibrations';
+    $parent = dirname($root) . ($revision === 'pilot-v1' ? '/agent-evaluation-pilots' : '/agent-evaluation-calibrations');
     if (!file_exists($parent) && !mkdir($parent, 0700)) {
         throw new RuntimeException('Unable to create the calibration evidence parent.');
     }
@@ -340,8 +397,8 @@ function agentEvaluationControllerRunCalibration(string $root, array $campaign):
         agentEvaluationRequireString($configuration, 'implementation_sha256', 'calibration'));
     $attempts = agentEvaluationRequireList($campaign, 'attempts', 'calibration');
     $inputs = agentEvaluationRequireObject($campaign, 'inputs', 'calibration');
-    if (count($attempts) !== 6) {
-        throw new RuntimeException('Calibration must retain exactly six predeclared attempts.');
+    if (count($attempts) !== $count) {
+        throw new RuntimeException('Bounded execution must retain every predeclared attempt.');
     }
     foreach ($attempts as $value) {
         $attempt = agentEvaluationValueObject($value, 'calibration attempt');
@@ -442,7 +499,7 @@ function agentEvaluationControllerCalibrationScore(array $attempt, string $hash,
     $revision = agentEvaluationControllerCalibrationAttemptRevision($attempt);
     return [...agentEvaluationControllerComparisonScoreFromEvidence($attempt, $hash, $holdout, $evidenceRoot,
             agentEvaluationControllerCalibrationBudgets($revision)['model_tokens'], $revision),
-        'schema_version' => 1, 'kind' => 'calibration-score-v' . agentEvaluationControllerCalibrationAttemptRevision($attempt), 'comparative_claims' => false];
+        'schema_version' => 1, 'kind' => agentEvaluationControllerCalibrationKind($revision, '-score'), 'comparative_claims' => false];
 }
 
 /**
@@ -456,7 +513,12 @@ function agentEvaluationControllerCalibrationReport(string $root, array $campaig
     if (preg_match('/\A[a-f0-9]{32}\z/D', $id) !== 1) {
         throw new RuntimeException('Calibration reporting requires one fixed campaign identity.');
     }
-    $directory = agentEvaluationControllerExistingRoot(dirname($root) . '/agent-evaluation-calibrations/' . $id, 'calibration report');
+    $policy = agentEvaluationRequireObject($configuration, 'calibration', 'calibration report');
+    agentEvaluationControllerValidateCalibrationPolicy($policy);
+    $revision = agentEvaluationControllerCalibrationRevision($policy);
+    $count = agentEvaluationControllerCalibrationRunCount($revision);
+    $directory = agentEvaluationControllerExistingRoot(dirname($root)
+        . ($revision === 'pilot-v1' ? '/agent-evaluation-pilots/' : '/agent-evaluation-calibrations/') . $id, 'calibration report');
     $attemptRoot = agentEvaluationControllerExistingRoot($directory . '/attempts', 'calibration report attempt root');
     $runRoot = agentEvaluationControllerExistingRoot($directory . '/runs', 'calibration report run root');
     $configurationPath = agentEvaluationControllerValidateRetainedArtifact($directory, 'configuration.json', AGENT_EVALUATION_MAX_JSON_BYTES);
@@ -471,11 +533,11 @@ function agentEvaluationControllerCalibrationReport(string $root, array $campaig
     $schedulePath = agentEvaluationControllerValidateRetainedArtifact($directory, 'schedule.json', AGENT_EVALUATION_MAX_JSON_BYTES);
     agentEvaluationRequireFileHash($schedulePath, hash('sha256', agentEvaluationJson($campaign['schedule'])), 'calibration retained schedule');
     $expectedPlans = agentEvaluationRequireList($campaign, 'attempts', 'calibration report');
-    if (count($expectedPlans) !== 6) {
+    if (count($expectedPlans) !== $count) {
         throw new RuntimeException('Calibration reporting cannot omit a planned attempt.');
     }
     $ledgerEntries = scandir($attemptRoot);
-    if ($ledgerEntries === false || count($ledgerEntries) > 26) {
+    if ($ledgerEntries === false || count($ledgerEntries) > 2 + 4 * $count) {
         throw new RuntimeException('Calibration attempt ledger exceeds its fixed file inventory.');
     }
     $ledgerPaths = [$configurationPath, $schedulePath];
@@ -483,7 +545,7 @@ function agentEvaluationControllerCalibrationReport(string $root, array $campaig
         if ($entry === '.' || $entry === '..') {
             continue;
         }
-        if (preg_match('/\A0[1-6](?:\.planned|\.started|\.score)?\.json\z/D', $entry) !== 1) {
+        if (preg_match('/\A0[1-' . $count . '](?:\.planned|\.started|\.score)?\.json\z/D', $entry) !== 1) {
             throw new RuntimeException('Calibration attempt ledger contains an unplanned entry.');
         }
         $ledgerPaths[] = agentEvaluationControllerValidateRetainedArtifact($attemptRoot, $entry, AGENT_EVALUATION_MAX_JSON_BYTES);
@@ -566,7 +628,7 @@ function agentEvaluationControllerCalibrationReport(string $root, array $campaig
             'score' => $score, 'score_status' => $score === null ? 'missing' : 'retained', 'evidence_root' => $evidence];
     }
     $runEntries = scandir($runRoot);
-    if ($runEntries === false || count($runEntries) > 8) {
+    if ($runEntries === false || count($runEntries) > $count + 2) {
         throw new RuntimeException('Calibration execution directory inventory exceeds its fixed planned attempts.');
     }
     foreach ($runEntries as $entry) {
@@ -578,12 +640,13 @@ function agentEvaluationControllerCalibrationReport(string $root, array $campaig
         }
         agentEvaluationControllerExistingRoot($runRoot . '/' . $entry, 'calibration retained execution directory');
     }
-    return ['schema_version' => 1, 'kind' => 'calibration-report-v' . agentEvaluationControllerCalibrationRevision(
-            agentEvaluationRequireObject($configuration, 'calibration', 'calibration report')), 'comparative_claims' => false,
+    return ['schema_version' => 1, 'kind' => agentEvaluationControllerCalibrationKind($revision, '-report'), 'comparative_claims' => false,
         'campaign_id' => $id, 'configuration_sha256' => $campaign['sha256'], 'implementation_sha256' => $configuration['implementation_sha256'],
-        'calibration' => $configuration['calibration'], 'planned_runs' => 6, 'spending_ceiling_usd' => '6.00', 'rows' => $rows,
+        'calibration' => $configuration['calibration'], 'planned_runs' => $count, 'spending_ceiling_usd' => $count . '.00', 'rows' => $rows,
         'correctness_rates_available' => false, 'human_review' => 'pending',
-        'limitation' => 'One calibration per task and condition cannot establish framework correctness rates or replace the sixty-trial study.'];
+        'limitation' => $revision === 'pilot-v1'
+            ? 'Two starts establish only observed feasibility; no rate, causal guidance effect or general superiority is established.'
+            : 'One calibration per task and condition cannot establish framework correctness rates or replace the sixty-trial study.'];
 }
 
 /**
@@ -594,9 +657,14 @@ function agentEvaluationControllerCalibrationReport(string $root, array $campaig
 function agentEvaluationControllerComparisonMain(string $root, array $arguments): int
 {
     agentEvaluationControllerRequireArgumentCount($arguments, 3, 'comparison-{prepare,run,report} <configuration.json>');
-    $calibration = str_starts_with($arguments[1], 'calibration-');
+    $pilot = str_starts_with($arguments[1], 'pilot-');
+    $calibration = $pilot || str_starts_with($arguments[1], 'calibration-');
     $campaign = agentEvaluationControllerReadComparisonConfiguration($root, $arguments[2], $calibration);
-    if (in_array($arguments[1], ['comparison-prepare', 'calibration-prepare'], true)) {
+    if ($calibration && $pilot !== (agentEvaluationControllerCalibrationRevision(
+        agentEvaluationRequireObject($campaign['configuration'], 'calibration', 'bounded command')) === 'pilot-v1')) {
+        throw new RuntimeException('Pilot and calibration commands require their distinct policy identities.');
+    }
+    if (in_array($arguments[1], ['comparison-prepare', 'calibration-prepare', 'pilot-prepare'], true)) {
         fwrite(STDOUT, agentEvaluationJson([
             'status' => 'prepared-no-trials', 'campaign_id' => $campaign['configuration']['campaign_id'],
             'configuration_sha256' => $campaign['sha256'], 'schedule' => $campaign['schedule'],
@@ -605,9 +673,9 @@ function agentEvaluationControllerComparisonMain(string $root, array $arguments)
         return 0;
     }
     if ($calibration) {
-        if ($arguments[1] === 'calibration-run') {
+        if (in_array($arguments[1], ['calibration-run', 'pilot-run'], true)) {
             agentEvaluationControllerRunCalibration($root, $campaign);
-        } elseif ($arguments[1] !== 'calibration-report') {
+        } elseif (!in_array($arguments[1], ['calibration-report', 'pilot-report'], true)) {
             throw new RuntimeException('Unknown calibration command.');
         }
         fwrite(STDOUT, agentEvaluationJson(agentEvaluationControllerCalibrationReport($root, $campaign)));
@@ -669,7 +737,7 @@ function agentEvaluationControllerReadComparisonConfiguration(string $root, stri
         $calibrationRevision = agentEvaluationControllerCalibrationRevision($calibrationPolicy);
     }
     $profile = agentEvaluationRequireObject($configuration, 'profile', 'comparison configuration');
-    if (($profile['condition'] ?? null) !== ($calibration ? 'calibration-v' . $calibrationRevision : 'comparison-v1')) {
+    if (($profile['condition'] ?? null) !== ($calibration ? agentEvaluationControllerCalibrationKind($calibrationRevision) : 'comparison-v1')) {
         throw new RuntimeException('Comparison shared profile must use its fixed template condition.');
     }
     $model = agentEvaluationRequireObject($profile, 'model', 'comparison profile');
@@ -704,9 +772,10 @@ function agentEvaluationControllerReadComparisonConfiguration(string $root, stri
             throw new RuntimeException('Calibration requires its exact reviewed snapshot and standard prices.');
         }
     }
+    $inputCount = $calibrationRevision === 'pilot-v1' ? 2 : 6;
     $inputValues = agentEvaluationRequireList($configuration, 'inputs', 'comparison configuration');
-    if (count($inputValues) !== 6) {
-        throw new RuntimeException('Comparison configuration must freeze exactly six task/condition preparations.');
+    if (count($inputValues) !== $inputCount) {
+        throw new RuntimeException('Campaign configuration must freeze exactly its admitted task/condition preparations.');
     }
     $inputs = [];
     foreach ($inputValues as $value) {
@@ -737,7 +806,7 @@ function agentEvaluationControllerReadComparisonConfiguration(string $root, stri
             'approval' => $configuration['approval'],
             'prepared_dependencies' => $input['prepared_dependencies'], 'prepared_lock' => $input['prepared_lock'],
             'prepared_dependencies_sha256' => $input['prepared_dependencies_sha256'], 'prepared_lock_sha256' => $input['prepared_lock_sha256'],
-        ], $selected, $calibration ? 6 : 60, $calibration, $calibrationRevision);
+        ], $selected, $calibration ? agentEvaluationControllerCalibrationRunCount($calibrationRevision) : 60, $calibration, $calibrationRevision);
         $dependencies = agentEvaluationRequireString($execution, 'prepared_dependencies', 'comparison dependencies');
         $holdoutPath = agentEvaluationRequireString($input, 'holdout_path', 'comparison input');
         $holdoutReal = realpath($holdoutPath);
@@ -762,7 +831,7 @@ function agentEvaluationControllerReadComparisonConfiguration(string $root, stri
     }
     $schedule = agentEvaluationComparisonSchedule($kit);
     if ($calibration) {
-        $schedule = array_slice($schedule, 0, 6);
+        $schedule = agentEvaluationControllerCalibrationSchedule($kit, $calibrationRevision);
     }
     $attempts = [];
     foreach ($schedule as $slot) {
@@ -860,7 +929,7 @@ function agentEvaluationControllerMain(array $arguments): int
     $command = $arguments[1] ?? 'help';
 
     try {
-        if (in_array($command, ['comparison-prepare', 'comparison-report', 'comparison-run', 'calibration-prepare', 'calibration-report', 'calibration-run'], true)) {
+        if (in_array($command, ['comparison-prepare', 'comparison-report', 'comparison-run', 'calibration-prepare', 'calibration-report', 'calibration-run', 'pilot-prepare', 'pilot-report', 'pilot-run'], true)) {
             return agentEvaluationControllerComparisonMain($root, $arguments);
         }
         if ($command === 'validate') {
@@ -1040,6 +1109,7 @@ function agentEvaluationControllerMain(array $arguments): int
                 . "  php tools/agent-evaluation-controller.php explanation-run <32-lowercase-hex-run-id> <configuration.json>\n\n"
                 . "  php tools/agent-evaluation-controller.php comparison-{prepare,run,report} <configuration.json>\n"
                 . "  php tools/agent-evaluation-controller.php calibration-{prepare,run,report} <configuration.json>\n\n"
+                . "  php tools/agent-evaluation-controller.php pilot-{prepare,run,report} <configuration.json>\n\n"
                 . "Live execution is opt-in and fails closed unless every ADR 048 OCI and proxy control passes.\n",
             );
 
@@ -1069,7 +1139,7 @@ function agentEvaluationControllerValidateEffectivePromptEvidence(
     string $evidenceRoot,
     array $task,
     ?string $condition,
-    ?int $calibrationRevision,
+    int|string|null $calibrationRevision,
 ): void {
     if (($task['schema_version'] ?? null) !== 3) {
         agentEvaluationControllerValidatePromptEvidence(
@@ -1996,7 +2066,8 @@ function agentEvaluationControllerExecuteControlled(
                     );
                     if ($calibration !== null) {
                         $manifest['comparison_execution'] = false;
-                        $manifest['calibration_execution'] = true;
+                        $manifest['calibration_execution'] = $calibrationRevision !== 'pilot-v1';
+                        if ($calibrationRevision === 'pilot-v1') { $manifest['pilot_execution'] = true; }
                     }
                     agentEvaluationControllerWriteArtifact(
                         $workspace['evidence_root'],
@@ -3048,7 +3119,7 @@ function agentEvaluationControllerComparisonArtifacts(string $evidenceRoot): arr
  * @param array<string,mixed> $holdout
  * @return array<string,mixed>
  */
-function agentEvaluationControllerComparisonScoreFromEvidence(array $attempt, string $attemptHash, array $holdout, string $evidenceRoot, int $modelTokenBudget = 40_000, ?int $calibrationRevision = null): array
+function agentEvaluationControllerComparisonScoreFromEvidence(array $attempt, string $attemptHash, array $holdout, string $evidenceRoot, int $modelTokenBudget = 40_000, int|string|null $calibrationRevision = null): array
 {
     agentEvaluationControllerValidateComparisonAttemptMeasurements($attempt, $evidenceRoot, $modelTokenBudget, $calibrationRevision);
     $results = agentEvaluationControllerEmptyComparisonResults($holdout);
@@ -3464,7 +3535,7 @@ function agentEvaluationControllerComparisonMustStop(array $attempt, ?string $ev
  *
  * @param array<string, mixed> $attempt
  */
-function agentEvaluationControllerValidateComparisonAttemptMeasurements(array $attempt, string $evidenceRoot, int $modelTokenBudget = 40_000, ?int $calibrationRevision = null): void
+function agentEvaluationControllerValidateComparisonAttemptMeasurements(array $attempt, string $evidenceRoot, int $modelTokenBudget = 40_000, int|string|null $calibrationRevision = null): void
 {
     $artifacts = agentEvaluationRequireObject($attempt, 'artifacts', 'comparison measurement evidence');
     if ($artifacts !== []) {

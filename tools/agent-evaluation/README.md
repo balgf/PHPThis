@@ -55,6 +55,8 @@ Stable v1 markers:
 
 ## Boundary
 
+[Filtered-collection revision 8](fixture-revision-8.md) adopts the shorter task route for the two-start feasibility pilot in #96. The [controller's pilot-v1 policy](../agent-evaluation-controller/README.md#two-start-feasibility-pilot-v1) owns its separate schedule and allowance; the original comparison and calibrations retain their identities.
+
 The kit evaluates an agent's work; it is not framework authority. The installed Consumer Contract, application-owned context, concrete application source, and application tests remain the authority for a candidate change. A task manifest may bound a trial more narrowly but cannot weaken those sources.
 
 This directory remains outside the framework package. It adds no Composer runtime dependency, framework API, Consumer Contract requirement, Strict Profile rule, application checker rule, or production execution path. Version 1 also contains no model runner or provider adapter. ADR 048 separately accepts the maintainer-only `tools/agent-evaluation-controller.php` v0.2 entrypoint and its fixed modules under `tools/agent-evaluation-controller/`; it must produce records conforming to these unchanged schemas and cannot weaken this data contract.
