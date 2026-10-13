@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use App\Observability\ErrorLogOuterFailureSink;
+use PHPThis\Http\ResponseEmissionFailed;
+use PHPThis\Http\UnknownFailureBoundary;
+use Swoole\Coroutine;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+use Throwable;
+
+final readonly class SwooleBridge
+{
+    public function __construct(private bool $overlapProbe)
+    {
+    }
+
+    public function handle(Request $incoming, Response $outgoing): void
+    {
+        $generic = (new UnknownFailureBoundary())->respond();
+        try {
+            $input = SwooleIngress::read($incoming);
+            $coordinator = Composition::request($input->bodyUri);
+            if ($this->overlapProbe) {
+                Coroutine::sleep(0.005);
+            }
+            $response = $coordinator->handle($input->server, $input->query);
+        } catch (Throwable $failure) {
+            $response = $generic;
+            try {
+                (new ErrorLogOuterFailureSink())->emit($failure);
+            } catch (Throwable) {
+            }
+        }
+        try {
+            (new SwooleEmitter())->emit($response, $outgoing);
+        } catch (ResponseEmissionFailed) {
+            error_log('application.response_emission_failed');
+            $outgoing->close();
+        }
+    }
+}

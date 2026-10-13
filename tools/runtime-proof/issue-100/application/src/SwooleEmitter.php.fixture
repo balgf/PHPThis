@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use PHPThis\Http\Response;
+use PHPThis\Http\ResponseEmissionFailed;
+use Swoole\Http\Response as NativeResponse;
+
+final class SwooleEmitter
+{
+    public function emit(Response $response, NativeResponse $native): void
+    {
+        if ($response->fileBody !== null || $response->cookies !== [] || strlen($response->body) > 65_536) {
+            throw new ResponseEmissionFailed(false);
+        }
+        if ($native->status($response->status) !== true) {
+            throw new ResponseEmissionFailed(false);
+        }
+        foreach ($response->headers as $name => $value) {
+            if ($native->header($name, $value) !== true) {
+                throw new ResponseEmissionFailed(false);
+            }
+        }
+        if ($native->end($response->body) !== true) {
+            throw new ResponseEmissionFailed(true);
+        }
+    }
+}

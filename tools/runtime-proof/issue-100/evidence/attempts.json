@@ -1,0 +1,80 @@
+{
+  "note": "Original intermediate logs remain in the local preparation evidence directory; these records preserve their outcome and hashes. Successful raw evidence is retained here.",
+  "attempts": [
+    {
+      "attempt": "build-01",
+      "failure": "The initial PECL configuration required unavailable Brotli development files.",
+      "repair": "Disable unused Brotli explicitly.",
+      "original_artifact_sha256": {
+        "runtime-build.log": "7dec5baa3bdfa50544ad29dd959e05f11af822ed97af06cd7dd1706d0f11fd41"
+      }
+    },
+    {
+      "attempt": "build-02",
+      "failure": "The extension build required OpenSSL headers even with its SSL option disabled.",
+      "repair": "Install libssl-dev in the disposable image.",
+      "original_artifact_sha256": {
+        "runtime-build-02.log": "e18764288b28e4c5a17c4799b3a448d7fb67d63d01e0b1aacddffb8550f4442d"
+      }
+    },
+    {
+      "attempt": "analysis-01",
+      "failure": "Strict analysis rejected implicit truthiness of three native API return values.",
+      "repair": "Compare status/header/end results with true explicitly.",
+      "original_artifact_sha256": {
+        "analysis-01.log": "ebfeb707dcb298daf1c6f5cbcc2730e290e0cd6c7d522933bfa090704a7e9440"
+      }
+    },
+    {
+      "attempt": "20261013T233620",
+      "failure": "Nginx attempted to create its default uwsgi temporary directory on a read-only filesystem.",
+      "repair": "Move all Nginx temporary paths under /tmp.",
+      "original_artifact_sha256": {
+        "20261013T233620/failure.txt": "1acf3e953ea1486a3dc341eb31bb771f49b502a3fc2d873e2055fec1bdb9ebf3",
+        "20261013T233620/cleanup.json": "d1b19eedb41df70e87274fef51f6058d1ff602a7b4ec91f5d7cf004ffebe60fa"
+      }
+    },
+    {
+      "attempt": "20261013T233724",
+      "failure": "Empty FastCGI CONTENT_LENGTH metadata made framework request parsing reject GET with 400.",
+      "repair": "Omit absent CONTENT_LENGTH and CONTENT_TYPE with if_not_empty.",
+      "original_artifact_sha256": {
+        "20261013T233724/failure.txt": "f79cf08b6e30065e33fdb35081aa10cfa2c5b92731788c4fb68810e32963c36f",
+        "20261013T233724/source-hashes.json": "f7aec6b76ce082d8376b9917351858e3bd3aae51698d0d857b0cdb4e66781bfe",
+        "20261013T233724/cleanup.json": "d1b19eedb41df70e87274fef51f6058d1ff602a7b4ec91f5d7cf004ffebe60fa"
+      }
+    },
+    {
+      "attempt": "20261013T233903",
+      "failure": "The client attempted JSON decoding of the canonical plain-text 404/405 responses.",
+      "repair": "Assert the actual plain-text routing bodies.",
+      "original_artifact_sha256": {
+        "20261013T233903/failure.txt": "4879c25a23b5dc5f69f30c6f2ae84ffb18ce869dc3cc63e4a012408c3c6d408a",
+        "20261013T233903/behavior.json.stderr": "1b552641487b6dc6e31450d65fa7ac6b90f75866720e95f522f295f96c28ec43",
+        "20261013T233903/source-hashes.json": "1e241b6772f7620d7596e87d7f7b19f8f2b22844ab646fe6c666b42459f1f82d",
+        "20261013T233903/cleanup.json": "d1b19eedb41df70e87274fef51f6058d1ff602a7b4ec91f5d7cf004ffebe60fa"
+      }
+    },
+    {
+      "attempt": "20261013T233933",
+      "failure": "HTTP checks passed, but shutdown could not find a kill executable in the image.",
+      "repair": "Send SIGTERM through Python os.kill and bound the termination wait.",
+      "original_artifact_sha256": {
+        "20261013T233933/failure.txt": "861325ca4057d8a215fef8e12752082fb639888f7bc7a3bdb8d9e3068d81c2d8",
+        "20261013T233933/source-hashes.json": "3c419cfb7c18d959aded5a4b465d045a05a0efecd529f320e8efbfc2a4352469",
+        "20261013T233933/cleanup.json": "d1b19eedb41df70e87274fef51f6058d1ff602a7b4ec91f5d7cf004ffebe60fa"
+      }
+    },
+    {
+      "attempt": "20261013T234433",
+      "failure": "The first benchmark stopped after Nginx closed a keep-alive connection. No complete successful measurement was claimed.",
+      "repair": "Honor Connection: close without retrying failed requests; set keepalive_requests=4096 and stream completed samples to JSONL.",
+      "original_artifact_sha256": {
+        "20261013T234433/failure.txt": "129b3251d0bb7705d2950bbd2bc63b217ad5d7fd31ebc05803b8884a04f6fb79",
+        "20261013T234433/benchmark.json.stderr": "98eab2536141caa57865c7e399487a86dcdb0e0ac0bd4c02d413c512abd29243",
+        "20261013T234433/source-hashes.json": "c48b2160c88438afdb78b13d2678b5d973e7dc857a0f847d2bad16bdc55b8122",
+        "20261013T234433/cleanup.json": "d1b19eedb41df70e87274fef51f6058d1ff602a7b4ec91f5d7cf004ffebe60fa"
+      }
+    }
+  ]
+}

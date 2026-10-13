@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+require '/framework/vendor/autoload.php';
+require '/framework/verification/SyntaxProfile.php';
+$failures = [];
+foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator('/app')) as $file) {
+    if ($file->isFile() && $file->getExtension() === 'php') {
+        $source = file_get_contents($file->getPathname());
+        if (!is_string($source)) {
+            throw new RuntimeException('Unable to read proof source.');
+        }
+        $failures = [...$failures, ...PHPThis\Verification\SyntaxProfile::failures($source, $file->getPathname())];
+    }
+}
+if ($failures !== []) {
+    fwrite(STDERR, implode("\n", $failures) . "\n");
+    exit(1);
+}
+echo "PASS syntax profile on proof PHP.\n";

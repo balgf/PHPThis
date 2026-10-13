@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use App\Observability\CorrelationId;
+use App\Observability\ErrorLogRequestSummarySink;
+use App\Observability\QuerySummarySource;
+use App\Observability\RequestSummarySink;
+use App\Observability\TerminalRequestCoordinator;
+use PHPThis\Application;
+use PHPThis\Database\Connection;
+use PHPThis\Database\QueryBudget;
+use PHPThis\Database\QueryTrace;
+use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\RequestBodyTooLarge;
+use PHPThis\Http\RequestBoundary;
+use PHPThis\Http\RequestReader;
+use PHPThis\Http\Response;
+use PHPThis\Http\UnknownFailureBoundary;
+use PHPThis\Routing\Route;
+use PHPThis\Routing\Router;
+
+final class Composition
+{
+    public static function request(string $bodyUri, ?RequestSummarySink $sink = null): TerminalRequestCoordinator
+    {
+        $budget = new QueryBudget(1);
+        $trace = new QueryTrace(2);
+        $handler = new ProofHandler(Connection::connect('sqlite:/fixture/proof.sqlite', $budget, $trace, options: [\PDO::ATTR_TIMEOUT => 1]));
+        $headers = ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store'];
+        return new TerminalRequestCoordinator(
+            new RequestBoundary(
+                new RequestReader(1_024, $bodyUri),
+                new Application(new Router([
+                    new Route('GET', '/health', $handler),
+                    new Route('GET', '/runtime', $handler),
+                    new Route('GET', '/documents', $handler),
+                    new Route('GET', '/fault', $handler),
+                    new Route('GET', '/budget', $handler),
+                    new Route('POST', '/rollback', $handler),
+                    new Route('GET', '/count', $handler),
+                    new Route('POST', '/echo', $handler),
+                ])),
+                new ErrorResponseRegistry([
+                    InvalidRequest::class => new Response(400, $headers, "{\"error\":\"invalid_request\"}\n"),
+                    RequestBodyTooLarge::class => new Response(413, $headers, "{\"error\":\"request_body_too_large\"}\n"),
+                ]),
+            ),
+            new UnknownFailureBoundary(),
+            CorrelationId::generate(),
+            $sink ?? new ErrorLogRequestSummarySink(),
+            [new QuerySummarySource('documents', $budget, $trace)],
+        );
+    }
+}

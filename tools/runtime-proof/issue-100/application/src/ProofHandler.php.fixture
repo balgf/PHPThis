@@ -1,0 +1,97 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use PHPThis\Database\Connection;
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\Response;
+use RuntimeException;
+use Throwable;
+
+final readonly class ProofHandler implements RequestHandler
+{
+    public function __construct(private Connection $database)
+    {
+    }
+
+    public function handle(Request $request): Response
+    {
+        $headers = ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store'];
+        if ($request->path === '/health') {
+            return new Response(200, $headers, "{\"status\":\"ok\"}\n");
+        }
+        if ($request->path === '/runtime') {
+            return new Response(200, $headers, json_encode([
+                'php' => PHP_VERSION, 'sapi' => PHP_SAPI,
+                'swoole' => phpversion('swoole'), 'errors' => error_reporting(), 'all_errors' => E_ALL,
+                'display_errors' => ini_get('display_errors'),
+                'display_startup_errors' => ini_get('display_startup_errors'),
+                'log_errors' => ini_get('log_errors'),
+                'ignore_args' => ini_get('zend.exception_ignore_args'),
+                'opcache' => ini_get('opcache.enable'),
+                'opcache_cli' => ini_get('opcache.enable_cli'),
+                'jit' => ini_get('opcache.jit_buffer_size'),
+                'memory_bytes' => memory_get_usage(true),
+            ], JSON_THROW_ON_ERROR) . "\n");
+        }
+        if ($request->path === '/fault') {
+            throw new RuntimeException('PRIVATE_FAILURE_SENTINEL');
+        }
+        if ($request->path === '/budget') {
+            $this->database->selectOneRow('SELECT 1 AS value');
+            $this->database->selectOneRow('SELECT 2 AS value');
+            throw new RuntimeException('Budget was bypassed.');
+        }
+        if ($request->path === '/rollback') {
+            $this->database->beginTransaction();
+            try {
+                $this->database->executeStatement('INSERT INTO attempts (id) VALUES (1)');
+                throw new RuntimeException('PRIVATE_ROLLBACK_SENTINEL');
+            } catch (Throwable $failure) {
+                $this->database->rollBack();
+                throw $failure;
+            }
+        }
+        if ($request->path === '/count') {
+            $row = $this->database->selectOneRow('SELECT COUNT(id) AS count FROM attempts');
+            if ($row === null || !is_int($row['count'] ?? null)) {
+                throw new RuntimeException('Invalid count projection.');
+            }
+            return new Response(200, $headers, json_encode(['count' => $row['count']], JSON_THROW_ON_ERROR) . "\n");
+        }
+        if ($request->path === '/echo') {
+            if (($request->headers['content-type'] ?? '') !== 'application/json') {
+                return new Response(415, $headers, "{\"error\":\"unsupported_media_type\"}\n");
+            }
+            try {
+                $value = json_decode($request->body, true, 4, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                throw new InvalidRequest('Invalid JSON.');
+            }
+            if (!is_array($value) || array_keys($value) !== ['marker'] || !is_string($value['marker'])
+                || preg_match('/\A[a-zA-Z0-9]{1,32}\z/D', $value['marker']) !== 1) {
+                throw new InvalidRequest('Invalid echo input.');
+            }
+            return new Response(200, $headers, json_encode(['marker' => $value['marker']], JSON_THROW_ON_ERROR) . "\n");
+        }
+        $input = ListInput::parse($request);
+        $rows = $this->database->selectAllRows(
+            'SELECT d.id, d.label, COUNT(e.id) AS events
+             FROM documents AS d
+             LEFT JOIN events AS e ON e.document_id = d.id AND e.tenant_id = d.tenant_id
+             WHERE d.tenant_id = :tenant
+             GROUP BY d.id, d.label
+             ORDER BY d.id ASC LIMIT :page_limit',
+            ['tenant' => $input->tenant, 'page_limit' => $input->limit],
+        );
+        $items = [];
+        foreach ($rows as $row) {
+            $items[] = DocumentView::fromRow($row)->toArray();
+        }
+        return new Response(200, $headers, json_encode(['data' => $items, 'marker' => $input->marker], JSON_THROW_ON_ERROR) . "\n");
+    }
+}

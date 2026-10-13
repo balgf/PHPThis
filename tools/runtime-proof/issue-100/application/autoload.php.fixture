@@ -1,0 +1,8 @@
+<?php
+
+declare(strict_types=1);
+
+/** @var Composer\Autoload\ClassLoader $loader */
+$loader = require '/framework/vendor/autoload.php';
+$loader->addPsr4('App\\', __DIR__ . '/src');
+$loader->addPsr4('App\\Observability\\', '/framework/skeleton/src/Observability');

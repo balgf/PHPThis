@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use UnexpectedValueException;
+
+final readonly class DocumentView
+{
+    private function __construct(public int $id, public string $label, public int $events)
+    {
+    }
+
+    /** @param array<string, mixed> $row */
+    public static function fromRow(array $row): self
+    {
+        $id = $row['id'] ?? null;
+        $label = $row['label'] ?? null;
+        $events = $row['events'] ?? null;
+        if (!is_int($id) || $id < 1 || !is_string($label) || strlen($label) > 64
+            || !is_int($events) || $events < 0 || $events > 100) {
+            throw new UnexpectedValueException('Invalid document projection.');
+        }
+        return new self($id, $label, $events);
+    }
+
+    /** @return array{id: int, label: string, events: int} */
+    public function toArray(): array
+    {
+        return ['id' => $this->id, 'label' => $this->label, 'events' => $this->events];
+    }
+}

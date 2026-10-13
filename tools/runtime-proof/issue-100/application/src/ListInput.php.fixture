@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\Request;
+
+final readonly class ListInput
+{
+    private function __construct(public int $tenant, public int $limit, public string $marker)
+    {
+    }
+
+    public static function parse(Request $request): self
+    {
+        if (array_diff(array_keys($request->query), ['tenant', 'limit', 'marker']) !== []) {
+            throw new InvalidRequest('Unknown query field.');
+        }
+        $tenant = $request->query['tenant'] ?? '1';
+        $limit = $request->query['limit'] ?? '50';
+        $marker = $request->query['marker'] ?? 'default';
+        if (!is_string($tenant) || !in_array($tenant, ['1', '2'], true)
+            || !is_string($limit) || preg_match('/\A(?:[1-9]|[1-4][0-9]|50)\z/D', $limit) !== 1
+            || !is_string($marker) || preg_match('/\A[a-zA-Z0-9]{1,32}\z/D', $marker) !== 1) {
+            throw new InvalidRequest('Invalid bounded query.');
+        }
+        return new self((int) $tenant, (int) $limit, $marker);
+    }
+}

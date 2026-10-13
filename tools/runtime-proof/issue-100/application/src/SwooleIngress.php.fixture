@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use RuntimeException;
+use Swoole\Http\Request;
+
+final readonly class SwooleIngress
+{
+    /**
+     * @param array<string, mixed> $server
+     * @param array<array-key, mixed> $query
+     */
+    private function __construct(public array $server, public array $query, public string $bodyUri)
+    {
+    }
+
+    public static function read(Request $request): self
+    {
+        $nativeServer = $request->server;
+        $nativeHeaders = $request->header;
+        $query = $request->get ?? [];
+        if (!is_array($nativeServer) || !is_array($nativeHeaders) || !is_array($query)) {
+            throw new RuntimeException('Invalid native HTTP metadata.');
+        }
+        $path = $nativeServer['request_uri'] ?? null;
+        $queryString = $nativeServer['query_string'] ?? '';
+        if (!is_string($path) || !is_string($queryString)) {
+            throw new RuntimeException('Missing native request target.');
+        }
+        $server = [
+            'REQUEST_METHOD' => $nativeServer['request_method'] ?? null,
+            'REQUEST_URI' => $path . ($queryString === '' ? '' : '?' . $queryString),
+        ];
+        foreach ($nativeHeaders as $name => $value) {
+            if (!is_string($name) || !is_string($value)) {
+                throw new RuntimeException('Invalid native header representation.');
+            }
+            $key = 'HTTP_' . strtoupper($name);
+            $server[$key] = $value;
+        }
+        $body = $request->rawContent();
+        if (!is_string($body) || strlen($body) > 16_384) {
+            throw new RuntimeException('Invalid bounded native request body.');
+        }
+        return new self($server, $query, 'data://text/plain;base64,' . base64_encode($body));
+    }
+}

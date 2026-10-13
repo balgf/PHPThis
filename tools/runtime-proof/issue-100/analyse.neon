@@ -1,0 +1,14 @@
+includes:
+    - /framework/vendor/phpstan/phpstan-strict-rules/rules.neon
+    - /framework/verification/phpstan/extension.php
+parameters:
+    level: max
+    strictRules:
+        allRules: true
+    paths:
+        - /app
+    tmpDir: /tmp/phpstan
+    checkUninitializedProperties: true
+    reportUnmatchedIgnoredErrors: true
+    resultCacheChecksProjectExtensionFilesDependencies: true
+    treatPhpDocTypesAsCertain: true

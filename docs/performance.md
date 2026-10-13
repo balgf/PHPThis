@@ -16,6 +16,12 @@ Optimize after measurement, but install cheap limits early. Query budgets and ex
 
 Do not treat attribute syntax as an application performance optimization. PHPThis permits declaration-local native engine behavior and explicitly selected development-tool attributes; neither permits application-runtime attribute scanning or reflection-driven application behavior. Any proposed performance claim names and measures the mechanism being replaced against the explicit implementation.
 
+## Swoole experiment
+
+Swoole is experimental: Consumer Contract 18 still requires the conventional PHP front controller. The [stateless HTTP proof](https://github.com/balgf/PHPThis/tree/main/tools/runtime-proof/issue-100) retains an explicit application-owned adapter, repeatable checks and matched PHP-FPM measurements. It adds no framework API or dependency.
+
+In the recorded local SQLite workload, Swoole's median throughput was approximately 9–20% higher. At concurrency 16 its pooled p99 latency was worse: 35–36 ms against 11–14 ms for FPM. These short closed-loop samples support investigation, not a production speedup claim. Inspect the workload, resource limits, raw samples and uncovered boundaries before making an adoption decision. Supported adoption needs a separately accepted contract decision and deployment evidence.
+
 ## Cache evidence
 
 A cache changes where work occurs; it does not remove the need to bound that work. Performance reports for an adopted cache name the backend and topology and report cold and warm scenarios separately. They include cache-operation count, payload size, hit/miss outcome, database statement count, request latency, and the tested fixture cardinality. A warm-cache latency result is not evidence that the cold path avoids N+1 queries.
