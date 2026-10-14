@@ -81,6 +81,18 @@ final readonly class RequestReader
         if ($path === '' || $path[0] !== '/') {
             throw new InvalidRequest('REQUEST_URI must contain an absolute path.');
         }
+        $peerAddress = null;
+        if (array_key_exists('REMOTE_ADDR', $server)) {
+            $address = $server['REMOTE_ADDR'];
+            if (!is_string($address)) {
+                throw new InvalidRequest('REMOTE_ADDR must be a bare IPv4 or IPv6 address of at most 45 bytes.');
+            }
+            try {
+                $peerAddress = PeerAddress::fromString($address);
+            } catch (InvalidArgumentException $failure) {
+                throw new InvalidRequest('REMOTE_ADDR must be a bare IPv4 or IPv6 address of at most 45 bytes.', previous: $failure);
+            }
+        }
         $parsedQuery = $this->query($query);
         $headers = $this->headers($server);
         $uploads = $this->uploads($method, $headers, $parsedFields, $files);
@@ -93,6 +105,7 @@ final readonly class RequestReader
                 body: $body,
                 headers: $headers,
                 uploads: $uploads ?? [],
+                peerAddress: $peerAddress,
             );
         } catch (InvalidArgumentException $failure) {
             throw new InvalidRequest('PHP runtime input did not produce a valid request.', previous: $failure);

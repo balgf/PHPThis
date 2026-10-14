@@ -135,6 +135,11 @@ error representations preserve defaults and independently customize routing fail
 error representations enforce byte bounds and reject control header injection
 configured errors retain correlation known mappings and unknown failure redaction
 real front controller emits configured errors and retains the built-in early fallback
+peer addresses retain valid IPv4 and IPv6 bytes without trusting forwarding headers
+malformed peer metadata fails redacted before body session and handler work
+routing and multipart request copies preserve the same peer value and request fields
+an application requiring peer metadata rejects unavailable input before protected work
+the real front controller retains the server peer despite spoofed forwarding headers
 router rejects duplicate method and path pairs
 route accepts at most two full-segment typed parameter declarations
 router matches bounded canonical positive integer path parameters

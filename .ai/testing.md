@@ -15,7 +15,7 @@ Use `AGENTS.md` for the change workflow and the selected concern guide for requi
 | Bounded child-process support | `composer test:process` |
 | Evaluation schemas and synthetic controller | `composer test:agent-evaluation`; `composer test:agent-evaluation-controller` |
 
-The framework uses PHPUnit 13 as a development runner. `tests/run.php` explicitly loads concern files and registers exactly 192 named behaviors; `tests/behavior-names.txt` fixes their unique order. `tests/FrameworkBehaviorTest.php` exposes selectable data sets and groups. Keep the entrypoint deterministic and support narrow. JUnit output belongs under `.phpunit.cache/`. `composer test:coverage` is report-only and needs PCOV or Xdebug; no coverage percentage determines validity.
+The framework uses PHPUnit 13 as a development runner. `tests/run.php` explicitly loads concern files and registers exactly 197 named behaviors; `tests/behavior-names.txt` fixes their unique order. `tests/FrameworkBehaviorTest.php` exposes selectable data sets and groups. Keep the entrypoint deterministic and support narrow. JUnit output belongs under `.phpunit.cache/`. `composer test:coverage` is report-only and needs PCOV or Xdebug; no coverage percentage determines validity.
 
 The installed-consumer entrypoint `tools/test-consumer-project.php` owns the explicit order of its 54 proof calls, twelve declaration-only modules, outer workspace lifecycle, completion sentinels, exit/output contracts and cleanup. Source guards verify that composition. Do not introduce discovery, a registry, generated loading, a second command path or hidden process ownership to organize tests. `tools/process-support.php` owns captured native child execution. Preserve time/output limits, original-process cleanup and failure precedence.
 
@@ -23,7 +23,7 @@ The installed-consumer entrypoint `tools/test-consumer-project.php` owns the exp
 
 | Concern | Current requirements | Executable owner |
 | --- | --- | --- |
-| HTTP ingestion, framing, cookies and emission | `.ai/http.md`, `.ai/request-boundary.md` | `tests/http-boundary.php`, `tests/error-representation.php`, `tests/response-framing.php`, `tests/response-emitter.php` |
+| HTTP ingestion, framing, cookies and emission | `.ai/http.md`, `.ai/request-boundary.md` | `tests/http-boundary.php`, `tests/error-representation.php`, `tests/peer-address.php`, `tests/response-framing.php`, `tests/response-emitter.php` |
 | Outer failure disclosure and safe SAPI settings | `.ai/errors.md`, `.ai/configuration.md` | `tests/outer-http-failure.php`, installed HTTP controls |
 | Route grammar and explicit decorators | `.ai/routing.md` | `tests/routing.php`, `tests/handler-decorator.php` |
 | Typed input and CRUD operation boundaries | `.ai/types.md`, `.ai/crud.md` | `tests/input-projection.php`, `tests/crud.php` |

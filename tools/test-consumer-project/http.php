@@ -1657,13 +1657,13 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
             'Strict Profile version 3 remains unchanged',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 19',
+            'Contract version: 20',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
             'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
             '## Outer HTTP failure boundary',
-            'Contract version 19 supports one deployed HTTP entrypoint.',
+            'Contract version 20 supports one deployed HTTP entrypoint.',
             'Any HTTP application may deliberately remain code-owned `GENERIC` without inventing external disclosure or runtime-profile selection inputs',
             'Every HTTP profile configures the effective web SAPI with all `E_ALL` bits reported',
         ],
@@ -1967,7 +1967,69 @@ PHP,
     }
 
     proveInstalledErrorRepresentations($project, $installedFramework, $environment);
+    proveInstalledPeerAddress($project, $installedFramework, $environment);
     fwrite(STDOUT, "PASS installed session cleanup and response framing distribution\n");
+}
+
+/** @param array<string, string> $environment */
+function proveInstalledPeerAddress(string $project, string $installedFramework, array $environment): void
+{
+    $proofPath = $project . '/installed-peer-proof.php';
+    writeFile($proofPath, <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\PeerAddress;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestReader;
+use PHPThis\Routing\PathParameters;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$reader = new RequestReader(8, 'php://memory');
+$server = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/', 'HTTP_X_FORWARDED_FOR' => '203.0.113.1'];
+foreach (['192.0.2.1', '2001:DB8::1', '::ffff:192.0.2.1'] as $address) {
+    $peer = PeerAddress::fromString($address);
+    $request = $reader->read($server + ['REMOTE_ADDR' => $address], []);
+    $copy = $request->withPathParameters(PathParameters::none());
+    $direct = new Request('GET', '/', peerAddress: $peer);
+    if ($request->peerAddress === null || $request->peerAddress->address !== $address
+        || $copy->peerAddress !== $request->peerAddress || $direct->peerAddress !== $peer) {
+        throw new RuntimeException('Installed peer value or copy contract failed.');
+    }
+}
+if ($reader->read($server, [])->peerAddress !== null || (new Request('GET', '/'))->peerAddress !== null) {
+    throw new RuntimeException('An absent installed peer must remain unavailable.');
+}
+foreach ([null, '', ['192.0.2.1'], 'private-sentinel', 'fe80::1%eth0'] as $bad) {
+    try {
+        $reader->read($server + ['REMOTE_ADDR' => $bad], []);
+    } catch (InvalidRequest $failure) {
+        if ($failure->getMessage() !== 'REMOTE_ADDR must be a bare IPv4 or IPv6 address of at most 45 bytes.') {
+            throw new RuntimeException('Installed peer failure is not redacted.');
+        }
+        continue;
+    }
+    throw new RuntimeException('Installed malformed peer was accepted.');
+}
+fwrite(STDOUT, "PASS installed peer address\n");
+PHP);
+    try {
+        requireSuccess(runProcess([PHP_BINARY, $installedFramework . '/bin/phpthis', 'check'], $project, $environment),
+            'Installed peer adopter failed the application profile.');
+        $result = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+        requireSuccess($result, 'Installed peer runtime proof failed.');
+        if ($result['stdout'] !== "PASS installed peer address\n") {
+            throw new RuntimeException('Installed peer proof did not complete.');
+        }
+    } finally {
+        if (is_file($proofPath) && !unlink($proofPath)) {
+            throw new RuntimeException('Unable to remove the installed peer proof.');
+        }
+    }
+    fwrite(STDOUT, "PASS installed peer address\n");
 }
 
 /** @param array<string, string> $environment */
@@ -2368,7 +2430,7 @@ PHP,
             'The final readable implementation occupies 2,618 lines',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 19',
+            'Contract version: 20',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',

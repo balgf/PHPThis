@@ -1200,8 +1200,11 @@ function startExampleOuterHttpFailureServer(
     throw new RuntimeException('The outer-boundary HTTP server did not become ready.');
 }
 
-/** @return array{status: int, headers: array<string, string>, body: string} */
-function requestExampleOuterHttpFailure(int $port): array
+/**
+ * @param array<string, string> $additionalHeaders
+ * @return array{status: int, headers: array<string, string>, body: string}
+ */
+function requestExampleOuterHttpFailure(int $port, array $additionalHeaders = []): array
 {
     $socket = fsockopen('127.0.0.1', $port, $errorCode, $errorMessage, 2.0);
 
@@ -1219,9 +1222,11 @@ function requestExampleOuterHttpFailure(int $port): array
         . 'Content-Length: ' . strlen($body) . "\r\n"
         . "X-Debug: on\r\n"
         . "X-Environment: local\r\n"
-        . "Cookie: debug=on; environment=local\r\n"
-        . "Connection: close\r\n\r\n"
-        . $body;
+        . "Cookie: debug=on; environment=local\r\n";
+    foreach ($additionalHeaders as $name => $value) {
+        $request .= $name . ': ' . $value . "\r\n";
+    }
+    $request .= "Connection: close\r\n\r\n" . $body;
 
     if (fwrite($socket, $request) !== strlen($request)) {
         fclose($socket);
