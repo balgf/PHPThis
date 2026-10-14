@@ -8,6 +8,16 @@ use PHPThis\Database\QueryBudgetExceeded;
 use PHPThis\Database\QueryTrace;
 
 require dirname(__DIR__) . '/autoload.php';
+require_once __DIR__ . '/process-support.php';
+require_once dirname(__DIR__) . '/verification/SyntaxProfile.php';
+require_once dirname(__DIR__) . '/verification/EnvironmentAccessProfile.php';
+require_once dirname(__DIR__) . '/tests/fixtures/bulk-write/LedgerEntry.php';
+require_once dirname(__DIR__) . '/tests/fixtures/bulk-write/LedgerBatch.php';
+require_once dirname(__DIR__) . '/tests/fixtures/bulk-write/MySqlLedgerImport.php';
+require_once dirname(__DIR__) . '/tests/fixtures/bulk-write/PostgresLedgerImport.php';
+require_once __DIR__ . '/database-bulk-recipes.php';
+
+proveBulkRecipeInputAndProfile();
 
 $drivers = configuredDatabaseDrivers();
 $availableDrivers = PDO::getAvailableDrivers();
@@ -27,11 +37,11 @@ foreach ($drivers as $driver) {
         $configuration = databaseDriverConfiguration($driver);
     }
 
-    $certifiedVersions[] = sprintf(
-        '%s %s',
-        $driver,
-        certifyDatabaseDriver($driver, $configuration),
-    );
+    $version = certifyDatabaseDriver($driver, $configuration);
+    $certifiedVersions[] = sprintf('%s %s', $driver, $version);
+    if ($driver !== 'sqlite') {
+        proveDatabaseBulkRecipes($driver, $configuration, $version);
+    }
 }
 
 $mismatchControl = $sqliteMismatchControlPassed ? '; SQLite mismatch and recovery control passed' : '';

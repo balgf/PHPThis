@@ -123,7 +123,36 @@ Only named data parameters are accepted. Parameter-array keys use an optional le
 
 A projection also validates any representation required by its next explicit sink. For example, a selected string later emitted as JSON must be valid UTF-8 at the named database-projection boundary; do not defer corrupt stored bytes to `json_encode`, substitute them, or normalize them implicitly. A failed database projection remains an application-owned unexpected failure unless the application has accepted and proved a narrower explicit policy. Field byte or character limits remain separate schema or operation decisions and must not be inferred from an optional cache's admission policy.
 
-`executeStatement` returns PDO's affected-row count. PHPThis certifies exact counts only for unambiguous single-row inserts and deletes. Do not use affected-row counts for reads, and test any update matched-versus-changed semantics against the selected engine.
+`executeStatement` returns PDO's affected-row count. The base transport harness certifies unambiguous single-row inserts and deletes; the bulk recipes below separately check their exact multi-row insert counts. Do not use affected-row counts for reads, and test any update matched-versus-changed semantics against the selected engine.
+
+### Bounded bulk writes and exact numerics
+
+The checked [MySQL import](https://github.com/balgf/PHPThis/blob/main/tests/fixtures/bulk-write/MySqlLedgerImport.php) and [PostgreSQL import](https://github.com/balgf/PHPThis/blob/main/tests/fixtures/bulk-write/PostgresLedgerImport.php) are application-owned examples for MySQL **8.4.11** and PostgreSQL **17.11**. Each owns two complete constant statements: one `INSERT ... SELECT` over a bound JSON array, then one bounded readback. MySQL uses `JSON_TABLE`; PostgreSQL uses `jsonb_to_recordset`. Both call `Connection` directly and pass PHT001–PHT008. Copy the selected engine's operation with its values and tests, then adapt its schema, authorization and deployment policy explicitly.
+
+Parse input with [LedgerBatch](https://github.com/balgf/PHPThis/blob/main/tests/fixtures/bulk-write/LedgerBatch.php) before opening the connection. It accepts exactly an `entries` list with **0–64 rows**, at most **65,536 input bytes**, JSON depth **8**, and at most **32,768 bytes** in the re-encoded SQL parameter. Every row has exactly these fields; the parser checks all row structures before interpreting values:
+
+| Field | Accepted representation |
+| --- | --- |
+| `entry_id` | Canonical positive integer **string**, `1` through `9223372036854775807`. |
+| `quantity` | Canonical signed integer **string**, `-9223372036854775808` through `9223372036854775807`. |
+| `amount` | Decimal **string** with exactly four fractional digits and at most 26 integer digits, matching `DECIMAL(30,4)` / `numeric(30,4)`. |
+| `memo` | `null` or valid UTF-8 text, at most 128 bytes, without NUL; an empty string stays empty. |
+
+```json
+{"entries":[{"entry_id":"9007199254740993","quantity":"-42","amount":"12345678901234567890.1234","memo":"雪"}]}
+```
+
+Numeric values stay strings through PHP and JSON. Reject numeric JSON tokens, exponents, whitespace, leading zeros, a leading `+`, negative zero, excess decimal scale and range overflow. Do not cast through `float` or use `JSON_NUMERIC_CHECK`. The parser rejects duplicate entry identifiers, unknown/missing fields, malformed JSON and oversized input. Native PHP JSON decoding still uses the last value for duplicate object keys; this recipe does not detect duplicate raw keys.
+
+The operation receives its chosen `Connection` through its constructor. An empty batch returns `[]` with zero statements. A nonempty batch owns one transaction, rejects an already active caller transaction, requires the insert count to equal the row count, and reads exactly that many rows in ascending numeric identifier order. SQL casts integer and decimal results to text; [LedgerEntry](https://github.com/balgf/PHPThis/blob/main/tests/fixtures/bulk-write/LedgerEntry.php) validates every projection before commit. One row and 64 rows both use **two statements**; transaction controls are outside `QueryBudget`'s statement count.
+
+Plain `INSERT` makes an existing primary-key conflict fail the entire batch. The checks prove rollback after a conflicting insert and after a successful insert whose readback exceeds the query budget. Two separately committed batches remain separate: failure of the second leaves the first committed. The examples provide no automatic chunking, retry or upsert policy. Applications own commit-acknowledgement ambiguity, idempotency and any larger transaction boundary.
+
+Validate before SQL even when the database has strict settings. In the pinned-engine negative controls, both engines round `1.23456` to `1.2346`, accept numeric JSON tokens and ignore unselected object fields. PostgreSQL fills a missing nullable `memo` with null; MySQL's explicit `ERROR ON EMPTY` rejects it. MySQL 8.4.11's `JSON_TABLE` converts the out-of-range string `9223372036854775808` to `-9223372036854775808` in this test despite strict mode and `ERROR ON ERROR`; PostgreSQL rejects it. The application parser rejects these unwanted inputs before execution. See the engines' [JSON_TABLE rules](https://dev.mysql.com/doc/refman/8.4/en/json-table-functions.html), [MySQL rounding rules](https://dev.mysql.com/doc/refman/8.4/en/precision-math-rounding.html), [PostgreSQL JSON functions](https://www.postgresql.org/docs/17/functions-json.html) and [numeric rules](https://www.postgresql.org/docs/17/datatype-numeric.html).
+
+The real-engine harness creates `phpthis_recipe_entries` with a bigint primary key, bigint quantity, exact decimal amount and nullable `varchar(128)` memo. MySQL uses InnoDB, strict mode and `utf8mb4`; PostgreSQL uses UTF8. It records session isolation and checks actual read plans with **4,096 unrelated rows**: one primary-key lookup per requested row for both 1 and 64 rows. PostgreSQL's explicit lateral lookup with `LIMIT 1` keeps the fixture from scanning the full table. Insert plans use the bounded JSON source. These checks bound observed fixture work, while inserts still incur per-row index, lock and WAL/redo costs. Verify plans, statement timeouts, concurrency and capacity against the application's deployed schema and data.
+
+`composer test:database-drivers` runs the [input/profile checks](https://github.com/balgf/PHPThis/blob/main/tests/fixtures/bulk-write/input-tests.php) locally with its default SQLite transport check. Selecting `mysql,pgsql` through `PHPTHIS_DATABASE_TEST_DRIVERS`, with the existing per-engine test DSN and credential variables, additionally runs [the real-engine recipe checks](https://github.com/balgf/PHPThis/blob/main/tools/database-bulk-recipes.php). The [dedicated CI job](https://github.com/balgf/PHPThis/blob/main/.github/workflows/ci.yml) supplies the maintained exact versions and services. Use a disposable or dedicated fixture database: the harness creates and drops its own table and rejects other engine versions before that DDL. Each application retains its own exact-engine integration evidence when adopting or changing the recipe.
 
 ## Database authority
 

@@ -3047,7 +3047,7 @@ function databaseCertificationAgreementFailures(string $root): array
     );
     $normalCertificationPosition = strpos(
         $harness,
-        'certifyDatabaseDriver($driver, $configuration),',
+        '$version = certifyDatabaseDriver($driver, $configuration);',
     );
     $orderedVersionMarkers = [
         '$version = databaseDriverVersion($driver, $configuration);',

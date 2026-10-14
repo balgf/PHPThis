@@ -130,7 +130,7 @@ jobs:
       - name: Install locked dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
-      - name: Certify PDO base transport
+      - name: Verify PDO transport and bulk-write recipes
         run: composer test:database-drivers
         env:
           PHPTHIS_DATABASE_TEST_DRIVERS: sqlite,mysql,pgsql
