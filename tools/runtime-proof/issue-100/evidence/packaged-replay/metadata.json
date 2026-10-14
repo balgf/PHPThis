@@ -1,0 +1,11 @@
+{
+  "image": "sha256:339bcc0697fad8faee917fdac42ca6405744d0788cbbbebdcf9bb26e2c70b5ea",
+  "base_image": "php@sha256:7b0f2acae67bd1678a12abcb359023c4e4fd168a87f4704f5a75c96f0a5406d5",
+  "architecture": "arm64",
+  "server_cpu_quota": 1,
+  "client_cpu_quota": 1,
+  "server_memory_mib": 512,
+  "client_memory_mib": 256,
+  "framework_commit": "cfb0ae656c5beaff0974ad2576648d1745579e41",
+  "probe_shutdown_ms": 100.27325002010912
+}

@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/autoload.php';
+
+if ($argv !== [__FILE__] && $argv !== [__FILE__, '--overlap-probe']) {
+    throw new InvalidArgumentException('Expected no argument or --overlap-probe.');
+}
+$bridge = new App\SwooleBridge(count($argv) === 2);
+$server = new Swoole\Http\Server('127.0.0.1', 9501, SWOOLE_PROCESS);
+$server->set([
+    'worker_num' => 1,
+    'max_request' => 0,
+    'enable_coroutine' => true,
+    'max_coroutine' => 32,
+    'max_conn' => 128,
+    'hook_flags' => 0,
+    'package_max_length' => 16_384,
+    'buffer_output_size' => 65_536,
+    'http_parse_post' => false,
+    'http_parse_cookie' => false,
+    'http_parse_files' => false,
+    'http_compression' => false,
+    'open_http2_protocol' => false,
+    'log_file' => '/tmp/swoole.log',
+    'pid_file' => '/tmp/swoole.pid',
+]);
+$server->on('request', $bridge->handle(...));
+$server->start();

@@ -1,0 +1,112 @@
+{
+  "run": "20261013T234652",
+  "throughput": "median of three repetition rates",
+  "p50": "median of 4500 pooled request latencies",
+  "p95_p99": "nearest rank of 4500 pooled request latencies",
+  "conditions": [
+    {
+      "rows": 2,
+      "concurrency": 1,
+      "runtime": "fpm",
+      "requests": 4500,
+      "median_requests_per_second": 2885.937638324761,
+      "min_requests_per_second": 2814.3576942152627,
+      "max_requests_per_second": 2916.5301207488383,
+      "p50_ms": 0.3388955374248326,
+      "p95_ms": 0.3889590734615922,
+      "p99_ms": 0.48708298709243536,
+      "max_client_cpu_fraction": 0.15506480970214315
+    },
+    {
+      "rows": 2,
+      "concurrency": 1,
+      "runtime": "swoole",
+      "requests": 4500,
+      "median_requests_per_second": 3144.758195267846,
+      "min_requests_per_second": 3073.8145836653875,
+      "max_requests_per_second": 3179.9454285816905,
+      "p50_ms": 0.31154206953942776,
+      "p95_ms": 0.3553329734131694,
+      "p99_ms": 0.4653750220313668,
+      "max_client_cpu_fraction": 0.1689752189210927
+    },
+    {
+      "rows": 2,
+      "concurrency": 16,
+      "runtime": "fpm",
+      "requests": 4500,
+      "median_requests_per_second": 3132.7906431274114,
+      "min_requests_per_second": 3105.7406294669904,
+      "max_requests_per_second": 3235.7101608923363,
+      "p50_ms": 4.687375039793551,
+      "p95_ms": 5.622333032079041,
+      "p99_ms": 13.627207954414189,
+      "max_client_cpu_fraction": 0.16759021592760756
+    },
+    {
+      "rows": 2,
+      "concurrency": 16,
+      "runtime": "swoole",
+      "requests": 4500,
+      "median_requests_per_second": 3543.333589416874,
+      "min_requests_per_second": 3390.3045762707256,
+      "max_requests_per_second": 3714.287892922922,
+      "p50_ms": 3.0530414660461247,
+      "p95_ms": 4.394167102873325,
+      "p99_ms": 36.367874941788614,
+      "max_client_cpu_fraction": 0.17663577370198041
+    },
+    {
+      "rows": 50,
+      "concurrency": 1,
+      "runtime": "fpm",
+      "requests": 4500,
+      "median_requests_per_second": 2594.710537035524,
+      "min_requests_per_second": 2589.146466146848,
+      "max_requests_per_second": 2643.047799248344,
+      "p50_ms": 0.37547945976257324,
+      "p95_ms": 0.4249169724062085,
+      "p99_ms": 0.5051670596003532,
+      "max_client_cpu_fraction": 0.18389296855747375
+    },
+    {
+      "rows": 50,
+      "concurrency": 1,
+      "runtime": "swoole",
+      "requests": 4500,
+      "median_requests_per_second": 2822.1685712368335,
+      "min_requests_per_second": 2772.1316948992453,
+      "max_requests_per_second": 2867.64252543755,
+      "p50_ms": 0.34924992360174656,
+      "p95_ms": 0.3874580143019557,
+      "p99_ms": 0.4290000069886446,
+      "max_client_cpu_fraction": 0.18804595862372186
+    },
+    {
+      "rows": 50,
+      "concurrency": 16,
+      "runtime": "fpm",
+      "requests": 4500,
+      "median_requests_per_second": 2872.9988447986148,
+      "min_requests_per_second": 2856.4092551010617,
+      "max_requests_per_second": 2967.2587741956218,
+      "p50_ms": 5.194520985241979,
+      "p95_ms": 9.009125060401857,
+      "p99_ms": 11.119208997115493,
+      "max_client_cpu_fraction": 0.20226738411243392
+    },
+    {
+      "rows": 50,
+      "concurrency": 16,
+      "runtime": "swoole",
+      "requests": 4500,
+      "median_requests_per_second": 3455.768985631198,
+      "min_requests_per_second": 3177.3832406104357,
+      "max_requests_per_second": 3486.4417075225188,
+      "p50_ms": 3.441624983679503,
+      "p95_ms": 4.965792060829699,
+      "p99_ms": 34.834457910619676,
+      "max_client_cpu_fraction": 0.21646523977592486
+    }
+  ]
+}
