@@ -28,7 +28,7 @@ The installed-consumer entrypoint `tools/test-consumer-project.php` owns the exp
 | Route grammar and explicit decorators | `.ai/routing.md` | `tests/routing.php`, `tests/handler-decorator.php` |
 | Typed input and CRUD operation boundaries | `.ai/types.md`, `.ai/crud.md` | `tests/input-projection.php`, `tests/crud.php` |
 | Authorization and tenant order | `.ai/request-policy.md` | `tests/request-policy.php`, `tests/consumer-profile.php` |
-| Database transactions, transport and scaling | `.ai/database.md` | `tests/database-boundary.php`, `tools/test-database-drivers.php`, `tools/test-query-scaling.php` |
+| Database transactions, transport and scaling | `.ai/database.md` | `tests/database-boundary.php`, `tools/test-database-drivers.php`, `tools/database-bulk-recipes.php`, `tests/fixtures/bulk-write/input-tests.php`, `tools/test-query-scaling.php` |
 | Session lifecycle | `.ai/session.md` | `tests/session-lifecycle.php` |
 | Cache and coordination | `.ai/cache.md`, `.ai/operations.md` | `tests/cache.php`, `tests/redis-coordination.php` |
 | Jobs, CLI and migrations | `.ai/jobs.md`, `.ai/cli.md`, `.ai/migrations.md` | `tests/jobs.php`, `tests/cli.php`, `tests/migrations.php` |
@@ -44,7 +44,7 @@ Use real value objects and an in-memory database only when it matches the engine
 
 Keep deliberately invalid source under `.php.fixture`, outside accepted PHP/autoload paths. Pass the exact source through the real profile checker, assert its diagnostic, then execute it only in an isolated subprocess when runtime comparison is needed. Never exempt an invalid `.php` file. The N+1 control must demonstrate growing count and budget rejection; it does not make PHT003 detect indirect I/O.
 
-Database-specific claims require the exact engine/version and real authority evidence. `composer test:database-drivers` defaults to SQLite; dedicated CI requires SQLite, MySQL and PostgreSQL versions from `docs/database.md#pdo-transport-certification-matrix`. Keep the pre-DDL version mismatch/cleanup/recovery control. An unconfigured driver or local version is not matrix certification. Budgets, constant SQL and bound values do not prove grants, plans, isolation or cross-database atomicity.
+Database-specific claims require the exact engine/version and real authority evidence. `composer test:database-drivers` defaults to SQLite plus the bulk recipes' input/profile checks; dedicated CI also executes the MySQL/PostgreSQL bulk recipes and requires all three versions from `docs/database.md#pdo-transport-certification-matrix`. Preserve the recipes' exact-value, coercion, rollback and actual-plan assertions alongside the pre-DDL version mismatch/cleanup/recovery control. An unconfigured driver or local version is not matrix certification. Budgets, constant SQL and bound values do not prove grants, plans, isolation or cross-database atomicity.
 
 Real-process, web-SAPI, service and concurrency requirements stay with their concern. In particular, preserve redacted failure/output controls, effective SAPI settings, zero protected work on denial, session cleanup precedence, local-file resource bounds, Redis policy separation and real engine/service evidence. A synthetic non-adopter marked `REFERENCE_ONLY` proves verifier structure only. No test may present that as application adoption, remote-service behavior, durability, production readiness or client receipt.
 
