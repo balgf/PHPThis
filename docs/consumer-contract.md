@@ -1,6 +1,6 @@
 # PHPThis application contract
 
-Contract version: 20
+Contract version: 21
 
 This is the canonical contract for an application built with the installed PHPThis version. It defines the minimum development rules supplied by that version. Application instructions may add stricter rules and project-specific facts, but they must not weaken this contract.
 
@@ -55,7 +55,7 @@ A PHPThis application must:
 - keep root Composer script command text free of assignments or direct mutations of those adopted application configuration inputs;
 - keep each optional application-owned request-handler decorator route-local, explicitly ordered, and limited to exactly one downstream `RequestHandler`;
 - own one explicit terminal request-summary coordinator and one sink at the front-controller composition boundary, without adding framework logging types or hidden instrumentation;
-- establish the Contract-version-20 generic-first outer HTTP failure boundary after ordinary Composer autoloading and generic-response setup but before application configuration, bootstrap, composition, or coordinator invocation, while retaining response emission as its separate visible boundary;
+- establish the Contract-version-21 generic-first outer HTTP failure boundary after ordinary Composer autoloading and generic-response setup but before application configuration, bootstrap, composition, or coordinator invocation, while retaining response emission as its separate visible boundary;
 - configure the actual web SAPI in every HTTP profile to report every `E_ALL` bit, disable native error and startup-error display, enable private controlled error logging, and omit exception arguments;
 - begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level; empty active buffers remain valid, and application code fixes early output at its owner rather than cleaning or incorporating it;
 - keep one canonical spelling and execution pattern for each framework operation;
@@ -80,11 +80,11 @@ The `php tests/run.php` value is the skeleton's concrete example, not a required
 
 A Composer script may invoke a recorded application entrypoint, including a value-free long-running development command, but its command text must not contain assignment or recognized mutation spellings for an input name canonically read by application PHP. Supply one complete selected process profile at the outer process boundary or through the explicitly adopted application-owned local environment launcher. The cross-platform lexical check is case-insensitive and conservatively rejects the adopted `KEY=` spelling, including case variants, even when intended as inert argument or example text. `phpthis check` identifies only the input name; it never repeats a script name, command, or assigned value.
 
-Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in Contract version 20.
+Applications must not add PHPStan configuration artifacts named `phpstan*.neon`, `phpstan*.neon.dist`, or `phpstan*baseline*.php`, or add `@phpstan-ignore` comments. This reserved filename family includes the usual `phpstan.neon`, `phpstan.neon.dist`, and PHPStan baseline variants. These create a second apparent definition of valid code and are rejected as `PHT004`. Project-specific static-analysis customization remains deliberately unsupported in Contract version 21.
 
 ## Server-reported peer metadata
 
-Contract 20 adds optional immutable `Request::$peerAddress`, populated only from server-array `REMOTE_ADDR`. Missing metadata stays `null`; malformed present metadata throws `InvalidRequest` before body, session or handler work. `PeerAddress::fromString()` accepts bounded IPv4/IPv6 literals and retains their exact bytes. This supplies neither original-peer provenance nor authorization. Follow [Request handling](request-handling.md#server-reported-peer-address) for formats, copying and server configuration and [Contract 20 upgrade guidance](consumer-contract-upgrades.md#contract-version-20) for migration. Trusted proxies, comparisons, allowlists and required-peer denial remain application-owned.
+Contract 20 adds optional immutable `Request::$peerAddress`, populated only from server-array `REMOTE_ADDR`. Missing metadata stays `null`; malformed present metadata throws `InvalidRequest` before body, session or handler work. `PeerAddress::fromString()` accepts bounded IPv4/IPv6 literals and retains their exact bytes. This supplies neither original-peer provenance nor authorization. Follow [Request handling](request-handling.md#server-reported-peer-address) for formats, copying and server configuration and [Contract 20 upgrade guidance](consumer-contract-upgrades.md#contract-version-21) for migration. Trusted proxies, comparisons, allowlists and required-peer denial remain application-owned.
 
 ## Framework error representations
 
@@ -94,7 +94,7 @@ Construct custom values inside protected composition. The front controller prebu
 
 ## Outer HTTP failure boundary
 
-Contract version 20 supports one deployed HTTP entrypoint. After ordinary Composer autoloading, that front controller loads the generic-boundary types and constructs the exact `UnknownFailureBoundary::respond()` response with no constructor arguments before application work. It then enters one application-owned `Throwable` catch around configuration, bootstrap, infrastructure composition, and coordinator invocation with `GENERIC` already selected. An alternate deployed HTTP adapter is ineligible for Contract version 20 until a separate accepted decision defines its equivalent boundary and SAPI evidence without creating a parallel canonical path.
+Contract version 21 supports one deployed HTTP entrypoint. After ordinary Composer autoloading, that front controller loads the generic-boundary types and constructs the exact `UnknownFailureBoundary::respond()` response with no constructor arguments before application work. It then enters one application-owned `Throwable` catch around configuration, bootstrap, infrastructure composition, and coordinator invocation with `GENERIC` already selected. An alternate deployed HTTP adapter is ineligible for Contract version 21 until a separate accepted decision defines its equivalent boundary and SAPI evidence without creating a parallel canonical path.
 
 The catch selects the already-constructed generic response before making at most one protected outer-event attempt and, when eligible, invoking the protected detail renderer. The outer event's application payload is exactly `application.http_outer_failure failure_class=<ADR023-safe-class>` with no other field; destination timestamp and transport framing are separate. Event failure never changes the response. A detailed response replaces the generic response only after its complete immutable `Response` is constructed successfully; renderer or renderer-autoload failure retains generic. Response emission remains outside that catch under the separate `ResponseEmissionFailed` boundary. The terminal coordinator retains its existing response, correlation, summary, and unknown-failure behavior; a failure it has already converted does not gain development details, and a pre-coordinator failure has no `X-Request-ID` or terminal-summary guarantee.
 
@@ -185,4 +185,8 @@ The current guide named in the second column owns the full normative requirement
 
 The complete simple-endpoint definition and four-file task route live in `docs/request-handling.md`. The application entrypoint is universal reading; report it separately from all task-specific context. First-contribution orientation and other entered concerns remain additional reading.
 
-Contract version 20 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`. Version 20 carries version 19 forward and adds validated server-reported peer metadata through the existing request boundary. It adds no dependency, Strict Profile rule or diagnostic.
+Contract version 21 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`. Version 21 carries version 20 forward and adds bounded native multipart forms through the existing request boundary. It migrates the canonical transport handoff to server/query arrays only and adds no dependency or diagnostic; PHT007 follows that exact current tuple.
+
+## Multipart input
+
+Adopt bounded native multipart parsing only through [request ingestion](file-transfers/request-ingestion.md), its effective SAPI requirements and explicit normalization limitations. `MultipartLimits` replaces the integer reader limit; `MultipartForm` replaces the Request upload-array input. The sole front controller and terminal coordinator pass only `$_SERVER` and `$_GET`. Existing single-file storage operations and `AMAZON_S3_ADR053` do not acquire mixed or multiple-file storage support.

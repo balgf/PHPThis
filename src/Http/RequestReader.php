@@ -6,6 +6,7 @@ namespace PHPThis\Http;
 
 use InvalidArgumentException;
 use RuntimeException;
+use RequestParseBodyException;
 
 final readonly class RequestReader
 {
@@ -13,18 +14,15 @@ final readonly class RequestReader
     private const int MAXIMUM_QUERY_PARAMETERS = 64;
     private const int MAXIMUM_HEADERS = 64;
     private const int MAXIMUM_HEADER_VALUE_BYTES = 8_192;
-    private const int MAXIMUM_TEMPORARY_PATH_BYTES = 4_096;
 
     /** @var positive-int */
     private int $maximumBodyBytes;
     private string $inputUri;
-    /** @var positive-int|null */
-    private ?int $maximumMultipartBytes;
 
     public function __construct(
         int $maximumBodyBytes,
         string $inputUri,
-        ?int $maximumMultipartBytes = null,
+        private ?MultipartLimits $multipartLimits = null,
     ) {
         if ($maximumBodyBytes < 1 || $maximumBodyBytes >= PHP_INT_MAX) {
             throw new InvalidArgumentException('Maximum request body bytes must be positive and safely bounded.');
@@ -32,28 +30,17 @@ final readonly class RequestReader
         if ($inputUri === '') {
             throw new InvalidArgumentException('Request input URI must be non-empty.');
         }
-        if (
-            $maximumMultipartBytes !== null
-            && ($maximumMultipartBytes < 1 || $maximumMultipartBytes >= PHP_INT_MAX)
-        ) {
-            throw new InvalidArgumentException('Maximum multipart bytes must be positive and safely bounded.');
-        }
         $this->maximumBodyBytes = $maximumBodyBytes;
         $this->inputUri = $inputUri;
-        $this->maximumMultipartBytes = $maximumMultipartBytes;
     }
 
     /**
      * @param array<array-key, mixed> $server
      * @param array<array-key, mixed> $query
-     * @param array<array-key, mixed> $parsedFields
-     * @param array<array-key, mixed> $files
      */
     public function read(
         array $server,
         array $query,
-        array $parsedFields = [],
-        array $files = [],
     ): Request
     {
         $methodValue = $server['REQUEST_METHOD'] ?? null;
@@ -95,8 +82,8 @@ final readonly class RequestReader
         }
         $parsedQuery = $this->query($query);
         $headers = $this->headers($server);
-        $uploads = $this->uploads($method, $headers, $parsedFields, $files);
-        $body = $uploads === null ? $this->body($headers) : '';
+        $multipart = $this->multipart($method, $headers);
+        $body = $multipart === null ? $this->body($headers) : '';
         try {
             return new Request(
                 method: $method,
@@ -104,7 +91,7 @@ final readonly class RequestReader
                 query: $parsedQuery,
                 body: $body,
                 headers: $headers,
-                uploads: $uploads ?? [],
+                multipart: $multipart,
                 peerAddress: $peerAddress,
             );
         } catch (InvalidArgumentException $failure) {
@@ -112,26 +99,14 @@ final readonly class RequestReader
         }
     }
 
-    /**
-     * @param array<string, string> $headers
-     * @param array<array-key, mixed> $parsedFields
-     * @param array<array-key, mixed> $files
-     * @return array<string, RequestUpload>|null
-     */
-    private function uploads(
-        string $method,
-        array $headers,
-        array $parsedFields,
-        array $files,
-    ): ?array {
+    /** @param array<string, string> $headers */
+    private function multipart(string $method, array $headers): ?MultipartForm
+    {
         $contentType = $headers['content-type'] ?? null;
         if (
             $contentType === null
             || preg_match('@^ *multipart/form-data(?: *;| *$)@iD', $contentType) !== 1
         ) {
-            if ($files !== []) {
-                throw new InvalidRequest('Uploaded files require multipart/form-data.');
-            }
             return null;
         }
         if ($method !== 'POST') {
@@ -147,69 +122,34 @@ final readonly class RequestReader
             throw new InvalidRequest('Multipart Content-Type requires one bounded boundary parameter.');
         }
         $declaredBytes = $this->contentLength($headers);
-        $maximumMultipartBytes = $this->maximumMultipartBytes;
+        $limits = $this->multipartLimits;
         if ($declaredBytes === null) {
             throw new InvalidRequest('Multipart requests require Content-Length.');
         }
-        if ($maximumMultipartBytes === null) {
+        if ($limits === null) {
             throw new UnsupportedMediaType('Multipart form data is not enabled.');
         }
-        if ($declaredBytes > $maximumMultipartBytes) {
+        if ($declaredBytes > $limits->maximumRequestBytes) {
             throw new RequestBodyTooLarge('Declared multipart request exceeds its byte limit.');
         }
-        if ($parsedFields !== [] || count($files) > 1) {
-            throw new InvalidRequest('Multipart requests accept one file and no text fields.');
+        if (ini_get('enable_post_data_reading') !== '0' && ini_get('enable_post_data_reading') !== '') {
+            throw new RuntimeException('Multipart ingestion requires automatic POST parsing to be disabled.');
         }
-        if ($files === []) {
-            return [];
+        if (ini_get('file_uploads') !== '1') {
+            throw new RuntimeException('Multipart ingestion requires PHP file uploads to be enabled.');
         }
-        $field = array_key_first($files);
-        $file = $files[$field];
-        if (
-            !is_string($field)
-            || $field === ''
-            || preg_match('/[\x00-\x1F\x7F]/', $field) === 1
-            || !is_array($file)
-            || array_diff(array_keys($file), ['name', 'full_path', 'type', 'tmp_name', 'error', 'size']) !== []
-            || !isset($file['name'], $file['type'], $file['tmp_name'], $file['error'], $file['size'])
-            || !is_string($file['name'])
-            || !is_string($file['type'])
-            || !is_string($file['tmp_name'])
-            || !is_int($file['error'])
-            || !is_int($file['size'])
-        ) {
-            throw new InvalidRequest('The uploaded file is missing typed flat metadata.');
+        try {
+            [$fields, $files] = request_parse_body([
+                'post_max_size' => $limits->maximumRequestBytes,
+                'upload_max_filesize' => $limits->maximumFileBytes,
+                'max_input_vars' => MultipartForm::MAXIMUM_FIELDS,
+                'max_file_uploads' => MultipartForm::MAXIMUM_UPLOADS,
+                'max_multipart_body_parts' => MultipartForm::MAXIMUM_PARTS,
+            ]);
+        } catch (RequestParseBodyException $failure) {
+            throw new InvalidRequest('PHP could not parse the bounded multipart request.', previous: $failure);
         }
-        $clientFullPath = array_key_exists('full_path', $file) ? $file['full_path'] : '';
-        if (
-            !is_string($clientFullPath)
-            || $file['size'] < 0
-            || $file['size'] > $declaredBytes
-            || strlen($file['tmp_name']) > self::MAXIMUM_TEMPORARY_PATH_BYTES
-            || preg_match(
-                '/[\x00-\x1F\x7F]/',
-                $field . $file['name'] . $clientFullPath . $file['type'] . $file['tmp_name'],
-            ) === 1
-        ) {
-            throw new InvalidRequest('The uploaded file metadata has an invalid representation.');
-        }
-        $error = RequestUploadError::tryFrom($file['error']);
-        if ($error === null) {
-            throw new RuntimeException('PHP reported an unknown upload error.');
-        }
-        if ($error === RequestUploadError::Success && ($file['name'] === '' || $file['tmp_name'] === '')) {
-            throw new InvalidRequest('A successful upload requires a client filename and temporary path.');
-        }
-        if ($error === RequestUploadError::NoFile && ($file['name'] !== '' || $clientFullPath !== '' || $file['type'] !== '' || $file['tmp_name'] !== '' || $file['size'] !== 0)) {
-            throw new InvalidRequest('A missing upload cannot contain file metadata.');
-        }
-        return [$field => new RequestUpload(
-            $file['name'],
-            $file['type'],
-            $file['tmp_name'],
-            $file['size'],
-            $error,
-        )];
+        return MultipartForm::fromPhp($fields, $files, $declaredBytes, $limits);
     }
 
     /**

@@ -140,6 +140,14 @@ malformed peer metadata fails redacted before body session and handler work
 routing and multipart request copies preserve the same peer value and request fields
 an application requiring peer metadata rejects unavailable input before protected work
 the real front controller retains the server peer despite spoofed forwarding headers
+multipart values preserve exact fields uploads and routing copies
+multipart limits reject invalid configurations and enforce inclusive file budgets
+multipart fields enforce flat names exact byte limits and collision rejection
+multipart uploads bound counts metadata and every exposed native shape
+multipart preserves every native upload error without treating partial files as success
+expanded multipart ingress does not expand the single-document storage operation
+native multipart parsing proves real fields files limits and normalized-input limitations
+multipart configuration and parsing failures precede sessions and handler work
 router rejects duplicate method and path pairs
 route accepts at most two full-segment typed parameter declarations
 router matches bounded canonical positive integer path parameters

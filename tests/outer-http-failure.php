@@ -457,7 +457,7 @@ use PHPThis\Http\Response;
 
 final readonly class UnavailableFileResponseCoordinator
 {
-    public function handle(array $server, array $query, array $form, array $files): Response
+    public function handle(array $server, array $query): Response
     {
         return new Response(
             200,
@@ -511,7 +511,7 @@ final class PendingOutputOuterFailure extends RuntimeException
 
 final readonly class PendingOutputResponseCoordinator
 {
-    public function handle(array $server, array $query, array $form, array $files): Response
+    public function handle(array $server, array $query): Response
     {
         echo 'already-owned-output';
 
@@ -1111,6 +1111,7 @@ function runConfiguredDisclosureCase(
 
 /**
  * @param array<string, string>|null $environment
+ * @param list<string> $iniSettings
  * @return array{0: resource, 1: int}
  */
 function startExampleOuterHttpFailureServer(
@@ -1119,6 +1120,7 @@ function startExampleOuterHttpFailureServer(
     ?array $environment = null,
     ?string $documentRoot = null,
     ?string $autoPrependFile = null,
+    array $iniSettings = [],
 ): array
 {
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errorCode, $errorMessage);
@@ -1158,6 +1160,10 @@ function startExampleOuterHttpFailureServer(
         $command[] = 'auto_prepend_file=' . $autoPrependFile;
     }
 
+    foreach ($iniSettings as $setting) {
+        $command[] = '-d';
+        $command[] = $setting;
+    }
     $command[] = '-S';
     $command[] = '127.0.0.1:' . $port;
     $command[] = '-t';

@@ -148,7 +148,7 @@ final class EnvironmentAccessProfile
                 if (self::nextSignificantTokenText($tokens, $index + 1) === '[') {
                     $failures[] = "PHT007 {$relativePath}:{$tokenLine} indexes \$_SERVER; pass the HTTP transport array unchanged or read configuration with \\getenv in the single configuration boundary.";
                 } elseif (!self::isCanonicalServerTransportHandoff($tokens, $index, $relativePath)) {
-                    $failures[] = "PHT007 {$relativePath}:{$tokenLine} reads bare \$_SERVER outside the canonical front-controller transport handoff; pass exactly \$_SERVER, \$_GET, \$_POST, and \$_FILES to the terminal coordinator or use \\getenv in the configuration boundary.";
+                    $failures[] = "PHT007 {$relativePath}:{$tokenLine} reads bare \$_SERVER outside the canonical front-controller transport handoff; pass exactly \$_SERVER and \$_GET to the terminal coordinator or use \\getenv in the configuration boundary.";
                 }
             }
 
@@ -1405,10 +1405,6 @@ final class EnvironmentAccessProfile
         $expected = [
             ',',
             '$_GET',
-            ',',
-            '$_POST',
-            ',',
-            '$_FILES',
             ')',
         ];
         $nextIndex = $index + 1;

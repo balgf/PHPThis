@@ -24,6 +24,8 @@ require __DIR__ . '/http-boundary.php';
 require __DIR__ . '/outer-http-failure.php';
 require __DIR__ . '/error-representation.php';
 require __DIR__ . '/peer-address.php';
+require __DIR__ . '/multipart.php';
+require __DIR__ . '/multipart-sapi.php';
 require __DIR__ . '/routing.php';
 require __DIR__ . '/input-projection.php';
 require __DIR__ . '/crud.php';
@@ -49,6 +51,8 @@ function frameworkBehaviorDefinitions(): Generator
     yield from frameworkBehaviorGroupDefinitions('http-boundary', outerHttpFailureBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('http-boundary', errorRepresentationBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('http-boundary', peerAddressBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('http-boundary', multipartBehaviorTests());
+    yield from frameworkBehaviorGroupDefinitions('http-boundary', multipartSapiBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('routing', routingBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('input-projection', inputProjectionBehaviorTests());
     yield from frameworkBehaviorGroupDefinitions('crud', crudBehaviorTests());
@@ -158,7 +162,7 @@ function frameworkBehaviorInventory(): array
         $contents === ''
         || !str_ends_with($contents, "\n")
         || str_contains($contents, "\r")
-        || hash('sha256', $contents) !== 'e2fe90f0b6adeb47c8690798b867bd4cf34f9e8add34aff33795d2252e259a9a'
+        || hash('sha256', $contents) !== '4dd09cfa4d8e337138a06b330b0b8302b73c52750859c6597bd38be77c1c6f71'
     ) {
         throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
     }
@@ -166,11 +170,11 @@ function frameworkBehaviorInventory(): array
     $names = explode("\n", substr($contents, 0, -1));
 
     if (
-        count($names) !== 197
-        || count(array_unique($names)) !== 197
+        count($names) !== 205
+        || count(array_unique($names)) !== 205
         || in_array('', $names, true)
     ) {
-        throw new LogicException('Framework behavior inventory must contain 197 unique non-empty names.');
+        throw new LogicException('Framework behavior inventory must contain 205 unique non-empty names.');
     }
 
     return $names;

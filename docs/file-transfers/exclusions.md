@@ -8,7 +8,7 @@ ADR 026 deliberately does not add:
 - a facade, helper, service container, provider, discovery, attributes, reflection, or callback registry;
 - trusted client filenames, extensions, directory paths, media types, or disposition values;
 - automatic retention, deletion, cleanup, backup, quota, malware scanning, image processing, transcoding, or metadata extraction;
-- multiple files, mixed multipart fields, resumable or chunked uploads, remote object stores, pre-signed delivery, or proxy offload; or
+- nested/directory, resumable or chunked uploads, generic remote object stores or proxy offload; or
 - byte-range parsing, `206`, `416`, `Content-Range`, multipart ranges, or conditional range logic.
 
 Do not stretch `RequestUpload` into a storage object or inspection result, or `LocalFileBody` into an arbitrary stream or authorization value. When an application needs one excluded capability, document the concrete product, security, operational, and performance requirement and seek one bounded decision with executable evidence.
@@ -16,3 +16,5 @@ Do not stretch `RequestUpload` into a storage object or inspection result, or `L
 Accepted ADR 053 provides one exact application-owned Amazon S3 exception to ADR 026's remote-object/pre-signed exclusion when an application explicitly selects `AMAZON_S3_ADR053`. Its [guidance](amazon-s3.md) and [verification](amazon-s3-verification.md) do not generalize remote stores, S3-compatible services, direct browser transfer, proxy/CDN delivery, or `LocalFileBody`. Contract version 13 accepts the direct S3 response's missing `nosniff` only inside this profile; `LOCAL_ADR026` remains unchanged.
 
 The current application-local `LocalDocumentFiles` name is intentionally backend-specific. Replacing it with a generic interface merely to make the example look extensible would erase the ownership and failure facts PHPThis is designed to preserve.
+
+ADR 067 admits flat fields and multiple named files at ingress only. It adds no multi-file storage operation or atomic persistence guarantee. `AMAZON_S3_ADR053` remains its exact single-file profile.

@@ -1,5 +1,7 @@
 # Application-owned Amazon S3 file transfers
 
+Contract 21 expands native multipart ingress, while `AMAZON_S3_ADR053` remains exactly one file with no operation text fields. Reject additional fields/files before any S3 operation. Mixed/multiple uploads require a separate storage-profile decision and evidence; this guide does not authorize them.
+
 Status: accepted optional guidance under ADR 053 and Consumer Contract version 13. An application adopts it only by recording `AMAZON_S3_ADR053` and completing every required application-owned evidence stage; installation or reference-proof success alone is not adoption.
 
 This profile defines one narrow server-mediated Amazon S3 path. It preserves PHPThis's bounded multipart ingress and application-owned policy, then makes every remote object choice visible. It is not a generic storage recommendation.

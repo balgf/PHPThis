@@ -105,6 +105,7 @@ docs/decisions/063-maintainability-review-over-size-proxies.md
 docs/decisions/064-one-entrypoint-per-audience.md
 docs/decisions/065-explicit-framework-error-representations.md
 docs/decisions/066-server-reported-peer-address.md
+docs/decisions/067-bounded-native-multipart-forms.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
@@ -181,6 +182,8 @@ src/Http/ErrorRepresentation.php
 src/Http/ErrorResponseRegistry.php
 src/Http/InvalidRequest.php
 src/Http/LocalFileBody.php
+src/Http/MultipartForm.php
+src/Http/MultipartLimits.php
 src/Http/PeerAddress.php
 src/Http/Request.php
 src/Http/RequestBodyTooLarge.php

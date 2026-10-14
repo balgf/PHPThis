@@ -11,6 +11,8 @@ use PHPThis\Http\Request;
 use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\RequestReader;
+use PHPThis\Http\MultipartForm;
+use PHPThis\Http\MultipartLimits;
 use PHPThis\Http\Response;
 use PHPThis\Routing\PathParameters;
 use PHPThis\Routing\Route;
@@ -72,7 +74,7 @@ function peerAddressBehaviorTests(): Generator
         foreach ([...$invalidStrings, null, false, 123, 1.5, ['192.0.2.1'], new stdClass()] as $address) {
             try {
                 // Invalid query/header/upload metadata and a nonexistent body must not be reached.
-                $reader->read($server + ['REMOTE_ADDR' => $address, 'HTTP_ACCEPT' => []], [0 => 'invalid'], ['bad'], ['bad']);
+                $reader->read($server + ['REMOTE_ADDR' => $address, 'HTTP_ACCEPT' => []], [0 => 'invalid']);
             } catch (InvalidRequest $failure) {
                 if ($failure->getMessage() !== 'REMOTE_ADDR must be a bare IPv4 or IPv6 address of at most 45 bytes.') {
                     throw new RuntimeException('Peer rejection must precede other input parsing and redact its value.');
@@ -99,15 +101,16 @@ function peerAddressBehaviorTests(): Generator
     };
 
     yield 'routing and multipart request copies preserve the same peer value and request fields' => static function (): void {
-        $reader = new RequestReader(8, 'php://memory', 1_024);
+        $limits = new MultipartLimits(1_024, 512, 700);
         foreach (['/health', '/items/7'] as $path) {
-            $request = $reader->read([
-                'REQUEST_METHOD' => 'POST', 'REQUEST_URI' => $path, 'REMOTE_ADDR' => '2001:DB8::1',
-                'CONTENT_TYPE' => 'multipart/form-data; boundary=peer-test', 'CONTENT_LENGTH' => '128',
-            ], ['page' => '1'], [], ['document' => [
-                'name' => 'untrusted.txt', 'type' => 'text/plain', 'tmp_name' => '/synthetic-upload',
-                'error' => UPLOAD_ERR_OK, 'size' => 1,
-            ]]);
+            $request = new Request('POST', $path, query: ['page' => '1'],
+                headers: ['content-type' => 'multipart/form-data; boundary=peer-test', 'content-length' => '128'],
+                multipart: MultipartForm::fromPhp([], ['document' => [
+                    'name' => 'untrusted.txt', 'type' => 'text/plain', 'tmp_name' => '/synthetic-upload',
+                    'error' => UPLOAD_ERR_OK, 'size' => 1,
+                ]], 128, $limits),
+                peerAddress: PeerAddress::fromString('2001:DB8::1'),
+            );
             $handler = new ObservabilityTestHandler(static function (Request $routed) use ($request, $path): Response {
                 if (
                     $routed === $request || $routed->peerAddress !== $request->peerAddress

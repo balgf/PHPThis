@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Example\DocumentFiles;
 
 use PHPThis\Http\Request;
+use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
 use PHPThis\Http\UnsupportedMediaType;
@@ -32,6 +33,9 @@ final readonly class UploadDocumentFileHandler implements RequestHandler
             throw new UnsupportedMediaType('Document upload requires multipart/form-data.');
         }
 
+        if ($request->multipart === null || $request->multipart->fields !== []) {
+            throw new InvalidRequest('Document upload accepts one file and no text fields.');
+        }
         $pendingUpload = PendingDocumentUpload::fromUploads($request->uploads);
         $id = $this->documentFiles->store($pendingUpload);
         $body = json_encode(['data' => ['file_id' => $id->value]], JSON_THROW_ON_ERROR);
