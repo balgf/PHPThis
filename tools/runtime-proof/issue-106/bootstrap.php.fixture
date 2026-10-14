@@ -1,0 +1,14 @@
+<?php
+
+declare(strict_types=1);
+
+use Example\Observability\ErrorLogRequestSummarySink;
+use NamedHeaderRecipe\MachinePolicyFixture;
+use PHPThis\Http\RequestReader;
+
+require '/framework/tests/fixtures/named-header/Fixture.php';
+
+// Test-only accepted identity, never a production verifier or issuance path.
+return (new MachinePolicyFixture())->coordinator(
+    new RequestReader(1_024, 'php://input'), new ErrorLogRequestSummarySink(),
+);

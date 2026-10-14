@@ -84,6 +84,8 @@ Smoke revision 33 carries the approved Contract 19 starter context from issue #1
 
 Smoke revision 34 carries Contract 20's approved starter context from issue #103. Only the current task revision, source-skeleton tree/digest and controller admission identities change. Prompts, rubric, scorer, budgets, workspace policy, comparison/explanation fixtures and retained trials stay fixed. [Revision 33 and its source](https://github.com/balgf/PHPThis/tree/8b07c7b85a96cd0d04fb7343223e83967f488b69/tools/agent-evaluation) remain reproducible there. This offline update authorizes no paid run or model-performance claim.
 
+Smoke revision 36 carries issue #106's opt-in named-header guidance in the starter context. Only the task revision, source-skeleton tree/digest and matching admission identities change. Prompts, rubric, scorer, budgets, workspace policy, comparison/explanation fixtures and retained trials stay fixed. [Revision 35 and its source](https://github.com/balgf/PHPThis/tree/a7a3cfea517a8a637828183af0081c5e99d7520c/tools/agent-evaluation) remain reproducible there. This offline update authorizes no paid run or model-performance claim.
+
 Paths in a manifest are relative to that task directory. Every recorded SHA-256 is the lowercase hexadecimal digest of the referenced file's exact bytes. Validation must fail on a missing file, a digest mismatch, an unlisted task, an unsupported schema version, or an unexpected manifest field.
 
 The task manifest itself is not mounted as application context unless a separately recorded condition explicitly says so. The exact prompt bytes are the user request. Workspace policy, budgets, and scorers belong to the evaluation controller.

@@ -1,0 +1,189 @@
+{
+  "scope": "Network-isolated HTTP/1.1 with synthetic policies; no TLS or production verifier certification",
+  "php": "8.4.19",
+  "nginx": "nginx version: nginx/1.22.1",
+  "njs_package": "0.7.9-2",
+  "source_sha256": {
+    "autoload.php": "d42adabba5221bd5df0c39811591d6c6929b5166dd6cf45c8f37cacc23e0c1e5",
+    "example/public/index.php": "35a717e519a8ccfd54afcaf4b5d67bddffbabf7277f85a80e2d70042ad75d899",
+    "src/Http/Request.php": "a5d9f2340cf8780506cd6ed1cce01f8f0c571ea0d0a484821fee417e481307f3",
+    "src/Http/RequestReader.php": "e374d375b00421381d3cd65671eaf26bdf16ecd9e2006584cc8a4bad4b98cf45",
+    "tests/fixtures/named-header/AuthenticateMachineRequest.php": "3b7e80df6df8fd68746b01f54684a2b8f85242ea88e070dd603579a23262d679",
+    "tests/fixtures/named-header/Fixture.php": "3e6cbc2e8d5dfc2f53cabc81ceb47f56aa418b33807b47291ef242f3d52b7579",
+    "tests/fixtures/named-header/MachineCredential.php": "d6dd17003aadc526497482f265b126396f06e4f031bce75fe50785d00e1b14f2",
+    "tests/fixtures/named-header/MachineCredentialRejected.php": "cdfa471d1cca061c047771d6620d9eacb4ba83576d27c6a447ad639580cc1dca",
+    "tests/fixtures/named-header/MachineVerificationUnavailable.php": "e6209fb42c4a59c26ca351d390d55e2466069436a06ca5aaffdc0e6731dcc034",
+    "tests/fixtures/named-header/VerifyMachineCredential.php": "5f89501dd4a930ca3c42bee3068bc0c7af289edba4b24260e8bf3904f72cbe4e",
+    "tools/runtime-proof/issue-106/Dockerfile": "55b9199cf79cb4404b6a219ad8b95c95d6b44c99fe8f9ded188291708509c7eb",
+    "tools/runtime-proof/issue-106/README.md": "34dcbccb137e9f04b98bdeee08edfffe84cb167ecb89140708f59bf295ed4f43",
+    "tools/runtime-proof/issue-106/bootstrap.php.fixture": "bed9a8cf28b08cd6d400961dfcc341525882f5b7adb14c02cc7d28edfc187bcc",
+    "tools/runtime-proof/issue-106/fastcgi.conf": "76863c0f4954dce83f7173dce36a2cc9197917ef56c0136372c53c61775a3ba5",
+    "tools/runtime-proof/issue-106/fpm.conf": "48961513c075dbba63a2d4e3f4ac57d0b560504a3769f83fa8543a7d0bfe92f3",
+    "tools/runtime-proof/issue-106/headers.js": "aa4bdd8d05d4f347c96a6f988b298c8c61c362d91050ce09d128732a164f3f76",
+    "tools/runtime-proof/issue-106/nginx.conf": "2d7470fbd1d4ab5685240d3bac1a9d80dd813eb69a87bf1cc3cc54003a2be94c",
+    "tools/runtime-proof/issue-106/probe.py": "334d55bf75f4dfe80c9d03cce3578cb622d47f685e34754fa2dde5123cb972b8",
+    "tools/runtime-proof/issue-106/run.py": "e7a9104a93863d85b200114683044075d955f8dacce10a311e1b45969f3987f5"
+  },
+  "cases": [
+    {
+      "case": "single",
+      "status": 200,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "field_name_case",
+      "status": 200,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "http_field_whitespace",
+      "status": 200,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "missing",
+      "status": 403,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "malformed",
+      "status": 403,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "wrong_secret",
+      "status": 403,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "over_profile_bound",
+      "status": 403,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "duplicate_identical",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "duplicate_case",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "duplicate_different",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "duplicate_empty",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "underscore_alias",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "alias_collision",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "dot_alias",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "dot_alias_collision",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "bearer_conflict",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "empty_bearer_conflict",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "empty_cookie_conflict",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "alternate_source_only",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "proxy_authorization",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "query_credential",
+      "status": 403,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "nested_query",
+      "status": 403,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "body_credential",
+      "status": 403,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "raw_field_maximum",
+      "status": 200,
+      "php_dispatch": true,
+      "result": "pass"
+    },
+    {
+      "case": "raw_field_count",
+      "status": 403,
+      "php_dispatch": false,
+      "result": "pass"
+    },
+    {
+      "case": "native_header_limit",
+      "status": 400,
+      "php_dispatch": false,
+      "result": "pass"
+    }
+  ],
+  "terminal_summaries": 11,
+  "private_log_redaction": "pass",
+  "denied_protected_queries": 0,
+  "image_id": "sha256:30110b7445871ae3c29d7e3844c2e7547100c2cb0fc7b1d84965b18b711d95a5"
+}

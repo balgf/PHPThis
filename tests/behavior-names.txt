@@ -20,6 +20,12 @@ protected document query fails closed when requested and resolved tenants differ
 document policy is not entered for route or method rejection
 mapped document denials emit no sensitive log data
 unexpected document policy failures use the generic redacted boundary
+named-header machine profile authenticates through explicit ordered policies
+named-header machine profile rejects malformed and alternate sources before verification
+named-header machine profile separates definitive rejection from verification uncertainty
+named-header machine profile preserves tenant and action denials
+named-header machine profile records transport rejection and raw-duplicate evidence limits
+named-header machine recipe satisfies the strict source profiles
 correlation IDs are generated with 128 random bits in canonical form
 terminal coordinator emits one success summary and owns the response request ID
 default error-log sink serializes exactly one closed request summary

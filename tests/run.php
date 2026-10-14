@@ -9,6 +9,7 @@ require __DIR__ . '/process-support.php';
 require __DIR__ . '/create-user-support.php';
 
 require __DIR__ . '/request-policy.php';
+require __DIR__ . '/named-header-authentication.php';
 require __DIR__ . '/observability.php';
 require __DIR__ . '/jobs.php';
 require __DIR__ . '/cli.php';
@@ -37,6 +38,7 @@ require __DIR__ . '/database-boundary.php';
 function frameworkBehaviorDefinitions(): Generator
 {
     yield from frameworkBehaviorGroupDefinitions('request-policy', requestPolicyTests());
+    yield from frameworkBehaviorGroupDefinitions('request-policy', namedHeaderAuthenticationTests());
     yield from frameworkBehaviorGroupDefinitions('observability', observabilityTests());
     yield from frameworkBehaviorGroupDefinitions('jobs', jobTests());
     yield from frameworkBehaviorGroupDefinitions('cli', cliTests());
@@ -162,7 +164,7 @@ function frameworkBehaviorInventory(): array
         $contents === ''
         || !str_ends_with($contents, "\n")
         || str_contains($contents, "\r")
-        || hash('sha256', $contents) !== '4dd09cfa4d8e337138a06b330b0b8302b73c52750859c6597bd38be77c1c6f71'
+        || hash('sha256', $contents) !== '09779be0f8b87b57c92962f563be35241f940baec8211cc04bf34a5db4c60194'
     ) {
         throw new LogicException('Framework behavior inventory bytes do not match the reviewed baseline.');
     }
@@ -170,11 +172,11 @@ function frameworkBehaviorInventory(): array
     $names = explode("\n", substr($contents, 0, -1));
 
     if (
-        count($names) !== 205
-        || count(array_unique($names)) !== 205
+        count($names) !== 211
+        || count(array_unique($names)) !== 211
         || in_array('', $names, true)
     ) {
-        throw new LogicException('Framework behavior inventory must contain 205 unique non-empty names.');
+        throw new LogicException('Framework behavior inventory must contain 211 unique non-empty names.');
     }
 
     return $names;

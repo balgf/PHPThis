@@ -405,13 +405,13 @@ function distributionGuardrailFailures(
     } else {
         $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-        if (count($behaviorNames) !== 205 || count(array_unique($behaviorNames)) !== 205) {
-            $failures[] = 'The framework suite must preserve exactly 205 unique named framework behaviors.';
+        if (count($behaviorNames) !== 211 || count(array_unique($behaviorNames)) !== 211) {
+            $failures[] = 'The framework suite must preserve exactly 211 unique named framework behaviors.';
         }
 
         if (
             hash('sha256', $behaviorInventory)
-            !== '4dd09cfa4d8e337138a06b330b0b8302b73c52750859c6597bd38be77c1c6f71'
+            !== '09779be0f8b87b57c92962f563be35241f940baec8211cc04bf34a5db4c60194'
         ) {
             $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
         }
@@ -446,7 +446,7 @@ function distributionGuardrailFailures(
             'function frameworkBehaviorNamesForGroup(string $group): array',
             'function frameworkBehaviorInventory(): array',
             'array_key_exists($name, $registered)',
-            '4dd09cfa4d8e337138a06b330b0b8302b73c52750859c6597bd38be77c1c6f71',
+            '09779be0f8b87b57c92962f563be35241f940baec8211cc04bf34a5db4c60194',
         ],
         'tests/composition.php' => [
             'function compositionBehaviorTests(): Generator',
@@ -720,6 +720,7 @@ function distributionGuardrailFailures(
             ['depth' => 0, 'statement' => "require__DIR__.'/process-support.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/create-user-support.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/request-policy.php';"],
+            ['depth' => 0, 'statement' => "require__DIR__.'/named-header-authentication.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/observability.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/jobs.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/cli.php';"],
@@ -747,6 +748,11 @@ function distributionGuardrailFailures(
                 'depth' => 1,
                 'yielded' => true,
                 'call' => "frameworkBehaviorGroupDefinitions('request-policy',requestPolicyTests())",
+            ],
+            [
+                'depth' => 1,
+                'yielded' => true,
+                'call' => "frameworkBehaviorGroupDefinitions('request-policy',namedHeaderAuthenticationTests())",
             ],
             [
                 'depth' => 1,
