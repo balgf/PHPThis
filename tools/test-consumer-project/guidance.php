@@ -550,10 +550,11 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         ],
         'docs/decisions/026-bounded-file-transfers.md' => [
             'title' => 'ADR 026: Bounded explicit file transfers',
-            'metadata' => 'Superseded in part by [ADR 053](053-application-owned-amazon-s3-file-transfers.md), which replaces only the remote-object-store and pre-signed-delivery exclusion when an application explicitly selects `AMAZON_S3_ADR053`, and [ADR 060](060-reject-pending-output-before-response-emission.md), which replaces only the headers-only prior-output check before local-file emission.',
+            'metadata' => 'Superseded in part by [ADR 053](053-application-owned-amazon-s3-file-transfers.md), which replaces only the remote-object-store and pre-signed-delivery exclusion when an application explicitly selects `AMAZON_S3_ADR053`, and [ADR 060](060-reject-pending-output-before-response-emission.md), which replaces only the headers-only prior-output check before local-file emission, and [ADR 067](067-bounded-native-multipart-forms.md), which replaces only multipart ingress with bounded native parsing, flat fields and multiple named uploads.',
             'targets' => [
                 '053-application-owned-amazon-s3-file-transfers.md',
                 '060-reject-pending-output-before-response-emission.md',
+                '067-bounded-native-multipart-forms.md',
             ],
         ],
         'docs/decisions/025-application-owned-explicit-cli-and-scheduler.md' => [
@@ -609,6 +610,7 @@ function proveInstalledReferenceClarityDistribution(string $installedFramework):
         '| [ADR 020](020-application-owned-request-policy.md) | Denial and unknown-failure logging wording | [ADR 023](023-application-owned-terminal-request-summaries.md) |',
         '| [ADR 021](021-application-owned-typed-input-boundaries.md) | Blanket-`400` authoring default for structured request-body content | [ADR 042](042-application-owned-input-failure-classification.md) |',
         '| [ADR 026](026-bounded-file-transfers.md) | Remote-object-store and pre-signed-delivery exclusion, only when an application explicitly selects `AMAZON_S3_ADR053`; `LOCAL_ADR026` remains unchanged | [ADR 053](053-application-owned-amazon-s3-file-transfers.md) |',
+        '| [ADR 026](026-bounded-file-transfers.md) | Automatically parsed single-file-only multipart ingress; storage and delivery policies retain their owners | [ADR 067](067-bounded-native-multipart-forms.md) |',
         '| [ADR 026](026-bounded-file-transfers.md) | Headers-only prior-output detection before local-file emission | [ADR 060](060-reject-pending-output-before-response-emission.md) |',
         '| [ADR 025](025-application-owned-explicit-cli-and-scheduler.md) | Executable example\'s same-host schedule file lock and `schedule:run` coordination output | [ADR 028](028-application-owned-redis-cache-and-schedule-lease.md) |',
         '| [ADR 044](044-bounded-task-routed-ai-context.md) | Universal-context ownership and the rejected measurement-report boundary after its recorded reconsideration condition was reached; universal authority, safety, validity, red lines, and the four-file task-specific simple-endpoint metric remain accepted | [ADR 058](058-concern-local-ai-context-routing.md) |',
