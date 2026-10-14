@@ -22,6 +22,8 @@ Consumer Contract 19 carries version 18 forward and permits this optional repres
 
 This adds one immutable value and two optional constructor extensions, with no dependency or new execution layer. Applications own only their literal representations and client compatibility. Current instructions and examples live in [Error responses](../errors.md#framework-error-representations); [upgrade guidance](../consumer-contract-upgrades.md#contract-version-19) owns migration. Runtime, real-front-controller, session-copy and installed-package tests cover the policy; counts and prose alone do not prove it.
 
+The maintainer-only smoke fixture advances from revision 32 to 33 because its source skeleton now carries Contract 19 guidance. Only current fixture/admission identities change; frozen comparison and explanation tasks, prompts, budgets and retained trials remain unchanged. Synthetic validation adds no model result or paid-run authorization.
+
 ## Reconsideration
 
 Consider additional representation fields only for a concrete consumer need and an explicit decision about their ownership. Request-dependent negotiation, exception rendering and alternative server adapters remain separate decisions.
