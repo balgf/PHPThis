@@ -1,12 +1,14 @@
 # Application-owned stateless authentication
 
-PHPThis is Bearer-ready only at its bounded HTTP header and explicit request-policy seams. It does not provide JWT, personal access token (PAT), API-token, OAuth, or external-identity-provider support. PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.
+PHPThis exposes bounded HTTP headers and explicit request-policy seams. Bearer is the default application profile; a machine integration may explicitly adopt [one named credential header](#named-header-machine-profile). JWT, personal access token (PAT), API-token, OAuth and external-identity-provider implementations remain application-owned. PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.
 
 The credential format, every library and external service, issuance and refresh behavior, key or verifier storage, lifecycle, and production evidence remain application-owned. This guide changes no core source, runtime dependency, Consumer Contract, Strict Profile, checker rule, or `PHT` diagnostic.
 
 Here, stateless means that each request presents its credential without using PHPThis session or cookie identity. It does not mean that authentication is I/O-free: an application-owned verifier may perform explicit bounded database, trusted-key, or external-provider I/O under the budgets and outage contract below.
 
 ## Start at the exact HTTP boundary
+
+This section defines the default Bearer profile. Select the credential source in route composition, never by probing the incoming request for a usable credential. Each adopted route profile has exactly one source; changing that source requires explicit application adoption and deployment evidence.
 
 `RequestReader` translates `HTTP_*` runtime fields to lowercase header names and exposes the accepted credential field as `$request->headers['authorization'] ?? null`. The complete request boundary accepts at most 64 headers and at most 8,192 bytes per header value, rejects control characters and conflicting normalized fields, and collapses identical normalized duplicates. Those are framework transport ceilings, not a credential grammar or a safe credential-size default.
 
@@ -26,7 +28,7 @@ Before protecting a route, an accountable human records the accepted credential 
 
 For every accepted credential kind, record:
 
-- the caller types, exact scheme and parser grammar, effective byte bound, version or prefix, and whether multiple credential kinds are deliberately supported;
+- the caller types, sole credential field, exact scheme and parser grammar, effective byte bound, version or prefix, explicitly rejected competing sources, and whether multiple credential kinds in that one field are deliberately supported;
 - the issuer or generator, intended recipient, subject or owner meaning, tenant binding, accepted lifetime, authoritative clock, allowed skew, and current expiry and revocation checks;
 - the credential's scopes or other bounded authority input and its mapping to the application's named actions; a scope or claim is input to current authorization, not the authorization decision itself;
 - the pinned maintained parser or cryptographic dependency and exact version, supported profile, security-update owner, configuration inputs, key or verifier storage, and removal or migration plan;
@@ -37,6 +39,36 @@ For every accepted credential kind, record:
 An ordinary Bearer credential is replayable by any party that possesses it. Restrict its audience, resource, actions or scopes, and lifetime to the least authority the caller needs, and record the residual replay window. Record whether sender constraint is not applicable or is a separately adopted and proved profile. OAuth mTLS-bound tokens and DPoP are separate protocol, key, proxy, proof-replay, nonce, and failure decisions; this guide does not implement either. See [RFC 9700, Best Current Practice for OAuth 2.0 Security](https://www.rfc-editor.org/rfc/rfc9700).
 
 When more than one credential kind is accepted, give each a mutually exclusive grammar and verification profile. Never guess a format after one verifier fails, accept the same bytes under multiple profiles, or use a fallback verifier.
+
+## Named-header machine profile
+
+An application may choose one fixed named header when its controlled machine clients require it. Keep Bearer as the default for other routes. Record the exact field, grammar, size, rejection and lifecycle policy in `.ai/request-policy.md`; never negotiate between headers, inspect a list of possible keys, or retry another source after absence or rejection. A different header does not prevent replay: possession still grants whatever authority the credential carries.
+
+The checked [application recipe](https://github.com/balgf/PHPThis/tree/main/tests/fixtures/named-header) is a read-only document route with this deliberately narrow profile:
+
+| Boundary | Selected policy |
+| --- | --- |
+| Source | Exactly one `Example-Machine-Key` field, exposed as `headers['example-machine-key']`. Field names are case-insensitive. |
+| Value | Exactly **68 ASCII bytes**: `mk1_` followed by **64 lowercase hexadecimal characters**. Credential bytes remain unchanged; no trimming, decoding, case folding or comma-list parsing in PHP. HTTP field-line optional whitespace is handled by the selected server and must be tested separately. |
+| Competing input | Reject any `Authorization`, `Proxy-Authorization`, `Cookie` or `X-API-Key` field, including an empty field. This GET profile also rejects every query parameter and any body or multipart data. Unrecognized headers never become credential sources. |
+| Raw headers | The first boundary with raw multiplicity rejects two selected fields even when identical or differently cased. The checked proxy permits only ASCII letters, digits and hyphens in field names, rejecting dot/underscore aliases before CGI normalization, and bounds raw field count to 64. It forwards only an unambiguous accepted field. |
+| Definitive denial | Missing, malformed, oversized, conflicting, expired, revoked, inactive or otherwise definitively rejected credentials use the same generic **403** JSON response as ordinary forbidden and cross-tenant decisions. No `WWW-Authenticate`, redirect, credential classification or refresh signal. |
+| Uncertainty | A named verifier outage or malformed trusted-provider response maps to generic **503**, with no challenge or automatic retry/refresh instruction. Unexpected failures retain the existing redacted **500** boundary. |
+| Cache and order | `Cache-Control: private, no-store` on success and failure. Preserve `authenticate -> resolve tenant -> authorize -> protected handler`; denial or uncertainty executes zero protected work. Transport rejection can happen earlier with generic **400**. |
+
+Other operations may accept separately typed query or body data under their own input contract; they still reject their recorded credential aliases and never search those values for authentication.
+
+The 403 choice is specific to this custom machine protocol; it is not an OAuth Bearer error profile. An application choosing 401 instead must define a challenge applicable to its actual protocol: [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-401-unauthorized) requires one. Do not emit a Bearer challenge for a route that accepts only a different header.
+
+`RequestReader` cannot recover raw duplicates or original spellings lost by a proxy or SAPI. The unit proof deliberately shows identical normalized fields collapsing. The separate [Nginx/njs and PHP-FPM proof](https://github.com/balgf/PHPThis/tree/main/tools/runtime-proof/issue-106) checks raw duplicate and alias rejection, forwarding, empty competing fields, generic responses and diagnostic redaction through the canonical front controller. Its network-isolated loopback deployment does not certify production TLS, another proxy chain or a live verifier. Verify every deployed hop; strip or reject competing sources before a component can discard or overwrite them.
+
+The [opaque-token lifecycle](#opaque-access-tokens-pats-and-api-tokens) applies unchanged to named-header secrets. For an actual `mk1_` issuer, 64 hexadecimal digits encode 32 cryptographically random bytes; fixed fixture values establish no entropy or production validity. Record authorized issuance and one-time display, scoped machine identity and tenant/action/audience limits, a named one-way verifier and separate key authority where applicable, finite expiry and authoritative clock, rotation overlap, revocation and disabled-owner checks, compromise response and bounded verifier I/O. Check scope again in the action authorizer. Never store a raw or bearer-reusable credential artifact.
+
+Require TLS with certificate validation on credential-bearing network hops; record any same-host private socket boundary separately and restrict direct access to PHP-FPM. Redaction covers client diagnostics, proxies, access/error logs, APM, provider clients, PHP exception arguments, responses, terminal summaries and query traces. A named header may escape an existing `Authorization` scrubber: configure and test it explicitly, including malformed and duplicate-field failures. Keep only finite outcomes and approved safe metadata; never log credential bytes, reusable verifiers or raw requests.
+
+Do not add query-string token authentication. [RFC 9700 §4.3.2](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.3.2) prohibits OAuth access tokens in URI query parameters; application log redaction cannot remove browser or intermediary exposure. An external service that requires a signed, resource-scoped temporary URL needs a separately adopted capability policy covering audience, object/version, method, lifetime, replay, revocation limits and disclosure, with its own real-service evidence. It is not a fallback authentication source for these machine routes.
+
+This is an opt-in policy extension, with no Consumer Contract or Strict Profile migration. Existing Bearer routes and their denial/challenge behavior remain unchanged. Existing applications reconcile their stronger local rules and explicitly adopt a new route profile before changing credentials or deployment. The synthetic verifier tests rejection/outage handling and policy order; they do not implement or prove issuance, durable storage, expiry clocks, revocation races or production authentication.
 
 ## JWT profile
 
@@ -100,9 +132,9 @@ authenticate -> resolve tenant -> authorize -> protected handler
 
 Authentication returns one concrete immutable application principal. Tenant resolution and authorization receive it explicitly; no credential, claims map, principal, tenant, or authorization decision is installed on `Request`, in a global or generic context bag, or in a session or cache snapshot. Authorization runs for the current named action on every request. Protected SQL remains explicitly tenant- and resource-scoped after authorization.
 
-Verifier database or network work uses a separately named dependency, budget, and trace from tenant policy and protected data work. A denial or verifier outage executes no protected query, write, session or cache mutation, or external business effect. Record the exact fail-closed public mapping for dependency uncertainty or outage as one named generic `5xx` application failure, distinct from a definitive invalid-credential `401`. It must not assert that the credential is invalid, emit an invalid-token or automatic-refresh signal, silently try another source, or disclose whether a credential, subject, tenant, or account exists.
+Verifier database or network work uses a separately named dependency, budget, and trace from tenant policy and protected data work. A denial or verifier outage executes no protected query, write, session or cache mutation, or external business effect. Record the exact fail-closed public mapping for dependency uncertainty or outage as one named generic `5xx` application failure, distinct from a definitive invalid-credential `401` in the Bearer profile or `403` in the checked named-header profile. It must not assert that the credential is invalid, emit an invalid-token or automatic-refresh signal, silently try another source, or disclose whether a credential, subject, tenant, or account exists.
 
-Missing, malformed, oversized, expired, not-yet-valid, revoked, definitively inactive, wrong-issuer, wrong-audience, wrong-type, invalid-signature, and otherwise definitively rejected credentials share the application's generic `401` Bearer response. Verifier uncertainty uses the separately recorded generic `5xx`; it never triggers client refresh automatically. Ordinary forbidden and cross-tenant decisions share the generic `403`. Authenticated, denied, and post-policy failures start with `Cache-Control: private, no-store` unless a later accepted policy proves another result.
+In the default Bearer profile, missing, malformed, oversized, expired, not-yet-valid, revoked, definitively inactive, wrong-issuer, wrong-audience, wrong-type, invalid-signature, and otherwise definitively rejected credentials share the application's generic `401` Bearer response. Verifier uncertainty uses the separately recorded generic `5xx`; it never triggers client refresh automatically. Ordinary forbidden and cross-tenant decisions share the generic `403`. Authenticated, denied, and post-policy failures start with `Cache-Control: private, no-store` unless a later accepted policy proves another result.
 
 ## Frontend boundary
 
@@ -119,6 +151,7 @@ Keep fixtures synthetic, non-production, bounded, and unmistakably invalid outsi
 | Boundary | Evidence |
 | --- | --- |
 | Raw HTTP and deployment | TLS and certificate validation; absent and exactly one raw `Authorization` field; duplicate rejection at the first observable boundary; proxy/SAPI forwarding; ASCII-case-insensitive scheme, exact separator, case-sensitive credential; no query, body, cookie, path, or alternate-header fallback; header and credential bounds |
+| Opt-in named header | One exact selected field, bounded grammar and no fallback; identical/mixed-case raw duplicates, normalization aliases and empty competing fields; missing/malformed/rejected 403 versus uncertainty 503; no Bearer challenge or refresh signal; zero protected work on denial; exact proxy/SAPI forwarding and complete diagnostic redaction; explicit local adoption |
 | Parser and generic failures | absent, malformed, wrong scheme, whitespace and case policy, control bytes, oversized value, and unsupported credential kind; the reference's bare disclosure-minimizing challenge and identical redacted `401` behavior are explicitly non-RFC-6750-compatible; an application claiming RFC 6750 compatibility proves fixed non-sensitive auth-param grammar plus exact absent, `invalid_request`, `invalid_token`, and `insufficient_scope` status/error behavior; verifier uncertainty remains the distinct generic `5xx` with no refresh signal |
 | JWT | exact JOSE serialization/protection profile and UTF-8; finite protected-header allowlist; unsupported nesting, JWE, compression, `crit`, `x5c`, embedded trust material, and duplicate protected-header or claim members under the recorded library policy; algorithm and key substitution; invalid signature; wrong issuer, audience, subject, type, and required claim shape; expired, future, overlong, and skew-bound time cases; untrusted `kid` and remote-URL claims; current revocation and disabled-subject checks; key rollover, maximum revocation lag, and unavailable-key behavior |
 | Opaque/PAT | generation and one-time display; named verifier and compromise assumptions; absence of raw or reversible durable storage; timing-safe verifier mismatch; stored-artifact non-reusability; active, expiry, revocation, owner, tenant, and scope checks; rotation overlap; concurrent revocation; safe listing and redaction |

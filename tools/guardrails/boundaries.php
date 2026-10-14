@@ -3198,7 +3198,7 @@ function statelessAuthenticationGuidanceFailures(string $root): array
         ],
         '.ai/request-policy.md' => [
             'For Bearer, JWT, opaque/PAT/API-token, or external-identity-provider adoption, also follow `docs/stateless-authentication.md`',
-            'Treat PHPThis as Bearer-ready only at the bounded lowercase `authorization` header seam.',
+            'Keep Bearer as the default at the bounded lowercase `authorization` header seam.',
             'Accept one strict Bearer credential over TLS with no query, body, cookie, path, alternate-header, or fallback credential source.',
             'Test Bearers are synthetic only and are never production credential evidence.',
             'explicitly non-RFC-6750-compatible',
@@ -3207,6 +3207,9 @@ function statelessAuthenticationGuidanceFailures(string $root): array
             '# Application-owned stateless authentication',
             'PHPThis supplies no credential parser, verifier, issuer, revoker, identity provider, or authentication runtime/API.',
             'This guide changes no core source, runtime dependency, Consumer Contract, Strict Profile, checker rule, or `PHT` diagnostic.',
+            '#named-header-machine-profile',
+            'Do not add query-string token authentication.',
+            'Existing Bearer routes and their denial/challenge behavior remain unchanged.',
             'Here, stateless means that each request presents its credential without using PHPThis session or cookie identity.',
             'an application-owned verifier may perform explicit bounded database, trusted-key, or external-provider I/O under the budgets and outage contract below.',
             "\$request->headers['authorization'] ?? null",
@@ -3249,7 +3252,7 @@ function statelessAuthenticationGuidanceFailures(string $root): array
             'authenticate -> resolve tenant -> authorize -> protected handler',
             'Authorization runs for the current named action on every request.',
             'one named generic `5xx` application failure, distinct from a definitive invalid-credential `401`',
-            'Missing, malformed, oversized, expired, not-yet-valid, revoked, definitively inactive, wrong-issuer, wrong-audience, wrong-type, invalid-signature, and otherwise definitively rejected credentials share the application\'s generic `401` Bearer response.',
+            'In the default Bearer profile, missing, malformed, oversized, expired, not-yet-valid, revoked, definitively inactive, wrong-issuer, wrong-audience, wrong-type, invalid-signature, and otherwise definitively rejected credentials share the application\'s generic `401` Bearer response.',
             'Production acceptance requires evidence for the consuming application\'s selected parser, verifier, credential lifecycle, external dependencies, deployment, and clients.',
         ],
         'docs/request-policy.md' => [
@@ -3268,7 +3271,7 @@ function statelessAuthenticationGuidanceFailures(string $root): array
         'skeleton/.ai/request-policy.md' => [
             '`NOT_APPLICABLE(REQUEST_POLICY)`',
             'read installed `vendor/phpthis/framework/docs/request-policy.md` and `vendor/phpthis/framework/docs/stateless-authentication.md`',
-            'one strict TLS-protected `Authorization: Bearer` source with no alternate or fallback source',
+            'one credential source: default to strict TLS-protected `Authorization: Bearer`, or explicitly adopt one fixed named header',
             'selected JWT, opaque/PAT/API-token, or external-verification profile',
             'preserve the bare non-RFC-6750-compatible reference challenge',
         ],

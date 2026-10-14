@@ -19,12 +19,12 @@ Complete this guide before protecting a route. Read installed `vendor/phpthis/fr
 
 ## Failure and runtime policy
 
-- Sole credential source, TLS boundary, raw duplicate handling, proxy/SAPI forwarding, strict Bearer grammar, and byte bound: {{AUTHORIZATION_HEADER_BOUNDARY}}
+- Sole credential source (Bearer by default, or an explicitly adopted named header), rejected competing sources, TLS boundary, raw duplicate/alias handling, proxy/SAPI forwarding, exact grammar and byte bound: {{AUTHORIZATION_HEADER_BOUNDARY}}
 - Selected JWT, opaque/PAT/API-token, or external-verification profile and explicitly unsupported kinds: {{CREDENTIAL_PROFILE}}
 - Pinned maintained dependency, verifier or timing-safe comparison, exact non-secret configuration, and key or verifier ownership: {{CREDENTIAL_VERIFIER_AND_CONFIGURATION}}
 - Issuance or one-time disclosure, refresh or replacement, authoritative clock, expiry, rotation, revocation, owner, tenant, scope, rate-limit, audit, and redaction: {{CREDENTIAL_LIFECYCLE}}
 - Unauthenticated response and challenge: {{UNAUTHENTICATED_RESPONSE}}
-- Bare reference challenge and explicit non-RFC-6750 compatibility, or fixed non-sensitive auth-param grammar and exact absent/`invalid_request`/`invalid_token`/`insufficient_scope` status and error profile: {{RFC_6750_COMPATIBILITY_POLICY}}
+- For Bearer, bare reference challenge and explicit non-RFC-6750 compatibility, or fixed non-sensitive auth-param grammar and exact absent/`invalid_request`/`invalid_token`/`insufficient_scope` status and error profile; for a custom named-header protocol, record not applicable and its distinct denial/challenge policy: {{RFC_6750_COMPATIBILITY_POLICY}}
 - Verifier-uncertainty generic `5xx`, no-invalid-token/no-refresh-signal behavior: {{UNVERIFIABLE_CREDENTIAL_RESPONSE}}
 - Ordinary forbidden and cross-tenant response: {{FORBIDDEN_RESPONSE}}
 - Terminal summary: use `.ai/observability.md`; this policy adds no denial-specific field or event.

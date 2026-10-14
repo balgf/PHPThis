@@ -8,12 +8,12 @@ Before protecting a route, read installed `vendor/phpthis/framework/docs/request
 - concrete immutable principal and tenant-context types;
 - manually wired, independently replaceable authenticator, tenant resolver, and authorizer;
 - fixed `authenticate -> resolve tenant -> authorize -> protected operation` order;
-- one strict TLS-protected `Authorization: Bearer` source with no alternate or fallback source, plus the raw-boundary duplicate, proxy/SAPI forwarding, parser grammar, and credential byte-bound policy;
+- one credential source: default to strict TLS-protected `Authorization: Bearer`, or explicitly adopt one fixed named header under the installed guide; record rejected competing sources, raw duplicate/alias handling, proxy/SAPI forwarding, exact parser grammar and byte bound, with no fallback;
 - selected JWT, opaque/PAT/API-token, or external-verification profile; pinned maintained dependency; verifier and timing-safe comparison where applicable; exact configuration; and explicit unsupported credential kinds;
 - issuance or one-time disclosure, refresh or replacement, authoritative clock, expiry, rotation, revocation, owner, tenant, scope, rate-limit, audit, and redaction policy;
 - separately named verifier database, trusted-key source, or external-provider I/O with finite timeout, response, budget, trace, cache-staleness, and fail-closed outage policy;
 - frontend credential storage and XSS boundary, or cookie/session and CSRF policy; exact CORS and preflight behavior when cross-origin;
-- generic definitive-invalid `401`, verifier-uncertainty `5xx` with no refresh signal, ordinary forbidden, and cross-tenant disclosure policy; preserve the bare non-RFC-6750-compatible reference challenge or record the fixed non-sensitive auth-param and exact status/error evidence for an application RFC 6750 compatibility claim;
+- protocol-specific definitive denial, verifier-uncertainty `5xx` with no refresh signal, ordinary forbidden, and cross-tenant disclosure policy; for Bearer, preserve the bare non-RFC-6750-compatible reference challenge or record the fixed non-sensitive auth-param and exact status/error evidence for an application RFC 6750 compatibility claim; the named-header reference uses `403` with no challenge and `503` for uncertainty;
 - status-only known-denial summary, only the ADR 023 safe class for unexpected failure, redaction, and response-cache policy;
 - I/O-free policies or separately named policy connections, budgets, and traces;
 - protected connection, budget, trace, tenant/resource SQL scope, and authorization race policy;
