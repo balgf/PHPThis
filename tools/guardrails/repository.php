@@ -1032,6 +1032,7 @@ function consumerProjectHarnessExpectedModuleFunctions(): array
             'proveInstalledStructuredJsonSuccessEnvelopeDistribution',
             'proveInstalledFieldValidationErrorGuidanceDistribution',
             'proveInstalledSessionCleanupAndResponseFramingDistribution',
+            'proveInstalledErrorRepresentations',
             'proveInstalledBoundedResponseCookieProfileDistribution',
         ],
         'tools/test-consumer-project/file-transfers.php' => [
@@ -2077,7 +2078,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
 
     if (
         $protectedFileTransferModuleFingerprint
-            !== '4ab1bf54efb5941bda8cedd5c7b5ad5dfa72e96c76c0ca301841b63ff02aeb56'
+            !== 'bda2c2a1c8b407ac352937c9d4c5be6367062732fc8fcda44cb0e623bcfdbf0f'
         || $mutatedProtectedFileTransferModule === $protectedFileTransferModule
         || consumerProjectHarnessTokenNormalizedFingerprint(
             $mutatedProtectedFileTransferModule,
@@ -2096,7 +2097,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== 'b9bc4cb5b409d1a184bceff3de73943038494aaaed0574beef551d30e82dc735'
+        $jobsVerificationModuleFingerprint !== 'ccbef42492a0c21b4b1901c1310c2cc1059b5206baa0f6542b53586d6409dd6a'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
@@ -4585,11 +4586,11 @@ function repositoryGuardrailFailures(string $root): array
             'ordinary Contract v16 checker failures with no configurable ignore, Strict Profile rule, or `PHT` diagnostic',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 18',
+            'Contract version: 19',
             'give every application PHP file a case-insensitive `.php` extension',
             'keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes',
             'do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions',
-            'Version 18 carries version 17 forward and adds the application-owned generic-first outer HTTP failure boundary and optional bounded development-details profile without adding a framework runtime, Strict Profile rule, or `PHT` diagnostic.',
+            'Version 19 carries version 18 forward and permits bounded code-owned framework error representations while retaining the independent built-in outer fallback.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -4602,7 +4603,7 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'every other application symlink fails before target-content inspection',
-            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 18 carries it forward.',
+            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 19 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
         ],
         'docs/static-analysis.md' => [
@@ -4645,7 +4646,7 @@ function repositoryGuardrailFailures(string $root): array
             'source-prefix-discovery-executed',
         ],
         'tools/test-consumer-project/data.php' => [
-            "'Contract version: 18'",
+            "'Contract version: 19'",
             "'/docs/decisions/059-bounded-application-source-prefix-discovery.md'",
             "'Status: accepted'",
             "'Every other regular file has at most its first 4,096 bytes classified plus one lookahead byte.'",
@@ -4729,9 +4730,9 @@ function repositoryGuardrailFailures(string $root): array
             'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 18',
+            'Contract version: 19',
             '## Outer HTTP failure boundary',
-            'Contract version 18 supports one deployed HTTP entrypoint.',
+            'Contract version 19 supports one deployed HTTP entrypoint.',
             'Any HTTP application may deliberately remain code-owned `GENERIC` without inventing external disclosure or runtime-profile selection inputs',
             'Missing, empty, unknown, unavailable, malformed, or contradictory input fails configuration before application-controlled I/O',
             'Every HTTP profile configures the effective web SAPI with all `E_ALL` bits reported, `display_errors=Off`, `display_startup_errors=Off`, `log_errors=On` to a private controlled destination, and `zend.exception_ignore_args=On`.',
@@ -4848,16 +4849,16 @@ function repositoryGuardrailFailures(string $root): array
         '.ai/http.md' => [
             'At emitter entry, reject ordinary and local-file responses as `ResponseEmissionFailed(true)`',
             'ADR 060 adds the pending-output preflight; ADR 061 adds the generic-first outer HTTP failure boundary and optional controlled detail response.',
-            'Current Consumer Contract v18 carries version 17 and Strict Profile v4 forward.',
+            'Current Consumer Contract v19 carries version 18 and Strict Profile v4 forward.',
         ],
         '.ai/file-transfers.md' => [
             'Before file access, `ResponseEmitter` applies the common response-output guard',
             'all-empty active and nested buffers remain valid',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 18',
+            'Contract version: 19',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 18 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 19 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -4902,7 +4903,7 @@ function repositoryGuardrailFailures(string $root): array
             'docs/decisions/060-reject-pending-output-before-response-emission.md',
         ],
         'tools/test-consumer-project/data.php' => [
-            "'Contract version: 18'",
+            "'Contract version: 19'",
             "'/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "'The proposed ADR 060 response-emission guard'",
         ],

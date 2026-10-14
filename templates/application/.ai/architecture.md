@@ -40,6 +40,8 @@ If existing identifier classes establish a coherent convention, record and prese
 
 ## Outer HTTP failure boundary
 
+Keep default framework errors unless the application deliberately adopts installed `vendor/phpthis/framework/docs/errors.md#framework-error-representations`. Record the public format and compatibility decision, construct bounded literal body/content-type values inside protected composition, and retain the unconfigured built-in outer fallback. This introduces no external configuration input.
+
 - Detailed renderer and exact finite safe-message class allowlist, or `NOT_APPLICABLE(DEVELOPMENT_DETAILS)`: {{OUTER_HTTP_DETAILED_RENDERER_AND_SAFE_MESSAGE_ALLOWLIST_OR_NOT_APPLICABLE}}
 
 The sole front controller loads ordinary Composer autoloading, loads the framework types needed for generic selection, and constructs `UnknownFailureBoundary::respond()` before application configuration, bootstrap, infrastructure composition, or coordinator invocation. It starts from that immutable generic response and catches `Throwable` across those application-controlled steps. For an eligible pre-coordinator outer failure only, a fully constructed detailed response may replace the generic response after `.ai/configuration.md` has selected `DEVELOPMENT_DETAILS`; any selection, event, renderer, or renderer-autoload failure leaves the generic response selected. A failure the terminal coordinator already converted never gains details. Response emission remains outside that catch and retains the separate current `ResponseEmissionFailed` behavior. Do not install a global exception handler, move emission into the outer catch, retry composition or emission, or add a second HTTP path.

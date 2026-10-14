@@ -27,6 +27,7 @@ The framework supplies a small execution foundation and strict verification boun
 | Boundary | Recorded state |
 | --- | --- |
 | Latest framework tag | Alpha 8, [`v0.1.0-alpha.8`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.8), Consumer Contract version 18, Strict Profile version 4, and diagnostics `PHT001` through `PHT008` |
+| Unreleased source | Consumer Contract 19 permits optional bounded framework error representations; Alpha 8 remains Contract 18. |
 | Latest proved application starter | Alpha 8 is the matching public framework/skeleton pair with complete clean Packagist-only installation evidence in [Issue #81](https://github.com/balgf/PHPThis/issues/81) |
 | Coordinated release evidence | [Issue #81](https://github.com/balgf/PHPThis/issues/81) records Alpha 8 exact candidates, approvals, signed tags, packages, public proof and continuing GitHub prerelease/announcement state; closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) preserves the completed Alpha 7 predecessor |
 | Current post-tag `main` | Mutable availability/evidence follow-ups do not change the immutable Alpha 8 tag, artifacts or accepted scope; inspect the requested tag for historical authority |

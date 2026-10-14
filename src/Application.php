@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPThis;
 
+use PHPThis\Http\ErrorRepresentation;
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
@@ -11,8 +12,11 @@ use PHPThis\Routing\Router;
 
 final readonly class Application implements RequestHandler
 {
-    public function __construct(private Router $router)
-    {
+    public function __construct(
+        private Router $router,
+        private ?ErrorRepresentation $notFound = null,
+        private ?ErrorRepresentation $methodNotAllowed = null,
+    ) {
     }
 
     public function handle(Request $request): Response
@@ -33,9 +37,9 @@ final readonly class Application implements RequestHandler
                 headers: [
                     'Allow' => implode(', ', $allowedMethods),
                     'Cache-Control' => 'no-store',
-                    'Content-Type' => 'text/plain; charset=utf-8',
+                    'Content-Type' => $this->methodNotAllowed->contentType ?? 'text/plain; charset=utf-8',
                 ],
-                body: "Method Not Allowed\n",
+                body: $this->methodNotAllowed->body ?? "Method Not Allowed\n",
             );
         }
 
@@ -43,9 +47,9 @@ final readonly class Application implements RequestHandler
             status: 404,
             headers: [
                 'Cache-Control' => 'no-store',
-                'Content-Type' => 'text/plain; charset=utf-8',
+                'Content-Type' => $this->notFound->contentType ?? 'text/plain; charset=utf-8',
             ],
-            body: "Not Found\n",
+            body: $this->notFound->body ?? "Not Found\n",
         );
     }
 }

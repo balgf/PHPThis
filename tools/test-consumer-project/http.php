@@ -1657,13 +1657,13 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
             'Strict Profile version 3 remains unchanged',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 18',
+            'Contract version: 19',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
             'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
             '## Outer HTTP failure boundary',
-            'Contract version 18 supports one deployed HTTP entrypoint.',
+            'Contract version 19 supports one deployed HTTP entrypoint.',
             'Any HTTP application may deliberately remain code-owned `GENERIC` without inventing external disclosure or runtime-profile selection inputs',
             'Every HTTP profile configures the effective web SAPI with all `E_ALL` bits reported',
         ],
@@ -1966,7 +1966,78 @@ PHP,
         }
     }
 
+    proveInstalledErrorRepresentations($project, $installedFramework, $environment);
     fwrite(STDOUT, "PASS installed session cleanup and response framing distribution\n");
+}
+
+/** @param array<string, string> $environment */
+function proveInstalledErrorRepresentations(string $project, string $installedFramework, array $environment): void
+{
+    $proofPath = $project . '/installed-error-representation-proof.php';
+    writeFile($proofPath, <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use App\Observability\CorrelationId;
+use App\Observability\ErrorLogRequestSummarySink;
+use App\Observability\TerminalRequestCoordinator;
+use App\Routes;
+use PHPThis\Application;
+use PHPThis\Http\ErrorRepresentation;
+use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestBoundary;
+use PHPThis\Http\RequestReader;
+use PHPThis\Http\UnknownFailureBoundary;
+use PHPThis\Routing\Router;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$application = new Application(
+    new Router(Routes::create()),
+    new ErrorRepresentation('application/json', '{"code":"missing"}'),
+    new ErrorRepresentation('application/json', '{"code":"method"}'),
+);
+$missing = $application->handle(new Request('GET', '/missing'));
+$method = $application->handle(new Request('POST', '/health'));
+$health = $application->handle(new Request('GET', '/health'));
+$unknown = new UnknownFailureBoundary(new ErrorRepresentation('application/json', '{"code":"service_error"}'));
+$id = CorrelationId::generate();
+$coordinator = new TerminalRequestCoordinator(
+    new RequestBoundary(new RequestReader(1_024, 'php://memory'), $application, new ErrorResponseRegistry([])),
+    $unknown, $id, new ErrorLogRequestSummarySink(), [],
+);
+$failure = $coordinator->handle(['REQUEST_METHOD' => 'invalid method', 'REQUEST_URI' => '/health'], []);
+if (
+    $missing->status !== 404 || $missing->body !== '{"code":"missing"}'
+    || $missing->headers !== ['Cache-Control' => 'no-store', 'Content-Type' => 'application/json']
+    || $method->status !== 405 || $method->body !== '{"code":"method"}'
+    || $method->headers !== ['Allow' => 'GET', 'Cache-Control' => 'no-store', 'Content-Type' => 'application/json']
+    || $health->status !== 200
+    || $failure->status !== 500 || $failure->body !== '{"code":"service_error"}'
+    || $failure->headers !== [
+        'Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store', 'X-Request-ID' => $id->value,
+    ]
+) {
+    throw new RuntimeException('Installed error representation behavior differs from its contract.');
+}
+fwrite(STDOUT, "PASS installed error representations\n");
+PHP);
+    try {
+        $profile = runProcess([PHP_BINARY, $installedFramework . '/bin/phpthis', 'check'], $project, $environment);
+        requireSuccess($profile, 'Installed error representation adopter failed the application profile.');
+        $result = runProcess([PHP_BINARY, $proofPath], $project, $environment);
+        requireSuccess($result, 'Installed error representation runtime proof failed.');
+        if ($result['stdout'] !== "PASS installed error representations\n") {
+            throw new RuntimeException('Installed error representation proof did not complete.');
+        }
+    } finally {
+        if (is_file($proofPath) && !unlink($proofPath)) {
+            throw new RuntimeException('Unable to remove the installed error representation proof.');
+        }
+    }
+    fwrite(STDOUT, "PASS installed error representations\n");
 }
 
 /** @param array<string, string> $environment */
@@ -2297,7 +2368,7 @@ PHP,
             'The final readable implementation occupies 2,618 lines',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 18',
+            'Contract version: 19',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',

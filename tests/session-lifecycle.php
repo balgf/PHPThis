@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use PHPThis\Http\CookieSameSite;
+use PHPThis\Http\ErrorRepresentation;
 use PHPThis\Http\ErrorResponseRegistry;
 use PHPThis\Http\LocalFileBody;
 use PHPThis\Http\Request;
@@ -649,6 +650,22 @@ try {
     }
 
     fclose($resourceValue);
+
+    $customError = (new PHPThis\Application(
+        new PHPThis\Routing\Router([]),
+        notFound: new ErrorRepresentation('application/json', '{"code":"missing"}'),
+    ))->handle(new Request('GET', '/missing'));
+    $sessions->begin(new Request('GET', '/missing'));
+    $sessions->update(static fn (SessionSnapshot $current): SessionSnapshot => new SessionSnapshot(['marker' => 'public']));
+    $finishedError = $sessions->finish($customError);
+    requireLiveCookie($finishedError, $configuration);
+    requireSessionTest(
+        $finishedError->status === 404
+        && $finishedError->headers === ['Cache-Control' => 'no-store', 'Content-Type' => 'application/json']
+        && $finishedError->body === '{"code":"missing"}'
+        && $finishedError->fileBody === null,
+        'Session finalization must preserve the configured error representation and append its own cookie.',
+    );
 
     fwrite(STDOUT, "PASS isolated native session lifecycle\n");
 } finally {
