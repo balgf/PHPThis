@@ -131,6 +131,10 @@ outer failure selection isolates event renderer and emission failures
 configured disclosure consumer enables details only after eligible complete selection
 configured disclosure consumer fails closed for invalid selection and request overrides
 example outer HTTP boundary catches bootstrap failures under safe SAPI settings
+error representations preserve defaults and independently customize routing failures
+error representations enforce byte bounds and reject control header injection
+configured errors retain correlation known mappings and unknown failure redaction
+real front controller emits configured errors and retains the built-in early fallback
 router rejects duplicate method and path pairs
 route accepts at most two full-segment typed parameter declarations
 router matches bounded canonical positive integer path parameters

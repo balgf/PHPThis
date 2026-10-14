@@ -2,7 +2,7 @@
 
 ## Current priorities
 
-PHPThis's current boundary is Consumer Contract 18, Strict Profile 4 and PHT001–PHT008. Alpha 8 is the latest recorded source tag; [RELEASING.md](RELEASING.md) owns release state, exact approval rules and the route to publication receipts. Changes after that tag are unreleased.
+PHPThis's current boundary is Consumer Contract 19, Strict Profile 4 and PHT001–PHT008. Alpha 8 is the latest recorded source tag; [RELEASING.md](RELEASING.md) owns release state, exact approval rules and the route to publication receipts. Changes after that tag are unreleased.
 
 - Keep the retained consumer useful through real feature changes and upgrades. [The lifecycle report](https://github.com/balgf/PHPThis/tree/main/tools/consumer-lifecycle) owns its public Alpha 8 repetition, failures, repairs and optional RAG exercise. Its next maintenance trigger is the next matching public release.
 - Review maintainability through behavior, documentation ownership and executable evidence. [ADR 063](docs/decisions/063-maintainability-review-over-size-proxies.md) makes file and line counts informational. [ADR 064](docs/decisions/064-one-entrypoint-per-audience.md) makes `AGENTS.md` the universal entrypoint and routes detail by task.

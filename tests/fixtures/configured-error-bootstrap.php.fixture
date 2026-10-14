@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
+use Example\Observability\CorrelationId;
+use Example\Observability\ErrorLogRequestSummarySink;
+use Example\Observability\TerminalRequestCoordinator;
+use PHPThis\Application;
+use PHPThis\Http\ErrorRepresentation;
+use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestBoundary;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\RequestReader;
+use PHPThis\Http\Response;
+use PHPThis\Http\UnknownFailureBoundary;
+use PHPThis\Routing\Route;
+use PHPThis\Routing\Router;
+
+// Each isolated test substitutes this code-owned case before server startup.
+$scenario = 'unknown';
+$unknown = new UnknownFailureBoundary(new ErrorRepresentation('application/json', '{"code":"service_error"}'));
+if ($scenario === 'invalid') {
+    new ErrorRepresentation("application/json\r\nAllow: private-sentinel", 'public');
+}
+if ($scenario === 'composition') {
+    throw new RuntimeException('composition-private-sentinel');
+}
+
+final readonly class ConfiguredErrorFixtureHandler implements RequestHandler
+{
+    public function __construct(private Throwable $failure)
+    {
+    }
+
+    public function handle(Request $request): Response
+    {
+        throw $this->failure;
+    }
+}
+
+$handler = new ConfiguredErrorFixtureHandler(
+    $scenario === 'known' ? new InvalidRequest('known-private-sentinel') : new RuntimeException('SQLSTATE unknown-private-sentinel'),
+);
+$application = new Application(
+    new Router($scenario === 'missing' ? [] : [new Route($scenario === 'method' ? 'GET' : 'POST', '/health', $handler)]),
+    new ErrorRepresentation('application/json', '{"code":"missing"}'),
+    new ErrorRepresentation('application/json', '{"code":"method"}'),
+);
+
+return new TerminalRequestCoordinator(
+    new RequestBoundary(
+        new RequestReader(1_024, 'php://input'),
+        $application,
+        new ErrorResponseRegistry([InvalidRequest::class => new Response(400, [
+            'Content-Type' => 'application/json', 'Cache-Control' => 'no-store',
+        ], '{"code":"known"}')]),
+    ),
+    $unknown, CorrelationId::generate(), new ErrorLogRequestSummarySink(), new DocumentDetailsCacheTrace(), [],
+);

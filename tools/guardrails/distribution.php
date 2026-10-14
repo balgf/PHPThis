@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 236) {
-            $failures[] = 'The current framework package inventory must contain exactly 236 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 238) {
+            $failures[] = 'The current framework package inventory must contain exactly 238 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -405,13 +405,13 @@ function distributionGuardrailFailures(
     } else {
         $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-        if (count($behaviorNames) !== 188 || count(array_unique($behaviorNames)) !== 188) {
-            $failures[] = 'The framework suite must preserve exactly 188 unique named framework behaviors.';
+        if (count($behaviorNames) !== 192 || count(array_unique($behaviorNames)) !== 192) {
+            $failures[] = 'The framework suite must preserve exactly 192 unique named framework behaviors.';
         }
 
         if (
             hash('sha256', $behaviorInventory)
-            !== '37b3b5388db2c440f1c912a5446b5d13abfa19e96e9f2bfb78154693dd3242d1'
+            !== 'ebe51f328fb1b72a9871cb65c629208a761d4d87b07f7e55afc6995afc33ce4a'
         ) {
             $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
         }
@@ -446,7 +446,7 @@ function distributionGuardrailFailures(
             'function frameworkBehaviorNamesForGroup(string $group): array',
             'function frameworkBehaviorInventory(): array',
             'array_key_exists($name, $registered)',
-            '37b3b5388db2c440f1c912a5446b5d13abfa19e96e9f2bfb78154693dd3242d1',
+            'ebe51f328fb1b72a9871cb65c629208a761d4d87b07f7e55afc6995afc33ce4a',
         ],
         'tests/composition.php' => [
             'function compositionBehaviorTests(): Generator',
@@ -732,6 +732,7 @@ function distributionGuardrailFailures(
             ['depth' => 0, 'statement' => "require__DIR__.'/composition.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/http-boundary.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/outer-http-failure.php';"],
+            ['depth' => 0, 'statement' => "require__DIR__.'/error-representation.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/routing.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/input-projection.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/crud.php';"],
@@ -803,6 +804,11 @@ function distributionGuardrailFailures(
                 'depth' => 1,
                 'yielded' => true,
                 'call' => "frameworkBehaviorGroupDefinitions('http-boundary',outerHttpFailureBehaviorTests())",
+            ],
+            [
+                'depth' => 1,
+                'yielded' => true,
+                'call' => "frameworkBehaviorGroupDefinitions('http-boundary',errorRepresentationBehaviorTests())",
             ],
             [
                 'depth' => 1,
@@ -1152,7 +1158,7 @@ function distributionGuardrailFailures(
             'Do not introduce an ORM',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 18',
+            'Contract version: 19',
             '## Optional bounded file transfers',
             'Raw `$_FILES` never enters a handler.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
@@ -1173,7 +1179,7 @@ function distributionGuardrailFailures(
         ],
         'docs/file-transfers/README.md' => [
             'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
-            'Consumer Contract version 18 carries version 17 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 19 carries version 18 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
@@ -1230,7 +1236,7 @@ function distributionGuardrailFailures(
             "\$installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "\$installedFramework . '/docs/file-transfers/emission.md'",
             "\$installedFramework . '/src/Http/ResponseEmitter.php'",
-            "'Contract version: 18'",
+            "'Contract version: 19'",
             'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
             'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
             'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
@@ -1310,7 +1316,7 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 18$/m', $consumerContract) !== 1) {
+            if (preg_match('/^Contract version: 19$/m', $consumerContract) !== 1) {
                 $failures[] = 'docs/consumer-contract.md must declare contract version 18.';
             }
 

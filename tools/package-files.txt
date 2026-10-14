@@ -103,6 +103,7 @@ docs/decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md
 docs/decisions/062-bounded-alpha-8-release-scope.md
 docs/decisions/063-maintainability-review-over-size-proxies.md
 docs/decisions/064-one-entrypoint-per-audience.md
+docs/decisions/065-explicit-framework-error-representations.md
 docs/decisions/README.md
 docs/email.md
 docs/errors.md
@@ -175,6 +176,7 @@ src/Database/QueryBudget.php
 src/Database/QueryBudgetExceeded.php
 src/Database/QueryTrace.php
 src/Http/CookieSameSite.php
+src/Http/ErrorRepresentation.php
 src/Http/ErrorResponseRegistry.php
 src/Http/InvalidRequest.php
 src/Http/LocalFileBody.php

@@ -4,6 +4,12 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 19
+
+Contract version 19 carries version 18 and Strict Profile version 4 forward with PHT001–PHT008 unchanged. [ADR 065](decisions/065-explicit-framework-error-representations.md) permits optional code-owned `ErrorRepresentation` values for 404, 405 and coordinator-selected 500 responses. Status, `Allow`, cache policy, correlation and the independent built-in outer fallback retain their owners.
+
+Existing applications may keep their defaults without PHP changes and rerun their complete gate. An adopter constructs bounded public body/content-type values inside protected composition, injects them through the existing `Application` and `UnknownFailureBoundary` constructors, records public API compatibility, and tests defaults, overrides, known/unknown failures, invalid construction, copies, redaction and real-front-controller fallback. Clients must still accept the built-in 500 when composition fails. Keep the unconfigured fallback before bootstrap; preserve emission and development-disclosure rules. Updating the dependency does not rewrite application-owned context. See [Error responses](errors.md#framework-error-representations).
+
 ### Contract version 18
 
 Contract version 18 carries Contract version 17 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`. Through [ADR 061](decisions/061-fail-closed-outer-http-failure-disclosure-profiles.md), the sole supported HTTP entrypoint now establishes one application-owned generic-first outer failure boundary after ordinary Composer autoloading and generic-response construction but before configuration, bootstrap, infrastructure composition, and coordinator invocation. It retains response emission as the separate current boundary. A pre-coordinator failure has no correlation or terminal-summary guarantee, and development details do not change a failure the coordinator has already converted.

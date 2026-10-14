@@ -26,6 +26,7 @@ use PHPThis\Application;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;
+use PHPThis\Http\ErrorRepresentation;
 use PHPThis\Http\ErrorResponseRegistry;
 use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\RequestBodyTooLarge;
@@ -154,19 +155,29 @@ final readonly class ApplicationComposition
             30_000,
             $documentCacheTrace,
         );
-        $application = new Application(new Router(Routes::create(
-            $listUsersConnection,
-            $getUserConnection,
-            $createUserConnection,
-            $retrieveDocument,
-            $listDocumentsConnection,
-            new DenyAllAccountAuthentication(),
-            new DenyAllAccountTenantResolution(),
-            $accountAuthorization,
-            $accountAuthorization,
-            $accountAuthorization,
-            new LocalDocumentFiles($databasePath . '.files'),
-        )));
+        $application = new Application(
+            router: new Router(Routes::create(
+                $listUsersConnection,
+                $getUserConnection,
+                $createUserConnection,
+                $retrieveDocument,
+                $listDocumentsConnection,
+                new DenyAllAccountAuthentication(),
+                new DenyAllAccountTenantResolution(),
+                $accountAuthorization,
+                $accountAuthorization,
+                $accountAuthorization,
+                new LocalDocumentFiles($databasePath . '.files'),
+            )),
+            notFound: new ErrorRepresentation(
+                'application/json; charset=utf-8',
+                "{\"error\":{\"code\":\"not_found\",\"message\":\"Not found.\"}}\n",
+            ),
+            methodNotAllowed: new ErrorRepresentation(
+                'application/json; charset=utf-8',
+                "{\"error\":{\"code\":\"method_not_allowed\",\"message\":\"Method not allowed.\"}}\n",
+            ),
+        );
         $errorResponses = self::errorResponses();
 
         return new TerminalRequestCoordinator(
