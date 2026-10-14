@@ -24,7 +24,7 @@ final readonly class PeerFixtureHandler implements RequestHandler
     public function handle(Request $request): Response
     {
         if ($request->peerAddress === null) {
-            return new Response(403, ['Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
+            return new Response(403, ['Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
         }
         return new Response(200, ['Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store'],
             json_encode(['peer' => $request->peerAddress->address], JSON_THROW_ON_ERROR));

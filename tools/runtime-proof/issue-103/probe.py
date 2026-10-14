@@ -66,6 +66,8 @@ try:
             if not re.fullmatch('[a-f0-9]{32}', response.getheader('X-Request-ID', '')):
                 raise RuntimeError('Missing correlation for ' + name)
             cache = 'no-store' if status == 400 else 'private, no-store'
+            if response.getheader('Content-Type') != 'application/json':
+                raise RuntimeError('Wrong content type for ' + name)
             if response.getheader('Cache-Control') != cache:
                 raise RuntimeError('Wrong cache policy for ' + name)
             results.append({'case': name, 'status': status, 'body': expected, 'result': 'pass'})

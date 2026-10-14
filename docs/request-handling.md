@@ -45,7 +45,7 @@ An operation requiring a peer explicitly rejects `null` before protected work. A
 
 ```php
 if ($request->peerAddress === null) {
-    return new Response(403, ['Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
+    return new Response(403, ['Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
 }
 return $this->next->handle($request);
 ```

@@ -147,7 +147,7 @@ function peerAddressBehaviorTests(): Generator
         });
         $handler = new PeerRequiredTestHandler($protected);
         $denied = $handler->handle(new Request('GET', '/', headers: ['x-forwarded-for' => '192.0.2.1']));
-        if ($denied->status !== 403 || $denied->body !== '{"code":"forbidden"}' || $denied->headers !== ['Cache-Control' => 'private, no-store']) {
+        if ($denied->status !== 403 || $denied->body !== '{"code":"forbidden"}' || $denied->headers !== ['Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store']) {
             throw new RuntimeException('An unavailable peer must not enter protected work.');
         }
         $protected->expectCalls(0);
@@ -226,7 +226,7 @@ final readonly class PeerRequiredTestHandler implements RequestHandler
     public function handle(Request $request): Response
     {
         if ($request->peerAddress === null) {
-            return new Response(403, ['Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
+            return new Response(403, ['Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
         }
         return $this->next->handle($request);
     }
