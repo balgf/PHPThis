@@ -14,9 +14,9 @@ function proveInstalledProtectedFileTransferReference(
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 20',
+            'Contract version: 21',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 20 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 21 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
             '# ADR 060: Reject pending output before response emission',
@@ -31,7 +31,7 @@ function proveInstalledProtectedFileTransferReference(
             'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
         ],
         $installedFramework . '/docs/file-transfers/README.md' => [
-            'Consumer Contract version 20 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 21 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
         ],
@@ -192,6 +192,8 @@ declare(strict_types=1);
 
 use PHPThis\Http\Request;
 use PHPThis\Http\RequestUpload;
+use PHPThis\Http\MultipartForm;
+use PHPThis\Http\MultipartLimits;
 use PHPThis\Http\RequestUploadError;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
@@ -948,7 +950,7 @@ final readonly class InstalledUploadDocumentHandler implements RequestHandler
     {
         $this->trace->step('pending_upload');
 
-        if ($request->body !== '') {
+        if ($request->body !== '' || $request->multipart === null || $request->multipart->fields !== []) {
             throw new InstalledFileForbidden('Multipart requests do not use an ordinary body.');
         }
 
@@ -1071,15 +1073,10 @@ function installedFileRequest(
         '',
         $headers,
         PathParameters::fromValues(['account_id' => 42], []),
-        [
-            'document' => new RequestUpload(
-                'hostile-client.php',
-                'text/x-php',
-                '/private/upload/tmp-secret',
-                $reportedSizeBytes,
-                $error,
-            ),
-        ],
+        MultipartForm::fromPhp([], ['document' => $error === RequestUploadError::NoFile
+            ? ['name' => '', 'type' => '', 'tmp_name' => '', 'error' => $error->value, 'size' => 0]
+            : ['name' => 'hostile-client.php', 'type' => 'text/x-php', 'tmp_name' => '/private/upload/tmp-secret', 'size' => $reportedSizeBytes, 'error' => $error->value]
+        ], 1_024, new MultipartLimits(1_024, 512, 700)),
     );
 }
 
@@ -1106,7 +1103,7 @@ function installedFileCrossTenantUploadRequest(): Request
         $request->body,
         $request->headers,
         PathParameters::fromValues(['account_id' => 43], []),
-        $request->uploads,
+        $request->multipart,
     );
 }
 
@@ -1167,6 +1164,37 @@ function installedFileAssertPrivateFailure(Response $response): void
         || !in_array($response->status, [401, 403, 404, 409, 429, 500], true)
     ) {
         throw new RuntimeException('Protected file-transfer failure mapping changed.');
+    }
+}
+
+$multipartLimits = new MultipartLimits(1_024, 512, 700);
+$nativeFile = ['name' => 'hostile-client.php', 'type' => 'text/x-php', 'tmp_name' => '/private/upload/tmp-secret', 'error' => 0, 'size' => 6];
+$expandedForm = MultipartForm::fromPhp(['empty' => '', 'enabled' => 'false'], ['first' => $nativeFile, 'second' => $nativeFile], 1_024, $multipartLimits);
+$expandedRequest = new Request('POST', '/inspect', multipart: $expandedForm);
+$expandedCopy = $expandedRequest->withPathParameters(PathParameters::fromValues(['account_id' => 42], []));
+if ($expandedCopy->multipart !== $expandedForm || $expandedCopy->uploads !== $expandedForm->uploads || $expandedForm->fields !== ['empty' => '', 'enabled' => 'false']) {
+    throw new RuntimeException('Installed multipart representation or routing copies changed.');
+}
+installedFileExpectFailure(
+    static fn() => MultipartForm::fromPhp(['same' => ''], ['same' => $nativeFile], 1_024, $multipartLimits),
+    PHPThis\Http\InvalidRequest::class,
+);
+installedFileExpectFailure(
+    static fn() => MultipartForm::fromPhp(['large' => str_repeat('x', 8_193)], [], 1_024, $multipartLimits),
+    PHPThis\Http\RequestBodyTooLarge::class,
+);
+foreach ([
+    MultipartForm::fromPhp(['title' => 'metadata'], ['document' => $nativeFile], 1_024, $multipartLimits),
+    MultipartForm::fromPhp([], ['document' => $nativeFile, 'extra' => $nativeFile], 1_024, $multipartLimits),
+] as $unsupportedStorageForm) {
+    $trace = new InstalledFileTrace();
+    $quota = new InstalledDocumentQuota();
+    $storage = new InstalledDocumentStorage();
+    $operation = installedFileUploadHandler($trace, $quota, $storage, new InstalledDocumentReconciliation($trace));
+    $request = new Request('POST', '/accounts/42/document-files', headers: ['cookie' => 'session=synthetic', 'x-csrf-token' => 'synthetic-csrf'], pathParameters: PathParameters::fromValues(['account_id' => 42], []), multipart: $unsupportedStorageForm);
+    installedFileExpectFailure(static fn() => $operation->handle($request), InstalledFileForbidden::class);
+    if ($storage->writeCalls !== 0 || $storage->fileCount() !== 0) {
+        throw new RuntimeException('Expanded ingress must not expand the single-file storage operation.');
     }
 }
 

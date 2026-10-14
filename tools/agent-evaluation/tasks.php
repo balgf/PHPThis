@@ -5,8 +5,8 @@ declare(strict_types=1);
 const AGENT_EVALUATION_TASK_REVISIONS = [
     'change.simple-ping' => [
         'schema_version' => 1,
-        'revision' => 34,
-        'manifest_sha256' => 'ba5489f9dcf9124397d4f88317584f85fdeaabece532d1c0844bc668ed296a9f',
+        'revision' => 35,
+        'manifest_sha256' => 'd9271c000fcbbe98a511812f737077c3c573f3e1ff9883c061bf9ad1ec95a14c',
     ],
     'change.protected-endpoint' => [
         'schema_version' => 2,

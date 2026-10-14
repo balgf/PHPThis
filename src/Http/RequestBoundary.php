@@ -21,21 +21,17 @@ final readonly class RequestBoundary
     /**
      * @param array<array-key, mixed> $server
      * @param array<array-key, mixed> $query
-     * @param array<array-key, mixed> $parsedFields
-     * @param array<array-key, mixed> $files
      */
     public function handle(
         array $server,
         array $query,
-        array $parsedFields = [],
-        array $files = [],
     ): Response
     {
         $sessions = $this->sessions;
         $sessionBegun = false;
 
         try {
-            $request = $this->reader->read($server, $query, $parsedFields, $files);
+            $request = $this->reader->read($server, $query);
 
             if ($sessions !== null) {
                 $sessions->begin($request);

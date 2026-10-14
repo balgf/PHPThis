@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 240) {
-            $failures[] = 'The current framework package inventory must contain exactly 240 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 243) {
+            $failures[] = 'The current framework package inventory must contain exactly 243 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -405,13 +405,13 @@ function distributionGuardrailFailures(
     } else {
         $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-        if (count($behaviorNames) !== 197 || count(array_unique($behaviorNames)) !== 197) {
-            $failures[] = 'The framework suite must preserve exactly 197 unique named framework behaviors.';
+        if (count($behaviorNames) !== 205 || count(array_unique($behaviorNames)) !== 205) {
+            $failures[] = 'The framework suite must preserve exactly 205 unique named framework behaviors.';
         }
 
         if (
             hash('sha256', $behaviorInventory)
-            !== 'e2fe90f0b6adeb47c8690798b867bd4cf34f9e8add34aff33795d2252e259a9a'
+            !== '4dd09cfa4d8e337138a06b330b0b8302b73c52750859c6597bd38be77c1c6f71'
         ) {
             $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
         }
@@ -446,7 +446,7 @@ function distributionGuardrailFailures(
             'function frameworkBehaviorNamesForGroup(string $group): array',
             'function frameworkBehaviorInventory(): array',
             'array_key_exists($name, $registered)',
-            'e2fe90f0b6adeb47c8690798b867bd4cf34f9e8add34aff33795d2252e259a9a',
+            '4dd09cfa4d8e337138a06b330b0b8302b73c52750859c6597bd38be77c1c6f71',
         ],
         'tests/composition.php' => [
             'function compositionBehaviorTests(): Generator',
@@ -734,6 +734,8 @@ function distributionGuardrailFailures(
             ['depth' => 0, 'statement' => "require__DIR__.'/outer-http-failure.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/error-representation.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/peer-address.php';"],
+            ['depth' => 0, 'statement' => "require__DIR__.'/multipart.php';"],
+            ['depth' => 0, 'statement' => "require__DIR__.'/multipart-sapi.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/routing.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/input-projection.php';"],
             ['depth' => 0, 'statement' => "require__DIR__.'/crud.php';"],
@@ -815,6 +817,16 @@ function distributionGuardrailFailures(
                 'depth' => 1,
                 'yielded' => true,
                 'call' => "frameworkBehaviorGroupDefinitions('http-boundary',peerAddressBehaviorTests())",
+            ],
+            [
+                'depth' => 1,
+                'yielded' => true,
+                'call' => "frameworkBehaviorGroupDefinitions('http-boundary',multipartBehaviorTests())",
+            ],
+            [
+                'depth' => 1,
+                'yielded' => true,
+                'call' => "frameworkBehaviorGroupDefinitions('http-boundary',multipartSapiBehaviorTests())",
             ],
             [
                 'depth' => 1,
@@ -1157,14 +1169,14 @@ function distributionGuardrailFailures(
         '.ai/file-transfers.md' => [
             'A `null` multipart limit disables multipart input.',
             'Do not add a generic storage interface, facade, disk registry, binding helper',
-            'Do not claim rejection of duplicate raw scalar parts',
+            'PHP still collapses scalar duplicates',
             'already-sent headers or pending bytes in any active PHP-managed output-buffer level fail as `ResponseEmissionFailed(true)`',
             'It inspects without cleaning, flushing, rewriting, or incorporating prior bytes.',
             'After headers, do not attempt a replacement response',
             'Do not introduce an ORM',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 20',
+            'Contract version: 21',
             '## Optional bounded file transfers',
             'Raw `$_FILES` never enters a handler.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
@@ -1185,7 +1197,7 @@ function distributionGuardrailFailures(
         ],
         'docs/file-transfers/README.md' => [
             'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
-            'Consumer Contract version 20 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 21 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
@@ -1242,7 +1254,7 @@ function distributionGuardrailFailures(
             "\$installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "\$installedFramework . '/docs/file-transfers/emission.md'",
             "\$installedFramework . '/src/Http/ResponseEmitter.php'",
-            "'Contract version: 20'",
+            "'Contract version: 21'",
             'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
             'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
             'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
@@ -1256,10 +1268,9 @@ function distributionGuardrailFailures(
             'headers unsent and no pending bytes in any active PHP-managed output-buffer level',
         ],
         'src/Http/RequestReader.php' => [
-            'private ?int $maximumMultipartBytes;',
-            'array $parsedFields = [],',
-            'array $files = [],',
-            'RequestUploadError::tryFrom',
+            'private ?MultipartLimits $multipartLimits = null,',
+            'request_parse_body([',
+            'MultipartForm::fromPhp',
         ],
         'src/Http/ResponseEmitter.php' => [
             'private const int FILE_CHUNK_BYTES = 8_192;',
@@ -1277,12 +1288,12 @@ function distributionGuardrailFailures(
             "'Content-Disposition' => 'attachment; filename=\"document.bin\"'",
         ],
         'example/public/index.php' => [
-            '$coordinator->handle($_SERVER, $_GET, $_POST, $_FILES)',
+            '$coordinator->handle($_SERVER, $_GET)',
             "error_log('application.response_emission_failed')",
             'if (!$failure->responseStarted)',
         ],
         'skeleton/public/index.php' => [
-            '$coordinator->handle($_SERVER, $_GET, $_POST, $_FILES)',
+            '$coordinator->handle($_SERVER, $_GET)',
             "error_log('application.response_emission_failed')",
             'if (!$failure->responseStarted)',
         ],
@@ -1322,7 +1333,7 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 20$/m', $consumerContract) !== 1) {
+            if (preg_match('/^Contract version: 21$/m', $consumerContract) !== 1) {
                 $failures[] = 'docs/consumer-contract.md must declare contract version 18.';
             }
 

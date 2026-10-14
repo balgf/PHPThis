@@ -8,7 +8,7 @@ Canonical factories:
 - `Command::fromJson(string)` for a JSON request body.
 - `PageRequest::fromQuery(array<string, mixed>)` for operation-specific query parameters.
 
-ADR 026 adds one framework runtime boundary value before application parsing: `RequestReader` converts the flat PHP upload entry to `RequestUpload`. The operation still parses the complete `Request::$uploads` map into its own narrow value, requires its exact field, exhaustively maps `RequestUploadError`, applies its file limit, and verifies provenance and actual size. Client filename and media type remain untrusted; client `full_path` is discarded.
+ADR 067 adds one framework transport boundary: `RequestReader` uses PHP's explicit native parser and `MultipartForm::fromPhp` validates bounded flat fields and uploads. Field values remain exact strings; operation factories own numbers, booleans, UTF-8, required/unknown fields and cross-field rules. Validate every supplied upload before operation work, exhaustively map `RequestUploadError`, apply operation limits, and verify provenance/actual size. Client filename/media type stay untrusted and full_path is discarded. See `docs/file-transfers/request-ingestion.md` for bounds and normalization limits.
 
 Routing likewise exposes only typed metadata. Choose the narrowest declaration among `positive-int`, `uuid`, `ulid`, and `token`, reserving `token` for genuinely opaque identifiers. Read the value only through the matching `PathParameters::positiveInteger()`, `uuid()`, `ulid()`, or `token()` accessor, then immediately wrap the unchanged value in an application-owned route-specific identifier and apply any narrower domain validation before database work. Do not normalize it, bind or look up a domain object, or fall back between route types.
 

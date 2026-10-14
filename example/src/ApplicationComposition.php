@@ -32,6 +32,7 @@ use PHPThis\Http\InvalidRequest;
 use PHPThis\Http\RequestBodyTooLarge;
 use PHPThis\Http\RequestBoundary;
 use PHPThis\Http\RequestReader;
+use PHPThis\Http\MultipartLimits;
 use PHPThis\Http\Response;
 use PHPThis\Http\UnsupportedMediaType;
 use PHPThis\Http\UnknownFailureBoundary;
@@ -182,7 +183,7 @@ final readonly class ApplicationComposition
 
         return new TerminalRequestCoordinator(
             new RequestBoundary(
-                new RequestReader(8_192, 'php://input', 2_097_152),
+                new RequestReader(8_192, 'php://input', new MultipartLimits(2_097_152, 1_048_576, 1_048_576)),
                 $application,
                 $errorResponses,
             ),

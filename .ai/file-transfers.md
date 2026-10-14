@@ -10,21 +10,16 @@ An adopted record names the exact profile, routes and fields, the dated effectiv
 
 ## Multipart request path
 
-- Only the front controller reads `$_POST` and `$_FILES`; pass both explicitly through the application terminal coordinator and `RequestBoundary` to `RequestReader`.
-- Configure the ordinary body limit, input URI, and a separate positive multipart request limit in the composition root. A `null` multipart limit disables multipart input.
-- Accept multipart only for `POST`, one syntactically bounded boundary parameter, one canonical `Content-Length`, no `Transfer-Encoding`, no parsed text fields, and zero or one normalized flat top-level file entry.
-- Reject nested or multiple file shapes, unknown file metadata keys, wrong runtime types, control bytes, an unreasonable temporary path, contradictory no-file metadata, and reported file bytes greater than the declared multipart request.
-- Do not claim rejection of duplicate raw scalar parts: PHP normalizes them before `RequestReader` and exposes only one scalar entry. A requirement to distinguish them needs an upstream rule or separately accepted raw parser.
-- Deliver only `array<string, RequestUpload>` on immutable `Request::$uploads`. Preserve it when routing creates a request copy.
-- Treat `RequestUpload::$untrustedClientFilename` and `$untrustedClientMediaType` as display-only hostile data. Validate PHP's optional client `full_path`, then discard it.
-- Match `RequestUploadError` exhaustively. An unknown PHP upload error remains an operational failure rather than a client error.
+Follow `docs/file-transfers/request-ingestion.md` for the current API, limits and failures. The sole front controller passes only server/query arrays; `RequestReader` performs one explicit native parse inside `RequestBoundary`, before session begin or handler dispatch. A `null` multipart limit disables multipart input.
+
+- Adopt immutable `MultipartLimits` explicitly; require effective automatic POST parsing off, native uploads on and no earlier body reader. Never fall back to automatically parsed arrays.
+- Receive immutable `MultipartForm` on `Request::$multipart`; its flat string fields and typed uploads use the exact bounded grammar. Preserve it through routing. Parse the complete permitted field/file set into one operation value and handle every upload error before operation I/O.
+- Treat client filename/media type as hostile metadata; validate then discard full_path. Verify provenance and actual size separately. Unknown native upload errors remain operational failures.
+- Native count/request limit exceptions reject the entire parse. PHP still collapses scalar duplicates, normalizes names and can discard malformed parts or accept a missing closing boundary. Record whether that normalized-input contract suits each operation; a stronger requirement needs separately verified upstream strict validation.
 
 ## Pre-PHP ingress policy
 
-- Record dated effective web-SAPI values and owners for proxy and web-server connections, header/body bytes, methods, media types, buffering, timeouts, request rate and concurrency, plus PHP `file_uploads`, `upload_max_filesize`, `post_max_size`, `max_file_uploads`, `max_multipart_body_parts`, `upload_tmp_dir`, and applicable execution/input limits. Name the first layer expected to reject each excess and its observable status, headers, body, or connection-close behavior.
-- Treat `max_multipart_body_parts` as a total raw-part resource bound, not proof that repeated scalar field names were rejected. PHP may reject or stop parsing before PHPThis runs, and normalization may still collapse duplicate scalar parts.
-- Decide explicitly whether that duplicate-raw-part limitation is suitable for each operation. If it is not suitable, require a tested upstream rule or a separately accepted bounded raw multipart parser before adoption; never infer raw multiplicity from `$_FILES`.
-- Align upstream, PHP, transport, and operation bounds and record which owner selects every rejection. An application response test cannot prove a proxy or PHP rejection that occurs before the front controller.
+Record dated effective settings and first rejection owners using `docs/file-transfers/deployment.md`: server/proxy buffering, bytes, timeouts and rate/concurrency; PHP automatic parsing, uploads, explicit parser options, temporary storage, filters, encoding, upload progress and applicable execution/input limits. Verify them through the target SAPI. Normalized aggregate sizes exclude overwritten/discarded parts; raw resource bounds are separate. An application response test cannot certify a proxy or PHP rejection before the front controller.
 
 ## Application-owned local upload policy
 
@@ -57,7 +52,7 @@ For the opened handle, the emitter checks regular-file type and exact expected s
 
 ## Required evidence
 
-Prove the typed runtime shape, every `RequestUploadError`, missing, nested, normalized-multiple, raw-scalar-duplicate limitation and suitability decision, text-field, wrong-media, oversized, unsafe-metadata, provenance, actual-size, move, permission, missing-file, framing, header-control, duplicate-header, pre-header emission failure, complete-byte, full-range-request, and fixed-chunk paths that the application claims. Include a real SAPI request with output written directly to a file, the exact dated effective pre-PHP settings including `max_multipart_body_parts`, and state any uninjectable filesystem/read failures plus PHP, web-server, proxy, buffering, content inspection, quota, lifecycle, request-policy, authorization, tenant, CSRF, and topology limits that remain unproved.
+Prove the typed runtime shape, every `RequestUploadError`, missing, nested, multiple named uploads, mixed/text-only fields, raw-scalar-duplicate and malformed-part limitations with their suitability decision, wrong-media, oversized, unsafe-metadata, provenance, actual-size, move, permission, missing-file, framing, header-control, duplicate-header, pre-header emission failure, complete-byte, full-range-request, and fixed-chunk paths that the application claims. Include a real SAPI request with output written directly to a file, the exact dated effective pre-PHP settings including `max_multipart_body_parts`, and state any uninjectable filesystem/read failures plus PHP, web-server, proxy, buffering, content inspection, quota, lifecycle, request-policy, authorization, tenant, CSRF, and topology limits that remain unproved.
 
 For a protected operation, prove unauthenticated, forbidden, cross-tenant, permitted, unexpected-policy-failure, and applicable CSRF outcomes with no storage lookup or mutation after a denial. Prove temporary and durable root isolation, quota boundaries and concurrent reservation behavior, lifecycle and cleanup outcomes, and every claimed opaque or inspected-content path against the actual selected definition, tools, and versions. `INSPECTED_CONTENT` evidence additionally changes each recorded definition input and proves the exact retained-byte reinspection or explicit no-reinspection policy, bounded progress, availability/quarantine behavior, result transition, and recovery. Static context checks can require the application record and markers; only application-owned behavior, integration, and deployment tests prove the selected mechanisms.
 

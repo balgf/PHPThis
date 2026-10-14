@@ -1,0 +1,140 @@
+{
+  "scope": "Canonical PHPThis front controller in local Nginx/FPM; synthetic inspection action; no production or storage-profile certification",
+  "php": "8.4.19",
+  "nginx": "nginx version: nginx/1.22.1",
+  "source_sha256": {
+    "autoload.php": "d42adabba5221bd5df0c39811591d6c6929b5166dd6cf45c8f37cacc23e0c1e5",
+    "example/public/index.php": "35a717e519a8ccfd54afcaf4b5d67bddffbabf7277f85a80e2d70042ad75d899",
+    "tests/fixtures/multipart-bootstrap.php.fixture": "731d12359543fbf423ac382821f770a5bf194f0a691b810b833c9d578d71ec97",
+    "src/Http/MultipartForm.php": "341d8d2e912f021a8c54d4525e88a2bac78658f71d9bb6f7306b68f2a89637e4",
+    "src/Http/MultipartLimits.php": "d747a79f9e005f3b179ff13d6a623e2e4615e36c335fad72694334fe392b1185",
+    "src/Http/Request.php": "a5d9f2340cf8780506cd6ed1cce01f8f0c571ea0d0a484821fee417e481307f3",
+    "src/Http/RequestReader.php": "e374d375b00421381d3cd65671eaf26bdf16ecd9e2006584cc8a4bad4b98cf45",
+    "src/Http/RequestBoundary.php": "d89a220f36962e7960b550f3fc762f6935588db18b6b12f8abc667f532e2a395",
+    "example/src/Observability/TerminalRequestCoordinator.php": "0835f5c976e3e234a150fa295598dc77639ad50feb1465c3abca772d0a33ec97",
+    "tools/runtime-proof/issue-104/Dockerfile": "37408761cfa2aec7a93a41b4ad7e0c65f7e68dbf3a6c352d41778c466e73cdbc",
+    "tools/runtime-proof/issue-104/README.md": "c611f31b19c967de1e89c7b42519105ba0ff8c90b075993533f956e1000a460d",
+    "tools/runtime-proof/issue-104/probe.py": "277e34e4914d1488c5ffce1479a79fc04ffb2e684db80baf242ce4301491fa05",
+    "tools/runtime-proof/issue-104/run.py": "7a4b84230a82cf07d1e4092424c9b49eb0879a3ee6cb10bd4d799dfea90d1531"
+  },
+  "cases": [
+    {
+      "case": "text_only",
+      "status": 200,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "mixed_multiple",
+      "status": 200,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "all_counts_exact",
+      "status": 200,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "duplicate_field_overflow",
+      "status": 400,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "duplicate_file_overflow",
+      "status": 400,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "raw_part_overflow",
+      "status": 400,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "whole_request_overflow",
+      "status": 413,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "file_size_error",
+      "status": 413,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "aggregate_file_overflow",
+      "status": 413,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "nested_fields",
+      "status": 400,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "collision",
+      "status": 400,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "normalized_duplicates",
+      "status": 200,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "missing_closing_boundary",
+      "status": 200,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "discarded_malformed_file",
+      "status": 200,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "partial_file",
+      "status": 400,
+      "handler_calls": 1,
+      "result": "pass"
+    },
+    {
+      "case": "automatic_parsing_rejected",
+      "status": 500,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "uploads_disabled_rejected",
+      "status": 500,
+      "handler_calls": 0,
+      "result": "pass"
+    },
+    {
+      "case": "short_http_body",
+      "outcome": "connection_closed_before_php",
+      "result": "pass"
+    }
+  ],
+  "temporary_cleanup": "verified",
+  "redaction": "verified",
+  "limits": {
+    "request_bytes": 131072,
+    "file_bytes": 512,
+    "total_file_bytes": 700,
+    "fields": 32,
+    "files": 8,
+    "parts": 40
+  },
+  "image_id": "sha256:339bcc0697fad8faee917fdac42ca6405744d0788cbbbebdcf9bb26e2c70b5ea"
+}

@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
+use Example\Observability\CorrelationId;
+use Example\Observability\ErrorLogRequestSummarySink;
+use Example\Observability\TerminalRequestCoordinator;
+use PHPThis\Application;
+use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\MultipartLimits;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestBodyTooLarge;
+use PHPThis\Http\RequestBoundary;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\RequestReader;
+use PHPThis\Http\RequestUploadError;
+use PHPThis\Http\Response;
+use PHPThis\Http\UnknownFailureBoundary;
+use PHPThis\Http\UnsupportedMediaType;
+use PHPThis\Routing\Route;
+use PHPThis\Routing\Router;
+use PHPThis\Http\CookieSameSite;
+use PHPThis\Session\SessionConfiguration;
+use PHPThis\Session\SessionLifecycle;
+
+// Disposable transport inspection only. This endpoint stores no files.
+final readonly class MultipartFixtureHandler implements RequestHandler
+{
+    public function handle(Request $request): Response
+    {
+        error_log('multipart.fixture_handler');
+        $form = $request->multipart;
+        if ($form === null) {
+            return new Response(200, ['Content-Type' => 'application/json', 'Cache-Control' => 'no-store'],
+                json_encode(['body' => $request->body], JSON_THROW_ON_ERROR));
+        }
+        foreach ($form->uploads as $upload) {
+            match ($upload->error) {
+                RequestUploadError::Success, RequestUploadError::NoFile => null,
+                RequestUploadError::IniSize, RequestUploadError::FormSize => throw new RequestBodyTooLarge('Upload too large.'),
+                RequestUploadError::Partial => throw new InvalidRequest('Upload incomplete.'),
+                RequestUploadError::NoTemporaryDirectory, RequestUploadError::CannotWrite, RequestUploadError::Extension => throw new RuntimeException('Upload unavailable.'),
+            };
+        }
+        $files = [];
+        foreach ($form->uploads as $name => $upload) {
+            $actual = null;
+            if ($upload->error === RequestUploadError::Success) {
+                if (!is_uploaded_file($upload->temporaryPath)) {
+                    throw new RuntimeException('Upload provenance unavailable.');
+                }
+                $actual = filesize($upload->temporaryPath);
+                if (!is_int($actual) || $actual !== $upload->reportedSizeBytes) {
+                    throw new RuntimeException('Upload size mismatch.');
+                }
+            }
+            $files[$name] = ['error' => $upload->error->name, 'bytes' => $upload->reportedSizeBytes, 'actual' => $actual];
+        }
+        if ($request->uploads !== $form->uploads || $request->peerAddress === null) {
+            throw new RuntimeException('Request copy lost transport values.');
+        }
+        return new Response(200, ['Content-Type' => 'application/json', 'Cache-Control' => 'no-store'], json_encode([
+            'fields' => $form->fields, 'files' => $files,
+            'route' => $request->pathParameters->positiveInteger('id'),
+            'settings' => ['automatic' => ini_get('enable_post_data_reading'), 'uploads' => ini_get('file_uploads')],
+        ], JSON_THROW_ON_ERROR));
+    }
+}
+
+$sessions = null;
+$limits = new MultipartLimits(131_072, 512, 700);
+
+return new TerminalRequestCoordinator(
+    new RequestBoundary(
+        new RequestReader(1_024, 'php://input', $limits),
+        new Application(new Router([new Route('POST', '/inspect/{id:positive-int}', new MultipartFixtureHandler())])),
+        new ErrorResponseRegistry([
+            InvalidRequest::class => new Response(400, ['Content-Type' => 'application/json', 'Cache-Control' => 'no-store'], '{"code":"invalid_request"}'),
+            RequestBodyTooLarge::class => new Response(413, ['Content-Type' => 'application/json', 'Cache-Control' => 'no-store'], '{"code":"request_body_too_large"}'),
+            UnsupportedMediaType::class => new Response(415, ['Content-Type' => 'application/json', 'Cache-Control' => 'no-store'], '{"code":"unsupported_media_type"}'),
+        ]), $sessions,
+    ),
+    new UnknownFailureBoundary(), CorrelationId::generate(), new ErrorLogRequestSummarySink(), new DocumentDetailsCacheTrace(), [],
+);

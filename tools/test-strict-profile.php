@@ -1001,7 +1001,7 @@ $canonicalServerHandoffFixture = <<<'PHP'
 
 declare(strict_types=1);
 
-$response = $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);
+$response = $coordinator->handle($_SERVER, $_GET);
 PHP;
 
 requireParseable($canonicalServerHandoffFixture);
@@ -1012,6 +1012,12 @@ requireProfile(
         'failures' => [],
     ],
     'PHT007 rejected the canonical front-controller transport handoff.',
+);
+
+$obsoleteServerHandoff = '<?php $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);';
+requireProfile(
+    count(EnvironmentAccessProfile::inspect($obsoleteServerHandoff, 'public/index.php')['failures']) === 1,
+    'PHT007 accepted the obsolete automatic multipart handoff.',
 );
 
 $invalidServerHandoffFixture = <<<'PHP'
@@ -1027,9 +1033,9 @@ PHP;
 requireParseable($invalidServerHandoffFixture);
 requireProfile(
     EnvironmentAccessProfile::inspect($invalidServerHandoffFixture, 'public/index.php')['failures'] === [
-        'PHT007 public/index.php:5 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
-        'PHT007 public/index.php:6 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
-        'PHT007 public/index.php:7 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER, $_GET, $_POST, and $_FILES to the terminal coordinator or use \getenv in the configuration boundary.',
+        'PHT007 public/index.php:5 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER and $_GET to the terminal coordinator or use \getenv in the configuration boundary.',
+        'PHT007 public/index.php:6 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER and $_GET to the terminal coordinator or use \getenv in the configuration boundary.',
+        'PHT007 public/index.php:7 reads bare $_SERVER outside the canonical front-controller transport handoff; pass exactly $_SERVER and $_GET to the terminal coordinator or use \getenv in the configuration boundary.',
     ],
     'PHT007 accepted a non-canonical bare $_SERVER handoff.',
 );

@@ -670,7 +670,7 @@ function proveRealDocumentFileTransfer(): void
 }
 
 /** @return array{0: resource, 1: int} */
-function startDocumentFileServer(string $temporary, string $serverRoot): array
+function startDocumentFileServer(string $temporary, string $serverRoot, bool $automaticPostParsing = false, bool $fileUploads = true): array
 {
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errorCode, $errorMessage);
 
@@ -694,7 +694,13 @@ function startDocumentFileServer(string $temporary, string $serverRoot): array
             '-d',
             'display_errors=1',
             '-d',
-            'file_uploads=1',
+            'file_uploads=' . ($fileUploads ? '1' : '0'),
+            '-d',
+            'enable_post_data_reading=' . ($automaticPostParsing ? '1' : '0'),
+            '-d',
+            'session.upload_progress.enabled=0',
+            '-d',
+            'mbstring.encoding_translation=0',
             '-d',
             'upload_max_filesize=2M',
             '-d',

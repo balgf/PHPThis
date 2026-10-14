@@ -4,6 +4,18 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 21
+
+[ADR 067](decisions/067-bounded-native-multipart-forms.md) adds bounded native multipart forms. Strict Profile 4 and PHT001–PHT008 remain; PHT007 now recognizes only `$coordinator->handle($_SERVER, $_GET)` as the canonical transport handoff.
+
+Every application updates its sole front controller and terminal coordinator to pass only server/query arrays to `RequestBoundary::handle` and `RequestReader::read`. Remove the parsed field/file arguments even when multipart is disabled. Do not pass the old tuple as extra PHP arguments; the installed checker rejects it.
+
+Multipart adopters replace the reader's third integer argument with `MultipartLimits(maximumRequestBytes, maximumFileBytes, maximumTotalFileBytes)`. Configure and verify the actual web SAPI with `enable_post_data_reading=Off`, `file_uploads=On`, no earlier body reader, and the [deployment controls](file-transfers/deployment.md). Restart affected PHP processes and verify ordinary body, single-file and expanded multipart behavior before activation. `null` still disables multipart and the configuration-free starter remains disabled.
+
+Replace `new Request(..., uploads: $uploads)` with `multipart: MultipartForm::fromPhp($fields, $phpFiles, $declaredBytes, $limits)`. The factory expects native PHP metadata, not preconstructed RequestUpload values. Update positional seventh arguments and application-owned request copies too; preserve peer metadata. Handlers can still read `$request->uploads`; fields live on `$request->multipart->fields` after requiring a non-null form. Observe the new name, count and byte bounds, including client metadata limits, in [request ingestion](file-transfers/request-ingestion.md).
+
+Record the operation's acceptance of PHP normalization: native limit exceptions reject the whole parse, but PHP can discard malformed parts, normalize/collapse names or accept text without a closing boundary. This is not strict raw-body validation. Validate all required/unknown fields and every supplied upload before operation work. Preserve provenance, actual sizes and exhaustive errors. Keep single-file local and S3 operations single-file unless a separately accepted storage policy expands them. Run the complete application gate and real-SAPI migration evidence; dependency installation never edits project-owned instructions or deployment settings.
+
 ### Contract version 20
 
 Contract version 20 carries version 19 and Strict Profile version 4 forward with PHT001–PHT008 unchanged. [ADR 066](decisions/066-server-reported-peer-address.md) adds optional `PeerAddress` metadata. Existing positional/named `Request` calls remain compatible because `peerAddress` is optional and last; manual calls default to `null`. Reader-created requests acquire the server-reported address when present.

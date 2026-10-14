@@ -1,5 +1,7 @@
 # Amazon S3 file-transfer verification
 
+Contract 21 expands native multipart ingress, while `AMAZON_S3_ADR053` remains exactly one file with no operation text fields. Reject additional fields/files before any S3 operation. Mixed/multiple uploads require a separate storage-profile decision and evidence; this guide does not authorize them.
+
 Status: accepted optional guidance under ADR 053 and Consumer Contract version 13. This page defines the application-owned evidence shape for a deliberate `AMAZON_S3_ADR053` adoption; its presence or synthetic framework proof alone is not adoption.
 
 The canonical gate is `file-transfers:s3:verify`. It runs finite local source checks, application behavior evidence, an isolated real-AWS test, and a deployment-evidence verifier. It fails closed when a module, credential, service fact, or dated deployment record is absent. A skip, fake S3 server, local emulator, mock, S3-compatible substitute, or source-only pass is never an adoption or release result.

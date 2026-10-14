@@ -168,7 +168,7 @@ final class FrameworkBehaviorTest extends TestCase
                 'consumer-profile' => 4,
                 'handler-decorator' => 6,
                 'composition' => 2,
-                'http-boundary' => 29,
+                'http-boundary' => 37,
                 'routing' => 18,
                 'input-projection' => 18,
                 'crud' => 11,

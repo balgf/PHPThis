@@ -16,7 +16,7 @@ $genericFailureResponse = (new UnknownFailureBoundary())->respond();
 try {
     /** @var TerminalRequestCoordinator $coordinator */
     $coordinator = require dirname(__DIR__) . '/bootstrap.php';
-    $response = $coordinator->handle($_SERVER, $_GET, $_POST, $_FILES);
+    $response = $coordinator->handle($_SERVER, $_GET);
 } catch (Throwable $failure) {
     $response = $genericFailureResponse;
 
