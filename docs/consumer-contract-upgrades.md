@@ -4,6 +4,12 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 20
+
+Contract version 20 carries version 19 and Strict Profile version 4 forward with PHT001–PHT008 unchanged. [ADR 066](decisions/066-server-reported-peer-address.md) adds optional `PeerAddress` metadata. Existing positional/named `Request` calls remain compatible because `peerAddress` is optional and last; manual calls default to `null`. Reader-created requests acquire the server-reported address when present.
+
+A present malformed `REMOTE_ADDR`, previously ignored, now throws `InvalidRequest` before body/session/handler work. Fix the server source rather than suppressing validation or inventing an address. Missing metadata remains accepted as `null`. Verify the actual ingress/FastCGI source and rewriting before using the value in network policy; forwarding headers never supply a fallback. Update application-owned request copies to retain `peerAddress`. Test unavailable/malformed input and any required-peer denial, then rerun the complete application gate. [Request handling](request-handling.md#server-reported-peer-address) owns formats, provenance and examples. Installation never rewrites project-owned instructions or authorizes deployment changes.
+
 ### Contract version 19
 
 Contract version 19 carries version 18 and Strict Profile version 4 forward with PHT001–PHT008 unchanged. [ADR 065](decisions/065-explicit-framework-error-representations.md) permits optional code-owned `ErrorRepresentation` values for 404, 405 and coordinator-selected 500 responses. Status, `Allow`, cache policy, correlation and the independent built-in outer fallback retain their owners.

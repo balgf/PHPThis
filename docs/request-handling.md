@@ -21,6 +21,39 @@ The path produced by `RequestReader` is non-empty and begins with `/`. Direct `R
 
 Header names in `Request` are lowercase HTTP tokens. Handlers use explicit array access such as `$request->headers['content-type'] ?? null`; PHPThis intentionally provides no generic input or header helper.
 
+## Server-reported peer address
+
+`Request::$peerAddress` is `?PHPThis\Http\PeerAddress`. The canonical reader reads only `REMOTE_ADDR` from the explicitly supplied server array, after method/target validation and before query, header, upload or body parsing. A missing key produces `null`. A present non-string (including explicit `null`), empty, oversized or malformed value throws redacted `InvalidRequest`; the starter/example registry maps it to generic 400 before session begin or handler work. Custom registries retain their exact-class mapping responsibility. No address is invented when metadata is unavailable.
+
+`PeerAddress::fromString(string): PeerAddress` accepts a bare IP literal of at most **45 bytes** through native `FILTER_VALIDATE_IP`. IPv4 has four decimal octets, each 0–255, without leading zeros except `0`. IPv6 may use full or compressed hexadecimal, either letter case, and a valid embedded dotted IPv4 suffix. All syntactically valid ranges are accepted. Hostnames, shortened/integer/hexadecimal IPv4, lists, whitespace/control bytes, brackets, ports, CIDR suffixes and IPv6 zone identifiers are rejected. Invalid factory input throws fixed `InvalidArgumentException`. The constructor is private.
+
+The readonly `address` property preserves accepted bytes exactly. There is no trimming, case folding, normalization or IPv4-mapped conversion. Equivalent IPv6 spellings may differ, so string equality is not general IP equality. Applications own address-family, equality, subnet and allowlist policy. Neither this value nor its factory proves provenance, reachability, authentication or authorization. Direct construction appends optional `peerAddress` after `uploads`; old callers keep `null`. `withPathParameters()` preserves the same value instance along with the other request fields.
+
+`Forwarded`, `X-Forwarded-For`, `X-Real-IP`, `Remote-Addr` and other client headers never supply or replace the peer. They remain subject to ordinary header validation. `REMOTE_HOST` and `REMOTE_PORT` are not read. There are no DNS lookups or other network operations.
+
+### Verify the server source
+
+The guarantee is **validated server-reported `REMOTE_ADDR`**, not the original connection peer or originating user. A server can rewrite it before PHP sees it; PHPThis cannot detect or undo that configuration. The [PHP server-variable documentation](https://www.php.net/manual/en/reserved.variables.server.php) describes the input; the [Nginx real-IP module](https://nginx.org/en/docs/http/ngx_http_realip_module.html) documents rewriting and its original-address variable.
+
+For direct Nginx ingress without real-IP rewriting or PROXY protocol selection, set `fastcgi_param REMOTE_ADDR $remote_addr;`. When real-IP rewriting is deliberately enabled and the application needs the original Nginx connection peer, explicitly select `fastcgi_param REMOTE_ADDR $realip_remote_addr;` instead. Use exactly one effective `REMOTE_ADDR` parameter, inspect inherited/include configuration, and restrict FastCGI access to the intended server. Never bind it to `$http_x_forwarded_for` or another client header. A preceding proxy remains the connection peer; neither variable authenticates an end user.
+
+An application's operations record names its actual ingress, proxy chain, selected source, access restrictions and real-SAPI evidence. Its request-policy record owns trusted-proxy interpretation, address comparison and missing-peer responses. Other SAPIs/topologies and production settings need their own verification. This addition does not qualify the experimental Swoole adapter.
+
+### Require availability in an application
+
+An operation requiring a peer explicitly rejects `null` before protected work. An application-owned `RequestHandler` decorator may use this body with one manually injected `RequestHandler $next`:
+
+```php
+if ($request->peerAddress === null) {
+    return new Response(403, ['Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
+}
+return $this->next->handle($request);
+```
+
+This example's 403 and availability gate are application policy. A present address still needs the operation's actual authorization. `tests/peer-address.php` checks zero protected calls on denial and exact-request delegation on success. Its synthetic SAPI fixture exposes the address only in isolated tests; applications gain no address-disclosure endpoint or automatic peer logging.
+
+Runtime tests cover literals, malformed input, spoofed headers, routing/multipart copies, session/body isolation and the canonical PHP front controller. Installed-consumer checks exercise the distributed API. The optional [Nginx/FPM replay](https://github.com/balgf/PHPThis/tree/main/tools/runtime-proof/issue-103) tests IPv4/IPv6, rewriting, original-peer preservation, unavailable and malformed FastCGI metadata through that controller. These are bounded local proofs, not deployment certification.
+
 ## Query parameters
 
 The top-level query-parameter count is bounded and names must be strings, but values remain external `mixed` data. An operation that accepts query parameters parses the complete array once through its own concrete boundary before I/O. The example `ListUsersPageRequest::fromQuery` accepts either no parameters or exactly one canonical positive-integer string named `after_user_id`; unknown, nested, coercive, padded, signed, and overflowing values fail before database work.
@@ -29,7 +62,7 @@ PHP has already normalized the raw query string into `$_GET` before this boundar
 
 ## Routing metadata
 
-`Router` first attempts direct exact-literal lookup. It then follows the deterministic state index for a path containing at most two full-segment placeholders. Current Consumer Contract version 19 carries version 14's four fixed types forward and requires the narrowest one: `positive-int` is canonical ASCII decimal in the range 1 through `PHP_INT_MAX`; `uuid` is lowercase `[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`; `ulid` is lowercase `[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}`; and `token` is the case-sensitive 1-to-64-byte opaque fallback `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`. The reader's no-decoding rule means `%31` does not become `1`, `%2F` does not create another segment, and an encoded spelling does not become a UUID or ULID. Routing returns bytes unchanged and never trims, case-folds, decodes, or otherwise normalizes them.
+`Router` first attempts direct exact-literal lookup. It then follows the deterministic state index for a path containing at most two full-segment placeholders. Current Consumer Contract version 20 carries version 14's four fixed types forward and requires the narrowest one: `positive-int` is canonical ASCII decimal in the range 1 through `PHP_INT_MAX`; `uuid` is lowercase `[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`; `ulid` is lowercase `[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}`; and `token` is the case-sensitive 1-to-64-byte opaque fallback `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`. The reader's no-decoding rule means `%31` does not become `1`, `%2F` does not create another segment, and an encoded spelling does not become a UUID or ULID. Routing returns bytes unchanged and never trims, case-folds, decodes, or otherwise normalizes them.
 
 The state index is compiled once from explicit `Route` objects. Parameterized declarations whose accepted paths overlap fail at construction rather than relying on registration order, type preference, or backtracking. One compiled state cannot contain differing parameter types or a typed transition beside a parameterized literal transition accepted by that type, even when their later segments differ. A failed `uuid` or `ulid` match never falls back to `token`. Every route sharing a typed transition also shares that transition's parameter name and type regardless of method or later branch. Request-time matching and allowed-method lookup traverse the bounded request path and compiled transitions, not the declared route list or an index collection. Invalid or oversized parameter spellings miss routing before handler or database work; a valid path registered only under another method produces the indexed 405 result.
 
@@ -94,7 +127,7 @@ PHPThis supplies no UUID value object, generator, package choice, database funct
 
 ## Application-owned request-handler decorators
 
-Current Consumer Contract version 19 carries forward ADR 033's optional route-local composition pattern, introduced under version 9 and retained by version 14: an **application-owned request-handler decorator**. The final application class implements the existing `RequestHandler`, receives exactly one downstream `RequestHandler`, and names one narrow concern. It may return an explicit early response without entering downstream or call that downstream exactly once with the exact same immutable `Request` instance.
+Current Consumer Contract version 20 carries forward ADR 033's optional route-local composition pattern, introduced under version 9 and retained by version 14: an **application-owned request-handler decorator**. The final application class implements the existing `RequestHandler`, receives exactly one downstream `RequestHandler`, and names one narrow concern. It may return an explicit early response without entering downstream or call that downstream exactly once with the exact same immutable `Request` instance.
 
 The complete outer-to-inner sequence stays visible beside the affected `Route`. This illustrative shape uses ordinary constructors only:
 
@@ -190,7 +223,7 @@ At emitter entry, both ordinary and local-file responses fail as `ResponseEmissi
 
 Optional 404/405 and coordinator-selected 500 body/content-type configuration follows [Framework error representations](errors.md#framework-error-representations). The owners still control status, `Allow`, cache policy and correlation. The early fallback below always uses an unconfigured `UnknownFailureBoundary`.
 
-After ordinary Composer autoloading, the sole supported HTTP front controller loads `UnknownFailureBoundary` and `Response`, constructs the exact generic response, and begins with `GENERIC` selected. One visible application-owned `Throwable` catch then contains configuration, bootstrap, infrastructure composition, and coordinator invocation. The catch first retains the already-constructed generic response; a protected outer-event attempt cannot alter it, and the protected detailed renderer replaces it only after constructing a complete immutable response. Renderer or renderer-autoload failure remains generic. An alternate deployed HTTP adapter is not Contract-version-19-compatible, and response emission remains outside this catch under the separate current `ResponseEmissionFailed` behavior.
+After ordinary Composer autoloading, the sole supported HTTP front controller loads `UnknownFailureBoundary` and `Response`, constructs the exact generic response, and begins with `GENERIC` selected. One visible application-owned `Throwable` catch then contains configuration, bootstrap, infrastructure composition, and coordinator invocation. The catch first retains the already-constructed generic response; a protected outer-event attempt cannot alter it, and the protected detailed renderer replaces it only after constructing a complete immutable response. Renderer or renderer-autoload failure remains generic. An alternate deployed HTTP adapter is not Contract-version-20-compatible, and response emission remains outside this catch under the separate current `ResponseEmissionFailed` behavior.
 
 The terminal coordinator retains ordinary request parsing, session, routing, handler, registered-failure, unknown-failure, correlation, and summary ownership. A failure it has already converted does not gain details. A failure before the coordinator exists receives no `X-Request-ID` or terminal-summary guarantee. Failures before Composer autoload and generic-response construction complete, uncatchable termination, and failures after response ownership is lost remain outside this application response boundary.
 

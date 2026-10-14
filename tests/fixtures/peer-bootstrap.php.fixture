@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+use Example\Documents\GetDocument\DocumentDetailsCacheTrace;
+use Example\Observability\CorrelationId;
+use Example\Observability\ErrorLogRequestSummarySink;
+use Example\Observability\TerminalRequestCoordinator;
+use PHPThis\Application;
+use PHPThis\Http\ErrorResponseRegistry;
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\Request;
+use PHPThis\Http\RequestBoundary;
+use PHPThis\Http\RequestHandler;
+use PHPThis\Http\RequestReader;
+use PHPThis\Http\Response;
+use PHPThis\Http\UnknownFailureBoundary;
+use PHPThis\Routing\Route;
+use PHPThis\Routing\Router;
+
+// Synthetic inspection endpoint, materialized only in a disposable test application.
+final readonly class PeerFixtureHandler implements RequestHandler
+{
+    public function handle(Request $request): Response
+    {
+        if ($request->peerAddress === null) {
+            return new Response(403, ['Cache-Control' => 'private, no-store'], '{"code":"forbidden"}');
+        }
+        return new Response(200, ['Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store'],
+            json_encode(['peer' => $request->peerAddress->address], JSON_THROW_ON_ERROR));
+    }
+}
+
+return new TerminalRequestCoordinator(
+    new RequestBoundary(
+        new RequestReader(1_024, 'php://input'),
+        new Application(new Router([new Route('POST', '/health', new PeerFixtureHandler())])),
+        new ErrorResponseRegistry([InvalidRequest::class => new Response(400, [
+            'Content-Type' => 'application/json', 'Cache-Control' => 'no-store',
+        ], '{"code":"invalid_request"}')]),
+    ),
+    new UnknownFailureBoundary(), CorrelationId::generate(), new ErrorLogRequestSummarySink(), new DocumentDetailsCacheTrace(), [],
+);

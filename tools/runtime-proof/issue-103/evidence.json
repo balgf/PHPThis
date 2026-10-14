@@ -1,0 +1,81 @@
+{
+  "scope": "Local canonical front controller with synthetic peer inspection handler; no production certification",
+  "php": "8.4.19",
+  "nginx": "nginx version: nginx/1.22.1",
+  "source_sha256": {
+    "autoload.php": "d42adabba5221bd5df0c39811591d6c6929b5166dd6cf45c8f37cacc23e0c1e5",
+    "example/public/index.php": "32f5703bff1052c63e174346d67880de35f7496255018a4e2f0396baee7e2b63",
+    "tests/fixtures/peer-bootstrap.php.fixture": "3b1573a8bedd09f2e80da14f60843715b63a06b4348ecd346b12a7822c544ea0",
+    "src/Http/PeerAddress.php": "18a76d01d8d8e951f60c5e0d28d1a5c453bbc23cf51f86ef6609a3790af9a0b0",
+    "src/Http/Request.php": "19c799339c7fee66f79bf78c0812fd5b93d9677388a28ffd8b6612fe97952c0c",
+    "src/Http/RequestReader.php": "41074375dd84e56d27707999e127f7aad46a82f1920e7d26c35ff4f4e5cac983",
+    "tools/runtime-proof/issue-103/Dockerfile": "37408761cfa2aec7a93a41b4ad7e0c65f7e68dbf3a6c352d41778c466e73cdbc",
+    "tools/runtime-proof/issue-103/README.md": "a65c15e4ec452b1dd46ab64232853ca343c873aff4a856e5d6748cfbf2372afe",
+    "tools/runtime-proof/issue-103/fastcgi.conf": "8e3623c87b213a2ec44e71ab91013b45fadb8108020a3d4e84b6b6ee7608489c",
+    "tools/runtime-proof/issue-103/fpm.conf": "3aba7a59913f2b2c20b60ea911193b7c1117e889523628778546e0b8ada25675",
+    "tools/runtime-proof/issue-103/nginx.conf": "77f2ba9dbb50db877dc4b75eae36d4037435fdd9a3db6ee1506081eb2d604db7",
+    "tools/runtime-proof/issue-103/probe.py": "25fdf8efa32210e7cce16be12f17dd7a544bb8e84fcba6d11f6a34debe511d87",
+    "tools/runtime-proof/issue-103/run.py": "14ff75a1dc15308ddf5fb8edad9951d9a739a11e9dd7165636e1d311c5593e34"
+  },
+  "cases": [
+    {
+      "case": "direct_ipv4",
+      "status": 200,
+      "body": {
+        "peer": "127.0.0.1"
+      },
+      "result": "pass"
+    },
+    {
+      "case": "direct_ipv6",
+      "status": 200,
+      "body": {
+        "peer": "::1"
+      },
+      "result": "pass"
+    },
+    {
+      "case": "rewritten_remote_addr",
+      "status": 200,
+      "body": {
+        "peer": "198.51.100.42"
+      },
+      "result": "pass"
+    },
+    {
+      "case": "preserved_original_peer",
+      "status": 200,
+      "body": {
+        "peer": "127.0.0.1"
+      },
+      "result": "pass"
+    },
+    {
+      "case": "missing_required_peer",
+      "status": 403,
+      "body": {
+        "code": "forbidden"
+      },
+      "result": "pass"
+    },
+    {
+      "case": "malformed_peer",
+      "status": 400,
+      "body": {
+        "code": "invalid_request"
+      },
+      "result": "pass"
+    },
+    {
+      "case": "empty_peer",
+      "status": 400,
+      "body": {
+        "code": "invalid_request"
+      },
+      "result": "pass"
+    }
+  ],
+  "terminal_summaries": 7,
+  "private_log_redaction": "pass",
+  "image_id": "sha256:339bcc0697fad8faee917fdac42ca6405744d0788cbbbebdcf9bb26e2c70b5ea"
+}

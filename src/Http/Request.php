@@ -26,6 +26,7 @@ final readonly class Request
         public array $headers = [],
         ?PathParameters $pathParameters = null,
         array $uploads = [],
+        public ?PeerAddress $peerAddress = null,
     ) {
         $this->pathParameters = $pathParameters ?? PathParameters::none();
         if (preg_match('/^[A-Z]+$/D', $method) !== 1) {
@@ -77,6 +78,7 @@ final readonly class Request
             $this->headers,
             $pathParameters,
             $this->uploads,
+            $this->peerAddress,
         );
     }
 }
