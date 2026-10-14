@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 const AGENT_EVALUATION_CONTROLLER_VERSION = 2;
 const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';
-const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 35;
+const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 36;
 const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;
 const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;
 const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;
@@ -203,7 +203,7 @@ function agentEvaluationControllerRequireFixedTask(array $task): void
         || ($task['comparative_claims'] ?? null) !== false
     ) {
         throw new RuntimeException(
-            'Controller v0.2 supports only change.simple-ping revision 35 without comparative claims.',
+            'Controller v0.2 supports only change.simple-ping revision 36 without comparative claims.',
         );
     }
 

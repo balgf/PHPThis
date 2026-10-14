@@ -157,7 +157,7 @@ final class FrameworkBehaviorTest extends TestCase
 
         self::assertSame(
             [
-                'request-policy' => 22,
+                'request-policy' => 28,
                 'observability' => 13,
                 'jobs' => 11,
                 'cli' => 9,
