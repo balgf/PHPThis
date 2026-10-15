@@ -10,9 +10,11 @@ composer test:generated-s3
 composer analyse
 ```
 
-The SDK lock belongs here; dependencies install under ignored `tmp/generated-s3-vendor`. Root analysis loads their types and checks every recipe PHP file at maximum level with the existing profile. No dependency enters the framework or starter package. Checks use PHP 8.4 with cURL, SimpleXML, PDO SQLite and POSIX, Python 3, and loopback sockets. They need no AWS inputs and perform no AWS calls. `schema.sql.fixture` records the separately provisioned private test/application schema; it is never loaded by runtime commands.
+The SDK lock belongs here; dependencies install under ignored `tmp/generated-s3-vendor`. Root analysis loads their types and checks every recipe PHP file at maximum level with the existing profile. No dependency enters the framework or starter package. Checks use PHP 8.4.1 or a later 8.4.x patch release with cURL, SimpleXML, PDO SQLite and POSIX, Python 3, and loopback sockets. They need no AWS inputs and perform no AWS calls. `schema.sql.fixture` records the separately provisioned private test/application schema; it is never loaded by runtime commands.
 
 The [supply-chain checks](../../SECURITY.md#framework-supply-chain-checks) audit this lockfile alongside the root lockfile and track its updates through Dependabot. Keep dependency updates exact, reviewed and verified by the recipe's offline checks and complete framework gate.
+
+The SDK's transitive `symfony/filesystem` dependency stays on version 8.1 or newer; the recipe's Composer conflict prevents an SDK update from restoring the unsupported 8.0 line. The locked 8.1.9 release requires PHP 8.4.1, which is also this recipe's declared minimum. Review [Symfony's release support](https://symfony.com/releases) when updating the lock; a passing advisory audit does not establish that a release line is maintained.
 
 `tests/lifecycle.php` covers exact generation/reads, uncertain Put outcomes, collision refusal, bounded reconciliation, metadata promotion failure, expiry, quota/history bounds and deletion accounting across fresh operations. `tests/contracts.php` checks source/configuration, subprocess redaction, role separation and locking. `tests/transport.py` sends actual SDK/Guzzle requests to a disposable synthetic HTTP server; its receipt is `tmp/generated-s3-transport.json`. HTTP loopback and shorter timeouts are test composition only. Production composition uses regional HTTPS, the reviewed CA and the accepted two/ten-second bounds.
 

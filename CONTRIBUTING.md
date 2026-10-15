@@ -17,7 +17,7 @@ AI may draft and update a proposed decision record and analyze tradeoffs. A cons
 
 ## Local checks
 
-Use PHP 8.4.x, Composer 2, Git and Python 3, with the PHP extensions required by `composer.json` and the locked development dependencies, including PDO SQLite and `ext-redis ^6.3`. Install Redis server `>=7.4` and `<9.0` plus `redis-cli` on your PATH for the complete gate. Redis is a development test dependency; the framework runtime does not require it.
+Use PHP 8.4.1 or a later 8.4.x patch release, Composer 2, Git and Python 3, with the PHP extensions required by `composer.json` and the locked development dependencies, including PDO SQLite and `ext-redis ^6.3`. The optional generated-S3 dependencies set this maintainer PHP minimum. Install Redis server `>=7.4` and `<9.0` plus `redis-cli` on your PATH for the complete gate. Redis is a development test dependency; the framework runtime does not require it.
 
 From the repository root, install the locked dependencies:
 
