@@ -1,0 +1,10 @@
+{
+  "operation": "catalog-image-v1",
+  "format_allowlist": "PNG-8bit-RGB-or-RGBA-noninterlaced-IHDR-IDAT-IEND-only",
+  "toolchain": "PHP-8.4.26-pngcheck-4.0.1-zlib-1.3.2",
+  "scanner_signatures": "not-applicable-format-integrity-only",
+  "parser_configuration": "full-CRC-exact-inflate-complete-stream-pngcheck-q",
+  "limits": "1048576-bytes-1024x1024-64-chunks-4195328-scanline-bytes",
+  "isolation": "uid65534-network-none-readonly-capdrop-all-64MiB-8pids-2cpu-seconds-10wall-seconds",
+  "application_policy": "LOCAL_ADR026-quarantine-principal-bound-24h-expiry-32files-32MiB-2attempts-reinspect-on-change"
+}

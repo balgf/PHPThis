@@ -2,6 +2,8 @@
 
 Start ordinary multipart-upload, local-file-response, or accepted Amazon S3 profile work with `docs/file-transfers/README.md` and this current guide. Read ADR 026 or ADR 053 only when reviewing or changing the decision itself. Keep transport normalization in core and every storage decision in the application.
 
+For the optional checked still-PNG inspection path, use `docs/file-transfers/inspected-png.md` and its named application policy/source/evidence. Its narrow `INSPECTED_CONTENT` recipe does not change the existing opaque example, starter non-adoption or storage profiles.
+
 ## Checked application adaptation
 
 Keep `.ai/file-transfers.md` in the current skeleton and template as the application's one authoritative adoption record. It contains either the exact standalone marker `NOT_APPLICABLE(FILE_TRANSFER)` or exactly one selected `LOCAL_ADR026` or `AMAZON_S3_ADR053` profile with one complete verified policy for the adopted operations. Other application guides and tests reference that record; they do not create a second writable upload, storage, content, authorization, quota, lifecycle, or emission policy. Preserve the configuration-free starter's non-adoption and the public non-production example's local reference.

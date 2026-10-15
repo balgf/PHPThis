@@ -21,4 +21,6 @@ Quota checks are not a count-then-write race hidden behind a helper. Name the co
 
 Do not extract an interface merely to rename this operation as generic storage. A remote object store, pre-signed delivery, or proxy offload requires an accepted application path and failure contract.
 
+For a concrete local quarantine and inspection lifecycle, follow the optional [checked PNG recipe](inspected-png.md). Its explicit metadata reservation, digest, inspection definition, serving lock and bounded cleanup belong to that application reference; they are not added to `LocalDocumentFiles` or the framework.
+
 Accepted ADR 053 and its [Amazon S3 page](amazon-s3.md) define one such direct-S3 path under `AMAZON_S3_ADR053`. They do not change the `LOCAL_ADR026` storage sequence above, authorize another remote store, or introduce a shared storage interface.

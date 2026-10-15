@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 244) {
-            $failures[] = 'The current framework package inventory must contain exactly 244 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 245) {
+            $failures[] = 'The current framework package inventory must contain exactly 245 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -268,6 +268,7 @@ function distributionGuardrailFailures(
             '@test:database-drivers',
             '@test:query-scaling',
             '@test:mysql-jobs-source',
+            '@test:inspected-media',
             '@test',
         ];
 
@@ -1752,10 +1753,13 @@ function distributionGuardrailFailures(
                     ['example/public/index.php', 'skeleton/public/index.php'],
                     true,
                 ) && $tokenText !== '$_SESSION';
+                $isCatalogFrontControllerInput = $relativePath === 'tools/inspected-media/public/index.php'
+                    && in_array($tokenText, ['$_SERVER', '$_GET'], true);
 
                 if (
                     !$isCanonicalSessionState
                     && !$isFrontControllerInput
+                    && !$isCatalogFrontControllerInput
                     && in_array(
                         $tokenText,
                         ['$_SERVER', '$_GET', '$_POST', '$_COOKIE', '$_FILES', '$_SESSION', '$_ENV', '$_REQUEST'],
