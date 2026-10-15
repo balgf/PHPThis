@@ -50,7 +50,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo, pdo_sqlite, redis, curl, simplexml, posix
@@ -123,7 +123,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP database drivers
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, pdo_mysql, pdo_pgsql, redis
@@ -157,7 +157,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up the checked PHP client
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, pdo_mysql, redis
@@ -186,7 +186,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up the application PHP runtime
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, posix, redis
