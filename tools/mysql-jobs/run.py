@@ -13,7 +13,7 @@ import tempfile
 import time
 import uuid
 
-from process_support import IMAGE, owned_group
+from process_support import IMAGE, failure_details, owned_group, wait_for_mysql
 ROOT = Path(__file__).resolve().parent
 parser = argparse.ArgumentParser()
 parser.add_argument('--cleanup-run')
@@ -21,10 +21,15 @@ parser.add_argument('--evidence', type=Path, default=ROOT.parents[1] / 'tmp/mysq
 args = parser.parse_args()
 
 
-def docker(*arguments, input_bytes=None, timeout=15):
-    result = subprocess.run(['docker', *arguments], input=input_bytes, capture_output=True, timeout=timeout)
-    if result.returncode != 0 or len(result.stdout) > 65536 or len(result.stderr) > 65536:
-        raise RuntimeError('mysql_fixture_docker_failed')
+def docker(*arguments, input_bytes=None, timeout=15, phase='docker'):
+    try:
+        result = subprocess.run(['docker', *arguments], input=input_bytes, capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError('mysql_fixture_' + phase + '_timeout') from None
+    if len(result.stdout) > 65536 or len(result.stderr) > 65536:
+        raise RuntimeError('mysql_fixture_' + phase + '_failed output_limit')
+    if result.returncode != 0:
+        raise RuntimeError('mysql_fixture_' + phase + '_failed ' + failure_details(result.returncode, result.stderr))
     return result.stdout.decode().strip()
 
 
@@ -63,6 +68,26 @@ def prove_stale_cleanup(active_name, active_id):
         if created_expired:
             inspect_owned(expired_name, expired)
             docker('rm', '--force', '--volumes', expired_name)
+
+
+def prove_initialization_not_ready(name, deadline):
+    docker('exec', name, 'sh', '-c',
+           'while [ ! -f /tmp/phpthis-mysql-initializing ]; do sleep 0.1; done',
+           timeout=max(0.001, deadline - time.monotonic()), phase='initialization_control')
+    temporary = docker('exec', name, 'sh', '-c',
+                       'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot -Nse "SELECT @@skip_networking"',
+                       timeout=max(0.001, deadline - time.monotonic()), phase='initialization_control')
+    if temporary != '1':
+        raise RuntimeError('mysql_initialization_control_not_temporary')
+    try:
+        wait_for_mysql(name, timeout=min(2, max(0, deadline - time.monotonic())), phase='initialization_control')
+    except RuntimeError as failure:
+        if not str(failure).startswith('mysql_fixture_initialization_control_timeout '):
+            raise
+    else:
+        raise RuntimeError('temporary_mysql_server_was_accepted')
+    docker('exec', name, 'touch', '/tmp/phpthis-mysql-continue',
+           timeout=max(0.001, deadline - time.monotonic()), phase='initialization_control')
 
 
 if args.cleanup_run:
@@ -113,18 +138,21 @@ with tempfile.TemporaryDirectory(prefix='phpthis-jobs-') as directory:
                '--binlog-format=ROW', '--innodb-buffer-pool-size=64M')
         created = True
         prove_stale_cleanup(name, run_id)
-        docker('start', name)
+        # Pause the real image after root setup, while only its temporary
+        # socket server exists. The hook self-terminates if the runner dies.
+        readiness_gate = private / 'readiness.sh'
+        readiness_gate.write_text(
+            'touch /tmp/phpthis-mysql-initializing\n'
+            'for attempt in {1..300}; do\n'
+            '  if [ -f /tmp/phpthis-mysql-continue ]; then return 0; fi\n'
+            '  sleep 0.1\n'
+            'done\nexit 1\n')
+        readiness_gate.chmod(0o644)
+        docker('cp', str(readiness_gate), name + ':/docker-entrypoint-initdb.d/readiness.sh')
         deadline = time.monotonic() + 75
-        while True:
-            # The service-local shell receives no command-line credential.
-            probe = subprocess.run(['docker', 'exec', name, 'sh', '-c',
-                                    'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot -Nse "SELECT 1"'],
-                                   capture_output=True, timeout=5)
-            if probe.returncode == 0 and probe.stdout == b'1\n':
-                break
-            if time.monotonic() >= deadline:
-                raise RuntimeError('mysql_fixture_startup_timeout')
-            time.sleep(0.2)
+        docker('start', name)
+        prove_initialization_not_ready(name, deadline)
+        wait_for_mysql(name, timeout=max(0, deadline - time.monotonic()), phase='startup')
         sql = (ROOT / 'schema.sql.fixture').read_text()
         # Fixture provisioning only: values are locally generated lowercase hex.
         sql += "\nCREATE USER 'phpthis_jobs_producer'@'%' IDENTIFIED BY '" + passwords['producer'] + "';\n"
@@ -134,7 +162,9 @@ with tempfile.TemporaryDirectory(prefix='phpthis-jobs-') as directory:
         sql += "GRANT SELECT ON phpthis_jobs.welcome_requests TO 'phpthis_jobs_worker'@'%';\n"
         sql += "GRANT SELECT, INSERT, UPDATE (idempotency_key) ON phpthis_jobs.welcome_deliveries TO 'phpthis_jobs_worker'@'%';\n"
         sql += "GRANT SELECT, UPDATE (status, attempts_started, available_at, lease_token, lease_expires_at, updated_at, completed_at, dead_at, last_failure_code) ON phpthis_jobs.application_jobs TO 'phpthis_jobs_worker'@'%';\n"
-        docker('exec', '-i', name, 'sh', '-c', 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot', input_bytes=sql.encode())
+        docker('exec', '-i', name, 'sh', '-c',
+               'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --protocol=TCP --host=127.0.0.1 '
+               '--port=3306 --connect-timeout=2 -uroot', input_bytes=sql.encode(), phase='provisioning')
         port = inspect_owned(name, run_id)['NetworkSettings']['Ports']['3306/tcp'][0]['HostPort']
         dsn = f'mysql:host=127.0.0.1;port={port};dbname=phpthis_jobs;charset=utf8mb4'
         environment = {'PATH': os.environ['PATH'], 'LANG': 'C', 'COMPOSER_HOME': str(private / 'composer')}
@@ -151,7 +181,7 @@ with tempfile.TemporaryDirectory(prefix='phpthis-jobs-') as directory:
                                     env=environment, timeout=300)
         if code != 0:
             # Gate output is fixed and credential-free; do not print native diagnostics.
-            raise RuntimeError('mysql_jobs_gate_failed')
+            raise RuntimeError('mysql_jobs_gate_failed ' + failure_details(code, err))
         if out != b'JOBS VERIFY PASS\n':
             raise RuntimeError('mysql_jobs_gate_output_mismatch')
         version = docker('exec', name, 'sh', '-c', 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot -Nse "SELECT VERSION()"')
@@ -163,6 +193,7 @@ with tempfile.TemporaryDirectory(prefix='phpthis-jobs-') as directory:
         evidence = {'checked_at_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                     'mysql': version, 'image': IMAGE, **client_versions,
                     'command': 'python3 tools/mysql-jobs/run.py',
+                    'readiness': 'temporary server rejected; authenticated TCP ready at startup and restart',
                     'modules': ['publication', 'delivery', 'operations'],
                     'concurrent_processes': 2, 'lease_seconds': 30,
                     'queue_size_samples': [1, 501], 'maximum_delivery_statements': 20,

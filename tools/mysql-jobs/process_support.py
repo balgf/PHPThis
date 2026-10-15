@@ -1,11 +1,52 @@
 """Bounded capture for this disposable fixture's owned subprocesses."""
 import os
+import re
 import selectors
 import signal
 import subprocess
 import time
 
 IMAGE = 'mysql:8.4@sha256:0744ee5ef89ce6ccfa13de3e579fe6b9e27f93dd70da9c06d2c908b1b193fb8d'
+
+
+def wait_for_mysql(name, *, timeout, phase):
+    deadline = time.monotonic() + timeout
+    last = 'probe=not_started'
+    while time.monotonic() < deadline:
+        try:
+            # The image's initialization server has a socket but no TCP listener.
+            # The service-local shell receives no command-line credential.
+            child = subprocess.Popen(
+                ['docker', 'exec', name, 'sh', '-c',
+                 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --protocol=TCP '
+                 '--host=127.0.0.1 --port=3306 --connect-timeout=2 -uroot -Nse "SELECT 1"'],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+            code, out, err = capture(child, min(5, max(0.001, deadline - time.monotonic())), limit=4096)
+            if code == 0 and out == b'1\n' and not err and time.monotonic() < deadline:
+                return
+            last = failure_details(code, err)
+        except (RuntimeError, subprocess.TimeoutExpired) as failure:
+            if str(failure) == 'fixture_process_output_limit':
+                raise RuntimeError('mysql_fixture_' + phase + '_failed probe=output_limit') from None
+            if not isinstance(failure, subprocess.TimeoutExpired) and str(failure) != 'fixture_process_timeout':
+                raise
+            # A short final probe must not erase an earlier useful server code.
+            if last == 'probe=not_started':
+                last = 'probe=timeout'
+        except OSError:
+            raise RuntimeError('mysql_fixture_' + phase + '_failed probe=unavailable') from None
+        time.sleep(min(0.2, max(0, deadline - time.monotonic())))
+    raise RuntimeError('mysql_fixture_' + phase + '_timeout ' + last)
+
+
+def failure_details(code, stderr):
+    """Expose only numeric exit/MySQL codes and a fixed-width SQLSTATE."""
+    match = re.search(rb'(?m)^ERROR ([0-9]{4}) \(([A-Z0-9]{5})\)', stderr[:4096])
+    detail = 'exit=' + str(code)
+    if match:
+        detail += ' mysql_error=' + match[1].decode('ascii') + ' sqlstate=' + match[2].decode('ascii')
+    return detail
 
 
 def capture(child, timeout, limit=65536):
