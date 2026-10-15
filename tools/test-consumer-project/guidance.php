@@ -1142,6 +1142,13 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
     }
 
     $orderedReleaseMarkers = [
+        '### Supply-chain prerequisites',
+        '`PHP 8.4 validity`',
+        '`PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.11)`',
+        '`MySQL 8.4.11 durable welcome work`',
+        '`Inspected PNG quarantine and resource bounds`',
+        '`Dependency audit`',
+        '`Workflow security`',
         '### 1. Freeze the release candidate',
         'Do not push it before the local proof in Step 2 passes.',
         '### 2. Prove the framework candidate',
@@ -1150,7 +1157,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
         'git-export-parity=verified',
         'git-export-parity=skipped-dirty',
         'After the complete local gate passes, confirm the authorization record permits pushing the exact framework candidate commit',
-        'GitHub CI passes both the PHP 8.4 validity job and the SQLite/MySQL/PostgreSQL PDO transport job for that exact pushed candidate commit.',
+        'All six required checks in the supply-chain prerequisites pass for that exact pushed candidate commit.',
         '### 3. Publish the framework prerelease',
         'Create the approved framework prerelease tag from the proven commit',
         'push that exact tag to the approved remote',

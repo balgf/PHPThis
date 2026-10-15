@@ -36,6 +36,23 @@ def php(path, *args, env=None, timeout=30):
     return run([PHP, '-d', 'display_errors=0', '-d', 'log_errors=0', str(HERE / path), *args], env=env, timeout=timeout)
 
 
+def checked_parser_result(code, out, err):
+    if code != 0 or err != b'':
+        # Accept only this fixture's finite case/stage protocol; never echo a
+        # PHP exception, Docker stream, pathname, image reference or input byte.
+        failure = re.fullmatch(
+            rb'REAL_PARSER_FAIL (setup_(?:arguments|definition|fixtures|fault_definition|report)'
+            rb'|format_(?:valid_rgb|valid_rgba|large_pipe_input|maximum_dimensions|svg|missing_iend'
+            rb'|truncated_idat|bad_crc|short_row|missing_row|extra_decoded|expansion_bomb|bad_filter'
+            rb'|oversize_dimension|forbidden_metadata|animation|trailing_bytes|file_byte_limit)_(?:inspect|cleanup)'
+            rb'|resource_(?:exit|output|cpu|memory|timeout)_(?:inspect|container_state|cleanup)'
+            rb'|resource_timeout_elapsed) cleanup=(not_started|passed|failed)\n', err)
+        if code == 1 and out == b'' and failure is not None:
+            raise RuntimeError('real_parser_' + failure[1].decode() + '_cleanup_' + failure[2].decode())
+        raise RuntimeError('real_parser_failed')
+    return json.loads(out)
+
+
 def image_id(tag):
     code, out, err = run(DOCKER + ['image', 'inspect', '--format', '{{.Id}}', tag])
     require(code == 0 and err == b'' and re.fullmatch(rb'sha256:[0-9a-f]{64}\n', out), 'image_identity')
@@ -109,8 +126,7 @@ def main():
     update = image_id('phpthis-inspected-media:issue108-update')
     recovery = image_id('phpthis-inspected-media:issue108-recovery')
     code, out, err = php('tests/real-parser.php', image, faults, timeout=100)
-    require(code == 0 and err == b'', 'real_parser_failed')
-    parser_evidence = json.loads(out)
+    parser_evidence = checked_parser_result(code, out, err)
     root = ROOT / 'tmp' / ('png-proof-' + uuid.uuid4().hex)
     children = []
     worker_env = ENV | {'PHPTHIS_PNG_WORKER_ROOT': str(root), 'PHPTHIS_PNG_WORKER_IMAGE': image}

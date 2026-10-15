@@ -31,6 +31,12 @@ require dirname(__DIR__, 3) . '/verification/EnvironmentAccessProfile.php';
 function verifyCatalogContracts(): void
 {
     $root = dirname(__DIR__);
+    $diagnostics = runBoundedMaintainerProcess(
+        ['python3', $root . '/test_parser_diagnostics.py', PHP_BINARY], $root, [], 10_000, 4096, 4096,
+    );
+    requireCatalogProof($diagnostics === [
+        'exit_code' => 0, 'stdout' => "PASS PNG parser diagnostic controls\n", 'stderr' => '',
+    ]);
     foreach (InspectionDefinition::sources() as $relative) {
         if (!str_ends_with($relative, '.php')) { continue; }
         $source = file_get_contents($root . '/' . $relative);

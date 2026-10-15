@@ -17,6 +17,8 @@
         "required_status_checks": [
           {"context": "PHP 8.4 validity", "integration_id": 15368},
           {"context": "PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.11)", "integration_id": 15368},
+          {"context": "MySQL 8.4.11 durable welcome work", "integration_id": 15368},
+          {"context": "Inspected PNG quarantine and resource bounds", "integration_id": 15368},
           {"context": "Dependency audit", "integration_id": 15368},
           {"context": "Workflow security", "integration_id": 15368}
         ]
