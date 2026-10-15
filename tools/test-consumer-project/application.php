@@ -129,9 +129,9 @@ function proveInstalledOneShotWorkerSupervisionGuidanceDistribution(
         ],
         $installedFramework . '/docs/jobs.md' => [
             'Status: current optional guidance under accepted [ADR 052]',
-            'PHPThis currently accepts this backend-neutral application-owned contract and one checked backend-specific profile: the application-owned [SQLite recipe](jobs/sqlite.md) recorded by ADR 024.',
+            'PHPThis currently accepts this backend-neutral application-owned contract with checked [SQLite](jobs/sqlite.md) and [MySQL](jobs/mysql.md) recipes, each limited to its recorded evidence.',
             'The minimum successful-publication invariant keeps work recoverable or deliverable within its named fault envelope',
-            'The accepted [SQLite profile](jobs/sqlite.md) remains the first and only checked profile under its existing ADR 024 evidence;',
+            'The accepted [SQLite profile](jobs/sqlite.md) remains the first checked profile under its existing ADR 024 evidence;',
             'The stricter exact service/client version and real-service bar above applies to every profile added under ADR 052.',
         ],
         $installedFramework . '/docs/jobs/sqlite.md' => [

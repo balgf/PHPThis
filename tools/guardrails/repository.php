@@ -2098,7 +2098,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== 'caaeab30d2d9cd369cc8904ab3d31370cae014a3837d6589a0c80cf27823ad82'
+        $jobsVerificationModuleFingerprint !== 'fd9856c0fb8cf03bd2e8e350d69285d2e806131fe39210b9349bf37dc55fd5fc'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
@@ -4083,8 +4083,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 36",
-            "'manifest_sha256' => '26a59befdccf90f1a90aa55875f7b1760fe8e2ad07ecb0d1c3c6fe2636660e95'",
+            "'revision' => 37",
+            "'manifest_sha256' => 'db31022826d8d3552ef852cd21939426dae0ab688708546c39fad205f3edc5ad'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
             'agentEvaluationComparisonSchedule',
             'agentEvaluationComparisonFixture',
@@ -4168,11 +4168,11 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 36',
+            '"revision": 37',
             '"model_tokens": 1000000',
             '"source-skeleton"',
-            '"tree": "72d3bcf2e703a57b933995defff7fca049fe2679"',
-            '"fixture_sha256": "f335994e8acb4031986aad93e7e0eb4b406e2d1da1a9f577ad51ca794db7971c"',
+            '"tree": "a5b1b8b96d7519883ef0c219f30d0ad45c3834e8"',
+            '"fixture_sha256": "4228386335dde53d4113673dc2eda46d82c35dc14079179e5ecb3736f3b9441f"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -4333,7 +4333,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 36 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 37 with `comparative_claims: false`.',
             'Missing or unverifiable live controls fail closed',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -4348,8 +4348,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 36;',
-            'Controller v0.2 supports only change.simple-ping revision 36 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 37;',
+            'Controller v0.2 supports only change.simple-ping revision 37 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',

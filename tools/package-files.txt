@@ -133,6 +133,7 @@ docs/jobs.md
 docs/jobs/README.md
 docs/jobs/envelope.md
 docs/jobs/lifecycle.md
+docs/jobs/mysql.md
 docs/jobs/operations.md
 docs/jobs/schema.md
 docs/jobs/sqlite.md

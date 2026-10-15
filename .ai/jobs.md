@@ -1,6 +1,6 @@
 # Durable jobs contract
 
-PHPThis accepts the optional [backend-neutral contract](../docs/jobs.md) and [verification structure](../docs/jobs/verification.md) under ADR 052. Its first and only checked backend-specific profile remains [application-owned SQLite durable jobs](../docs/jobs/sqlite.md) under [ADR 024](../docs/decisions/024-application-owned-sqlite-durable-jobs.md). Do not generalize the SQLite profile.
+PHPThis accepts the optional [backend-neutral contract](../docs/jobs.md) and [verification structure](../docs/jobs/verification.md) under ADR 052. Its first checked backend-specific profile remains [application-owned SQLite durable jobs](../docs/jobs/sqlite.md) under [ADR 024](../docs/decisions/024-application-owned-sqlite-durable-jobs.md). For MySQL work, use the checked [MySQL welcome-work recipe](../docs/jobs/mysql.md) and its independent real-service evidence. Do not generalize either profile.
 
 For an ADR 024 task, start with the checked SQLite profile and use [externally supervised one-shot durable jobs](../docs/jobs/operations.md) when continual consumption or worker deployment is involved. Preserve its same-connection SQLite transaction, bounded JSON, finite dispatch, one-row `UPDATE ... RETURNING` claim, fresh opaque lease-token fencing, one-shot worker, finite retry and dead-letter policy, idempotent database effect, redaction, statement bounds, subprocess recovery, external supervision, and exact tested outcomes. These are profile-specific mechanisms, not defaults for another backend.
 

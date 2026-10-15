@@ -1,11 +1,13 @@
 # Durable-job knowledge index
 
-Use this index when a task concerns deferred work. PHPThis currently accepts the optional [backend-neutral contract](../jobs.md) and [verification structure](verification.md) under ADR 052. Its first and only checked backend-specific profile remains [application-owned SQLite durable jobs](sqlite.md) under ADR 024.
+Use this index when a task concerns deferred work. PHPThis currently accepts the optional [backend-neutral contract](../jobs.md) and [verification structure](verification.md) under ADR 052. Its first checked backend-specific profile remains [application-owned SQLite durable jobs](sqlite.md) under ADR 024.
 
 Current optional common route:
 
 - [Backend-neutral contract](../jobs.md): exact adoption record, publication and recovery, envelope, real delivery semantics, effects, retry, lifecycle, operations, checker boundary and optional-profile model.
 - [Verification structure](verification.md): backend-neutral evidence matrix, one application-owned `jobs:verify` entrypoint, three explicit modules and complete-gate wiring.
+
+The checked [MySQL welcome-work recipe](mysql.md) has its own schema, bounded one-shot operation and real-service crash/concurrency evidence. It records a database receipt, not email delivery.
 
 Current accepted SQLite profile:
 

@@ -1,0 +1,44 @@
+CREATE DATABASE phpthis_jobs CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+USE phpthis_jobs;
+
+CREATE TABLE welcome_requests (
+    idempotency_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+    recipient_email VARCHAR(254) COLLATE utf8mb4_bin NOT NULL,
+    job_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
+    requested_at BIGINT NOT NULL CHECK (requested_at >= 0)
+) ENGINE=InnoDB;
+
+CREATE TABLE application_jobs (
+    job_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+    envelope_json TEXT COLLATE utf8mb4_bin NOT NULL,
+    status VARCHAR(12) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    attempts_started TINYINT NOT NULL CHECK (attempts_started BETWEEN 0 AND 3),
+    available_at BIGINT NOT NULL CHECK (available_at >= 0),
+    lease_token CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    lease_expires_at BIGINT NULL,
+    created_at BIGINT NOT NULL CHECK (created_at >= 0),
+    updated_at BIGINT NOT NULL CHECK (updated_at >= 0),
+    completed_at BIGINT NULL,
+    dead_at BIGINT NULL,
+    last_failure_code VARCHAR(40) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    next_action_at BIGINT GENERATED ALWAYS AS (
+        CASE WHEN status = 'available' THEN available_at WHEN status = 'leased' THEN lease_expires_at ELSE NULL END
+    ) STORED,
+    INDEX due_job (next_action_at, job_id),
+    CHECK (REGEXP_LIKE(job_id, '^[0-9a-f]{32}$', 'c')),
+    CHECK (OCTET_LENGTH(envelope_json) BETWEEN 2 AND 2048),
+    CHECK (last_failure_code IS NULL OR last_failure_code IN ('invalid_envelope', 'handler_failure', 'lease_expired_after_final_attempt')),
+    CHECK (
+        (status = 'available' AND attempts_started < 3 AND lease_token IS NULL AND lease_expires_at IS NULL AND completed_at IS NULL AND dead_at IS NULL)
+        OR (status = 'leased' AND attempts_started >= 1 AND lease_token IS NOT NULL AND REGEXP_LIKE(lease_token, '^[0-9a-f]{32}$', 'c') AND lease_expires_at IS NOT NULL AND lease_expires_at >= 0 AND completed_at IS NULL AND dead_at IS NULL)
+        OR (status = 'succeeded' AND attempts_started >= 1 AND lease_token IS NULL AND lease_expires_at IS NULL AND completed_at IS NOT NULL AND completed_at >= 0 AND dead_at IS NULL)
+        OR (status = 'dead' AND attempts_started >= 1 AND lease_token IS NULL AND lease_expires_at IS NULL AND completed_at IS NULL AND dead_at IS NOT NULL AND dead_at >= 0)
+    )
+) ENGINE=InnoDB;
+
+CREATE TABLE welcome_deliveries (
+    idempotency_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+    recipient_email VARCHAR(254) COLLATE utf8mb4_bin NOT NULL,
+    created_at BIGINT NOT NULL CHECK (created_at >= 0),
+    FOREIGN KEY (idempotency_key) REFERENCES welcome_requests (idempotency_key)
+) ENGINE=InnoDB;

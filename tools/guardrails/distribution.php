@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 243) {
-            $failures[] = 'The current framework package inventory must contain exactly 243 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 244) {
+            $failures[] = 'The current framework package inventory must contain exactly 244 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -267,6 +267,7 @@ function distributionGuardrailFailures(
             '@test:consumer',
             '@test:database-drivers',
             '@test:query-scaling',
+            '@test:mysql-jobs-source',
             '@test',
         ];
 

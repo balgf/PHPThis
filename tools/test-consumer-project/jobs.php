@@ -146,16 +146,23 @@ function proveInstalledBackendNeutralJobsVerificationReference(
             'after the application reports publication success, the intent or message survives producer/request termination and remains recoverable or deliverable until acknowledgement, a terminal outcome, or an explicit finite cancellation or expiry',
             'it is not permission to call Redis Pub/Sub, process memory, after-response work or another fire-and-forget path durable.',
             'Where delivery ownership or session liveness expires, record maximum handler duration relative to that window',
-            'The accepted [SQLite profile](jobs/sqlite.md) remains the first and only checked profile under its existing ADR 024 evidence;',
+            'The accepted [SQLite profile](jobs/sqlite.md) remains the first checked profile under its existing ADR 024 evidence;',
             'The stricter exact service/client version and real-service bar above applies to every profile added under ADR 052.',
             'This accepted optional guidance left Consumer Contract version 12 unchanged; current Consumer Contract version 21 carries version 19 and this guidance forward under Strict Profile version 4 and diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/jobs/README.md' => [
             'PHPThis currently accepts the optional [backend-neutral contract](../jobs.md) and [verification structure](verification.md) under ADR 052.',
-            'Its first and only checked backend-specific profile remains [application-owned SQLite durable jobs](sqlite.md) under ADR 024.',
+            'Its first checked backend-specific profile remains [application-owned SQLite durable jobs](sqlite.md) under ADR 024.',
+            '[MySQL welcome-work recipe](mysql.md)',
+        ],
+        $installedFramework . '/docs/jobs/mysql.md' => [
+            '# Application-owned MySQL durable welcome work',
+            'It sends no email.',
+            'SELECT ... FOR UPDATE SKIP LOCKED',
+            'Installing PHPThis alone does not install or execute this reference.',
         ],
         $installedFramework . '/docs/jobs/verification.md' => [
-            'Status: current optional guidance under accepted ADR 052. The [checked SQLite profile](sqlite.md) and ADR 024 remain the first and only checked backend-specific evidence.',
+            'Status: current optional guidance under accepted ADR 052. The [checked SQLite profile](sqlite.md) and ADR 024 remain the first checked backend-specific evidence.',
             'This structure organizes application evidence. It is not a backend validator, PHPThis checker extension, queue adapter, transport simulation, or proof of production topology.',
             'When no business database commit, outbox or relay applies, the application records its initiating-state semantics, including explicit non-applicability, and the exact direct-publication and recovery mechanism',
             'the isolated real-service gate asserts the selected service or API identity and version, client version, and every safely observable or pinned version-controlled durability, persistence and topology feature',
@@ -198,7 +205,7 @@ function proveInstalledBackendNeutralJobsVerificationReference(
             'The canonical application evidence script is `jobs:verify`',
         ],
         $project . '/.ai/testing.md' => [
-            'accepted ADR 052 supplies optional backend-neutral requirements, while ADR 024 remains the current first and only checked backend-specific SQLite profile.',
+            'accepted ADR 052 supplies optional backend-neutral requirements, while ADR 024 remains the current first checked backend-specific SQLite profile.',
         ],
     ];
     requireInstalledArtifactMarkers($artifactMarkers, 'backend-neutral jobs verification reference');
