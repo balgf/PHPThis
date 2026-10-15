@@ -17,7 +17,7 @@ The [catalog reference](https://github.com/balgf/PHPThis/tree/main/tools/inspect
 
 This subset rejects many valid PNGs: metadata/color-profile chunks, palettes, grayscale, interlacing, animation and other bit depths. JPEG, WebP, SVG, audio and video have no inspection claim. Neither filename nor submitted MIME type chooses the classifier. No rendering, transcoding, antivirus scanning, streaming or range playback is implied.
 
-The application first validates the envelope, CRCs, dimensions, exact bounded scanlines and complete zlib stream consumption, then requires `pngcheck -q` success on the same bytes. The retained adversarial proof shows why both are needed: pngcheck alone accepted some incomplete or excess decoded image data. Successful format inspection is not a general content-safety guarantee.
+The application first validates the envelope, CRCs, dimensions, exact bounded scanlines and complete zlib stream consumption, then requires `pngcheck -q` success on the same bytes. Both checks must pass before promotion. Successful format inspection is not a general content-safety guarantee.
 
 ## Visible lifecycle
 

@@ -15,9 +15,19 @@ try {
     $definition = InspectionDefinition::fromImageId($argv[1], dirname(__DIR__));
     $inspector = new DockerPngInspector($definition);
     $valid = catalogPng();
+    $largePixels = '';
+    for ($row = 0; $row < 512; $row++) {
+        $largePixels .= "\0";
+        for ($block = 0; $block < 48; $block++) {
+            $largePixels .= hash('sha256', 'row/' . $row . '/block/' . $block, true);
+        }
+    }
+    $largePng = catalogPng(512, 512, raw: $largePixels);
+    requireCatalogProof(strlen($largePng) > 700_000 && strlen($largePng) < 1_048_576);
     $cases = [
         ['valid_rgb', $valid, InspectionOutcome::Accepted],
         ['valid_rgba', catalogPng(colour: 6), InspectionOutcome::Accepted],
+        ['large_pipe_input', $largePng, InspectionOutcome::Accepted],
         ['maximum_dimensions', catalogPng(1024, 1024, 6), InspectionOutcome::Accepted],
         ['svg', '<svg/>', InspectionOutcome::Rejected],
         ['missing_iend', substr($valid, 0, -12), InspectionOutcome::Rejected],
@@ -47,7 +57,8 @@ try {
         $token = bin2hex(random_bytes(16));
         $started = hrtime(true);
         try {
-            requireCatalogProof($faults->inspect($mode . "\n", $token) === InspectionOutcome::ScannerError);
+            $input = $mode . "\n" . ($mode === 'timeout' ? str_repeat('x', 1_048_000) : '');
+            requireCatalogProof($faults->inspect($input, $token) === InspectionOutcome::ScannerError);
             $observed = runBoundedMaintainerProcess(['docker', '--host', 'unix:///var/run/docker.sock', 'inspect', '--format',
                 '{{.State.OOMKilled}} {{.HostConfig.Memory}} {{.HostConfig.MemorySwap}} {{.HostConfig.ReadonlyRootfs}} {{.HostConfig.NetworkMode}} {{.Config.User}} {{.HostConfig.PidsLimit}}', 'phpthis-catalog-' . $token],
                 '/', ['PATH' => '/usr/local/bin:/usr/bin:/bin'], 3_000, 8192, 8192);

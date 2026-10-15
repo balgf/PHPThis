@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "verified_at": "2026-10-15T02:34:11.524995+00:00",
+  "verified_at": "2026-10-15T02:37:57.335365+00:00",
   "scope": "disposable single-host reference; no production adoption or malware-safety claim",
   "host_php": "8.4.19",
   "inspector_php": "8.4.26",
@@ -14,6 +14,7 @@
     "format_cases": [
       "valid_rgb",
       "valid_rgba",
+      "large_pipe_input",
       "maximum_dimensions",
       "svg",
       "missing_iend",
@@ -51,7 +52,7 @@
   "cleanup": "owned processes, containers, upload temporaries and retained fixture removed",
   "source_sha256": {
     "tools/inspected-media/.ai/configuration.md": "376b2b2124652a3a72dcfbf99aec86675e122c6b64b28bafcf9d85f7265b994c",
-    "tools/inspected-media/.ai/file-transfers.md": "14cb8b47225a715f80d65be2dea72fde2d7b978c7cc97f9d4cf951d9ccd3ae03",
+    "tools/inspected-media/.ai/file-transfers.md": "39e195eff557671b1114e3a59157c0c4bd0721da9c1658fa3bde4deb8d48469c",
     "tools/inspected-media/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
     "tools/inspected-media/Dockerfile": "7156c62022b81c634327e2cfa46ea5add1ff3e9be0c1f13c4c08ef9de15bd55d",
     "tools/inspected-media/README.md": "9b2c2b5e37fac98843feba1b2fae30b3fc115853a9db67097b6d5c1ef4253989",
@@ -73,7 +74,7 @@
     "tools/inspected-media/src/CatalogRoot.php": "d97f3c976fe46dd831ed09a087d1b71dbcb794da0acd5a5288773a5d8bf02021",
     "tools/inspected-media/src/CatalogSettings.php": "b4c29cf4ebdf6b71d3b33717f431ae596426d7b0dbbee734863ebc175d58bf27",
     "tools/inspected-media/src/Configuration.php": "5d8143ba3b8343b8e225ec69e8983242cf5ac94bd24d1fb44430c63975418d58",
-    "tools/inspected-media/src/DockerPngInspector.php": "67a7a295a1134e2d04866270b18dae4216e1f71a1838e3b8ba802a942e8c7c39",
+    "tools/inspected-media/src/DockerPngInspector.php": "079dfdbef08edfb1f9e1a4606826447e3def2fb073100c2d17bd871ff49e63fa",
     "tools/inspected-media/src/DownloadCatalogImage.php": "ed74720413ab8894246dee65342b36a75cb11c0419b36387d517fc3b216f5c72",
     "tools/inspected-media/src/Failures.php": "28b05f8d158ab88c050c7064278c2d522244320860c5a4c7e436e94c68a07fdb",
     "tools/inspected-media/src/ImageId.php": "2c4822693e7b6db2819b9625fa48fb97c8fdcff98ed5f17689e0d563158d647e",
@@ -93,7 +94,7 @@
     "tools/inspected-media/tests/lifecycle.php": "87c62efb29a43a78489514cde842fadc1b484052d2dc49f3d8af44841b876a4c",
     "tools/inspected-media/tests/parser.php": "6e15ec09709ba6ea6dfeb7c1f7c8289131cb7050a8e343f9bf8761f348063c23",
     "tools/inspected-media/tests/provision.php": "2064fa222dda384e9effebc927a40700bc7ed77d7cfdcc370a33fc61cd441dec",
-    "tools/inspected-media/tests/real-parser.php": "e30a91198477b2d17b900b1abe70b860422f479f2641f12b02431c565221cbb8",
+    "tools/inspected-media/tests/real-parser.php": "c094bdcb9b17a942ce002884942e9ef74d61e20b38c588a1b25dd8f9f0ea0180",
     "tools/inspected-media/tests/update.Dockerfile": "2f12df41d9e042260c9b15cc9afd74e0549acccb0878765bcfda46637cdae1fe"
   }
 }

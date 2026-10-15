@@ -52,25 +52,32 @@ final readonly class DockerPngInspector implements PngInspector
      */
     private function capture(array $arguments, string $input, int $seconds): ?array
     {
-        $source = tmpfile();
-        if ($source === false) { return null; }
         $process = null;
         $pipes = [];
         try {
-            if (fwrite($source, $input) !== strlen($input) || !rewind($source)) { return null; }
             // Only the supervisor has local daemon authority. No inherited app environment.
             $process = @proc_open(
                 ['docker', '--host', 'unix:///var/run/docker.sock', ...$arguments],
-                [0 => $source, 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes,
+                [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes,
                 '/', ['PATH' => '/usr/local/bin:/usr/bin:/bin'],
             );
             if (!is_resource($process)) { return null; }
+            stream_set_blocking($pipes[0], false);
             stream_set_blocking($pipes[1], false);
             stream_set_blocking($pipes[2], false);
+            $offset = 0;
             $out = '';
             $err = '';
             $deadline = hrtime(true) + $seconds * 1_000_000_000;
             do {
+                if (isset($pipes[0])) {
+                    if ($offset < strlen($input)) {
+                        $written = @fwrite($pipes[0], substr($input, $offset, 8192));
+                        if ($written === false) { return null; }
+                        $offset += $written;
+                    }
+                    if ($offset === strlen($input)) { fclose($pipes[0]); unset($pipes[0]); }
+                }
                 $a = stream_get_contents($pipes[1], 8193 - strlen($out));
                 $b = stream_get_contents($pipes[2], 8193 - strlen($err));
                 if ($a === false || $b === false) { return null; }
@@ -98,7 +105,6 @@ final readonly class DockerPngInspector implements PngInspector
                 foreach ($pipes as $pipe) { fclose($pipe); }
                 if (!$status['running']) { proc_close($process); }
             }
-            fclose($source);
         }
     }
 }
