@@ -2,6 +2,8 @@
 
 Status: accepted by the accountable maintainer on 2026-10-15 for offline implementation. Real AWS execution and production adoption remain unapproved and unverified. Consumer Contract 22; Strict Profile 4 and PHT001–PHT008 remain unchanged.
 
+Scope refinement accepted on 2026-10-15: offline tests are sufficient for the reference recipe; real S3 and deployment verification are deferred until application adoption. This replaces the initial requirement to keep #109 open for live AWS evidence. It changes reference completion criteria, with no consumer migration or change to Contract 22's adoption requirements.
+
 ## Need and decision
 
 Issue [#109](https://github.com/balgf/PHPThis/issues/109) needs application-generated artifacts and internal object reads. ADR 053 only describes PHP uploads and protected redirects. Extend its optional `AMAZON_S3_ADR053` profile with one concrete inventory-export operation. Keep its upload provenance, bucket, versioning, KMS, credential, transport, ownership and reconciliation requirements.
@@ -18,6 +20,6 @@ The reference selects single-host nonblocking flock, separate writer/reader/reco
 
 ## Evidence and migration
 
-[Generated exports](../file-transfers/generated-exports.md) owns current guidance and routes the executable reference. Offline checks prove application behavior and pinned SDK loopback transport only. They cannot prove Amazon S3, IAM, KMS, TLS deployment or production durability. The adoption gate fails closed while these facts are absent; #109 stays open.
+[Generated exports](../file-transfers/generated-exports.md) owns current guidance and routes the executable reference. The existing offline recipe tests and complete framework `composer check` suffice for reference completion and #109. They prove application behavior and pinned SDK loopback transport, while retaining `REFERENCE_ONLY` status. They cannot prove Amazon S3, IAM, KMS, TLS deployment or production durability. The application-adoption gate continues to fail closed until its real-service and deployment evidence exists; it is not a reference-completion gate.
 
 Existing applications keep their adopted upload/redirect or local policy. Adoption of the generated mode is explicit in the single application `.ai/file-transfers.md`; HTTP-only fields become explicitly inapplicable for a CLI-only operation. Keep the original seven-role upload/redirect verifier unchanged. The generated mode requires its own reviewed source, behavior, real-service and deployment modules under `file-transfers:s3:verify`. Dependency updates do not migrate metadata or authorize cloud work.
