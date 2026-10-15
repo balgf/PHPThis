@@ -34,3 +34,7 @@ Keep selected storage, quota accounting, inspection, cleanup, retention, deletio
 REFERENCE_ONLY(AMAZON_S3_FILE_TRANSFER_GUIDANCE)
 
 ADR 053 and Consumer Contract version 13 accept the optional `AMAZON_S3_ADR053` profile, including its narrow direct-response exception without `nosniff`. The skeleton remains `NOT_APPLICABLE(FILE_TRANSFER)` and contains no AWS package, lock entry, configuration, credential source, client, route, checker, network call, or evidence. The reference marker routes a future deliberate adoption; it does not adopt or prove the profile.
+
+NOT_APPLICABLE(GENERATED_S3_EXPORTS)
+
+The health-only starter generates no artifacts and reads no S3 objects. Optional Contract 22 adoption follows `vendor/phpthis/framework/docs/file-transfers/generated-exports.md` and requires its own real AWS/deployment evidence.

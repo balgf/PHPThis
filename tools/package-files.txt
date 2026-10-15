@@ -9,9 +9,11 @@ bin/phpthis
 composer.json
 docs/ai-context-routing-review.md
 docs/architecture.md
+docs/decisions/068-generated-s3-inventory-exports.md
 docs/design-goals.md
 docs/caching.md
 docs/coordination.md
+docs/file-transfers/generated-exports.md
 docs/redis-coordination.md
 docs/redis/README.md
 docs/redis/adoption.md

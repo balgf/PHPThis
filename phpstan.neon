@@ -3,6 +3,8 @@ includes:
     - verification/phpstan/extension.php
 
 parameters:
+    bootstrapFiles:
+        - tools/generated-s3/dependencies.php
     level: max
     strictRules:
         allRules: true

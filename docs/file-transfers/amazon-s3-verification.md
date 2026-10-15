@@ -1,5 +1,7 @@
 # Amazon S3 file-transfer verification
 
+This seven-role checker verifies the original HTTP upload/redirect path. Contract 22's [generated exports](generated-exports.md) require their own explicit source, behavior, real-AWS and deployment modules through `file-transfers:s3:verify`. Do not treat this checker or an offline generated-reference pass as evidence for those modules.
+
 Contract 21 expands native multipart ingress, while `AMAZON_S3_ADR053` remains exactly one file with no operation text fields. Reject additional fields/files before any S3 operation. Mixed/multiple uploads require a separate storage-profile decision and evidence; this guide does not authorize them.
 
 Status: accepted optional guidance under ADR 053 and Consumer Contract version 13. This page defines the application-owned evidence shape for a deliberate `AMAZON_S3_ADR053` adoption; its presence or synthetic framework proof alone is not adoption.

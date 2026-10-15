@@ -1,0 +1,9 @@
+# Export console
+
+`console.php` is the only application console. It accepts exactly `generate`, `verify <id>`, `reconcile-one <id>` or `expire-one <id>`. Identity is exactly 32 lowercase hexadecimal characters. Unknown commands and invalid/extra/missing arguments reject before configuration and application I/O. No polling, scheduler, migration, second command spelling or child dispatch is adopted.
+
+Generate selects writer inputs; verify reader inputs; reconcile-one reconciler inputs; expire-one deletion inputs. Each invocation composes a fresh Connection (16 statements), trace (16 fingerprints), SDK client and lock. Use an external supervisor with a 60-second deadline and measured OS limit. Commands can be repeated deliberately, but generation always allocates a new identity; it is not an idempotent business request API.
+
+Exit 0 emits one newline-terminated JSON object with ordered `command`, `outcome` fields and empty stderr. Outcomes are generated, verified, reconciled, unresolved, not_due, deleted or already_deleted. `unresolved` is expected bookkeeping, never successful cleanup or adoption. Exit 2 emits only `unknown_command` or `invalid_arguments` as an error JSON on stderr. Exit 1 emits only `command_failed`. No ID, path, payload, configuration value or SDK exception is printed. Automation must inspect the authoritative private metadata for identities; console success is not a receipt from a client.
+
+The file-transfer owner defines the operation and lock lifecycle. Native PHP error display must be off and exception arguments omitted in a deployed CLI; operator-controlled logging also must not disclose configuration or SDK payloads. The tests use fresh subprocesses for argument/configuration rejection, role separation and an expected no-I/O outcome; successful remote command behavior remains part of the AWS phase.

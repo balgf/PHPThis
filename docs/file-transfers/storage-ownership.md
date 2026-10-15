@@ -1,5 +1,7 @@
 # Storage ownership
 
+For application-generated artifacts and internal object reads, follow [generated S3 exports](generated-exports.md) under Contract 22 / ADR 068. They retain the shared ownership, quota and reconciliation rules while using generated memory bytes rather than HTTP-upload provenance. The local path below is unchanged.
+
 Storage is an application operation, not a framework backend abstraction. Under `LOCAL_ADR026`, the example's one concrete `LocalDocumentFiles` owns this visible sequence:
 
 1. verify upload error, operation byte limit, `is_uploaded_file`, and actual size;

@@ -1,0 +1,23 @@
+{
+  "name": "phpthis/generated-s3-reference",
+  "description": "Optional application-owned generated inventory exports; offline reference, awaiting AWS evidence.",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": "8.4.*",
+    "aws/aws-sdk-php": "3.392.1",
+    "guzzlehttp/guzzle": "8.0.2",
+    "ext-curl": "*",
+    "ext-json": "*",
+    "ext-pcre": "*",
+    "ext-pdo_sqlite": "*",
+    "ext-posix": "*",
+    "ext-simplexml": "*"
+  },
+  "scripts": {
+    "test": "php ../test-generated-s3.php",
+    "test:transport": "python3 tests/transport.py",
+    "file-transfers:s3:verify": "php verify-adoption.php"
+  },
+  "config": { "allow-plugins": false, "vendor-dir": "../../tmp/generated-s3-vendor" }
+}

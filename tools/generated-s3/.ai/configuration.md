@@ -1,0 +1,9 @@
+# Export process configuration
+
+`src/ReferenceEnvironment.php` is the only environment reader. Each of WRITER, READER, RECONCILER and DELETION has its own exact `PHPTHIS_EXPORT_<ROLE>_` inputs: ROOT, BUCKET, REGION, ACCOUNT, KMS, CA_PATH, CA_SHA256, ACCESS_KEY, SECRET, TOKEN, EXPIRES. The source spells every literal name. There are no aliases, dotenv loader, combined credentials, ambient AWS profile or fallback.
+
+The matching final process configuration contains one validated immutable S3 settings value. All fields are mandatory. Root/CA paths are bounded absolute paths; the target rejects reserved buckets, unsupported partitions and cross-account/region or alias/multi-region KMS identities. The CA file must be bounded, regular, readable, non-symlink and match its reviewed hash; its immutable image origin is a deployment obligation.
+
+Credentials are one explicit supervisor-injected short-lived ASIA access key, 40-byte secret, bounded session token and epoch expiry, with more than 120 seconds and at most 12 hours remaining. `CredentialProvider::fromCredentials` is explicitly memoized. Acquisition/refresh HTTP is not applicable in this process: the external supervisor rotates the tuple and restarts the command. Missing, malformed, expired or unavailable credentials fail without fallback. The external clock must be synchronized; supervisor acquisition/authority and actual AWS credential behavior remain unverified.
+
+Configuration reads have no application I/O. Composition verifies the CA/lifetime, then the private root/lock, and opens fresh Connection/budget/trace and SDK client. Do not log values, exceptions, arguments, keys, digests or SDK bodies. The application file-transfer policy owns actions, bounds and remaining deployment decisions. Composer aliases contain no input values.
