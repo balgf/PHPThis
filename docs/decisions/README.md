@@ -128,4 +128,4 @@ Accepted [ADR 065](065-explicit-framework-error-representations.md) introduces C
 
 Accepted [ADR 067](067-bounded-native-multipart-forms.md) introduces Consumer Contract 21 native multipart parsing, immutable fields/uploads and explicit PHP normalization limits. It supersedes ADR 026 multipart ingress only; application storage and delivery policies retain their owners.
 
-Accepted [ADR 068](068-generated-s3-inventory-exports.md) introduces Consumer Contract 22 for optional application-owned generated S3 inventory exports and bounded internal reads. Offline implementation is approved; actual AWS and deployment evidence remain required for adoption.
+Accepted [ADR 068](068-generated-s3-inventory-exports.md) introduces Consumer Contract 22 for optional application-owned generated S3 inventory exports and bounded internal reads. Its accepted scope refinement makes offline tests and the complete framework gate sufficient for reference completion; actual AWS and deployment verification are deferred until application adoption, when they remain required.
