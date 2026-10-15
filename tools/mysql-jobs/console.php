@@ -13,11 +13,15 @@ use PHPThis\Database\QueryBudget;
 use PHPThis\Database\QueryTrace;
 
 try {
-    require __DIR__ . '/bootstrap.php';
-    if ($argc !== 2 || $argv[1] !== 'jobs:run-one') {
-        fwrite(STDERR, "{\"error\":\"invalid_command\"}\n");
+    if (($argv[1] ?? null) !== 'jobs:run-one') {
+        fwrite(STDERR, "{\"error\":\"unknown_command\"}\n");
         exit(2);
     }
+    if ($argc !== 2) {
+        fwrite(STDERR, "{\"error\":\"invalid_arguments\"}\n");
+        exit(2);
+    }
+    require __DIR__ . '/bootstrap.php';
     $configuration = ReferenceEnvironment::forWorker();
     $connection = Connection::connect($configuration->dsn, new QueryBudget(32), new QueryTrace(32), WorkerConfiguration::USERNAME, $configuration->password, [PDO::ATTR_TIMEOUT => 2]);
     MySqlWelcomeSession::configure($connection);

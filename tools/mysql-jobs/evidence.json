@@ -1,5 +1,5 @@
 {
-  "checked_at_utc": "2026-10-15T00:36:57Z",
+  "checked_at_utc": "2026-10-15T00:50:56Z",
   "mysql": "8.4.11",
   "image": "mysql:8.4@sha256:0744ee5ef89ce6ccfa13de3e579fe6b9e27f93dd70da9c06d2c908b1b193fb8d",
   "php": "8.4.19",
@@ -20,9 +20,9 @@
   "maximum_delivery_statements": 20,
   "source_sha256": {
     "tools/mysql-jobs/bootstrap.php": "8f1de3fcda78b75e5644ef97f663ce43cc5d8acf38b97a68d72b4970cf00da9e",
-    "tools/mysql-jobs/console.php": "2addaaff1fc5cb3240b797d46dbd9302f3de3e93712e146290692e3c056fbbdc",
+    "tools/mysql-jobs/console.php": "062d0c3ec59603dc44967c719388e1e837b416f36d65d9ce70eadaacfc851f66",
     "tools/mysql-jobs/process_support.py": "64e5aee5bb35c24debf646b7116815f9af5bc23250be9a0d6029c1d1755b2f49",
-    "tools/mysql-jobs/run.py": "5cc99b0644cc546c867a36435159f279b7dfe70763540ad70ee73485b890ef2f",
+    "tools/mysql-jobs/run.py": "4d8d5d57648374b0de8807def7a60a96b55d20785fe4f756e3ee58b6e04ec2cd",
     "tools/mysql-jobs/schema.sql.fixture": "92d1785963727bca0fb6a6a4d8026fbc3b7deb007e4e2e6a87a7eebaef9c3ccd",
     "tools/mysql-jobs/src/FixtureRun.php": "943a6abe26fc1198ecb59145868f180b64a4b2fec0c9420c0b6b5cdf2fd97c17",
     "tools/mysql-jobs/src/MySqlWelcomeClock.php": "2d5db7cf7a053a55ac6a070ac36678b3c3d088960e7eca238c941a20c9a3d6ea",
@@ -37,7 +37,7 @@
     "tools/mysql-jobs/src/WelcomeLeaseLost.php": "fd95ac3ffe4f5ceac04dfbb0a7e2b363fe48b5d938a08bc388c91c5813ad72d1",
     "tools/mysql-jobs/src/WorkerConfiguration.php": "8a9ac078423b6863d16c7f303f99b6b617e4aaddb9f46b8aa59e5d032cb98ad0",
     "tools/mysql-jobs/tools/probe-worker.php": "184ecedad7a4dd3c172dee345378699ab8e9848dac3a4a519da272821d9232ef",
-    "tools/mysql-jobs/tools/processes.py": "4b71723e326c89c571afba10953b2bb1845151d7f4c9a49ee45a4f1faf12f2ff",
+    "tools/mysql-jobs/tools/processes.py": "9e8f06d7a9f8d00fb36891683f9e3ce310d141941e20728c6e76f4f6bccc8773",
     "tools/mysql-jobs/tools/verify-jobs/Fixture.php": "a93aad4ec7b8e5590540c3fdccc4c4cfdf45936f4b73a487a9cfa0a46447556a",
     "tools/mysql-jobs/tools/verify-jobs/delivery.php": "ebc9593699a70ab8959be61c17146de2fa862aef7ab1f8bd2a887d1635833920",
     "tools/mysql-jobs/tools/verify-jobs/operations.php": "ff75c22ff1fcc2bc6e765221c56f1ffd349969d1a8e8583eaadb773c4aa30c30",

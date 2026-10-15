@@ -56,8 +56,8 @@ try {
 } catch (InvalidArgumentException) {
 }
 requireMySqlReference(runMySqlReferenceControl(__DIR__ . '/mysql-jobs/console.php', ['jobs:run-one']) === ['exit_code' => 1, 'stdout' => '', 'stderr' => "{\"error\":\"command_failed\"}\n"]);
-requireMySqlReference(runMySqlReferenceControl(__DIR__ . '/mysql-jobs/console.php', ['unknown']) === ['exit_code' => 2, 'stdout' => '', 'stderr' => "{\"error\":\"invalid_command\"}\n"]);
-requireMySqlReference(runMySqlReferenceControl(__DIR__ . '/mysql-jobs/console.php', ['jobs:run-one', 'extra']) === ['exit_code' => 2, 'stdout' => '', 'stderr' => "{\"error\":\"invalid_command\"}\n"]);
+requireMySqlReference(runMySqlReferenceControl(__DIR__ . '/mysql-jobs/console.php', ['unknown']) === ['exit_code' => 2, 'stdout' => '', 'stderr' => "{\"error\":\"unknown_command\"}\n"]);
+requireMySqlReference(runMySqlReferenceControl(__DIR__ . '/mysql-jobs/console.php', ['jobs:run-one', 'extra']) === ['exit_code' => 2, 'stdout' => '', 'stderr' => "{\"error\":\"invalid_arguments\"}\n"]);
 requireMySqlReference(runMySqlReferenceControl(__DIR__ . '/mysql-jobs/tools/verify-jobs.php') === ['exit_code' => 1, 'stdout' => '', 'stderr' => "JOBS VERIFY FAIL\n"]);
 
 // Exercise only entrypoint control flow here, never label synthetic modules as

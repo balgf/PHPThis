@@ -75,6 +75,19 @@ if args.cleanup_run:
     print('PASS exact abandoned MySQL run cleanup')
     raise SystemExit(0)
 
+php = subprocess.run(['php', '-r', 'echo json_encode(["php" => PHP_VERSION, "pdo_mysql" => phpversion("pdo_mysql"), "mysqlnd" => phpversion("mysqlnd")]);'], capture_output=True, timeout=5, check=True)
+if len(php.stdout) > 256:
+    raise RuntimeError('invalid_client_version_report')
+client_versions = json.loads(php.stdout)
+# setup-php selects the available patch of its requested minor series. Retain
+# exact observed clients and reject future drift before provisioning a service.
+if client_versions not in (
+    {'php': '8.4.19', 'pdo_mysql': '8.4.19', 'mysqlnd': 'mysqlnd 8.4.19'},
+    {'php': '8.4.26', 'pdo_mysql': '8.4.26', 'mysqlnd': 'mysqlnd 8.4.26'},
+):
+    raise RuntimeError('unreviewed_client_version')
+print('MYSQL JOBS CLIENT ' + json.dumps(client_versions, sort_keys=True), flush=True)
+
 run_id = uuid.uuid4().hex
 name = 'phpthis-jobs-' + run_id
 print('MYSQL JOBS FIXTURE ' + run_id, flush=True)
@@ -142,10 +155,8 @@ with tempfile.TemporaryDirectory(prefix='phpthis-jobs-') as directory:
         if out != b'JOBS VERIFY PASS\n':
             raise RuntimeError('mysql_jobs_gate_output_mismatch')
         version = docker('exec', name, 'sh', '-c', 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot -Nse "SELECT VERSION()"')
-        php = subprocess.run(['php', '-r', 'echo json_encode(["php" => PHP_VERSION, "pdo_mysql" => phpversion("pdo_mysql"), "mysqlnd" => phpversion("mysqlnd")]);'], capture_output=True, timeout=5, check=True)
-        client_versions = json.loads(php.stdout)
-        if version != '8.4.11' or client_versions != {'php': '8.4.19', 'pdo_mysql': '8.4.19', 'mysqlnd': 'mysqlnd 8.4.19'}:
-            raise RuntimeError('unreviewed_service_or_client_version')
+        if version != '8.4.11':
+            raise RuntimeError('unreviewed_service_version')
         sources = sorted(path for path in ROOT.rglob('*') if path.is_file() and path.suffix in ('.php', '.py', '.fixture') and '__pycache__' not in path.parts)
         sources += [ROOT / 'composer.json', ROOT.parents[1] / 'src/Database/Connection.php']
         sources += sorted((ROOT.parents[1] / 'example/src/Jobs').glob('*.php'))

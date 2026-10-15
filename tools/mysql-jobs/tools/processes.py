@@ -166,8 +166,8 @@ def run(case):
     elif case in ('completed', 'idle', 'dead_lettered', 'retry_scheduled'):
         console(case)
     elif case == 'console-rejection':
-        finish(start(['console.php', 'unknown']), b'', 2, b'{"error":"invalid_command"}\n')
-        finish(start(['console.php', 'jobs:run-one', 'extra']), b'', 2, b'{"error":"invalid_command"}\n')
+        finish(start(['console.php', 'unknown']), b'', 2, b'{"error":"unknown_command"}\n')
+        finish(start(['console.php', 'jobs:run-one', 'extra']), b'', 2, b'{"error":"invalid_arguments"}\n')
     else:
         raise RuntimeError('unknown_process_case')
 
