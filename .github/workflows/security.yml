@@ -32,7 +32,11 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Audit locked production and development dependencies
+      - name: Audit locked root production and development dependencies
+        run: composer audit --locked --no-interaction --format=plain
+
+      - name: Audit locked generated S3 reference dependencies
+        working-directory: tools/generated-s3
         run: composer audit --locked --no-interaction --format=plain
 
   workflow-security:
