@@ -50,7 +50,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo, pdo_sqlite, redis, curl, simplexml, posix
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload maintainer test reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: php-${{ matrix.php }}-maintainer-test-reports
           path: |
@@ -123,7 +123,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP database drivers
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, pdo_mysql, pdo_pgsql, redis
@@ -157,7 +157,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up the checked PHP client
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, pdo_mysql, redis
@@ -170,7 +170,7 @@ jobs:
       - name: Verify isolated MySQL publication, delivery and recovery
         run: python3 tools/mysql-jobs/run.py
       - name: Upload redacted MySQL evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mysql-durable-work-evidence
           path: tmp/mysql-jobs-evidence.json
@@ -186,7 +186,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up the application PHP runtime
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, posix, redis
@@ -204,7 +204,7 @@ jobs:
       - name: Verify parser, upload lifecycle and real resource failures
         run: python3 tools/inspected-media/run.py
       - name: Upload redacted inspection evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: inspected-png-evidence
           path: tmp/inspected-media-evidence.json

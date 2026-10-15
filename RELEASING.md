@@ -22,7 +22,7 @@ Record authority separately for source preparation; exact candidate approval; fr
 
 Before approving a future candidate, verify the effective framework repository settings and record the result in the release work item. Configuration files and earlier successful checks do not prove continuing remote enforcement.
 
-- `main` must reject deletion and force pushes and require successful `PHP 8.4 validity`, `PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.11)`, `Dependency audit`, and `Workflow security` checks from the GitHub Actions app. Require an up-to-date base. The reviewed ruleset has no routine bypass; push a topic branch and prove its commit before advancing `main`. Independent review is required when a trusted reviewer is available; do not invent a second approver for a sole-maintainer project. If a check name changes, update the required check alongside the workflow and verify the result.
+- `main` must reject deletion and force pushes and require successful `PHP 8.4 validity`, `PDO transport (SQLite 3.45.1, MySQL 8.4.11, PostgreSQL 17.11)`, `MySQL 8.4.11 durable welcome work`, `Inspected PNG quarantine and resource bounds`, `Dependency audit`, and `Workflow security` checks from the GitHub Actions app. Require an up-to-date base. The reviewed ruleset has no routine bypass; push a topic branch and prove its commit before advancing `main`. Independent review is required when a trusted reviewer is available; do not invent a second approver for a sole-maintainer project. If a check name changes, update the required check alongside the workflow and verify the result.
 - Existing `v*` release tags must reject updates and deletion without a routine bypass. Restrict creation of new `v*` tags to repository administrators. An administrator can still change repository rules, so these settings do not eliminate account-compromise risk. Any emergency rule change needs explicit human authorization and a recorded reason, affected refs, restoration, and verification.
 - GitHub immutable releases must be enabled before publishing a new framework release. Create a draft, attach and verify any intended assets, then publish it only at the existing authorized release step. Verify the resulting release's `immutable` state and attestation. This does not retroactively make Alpha 7 or another historical GitHub release immutable. Never rewrite, re-sign, or move an existing tag to retrofit these controls.
 - Future framework release tags must be annotated and cryptographically signed by an approved maintainer key. Before tag creation, record the approved public key identity and verify the signing setup using a disposable local repository. Verify each new tag with `git verify-tag`, confirm its target matches the approved candidate, and record the verification before pushing. Keep private keys and recovery material outside the repository and evidence. A verified signature establishes an approved signer, not code safety; Composer does not automatically verify Git tag signatures or GitHub release attestations. Packagist's immutable non-dev source/distribution references are a separate control.
@@ -43,13 +43,13 @@ The reviewable framework ruleset payloads are in `.github/rulesets/` in the sour
 
 ### 2. Prove the framework candidate
 
-Run from the framework repository root:
+Prepare the tools and PHP extensions in [CONTRIBUTING.md's local checks](CONTRIBUTING.md#local-checks). From the clean framework repository root, validate the package metadata:
 
 ```bash
 composer validate --strict
-composer install --no-interaction --no-progress --prefer-dist
-composer check
 ```
+
+Then follow that guide's two locked dependency installations, disposable Redis setup and readiness checks, complete `composer check` with those endpoints, and cleanup. These are maintainer verification prerequisites; the consumer installation path in Step 5 is unchanged.
 
 - [ ] The complete local gate passes without a baseline, suppression, skipped required driver, or modified dependency source.
 - [ ] `composer test:consumer` builds the release archive, matches the complete Composer and Git export inventory, installs a mirrored package into a clean skeleton, passes its adversarial controls, and finishes with `git-export-parity=verified` for this exact clean candidate.
@@ -57,7 +57,7 @@ composer check
 - [ ] The framework archive contains exactly `tools/package-files.txt`; `bin/phpthis` remains executable.
 - [ ] Release notes name the supported surface, exclusions, known limitations, and any breaking change without claiming evidence the candidate does not have.
 - [ ] After the complete local gate passes, confirm the authorization record permits pushing the exact framework candidate commit, push it without modification, and record the pushed commit.
-- [ ] GitHub CI passes both the PHP 8.4 validity job and the SQLite/MySQL/PostgreSQL PDO transport job for that exact pushed candidate commit.
+- [ ] All six required checks in the supply-chain prerequisites pass for that exact pushed candidate commit. Record the CI and Security run URLs, including the real MySQL durable-work and PNG inspection results, and verify that the effective `main` rules require those same checks from the GitHub Actions app. Skipped jobs and a local ruleset file alone do not satisfy this gate.
 
 ### 3. Publish the framework prerelease
 
