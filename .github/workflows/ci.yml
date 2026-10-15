@@ -201,6 +201,8 @@ jobs:
           docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 -f tools/inspected-media/tests/fault.Dockerfile -t phpthis-inspected-media:issue108-faults tools/inspected-media
           docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 -f tools/inspected-media/tests/update.Dockerfile -t phpthis-inspected-media:issue108-update tools/inspected-media
           docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 --label phpthis.fixture-recovery=third -f tools/inspected-media/tests/update.Dockerfile -t phpthis-inspected-media:issue108-recovery tools/inspected-media
+      - name: Observe repeated memory-fault state
+        run: php -d display_errors=0 -d log_errors=0 tools/inspected-media/tests/memory-observation.php "$(docker image inspect --format '{{.Id}}' phpthis-inspected-media:issue108-faults)"
       - name: Verify parser, upload lifecycle and real resource failures
         run: python3 tools/inspected-media/run.py
       - name: Upload redacted inspection evidence
