@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 // Test-image supervisor only. Keeping PID 1 alive preserves the kernel counters
 // until the allocating child has been reaped, independently of Docker events.
-function memoryFaultOomKills(): ?int
+/**
+ * @phpstan-impure
+ * @return array{oom: int, oom_kill: int}|null
+ */
+function memoryFaultCounters(): ?array
 {
     $events = @file_get_contents('/sys/fs/cgroup/memory.events', false, null, 0, 4096);
     if (!is_string($events) || strlen($events) === 4096
-        || preg_match('/^oom_kill ([0-9]{1,9})$/m', $events, $match) !== 1) {
+        || preg_match('/^oom ([0-9]{1,9})$/m', $events, $oom) !== 1
+        || preg_match('/^oom_kill ([0-9]{1,9})$/m', $events, $kills) !== 1) {
         return null;
     }
-    return (int) $match[1];
+    return ['oom' => (int) $oom[1], 'oom_kill' => (int) $kills[1]];
 }
 
 function runMemoryFault(string $mode): int
 {
     // A fresh cgroup-v2 container is required; absent evidence never passes.
-    if (memoryFaultOomKills() !== 0) { return 88; }
+    if (memoryFaultCounters() !== ['oom' => 0, 'oom_kill' => 0]) { return 88; }
     $program = match ($mode) {
         "memory\n" => "echo strlen(str_repeat('x', 268_435_456));",
         "memory_small\n" => "echo strlen(str_repeat('x', 1024));",
@@ -36,11 +41,13 @@ function runMemoryFault(string $mode): int
         do {
             $status = proc_get_status($child);
             if (!$status['running']) {
-                $kills = memoryFaultOomKills();
-                if ($kills === null) { return 88; }
-                if ($status['signaled'] && $status['termsig'] === 9 && $kills === 1) { return 86; }
-                if ($status['signaled'] && $status['termsig'] === 9 && $kills === 0) { return 89; }
-                if (!$status['signaled'] && $status['exitcode'] === 0 && $kills === 0) { return 87; }
+                $events = memoryFaultCounters();
+                if ($events === null) { return 88; }
+                if ($status['signaled'] && $status['termsig'] === 9
+                    && $events['oom'] > 0 && $events['oom_kill'] === 1) { return 86; }
+                if ($events !== ['oom' => 0, 'oom_kill' => 0]) { return 88; }
+                if ($status['signaled'] && $status['termsig'] === 9) { return 89; }
+                if (!$status['signaled'] && $status['exitcode'] === 0) { return 87; }
                 return 88;
             }
             usleep(10_000);

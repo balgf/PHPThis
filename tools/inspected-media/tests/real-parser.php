@@ -88,7 +88,7 @@ try {
                 '/', ['PATH' => '/usr/local/bin:/usr/bin:/bin'], 3_000, 8192, 8192);
             requireCatalogProof($termination['exit_code'] === 0 && $termination['stderr'] === '');
             if ($mode === 'memory') {
-                // Exit 86 requires a SIGKILL and a fresh kernel oom_kill event.
+                // Exit 86 requires SIGKILL plus fresh kernel oom/oom_kill events.
                 // Docker's asynchronously delivered OOMKilled flag can be lost.
                 requireCatalogProof(in_array($termination['stdout'], ["false 86 true\n", "false 86 false\n"], true));
             } elseif ($mode === 'memory_small' || $mode === 'memory_kill') {
