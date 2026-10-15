@@ -49,6 +49,7 @@
         "test:database-drivers": "php tools/test-database-drivers.php",
         "test:query-scaling": "php tools/test-query-scaling.php",
         "test:mysql-jobs-source": "php tools/test-mysql-jobs.php",
+        "test:inspected-media": "php tools/test-inspected-media.php",
         "test:profile": "php tools/test-strict-profile.php",
         "check": [
             "@guard",
@@ -62,6 +63,7 @@
             "@test:database-drivers",
             "@test:query-scaling",
             "@test:mysql-jobs-source",
+            "@test:inspected-media",
             "@test"
         ]
     },

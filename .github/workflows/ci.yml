@@ -172,3 +172,37 @@ jobs:
           name: mysql-durable-work-evidence
           path: tmp/mysql-jobs-evidence.json
           if-no-files-found: error
+
+  inspected-png:
+    name: Inspected PNG quarantine and resource bounds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the application PHP runtime
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, posix, redis
+          coverage: none
+          tools: composer:v2
+      - name: Install locked dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Build the pinned PNG inspector
+        run: docker build -t phpthis-inspected-media:issue108 tools/inspected-media
+      - name: Build deliberate resource-failure and update controls
+        run: |
+          docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 -f tools/inspected-media/tests/fault.Dockerfile -t phpthis-inspected-media:issue108-faults tools/inspected-media
+          docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 -f tools/inspected-media/tests/update.Dockerfile -t phpthis-inspected-media:issue108-update tools/inspected-media
+          docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 --label phpthis.fixture-recovery=third -f tools/inspected-media/tests/update.Dockerfile -t phpthis-inspected-media:issue108-recovery tools/inspected-media
+      - name: Verify parser, upload lifecycle and real resource failures
+        run: python3 tools/inspected-media/run.py
+      - name: Upload redacted inspection evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: inspected-png-evidence
+          path: tmp/inspected-media-evidence.json
+          if-no-files-found: error

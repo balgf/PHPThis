@@ -1,0 +1,12 @@
+{
+    "name": "phpthis/inspected-png-reference",
+    "description": "Optional application-owned catalog PNG inspection reference.",
+    "type": "project",
+    "license": "MIT",
+    "scripts": {
+        "test": "php ../test-inspected-media.php",
+        "verify:live": "python3 run.py",
+        "check": "@test"
+    },
+    "config": { "allow-plugins": false }
+}
