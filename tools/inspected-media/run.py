@@ -45,7 +45,7 @@ def checked_parser_result(code, out, err):
             rb'|format_(?:valid_rgb|valid_rgba|large_pipe_input|maximum_dimensions|svg|missing_iend'
             rb'|truncated_idat|bad_crc|short_row|missing_row|extra_decoded|expansion_bomb|bad_filter'
             rb'|oversize_dimension|forbidden_metadata|animation|trailing_bytes|file_byte_limit)_(?:inspect|cleanup)'
-            rb'|resource_(?:exit|output|cpu|memory|timeout)_(?:inspect|container_state|cleanup)'
+            rb'|resource_(?:exit|output|cpu|memory|memory_small|memory_kill|timeout)_(?:inspect|container_state|termination|cleanup)'
             rb'|resource_timeout_elapsed) cleanup=(not_started|passed|failed)\n', err)
         if code == 1 and out == b'' and failure is not None:
             raise RuntimeError('real_parser_' + failure[1].decode() + '_cleanup_' + failure[2].decode())

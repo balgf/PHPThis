@@ -22,6 +22,9 @@ class ParserDiagnosticsTests(unittest.TestCase):
             ('format_valid_rgb_inspect', 'passed'),
             ('format_large_pipe_input_cleanup', 'failed'),
             ('resource_memory_container_state', 'passed'),
+            ('resource_memory_termination', 'passed'),
+            ('resource_memory_small_termination', 'passed'),
+            ('resource_memory_kill_termination', 'passed'),
             ('resource_timeout_elapsed', 'passed'),
             ('resource_output_inspect', 'failed'),
         ):

@@ -5,8 +5,9 @@ declare(strict_types=1);
 $mode = fgets(STDIN, 32);
 if ($mode === "timeout\n") {
     sleep(30);
-} elseif ($mode === "memory\n") {
-    echo strlen(str_repeat('x', 268_435_456));
+} elseif (in_array($mode, ["memory\n", "memory_small\n", "memory_kill\n"], true)) {
+    require __DIR__ . '/memory-fault.php';
+    exit(runMemoryFault($mode));
 } elseif ($mode === "output\n") {
     fwrite(STDOUT, str_repeat('x', 16_384));
 } elseif ($mode === "cpu\n") {
