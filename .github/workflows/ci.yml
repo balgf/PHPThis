@@ -143,3 +143,32 @@ jobs:
           PHPTHIS_PGSQL_DSN: 'pgsql:host=127.0.0.1;port=5432;dbname=phpthis'
           PHPTHIS_PGSQL_USERNAME: phpthis
           PHPTHIS_PGSQL_PASSWORD: phpthis
+
+  mysql-durable-work:
+    name: MySQL 8.4.11 durable welcome work
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the checked PHP client
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4.19'
+          extensions: pdo, pdo_sqlite, pdo_mysql, redis
+          coverage: none
+          tools: composer:v2
+      - name: Install locked dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Pull the reviewed MySQL image
+        run: docker pull mysql:8.4@sha256:0744ee5ef89ce6ccfa13de3e579fe6b9e27f93dd70da9c06d2c908b1b193fb8d
+      - name: Verify isolated MySQL publication, delivery and recovery
+        run: python3 tools/mysql-jobs/run.py
+      - name: Upload redacted MySQL evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mysql-durable-work-evidence
+          path: tmp/mysql-jobs-evidence.json
+          if-no-files-found: error

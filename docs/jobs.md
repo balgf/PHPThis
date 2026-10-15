@@ -2,7 +2,7 @@
 
 Status: current optional guidance under accepted [ADR 052](decisions/052-backend-neutral-application-owned-durable-jobs.md).
 
-PHPThis currently accepts this backend-neutral application-owned contract and one checked backend-specific profile: the application-owned [SQLite recipe](jobs/sqlite.md) recorded by ADR 024. This page defines the common contract for applications that deliberately select SQLite, Redis Streams, RabbitMQ, SQS, Kafka, or another durable transport. It does not weaken, replace, or generalize the accepted SQLite profile.
+PHPThis currently accepts this backend-neutral application-owned contract with checked [SQLite](jobs/sqlite.md) and [MySQL](jobs/mysql.md) recipes, each limited to its recorded evidence. This page defines the common contract for applications that deliberately select SQLite, MySQL, Redis Streams, RabbitMQ, SQS, Kafka, or another durable transport. It does not weaken, replace, or generalize the accepted SQLite profile.
 
 The guidance separates three layers:
 
@@ -89,7 +89,7 @@ The installed PHPThis checker enforces only the existing Consumer Contract and S
 
 A future profile is an implementation guide, not a framework adapter or portability claim. It names exact supported backend and client versions, concrete publication and delivery mechanisms, acknowledgement, retry and selected terminal semantics including any adopted dead-letter/DLQ mechanism or explicit non-applicability, topology and security assumptions, copyable application-owned structure, real-service automated evidence, deployment evidence, and unsupported claims.
 
-Backend notes remain decision checklists until a real consumer implementation supplies that evidence. The accepted [SQLite profile](jobs/sqlite.md) remains the first and only checked profile under its existing ADR 024 evidence; it does not retroactively certify an exact deployable SQLite version. The stricter exact service/client version and real-service bar above applies to every profile added under ADR 052. ADR 024's same-connection transaction, `UPDATE ... RETURNING` lease, one-shot worker, finite retry, dead-letter, idempotent database effect, redaction, and process evidence stay intact and do not become generic defaults.
+Backend notes remain decision checklists until a real consumer implementation supplies that evidence. The accepted [SQLite profile](jobs/sqlite.md) remains the first checked profile under its existing ADR 024 evidence; it does not retroactively certify an exact deployable SQLite version. The [MySQL recipe](jobs/mysql.md) supplies its own checked service and process envelope. The stricter exact service/client version and real-service bar above applies to every profile added under ADR 052. ADR 024's same-connection transaction, `UPDATE ... RETURNING` lease, one-shot worker, finite retry, dead-letter, idempotent database effect, redaction, and process evidence stay intact and do not become generic defaults.
 
 ## Non-goals
 
@@ -100,4 +100,4 @@ Backend notes remain decision checklists until a real consumer implementation su
 - Treating static analysis, mocks, publisher confirmations, or service marketing as production evidence.
 - Installing any durable-job mechanism in the non-adopting starter.
 
-This accepted optional guidance left Consumer Contract version 12 unchanged; current Consumer Contract version 21 carries version 19 and this guidance forward under Strict Profile version 4 and diagnostics `PHT001` through `PHT008`. [ADR 024](decisions/024-application-owned-sqlite-durable-jobs.md) and the [checked SQLite profile](jobs/sqlite.md) remain the first and only checked backend-specific durable-job profile.
+This accepted optional guidance left Consumer Contract version 12 unchanged; current Consumer Contract version 21 carries version 19 and this guidance forward under Strict Profile version 4 and diagnostics `PHT001` through `PHT008`. [ADR 024](decisions/024-application-owned-sqlite-durable-jobs.md) and the [checked SQLite profile](jobs/sqlite.md) remain the first checked backend-specific durable-job profile.

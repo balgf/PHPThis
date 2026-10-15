@@ -1,0 +1,14 @@
+{
+    "name": "phpthis/mysql-welcome-reference",
+    "description": "Maintainer reference for an application-owned MySQL welcome obligation.",
+    "type": "project",
+    "license": "MIT",
+    "scripts": {
+        "jobs:verify": "php tools/verify-jobs.php",
+        "test": "@jobs:verify",
+        "check": "@test"
+    },
+    "config": {
+        "allow-plugins": false
+    }
+}

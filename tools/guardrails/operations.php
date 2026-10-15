@@ -76,7 +76,7 @@ function operationGuardrailFailures(string $root): array
         '.ai/jobs.md' => [
             '# Durable jobs contract',
             'PHPThis accepts the optional [backend-neutral contract](../docs/jobs.md) and [verification structure](../docs/jobs/verification.md) under ADR 052.',
-            'Its first and only checked backend-specific profile remains [application-owned SQLite durable jobs](../docs/jobs/sqlite.md) under [ADR 024]',
+            'Its first checked backend-specific profile remains [application-owned SQLite durable jobs](../docs/jobs/sqlite.md) under [ADR 024]',
             'required ordering/partition/sequence key and concurrency scope plus service enforcement or monotonic/version guard, rejection or reconciliation for stale/out-of-order/replayed work, or explicit order-independent non-applicability',
             'renewal failure/expiry and actual stale-owner behavior; rejection or fencing only where supported, otherwise bounded overlapping stale work and duplicate-safe recovery',
             'zero handler executions only after an explicit recorded terminal rejection/exhaustion, finite cancellation/expiry, or bounded catastrophic loss outside the successful-publication envelope',
@@ -113,9 +113,16 @@ function operationGuardrailFailures(string $root): array
         'docs/jobs/README.md' => [
             'Durable-job knowledge index',
             'PHPThis currently accepts the optional [backend-neutral contract](../jobs.md) and [verification structure](verification.md) under ADR 052.',
-            'Its first and only checked backend-specific profile remains [application-owned SQLite durable jobs](sqlite.md) under ADR 024.',
+            'Its first checked backend-specific profile remains [application-owned SQLite durable jobs](sqlite.md) under ADR 024.',
             'SQLite schema',
+            '[MySQL welcome-work recipe](mysql.md)',
             '[Externally supervised one-shot operations](operations.md): canonical production topology, direct continual consumption, supervisor policy, SQLite capacity, monitoring, recovery, and reconsideration triggers.',
+        ],
+        'docs/jobs/mysql.md' => [
+            '# Application-owned MySQL durable welcome work',
+            'It sends no email.',
+            'SELECT ... FOR UPDATE SKIP LOCKED',
+            'Host/power failure, lost storage, replicas, failover, partitions and production throughput remain unproved.',
         ],
         'docs/jobs/verification.md' => [
             'Status: current optional guidance under accepted ADR 052.',

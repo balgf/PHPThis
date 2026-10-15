@@ -1,6 +1,6 @@
 # Backend-neutral durable-job verification
 
-Status: current optional guidance under accepted ADR 052. The [checked SQLite profile](sqlite.md) and ADR 024 remain the first and only checked backend-specific evidence.
+Status: current optional guidance under accepted ADR 052. The [checked SQLite profile](sqlite.md) and ADR 024 remain the first checked backend-specific evidence. The [MySQL welcome-work recipe](mysql.md) supplies separate real-service evidence within its stated limits.
 
 An adopting application owns one exact verification command for its selected backend. The command exercises a real service wherever it claims backend behavior, fails closed when required configuration or evidence is absent, and runs from the normal application test and complete release gate. A skip, missing service, missing credential, mock, in-memory double, or alternate fallback never counts as a passing release result.
 

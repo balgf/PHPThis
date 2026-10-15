@@ -48,6 +48,7 @@
         "test:consumer": "php tools/test-consumer-project.php",
         "test:database-drivers": "php tools/test-database-drivers.php",
         "test:query-scaling": "php tools/test-query-scaling.php",
+        "test:mysql-jobs-source": "php tools/test-mysql-jobs.php",
         "test:profile": "php tools/test-strict-profile.php",
         "check": [
             "@guard",
@@ -60,6 +61,7 @@
             "@test:consumer",
             "@test:database-drivers",
             "@test:query-scaling",
+            "@test:mysql-jobs-source",
             "@test"
         ]
     },

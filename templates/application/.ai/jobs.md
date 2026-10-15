@@ -1,6 +1,6 @@
 # Application durable-job contract
 
-Status: accepted ADR 052 supplies the optional backend-neutral fields below. The installed `vendor/phpthis/framework/docs/jobs/sqlite.md` and ADR 024 remain the current first and only checked backend-specific SQLite profile.
+Status: accepted ADR 052 supplies the optional backend-neutral fields below. The installed `vendor/phpthis/framework/docs/jobs/sqlite.md` and ADR 024 remain the current first checked backend-specific SQLite profile. The MySQL reference is installed `vendor/phpthis/framework/docs/jobs/mysql.md`; select and prove the intended profile explicitly.
 
 - Adoption or `NOT_APPLICABLE(JOBS)`: {{JOBS_ADOPTION_OR_NOT_APPLICABLE}}
 - Exact backend/service and version, client dependency and version, and update owner: {{JOBS_BACKEND_CLIENT_VERSION_OWNER_OR_NOT_APPLICABLE}}
