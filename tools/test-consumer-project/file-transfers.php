@@ -13,10 +13,19 @@ function proveInstalledProtectedFileTransferReference(
 ): string {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
+        $installedFramework . '/docs/file-transfers/generated-exports.md' => [
+            '# Generated inventory exports in Amazon S3',
+            'REFERENCE_ONLY',
+            'file-transfers:s3:verify',
+        ],
+        $installedFramework . '/docs/decisions/068-generated-s3-inventory-exports.md' => [
+            'Status: accepted',
+            'Consumer Contract 22',
+        ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 21',
+            'Contract version: 22',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 21 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 22 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
             '# ADR 060: Reject pending output before response emission',
@@ -31,7 +40,7 @@ function proveInstalledProtectedFileTransferReference(
             'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
         ],
         $installedFramework . '/docs/file-transfers/README.md' => [
-            'Consumer Contract version 21 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 22 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
         ],
@@ -57,6 +66,7 @@ function proveInstalledProtectedFileTransferReference(
             'Static installed-context proof may require the authoritative application adoption record and its finite markers, routing, and complete project-gate link.',
         ],
         $installedFramework . '/templates/application/.ai/file-transfers.md' => [
+            '{{GENERATED_S3_OPERATION_AND_EVIDENCE_OR_NOT_APPLICABLE}}',
             'This is the application\'s single authoritative file-transfer policy.',
             'authenticate -> resolve tenant when applicable -> authorize upload -> validate CSRF when applicable -> rate/concurrency admission -> atomic quota reservation -> storage',
             'for `LOCAL_ADR026`, the deployment-precreated durable root before HTTP handling',
@@ -68,6 +78,7 @@ function proveInstalledProtectedFileTransferReference(
             'throw new ResponseEmissionFailed(true);',
         ],
         $project . '/.ai/file-transfers.md' => [
+            'NOT_APPLICABLE(GENERATED_S3_EXPORTS)',
             'NOT_APPLICABLE(FILE_TRANSFER)',
             'The starter accepts no upload and returns no file download.',
             'pending bytes in any active PHP-managed output-buffer level',

@@ -127,3 +127,5 @@ Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) co
 Accepted [ADR 065](065-explicit-framework-error-representations.md) introduces Consumer Contract 19 and optional bounded body/content-type values for framework errors, retaining Strict Profile 4, fixed HTTP control fields and the independent built-in early-failure fallback.
 
 Accepted [ADR 067](067-bounded-native-multipart-forms.md) introduces Consumer Contract 21 native multipart parsing, immutable fields/uploads and explicit PHP normalization limits. It supersedes ADR 026 multipart ingress only; application storage and delivery policies retain their owners.
+
+Accepted [ADR 068](068-generated-s3-inventory-exports.md) introduces Consumer Contract 22 for optional application-owned generated S3 inventory exports and bounded internal reads. Offline implementation is approved; actual AWS and deployment evidence remain required for adoption.

@@ -23,7 +23,10 @@ From the repository root, install the locked dependencies:
 
 ```sh
 composer install --no-interaction --no-progress --prefer-dist
+composer install --working-dir=tools/generated-s3 --no-interaction --no-progress --prefer-dist
 ```
+
+The optional generated-S3 reference keeps its SDK dependencies under ignored `tmp/generated-s3-vendor`; maximum-level analysis and the offline tests use that exact lock. Its tests additionally need cURL, SimpleXML, POSIX and loopback sockets, with no AWS account or credentials. These are maintainer test dependencies, not framework runtime requirements.
 
 The tests need two distinct disposable Redis processes and change their configuration. Use unused loopback ports and empty temporary data directories, never shared or production instances. Start each server in its own terminal and leave it running until the checks finish.
 

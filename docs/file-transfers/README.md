@@ -2,7 +2,7 @@
 
 This knowledge set routes an AI through PHPThis's accepted application-owned file-transfer profiles. Load only the page needed for the task and inspect the named application source and tests. Read [ADR 026](../decisions/026-bounded-file-transfers.md) or [ADR 053](../decisions/053-application-owned-amazon-s3-file-transfers.md) only when reviewing or changing the decision itself; ordinary implementation follows this current knowledge set.
 
-Consumer Contract version 21 carries version 19 and version 13's requirement for exactly one deliberate selection: `LOCAL_ADR026` for ADR 026's local move and local response under ADR 060's pending-output preflight, or optional `AMAZON_S3_ADR053` for the accepted [Amazon S3 guidance](amazon-s3.md) and [verification](amazon-s3-verification.md). The S3 profile accepts fixed `application/octet-stream` attachment delivery without a guaranteed `nosniff` header as a narrow direct-S3 exception. It does not weaken the local profile or make either profile an automatic application default.
+Consumer Contract version 22 carries version 19 and version 13's requirement for exactly one deliberate selection: `LOCAL_ADR026` for ADR 026's local move and local response under ADR 060's pending-output preflight, or optional `AMAZON_S3_ADR053` for the accepted [Amazon S3 guidance](amazon-s3.md) and [verification](amazon-s3-verification.md). The S3 profile accepts fixed `application/octet-stream` attachment delivery without a guaranteed `nosniff` header as a narrow direct-S3 exception. It does not weaken the local profile or make either profile an automatic application default.
 
 | Task | Read | Inspect |
 | --- | --- | --- |
@@ -11,6 +11,7 @@ Consumer Contract version 21 carries version 19 and version 13's requirement for
 | Map upload outcomes | [Upload errors](upload-errors.md), [Failures](failures.md) | `RequestUploadError`, application upload boundary, exact error registry |
 | Review client metadata | [Metadata trust](metadata-trust.md), [Security](security.md) | `RequestUpload`, application handler, public outputs and terminal evidence |
 | Inspect a bounded still PNG | [Checked PNG recipe](inspected-png.md) | optional `tools/inspected-media` quarantine, real-tool inspection, reinspection and attachment reference |
+| Generate an inventory export or read a private object internally | [Generated S3 exports](generated-exports.md) | optional concrete application, exact-version lifecycle and separate offline/AWS evidence |
 | Store an upload locally | [Storage ownership](storage-ownership.md), [Deployment](deployment.md) | one concrete application storage operation and filesystem configuration under `LOCAL_ADR026` |
 | Adopt or review the Amazon S3 profile | [Amazon S3 guidance](amazon-s3.md), [verification](amazon-s3-verification.md) | exact `AMAZON_S3_ADR053` application policy, source, behavior, isolated real-AWS, deployment evidence, and complete gate |
 | Inspect the framework S3 reference proof | [Amazon S3 verification](amazon-s3-verification.md) | `tools/test-consumer-project/amazon-s3-file-transfers.php` defines `proveInstalledAmazonS3FileTransferVerificationReference(...)`; `tools/test-consumer-project.php` calls it. Together they form a synthetic installed-reference proof, not real-consumer adoption; the checker source is a consumer-owned template in the verification guide |

@@ -1,0 +1,16 @@
+-- Deployment-precreated private SQLite database. Run only in an isolated provisioner.
+PRAGMA journal_mode = DELETE;
+PRAGMA synchronous = FULL;
+CREATE TABLE inventory (sku TEXT PRIMARY KEY NOT NULL, quantity INTEGER NOT NULL CHECK (quantity BETWEEN 0 AND 2147483647)) STRICT;
+CREATE TABLE exports (
+    export_id TEXT PRIMARY KEY NOT NULL,
+    size_bytes INTEGER NOT NULL CHECK (size_bytes BETWEEN 1 AND 65536),
+    sha256 TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('pending','stored','accepted','failed','reconciliation_required','deletion_pending','deleted')),
+    version_id TEXT,
+    delete_attempts INTEGER NOT NULL CHECK (delete_attempts BETWEEN 0 AND 2),
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL CHECK (expires_at = created_at + 86400),
+    target TEXT NOT NULL,
+    reason TEXT NOT NULL
+) STRICT;

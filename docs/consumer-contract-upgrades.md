@@ -4,6 +4,12 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 22
+
+Contract 22 carries version 21 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 068](decisions/068-generated-s3-inventory-exports.md) permits an explicit optional generated inventory export and bounded internal read within `AMAZON_S3_ADR053`. No runtime API, framework dependency, HTTP handoff or existing upload/redirect behavior changes.
+
+Existing applications may retain their present policy and rerun their complete gate. A generated-mode adopter reconciles `.ai/file-transfers.md`, records generated provenance and CLI/process authority, implements bounded memory-only writes/reads and the shared ownership/quota/reconciliation lifecycle, and completes its source, behavior, real-AWS and deployment modules under `file-transfers:s3:verify`. The existing seven-role upload/redirect verifier does not cover the new mode. Preserve exact version ownership, unresolved capacity and delete-attempt history; no automatic data migration is provided. Offline `REFERENCE_ONLY` evidence cannot complete adoption. See [generated exports](file-transfers/generated-exports.md).
+
 ### Contract version 21
 
 [ADR 067](decisions/067-bounded-native-multipart-forms.md) adds bounded native multipart forms. Strict Profile 4 and PHT001–PHT008 remain; PHT007 now recognizes only `$coordinator->handle($_SERVER, $_GET)` as the canonical transport handoff.

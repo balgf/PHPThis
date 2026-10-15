@@ -8,6 +8,8 @@ This profile defines one narrow server-mediated Amazon S3 path. It preserves PHP
 
 ## Profile boundary
 
+Contract 22 / [ADR 068](../decisions/068-generated-s3-inventory-exports.md) additionally permits the explicitly adopted [generated inventory export and bounded internal read](generated-exports.md). Its memory-only provenance and CLI authority replace HTTP-only fields for that operation; all shared ownership, target, versioning, KMS and operational requirements remain. The upload/redirect path below keeps its original scope and verifier. The generated reference currently has offline evidence only.
+
 The complete profile selection is:
 
 - PHP 8.4.x, `aws/aws-sdk-php` exactly `3.392.1`, `guzzlehttp/guzzle` exactly `8.0.2`, and S3 API model `2006-03-01`, with the SDK-required JSON, PCRE and SimpleXML extensions plus the selected cURL extension/runtime;
