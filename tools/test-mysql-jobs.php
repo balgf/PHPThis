@@ -27,6 +27,13 @@ function runMySqlReferenceControl(string $path, array $arguments = []): array
     return runBoundedMaintainerProcess([PHP_BINARY, '-d', 'display_errors=0', '-d', 'log_errors=0', $path, ...$arguments], dirname(__DIR__), [], 5_000, 4096, 4096);
 }
 
+$fixtureControls = runBoundedMaintainerProcess(
+    ['python3', __DIR__ . '/mysql-jobs/test_process_support.py'], dirname(__DIR__), [], 10_000, 4096, 4096,
+);
+requireMySqlReference($fixtureControls === [
+    'exit_code' => 0, 'stdout' => "PASS MySQL fixture process controls\n", 'stderr' => '',
+]);
+
 $sources = glob(__DIR__ . '/mysql-jobs/src/*.php');
 requireMySqlReference(is_array($sources) && $sources !== []);
 if (!is_array($sources)) {

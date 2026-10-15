@@ -10,7 +10,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from process_support import IMAGE, capture
+from process_support import IMAGE, capture, wait_for_mysql
 
 PHP = sys.argv[2]
 CHILDREN = []
@@ -90,16 +90,7 @@ def restart_database():
     docker('kill', '--signal=KILL', name)
     stop(writer)
     docker('start', name)
-    deadline = time.monotonic() + 60
-    while True:
-        probe = subprocess.run(['docker', 'exec', name, 'sh', '-c',
-                                'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot -Nse "SELECT 1"'],
-                               capture_output=True, timeout=5)
-        if probe.returncode == 0 and probe.stdout == b'1\n':
-            return
-        if time.monotonic() >= deadline:
-            raise RuntimeError('fixture_restart_timeout')
-        time.sleep(0.2)
+    wait_for_mysql(name, timeout=60, phase='restart')
 
 
 def fixture_preflight():
