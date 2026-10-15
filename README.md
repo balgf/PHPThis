@@ -90,11 +90,11 @@ Cloning this repository is for contributing to PHPThis or evaluating its framewo
 ```bash
 git clone https://github.com/balgf/PHPThis.git
 cd PHPThis
-composer install
-composer check
 ```
 
-`composer check` is the complete maintainer gate. PHPStan, PHPUnit, and the Strict Profile are development and verification dependencies; they do not affect the framework runtime or require consumers to select the same test runner. See [CONTRIBUTING.md](CONTRIBUTING.md) and [the guardrail catalogue](docs/guardrails.md) before changing the framework.
+Next, follow [CONTRIBUTING.md's local checks](CONTRIBUTING.md#local-checks) for the required tools and PHP extensions, both locked dependency installations, two disposable Redis roles, the complete `composer check`, and cleanup.
+
+`composer check` is the complete maintainer gate. PHPStan, PHPUnit, the Strict Profile, and the optional-reference SDKs are development and verification dependencies; they do not affect the framework runtime or require consumers to select the same test runner. See [the guardrail catalogue](docs/guardrails.md) before changing the framework.
 
 ## License
 

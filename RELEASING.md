@@ -43,13 +43,13 @@ The reviewable framework ruleset payloads are in `.github/rulesets/` in the sour
 
 ### 2. Prove the framework candidate
 
-Run from the framework repository root:
+Prepare the tools and PHP extensions in [CONTRIBUTING.md's local checks](CONTRIBUTING.md#local-checks). From the clean framework repository root, validate the package metadata:
 
 ```bash
 composer validate --strict
-composer install --no-interaction --no-progress --prefer-dist
-composer check
 ```
+
+Then follow that guide's two locked dependency installations, disposable Redis setup and readiness checks, complete `composer check` with those endpoints, and cleanup. These are maintainer verification prerequisites; the consumer installation path in Step 5 is unchanged.
 
 - [ ] The complete local gate passes without a baseline, suppression, skipped required driver, or modified dependency source.
 - [ ] `composer test:consumer` builds the release archive, matches the complete Composer and Git export inventory, installs a mirrored package into a clean skeleton, passes its adversarial controls, and finishes with `git-export-parity=verified` for this exact clean candidate.
