@@ -177,7 +177,8 @@ jobs:
           if-no-files-found: error
 
   inspected-png:
-    name: Inspected PNG and JPEG quarantine and resource bounds
+    # Required branch-protection context; keep this name as the proof expands to JPEG.
+    name: Inspected PNG quarantine and resource bounds
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
