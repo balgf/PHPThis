@@ -133,3 +133,5 @@ Accepted [ADR 068](068-generated-s3-inventory-exports.md) introduces Consumer Co
 Accepted [ADR 069](069-configurable-multipart-field-limits.md) introduces Consumer Contract 23 with optional per-field and aggregate field-byte limits on `MultipartLimits`. It replaces only ADR 067's fixed field-byte ceilings, preserves existing calls and defaults, and retains request/file limits, native parsing and application-owned storage policy.
 
 Accepted [ADR 070](070-fixed-early-http-error-representations.md) introduces Consumer Contract 24 with optional fixed early HTTP failure representations through existing value types. It replaces ADR 065's always-built-in early-format requirement while retaining ADR 061's disclosure, initial fallback and response-ownership boundaries.
+
+Accepted [ADR 071](071-s3-upload-operation-metadata.md) introduces Consumer Contract 25 with one optional S3 document upload carrying typed descriptive metadata. It preserves original and generated operation scopes, binds fields privately to trusted ownership and exact versions, and keeps real AWS/deployment verification at application adoption.

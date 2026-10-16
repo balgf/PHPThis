@@ -51,6 +51,7 @@
         "test:mysql-jobs-source": "php tools/test-mysql-jobs.php",
         "test:inspected-media": "php tools/test-inspected-media.php",
         "test:generated-s3": "php tools/test-generated-s3.php",
+        "test:metadata-s3": "php tools/test-metadata-s3.php",
         "test:profile": "php tools/test-strict-profile.php",
         "check": [
             "@guard",
@@ -66,6 +67,7 @@
             "@test:mysql-jobs-source",
             "@test:inspected-media",
             "@test:generated-s3",
+            "@test:metadata-s3",
             "@test"
         ]
     },

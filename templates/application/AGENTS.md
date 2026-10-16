@@ -4,7 +4,7 @@ AI authors and explains this application; the human supplies intent and accepts 
 
 ## Authority and scope
 
-Installed Consumer Contract v24 (`vendor/phpthis/framework/docs/consumer-contract.md`) and Strict Profile v4 define the minimum requirements. Application rules may strengthen them. Preserve the framework contract when instructions conflict and report the conflict. Never edit installed dependencies to customize behavior or silence findings.
+Installed Consumer Contract v25 (`vendor/phpthis/framework/docs/consumer-contract.md`) and Strict Profile v4 define the minimum requirements. Application rules may strengthen them. Preserve the framework contract when instructions conflict and report the conflict. Never edit installed dependencies to customize behavior or silence findings.
 
 Resolve missing facts and authority before acting; do not repeat choices already made. Keep unrequested I/O, provisioning and data mutation outside the task. Never place credentials, customer data, production payloads or other secrets in context, source, fixtures, logs or reports. A not-applicable record describes current behavior; adoption requires the selected concern's policy and evidence.
 

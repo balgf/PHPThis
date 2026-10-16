@@ -1,8 +1,8 @@
 # Amazon S3 file-transfer verification
 
-This seven-role checker verifies the original HTTP upload/redirect path. Application adoption of Contract 22's [generated exports](generated-exports.md) requires its own explicit source, behavior, real-AWS and deployment modules through `file-transfers:s3:verify`. Offline tests suffice for the generated reference's completion under its linked guide; they cannot replace actual AWS or deployment evidence at adoption. This original checker does not verify the generated extension.
+This seven-role checker verifies the original HTTP upload/redirect path. Application adoption of Contract 22's [generated exports](generated-exports.md) requires its own explicit source, behavior, real-AWS and deployment modules through `file-transfers:s3:verify`. Offline tests suffice for the generated reference's completion under its linked guide; they cannot replace actual AWS or deployment evidence at adoption. This original checker verifies neither the generated extension nor the Contract 25 metadata operation; each needs its own adopted modules under the same alias.
 
-Contract 21 expands native multipart ingress, while `AMAZON_S3_ADR053` remains exactly one file with no operation text fields. Reject additional fields/files before any S3 operation. Mixed/multiple uploads require a separate storage-profile decision and evidence; this guide does not authorize them.
+The original upload/redirect path remains exactly one file with no operation text fields. Reject extra fields/files in that operation. Contract 25 separately permits the explicitly adopted [typed document metadata operation](metadata-uploads.md); its dedicated proof covers one normalized file with a label and optional note. Multiple-file storage remains deferred.
 
 Status: accepted optional guidance under ADR 053 and Consumer Contract version 13. This page defines the application-owned evidence shape for a deliberate `AMAZON_S3_ADR053` adoption; its presence or synthetic framework proof alone is not adoption.
 

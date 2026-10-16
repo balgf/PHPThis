@@ -99,8 +99,10 @@ final class InventoryS3
         }
         if ($versions === []) { return null; }
         $candidate = $versions[0];
+        // SDK XML long values are decimal strings; accept only the exact expected size, or its integer form.
         if (!is_array($candidate) || ($candidate['Key'] ?? null) !== $record->id->key()
-            || ($candidate['IsLatest'] ?? null) !== true || ($candidate['Size'] ?? null) !== $record->bytes) {
+            || ($candidate['IsLatest'] ?? null) !== true
+            || (($candidate['Size'] ?? null) !== $record->bytes && ($candidate['Size'] ?? null) !== (string) $record->bytes)) {
             throw new ExportUnavailable('Export ownership unresolved.');
         }
         $version = ObjectVersion::fromInput($candidate['VersionId'] ?? null);

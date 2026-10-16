@@ -270,6 +270,7 @@ function distributionGuardrailFailures(
             '@test:mysql-jobs-source',
             '@test:inspected-media',
             '@test:generated-s3',
+            '@test:metadata-s3',
             '@test',
         ];
 
@@ -1185,7 +1186,7 @@ function distributionGuardrailFailures(
             'Do not introduce an ORM',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 24',
+            'Contract version: 25',
             '## Optional bounded file transfers',
             'Raw `$_FILES` never enters a handler.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
@@ -1206,7 +1207,7 @@ function distributionGuardrailFailures(
         ],
         'docs/file-transfers/README.md' => [
             'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
-            'Consumer Contract version 24 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 25 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
@@ -1263,7 +1264,7 @@ function distributionGuardrailFailures(
             "\$installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "\$installedFramework . '/docs/file-transfers/emission.md'",
             "\$installedFramework . '/src/Http/ResponseEmitter.php'",
-            "'Contract version: 24'",
+            "'Contract version: 25'",
             'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
             'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
             'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
@@ -1342,8 +1343,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 24$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 24.';
+            if (preg_match('/^Contract version: 25$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 25.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {
@@ -1754,7 +1755,11 @@ function distributionGuardrailFailures(
                     ['example/public/index.php', 'skeleton/public/index.php'],
                     true,
                 ) && $tokenText !== '$_SESSION';
-                $isCatalogFrontControllerInput = $relativePath === 'tools/inspected-media/public/index.php'
+                $isCatalogFrontControllerInput = in_array($relativePath, [
+                    'tools/inspected-media/public/index.php',
+                    'tools/metadata-s3/public/index.php',
+                    'tools/metadata-s3/tests/router.php',
+                ], true)
                     && in_array($tokenText, ['$_SERVER', '$_GET'], true);
 
                 if (

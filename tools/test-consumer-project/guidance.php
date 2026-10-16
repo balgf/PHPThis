@@ -945,7 +945,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
         ],
         $installedFramework . '/docs/getting-started.md' => [
             '## Start from a proved published skeleton',
-            'Use the contract-version-24 Composer scripts',
+            'Use the contract-version-25 Composer scripts',
             'Do not use an unpinned prerelease constraint during partial publication',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.9'",
             'Before selecting a later prerelease, verify its exact skeleton version and clean public-install evidence in the release work item, GitHub, and Packagist.',

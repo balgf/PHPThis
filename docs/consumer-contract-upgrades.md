@@ -4,6 +4,14 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 25
+
+Contract 25 carries version 24 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 071](decisions/071-s3-upload-operation-metadata.md) permits one optional `AMAZON_S3_ADR053` document upload with a typed label and optional note. The [operation guide](file-transfers/metadata-uploads.md) owns exact fields, byte bounds, normalization limits and failure behavior. No core API, framework dependency or default starter behavior changes.
+
+Existing applications need no PHP or schema changes unless they explicitly adopt this operation. Adopters record the approved fields, normalized-duplicate suitability, principal policy, private metadata/version binding, quotas and retention in their single `.ai/file-transfers.md`. Wire current action-specific authorization before validation/admission, real upload verification before reservation, and bounded ambiguity/deletion recovery. Keep descriptive text private and clear it only with committed failed/deleted state.
+
+Provision or migrate the private schema through the application's authorized non-HTTP path before enabling the route. Do not invent labels for existing objects, auto-migrate during installation or infer adoption from the framework's optional reference. Disable/drain the route before schema rollback. Run offline behavior and the full application gate; supply actual AWS and dated deployment evidence through `file-transfers:s3:verify` before adoption. Framework reference completion requires its maintained offline tests and complete `composer check`, without cloud execution.
+
 ### Contract version 24
 
 Contract 24 carries version 23 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 070](decisions/070-fixed-early-http-error-representations.md) permits a fixed early 500 representation through the existing `ErrorRepresentation` and `UnknownFailureBoundary`; it adds no core API or dependency. [Error responses](errors.md#outer-http-failures) owns the complete sequence and failure-phase map.

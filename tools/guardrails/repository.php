@@ -2079,7 +2079,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
 
     if (
         $protectedFileTransferModuleFingerprint
-            !== 'fcbff1267d8b94b00d1ea370bfe446b7eb4be2392df6c401e65d2db75e0d5e0d'
+            !== '3ceac37ecd5daf95603800555ddd06a288e969549d87fed69f9150326509076c'
         || $mutatedProtectedFileTransferModule === $protectedFileTransferModule
         || consumerProjectHarnessTokenNormalizedFingerprint(
             $mutatedProtectedFileTransferModule,
@@ -2098,7 +2098,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
     );
 
     if (
-        $jobsVerificationModuleFingerprint !== '5060aa142cc3a5008f1ab441a732978e5b56204523bb12c5e763f5613812c363'
+        $jobsVerificationModuleFingerprint !== '5d51183eec0f648e1a7316a2cf77cab16bf5e2ee0f1f603972d9d7edfc66b131'
         || $mutatedJobsVerificationModule === $jobsVerificationModule
         || consumerProjectHarnessTokenNormalizedFingerprint($mutatedJobsVerificationModule)
             === $jobsVerificationModuleFingerprint
@@ -4083,8 +4083,8 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks.php' => [
             'AGENT_EVALUATION_TASK_REVISIONS',
-            "'revision' => 40",
-            "'manifest_sha256' => 'c35169088bbf7ecf54bf25a967f5e52aa01eb84a9649a6ee8caa437c8b4e1ceb'",
+            "'revision' => 41",
+            "'manifest_sha256' => 'd9c7fdd09907aab474a2041812d50ee5c0b8dd9d8dd554d42b7ec4f6fc6020c4'",
             'Public smoke task {$taskId} cannot authorize comparative claims.',
             'agentEvaluationComparisonSchedule',
             'agentEvaluationComparisonFixture',
@@ -4168,11 +4168,11 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'tools/agent-evaluation/tasks/change.simple-ping/task.json' => [
             '"id": "change.simple-ping"',
-            '"revision": 40',
+            '"revision": 41',
             '"model_tokens": 1000000',
             '"source-skeleton"',
-            '"tree": "ac62505e2502b4fff1cee80fb0137a6251a10e7e"',
-            '"fixture_sha256": "55a3d4eee7b3122a08dfd3c1ecf2d0dd193f620779944ba632d781d392b52d34"',
+            '"tree": "e2ad52f51334c49af12731d677c63d2e8d0ef57c"',
+            '"fixture_sha256": "9a7d4db5270dc628c5c8c1975ae62db0d732ed1278aee1d8e603509cbd6e9bb4"',
             '"max_changed_files": 3',
             '"comparative_claims": false',
         ],
@@ -4333,7 +4333,7 @@ function repositoryGuardrailFailures(string $root): array
             '## Fixed composition',
             'There is no module or task discovery, runner selector',
             '`process.php` is the only controller file that owns native process primitives.',
-            'v0.2 accepts only `change.simple-ping` revision 40 with `comparative_claims: false`.',
+            'v0.2 accepts only `change.simple-ping` revision 41 with `comparative_claims: false`.',
             'Missing or unverifiable live controls fail closed',
             '`AGENT_EVALUATION_CONTROLLER_VERSION(2)`',
             '`AGENT_EVALUATION_CONTROLLER_OCI_ONLY`',
@@ -4348,8 +4348,8 @@ function repositoryGuardrailFailures(string $root): array
         'tools/agent-evaluation-controller/contract.php' => [
             'const AGENT_EVALUATION_CONTROLLER_VERSION = 2;',
             "const AGENT_EVALUATION_CONTROLLER_TASK_ID = 'change.simple-ping';",
-            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 40;',
-            'Controller v0.2 supports only change.simple-ping revision 40 without comparative claims.',
+            'const AGENT_EVALUATION_CONTROLLER_TASK_REVISION = 41;',
+            'Controller v0.2 supports only change.simple-ping revision 41 without comparative claims.',
             'const AGENT_EVALUATION_CONTROLLER_OCI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_FAKE_RUNNER_CI_ONLY = true;',
             'const AGENT_EVALUATION_CONTROLLER_NO_NATIVE_FALLBACK = true;',
@@ -4589,11 +4589,11 @@ function repositoryGuardrailFailures(string $root): array
             'ordinary Contract v16 checker failures with no configurable ignore, Strict Profile rule, or `PHT` diagnostic',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 24',
+            'Contract version: 25',
             'give every application PHP file a case-insensitive `.php` extension',
             'keep every non-`.php` regular file readable and decisively non-PHP within the first 4,096 bytes',
             'do not place symlinks in the application tree outside the resolved Composer dependency and VCS exclusions',
-            'Version 24 carries version 23 forward and permits fixed early HTTP failure representations under ADR 070.',
+            'Version 25 carries version 24 forward and permits one S3 document upload with typed operation metadata under ADR 071.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -4606,7 +4606,7 @@ function repositoryGuardrailFailures(string $root): array
         ],
         'docs/guardrails.md' => [
             'every other application symlink fails before target-content inspection',
-            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 24 carries it forward.',
+            'Consumer Contract version 16 introduced this boundary under Strict Profile version 4 and permanent diagnostics `PHT001` through `PHT008`; current Contract version 25 carries it forward.',
             'Acceptance selects no release identity and authorizes no tag, package, release, or announcement.',
         ],
         'docs/static-analysis.md' => [
@@ -4649,7 +4649,7 @@ function repositoryGuardrailFailures(string $root): array
             'source-prefix-discovery-executed',
         ],
         'tools/test-consumer-project/data.php' => [
-            "'Contract version: 24'",
+            "'Contract version: 25'",
             "'/docs/decisions/059-bounded-application-source-prefix-discovery.md'",
             "'Status: accepted'",
             "'Every other regular file has at most its first 4,096 bytes classified plus one lookahead byte.'",
@@ -4733,9 +4733,9 @@ function repositoryGuardrailFailures(string $root): array
             'Accepted [ADR 061](061-fail-closed-outer-http-failure-disclosure-profiles.md) coordinates Consumer Contract version 18',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 24',
+            'Contract version: 25',
             '## Outer HTTP failure boundary',
-            'Contract version 24 supports one deployed HTTP entrypoint.',
+            'Contract version 25 supports one deployed HTTP entrypoint.',
             'Any HTTP application may deliberately remain code-owned `GENERIC` without inventing external disclosure or runtime-profile selection inputs',
             'Missing, empty, unknown, unavailable, malformed, or contradictory input fails configuration before application-controlled I/O',
             'Every HTTP profile configures the effective web SAPI with all `E_ALL` bits reported, `display_errors=Off`, `display_startup_errors=Off`, `log_errors=On` to a private controlled destination, and `zend.exception_ignore_args=On`.',
@@ -4852,16 +4852,16 @@ function repositoryGuardrailFailures(string $root): array
         '.ai/http.md' => [
             'At emitter entry, reject ordinary and local-file responses as `ResponseEmissionFailed(true)`',
             'ADR 060 adds the pending-output preflight; ADR 061 adds the generic-first outer HTTP failure boundary and optional controlled detail response.',
-            'Current Consumer Contract v24 carries version 19 and Strict Profile v4 forward.',
+            'Current Consumer Contract v25 carries version 19 and Strict Profile v4 forward.',
         ],
         '.ai/file-transfers.md' => [
             'Before file access, `ResponseEmitter` applies the common response-output guard',
             'all-empty active and nested buffers remain valid',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 24',
+            'Contract version: 25',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 24 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 25 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -4906,7 +4906,7 @@ function repositoryGuardrailFailures(string $root): array
             'docs/decisions/060-reject-pending-output-before-response-emission.md',
         ],
         'tools/test-consumer-project/data.php' => [
-            "'Contract version: 24'",
+            "'Contract version: 25'",
             "'/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "'The proposed ADR 060 response-emission guard'",
         ],

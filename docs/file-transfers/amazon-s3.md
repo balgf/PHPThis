@@ -1,6 +1,6 @@
 # Application-owned Amazon S3 file transfers
 
-Contract 21 expands native multipart ingress, while `AMAZON_S3_ADR053` remains exactly one file with no operation text fields. Reject additional fields/files before any S3 operation. Mixed/multiple uploads require a separate storage-profile decision and evidence; this guide does not authorize them.
+The original upload/redirect path remains exactly one file with no operation text fields. Reject extra fields/files in that operation. Contract 25 separately permits the explicitly adopted [typed document metadata operation](metadata-uploads.md); its dedicated proof covers one normalized file with a label and optional note. Multiple-file storage remains deferred.
 
 Status: accepted optional guidance under ADR 053 and Consumer Contract version 13. An application adopts it only by recording `AMAZON_S3_ADR053` and completing every required application-owned evidence stage; installation or reference-proof success alone is not adoption.
 
