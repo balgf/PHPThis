@@ -68,7 +68,7 @@ try {
     $cleanup = 'not_started';
     $faults = new DockerPngInspector(InspectionDefinition::fromImageId($argv[2], dirname(__DIR__)));
     $resources = [];
-    foreach (['exit', 'output', 'cpu', 'memory', 'timeout'] as $mode) {
+    foreach (['exit', 'output', 'cpu', 'memory', 'memory_small', 'memory_kill', 'timeout'] as $mode) {
         $failure = 'resource_' . $mode . '_inspect';
         $cleanup = 'not_started';
         $token = bin2hex(random_bytes(16));
@@ -78,11 +78,26 @@ try {
             requireCatalogProof($faults->inspect($input, $token) === InspectionOutcome::ScannerError);
             $failure = 'resource_' . $mode . '_container_state';
             $observed = runBoundedMaintainerProcess(['docker', '--host', 'unix:///var/run/docker.sock', 'inspect', '--format',
-                '{{.State.OOMKilled}} {{.HostConfig.Memory}} {{.HostConfig.MemorySwap}} {{.HostConfig.ReadonlyRootfs}} {{.HostConfig.NetworkMode}} {{.Config.User}} {{.HostConfig.PidsLimit}}', 'phpthis-catalog-' . $token],
+                '{{.HostConfig.Memory}} {{.HostConfig.MemorySwap}} {{.HostConfig.ReadonlyRootfs}} {{.HostConfig.NetworkMode}} {{.Config.User}} {{.HostConfig.PidsLimit}}', 'phpthis-catalog-' . $token],
                 '/', ['PATH' => '/usr/local/bin:/usr/bin:/bin'], 3_000, 8192, 8192);
-            $expectedOom = $mode === 'memory' ? 'true' : 'false';
             requireCatalogProof($observed['exit_code'] === 0 && $observed['stderr'] === ''
-                && $observed['stdout'] === $expectedOom . " 67108864 67108864 true none 65534:65534 8\n");
+                && $observed['stdout'] === "67108864 67108864 true none 65534:65534 8\n");
+            $failure = 'resource_' . $mode . '_termination';
+            $termination = runBoundedMaintainerProcess(['docker', '--host', 'unix:///var/run/docker.sock', 'inspect', '--format',
+                '{{.State.Running}} {{.State.ExitCode}} {{.State.OOMKilled}}', 'phpthis-catalog-' . $token],
+                '/', ['PATH' => '/usr/local/bin:/usr/bin:/bin'], 3_000, 8192, 8192);
+            requireCatalogProof($termination['exit_code'] === 0 && $termination['stderr'] === '');
+            if ($mode === 'memory') {
+                // Exit 86 requires SIGKILL plus fresh kernel oom/oom_kill events.
+                // Docker's asynchronously delivered OOMKilled flag can be lost.
+                requireCatalogProof(in_array($termination['stdout'], ["false 86 true\n", "false 86 false\n"], true));
+            } elseif ($mode === 'memory_small' || $mode === 'memory_kill') {
+                // Neither allocation success nor an unrelated SIGKILL is an OOM proof.
+                $expectedExit = $mode === 'memory_small' ? 87 : 89;
+                requireCatalogProof($termination['stdout'] === 'false ' . $expectedExit . " false\n");
+            } else {
+                requireCatalogProof(preg_match('/\A(?:true|false) -?[0-9]+ false\n\z/D', $termination['stdout']) === 1);
+            }
             if ($mode === 'timeout') {
                 $failure = 'resource_timeout_elapsed';
                 requireCatalogProof(hrtime(true) - $started >= 9_000_000_000);
