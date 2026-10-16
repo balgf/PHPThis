@@ -13,9 +13,14 @@ require_once __DIR__ . '/src/ReferenceEnvironment.php';
 require_once __DIR__ . '/src/CredentialProvider.php';
 require_once __DIR__ . '/src/Composition.php';
 require_once __DIR__ . '/src/VerifiedUpload.php';
+require_once __DIR__ . '/src/PacketInput.php';
+require_once __DIR__ . '/src/PacketValues.php';
+require_once __DIR__ . '/src/PacketS3.php';
 require_once __DIR__ . '/src/DocumentS3.php';
 require_once __DIR__ . '/src/Documents.php';
+require_once __DIR__ . '/src/Packets.php';
 require_once __DIR__ . '/src/UploadDocument.php';
+require_once __DIR__ . '/src/UploadPacket.php';
 require_once __DIR__ . '/src/DocumentInvocation.php';
 require_once __DIR__ . '/src/HttpComposition.php';
 

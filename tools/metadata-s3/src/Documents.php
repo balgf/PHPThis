@@ -25,17 +25,20 @@ final readonly class Documents
             $reserved = $this->database->executeStatement(
                 'INSERT INTO documents (document_id, owner_id, label, note, size_bytes, sha256, state, version_id, created_at, expires_at, target)
                  SELECT :id, :owner, :label, :note, :bytes, :digest, :state, NULL, :created, :expires, :target
-                 WHERE (SELECT COUNT(*) FROM documents) < 256
-                   AND (SELECT COUNT(*) FROM documents WHERE state NOT IN (:failed_count, :deleted_count)) < 32
-                   AND (SELECT COALESCE(SUM(size_bytes), 0) FROM documents WHERE state NOT IN (:failed_bytes, :deleted_bytes)) + :quota <= 2097152
-                   AND (SELECT COUNT(*) FROM documents WHERE owner_id = :principal_count AND state NOT IN (:owner_failed_count, :owner_deleted_count)) < 8
-                   AND (SELECT COALESCE(SUM(size_bytes), 0) FROM documents WHERE owner_id = :principal_bytes AND state NOT IN (:owner_failed_bytes, :owner_deleted_bytes)) + :owner_quota <= 524288',
+                 WHERE (SELECT COUNT(*) FROM documents) + (SELECT COUNT(*) FROM document_packets) < 256
+                   AND (SELECT COUNT(*) FROM documents WHERE state NOT IN (:failed_count, :deleted_count)) + 2 * (SELECT COUNT(*) FROM document_packets WHERE state NOT IN (:packet_failed_count, :packet_deleted_count)) < 32
+                   AND (SELECT COALESCE(SUM(size_bytes), 0) FROM documents WHERE state NOT IN (:failed_bytes, :deleted_bytes)) + (SELECT COALESCE(SUM(primary_bytes + supporting_bytes), 0) FROM document_packets WHERE state NOT IN (:packet_failed_bytes, :packet_deleted_bytes)) + :quota <= 2097152
+                   AND (SELECT COUNT(*) FROM documents WHERE owner_id = :principal_count AND state NOT IN (:owner_failed_count, :owner_deleted_count)) + 2 * (SELECT COUNT(*) FROM document_packets WHERE owner_id = :packet_owner_count AND state NOT IN (:packet_owner_failed_count, :packet_owner_deleted_count)) < 8
+                   AND (SELECT COALESCE(SUM(size_bytes), 0) FROM documents WHERE owner_id = :principal_bytes AND state NOT IN (:owner_failed_bytes, :owner_deleted_bytes)) + (SELECT COALESCE(SUM(primary_bytes + supporting_bytes), 0) FROM document_packets WHERE owner_id = :packet_owner_bytes AND state NOT IN (:packet_owner_failed_bytes, :packet_owner_deleted_bytes)) + :owner_quota <= 524288',
                 ['id' => $id->value, 'owner' => $owner->id, 'label' => $input->metadata->label, 'note' => $input->metadata->note,
                     'bytes' => $upload->bytes, 'digest' => $upload->sha256, 'state' => 'pending', 'created' => $now, 'expires' => $now + 86400,
                     'target' => $this->s3->target->fingerprint(), 'failed_count' => 'failed', 'deleted_count' => 'deleted',
                     'failed_bytes' => 'failed', 'deleted_bytes' => 'deleted', 'quota' => $upload->bytes, 'principal_count' => $owner->id,
                     'owner_failed_count' => 'failed', 'owner_deleted_count' => 'deleted', 'principal_bytes' => $owner->id,
-                    'owner_failed_bytes' => 'failed', 'owner_deleted_bytes' => 'deleted', 'owner_quota' => $upload->bytes],
+                    'owner_failed_bytes' => 'failed', 'owner_deleted_bytes' => 'deleted', 'owner_quota' => $upload->bytes,
+                    'packet_failed_count' => 'failed', 'packet_deleted_count' => 'deleted', 'packet_failed_bytes' => 'failed', 'packet_deleted_bytes' => 'deleted',
+                    'packet_owner_count' => $owner->id, 'packet_owner_failed_count' => 'failed', 'packet_owner_deleted_count' => 'deleted',
+                    'packet_owner_bytes' => $owner->id, 'packet_owner_failed_bytes' => 'failed', 'packet_owner_deleted_bytes' => 'deleted'],
             );
             if ($reserved !== 1) { throw new CapacityUnavailable('Document capacity unavailable.'); }
             try { $version = $this->s3->create($id, $upload); }

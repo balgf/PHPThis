@@ -6,6 +6,8 @@ For the optional checked still-PNG inspection path, use `docs/file-transfers/ins
 
 ## Checked application adaptation
 
+For exactly two named S3 files, use `docs/file-transfers/document-packets.md` under ADR 072 / Contract 26. Require all-or-nothing visibility, durable per-role write claims and ownership markers, owner-scoped replay without another Put, shared quota across both routes and exact-version cleanup. Read its migration before changing the existing metadata application.
+
 For one S3 document with a label and optional note, use `docs/file-transfers/metadata-uploads.md` under ADR 071 / Contract 25. Complete operation authorization/validation before protected effects, verify upload provenance before reservation, and bind descriptions privately to trusted owner and exact version. Preserve normalized-input limits, quotas and recovery; clear descriptions on durable failed/deleted states. `tools/metadata-s3` offline tests plus complete `composer check` suffice for the reference; real AWS/deployment evidence is required at adoption.
 
 For generated inventory exports and internal reads, use `docs/file-transfers/generated-exports.md` under ADR 068 / Contract 22. The offline `tools/generated-s3` tests and complete framework `composer check` are sufficient for reference-recipe verification. Keep generated provenance separate from PHP uploads and preserve exact-version ownership and ambiguity accounting. Actual AWS/deployment verification is deferred until application adoption, when it remains required; the reference's failing adoption gate does not block reference completion.

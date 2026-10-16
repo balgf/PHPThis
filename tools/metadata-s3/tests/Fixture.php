@@ -159,6 +159,35 @@ final readonly class Fixture
     reason TEXT NOT NULL DEFAULT 'reserved',
     CHECK (CASE WHEN state IN ('failed','deleted') THEN label IS NULL AND note IS NULL ELSE label IS NOT NULL END)
 ) STRICT;");
+        $this->database->executeStatement("CREATE TABLE document_packets(
+    packet_id TEXT PRIMARY KEY NOT NULL CHECK (length(packet_id) = 32),
+    owner_id INTEGER NOT NULL CHECK (owner_id > 0),
+    request_id TEXT NOT NULL CHECK (length(request_id) = 32),
+    request_fingerprint TEXT NOT NULL CHECK (length(request_fingerprint) = 64),
+    label TEXT CHECK (label IS NULL OR length(CAST(label AS BLOB)) BETWEEN 1 AND 120),
+    note TEXT CHECK (note IS NULL OR length(CAST(note AS BLOB)) <= 1024),
+    primary_bytes INTEGER NOT NULL CHECK (primary_bytes BETWEEN 1 AND 65536),
+    primary_sha256 TEXT NOT NULL CHECK (length(primary_sha256) = 64),
+    primary_nonce TEXT NOT NULL CHECK (length(primary_nonce) = 32),
+    primary_state TEXT NOT NULL DEFAULT 'ready' CHECK (primary_state IN ('ready','write_started','stored','verified','collision','deletion_pending','deleted')),
+    primary_version TEXT CHECK (primary_version IS NULL OR length(CAST(primary_version AS BLOB)) BETWEEN 1 AND 1024),
+    primary_delete_attempts INTEGER NOT NULL DEFAULT 0 CHECK (primary_delete_attempts BETWEEN 0 AND 2),
+    supporting_bytes INTEGER NOT NULL CHECK (supporting_bytes BETWEEN 1 AND 65536),
+    supporting_sha256 TEXT NOT NULL CHECK (length(supporting_sha256) = 64),
+    supporting_nonce TEXT NOT NULL CHECK (length(supporting_nonce) = 32),
+    supporting_state TEXT NOT NULL DEFAULT 'ready' CHECK (supporting_state IN ('ready','write_started','stored','verified','collision','deletion_pending','deleted')),
+    supporting_version TEXT CHECK (supporting_version IS NULL OR length(CAST(supporting_version AS BLOB)) BETWEEN 1 AND 1024),
+    supporting_delete_attempts INTEGER NOT NULL DEFAULT 0 CHECK (supporting_delete_attempts BETWEEN 0 AND 2),
+    state TEXT NOT NULL CHECK (state IN ('pending','reconciliation_required','accepted','aborting','deletion_pending','failed','deleted')),
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL CHECK (expires_at = created_at + 86400),
+    target TEXT NOT NULL CHECK (length(target) = 64),
+    UNIQUE (owner_id, request_id),
+    CHECK (state <> 'accepted' OR (primary_state = 'verified' AND supporting_state = 'verified'
+        AND primary_version IS NOT NULL AND supporting_version IS NOT NULL)),
+    CHECK (state NOT IN ('failed','deleted') OR (primary_state IN ('ready','collision','deleted') AND supporting_state IN ('ready','collision','deleted'))),
+    CHECK (CASE WHEN state IN ('failed','deleted') THEN label IS NULL AND note IS NULL ELSE label IS NOT NULL END)
+) STRICT; ");
         $this->lock = new DocumentLock($this->root); $this->lock->acquire(true);
         $this->clock = new FixtureClock(); $this->owner = new DocumentOwner(1);
         $this->remote = new SyntheticS3(S3Target::fromInputs('fixture-bucket', 'us-east-1', '000000000000', 'arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000001'));

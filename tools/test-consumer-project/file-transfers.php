@@ -13,6 +13,17 @@ function proveInstalledProtectedFileTransferReference(
 ): string {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
+        $installedFramework . '/docs/file-transfers/document-packets.md' => [
+            '# Two-file S3 document packets',
+            'REFERENCE_ONLY',
+            'MultipartLimits(196608, 65536, 131072, 1024, 1195)',
+            'Partial deletion or uncertain database accounting retains the **whole packet\'s reservation**.',
+            'file-transfers:s3:verify',
+        ],
+        $installedFramework . '/docs/decisions/072-s3-document-packets.md' => [
+            'Status: accepted',
+            'Consumer Contract 26',
+        ],
         $installedFramework . '/docs/file-transfers/metadata-uploads.md' => [
             '# One S3 document with typed operation metadata',
             'REFERENCE_ONLY',
@@ -38,9 +49,9 @@ function proveInstalledProtectedFileTransferReference(
             'Consumer Contract 22',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 25',
+            'Contract version: 26',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 25 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 26 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
             '# ADR 060: Reject pending output before response emission',
@@ -55,7 +66,7 @@ function proveInstalledProtectedFileTransferReference(
             'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
         ],
         $installedFramework . '/docs/file-transfers/README.md' => [
-            'Consumer Contract version 25 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 26 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
         ],

@@ -26,11 +26,15 @@ use PHPThis\Routing\Router;
 /** Reuse the starter's unchanged application-owned terminal coordinator. */
 function documentCoordinator(
     DocumentUploadPolicy $policy, DocumentReceiver $receiver, QueryBudget $budget, QueryTrace $trace, RequestSummarySink $sink,
+    PacketUploadPolicy $packetPolicy, PacketReceiver $packetReceiver, QueryBudget $packetBudget, QueryTrace $packetTrace,
 ): TerminalRequestCoordinator {
     $headers = ['Content-Type' => 'text/plain', 'Cache-Control' => 'private, no-store'];
     return new TerminalRequestCoordinator(new RequestBoundary(
-        new RequestReader(131_072, 'php://input', new MultipartLimits(131_072, 65_536, 65_536, 1024, 1153)),
-        new Application(new Router([new Route('POST', '/documents', new UploadDocument($policy, $receiver))])),
+        new RequestReader(131_072, 'php://input', new MultipartLimits(196_608, 65_536, 131_072, 1024, 1195)),
+        new Application(new Router([
+            new Route('POST', '/documents', new UploadDocument($policy, $receiver)),
+            new Route('POST', '/document-packets', new UploadPacket($packetPolicy, $packetReceiver)),
+        ])),
         new ErrorResponseRegistry([
             InvalidRequest::class => new Response(400, $headers, 'invalid request'),
             InvalidMetadata::class => new Response(422, $headers, 'invalid value'),
@@ -39,6 +43,10 @@ function documentCoordinator(
             CapacityUnavailable::class => new Response(503, $headers, 'unavailable'),
             AuthenticationRequired::class => new Response(401, $headers + ['WWW-Authenticate' => 'Bearer'], 'unauthorized'),
             UploadDenied::class => new Response(403, $headers, 'forbidden'),
+            PacketConflict::class => new Response(409, $headers, 'conflict'),
+            PacketGone::class => new Response(410, $headers, 'gone'),
         ]),
-    ), new UnknownFailureBoundary(), CorrelationId::generate(), $sink, [new QuerySummarySource('documents', $budget, $trace)]);
+    ), new UnknownFailureBoundary(), CorrelationId::generate(), $sink, [
+        new QuerySummarySource('documents', $budget, $trace), new QuerySummarySource('packets', $packetBudget, $packetTrace),
+    ]);
 }

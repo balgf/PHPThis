@@ -61,3 +61,5 @@ Application-owned tests for every profile exercise the real web-SAPI boundary; e
 ## Optional generated S3 operation
 
 For Contract 22 / ADR 068, follow `vendor/phpthis/framework/docs/file-transfers/generated-exports.md`. Record generated provenance, operation/row/byte bounds, typed internal consumption, process-specific authority, durable ownership/quota and delete-attempt accounting, bounded reconciliation, memory/handle lifetime, expiry and actual AWS/deployment evidence: {{GENERATED_S3_OPERATION_AND_EVIDENCE_OR_NOT_APPLICABLE}}. Otherwise record `NOT_APPLICABLE(GENERATED_S3_EXPORTS)`. The original upload/redirect checker does not cover this mode.
+
+For the optional two-file S3 packet, follow installed `vendor/phpthis/framework/docs/file-transfers/document-packets.md`. Explicit adoption records both roles, visibility and replay semantics, ownership markers, shared quota, retention and recovery in this file; preserve unresolved ownership during migration/rollback. The starter remains a non-adopter, and offline reference evidence does not establish application adoption.

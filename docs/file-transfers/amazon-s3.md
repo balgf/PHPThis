@@ -1,6 +1,6 @@
 # Application-owned Amazon S3 file transfers
 
-The original upload/redirect path remains exactly one file with no operation text fields. Reject extra fields/files in that operation. Contract 25 separately permits the explicitly adopted [typed document metadata operation](metadata-uploads.md); its dedicated proof covers one normalized file with a label and optional note. Multiple-file storage remains deferred.
+The original upload/redirect path remains exactly one file with no operation text fields. Reject extra fields/files in that operation. Contract 25 separately permits the explicitly adopted [typed document metadata operation](metadata-uploads.md); its dedicated proof covers one normalized file with a label and optional note. Contract 26 separately permits the [two-file document packet](document-packets.md), with its own role keys, ownership markers, shared quota and failure semantics.
 
 Status: accepted optional guidance under ADR 053 and Consumer Contract version 13. An application adopts it only by recording `AMAZON_S3_ADR053` and completing every required application-owned evidence stage; installation or reference-proof success alone is not adoption.
 
@@ -20,7 +20,7 @@ The complete profile selection is:
 
 The application owns the SDK and HTTP-client dependencies, cURL/TLS/CA runtime and update review, configuration values, credential provider, clients, operations, metadata, quota, reconciliation, exact-version deletion, IAM, KMS, bucket policy, retention, alarms, cost, audit events, real-service tests, and production evidence. PHPThis owns none of them.
 
-This profile excludes direct browser PUT/POST, S3 multipart or resumable upload, multiple files, PHP proxy streaming, CDN/proxy offload, public objects, directory buckets/S3 Express, access points, Multi-Region Access Points, Outposts, transfer acceleration, custom endpoints, other partitions, arbitrary S3-compatible services, runtime backend selection, and generic storage abstractions.
+The original upload/redirect operation below excludes direct browser PUT/POST, S3 multipart or resumable upload, multiple files, PHP proxy streaming, CDN/proxy offload, public objects, directory buckets/S3 Express, access points, Multi-Region Access Points, Outposts, transfer acceleration, custom endpoints, other partitions, arbitrary S3-compatible services, runtime backend selection, and generic storage abstractions.
 
 ## Common multipart and request policy
 

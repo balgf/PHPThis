@@ -25,7 +25,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
     }
 
     requireInstalledArtifactMarkers([
-        $installedFramework . '/docs/consumer-contract.md' => ['Contract version: 25'],
+        $installedFramework . '/docs/consumer-contract.md' => ['Contract version: 26'],
         $project . '/src/Routes.php' => [
             'return [...HealthRoutes::create()];',
         ],
@@ -78,7 +78,7 @@ function proveInstalledBoundedTaskRoutedContextGuidanceDistribution(
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 25 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 26 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/consumer-contract-upgrades.md' => [
             'Remove unintended early output at its owner.',

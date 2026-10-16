@@ -88,6 +88,8 @@ function distributionGuardrailFailures(
             'docs/file-transfers/amazon-s3-verification.md',
             'docs/file-transfers/metadata-uploads.md',
             'docs/decisions/071-s3-upload-operation-metadata.md',
+            'docs/decisions/072-s3-document-packets.md',
+            'docs/file-transfers/document-packets.md',
         ];
 
         foreach ($amazonS3AcceptedPackagePaths as $amazonS3AcceptedPackagePath) {
@@ -100,8 +102,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 252) {
-            $failures[] = 'The current framework package inventory must contain exactly 252 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 254) {
+            $failures[] = 'The current framework package inventory must contain exactly 254 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -1188,7 +1190,7 @@ function distributionGuardrailFailures(
             'Do not introduce an ORM',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 25',
+            'Contract version: 26',
             '## Optional bounded file transfers',
             'Raw `$_FILES` never enters a handler.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
@@ -1209,7 +1211,7 @@ function distributionGuardrailFailures(
         ],
         'docs/file-transfers/README.md' => [
             'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
-            'Consumer Contract version 25 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 26 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
@@ -1266,7 +1268,7 @@ function distributionGuardrailFailures(
             "\$installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "\$installedFramework . '/docs/file-transfers/emission.md'",
             "\$installedFramework . '/src/Http/ResponseEmitter.php'",
-            "'Contract version: 25'",
+            "'Contract version: 26'",
             'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
             'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
             'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
@@ -1345,8 +1347,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 25$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 25.';
+            if (preg_match('/^Contract version: 26$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 26.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {

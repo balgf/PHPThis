@@ -6,10 +6,23 @@ require __DIR__ . '/metadata-s3/bootstrap.php';
 require __DIR__ . '/metadata-s3/tests/Fixture.php';
 require __DIR__ . '/metadata-s3/tests/lifecycle.php';
 require __DIR__ . '/metadata-s3/tests/contracts.php';
+require __DIR__ . '/metadata-s3/tests/PacketFixture.php';
+require __DIR__ . '/metadata-s3/tests/packet-lifecycle.php';
 
 verifyMetadataS3Lifecycle();
 verifyMetadataS3FailureAccounting();
 verifyMetadataS3Contracts();
+verifyPacketLifecycle();
+verifyPacketCleanup();
+$packetValues = runBoundedMaintainerProcess([PHP_BINARY, __DIR__ . '/metadata-s3/tests/packet-values.php'], dirname(__DIR__), [], 3000, 8192, 8192);
+if ($packetValues !== ['exit_code' => 0, 'stdout' => "PASS packet values: 27 cases\n", 'stderr' => '']) {
+    throw new RuntimeException('Packet value proof failed: ' . $packetValues['stdout'] . $packetValues['stderr']);
+}
+$packetHttp = runBoundedMaintainerProcess(['python3', '-B', __DIR__ . '/metadata-s3/tests/packet-http.py'], dirname(__DIR__),
+    ['PATH' => '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'], 45_000, 8192, 8192);
+if ($packetHttp !== ['exit_code' => 0, 'stdout' => "PASS packet HTTP: 116 cases; fresh-process recovery; no AWS calls\n", 'stderr' => '']) {
+    throw new RuntimeException('Packet HTTP proof failed: ' . $packetHttp['stdout'] . $packetHttp['stderr']);
+}
 $values = runBoundedMaintainerProcess([PHP_BINARY, __DIR__ . '/metadata-s3/tests/values.php'], dirname(__DIR__), [], 3000, 8192, 8192);
 if ($values !== ['exit_code' => 0, 'stdout' => "PASS metadata S3 values: 17 cases; every upload error and structural precedence\n", 'stderr' => '']) {
     throw new RuntimeException('Metadata S3 value proof failed.');
@@ -17,7 +30,7 @@ if ($values !== ['exit_code' => 0, 'stdout' => "PASS metadata S3 values: 17 case
 $http = runBoundedMaintainerProcess(['python3', __DIR__ . '/metadata-s3/tests/http-proof.py'], dirname(__DIR__),
     ['PATH' => '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'], 30_000, 8192, 8192);
 if ($http['exit_code'] !== 0 || $http['stderr'] !== ''
-    || $http['stdout'] !== "PASS metadata S3 HTTP: 65 cases; synthetic SDK only; no AWS calls\n") {
+    || $http['stdout'] !== "PASS metadata S3 HTTP: 67 cases; synthetic SDK only; no AWS calls\n") {
     throw new RuntimeException('Metadata S3 HTTP proof failed: ' . $http['stdout'] . $http['stderr']);
 }
 $transport = runBoundedMaintainerProcess(['python3', __DIR__ . '/metadata-s3/tests/transport.py'], dirname(__DIR__),
