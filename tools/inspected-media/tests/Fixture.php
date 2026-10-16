@@ -61,7 +61,7 @@ final readonly class Fixture
                 state TEXT NOT NULL CHECK (state IN (\'reserved\', \'pending\', \'inspecting\', \'accepted\', \'rejected\', \'scanner_error\')),
                 definition TEXT NOT NULL, attempts INTEGER NOT NULL CHECK (attempts BETWEEN 0 AND 2),
                 created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL CHECK (expires_at = created_at + 86400), inspection_token TEXT,
-                format TEXT NOT NULL CHECK (format IN (\'png\', \'jpeg\'))
+                format TEXT NOT NULL CHECK (format IN (\'png\', \'jpeg\', \'mp4\'))
              )',
         );
         $this->definition = InspectionDefinition::fromImageId($image, dirname(__DIR__));

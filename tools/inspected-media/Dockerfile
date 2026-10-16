@@ -16,13 +16,26 @@ RUN --network=none tar -xzf jpeg.tar.gz \
  && cmake --build jpeg-build --parallel 2 \
  && cd jpeg-build && ctest --output-on-failure
 
+FROM php:8.4.26-cli-bookworm@sha256:836ac6c672d1372a47c8fd61b625015bd07760f493fb2eaab2087636498a2b4b AS mp4-build
+ADD --checksum=sha256:8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz /build/ffmpeg.tar.xz
+WORKDIR /build
+RUN --network=none tar -xJf ffmpeg.tar.xz && cd ffmpeg-9.0.2 \
+ && ./configure --disable-everything --disable-autodetect --disable-network --disable-doc --disable-debug --disable-asm \
+    --disable-programs --enable-ffprobe --disable-avdevice --disable-avfilter --disable-swscale --disable-swresample \
+    --disable-pthreads --disable-w32threads --disable-os2threads \
+    --enable-decoder=h264 --enable-parser=h264 --enable-demuxer=mov --enable-protocol=pipe \
+ && make -j2 ffprobe
+
 FROM php:8.4.26-cli-bookworm@sha256:836ac6c672d1372a47c8fd61b625015bd07760f493fb2eaab2087636498a2b4b
+COPY --from=mp4-build /build/ffmpeg-9.0.2/ffprobe /usr/local/bin/ffprobe
+COPY --from=mp4-build /build/ffmpeg-9.0.2/COPYING.LGPLv2.1 /usr/local/share/ffmpeg/COPYING.LGPLv2.1
 COPY --from=build /build/pngcheck /usr/local/bin/pngcheck
 COPY --from=build /build/jpeg-build/djpeg-static /usr/local/bin/djpeg
 COPY --from=build /opt/png-zlib/lib/libz.so.1.3.2 /opt/png-zlib/lib/libz.so.1
 ENV LD_LIBRARY_PATH=/opt/png-zlib/lib
 COPY src/Failures.php src/PngHeader.php src/BoundedPng.php /inspector/src/
 COPY src/BoundedJpeg.php src/CatalogImageFormat.php /inspector/src/
+COPY src/Mp4Structure.php src/BoundedMp4.php src/Mp4Decoder.php /inspector/src/
 COPY inspector.php /inspector/inspector.php
 USER 65534:65534
 ENTRYPOINT ["php", "-n", "-d", "memory_limit=32M", "-d", "display_errors=0", "-d", "log_errors=0", "/inspector/inspector.php"]

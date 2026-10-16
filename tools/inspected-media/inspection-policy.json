@@ -1,10 +1,10 @@
 {
-  "operation": "catalog-image-v2",
-  "format_allowlist": "PNG-8bit-RGB-or-RGBA-noninterlaced-IHDR-IDAT-IEND-only;CATALOG_JPEG_BASELINE_V1-SOF0-8bit-YCbCr-444-422-420-JFIF101-102-no-metadata-single-scan-terminal-EOI",
-  "toolchain": "PHP-8.4.26-pngcheck-4.0.1-zlib-1.3.2-libjpeg-turbo-3.2.0-static-no-SIMD-no-arithmetic",
+  "operation": "catalog-media-v3",
+  "format_allowlist": "PNG-8bit-RGB-or-RGBA-noninterlaced-IHDR-IDAT-IEND-only;CATALOG_JPEG_BASELINE_V1-SOF0-8bit-YCbCr-444-422-420-JFIF101-102-no-metadata-single-scan-terminal-EOI;CATALOG_MP4_AVC_BASELINE_V1-isom-avc1-ConstrainedBaselineL30-silent-single-track-chunk-no-SEI",
+  "toolchain": "PHP-8.4.26-pngcheck-4.0.1-zlib-1.3.2-libjpeg-turbo-3.2.0-static-no-SIMD-no-arithmetic-FFmpeg-9.0.2-minimal-MOV-H264-pipe-no-network-no-threads",
   "scanner_signatures": "not-applicable-format-integrity-only",
-  "parser_configuration": "PNG-full-CRC-exact-inflate-complete-stream-pngcheck-q;JPEG-bounded-envelope-then-djpeg-strict-maxscans1-maxmemory16M-rgb-pnm-to-devnull-nonzero-scanner_error",
-  "limits": "1048576-bytes-1024x1024;PNG-64-chunks-4195328-scanline-bytes;JPEG-32-segments-3145728-RGB-pixel-bytes",
+  "parser_configuration": "PNG-full-CRC-exact-inflate-complete-stream-pngcheck-q;JPEG-bounded-envelope-then-djpeg-strict-maxscans1-maxmemory16M-rgb-pnm-to-devnull-nonzero-scanner_error;MP4-bounded-BMFF-SPS-crop-match-then-full-frame-ffprobe-strict-8s-65536stdout-8192stderr-matching-count-timestamps-size-format-no-warning",
+  "limits": "1048576-bytes-1024x1024;PNG-64-chunks-4195328-scanline-bytes;JPEG-32-segments-3145728-RGB-pixel-bytes;MP4-1MiB-640x480-10s-300frames-1to30fps-262144sample-1to4refs-307200coded-pixels-8MiB-single-allocation",
   "isolation": "uid65534-network-none-readonly-capdrop-all-no-new-privileges-no-mounts-64MiB-8pids-2cpu-seconds-per-process-10wall-seconds-8192-protocol-bytes",
-  "application_policy": "LOCAL_ADR026-quarantine-principal-and-route-format-bound-shared-24h-expiry-32files-32MiB-2attempts-reinspect-both-formats-on-change"
+  "application_policy": "LOCAL_ADR026-quarantine-principal-and-route-format-bound-shared-24h-expiry-32files-32MiB-2attempts-reinspect-all-three-formats-on-change"
 }

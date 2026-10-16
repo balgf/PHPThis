@@ -7,6 +7,8 @@ require_once __DIR__ . '/src/Failures.php';
 require_once __DIR__ . '/src/PngHeader.php';
 require_once __DIR__ . '/src/BoundedPng.php';
 require_once __DIR__ . '/src/BoundedJpeg.php';
+require_once __DIR__ . '/src/Mp4Structure.php';
+require_once __DIR__ . '/src/BoundedMp4.php';
 require_once __DIR__ . '/src/CatalogImageFormat.php';
 require_once __DIR__ . '/src/ImageId.php';
 require_once __DIR__ . '/src/CatalogPrincipal.php';

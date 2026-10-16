@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use CatalogImageRecipe\BoundedPng;
 use CatalogImageRecipe\BoundedJpeg;
+use CatalogImageRecipe\BoundedMp4;
+use CatalogImageRecipe\Mp4Decoder;
+use CatalogImageRecipe\RejectedMp4;
 use CatalogImageRecipe\CatalogImageFormat;
 use CatalogImageRecipe\RejectedPng;
 use CatalogImageRecipe\RejectedJpeg;
@@ -12,6 +15,9 @@ require __DIR__ . '/src/Failures.php';
 require __DIR__ . '/src/PngHeader.php';
 require __DIR__ . '/src/BoundedPng.php';
 require __DIR__ . '/src/BoundedJpeg.php';
+require __DIR__ . '/src/Mp4Structure.php';
+require __DIR__ . '/src/BoundedMp4.php';
+require __DIR__ . '/src/Mp4Decoder.php';
 require __DIR__ . '/src/CatalogImageFormat.php';
 
 try {
@@ -21,10 +27,13 @@ try {
     if ($format === null) { throw new RuntimeException('Inspector format invalid.'); }
     $bytes = file_get_contents('php://stdin', false, null, 0, 1_048_577);
     if (!is_string($bytes)) { throw new RuntimeException('Input unavailable.'); }
+    $mp4 = null;
     try {
         if ($format === CatalogImageFormat::Png) { BoundedPng::fromBytes($bytes); }
-        else { BoundedJpeg::fromBytes($bytes); }
-    } catch (RejectedPng | RejectedJpeg) { fwrite(STDOUT, "rejected\n"); exit(0); }
+        elseif ($format === CatalogImageFormat::Jpeg) { BoundedJpeg::fromBytes($bytes); }
+        else { $mp4 = BoundedMp4::fromBytes($bytes); }
+    } catch (RejectedPng | RejectedJpeg | RejectedMp4) { fwrite(STDOUT, "rejected\n"); exit(0); }
+    if ($mp4 instanceof BoundedMp4) { Mp4Decoder::verify($bytes, $mp4); fwrite(STDOUT, "accepted\n"); exit(0); }
     $pipes = [];
     $command = $format === CatalogImageFormat::Png ? ['/usr/local/bin/pngcheck', '-q']
         : ['/usr/local/bin/djpeg', '-strict', '-maxscans', '1', '-maxmemory', '16M', '-rgb', '-pnm', '-outfile', '/dev/null'];
