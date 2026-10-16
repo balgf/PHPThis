@@ -40,3 +40,5 @@ ADR 053 and Consumer Contract version 13 accept the optional `AMAZON_S3_ADR053` 
 NOT_APPLICABLE(GENERATED_S3_EXPORTS)
 
 The health-only starter generates no artifacts and reads no S3 objects. Optional Contract 22 adoption follows `vendor/phpthis/framework/docs/file-transfers/generated-exports.md` and requires its own real AWS/deployment evidence.
+
+For the optional two-file S3 packet, follow installed `vendor/phpthis/framework/docs/file-transfers/document-packets.md`. Explicit adoption records both roles, visibility and replay semantics, ownership markers, shared quota, retention and recovery in this file; preserve unresolved ownership during migration/rollback. The starter remains a non-adopter, and offline reference evidence does not establish application adoption.

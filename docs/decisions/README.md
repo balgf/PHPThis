@@ -135,3 +135,5 @@ Accepted [ADR 069](069-configurable-multipart-field-limits.md) introduces Consum
 Accepted [ADR 070](070-fixed-early-http-error-representations.md) introduces Consumer Contract 24 with optional fixed early HTTP failure representations through existing value types. It replaces ADR 065's always-built-in early-format requirement while retaining ADR 061's disclosure, initial fallback and response-ownership boundaries.
 
 Accepted [ADR 071](071-s3-upload-operation-metadata.md) introduces Consumer Contract 25 with one optional S3 document upload carrying typed descriptive metadata. It preserves original and generated operation scopes, binds fields privately to trusted ownership and exact versions, and keeps real AWS/deployment verification at application adoption.
+
+Accepted [ADR 072](072-s3-document-packets.md) introduces Consumer Contract 26 for one explicit two-file S3 packet: all-or-nothing visibility, owner-scoped repeats, durable role identities, shared quotas and exact-version recovery. Offline reference evidence remains separate from AWS/deployment adoption.

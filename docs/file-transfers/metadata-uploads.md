@@ -1,6 +1,6 @@
 # One S3 document with typed operation metadata
 
-Consumer Contract 25 and [ADR 071](../decisions/071-s3-upload-operation-metadata.md) permit this optional `AMAZON_S3_ADR053` operation: `POST /documents` registers one opaque document with a descriptive label and optional note. The [S3 owner](amazon-s3.md) retains target, versioning, KMS, transport and deployment policy. The original upload/redirect and generated-export operations keep their separate scopes.
+Consumer Contract 25 and [ADR 071](../decisions/071-s3-upload-operation-metadata.md) permit this optional `AMAZON_S3_ADR053` operation: `POST /documents` registers one opaque document with a descriptive label and optional note. The [S3 owner](amazon-s3.md) retains target, versioning, KMS, transport and deployment policy. The original upload/redirect and generated-export operations keep their separate scopes. Contract 26 adds the separate [two-file packet](document-packets.md) to the same optional reference application.
 
 The [executable reference](https://github.com/balgf/PHPThis/tree/main/tools/metadata-s3) is `REFERENCE_ONLY`. Offline tests plus the complete framework `composer check` suffice for this recipe; actual AWS and deployment verification remain required at application adoption. It uses the existing optional SDK lock and adds no core API or framework dependency.
 
@@ -14,7 +14,7 @@ The [executable reference](https://github.com/balgf/PHPThis/tree/main/tools/meta
 
 Retain exact text without trimming, coercion or Unicode normalization. An absent note is `null`; an explicitly empty note remains `''`. These are flat descriptive strings: JSON depth, nested-object counts and HTML interpretation are inapplicable. Escape text for its destination if an application later displays it. Metadata does not inspect or certify the file.
 
-Compose `MultipartLimits(131072, 65536, 65536, 1024, 1153)`: request 128 KiB, file/aggregate file 64 KiB, per-field value 1,024 bytes, aggregate field names and values 1,153 bytes. The last bound includes `label` and `note` names and their maximum values. The operation narrows the label to 120 bytes. PHP's native pre-materialization limits remain 32 fields, eight files and 40 parts; the operation accepts at most two normalized fields and one normalized file.
+The one-file operation keeps the envelope `MultipartLimits(131072, 65536, 65536, 1024, 1153)`: request 128 KiB, file/aggregate file 64 KiB, per-field value 1,024 bytes, aggregate field names and values 1,153 bytes. The last bound includes `label` and `note` names and their maximum values. The combined reference reader uses the larger packet envelope; this handler checks its 128 KiB request, 64 KiB aggregate-file and 1,153-byte field aggregate after parsing and before policy I/O. The operation narrows the label to 120 bytes. PHP's native pre-materialization limits remain 32 fields, eight files and 40 parts; the operation accepts at most two normalized fields and one normalized file.
 
 Validate the complete observable field/file set before value rules. Missing, unknown, nested or extra fields/files produce generic 400. Invalid UTF-8, controls, label length and an empty file produce 422. Transport overflow produces 413; incompatible media produces 415. Preserve native upload-error mapping: partial/missing 400, size 413, temporary-directory/write/extension and unknown errors 500. Operational failures remain generic; admission/quota exhaustion produces 503.
 
@@ -32,7 +32,7 @@ Caller fields never select ownership, tenant, bucket, key, destination, encrypti
 
 ## Capacity, retention and recovery
 
-Use a private single-host SQLite database and one nonblocking mutation lock, precreated by an authorized non-HTTP process. Retain at most 32 live/reserved objects, 2 MiB and 256 total identities including tombstones. Add limits of eight live/reserved objects and 512 KiB per trusted owner. This reference and the generated-export application have independent stores; a shared deployment needs one coordinated aggregate quota policy.
+Use a private single-host SQLite database and one nonblocking mutation lock, precreated by an authorized non-HTTP process. Retain at most 32 live/reserved objects, 2 MiB and 256 total operation identities including tombstones across both routes; each packet reserves two objects and all its bytes. Add limits of eight live/reserved objects and 512 KiB per trusted owner. This reference and the generated-export application have independent stores; a shared deployment needs one coordinated aggregate quota policy.
 
 Ambiguous writes and post-Put database failures retain pending/stored/reconciliation-required ownership, descriptive fields and quota. Never replay Put for the same key. A definitive 412 collision marks only this reservation failed and clears its label/note; never inspect, adopt or delete the conflicting object. Recovery uses one exact-key, at-most-two-entry version listing and one matching Head, with no broad discovery. The pinned SDK represents listing size as a decimal string; compare it against the exact expected byte count without permissive numeric conversion.
 

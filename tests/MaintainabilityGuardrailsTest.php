@@ -176,8 +176,8 @@ final class MaintainabilityGuardrailsTest extends TestCase
         yield 'link label cannot hide a broken target' => ['docs/knowledge-map.md', '`docs/request-handling.md`', '[docs/request-handling.md](missing.md)'];
         yield 'comment cannot supply a missing route' => ['docs/knowledge-map.md', '`docs/request-handling.md`', '<!-- `docs/request-handling.md` -->'];
         yield 'code sample cannot supply a missing route' => ['docs/knowledge-map.md', '`docs/request-handling.md`', "\n```text\n`docs/request-handling.md`\n```\n"];
-        yield 'missing upgrade anchor' => ['docs/consumer-contract-upgrades.md', '### Contract version 25', '### Previous contract'];
-        yield 'comment cannot supply an upgrade anchor' => ['docs/consumer-contract-upgrades.md', '### Contract version 25', "### Previous contract\n\n<!--\n### Contract version 25\n-->\n"];
+        yield 'missing upgrade anchor' => ['docs/consumer-contract-upgrades.md', '### Contract version 26', '### Previous contract'];
+        yield 'comment cannot supply an upgrade anchor' => ['docs/consumer-contract-upgrades.md', '### Contract version 26', "### Previous contract\n\n<!--\n### Contract version 26\n-->\n"];
         yield 'empty required guidance' => ['docs/design-goals.md', '', ''];
     }
 

@@ -13,11 +13,13 @@ docs/decisions/068-generated-s3-inventory-exports.md
 docs/decisions/069-configurable-multipart-field-limits.md
 docs/decisions/070-fixed-early-http-error-representations.md
 docs/decisions/071-s3-upload-operation-metadata.md
+docs/decisions/072-s3-document-packets.md
 docs/design-goals.md
 docs/caching.md
 docs/coordination.md
 docs/file-transfers/generated-exports.md
 docs/file-transfers/metadata-uploads.md
+docs/file-transfers/document-packets.md
 docs/redis-coordination.md
 docs/redis/README.md
 docs/redis/adoption.md

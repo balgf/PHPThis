@@ -4,6 +4,16 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 26
+
+Contract 26 carries version 25 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 072](decisions/072-s3-document-packets.md) permits the optional [two-file S3 packet](file-transfers/document-packets.md): fixed primary/supporting roles, all-or-nothing application visibility, owner-scoped retry identities, per-role ownership markers and bounded recovery. No core API or dependency changes.
+
+Adopt the operation explicitly in the application's single file-transfer policy. Drain both existing and packet mutation paths, provision the private packet table through the authorized non-HTTP migration path, and deploy both routes' shared quota checks before admitting traffic. Preserve existing single-file identities without fabricating a partner, nonce or retry binding. The combined reference's parser admits the larger packet envelope; the single-file handler retains its smaller bounds before policy I/O. Verify the target SAPI and operation-specific rejection behavior.
+
+Rollback disables/drains packet traffic and maintenance first. Keep authoritative rows and aggregate reservations through unresolved recovery; do not drop the packet table or restore an older single-file writer that ignores packet capacity. Resolve all packet reservations or retain shared quota enforcement before that rollback. Dependency installation never migrates application data or rewrites policy.
+
+Reference completion uses offline tests and complete `composer check`. Actual AWS/IAM/KMS/version/ownership-marker/cleanup behavior and dated deployment evidence remain required at application adoption through `file-transfers:s3:verify`.
+
 ### Contract version 25
 
 Contract 25 carries version 24 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 071](decisions/071-s3-upload-operation-metadata.md) permits one optional `AMAZON_S3_ADR053` document upload with a typed label and optional note. The [operation guide](file-transfers/metadata-uploads.md) owns exact fields, byte bounds, normalization limits and failure behavior. No core API, framework dependency or default starter behavior changes.

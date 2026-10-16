@@ -20,7 +20,8 @@ function verifyMetadataS3Contracts(): void
     $root = dirname(__DIR__);
     $sources = ['src/Values.php', 'src/DocumentInput.php', 'src/DocumentLock.php', 'src/S3Settings.php', 'src/ReferenceEnvironment.php',
         'src/CredentialProvider.php', 'src/Composition.php', 'src/VerifiedUpload.php', 'src/DocumentS3.php', 'src/Documents.php',
-        'src/DocumentInvocation.php', 'src/UploadDocument.php', 'src/HttpComposition.php', 'http.php', 'public/index.php', 'console.php'];
+        'src/DocumentInvocation.php', 'src/UploadDocument.php', 'src/HttpComposition.php', 'http.php', 'public/index.php', 'console.php',
+        'src/PacketInput.php', 'src/PacketValues.php', 'src/PacketS3.php', 'src/Packets.php', 'src/UploadPacket.php'];
     foreach ($sources as $path) {
         $source = file_get_contents($root . '/' . $path);
         if (!is_string($source)) { throw new LogicException('Source unavailable.'); }
@@ -30,12 +31,13 @@ function verifyMetadataS3Contracts(): void
     }
     foreach ([[], ['bad-secret'], ['expire-one'], ['expire-one', str_repeat('a', 32)], ['expire-one', str_repeat('a', 32), '0'],
         ['expire-one', str_repeat('a', 32), '9999999999999999999'], ['reconcile-one', 'bad-id', '1'],
-        ['reconcile-one', str_repeat('a', 32), '1', 'extra-secret']] as $arguments) {
+        ['reconcile-one', str_repeat('a', 32), '1', 'extra-secret'], ['reconcile-packet'], ['purge-packet', 'invalid', '1'],
+        ['purge-packet', str_repeat('a', 32), '0'], ['reconcile-packet', str_repeat('a', 32), '1', 'extra-secret']] as $arguments) {
         $result = runBoundedMaintainerProcess([PHP_BINARY, $root . '/console.php', ...$arguments], $root, [], 3000, 4096, 4096);
         requireProof($result === ['exit_code' => 2, 'stdout' => '', 'stderr' => ($arguments === ['bad-secret']
             ? "{\"error\":\"unknown_command\"}\n" : "{\"error\":\"invalid_arguments\"}\n")], 'argument rejection and redaction before I/O');
     }
-    foreach (['reconcile-one', 'expire-one'] as $command) {
+    foreach (['reconcile-one', 'expire-one', 'reconcile-packet', 'purge-packet'] as $command) {
         $result = runBoundedMaintainerProcess([PHP_BINARY, $root . '/console.php', $command, str_repeat('a', 32), '1'], $root, [], 3000, 4096, 4096);
         requireProof($result === ['exit_code' => 1, 'stdout' => '', 'stderr' => "{\"error\":\"command_failed\"}\n"], 'missing role configuration redacted');
     }
@@ -66,6 +68,16 @@ function verifyMetadataS3Contracts(): void
         requireProof($result === ['exit_code' => 0, 'stdout' => "{\"command\":\"expire-one\",\"outcome\":\"not_due\"}\n", 'stderr' => ''], 'real console expected outcome without remote I/O');
         $result = runBoundedMaintainerProcess([PHP_BINARY, $root . '/console.php', 'reconcile-one', $id->value, '1'], $root, $environment, 3000, 4096, 4096);
         requireProof($result === ['exit_code' => 1, 'stdout' => '', 'stderr' => "{\"error\":\"command_failed\"}\n"], 'role input separation');
+        $fixture->database->executeStatement("INSERT INTO document_packets (packet_id, owner_id, request_id, request_fingerprint, label, note,
+            primary_bytes, primary_sha256, primary_nonce, supporting_bytes, supporting_sha256, supporting_nonce, state, created_at, expires_at, target)
+            SELECT document_id, owner_id, document_id, sha256, label, note, size_bytes, sha256, document_id,
+                size_bytes, sha256, document_id, 'pending', created_at, expires_at, target FROM documents WHERE document_id = :id", ['id' => $id->value]);
+        $result = runBoundedMaintainerProcess([PHP_BINARY, $root . '/console.php', 'purge-packet', $id->value, '1'], $root, $environment, 3000, 4096, 4096);
+        requireProof($result === ['exit_code' => 0, 'stdout' => "{\"command\":\"purge-packet\",\"outcome\":\"failed\"}\n", 'stderr' => ''], 'real packet console cleans never-started reservation without AWS');
+        $reconcilerEnvironment = [];
+        foreach ($environment as $key => $value) { $reconcilerEnvironment[str_replace('DELETION', 'RECONCILER', $key)] = $value; }
+        $result = runBoundedMaintainerProcess([PHP_BINARY, $root . '/console.php', 'reconcile-packet', $id->value, '1'], $root, $reconcilerEnvironment, 3000, 4096, 4096);
+        requireProof($result === ['exit_code' => 0, 'stdout' => "{\"command\":\"reconcile-packet\",\"outcome\":\"not_due\"}\n", 'stderr' => ''], 'real reconciler console preserves terminal packet');
         $settings = S3Settings::fromInputs($fixture->root->path, 'fixture-bucket', 'us-east-1', '000000000000', $fixture->remote->target->kms,
             $ca, hash('sha256', 'synthetic CA bytes'), 'ASIA' . str_repeat('A', 16), str_repeat('s', 40), str_repeat('t', 32), (string) (time() + 120));
         requireDocumentFailure(static fn () => $settings->verify(time()));

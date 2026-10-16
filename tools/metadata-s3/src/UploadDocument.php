@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MetadataS3Recipe;
 
 use PHPThis\Http\Request;
+use PHPThis\Http\InvalidRequest;
+use PHPThis\Http\RequestBodyTooLarge;
 use PHPThis\Http\RequestHandler;
 use PHPThis\Http\Response;
 use PHPThis\Http\UnsupportedMediaType;
@@ -49,6 +51,17 @@ final readonly class UploadDocument implements RequestHandler
     public function __construct(private DocumentUploadPolicy $policy, private DocumentReceiver $receiver) {}
     public function handle(Request $request): Response
     {
+        // The shared reader admits packets. Preserve this operation's smaller bounds before policy I/O.
+        if ($request->multipart !== null) {
+            $length = $request->headers['content-length'] ?? null;
+            if ($length === null || preg_match('/\A(?:0|[1-9][0-9]*)\z/', $length) !== 1) { throw new InvalidRequest('Document length unavailable.'); }
+            if (strlen($length) > 6 || (int) $length > 131072) { throw new RequestBodyTooLarge('Document too large.'); }
+            $fieldBytes = 0;
+            foreach ($request->multipart->fields as $name => $value) { $fieldBytes += strlen($name) + strlen($value); }
+            $fileBytes = 0;
+            foreach ($request->multipart->uploads as $upload) { $fileBytes += $upload->reportedSizeBytes; }
+            if ($fieldBytes > 1153 || $fileBytes > 65536) { throw new RequestBodyTooLarge('Document too large.'); }
+        }
         $owner = $this->policy->authorize($request);
         if ($request->multipart === null) { throw new UnsupportedMediaType('Multipart required.'); }
         $input = DocumentInput::fromMultipart($request->multipart);

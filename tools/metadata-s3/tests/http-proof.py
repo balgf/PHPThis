@@ -63,14 +63,14 @@ def reset(root, fault="", trigger=None, count=0, owner=1, history=False):
     os.chmod(root / "plan.json", 0o600)
 
 
-def request(port, body, auth="Bearer synthetic-owner-one", content_type=None):
+def request(port, body, auth="Bearer synthetic-owner-one", content_type=None, path="/documents"):
     connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
     headers = {"Content-Type": content_type or "multipart/form-data; boundary=" + BOUNDARY.decode(),
                "Content-Length": str(len(body))}
     if auth is not None:
         headers["Authorization"] = auth
     try:
-        connection.request("POST", "/documents", body, headers)
+        connection.request("POST", path, body, headers)
         response = connection.getresponse()
         data = response.read(4097)
         require(len(data) <= 4096, "response bound")
@@ -253,6 +253,12 @@ def run():
                     status, _ = request(port, valid(note="private-sentinel"), auth)
                     require(status == expected and rows(root) == [], "checked composition denies before SQL")
                     names.append("checked-composition-denial-" + str(expected))
+                    packet = field("label", LABEL) + field("request_id", "a" * 32) + upload("primary") + upload("supporting") + END
+                    status, _ = request(port, packet, auth, path="/document-packets")
+                    require(status == expected and rows(root) == [], "checked packet composition denies before SQL")
+                    with sqlite3.connect(root / "documents.sqlite") as database:
+                        require(database.execute("SELECT COUNT(*) FROM document_packets").fetchone()[0] == 0, "checked packet composition leaves no reservation")
+                    names.append("checked-packet-composition-denial-" + str(expected))
             finally:
                 process.terminate()
                 try:
