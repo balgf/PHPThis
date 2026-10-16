@@ -78,6 +78,8 @@ The filename `public/holdout.php.fixture` is retained as a task-local scorer nam
 
 ## Hashes
 
+Smoke revision 41 carries issue #138's approved Contract 25 starter context; the starter remains a file-transfer non-adopter. Only the current smoke revision, source-skeleton tree/digest and matching controller admission identities change. [Revision 40 and its source](https://github.com/balgf/PHPThis/tree/befac53390f11729b292f2d6f11833dc47354abe/tools/agent-evaluation) preserve the preceding fixture. Prompts, rubric, scorer, budgets, comparison/explanation fixtures and retained trials remain unchanged. No paid evaluation or comparative claim is authorized.
+
 Smoke revision 40 carries issue #137's approved Contract 24 starter context and selected-format emission fallback. Only the current smoke task revision, source-skeleton tree/digest and matching controller admission identities change. [Revision 39 and its source](https://github.com/balgf/PHPThis/tree/3cc0267222ede8da70eac52dcc13c4045c3fe10a/tools/agent-evaluation) preserve the preceding fixture. Prompts, rubric, scorer, budgets, comparison/explanation fixtures and retained trials remain unchanged. No paid evaluation or comparative claim is authorized.
 
 Smoke revision 39 carries issue #136's approved Contract 23 starter context. Only the current smoke task revision, source-skeleton tree/digest and matching controller admission identities change. [Revision 38 and its source](https://github.com/balgf/PHPThis/tree/7b895c5a4be35604eeff92288f4452e95381e3f6/tools/agent-evaluation) retain the earlier fixture. Prompts, rubric, scorer, budgets, comparison/explanation fixtures and retained trials remain unchanged. This offline update authorizes no paid run or performance claim.
