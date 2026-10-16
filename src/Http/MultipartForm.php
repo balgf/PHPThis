@@ -48,13 +48,18 @@ final readonly class MultipartForm
             if (array_key_exists($name, $files)) {
                 throw new InvalidRequest('Multipart field and upload names must be distinct.');
             }
-            if (strlen($value) > 8_192) {
+            $valueBytes = strlen($value);
+            $nameBytes = strlen($name);
+            if ($valueBytes > $limits->maximumFieldBytes) {
                 throw new RequestBodyTooLarge('Multipart field exceeds its byte limit.');
             }
-            $fieldBytes += strlen($name) + strlen($value);
-            if ($fieldBytes > 65_536) {
+            if (
+                $nameBytes > $limits->maximumTotalFieldBytes - $fieldBytes
+                || $valueBytes > $limits->maximumTotalFieldBytes - $fieldBytes - $nameBytes
+            ) {
                 throw new RequestBodyTooLarge('Multipart fields exceed their aggregate byte limit.');
             }
+            $fieldBytes += $nameBytes + $valueBytes;
             $parsedFields[$name] = $value;
         }
         $uploads = [];

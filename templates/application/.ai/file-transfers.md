@@ -12,7 +12,7 @@ Replace the next line with either the exact standalone `NOT_APPLICABLE(FILE_TRAN
 
 - Accepted upload routes, methods, and media types: {{FILE_UPLOAD_ROUTES_METHODS_AND_MEDIA_TYPES_OR_NOT_APPLICABLE}}
 - Upload field names, cardinality, text-field policy, and operation ownership: {{FILE_UPLOAD_FIELDS_CARDINALITY_AND_OWNER_OR_NOT_APPLICABLE}}
-- Total request, exact inclusive minimum and maximum file bytes including zero-byte policy, field-count, filename/path, rate, concurrency, and execution limits: {{FILE_UPLOAD_LIMITS_OR_NOT_APPLICABLE}}
+- Total request, exact inclusive minimum and maximum file bytes including zero-byte policy, per-field value bytes and aggregate field-name/value bytes, field-count, filename/path, rate, concurrency, and execution limits: {{FILE_UPLOAD_LIMITS_OR_NOT_APPLICABLE}}
 - Dated effective proxy, web-server, and PHP web-SAPI controls, including connection, header/body, rate, concurrency, buffering and timeout bounds; `file_uploads`, `upload_max_filesize`, `post_max_size`, `max_file_uploads`, `max_multipart_body_parts`, and `upload_tmp_dir`; first rejecting layer and observable response; plus PHP-normalized duplicate raw scalar-part suitability and any upstream enforcement: {{FILE_TRANSFER_PRE_PHP_INGRESS_POLICY_OR_NOT_APPLICABLE}}
 - Accepted runtime upload statuses and temporary-file provenance checks: {{FILE_UPLOAD_STATUS_AND_PROVENANCE_POLICY_OR_NOT_APPLICABLE}}
 - Client filename, path, extension, and media-type treatment: {{FILE_UPLOAD_METADATA_POLICY_OR_NOT_APPLICABLE}}

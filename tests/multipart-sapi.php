@@ -13,6 +13,11 @@ function multipartSapiBehaviorTests(): Generator
         proveMultipartSapi(false, false, false);
         proveMultipartSapi(false, true, true);
     };
+    yield 'configured multipart field limits prove larger input and rejection before session or body work' => static function (): void {
+        proveMultipartFieldLimitsSapi(false, false);
+        proveMultipartFieldLimitsSapi(true, false);
+        proveMultipartFieldLimitsSapi(false, true);
+    };
 }
 
 function multipartFieldPart(string $name, string $value = 'v'): string
@@ -96,6 +101,7 @@ PHP, $bootstrap);
         foreach ([
             ['field-value-exact', multipartFieldPart('a', str_repeat('v', 8_192)), 200, 1],
             ['field-value-over', multipartFieldPart('a', str_repeat('v', 8_193)), 413, 0],
+            ['larger-json-default-rejection', multipartFieldPart('metadata', '{"text":"' . str_repeat('v', 16_373) . '"}'), 413, 0],
             ['name-exact', multipartFieldPart(str_repeat('n', 64)), 200, 1],
             ['name-over', multipartFieldPart(str_repeat('n', 65)), 400, 0],
             ['nested-field', multipartFieldPart('a[]'), 400, 0],
@@ -156,6 +162,74 @@ PHP, $bootstrap);
         $log = file_get_contents($root . '/server.log');
         if (!is_string($log) || str_contains($log, 'client-private') || str_contains($log, 'private-sentinel')) {
             throw new RuntimeException('Multipart values escaped into private terminal summaries.');
+        }
+    } finally {
+        if (is_resource($process)) {
+            proc_terminate($process);
+            proc_close($process);
+        }
+        removeDocumentFileTestDirectory($temporary);
+    }
+}
+
+function proveMultipartFieldLimitsSapi(bool $begunSession, bool $invalidConfiguration): void
+{
+    $bootstrap = file_get_contents(__DIR__ . '/fixtures/multipart-bootstrap.php.fixture');
+    if (!is_string($bootstrap)) {
+        throw new RuntimeException('Cannot read multipart field-limit bootstrap.');
+    }
+    $bootstrap = str_replace('$limits = new MultipartLimits(131_072, 512, 700);',
+        '$limits = new MultipartLimits(131_072, 512, 700, maximumFieldBytes: ' . ($invalidConfiguration ? '0' : '16_384') . ', maximumTotalFieldBytes: 32_768);'
+        . "\nerror_log('multipart.fixture_limits_constructed');", $bootstrap);
+    if ($begunSession) {
+        $bootstrap = str_replace('$sessions = null;', <<<'PHP'
+$sessions = new SessionLifecycle(new SessionConfiguration('multipartTest', 'multipartTest', false, CookieSameSite::Lax, sys_get_temp_dir()));
+$sessions->begin(new Request('GET', '/'));
+PHP, $bootstrap);
+    }
+    $temporary = dirname(__DIR__) . '/tmp/application-tests/multipart-fields-' . bin2hex(random_bytes(8));
+    $process = null;
+    try {
+        $root = createExampleFrontControllerProcessTree($temporary, $bootstrap);
+        if (!mkdir($root . '/uploads', 0700) || file_put_contents($root . '/server.log', '') !== 0 || !chmod($root . '/server.log', 0600)) {
+            throw new RuntimeException('Cannot prepare private multipart field-limit storage.');
+        }
+        [$process, $port] = startExampleOuterHttpFailureServer($root, $root . '/server.log', iniSettings: [
+            'enable_post_data_reading=0', 'file_uploads=1', 'upload_tmp_dir=' . $root . '/uploads',
+            'session.upload_progress.enabled=0', 'mbstring.encoding_translation=0',
+        ]);
+        $end = "--phpthis-test--\r\n";
+        if ($invalidConfiguration) {
+            $payload = multipartFieldPart('metadata', 'private-sentinel') . multipartFilePart('document') . $end;
+            if (file_put_contents($root . '/request.bin', $payload) !== strlen($payload)) {
+                throw new RuntimeException('Cannot prepare invalid-configuration input.');
+            }
+            $response = runDocumentFileCurl($root, 'response', ['--header', 'Content-Type: multipart/form-data; boundary=phpthis-test', '--data-binary', '@' . $root . '/request.bin'], 'http://127.0.0.1:' . $port . '/inspect/7');
+            $log = file_get_contents($root . '/server.log');
+            if (
+                $response['status'] !== 500 || $response['body'] !== '{"error":{"code":"internal_server_error","message":"Internal server error."}}' . "\n"
+                || stripos($response['headers'], 'X-Request-ID:') !== false || !is_string($log)
+                || !str_contains($log, 'application.http_outer_failure failure_class=InvalidArgumentException')
+                || str_contains($log, 'multipart.fixture_limits_constructed') || str_contains($log, 'multipart.fixture_handler')
+                || str_contains($log, 'application.request_summary') || str_contains($log, 'private-sentinel')
+            ) {
+                throw new RuntimeException('Invalid field configuration did not fail before reader construction.');
+            }
+        } else {
+            $json = '{"text":"' . str_repeat('v', 16_373) . '"}';
+            $response = assertMultipartHttp($root, $port, 'configured-json-exact', multipartFieldPart('metadata', $json) . $end, $begunSession ? 500 : 200, $begunSession ? 0 : 1);
+            if (!$begunSession && ($response['fields'] !== ['metadata' => $json] || $response['route'] !== 7)) {
+                throw new RuntimeException('Configured native parsing changed the larger field bytes.');
+            }
+            assertMultipartHttp($root, $port, 'configured-field-over', multipartFieldPart('metadata', $json . ' ') . $end, 413, 0);
+            $exact = multipartFieldPart('a', str_repeat('v', 16_383)) . multipartFieldPart('b', str_repeat('v', 16_383));
+            assertMultipartHttp($root, $port, 'configured-aggregate-exact', $exact . $end, $begunSession ? 500 : 200, $begunSession ? 0 : 1);
+            assertMultipartHttp($root, $port, 'configured-aggregate-over-name', $exact . multipartFieldPart('c', '') . $end, 413, 0);
+            $over = multipartFieldPart('a', str_repeat('v', 16_384)) . multipartFieldPart('b', str_repeat('v', 16_383));
+            assertMultipartHttp($root, $port, 'configured-aggregate-over-value', $over . $end, 413, 0);
+        }
+        if (glob($root . '/uploads/*') !== []) {
+            throw new RuntimeException('Configured multipart parsing left temporary uploads behind.');
         }
     } finally {
         if (is_resource($process)) {

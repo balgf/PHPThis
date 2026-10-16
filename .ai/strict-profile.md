@@ -2,7 +2,7 @@
 
 PHPThis is a checked subset of ordinary PHP. Code is not valid PHPThis merely because PHP can execute it; the complete `composer check` command must pass.
 
-Consumer Contract version 22 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.
+Consumer Contract version 23 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.
 
 ## Universal rules
 

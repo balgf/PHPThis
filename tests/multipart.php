@@ -136,6 +136,58 @@ function multipartBehaviorTests(): Generator
             expectMultipartFailure(InvalidRequest::class, static fn () => $handler->handle(new Request('POST', '/document-files', headers: ['content-type' => 'multipart/form-data; boundary=test'], multipart: $form)));
         }
     };
+
+    yield 'multipart field configuration preserves defaults and validates finite ordered limits' => static function (): void {
+        $limits = new MultipartLimits(1_024, 512, 700);
+        if ($limits->maximumFieldBytes !== 8_192 || $limits->maximumTotalFieldBytes !== 65_536) {
+            throw new RuntimeException('Existing multipart calls must retain their field defaults.');
+        }
+        foreach ([[0, 1], [-1, 1], [1, 0], [1, -1], [2, 1], [PHP_INT_MAX, PHP_INT_MAX], [1, PHP_INT_MAX]] as [$field, $total]) {
+            expectMultipartFailure(InvalidArgumentException::class, static fn () => new MultipartLimits(1_024, 512, 700, maximumFieldBytes: $field, maximumTotalFieldBytes: $total));
+        }
+        MultipartForm::fromPhp(['a' => 'v'], [], 2, $limits);
+        expectMultipartFailure(InvalidRequest::class, static fn () => MultipartForm::fromPhp(['a' => 'v'], [], 1, $limits));
+    };
+
+    yield 'multipart configured field bytes accept larger JSON and enforce smaller inclusive limits' => static function (): void {
+        $json = '{"text":"' . str_repeat('v', 16_373) . '"}';
+        $limits = new MultipartLimits(131_072, 512, 700, maximumFieldBytes: 16_384);
+        $form = MultipartForm::fromPhp(['metadata' => $json], [], 131_072, $limits);
+        $copy = (new Request('POST', '/items/7', multipart: $form))->withPathParameters(PathParameters::fromValues(['id' => 7], []));
+        if (strlen($json) !== 16_384 || $form->fields !== ['metadata' => $json] || $copy->multipart !== $form) {
+            throw new RuntimeException('Configured multipart input or its request copy changed.');
+        }
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp(['metadata' => $json . ' '], [], 131_072, $limits));
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp(['metadata' => $json], [], 131_072, new MultipartLimits(131_072, 512, 700)));
+        $small = new MultipartLimits(1_024, 512, 700, maximumFieldBytes: 2);
+        MultipartForm::fromPhp(['a' => 'é'], [], 3, $small);
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp(['a' => 'éa'], [], 1_024, $small));
+    };
+
+    yield 'multipart configured aggregate field bytes count names and preserve file budgets' => static function (): void {
+        $limits = new MultipartLimits(1_024, 512, 700, maximumFieldBytes: 16, maximumTotalFieldBytes: 20);
+        $fields = ['a' => str_repeat('v', 10), 'bb' => str_repeat('v', 7)];
+        MultipartForm::fromPhp($fields, ['file' => multipartTestFile(512)], 532, $limits);
+        expectMultipartFailure(InvalidRequest::class, static fn () => MultipartForm::fromPhp($fields, ['file' => multipartTestFile(512)], 531, $limits));
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp($fields, ['file' => multipartTestFile(513)], 1_024, $limits));
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp($fields + ['c' => ''], [], 1_024, $limits));
+        $fields['bb'] .= 'v';
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp($fields, [], 1_024, $limits));
+        $tiny = new MultipartLimits(1_024, 512, 700, maximumFieldBytes: 1, maximumTotalFieldBytes: 1);
+        MultipartForm::fromPhp(['a' => ''], [], 1, $tiny);
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp(['aa' => ''], [], 1_024, $tiny));
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp(['a' => 'v'], [], 1_024, $tiny));
+        $large = new MultipartLimits(131_072, 512, 700, maximumFieldBytes: 65_536, maximumTotalFieldBytes: 65_537);
+        MultipartForm::fromPhp(['a' => str_repeat('v', 65_536)], [], 65_537, $large);
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp(['a' => str_repeat('v', 65_536), 'b' => ''], [], 131_072, $large));
+    };
+
+    yield 'multipart field and file accounting stays bounded at integer limits' => static function (): void {
+        $limits = new MultipartLimits(PHP_INT_MAX - 1, PHP_INT_MAX - 1, PHP_INT_MAX - 1, maximumFieldBytes: PHP_INT_MAX - 1, maximumTotalFieldBytes: PHP_INT_MAX - 1);
+        MultipartForm::fromPhp(['a' => 'v'], ['file' => multipartTestFile(PHP_INT_MAX - 3)], PHP_INT_MAX - 1, $limits);
+        expectMultipartFailure(InvalidRequest::class, static fn () => MultipartForm::fromPhp(['a' => 'v'], ['file' => multipartTestFile(PHP_INT_MAX - 2)], PHP_INT_MAX - 1, $limits));
+        expectMultipartFailure(RequestBodyTooLarge::class, static fn () => MultipartForm::fromPhp([], ['a' => multipartTestFile(PHP_INT_MAX - 1), 'b' => multipartTestFile(1)], PHP_INT_MAX - 1, $limits));
+    };
 }
 
 /** @return array{name: string, type: string, tmp_name: string, error: int, size: int} */

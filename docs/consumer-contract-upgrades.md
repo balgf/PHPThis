@@ -4,6 +4,14 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 23
+
+Contract 23 carries version 22 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 069](decisions/069-configurable-multipart-field-limits.md) appends optional `maximumFieldBytes = 8_192` and `maximumTotalFieldBytes = 65_536` arguments to immutable `MultipartLimits`. Per-value limits count value bytes; aggregate limits count normalized names plus values, including names of empty values. All limits are positive and below `PHP_INT_MAX`; field <= aggregate field, while the existing file <= aggregate file <= request order remains.
+
+Existing three-argument calls, default field behavior, small request caps and multipart-disabled applications need no PHP source changes. Field ceilings may exceed the request ceiling; every actual request still obeys the raw request cap and normalized field/file total. No values are silently clamped. An application choosing a lower aggregate field ceiling must also lower the per-field ceiling when necessary.
+
+To adopt different field limits, set the arguments explicitly in composition, reconcile the single application file-transfer record, check the effective ingress/request/memory budgets, and prove exact/one-over individual and aggregate failures through the target SAPI before activation. PHP still materializes text before these checks; larger configured ceilings do not add streaming or strict raw-body validation. Domain/JSON parsing and mixed/multiple-file storage remain separate application decisions. Run the complete application gate. Dependency installation changes no application instructions or deployment settings; see [request ingestion](file-transfers/request-ingestion.md).
+
 ### Contract version 22
 
 Contract 22 carries version 21 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 068](decisions/068-generated-s3-inventory-exports.md) permits an explicit optional generated inventory export and bounded internal read within `AMAZON_S3_ADR053`. No runtime API, framework dependency, HTTP handoff or existing upload/redirect behavior changes.
