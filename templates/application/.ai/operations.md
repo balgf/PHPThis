@@ -155,3 +155,5 @@ Keep destination buffering, retention, backpressure, outage, and incident facts 
 - {{PROHIBITED_OPERATION_2}}
 
 An AI may inspect documented local state and run project checks. It must not deploy, migrate shared data, rotate credentials, contact users, or mutate external systems unless the accountable human explicitly authorizes that exact action.
+
+Fixed early error representation: record {{FIXED_EARLY_500_FORMAT_SOURCE_PHASES_AND_CLIENT_COMPATIBILITY_OR_BUILT_IN_DEFAULT}} before adoption. Follow installed `docs/errors.md#outer-http-failures` and Contract 24 migration; formatting never enables development details.

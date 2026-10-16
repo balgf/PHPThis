@@ -4,6 +4,14 @@ This is the upgrade and history companion to the current [PHPThis application co
 
 ## Contract evolution
 
+### Contract version 24
+
+Contract 24 carries version 23 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 070](decisions/070-fixed-early-http-error-representations.md) permits a fixed early 500 representation through the existing `ErrorRepresentation` and `UnknownFailureBoundary`; it adds no core API or dependency. [Error responses](errors.md#outer-http-failures) owns the complete sequence and failure-phase map.
+
+Applications retaining built-in early and emission responses need no PHP changes. To adopt a custom format, record its fixed public body/type, source owner, failure phases and client compatibility in `.ai/operations.md`. Keep the initial unconfigured built-in response before the protected block, construct and assign the custom response inside it before configuration/bootstrap, and stop startup with the built-in response if selection fails. Clients must still accept that built-in response. Deliberately align or distinguish the coordinator's separately injected format.
+
+Update the existing single pre-start emission fallback to use the selected generic body/type while preserving status 500, `Cache-Control: no-store`, its fixed log event and no retry. Keep early generic `private, no-store`, disclosure eligibility, independently protected event/renderer attempts and no replacement after output ownership starts. Prove these phases through the actual entrypoint, preserve ordinary coordinator correlation/summary behavior, verify effective SAPI settings and run the complete application check. Package installation does not rewrite application code or records.
+
 ### Contract version 23
 
 Contract 23 carries version 22 and Strict Profile 4 forward with PHT001–PHT008 unchanged. [ADR 069](decisions/069-configurable-multipart-field-limits.md) appends optional `maximumFieldBytes = 8_192` and `maximumTotalFieldBytes = 65_536` arguments to immutable `MultipartLimits`. Per-value limits count value bytes; aggregate limits count normalized names plus values, including names of empty values. All limits are positive and below `PHP_INT_MAX`; field <= aggregate field, while the existing file <= aggregate file <= request order remains.

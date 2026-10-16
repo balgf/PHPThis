@@ -11,6 +11,7 @@ docs/ai-context-routing-review.md
 docs/architecture.md
 docs/decisions/068-generated-s3-inventory-exports.md
 docs/decisions/069-configurable-multipart-field-limits.md
+docs/decisions/070-fixed-early-http-error-representations.md
 docs/design-goals.md
 docs/caching.md
 docs/coordination.md

@@ -148,6 +148,10 @@ function errorRepresentationBehaviorTests(): Generator
         }
     };
 
+    yield 'fixed early representations preserve fallback disclosure and emission boundaries' => static function (): void {
+        proveFixedEarlyErrorRepresentations();
+    };
+
     yield 'real front controller emits configured errors and retains the built-in early fallback' => static function (): void {
         $source = file_get_contents(__DIR__ . '/fixtures/configured-error-bootstrap.php.fixture');
         if (!is_string($source)) {
@@ -205,4 +209,220 @@ function errorRepresentationBehaviorTests(): Generator
             removeOuterHttpFailureDirectory($temporary);
         }
     };
+}
+
+function configureEarlyErrorRepresentation(string $source, string $selection): string
+{
+    $start = strpos($source, "try {\n");
+    if ($start === false) {
+        throw new RuntimeException('Expected the established outer boundary.');
+    }
+    return substr_replace($source, "try {\n" . $selection . "\n", $start, 6);
+}
+
+function assertEarlyErrorRepresentation(bool $condition, string $name): void
+{
+    if (!$condition) {
+        throw new RuntimeException('Early error representation failed: ' . $name);
+    }
+}
+
+function proveFixedEarlyErrorRepresentations(): void
+{
+    $repository = dirname(__DIR__);
+    $selection = <<<'PHP'
+        $genericFailureResponse = (new UnknownFailureBoundary(
+            new \PHPThis\Http\ErrorRepresentation(
+                'application/json; charset=utf-8',
+                '{"code":"service_unavailable"}',
+            ),
+        ))->respond();
+    PHP;
+    $original = file_get_contents($repository . '/example/public/index.php');
+    if (!is_string($original)) {
+        throw new RuntimeException('Unable to read the existing front controller.');
+    }
+    $genericBody = (new PHPThis\Http\UnknownFailureBoundary())->respond()->body;
+    $customBody = '{"code":"service_unavailable"}';
+    $prelude = <<<'PHP'
+    <?php
+    declare(strict_types=1);
+    error_log('preflight.bootstrap_entered');
+    PHP;
+    $fileResponse = <<<'PHP'
+    return new class {
+        public function handle(array $server, array $query): \PHPThis\Http\Response
+        {
+            return new \PHPThis\Http\Response(200, ['Content-Length' => '4'], '', [],
+                new \PHPThis\Http\LocalFileBody(__DIR__ . '/absent.bin', 4));
+        }
+    };
+    PHP;
+    $normalResponse = <<<'PHP'
+    return new class {
+        public function handle(array $server, array $query): \PHPThis\Http\Response
+        {
+            return new \PHPThis\Http\Response(200, ['Content-Type' => 'text/plain'], 'ok');
+        }
+    };
+    PHP;
+    $throwingInvocation = <<<'PHP'
+    return new class {
+        public function handle(array $server, array $query): \PHPThis\Http\Response
+        {
+            throw new \RuntimeException('private-sentinel-invocation');
+        }
+    };
+    PHP;
+    $composition = <<<'PHP'
+    final class FailedComposition
+    {
+        public function __construct()
+        {
+            throw new \RuntimeException('private-sentinel-composition');
+        }
+    }
+    new FailedComposition();
+    PHP;
+    $loadFailure = <<<'PHP'
+    <?php
+    declare(strict_types=1);
+    spl_autoload_register(static function (string $class): void {
+        if ($class === 'PHPThis\\Http\\ErrorRepresentation') {
+            throw new ParseError('private-sentinel-representation-load');
+        }
+    });
+    PHP;
+    $eventFailure = <<<'PHP'
+    <?php
+    declare(strict_types=1);
+    spl_autoload_register(static function (string $class): void {
+        if ($class === 'Example\\Observability\\ErrorLogOuterFailureSink') {
+            error_log('preflight.outer_sink_attempt');
+            throw new RuntimeException('private-sentinel-sink-load');
+        }
+    });
+    PHP;
+
+    // name, selection, bootstrap, status, body, cache, bootstrap attempts, outer events, emission events, prepend
+    $cases = [
+        ['configuration', $selection, $prelude . "\nthrow new InvalidArgumentException('private-sentinel-configuration');", 500, $customBody, 'private, no-store', 1, 1, 0, null],
+        ['bootstrap', $selection, $prelude . "\nthrow new RuntimeException('private-sentinel-bootstrap');", 500, $customBody, 'private, no-store', 1, 1, 0, null],
+        ['composition', $selection, $prelude . "\n" . $composition, 500, $customBody, 'private, no-store', 1, 1, 0, null],
+        ['bootstrap-parse-error', $selection, '<?php this is deliberately invalid syntax', 500, $customBody, 'private, no-store', 0, 1, 0, null],
+        ['invocation', $selection, $prelude . "\n" . $throwingInvocation, 500, $customBody, 'private, no-store', 1, 1, 0, null],
+        ['invalid-content-type', str_replace('application/json; charset=utf-8', ' ', $selection), $prelude . "\n" . $normalResponse, 500, $genericBody, 'private, no-store', 0, 1, 0, null],
+        ['oversized-body', str_replace("'{\"code\":\"service_unavailable\"}'", var_export(str_repeat('a', 65_537), true), $selection), $prelude . "\n" . $normalResponse, 500, $genericBody, 'private, no-store', 0, 1, 0, null],
+        ['representation-load-failure', $selection, $prelude . "\n" . $normalResponse, 500, $genericBody, 'private, no-store', 0, 1, 0, $loadFailure],
+        ['throwing-outer-sink', $selection, $prelude . "\nthrow new RuntimeException('private-sentinel-bootstrap');", 500, $customBody, 'private, no-store', 1, 0, 0, $eventFailure],
+        ['pre-start-emission', $selection, $prelude . "\n" . $fileResponse, 500, $customBody, 'no-store', 1, 0, 1, null],
+        ['text-type-early', str_replace('application/json', 'text/plain', $selection), $prelude . "\nthrow new RuntimeException('private-sentinel-bootstrap');", 500, $customBody, 'private, no-store', 1, 1, 0, null],
+        ['text-type-emission', str_replace('application/json', 'text/plain', $selection), $prelude . "\n" . $fileResponse, 500, $customBody, 'no-store', 1, 0, 1, null],
+        ['default-early-failure', '', $prelude . "\nthrow new RuntimeException('private-sentinel-bootstrap');", 500, $genericBody, 'private, no-store', 1, 1, 0, null],
+        ['default-emission-failure', '', $prelude . "\n" . $fileResponse, 500, $genericBody, 'no-store', 1, 0, 1, null],
+        ['normal-response', $selection, $prelude . "\n" . $normalResponse, 200, 'ok', null, 1, 0, 0, null],
+        ['pending-output', $selection, $prelude . "\nob_start(); echo 'already-owned-output'; throw new RuntimeException('private-sentinel-buffer');", 200, 'already-owned-output', null, 1, 1, 1, null],
+        ['started-output', $selection, $prelude . "\necho 'already-owned-output'; flush(); throw new RuntimeException('private-sentinel-output');", 200, 'already-owned-output', null, 1, 1, 1, null],
+    ];
+
+    $coordinatorFixture = file_get_contents($repository . '/tests/fixtures/configured-error-bootstrap.php.fixture');
+    if (!is_string($coordinatorFixture)) {
+        throw new RuntimeException('Unable to read the configured coordinator fixture.');
+    }
+    foreach ([['unknown', 500, '{"code":"service_error"}'], ['known', 400, '{"code":"known"}'], ['missing', 404, '{"code":"missing"}'], ['method', 405, '{"code":"method"}']] as [$scenario, $status, $body]) {
+        $bootstrap = str_replace("\$scenario = 'unknown';", "error_log('preflight.bootstrap_entered');\n\$scenario = '" . $scenario . "';", $coordinatorFixture);
+        $cases[] = ['coordinator-' . $scenario, $selection, $bootstrap, $status, $body, $status === 500 ? 'private, no-store' : 'no-store', 1, 0, 0, null];
+    }
+
+    $temporary = $repository . '/tmp/application-tests/early-errors-' . bin2hex(random_bytes(6));
+    $process = null;
+    try {
+        foreach ($cases as [$name, $chosen, $bootstrap, $status, $body, $cache, $bootstrapCount, $outerCount, $emissionCount, $prepend]) {
+            $serverRoot = createExampleFrontControllerProcessTree($temporary . '/' . $name, $bootstrap);
+            $front = configureEarlyErrorRepresentation($original, $chosen);
+            file_put_contents($serverRoot . '/example/public/index.php', $front);
+            $logPath = $serverRoot . '/server.log';
+            file_put_contents($logPath, '');
+            chmod($logPath, 0600);
+            $prependPath = null;
+            if ($prepend !== null) {
+                $prependPath = $serverRoot . '/prepend.php';
+                file_put_contents($prependPath, $prepend);
+            }
+            [$process, $port] = startExampleOuterHttpFailureServer($serverRoot, $logPath, null, null, $prependPath, ['output_buffering=0']);
+            $response = requestExampleOuterHttpFailure($port, ['X-Request-ID' => 'private-sentinel-request']);
+            proc_terminate($process);
+            proc_close($process);
+            $process = null;
+            $log = file_get_contents($logPath);
+            if (!is_string($log)) {
+                throw new RuntimeException('Unable to read the early error test log.');
+            }
+            $headers = array_change_key_case($response['headers'], CASE_LOWER);
+            $coordinated = str_starts_with($name, 'coordinator-');
+            assertEarlyErrorRepresentation($response['status'] === $status && $response['body'] === $body, $name . ' status/body');
+            assertEarlyErrorRepresentation(($headers['cache-control'] ?? null) === $cache, $name . ' cache policy');
+            if ($coordinated) {
+                assertEarlyErrorRepresentation(($headers['content-type'] ?? null) === 'application/json', $name . ' content type');
+                assertEarlyErrorRepresentation(preg_match('/\A[a-f0-9]{32}\z/D', $headers['x-request-id'] ?? '') === 1, $name . ' correlation preserved');
+            } else {
+                if ($status === 500) {
+                    $type = str_starts_with($name, 'text-type-') ? 'text/plain; charset=utf-8' : 'application/json; charset=utf-8';
+                    assertEarlyErrorRepresentation(($headers['content-type'] ?? null) === $type, $name . ' content type');
+                }
+                assertEarlyErrorRepresentation(!isset($headers['x-request-id']), $name . ' no invented correlation');
+            }
+            assertEarlyErrorRepresentation(substr_count($log, 'preflight.bootstrap_entered') === $bootstrapCount, $name . ' startup count');
+            assertEarlyErrorRepresentation(substr_count($log, 'application.http_outer_failure') === $outerCount, $name . ' outer event count');
+            assertEarlyErrorRepresentation(substr_count($log, 'application.response_emission_failed') === $emissionCount, $name . ' emission event count');
+            assertEarlyErrorRepresentation(substr_count($log, 'application.request_summary') === ($coordinated ? 1 : 0), $name . ' terminal summary count');
+            if ($name === 'coordinator-method') {
+                assertEarlyErrorRepresentation(($headers['allow'] ?? null) === 'GET', $name . ' Allow preserved');
+            }
+            assertEarlyErrorRepresentation(!str_contains(json_encode($response, JSON_THROW_ON_ERROR) . $log, 'private-sentinel'), $name . ' redaction');
+            if ($name === 'throwing-outer-sink') {
+                assertEarlyErrorRepresentation(substr_count($log, 'preflight.outer_sink_attempt') === 1, $name . ' single attempt');
+            }
+        }
+    } finally {
+        if (is_resource($process)) {
+            proc_terminate($process);
+            proc_close($process);
+        }
+        removeOuterHttpFailureDirectory($temporary);
+    }
+
+    foreach ([
+        ['eligible-details', false, false, 'development', 'DEVELOPMENT_DETAILS', true],
+        ['renderer-autoload-failure', false, true, 'development', 'DEVELOPMENT_DETAILS', false],
+        ['outer-sink-failure-details', true, false, 'development', 'DEVELOPMENT_DETAILS', true],
+        ['invalid-disclosure', false, false, 'production', 'DEVELOPMENT_DETAILS', false],
+        ['missing-disclosure', false, false, null, null, false],
+    ] as [$name, $throwingSink, $throwingRenderer, $profile, $mode, $details]) {
+        [$temporary, $serverRoot] = createConfiguredDisclosureServerTree('issue-137-' . $name, $throwingSink, $throwingRenderer);
+        try {
+            $path = $serverRoot . '/public/index.php';
+            $source = file_get_contents($path);
+            if (!is_string($source)) {
+                throw new RuntimeException('Unable to read the disclosure fixture.');
+            }
+            file_put_contents($path, configureEarlyErrorRepresentation($source, $selection));
+            $inputs = [];
+            if ($profile !== null && $mode !== null) {
+                $inputs['PHPTHIS_TEST_CONFIGURED_RUNTIME_PROFILE'] = $profile;
+                $inputs['PHPTHIS_TEST_CONFIGURED_DISCLOSURE_MODE'] = $mode;
+            }
+            $result = runConfiguredDisclosureCase($temporary, $serverRoot, $name, $inputs);
+            $response = $result['response'];
+            $headers = array_change_key_case($response['headers'], CASE_LOWER);
+            assertEarlyErrorRepresentation($response['status'] === 500, $name . ' status');
+            assertEarlyErrorRepresentation($details ? str_starts_with($response['body'], "PHPThis development failure\n") : $response['body'] === $customBody, $name . ' selected response');
+            assertEarlyErrorRepresentation(($headers['content-type'] ?? null) === ($details ? 'text/plain; charset=utf-8' : 'application/json; charset=utf-8'), $name . ' type');
+            assertEarlyErrorRepresentation(($headers['cache-control'] ?? null) === 'private, no-store' && !isset($headers['x-request-id']), $name . ' headers');
+            assertEarlyErrorRepresentation(!str_contains($result['log'], 'application.request_summary'), $name . ' summary');
+        } finally {
+            removeOuterHttpFailureDirectory($temporary);
+        }
+    }
+
 }

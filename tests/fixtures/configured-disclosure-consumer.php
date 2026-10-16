@@ -86,10 +86,10 @@ try {
         $emitter->emit(new Response(
             500,
             [
-                'Content-Type' => 'application/json; charset=utf-8',
+                'Content-Type' => $genericFailureResponse->headers['Content-Type'],
                 'Cache-Control' => 'no-store',
             ],
-            "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n",
+            $genericFailureResponse->body,
         ));
     }
 }

@@ -25,7 +25,7 @@ A consumer may record and prove a different finite public status contract, and a
 
 ## Framework error representations
 
-Consumer Contract 23 retains the Contract 19 option of explicit, code-owned formats for routing failures and coordinator-selected unknown failures. Construct `ErrorRepresentation(contentType: ..., body: ...)` in protected composition and pass it to the existing owner:
+Consumer Contract 24 retains the Contract 19 option of explicit, code-owned formats for routing failures and coordinator-selected unknown failures. Construct `ErrorRepresentation(contentType: ..., body: ...)` in protected composition and pass it to the existing owner:
 
 ```php
 $application = new Application(
@@ -44,13 +44,37 @@ The immutable value accepts only content type and body. Content type must be non
 
 `Application` retains status 404/405, route-derived `Allow` and `Cache-Control: no-store`; `UnknownFailureBoundary` retains status 500 and `Cache-Control: private, no-store`. The value has no custom headers, cookies, file body or status. Session finalization and the terminal coordinator preserve response fields and add their own cookies or correlation. `respond()` takes no exception or request. Keep representations literal and public: no exception messages, traces, SQL, credentials, request values or internal state. Known failures and application validation still use their own exact mappings.
 
-Keep the front controller's unconfigured `(new UnknownFailureBoundary())->respond()` before bootstrap. Construct custom values only inside protected composition. Invalid error configuration or any composition failure selects that independent built-in 500, so clients must accept it even after adopting a custom request-path 500. Outer development details and emission failure rules retain their existing scope. Changing a public format requires the application's compatibility decision and tests; see [Contract 19 migration](consumer-contract-upgrades.md#contract-version-19).
+Keep the front controller's unconfigured `(new UnknownFailureBoundary())->respond()` before application work. Contract 24 permits an optional fixed early representation through the sequence below. Failed selection retains that built-in response and stops startup; clients must continue to accept it. The coordinator's injected representation remains a separate explicit composition choice. Changing either public format requires the application's compatibility decision and tests; see [Contract 24 migration](consumer-contract-upgrades.md#contract-version-24).
 
 ## Outer HTTP failures
 
-Consumer Contract version 23 requires the sole supported HTTP front controller to construct the exact `UnknownFailureBoundary::respond()` response after ordinary Composer autoloading and generic-boundary setup but before application configuration or composition. One application-owned `Throwable` catch contains configuration, bootstrap, infrastructure composition, and coordinator invocation with `GENERIC` already selected. The catch first retains generic, then protects its at-most-one redacted outer-event attempt and optional detailed renderer separately. An event failure cannot alter the response; a detailed response replaces generic only after complete immutable construction; renderer or renderer-autoload failure remains generic. Response emission stays outside this catch under the separate `ResponseEmissionFailed` boundary.
+Consumer Contract version 24 requires the sole supported HTTP front controller to construct the exact `UnknownFailureBoundary::respond()` response after ordinary Composer autoloading and generic-boundary setup but before application configuration or composition. One application-owned `Throwable` catch contains the optional fixed-representation selection, configuration, bootstrap, infrastructure composition, and coordinator invocation with `GENERIC` already selected. The catch first retains generic, then protects its at-most-one redacted outer-event attempt and optional detailed renderer separately. An event failure cannot alter the response; a detailed response replaces generic only after complete immutable construction; renderer or renderer-autoload failure remains generic. Response emission stays outside this catch under the separate `ResponseEmissionFailed` boundary.
 
-The terminal coordinator retains its existing unknown-failure response, correlation, and summary contract. A failure it has already converted does not gain development details. A pre-coordinator failure has no `X-Request-ID` or terminal-summary guarantee. An alternate deployed HTTP adapter is ineligible for Contract version 23 pending a separate accepted decision.
+At the start of that `try`, an adopter may assign a complete fixed response:
+
+```php
+$genericFailureResponse = (new UnknownFailureBoundary(
+    new ErrorRepresentation('application/json; charset=utf-8', '{"code":"service_unavailable"}'),
+))->respond();
+```
+
+The initial built-in assignment remains outside the `try`. The optional assignment completes before configuration reads, bootstrap or infrastructure work. Use only public source literals and the existing value types: no request/exception data, environment/configuration reads, negotiation, callbacks, payload-file reads, database or network work. Ordinary class autoloading occurs inside the protected step. Construction or loading failure leaves the built-in response selected and exits startup through the catch; it never continues with partially accepted configuration. The literal above is an application example, not a default.
+
+| Failure phase | Response policy |
+| --- | --- |
+| No custom selection | Existing built-in response |
+| Custom construction/loading fails | Built-in response; no bootstrap |
+| Later configuration/bootstrap/composition fails | Selected generic response, or eligible existing development details |
+| Outer event fails | Selection unchanged |
+| Detail renderer/loading fails | Selected generic response |
+| `ResponseEmissionFailed(false)` | One fallback with selected generic body/type, status 500 and `Cache-Control: no-store` |
+| Pending output or response already started | No replacement, append or buffer cleanup |
+
+The outer generic response keeps `Cache-Control: private, no-store`. The emission branch constructs its existing ordinary `Response` using `$genericFailureResponse->headers['Content-Type']` and `$genericFailureResponse->body`; keep its fixed log event and one-attempt limit. A fallback failure does not trigger another attempt. No fallback adds development details, correlation, cookies or a second terminal summary, and it does not revise the summary of the originally selected response. Keep the selected generic value independent of any detailed response.
+
+Record the fixed format, source owner, covered phases and client compatibility in the application's HTTP failure policy in `.ai/operations.md`. Existing defaults remain valid. Prove the actual front controller's configuration/bootstrap/composition, invalid/loading selection, outer-event and renderer failures, pre-start fallback, pending/started output and unchanged coordinator paths. [ADR 070](decisions/070-fixed-early-http-error-representations.md) records this optional composition policy; safe SAPI and delivery limits below remain binding.
+
+The terminal coordinator retains its existing unknown-failure response, correlation, and summary contract. A failure it has already converted does not gain development details. A pre-coordinator failure has no `X-Request-ID` or terminal-summary guarantee. An alternate deployed HTTP adapter is ineligible for Contract version 24 pending a separate accepted decision.
 
 `GENERIC` is code-owned for an application that does not adopt external disclosure selection and is mandatory for staging and production. An adopter requires both its exact application-owned disclosure setting and runtime-profile input in the one typed configuration boundary. The mode remains generic until the complete pair is parsed and atomically validated. Missing, empty, unknown, unavailable, malformed, or contradictory input fails before application-controlled I/O and returns generic; it does not continue application execution. `DEVELOPMENT_DETAILS` is eligible only for a recorded isolated local, development, or test deployment with restricted access, no production traffic or data, and least process authority. No request-controlled or inferred value enables details.
 
@@ -146,4 +170,4 @@ ADR 023 accepts an application-owned generated correlation ID, injected sink, an
 
 ADR 026 uses the same exact registry for file-transfer request failures. Malformed multipart input, partial upload, or missing required file maps to generic 400; total or application file overflow maps to 413; disabled or route-incompatible multipart maps to 415. PHP temporary-storage, extension, provenance, move, permission, unknown upload-code, and unexpected filesystem failures remain generic unknown 500 outcomes. No public response includes client metadata, a temporary or stored path, storage identity, PHP error text, or internal message.
 
-`ResponseEmissionFailed` is different: emission occurs after `RequestBoundary` has returned and the terminal summary has recorded response selection. The front controller catches it directly. When `responseStarted` is false, it may attempt one generic 500 response; when true, it must not append or replace output. The failure message is fixed and carries no path. See [File-transfer failures](file-transfers/failures.md).
+`ResponseEmissionFailed` is different: emission occurs after `RequestBoundary` has returned and the terminal summary has recorded response selection. The front controller catches it directly. When `responseStarted` is false, it may attempt one 500 using the selected generic response's body and content type, with the existing `Cache-Control: no-store` emission policy; when true, it must not append or replace output. Emission never selects development details, retries a failed fallback, or rewrites the terminal summary. The failure message is fixed and carries no path. See [File-transfer failures](file-transfers/failures.md).
