@@ -5,6 +5,8 @@ declare(strict_types=1);
 use CatalogImageRecipe\BoundedPng;
 use CatalogImageRecipe\BoundedJpeg;
 use CatalogImageRecipe\BoundedMp4;
+use CatalogImageRecipe\BoundedWav;
+use CatalogImageRecipe\RejectedWav;
 use CatalogImageRecipe\Mp4Decoder;
 use CatalogImageRecipe\RejectedMp4;
 use CatalogImageRecipe\CatalogImageFormat;
@@ -17,6 +19,7 @@ require __DIR__ . '/src/BoundedPng.php';
 require __DIR__ . '/src/BoundedJpeg.php';
 require __DIR__ . '/src/Mp4Structure.php';
 require __DIR__ . '/src/BoundedMp4.php';
+require __DIR__ . '/src/BoundedWav.php';
 require __DIR__ . '/src/Mp4Decoder.php';
 require __DIR__ . '/src/CatalogImageFormat.php';
 
@@ -31,8 +34,10 @@ try {
     try {
         if ($format === CatalogImageFormat::Png) { BoundedPng::fromBytes($bytes); }
         elseif ($format === CatalogImageFormat::Jpeg) { BoundedJpeg::fromBytes($bytes); }
-        else { $mp4 = BoundedMp4::fromBytes($bytes); }
-    } catch (RejectedPng | RejectedJpeg | RejectedMp4) { fwrite(STDOUT, "rejected\n"); exit(0); }
+        elseif ($format === CatalogImageFormat::Mp4) { $mp4 = BoundedMp4::fromBytes($bytes); }
+        else { BoundedWav::fromBytes($bytes); }
+    } catch (RejectedPng | RejectedJpeg | RejectedMp4 | RejectedWav) { fwrite(STDOUT, "rejected\n"); exit(0); }
+    if ($format === CatalogImageFormat::Wav) { fwrite(STDOUT, "accepted\n"); exit(0); }
     if ($mp4 instanceof BoundedMp4) { Mp4Decoder::verify($bytes, $mp4); fwrite(STDOUT, "accepted\n"); exit(0); }
     $pipes = [];
     $command = $format === CatalogImageFormat::Png ? ['/usr/local/bin/pngcheck', '-q']

@@ -78,7 +78,7 @@ function verifyCatalogPromotionFailure(CatalogImageFormat $format): void
     $fixture = new Fixture(dirname(__DIR__, 3) . '/tmp/png-proof-' . bin2hex(random_bytes(8)), format: $format);
     $inspector = new FixtureInspector();
     try {
-        $id = $fixture->seed(str_repeat('1', 32), match ($format) { CatalogImageFormat::Png => catalogPng(), CatalogImageFormat::Jpeg => catalogJpegSeeds()['sampling420'], CatalogImageFormat::Mp4 => catalogMp4Seeds()['valid-320x240'] });
+        $id = $fixture->seed(str_repeat('1', 32), match ($format) { CatalogImageFormat::Png => catalogPng(), CatalogImageFormat::Jpeg => catalogJpegSeeds()['sampling420'], CatalogImageFormat::Mp4 => catalogMp4Seeds()['valid-320x240'], CatalogImageFormat::Wav => catalogWav() });
         $fixture->lock->acquire(true);
         $fixture->database->executeStatement('CREATE TRIGGER fail_promotion BEFORE UPDATE ON catalog_images WHEN NEW.state = \'accepted\' BEGIN SELECT RAISE(ABORT, \'fixture\'); END');
         try { $fixture->images->inspectOne($fixture->definition, $inspector); throw new LogicException('Failed promotion succeeded.'); }

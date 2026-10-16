@@ -36,6 +36,7 @@ ENV LD_LIBRARY_PATH=/opt/png-zlib/lib
 COPY src/Failures.php src/PngHeader.php src/BoundedPng.php /inspector/src/
 COPY src/BoundedJpeg.php src/CatalogImageFormat.php /inspector/src/
 COPY src/Mp4Structure.php src/BoundedMp4.php src/Mp4Decoder.php /inspector/src/
+COPY src/BoundedWav.php /inspector/src/
 COPY inspector.php /inspector/inspector.php
 USER 65534:65534
 ENTRYPOINT ["php", "-n", "-d", "memory_limit=32M", "-d", "display_errors=0", "-d", "log_errors=0", "/inspector/inspector.php"]

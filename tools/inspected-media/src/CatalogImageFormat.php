@@ -9,4 +9,5 @@ enum CatalogImageFormat: string
     case Png = 'png';
     case Jpeg = 'jpeg';
     case Mp4 = 'mp4';
+    case Wav = 'wav';
 }

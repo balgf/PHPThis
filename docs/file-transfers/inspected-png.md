@@ -44,3 +44,5 @@ Existing applications opt in explicitly; installing/upgrading PHPThis does not c
 The shared catalog now persists `png`/`jpeg` and binds that value to its trusted routes and reads. Existing PNG adopters follow the [format-column migration](inspected-jpeg.md#adopting-the-format-column), activate the coherent new definition and reinspect PNG records before serving. The PNG subset and response headers remain unchanged; the migration intentionally makes prior acceptance temporarily unavailable. Both formats share the same quota, retention and recovery ownership.
 
 The same catalog also has a separately bounded [silent MP4 operation](inspected-mp4.md). Adopting that extension requires its format-constraint migration and reinspection; still-image inspection alone supplies no video-decoding evidence.
+
+The optional [WAV operation](inspected-wav.md) shares this catalog with its own PCM policy. Its retained-format migration preserves existing identities and requires a new definition and reinspection of all adopted formats.

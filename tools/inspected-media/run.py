@@ -1,8 +1,9 @@
-"""Real PNG/JPEG/MP4 tools, HTTP provenance, quarantine and resource-failure proof. No paid service."""
+"""Real PNG/JPEG/MP4/WAV inspection, HTTP quarantine and resource-failure proof. No paid service."""
 import base64
 import datetime
 import hashlib
 import http.client
+import io
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ import struct
 import subprocess
 import time
 import uuid
+import wave
 import zlib
 
 from process_support import capture, stop_group
@@ -55,9 +57,10 @@ def checked_parser_result(code, out, err):
             rb'|quantization_after_frame|duplicate_huffman|huffman_before_frame|invalid_huffman_selector|huffman_symbol_overflow'
             rb'|missing_huffman|no_sos|byte_limit|png|empty|truncated_entropy|corrupt_entropy)_(?:inspect|cleanup)'
             rb'|mp4_(?:valid_320x240|minimum_frame|max_dimensions_duration_frames|24fps_single_frame|25fps|duration_excess|frame_rate_excess|width_excess|height_excess|high_profile|fragmented|title_metadata|b_frames|seed|empty|oversized|truncated|trailing|zero_box|large_box|wrong_brand|unknown_box|external_reference|audio_track|high_profile_declaration|second_sps|second_description|duration_mismatch|extra_timing_entry|zero_delta|sample_count_excess|outside_offset|size_count_mismatch|sample_size_excess|rotation|non_square_pixels|container_crop|hidden_sps_width|hidden_sps_height|sps_range|png|jpeg|corrupt_frame)_(?:inspect|cleanup)'
+            rb'|wav_(?:one_sample_silence|signed_extremes|all_sample_bit_patterns|one_second|just_below_duration|ten_seconds|empty_input|empty_data|one_byte_sample|partial_final_sample|one_extra_sample|one_mebibyte|over_shared_input_cap|truncated_header|truncated_sample|truncated_maximum|trailing_byte|trailing_aligned_bytes|concatenated_files|rifx|rf64|bw64|wave64|avi_form|riff_zero|riff_maximum_claim|riff_underreported|riff_overreported|fmt_zero|fmt_maximum_claim|adpcm|float|alaw|mulaw|extensible|zero_channels|stereo|excess_channels|zero_rate|rate_8k|rate_48k|excess_rate|wrong_byte_rate|excess_byte_rate|zero_alignment|wrong_alignment|bits_8|bits_24|unknown_data_tag|data_zero_claim|data_underreported|data_overreported|data_maximum_claim|data_before_fmt|duplicate_fmt|duplicate_data|fmt_18_with_cbsize_zero|info_metadata|bext_metadata|fact_chunk|padded_odd_junk|nested_list|extra_chunk_after_data|python_wave_writer)_(?:inspect|cleanup)'
             rb'|mp4_probe_(?:stdout|stderr|timeout|exit)_(?:inspect|cleanup)'
-            rb'|(?:(?:jpeg|mp4)_)?resource_(?:exit|output|cpu|memory|memory_small|memory_kill|timeout)_(?:inspect|container_state|termination|cleanup)'
-            rb'|(?:(?:jpeg|mp4)_)?resource_timeout_elapsed) cleanup=(not_started|passed|failed)\n', err)
+            rb'|(?:(?:jpeg|mp4|wav)_)?resource_(?:exit|output|cpu|memory|memory_small|memory_kill|timeout)_(?:inspect|container_state|termination|cleanup)'
+            rb'|(?:(?:jpeg|mp4|wav)_)?resource_timeout_elapsed) cleanup=(not_started|passed|failed)\n', err)
         if code == 1 and out == b'' and failure is not None:
             raise RuntimeError('real_parser_' + failure[1].decode() + '_cleanup_' + failure[2].decode())
         raise RuntimeError('real_parser_failed')
@@ -77,6 +80,17 @@ def chunk(kind, data):
 def png():
     return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
             + chunk(b'IDAT', zlib.compress(b'\0abc')) + chunk(b'IEND', b''))
+
+
+def wav(frames=160000):
+    # Independent standard-library writer; no host encoder or binary fixture required.
+    output = io.BytesIO()
+    with wave.open(output, 'wb') as writer:
+        writer.setnchannels(1)
+        writer.setsampwidth(2)
+        writer.setframerate(16000)
+        writer.writeframes(b'\x80\x01' * frames)
+    return output.getvalue()
 
 
 def multipart(data, *, name='image', filename='client-name.png', media='image/png', extra=b''):
@@ -179,7 +193,7 @@ def main():
             return json.loads(out)
 
         def upload(data, *, route='/catalog-images', **kwargs):
-            if route == '/catalog-video-clips':
+            if route in ('/catalog-video-clips', '/catalog-audio-clips'):
                 kwargs.setdefault('name', 'clip')
             body, media = multipart(data, **kwargs)
             status, headers, response = request(port, 'POST', route, body, media)
@@ -216,6 +230,14 @@ def main():
             require(request(port, 'POST', '/catalog-video-clips', data, media, credential=credential)[0] == expected, 'mp4_authority')
         require(list((root / 'objects').iterdir()) == [], 'mp4_denial_has_no_storage')
         passed.append('mp4_denial_and_policy_failure_have_no_storage')
+
+        audio = wav()
+        data, media = multipart(audio, name='clip')
+        require(request(deny_port, 'POST', '/catalog-audio-clips', data, media)[0] == 401, 'wav_default_deny')
+        for credential, expected in [(None, 401), ('fixture-forbidden', 403), ('fixture-outage', 500)]:
+            require(request(port, 'POST', '/catalog-audio-clips', data, media, credential=credential)[0] == expected, 'wav_authority')
+        require(list((root / 'objects').iterdir()) == [], 'wav_denial_has_no_storage')
+        passed.append('wav_denial_and_policy_failure_have_no_storage')
 
         first = upload(png(), filename='../misleading.php', media='text/html')
         path = '/catalog-images/' + first
@@ -267,16 +289,41 @@ def main():
         require((root / 'objects' / mp4_id / 'content').stat().st_mode & 0o777 == 0o600, 'mp4_private_mode')
         passed.append('mp4_native_upload_quarantine_original_attachment_and_owner_format_binding')
 
+        wav_id = upload(audio, route='/catalog-audio-clips', filename='../fake.mp4', media='text/html')
+        wav_path = '/catalog-audio-clips/' + wav_id
+        require(state(wav_id)['format'] == 'wav' and state(wav_id)['bytes'] == 320044
+                and request(port, 'GET', wav_path)[0] == 404, 'wav_maximum_pending_format')
+        inspect('accepted')
+        status, headers, body = request(port, 'GET', wav_path, extra={'Range': 'bytes=0-1'})
+        require(status == 200 and body == audio, 'wav_exact_original_bytes')
+        with wave.open(io.BytesIO(body), 'rb') as reader:
+            require(reader.getparams()[:4] == (1, 2, 16000, 160000)
+                    and reader.readframes(160001) == b'\x80\x01' * 160000, 'wav_independent_reader')
+        require(headers['content-type'] == 'audio/vnd.wave; codec=1'
+                and headers['content-disposition'] == 'attachment; filename="catalog-clip.wav"'
+                and headers['x-content-type-options'] == 'nosniff' and headers['cache-control'] == 'private, no-store'
+                and headers['accept-ranges'] == 'none' and int(headers['content-length']) == len(audio), 'wav_download_headers')
+        require(request(port, 'GET', wav_path, credential='fixture-owner-two')[0] == 404
+                and request(deny_port, 'GET', wav_path)[0] == 401, 'wav_read_authority')
+        for other_route, identifier in [('/catalog-images/', first), ('/catalog-jpeg-images/', jpeg_id), ('/catalog-video-clips/', mp4_id)]:
+            require(request(port, 'GET', other_route + wav_id)[0] == 404
+                    and request(port, 'GET', '/catalog-audio-clips/' + identifier)[0] == 404, 'wav_cross_format_reads')
+        require((root / 'objects' / wav_id / 'content').stat().st_mode & 0o777 == 0o600, 'wav_private_mode')
+        passed.append('wav_maximum_native_upload_misleading_labels_quarantine_attachment_and_owner_format_binding')
+
         worker_env['PHPTHIS_PNG_WORKER_IMAGE'] = update
         command('images:activate-definition', expected='activated')
         require(request(port, 'GET', path)[0] == 404, 'old_definition_not_served')
         require(request(port, 'GET', jpeg_path)[0] == 404, 'old_jpeg_definition_not_served')
         require(request(port, 'GET', mp4_path)[0] == 404, 'old_mp4_definition_not_served')
+        require(request(port, 'GET', wav_path)[0] == 404, 'old_wav_definition_not_served')
+        inspect('accepted')
         inspect('accepted')
         inspect('accepted')
         inspect('accepted')
         require(request(port, 'GET', path)[2] == png() and request(port, 'GET', jpeg_path)[2] == jpeg, 'reinspection_promotion')
         require(request(port, 'GET', mp4_path)[2] == mp4, 'mp4_reinspection_promotion')
+        require(request(port, 'GET', wav_path)[2] == audio, 'wav_reinspection_promotion')
         passed.append('definition_switch_immediately_blocks_old_acceptance_and_reinspects')
 
         # Missing immutable tool image is operational uncertainty, not a content rejection.
@@ -289,6 +336,16 @@ def main():
         inspect(failed=True)
         require(state(first)['attempts'] == 2, 'retry_bound')
         command('images:retry', first, expected='ineligible')
+        # The remaining old-definition objects are JPEG, MP4 and WAV in that order.
+        inspect(failed=True)
+        inspect(failed=True)
+        inspect(failed=True)
+        require(state(wav_id)['state'] == 'scanner_error' and state(wav_id)['attempts'] == 1
+                and request(port, 'GET', wav_path)[0] == 404, 'wav_outage_quarantine')
+        command('images:retry', wav_id, expected='retry_pending')
+        inspect(failed=True)
+        require(state(wav_id)['attempts'] == 2, 'wav_retry_bound')
+        command('images:retry', wav_id, expected='ineligible')
         worker_env['PHPTHIS_PNG_WORKER_IMAGE'] = image
         command('images:activate-definition', failed=True)
         worker_env['PHPTHIS_PNG_WORKER_IMAGE'] = recovery
@@ -296,8 +353,10 @@ def main():
         inspect('accepted')
         inspect('accepted')
         inspect('accepted')
+        inspect('accepted')
         require(request(port, 'GET', jpeg_path)[2] == jpeg, 'jpeg_definition_recovery')
         require(request(port, 'GET', mp4_path)[2] == mp4, 'mp4_definition_recovery')
+        require(request(port, 'GET', wav_path)[2] == audio, 'wav_definition_recovery')
         passed.append('parser_outage_quarantine_explicit_retry_bound_definition_recovery')
 
         bad = upload(b'<svg/>', filename='looks-valid.png', media='image/png')
@@ -327,6 +386,19 @@ def main():
         require(state(broken_id)['state'] == 'scanner_error' and request(port, 'GET', '/catalog-video-clips/' + broken_id)[0] == 404, 'mp4_decoder_error_nonserving')
         passed.append('mp4_route_controls_classification_and_decoder_errors_stay_quarantined')
 
+        mislabeled_audio = upload(png(), route='/catalog-audio-clips', media='audio/vnd.wave; codec=1')
+        inspect('rejected')
+        require(state(mislabeled_audio)['state'] == 'rejected'
+                and request(port, 'GET', '/catalog-audio-clips/' + mislabeled_audio)[0] == 404, 'wav_wrong_format_bytes')
+        wav_in_video = upload(audio, route='/catalog-video-clips')
+        inspect('rejected')
+        require(state(wav_in_video)['state'] == 'rejected', 'wav_is_not_video')
+        malformed_audio = upload(audio[:40] + struct.pack('<I', 0xffffffff) + audio[44:], route='/catalog-audio-clips')
+        inspect('rejected')
+        require(state(malformed_audio)['state'] == 'rejected'
+                and request(port, 'GET', '/catalog-audio-clips/' + malformed_audio)[0] == 404, 'wav_bad_length_nonserving')
+        passed.append('wav_route_selects_parser_and_malformed_lengths_stay_quarantined')
+
         for payload, expected in [(b'', 400), (b'x' * 1_048_577, 413)]:
             body, media = multipart(payload)
             require(request(port, 'POST', '/catalog-images', body, media)[0] == expected, 'file_byte_boundary')
@@ -337,6 +409,17 @@ def main():
         require(state(maximum)['bytes'] == 1_048_576 and request(port, 'GET', '/catalog-images/' + maximum)[0] == 404, 'inclusive_file_limit')
         mp4_maximum = upload(b'x' * 1_048_576, route='/catalog-video-clips')
         require(state(mp4_maximum)['bytes'] == 1_048_576 and request(port, 'GET', '/catalog-video-clips/' + mp4_maximum)[0] == 404, 'mp4_inclusive_file_limit')
+        before_wav_limits = len(list((root / 'objects').iterdir()))
+        for payload, expected in [(b'', 400), (b'x' * 45, 400), (b'x' * 320045, 413), (b'x' * 1_048_577, 413)]:
+            body, media = multipart(payload, name='clip')
+            require(request(port, 'POST', '/catalog-audio-clips', body, media)[0] == expected, 'wav_file_byte_boundary')
+        body, media = multipart(audio)
+        require(request(port, 'POST', '/catalog-audio-clips', body, media)[0] == 400, 'wav_wrong_field_boundary')
+        body, media = multipart(audio, name='clip')
+        require(request(port, 'POST', '/catalog-audio-clips?unexpected=value', body, media)[0] == 400, 'wav_query_boundary')
+        require(len(list((root / 'objects').iterdir())) == before_wav_limits, 'wav_invalid_admission_has_no_storage')
+        wav_minimum = upload(wav(1), route='/catalog-audio-clips')
+        require(state(wav_minimum)['bytes'] == 46 and request(port, 'GET', '/catalog-audio-clips/' + wav_minimum)[0] == 404, 'wav_inclusive_minimum')
         body, media = multipart(png(), name='other')
         require(request(port, 'POST', '/catalog-images', body, media)[0] == 400, 'field_boundary')
         extra = b'--phpthis-catalog-proof\r\nContent-Disposition: form-data; name="caption"\r\n\r\nno\r\n'
@@ -347,7 +430,9 @@ def main():
         require(request(port, 'POST', '/catalog-video-clips', body, media)[0] == 400, 'mp4_text_field_boundary')
         body, media = multipart(mp4)
         require(request(port, 'POST', '/catalog-video-clips', body, media)[0] == 400, 'mp4_wrong_field_boundary')
-        require(len(list((root / 'objects').iterdir())) == 11, 'input_failure_no_storage')
+        body, media = multipart(audio, name='clip', extra=extra)
+        require(request(port, 'POST', '/catalog-audio-clips', body, media)[0] == 400, 'wav_text_field_boundary')
+        require(len(list((root / 'objects').iterdir())) == 16, 'input_failure_no_storage')
         passed.append('native_byte_limits_zero_unknown_and_extra_fields_no_storage')
 
         # Expiry is checked on reads, independently of whether the cleanup pass has run.
@@ -372,20 +457,31 @@ def main():
         require(state(mp4_id) is None and not (root / 'objects' / mp4_id).exists(), 'mp4_expiry_cleanup')
         passed.append('mp4_expiry_and_exact_cleanup')
 
-        # All three routes count every retained reservation, including rejection/error states.
-        require(len(list((root / 'objects').iterdir())) == 8, 'mixed_quota_baseline')
-        for index in range(24):
-            if index % 3 == 0:
+        code, out, err = php('tests/control.php', str(root), 'expire', wav_id)
+        require((code, out, err) == (0, b'EXPIRED\n', b''), 'wav_expiry_control')
+        require(request(port, 'GET', wav_path)[0] == 404, 'wav_expired_not_served')
+        command('images:expire-one', expected='expired')
+        require(state(wav_id) is None and not (root / 'objects' / wav_id).exists(), 'wav_expiry_cleanup')
+        passed.append('wav_expiry_and_exact_cleanup')
+
+        # All four routes count every retained reservation, including rejection/error states.
+        require(len(list((root / 'objects').iterdir())) == 12, 'mixed_quota_baseline')
+        for index in range(20):
+            if index % 4 == 0:
                 upload(png())
-            elif index % 3 == 1:
+            elif index % 4 == 1:
                 upload(jpeg, route='/catalog-jpeg-images')
-            else:
+            elif index % 4 == 2:
                 upload(mp4, route='/catalog-video-clips')
+            else:
+                upload(audio, route='/catalog-audio-clips')
         body, media = multipart(png())
         require(request(port, 'POST', '/catalog-images', body, media)[0] == 503, 'aggregate_quota')
         require(request(port, 'POST', '/catalog-jpeg-images', body, media)[0] == 503, 'jpeg_aggregate_quota')
         body, media = multipart(mp4, name='clip')
         require(request(port, 'POST', '/catalog-video-clips', body, media)[0] == 503, 'mp4_aggregate_quota')
+        body, media = multipart(audio, name='clip')
+        require(request(port, 'POST', '/catalog-audio-clips', body, media)[0] == 503, 'wav_aggregate_quota')
         require(len(list((root / 'objects').iterdir())) == 32, 'quota_reservation_bound')
         passed.append('mixed_formats_and_errors_share_quota_and_all_routes_deny_33rd_upload')
         require(list((root / 'php-uploads').iterdir()) == [], 'final_php_temp_cleanup')
@@ -411,7 +507,7 @@ def main():
                 'probe_fault_image_ids': probe_faults, 'parser': parser_evidence, 'http_and_lifecycle': passed,
                 'cleanup': 'owned processes, containers, upload temporaries and retained fixture removed', 'source_sha256': sources}
     (ROOT / 'tmp' / 'inspected-media-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
-    print('PASS real PNG/JPEG/MP4 inspection, HTTP quarantine and resource-failure reference')
+    print('PASS real PNG/JPEG/MP4/WAV inspection, HTTP quarantine and resource-failure reference')
 
 
 if __name__ == '__main__':

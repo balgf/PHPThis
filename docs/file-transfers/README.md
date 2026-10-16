@@ -13,6 +13,7 @@ Consumer Contract version 26 carries version 19 and version 13's requirement for
 | Inspect a bounded still PNG | [Checked PNG recipe](inspected-png.md) | optional `tools/inspected-media` quarantine, real-tool inspection, reinspection and attachment reference |
 | Inspect a bounded baseline JPEG | [Checked JPEG recipe](inspected-jpeg.md) | Same catalog lifecycle, explicit format routing, pinned decoder and retained-format migration |
 | Inspect a short silent MP4 clip | [Checked MP4 recipe](inspected-mp4.md) | Finite container/AVC profile, full decode, shared local lifecycle and format-constraint migration |
+| Inspect a short PCM WAV clip | [Checked WAV recipe](inspected-wav.md) | Finite mono PCM structure, sample bounds, shared local lifecycle and retained-format migration |
 | Store a two-file S3 document packet | [Document packets](document-packets.md) | Shared quotas, all-or-nothing visibility, replay identities and bounded exact-version recovery |
 | Store one S3 document with a label and note | [Typed operation metadata](metadata-uploads.md) | explicit application values, private owner/version binding and offline reference evidence |
 | Generate an inventory export or read a private object internally | [Generated S3 exports](generated-exports.md) | optional concrete application, exact-version lifecycle and separate offline/AWS evidence |
