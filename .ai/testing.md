@@ -32,7 +32,7 @@ The installed-consumer entrypoint `tools/test-consumer-project.php` owns the exp
 | Session lifecycle | `.ai/session.md` | `tests/session-lifecycle.php` |
 | Cache and coordination | `.ai/cache.md`, `.ai/operations.md` | `tests/cache.php`, `tests/redis-coordination.php` |
 | Jobs, CLI and migrations | `.ai/jobs.md`, `.ai/cli.md`, `.ai/migrations.md` | `tests/jobs.php`, `tests/cli.php`, `tests/migrations.php` |
-| File transfers | `.ai/file-transfers.md` | `tests/upload-request-boundary.php`, `tests/document-files.php`, installed local/S3 reference controls; `tools/test-inspected-media.php` and the optional PNG reference's real-tool runner; `tools/test-generated-s3.php` for generated exports; `tools/test-metadata-s3.php` for single documents and two-file packets, real native uploads, retry/commit/crash recovery and SDK loopback evidence |
+| File transfers | `.ai/file-transfers.md` | `tests/upload-request-boundary.php`, `tests/document-files.php`, installed local/S3 reference controls; `tools/test-inspected-media.php` and the optional PNG/JPEG reference's real-tool runner; `tools/test-generated-s3.php` for generated exports; `tools/test-metadata-s3.php` for single documents and two-file packets, real native uploads, retry/commit/crash recovery and SDK loopback evidence |
 | Correlation and logging | `.ai/observability.md` | `tests/observability.php`, installed destination-record controls |
 | Application configuration and launcher | `.ai/configuration.md` | installed configuration and local-launcher controls |
 | Context ownership and distribution | `.ai/application-context.md` | `tools/guidance-support.php`, `tests/MaintainabilityGuardrailsTest.php`, installed consumer proof |

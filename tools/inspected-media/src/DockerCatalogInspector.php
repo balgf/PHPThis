@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace CatalogImageRecipe;
 
-final readonly class DockerPngInspector implements PngInspector
+final readonly class DockerCatalogInspector implements CatalogInspector
 {
     public function __construct(private InspectionDefinition $definition) {}
 
-    public function inspect(string $bytes, string $token): InspectionOutcome
+    public function inspect(string $bytes, string $token, CatalogImageFormat $format): InspectionOutcome
     {
         $name = $this->name($token);
         if ($bytes === '' || strlen($bytes) > 1_048_576) { return InspectionOutcome::Rejected; }
@@ -16,7 +16,7 @@ final readonly class DockerPngInspector implements PngInspector
             'run', '--pull', 'never', '--name', $name, '--label', 'phpthis.catalog-inspector=' . $token,
             '--network', 'none', '--read-only', '--user', '65534:65534', '--cap-drop', 'ALL',
             '--security-opt', 'no-new-privileges', '--pids-limit', '8', '--memory', '64m', '--memory-swap', '64m',
-            '--cpus', '1', '--ulimit', 'cpu=2:2', '--log-driver', 'none', '-i', $this->definition->image,
+            '--cpus', '1', '--ulimit', 'cpu=2:2', '--log-driver', 'none', '-i', $this->definition->image, $format->value,
         ], $bytes, 10);
         if ($result === null || $result['code'] !== 0 || $result['err'] !== '') { return InspectionOutcome::ScannerError; }
         return match ($result['out']) {

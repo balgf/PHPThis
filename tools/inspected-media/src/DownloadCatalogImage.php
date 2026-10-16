@@ -17,6 +17,7 @@ final readonly class DownloadCatalogImage implements RequestHandler
     public function __construct(
         private CatalogRoot $root, private CatalogLock $lock, private CatalogClock $clock,
         private CatalogAuthenticator $authenticator, private AuthorizeCatalogDownload $authorizer,
+        private CatalogImageFormat $format = CatalogImageFormat::Png,
     ) {}
 
     public function handle(Request $request): Response
@@ -27,9 +28,11 @@ final readonly class DownloadCatalogImage implements RequestHandler
         if ($request->query !== []) { throw new InvalidRequest('Unexpected query.'); }
         $this->lock->acquire(false);
         $database = Connection::connect('sqlite:' . $this->root->path . '/catalog.sqlite', new QueryBudget(8), new QueryTrace(8), options: [\PDO::ATTR_TIMEOUT => 1]);
-        $body = (new CatalogImages($database, $this->root, $this->lock, $this->clock))->read($id, $principal);
+        $body = (new CatalogImages($database, $this->root, $this->lock, $this->clock))->read($id, $principal, $this->format);
         return new Response(200, [
-            'Content-Type' => 'image/png', 'Content-Disposition' => 'attachment; filename="catalog-image.png"',
+            'Content-Type' => $this->format === CatalogImageFormat::Png ? 'image/png' : 'image/jpeg',
+            'Content-Disposition' => $this->format === CatalogImageFormat::Png
+                ? 'attachment; filename="catalog-image.png"' : 'attachment; filename="catalog-image.jpg"',
             'Content-Length' => (string) $body->bytes, 'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff', 'Accept-Ranges' => 'none',
         ], '', fileBody: $body);

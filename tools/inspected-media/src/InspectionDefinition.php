@@ -12,11 +12,11 @@ final readonly class InspectionDefinition
     public static function sources(): array
     {
         return [
-            'inspection-policy.json', 'Dockerfile', 'inspector.php', 'bootstrap.php', 'console.php', 'public/index.php',
-            'src/Failures.php', 'src/BoundedPng.php', 'src/PngHeader.php', 'src/ImageId.php',
+            'inspection-policy.json', '.ai/file-transfers.md', '.ai/configuration.md', 'Dockerfile', 'inspector.php', 'bootstrap.php', 'console.php', 'public/index.php',
+            'src/Failures.php', 'src/BoundedJpeg.php', 'src/CatalogImageFormat.php', 'src/BoundedPng.php', 'src/PngHeader.php', 'src/ImageId.php',
             'src/CatalogPrincipal.php', 'src/CatalogClock.php', 'src/ImageRecord.php', 'src/CatalogRoot.php',
-            'src/CatalogLock.php', 'src/PngInspector.php', 'src/PendingImageUpload.php', 'src/CatalogSettings.php',
-            'src/CatalogImages.php', 'src/InspectionDefinition.php', 'src/DockerPngInspector.php',
+            'src/CatalogLock.php', 'src/CatalogInspector.php', 'src/PendingImageUpload.php', 'src/CatalogSettings.php',
+            'src/CatalogImages.php', 'src/InspectionDefinition.php', 'src/DockerCatalogInspector.php',
             'src/Configuration.php', 'src/ReferenceEnvironment.php', 'src/CatalogPolicy.php',
             'src/UploadCatalogImage.php', 'src/DownloadCatalogImage.php', 'src/CatalogHttp.php',
         ];

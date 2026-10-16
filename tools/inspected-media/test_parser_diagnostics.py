@@ -20,6 +20,10 @@ class ParserDiagnosticsTests(unittest.TestCase):
     def test_format_resource_and_cleanup_failures_keep_the_case_and_stage(self):
         for label, cleanup in (
             ('format_valid_rgb_inspect', 'passed'),
+            ('jpeg_sampling420_inspect', 'passed'),
+            ('jpeg_corrupt_entropy_inspect', 'passed'),
+            ('jpeg_resource_memory_termination', 'passed'),
+            ('jpeg_resource_timeout_elapsed', 'passed'),
             ('format_large_pipe_input_cleanup', 'failed'),
             ('resource_memory_container_state', 'passed'),
             ('resource_memory_termination', 'passed'),
@@ -37,6 +41,7 @@ class ParserDiagnosticsTests(unittest.TestCase):
         for code, out, err in (
             (0, b'', valid), (-9, b'', valid), (1, b'private-stdout', valid),
             (1, b'', b'private-password /private/path'),
+            (1, b'', b'REAL_PARSER_FAIL jpeg_private_payload_inspect cleanup=passed\n'),
             (1, b'', valid + b'private-stderr'),
             (1, b'', b'REAL_PARSER_FAIL format_private_payload_inspect cleanup=passed\n'),
             (1, b'', b'REAL_PARSER_FAIL resource_memory_elapsed cleanup=passed\n'),

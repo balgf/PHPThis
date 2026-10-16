@@ -13,9 +13,9 @@ The [catalog reference](https://github.com/balgf/PHPThis/tree/main/tools/inspect
 | Input | 1–1,048,576 file bytes; 2 MiB native multipart request ceiling |
 | Image | 1–1,024 pixels on each axis; at most 4,195,328 decompressed scanline bytes |
 | Toolchain | PHP 8.4.26, pngcheck 4.0.1, zlib 1.3.2; hash-verified sources and immutable image identity |
-| Isolation | One network-disabled, read-only, non-root container per file; 64 MiB, eight PIDs, two CPU seconds, ten-second inspection deadline |
+| Isolation | One network-disabled, read-only, non-root container per file; 64 MiB, eight PIDs, two CPU seconds per process, ten-second inspection deadline |
 
-This subset rejects many valid PNGs: metadata/color-profile chunks, palettes, grayscale, interlacing, animation and other bit depths. JPEG, WebP, SVG, audio and video have no inspection claim. Neither filename nor submitted MIME type chooses the classifier. No rendering, transcoding, antivirus scanning, streaming or range playback is implied.
+This subset rejects many valid PNGs: metadata/color-profile chunks, palettes, grayscale, interlacing, animation and other bit depths. A separate [bounded JPEG operation](inspected-jpeg.md) shares this catalog; the PNG route still rejects JPEG. WebP, SVG, audio and video have no inspection claim. Neither filename nor submitted MIME type chooses the classifier. No rendering, transcoding, antivirus scanning, streaming or range playback is implied.
 
 The application first validates the envelope, CRCs, dimensions, exact bounded scanlines and complete zlib stream consumption, then requires `pngcheck -q` success on the same bytes. Both checks must pass before promotion. Successful format inspection is not a general content-safety guarantee.
 
@@ -40,3 +40,5 @@ The real memory-limit proof requires cgroup v2. Its test-image supervisor checks
 An adopter still owns actual authentication and applicable CSRF, strict-raw-multipart suitability, ingress/TLS/rate limits, separate HTTP/supervisor authority, temporary/durable volumes, capacity and inode monitoring, filesystem crash behavior, retention supervision and incident recovery. The built-in server and ordinary local permissions do not prove a production deployment or prohibit an OS owner from chmodding its root. Complete the existing [storage](storage-ownership.md), [deployment](deployment.md) and [testing](testing.md) requirements before making those claims.
 
 Existing applications opt in explicitly; installing/upgrading PHPThis does not change an opaque-byte policy or migrate retained objects. No Consumer Contract or Strict Profile migration is required. Adopting the recipe needs its own schema/provisioning, pinned inspector image, authoritative operation policy and reinspection plan.
+
+The shared catalog now persists `png`/`jpeg` and binds that value to its trusted routes and reads. Existing PNG adopters follow the [format-column migration](inspected-jpeg.md#adopting-the-format-column), activate the coherent new definition and reinspect PNG records before serving. The PNG subset and response headers remain unchanged; the migration intentionally makes prior acceptance temporarily unavailable. Both formats share the same quota, retention and recovery ownership.
