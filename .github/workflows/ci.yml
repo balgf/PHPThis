@@ -177,7 +177,7 @@ jobs:
           if-no-files-found: error
 
   inspected-png:
-    name: Inspected PNG quarantine and resource bounds
+    name: Inspected PNG and JPEG quarantine and resource bounds
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -194,7 +194,7 @@ jobs:
           tools: composer:v2
       - name: Install locked dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
-      - name: Build the pinned PNG inspector
+      - name: Build the pinned PNG and JPEG inspector
         run: docker build -t phpthis-inspected-media:issue108 tools/inspected-media
       - name: Build deliberate resource-failure and update controls
         run: |

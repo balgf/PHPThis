@@ -125,6 +125,7 @@ docs/file-transfers/deployment.md
 docs/file-transfers/emission.md
 docs/file-transfers/exclusions.md
 docs/file-transfers/failures.md
+docs/file-transfers/inspected-jpeg.md
 docs/file-transfers/inspected-png.md
 docs/file-transfers/local-file-response.md
 docs/file-transfers/metadata-trust.md

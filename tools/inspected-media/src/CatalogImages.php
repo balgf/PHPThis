@@ -14,7 +14,7 @@ final readonly class CatalogImages
         private CatalogLock $lock, private CatalogClock $clock,
     ) {}
 
-    public function retain(PendingImageUpload $upload, CatalogPrincipal $owner): ImageId
+    public function retain(PendingImageUpload $upload, CatalogPrincipal $owner, CatalogImageFormat $format): ImageId
     {
         $this->lock->requireHeld(true);
         $now = $this->now();
@@ -25,12 +25,12 @@ final readonly class CatalogImages
         $id = new ImageId(bin2hex(random_bytes(16)));
         // The committed reservation precedes filesystem mutation and survives a crash.
         $reserved = $this->database->executeStatement(
-            'INSERT INTO catalog_images (image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token)
-             SELECT :id, :owner, :bytes, NULL, :state, :definition, 0, :created, :expires, NULL
+            'INSERT INTO catalog_images (image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token, format)
+             SELECT :id, :owner, :bytes, NULL, :state, :definition, 0, :created, :expires, NULL, :format
              WHERE (SELECT COUNT(*) FROM catalog_images) < 32
                AND (SELECT COALESCE(SUM(size_bytes), 0) FROM catalog_images) + :quota_bytes <= 33554432',
             ['id' => $id->value, 'owner' => $owner->id, 'bytes' => $upload->bytes, 'state' => 'reserved',
-                'definition' => $settings->definition, 'created' => $now, 'expires' => $now + 86_400, 'quota_bytes' => $upload->bytes],
+                'definition' => $settings->definition, 'created' => $now, 'expires' => $now + 86_400, 'quota_bytes' => $upload->bytes, 'format' => $format->value],
         );
         if ($reserved !== 1) { throw new CatalogBusy('Catalog capacity unavailable.'); }
         $directory = $this->root->objectDirectory($id);
@@ -53,14 +53,14 @@ final readonly class CatalogImages
         return $id;
     }
 
-    public function read(ImageId $id, CatalogPrincipal $owner): LocalFileBody
+    public function read(ImageId $id, CatalogPrincipal $owner, CatalogImageFormat $format = CatalogImageFormat::Png): LocalFileBody
     {
         $this->lock->requireHeld(false);
         $row = $this->database->selectOneRow(
-            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token
-             FROM catalog_images WHERE image_id = :id AND owner_id = :owner AND state = :accepted
+            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token, format
+             FROM catalog_images WHERE image_id = :id AND owner_id = :owner AND format = :format AND state = :accepted
              AND expires_at > :now AND definition = (SELECT definition FROM catalog_policy WHERE singleton = 1 AND source_fingerprint = :source)',
-            ['id' => $id->value, 'owner' => $owner->id, 'accepted' => 'accepted', 'now' => $this->now(),
+            ['id' => $id->value, 'owner' => $owner->id, 'format' => $format->value, 'accepted' => 'accepted', 'now' => $this->now(),
                 'source' => InspectionDefinition::sourceFingerprint(dirname(__DIR__))],
         );
         if ($row === null) { throw new CatalogNotFound('Image not available.'); }
@@ -93,7 +93,7 @@ final readonly class CatalogImages
         return 'activated';
     }
 
-    public function inspectOne(InspectionDefinition $definition, PngInspector $inspector): string
+    public function inspectOne(InspectionDefinition $definition, CatalogInspector $inspector): string
     {
         $this->lock->requireHeld(true);
         $now = $this->now();
@@ -101,7 +101,7 @@ final readonly class CatalogImages
         if ($settings->definition !== $definition->value) { throw new CatalogUnavailable('Inspector definition is not active.'); }
         if ($now < $settings->lastStarted + 1) { return 'not_due'; }
         $row = $this->database->selectOneRow(
-            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token
+            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token, format
              FROM catalog_images WHERE expires_at > :now AND state NOT IN (:reserved, :inspecting) AND inspection_token IS NULL
              AND (definition <> :definition OR state = :pending) ORDER BY created_at, image_id LIMIT 1',
             ['now' => $now, 'reserved' => 'reserved', 'inspecting' => 'inspecting', 'definition' => $definition->value, 'pending' => 'pending'],
@@ -124,7 +124,7 @@ final readonly class CatalogImages
             if ($this->database->inTransaction()) { $this->database->rollBack(); }
         }
         try {
-            $outcome = $inspector->inspect($this->root->bytes($record), $token);
+            $outcome = $inspector->inspect($this->root->bytes($record), $token, $record->format);
             // Verify the immutable retained input again before accepting the result.
             $this->root->bytes($record);
         } catch (\Throwable) {
@@ -144,12 +144,12 @@ final readonly class CatalogImages
         return $outcome->value;
     }
 
-    public function retry(ImageId $id, InspectionDefinition $definition, PngInspector $inspector): string
+    public function retry(ImageId $id, InspectionDefinition $definition, CatalogInspector $inspector): string
     {
         $this->lock->requireHeld(true);
         if ($this->settings()->definition !== $definition->value) { throw new CatalogUnavailable('Inactive inspector.'); }
         $row = $this->database->selectOneRow(
-            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token
+            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token, format
              FROM catalog_images WHERE image_id = :id AND definition = :definition AND state = :error AND attempts < 2 AND expires_at > :now',
             ['id' => $id->value, 'definition' => $definition->value, 'error' => 'scanner_error', 'now' => $this->now()],
         );
@@ -164,11 +164,11 @@ final readonly class CatalogImages
         return 'retry_pending';
     }
 
-    public function reconcileOne(PngInspector $inspector): string
+    public function reconcileOne(CatalogInspector $inspector): string
     {
         $this->lock->requireHeld(true);
         $row = $this->database->selectOneRow(
-            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token
+            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token, format
              FROM catalog_images WHERE state IN (:reserved, :inspecting) OR (state = :error AND inspection_token IS NOT NULL)
              ORDER BY created_at, image_id LIMIT 1',
             ['reserved' => 'reserved', 'inspecting' => 'inspecting', 'error' => 'scanner_error'],
@@ -186,11 +186,11 @@ final readonly class CatalogImages
         return 'inspection_quarantined';
     }
 
-    public function expireOne(PngInspector $inspector): string
+    public function expireOne(CatalogInspector $inspector): string
     {
         $this->lock->requireHeld(true);
         $row = $this->database->selectOneRow(
-            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token
+            'SELECT image_id, owner_id, size_bytes, digest, state, definition, attempts, created_at, expires_at, inspection_token, format
              FROM catalog_images WHERE expires_at <= :now ORDER BY created_at, image_id LIMIT 1', ['now' => $this->now()],
         );
         if ($row === null) { return 'empty'; }

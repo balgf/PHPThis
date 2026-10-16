@@ -11,6 +11,7 @@ Consumer Contract version 26 carries version 19 and version 13's requirement for
 | Map upload outcomes | [Upload errors](upload-errors.md), [Failures](failures.md) | `RequestUploadError`, application upload boundary, exact error registry |
 | Review client metadata | [Metadata trust](metadata-trust.md), [Security](security.md) | `RequestUpload`, application handler, public outputs and terminal evidence |
 | Inspect a bounded still PNG | [Checked PNG recipe](inspected-png.md) | optional `tools/inspected-media` quarantine, real-tool inspection, reinspection and attachment reference |
+| Inspect a bounded baseline JPEG | [Checked JPEG recipe](inspected-jpeg.md) | Same catalog lifecycle, explicit format routing, pinned decoder and retained-format migration |
 | Store a two-file S3 document packet | [Document packets](document-packets.md) | Shared quotas, all-or-nothing visibility, replay identities and bounded exact-version recovery |
 | Store one S3 document with a label and note | [Typed operation metadata](metadata-uploads.md) | explicit application values, private owner/version binding and offline reference evidence |
 | Generate an inventory export or read a private object internally | [Generated S3 exports](generated-exports.md) | optional concrete application, exact-version lifecycle and separate offline/AWS evidence |

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use CatalogImageRecipe\CatalogImages;
 use CatalogImageRecipe\CatalogLock;
-use CatalogImageRecipe\DockerPngInspector;
+use CatalogImageRecipe\DockerCatalogInspector;
 use CatalogImageRecipe\ImageId;
 use CatalogImageRecipe\ReferenceEnvironment;
 use CatalogImageRecipe\SystemCatalogClock;
@@ -33,7 +33,7 @@ try {
     $lock->acquire(true);
     $database = Connection::connect('sqlite:' . $configuration->root->path . '/catalog.sqlite', new QueryBudget(16), new QueryTrace(16), options: [PDO::ATTR_TIMEOUT => 1]);
     $images = new CatalogImages($database, $configuration->root, $lock, new SystemCatalogClock());
-    $inspector = new DockerPngInspector($configuration->definition);
+    $inspector = new DockerCatalogInspector($configuration->definition);
     $outcome = match ($command) {
         'images:activate-definition' => $images->activate($configuration->definition),
         'images:inspect-one' => $images->inspectOne($configuration->definition, $inspector),

@@ -11,8 +11,8 @@ enum InspectionOutcome: string
     case ScannerError = 'scanner_error';
 }
 
-interface PngInspector
+interface CatalogInspector
 {
-    public function inspect(string $bytes, string $token): InspectionOutcome;
+    public function inspect(string $bytes, string $token, CatalogImageFormat $format): InspectionOutcome;
     public function discard(string $token): bool;
 }
