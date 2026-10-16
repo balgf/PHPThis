@@ -2,12 +2,12 @@
 
 ## Current priorities
 
-PHPThis's current source boundary is Consumer Contract 22, Strict Profile 4 and PHT001–PHT008. Alpha 8 is the latest recorded source tag at Contract 18; [RELEASING.md](RELEASING.md) owns release state, exact approval rules and the route to publication receipts. Changes after that tag are unreleased.
+PHPThis's current source boundary and latest recorded Alpha 9 tag use Consumer Contract 22, Strict Profile 4 and PHT001–PHT008. [RELEASING.md](RELEASING.md) owns release state, exact approval rules and the route to publication receipts. Changes after that tag are unreleased.
 
-- Keep the retained consumer useful through real feature changes and upgrades. [The lifecycle report](https://github.com/balgf/PHPThis/tree/main/tools/consumer-lifecycle) owns its public Alpha 8 repetition, failures, repairs and optional RAG exercise. Its next maintenance trigger is the next matching public release.
+- Keep the retained consumer useful through real feature changes and upgrades. [The lifecycle report](https://github.com/balgf/PHPThis/tree/main/tools/consumer-lifecycle) owns its public Alpha 8 repetition, failures, repairs and optional RAG exercise. Alpha 9 publication triggers its next deliberate upgrade and repetition; the recorded Alpha 8 consumer evidence remains historical.
 - Review maintainability through behavior, documentation ownership and executable evidence. [ADR 063](docs/decisions/063-maintainability-review-over-size-proxies.md) makes file and line counts informational. [ADR 064](docs/decisions/064-one-entrypoint-per-audience.md) makes `AGENTS.md` the universal entrypoint and routes detail by task.
 - Use consumer evidence to prioritize changes. Outside a demonstrated release blocker, correctness defect or security defect in the accepted surface, runtime/checker expansion needs a reproducible consumer problem.
-- Prepare the coordinated Alpha 9 candidate under [Issue #124](https://github.com/balgf/PHPThis/issues/124), using the [scope and Alpha 8 migration](docs/releases/0.1.0-alpha.9.md). Candidate acceptance and publication follow their own gates. External-service file-URL consumption in [#110](https://github.com/balgf/PHPThis/issues/110) remains deferred; the selected scope is S3 storage and downloads.
+- Carry the published Alpha 9 [scope and Alpha 8 migration](docs/releases/0.1.0-alpha.9.md) into consumer adoption. [Issue #124](https://github.com/balgf/PHPThis/issues/124) owns publication evidence and announcement authorization. External-service file-URL consumption in [#110](https://github.com/balgf/PHPThis/issues/110) remains deferred; the selected scope is S3 storage and downloads.
 
 ## Evidence and open claims
 
@@ -25,6 +25,6 @@ Framework-owned authentication/authorization, credential lifecycle, CSRF policy,
 
 ## Completed work and historical scope
 
-[Decision records](docs/decisions/README.md) and versioned notes in `docs/releases/` preserve the accepted Alpha 1–8 scope. [Issue #81](https://github.com/balgf/PHPThis/issues/81) retains Alpha 8 package/public-install and subsequent operation evidence; [#53](https://github.com/balgf/PHPThis/issues/53) retains Alpha 7, and [#37](https://github.com/balgf/PHPThis/issues/37) retains Alpha 6.
+[Decision records](docs/decisions/README.md) and versioned notes in `docs/releases/` preserve the accepted Alpha 1–9 scope. [Issue #124](https://github.com/balgf/PHPThis/issues/124) retains Alpha 9 package/public-install and GitHub prerelease evidence; [#81](https://github.com/balgf/PHPThis/issues/81) retains Alpha 8, [#53](https://github.com/balgf/PHPThis/issues/53) retains Alpha 7, and [#37](https://github.com/balgf/PHPThis/issues/37) retains Alpha 6.
 
 The [phase-by-phase roadmap at the pre-consolidation revision](https://github.com/balgf/PHPThis/blob/884e7154984d774f9da8f595c820c2b978c8118a/ROADMAP.md) preserves the original completion dates, source-preparation checkpoints, deferred details and numerical limits in force at those dates. Those historical limits and `PENDING` records are not current policy or publication state. Current priorities live above; evidence remains with the decision, release or evaluation that produced it.

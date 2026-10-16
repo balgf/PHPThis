@@ -2,11 +2,11 @@
 
 ## Project status
 
-PHPThis is experimental prerelease software and is not intended for production use. Alpha 8 and `v0.1.0-alpha.8` preserve the latest immutable framework tag/source boundary; [Issue #81](https://github.com/balgf/PHPThis/issues/81) owns its exact approvals and publication evidence. Closed Issue #53 preserves the completed and announced Alpha 7 predecessor. None of this is a production-support commitment. Pre-alpha and alpha revisions receive no production security support and have no guaranteed response-time or remediation SLA. Private vulnerability reports are still assessed on a best-effort basis.
+PHPThis is experimental prerelease software and is not intended for production use. Alpha 9 and `v0.1.0-alpha.9` preserve the latest immutable framework tag/source boundary; [Issue #124](https://github.com/balgf/PHPThis/issues/124) owns its exact approvals and publication evidence. Closed Issue #53 preserves the completed and announced Alpha 7 predecessor. None of this is a production-support commitment. Pre-alpha and alpha revisions receive no production security support and have no guaranteed response-time or remediation SLA. Private vulnerability reports are still assessed on a best-effort basis.
 
 Any approved prerelease candidate may be announced only after its complete public-artifact gate in [the release process](RELEASING.md) passes and both GitHub prereleases receive their exact separate authorizations. A partially published framework or skeleton remains unannounced until both packages, the clean public installation path, and the required GitHub prereleases are proved. This tracked policy does not prove continuing live publication state; verify that state from the exact tagged release, GitHub, and Packagist. Release preparation must confirm that GitHub private vulnerability reporting is enabled before a prerelease is announced.
 
-The Alpha 9 source-preparation proposal in [#124](https://github.com/balgf/PHPThis/issues/124) retains this experimental support policy. Its [notes](docs/releases/0.1.0-alpha.9.md) describe scope and adoption limits; preparation does not establish a supported deployment.
+The published Alpha 9 pair in [#124](https://github.com/balgf/PHPThis/issues/124) retains this experimental support policy. Its [notes](docs/releases/0.1.0-alpha.9.md) describe scope and adoption limits; publication does not establish a supported deployment.
 
 ## Reporting a vulnerability
 
