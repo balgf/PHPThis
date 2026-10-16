@@ -27,6 +27,17 @@ final readonly class InventoryExports
             $csv .= $line->sku . ',' . $line->quantity . "\n";
         }
         $bytes = ExportBytes::fromBytes($csv);
+        return $this->retain($bytes);
+    }
+
+    public function generateTestTone(TestToneBytes $tone): ExportId
+    {
+        $this->lock->requireHeld(true);
+        return $this->retain($tone->bytes);
+    }
+
+    private function retain(ExportBytes $bytes): ExportId
+    {
         $id = new ExportId(bin2hex(random_bytes(16)));
         $now = $this->now();
         $reserved = $this->database->executeStatement(

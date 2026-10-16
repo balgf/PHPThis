@@ -13,6 +13,7 @@ use GeneratedS3Recipe\ExportId;
 use GeneratedS3Recipe\ExportRecord;
 use GeneratedS3Recipe\InventoryS3;
 use GeneratedS3Recipe\S3Target;
+use GeneratedS3Recipe\TestToneProducer;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\TransportSharing;
@@ -51,9 +52,25 @@ try {
     $control = new InventoryS3($client, $target);
     try { $control->version($lastRecord); throw new LogicException('oversized_control_accepted'); }
     catch (RuntimeException) {}
+    $tone = TestToneProducer::generate()->bytes;
+    $toneWrite = new InventoryS3($client, $target);
+    $toneVersion = $toneWrite->create(new ExportId(str_repeat('e', 32)), $tone);
+    $toneCases = ['tone_valid', 'tone_oversized', 'tone_chunked_oversized', 'tone_corrupted'];
+    foreach ($toneCases as $index => $case) {
+        $record = ExportRecord::fromDatabaseRow(['export_id' => str_repeat(dechex(14 - $index), 32), 'size_bytes' => 32_044,
+            'sha256' => $tone->sha256, 'state' => 'accepted', 'version_id' => $toneVersion->value, 'delete_attempts' => 0,
+            'created_at' => 1_800_000_000, 'expires_at' => 1_800_086_400, 'target' => $target->fingerprint()]);
+        $s3 = new InventoryS3($client, $target); $accepted = false;
+        if ($case === 'tone_valid') { $s3->head($record, $toneVersion); }
+        try { $accepted = $s3->read($record)->value === $tone->value; } catch (Throwable) {}
+        if ($accepted !== ($case === 'tone_valid') || $s3->calls() !== ($case === 'tone_valid' ? 2 : 1)) {
+            throw new RuntimeException('tone_read_case');
+        }
+    }
     $curl = curl_version();
     if ($curl === false) { throw new RuntimeException('curl unavailable'); }
-    echo json_encode(['scope' => 'REFERENCE_ONLY', 'cases' => ['generated_memory_put', ...$cases, 'oversized_control'],
+    echo json_encode(['scope' => 'REFERENCE_ONLY', 'cases' => ['generated_memory_put', ...$cases, 'oversized_control',
+        'generated_tone_put', 'generated_tone_head', ...$toneCases],
         'php' => PHP_VERSION, 'curl' => $curl['version'], 'tls' => $curl['ssl_version'],
         'sdk' => Aws\Sdk::VERSION, 'guzzle' => Composer\InstalledVersions::getPrettyVersion('guzzlehttp/guzzle'),
         'psr7' => Composer\InstalledVersions::getPrettyVersion('guzzlehttp/psr7'),

@@ -13,8 +13,8 @@ final readonly class ExportInvocation
     {
         if (count($arguments) < 1 || count($arguments) > 2) { throw new \InvalidArgumentException('Invalid arguments.'); }
         $command = $arguments[0];
-        if (!in_array($command, ['generate', 'verify', 'reconcile-one', 'expire-one'], true)) { throw new UnknownExportCommand('Unknown command.'); }
-        if ($command === 'generate' ? count($arguments) !== 1 : count($arguments) !== 2) {
+        if (!in_array($command, ['generate', 'generate-test-tone', 'verify', 'reconcile-one', 'expire-one'], true)) { throw new UnknownExportCommand('Unknown command.'); }
+        if (in_array($command, ['generate', 'generate-test-tone'], true) ? count($arguments) !== 1 : count($arguments) !== 2) {
             throw new \InvalidArgumentException('Invalid arguments.');
         }
         return new self($command, isset($arguments[1]) ? new ExportId($arguments[1]) : null);

@@ -12,7 +12,7 @@ use GuzzleHttp\Psr7\DroppingStream;
 use GuzzleHttp\Psr7\Utils;
 use Psr\Http\Message\StreamInterface;
 
-/** Concrete S3 operations for this inventory export only; no backend interface or registry. */
+/** Concrete S3 operations for the CSV export and fixed test tone; no backend interface or registry. */
 final class InventoryS3
 {
     private int $calls = 0;

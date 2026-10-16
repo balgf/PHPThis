@@ -20,7 +20,7 @@ function verifyGeneratedS3Contracts(): void
     $root = dirname(__DIR__);
     $sources = ['src/Values.php', 'src/ExportLock.php', 'src/S3Settings.php', 'src/ReferenceEnvironment.php',
         'src/CredentialProvider.php', 'src/Composition.php', 'src/InventoryS3.php', 'src/InventoryExports.php',
-        'src/ExportInvocation.php', 'console.php'];
+        'src/ExportInvocation.php', 'src/TestToneBytes.php', 'src/TestToneProducer.php', 'worker/test-tone.php', 'console.php'];
     foreach ($sources as $path) {
         $source = file_get_contents($root . '/' . $path);
         if (!is_string($source)) { throw new LogicException('Source unavailable.'); }
@@ -29,12 +29,13 @@ function verifyGeneratedS3Contracts(): void
         requireProof($inspection['failures'] === [] && ($path === 'src/ReferenceEnvironment.php' || $inspection['reads'] === []), 'one environment owner');
         requireProof(!str_contains($source, 'RequestUpload') && !str_contains($source, 'is_uploaded_file'), 'separate generated provenance');
     }
-    foreach ([[], ['bad-secret'], ['generate', 'unexpected-secret'], ['verify'], ['verify', 'wrong-secret'], ['expire-one', str_repeat('a', 33)]] as $arguments) {
+    foreach ([[], ['bad-secret'], ['generate', 'unexpected-secret'], ['generate-test-tone', '/untrusted/path.wav'],
+        ['generate-test-tone', '--frequency=1000'], ['verify'], ['verify', 'wrong-secret'], ['expire-one', str_repeat('a', 33)]] as $arguments) {
         $result = runBoundedMaintainerProcess([PHP_BINARY, $root . '/console.php', ...$arguments], $root, [], 3000, 4096, 4096);
         requireProof($result === ['exit_code' => 2, 'stdout' => '', 'stderr' => ($arguments === ['bad-secret']
             ? "{\"error\":\"unknown_command\"}\n" : "{\"error\":\"invalid_arguments\"}\n")], 'argument redaction and pre-I/O failure');
     }
-    foreach ([['generate'], ['verify', str_repeat('a', 32)], ['reconcile-one', str_repeat('a', 32)], ['expire-one', str_repeat('a', 32)]] as $arguments) {
+    foreach ([['generate'], ['generate-test-tone'], ['verify', str_repeat('a', 32)], ['reconcile-one', str_repeat('a', 32)], ['expire-one', str_repeat('a', 32)]] as $arguments) {
         $result = runBoundedMaintainerProcess([PHP_BINARY, $root . '/console.php', ...$arguments], $root, [], 3000, 4096, 4096);
         requireProof($result === ['exit_code' => 1, 'stdout' => '', 'stderr' => "{\"error\":\"command_failed\"}\n"], 'missing role configuration redacted');
     }

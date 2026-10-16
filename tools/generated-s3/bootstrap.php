@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/autoload.php';
 require_once __DIR__ . '/dependencies.php';
 require_once __DIR__ . '/src/Values.php';
+require_once __DIR__ . '/src/TestToneBytes.php';
+require_once __DIR__ . '/src/TestToneProducer.php';
 require_once __DIR__ . '/src/ExportLock.php';
 require_once __DIR__ . '/src/S3Settings.php';
 require_once __DIR__ . '/src/ReferenceEnvironment.php';

@@ -8,6 +8,7 @@ use GeneratedS3Recipe\InventoryExports;
 use GeneratedS3Recipe\InventoryS3;
 use GeneratedS3Recipe\ReferenceEnvironment;
 use GeneratedS3Recipe\SystemExportClock;
+use GeneratedS3Recipe\TestToneProducer;
 use GeneratedS3Recipe\UnknownExportCommand;
 use PHPThis\Database\Connection;
 use PHPThis\Database\QueryBudget;
@@ -27,13 +28,18 @@ try {
     require __DIR__ . '/bootstrap.php';
     if (ini_set('memory_limit', '64M') === false) { throw new RuntimeException('Runtime bound unavailable.'); }
     $configuration = match ($invocation->command) {
-        'generate' => ReferenceEnvironment::writer(),
+        'generate', 'generate-test-tone' => ReferenceEnvironment::writer(),
         'verify' => ReferenceEnvironment::reader(),
         'reconcile-one' => ReferenceEnvironment::reconciler(),
         'expire-one' => ReferenceEnvironment::deletion(),
         default => throw new LogicException('Unknown command.'),
     };
     $settings = $configuration->s3;
+    $tone = null;
+    if ($invocation->command === 'generate-test-tone') {
+        $settings->verify(time());
+        $tone = TestToneProducer::generate();
+    }
     $client = exportS3Client($settings);
     $lock = new ExportLock($settings->root);
     $lock->acquire($invocation->command !== 'verify');
@@ -42,6 +48,9 @@ try {
     $database->executeStatement('PRAGMA busy_timeout = 0');
     $operation = new InventoryExports($database, $lock, new InventoryS3($client, $settings->target), new SystemExportClock());
     if ($invocation->command === 'generate') { $operation->generate(); $outcome = 'generated'; }
+    elseif ($invocation->command === 'generate-test-tone') {
+        $operation->generateTestTone($tone); $outcome = 'generated';
+    }
     else {
         $id = $invocation->id;
         if ($id === null) { throw new LogicException('Missing identity.'); }
