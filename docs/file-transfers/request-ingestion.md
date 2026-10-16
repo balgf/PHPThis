@@ -1,6 +1,6 @@
 # Multipart request ingestion
 
-Under Consumer Contract 22, carrying forward the Contract 21 handoff, the sole front controller passes `$_SERVER` and `$_GET` unchanged through the terminal coordinator and `RequestBoundary`. `RequestReader` owns the body read. It calls PHP 8.4's native `request_parse_body()` once for enabled multipart POST, validates the result into immutable `MultipartForm`, and leaves `Request::$body` empty. Ordinary input still uses the configured URI and ordinary-body limit. Handlers never read superglobals or the input stream.
+Under Consumer Contract 23, carrying forward the Contract 21 handoff, the sole front controller passes `$_SERVER` and `$_GET` unchanged through the terminal coordinator and `RequestBoundary`. `RequestReader` owns the body read. It calls PHP 8.4's native `request_parse_body()` once for enabled multipart POST, validates the result into immutable `MultipartForm`, and leaves `Request::$body` empty. Ordinary input still uses the configured URI and ordinary-body limit. Handlers never read superglobals or the input stream.
 
 ## Explicit configuration
 
@@ -16,7 +16,23 @@ new RequestReader(
 );
 ```
 
-`null` leaves multipart disabled. These numbers retain the document example's policy, not universal storage defaults. All three limits must be positive and below `PHP_INT_MAX`, with file <= aggregate file <= request. Configure the actual web SAPI with `enable_post_data_reading=Off` and `file_uploads=On`; otherwise enabled multipart fails operationally before parsing. No earlier reader may consume the request body. See [deployment](deployment.md) and the [Contract 21 migration](../consumer-contract-upgrades.md#contract-version-21).
+`null` leaves multipart disabled. These numbers retain the document example's policy, not universal storage defaults. The three-argument constructor retains its existing behavior: text values default to 8,192 bytes each, with 65,536 aggregate name/value bytes. Contract 23 adds two optional final arguments for explicit application limits:
+
+```php
+new MultipartLimits(
+    maximumRequestBytes: 2_097_152,
+    maximumFileBytes: 1_048_576,
+    maximumTotalFileBytes: 1_048_576,
+    maximumFieldBytes: 32_768,
+    maximumTotalFieldBytes: 131_072,
+);
+```
+
+All five limits must be positive and below `PHP_INT_MAX`, with file <= aggregate file <= request and field <= aggregate field. Invalid configuration throws `InvalidArgumentException` at construction, before body consumption. Zero does not disable fields; an operation still validates its complete permitted field set. Lowering the aggregate field ceiling below the default per-field ceiling requires explicitly lowering both.
+
+Field ceilings may exceed the request ceiling; they are upper bounds, not reserved allocations. For example, `new MultipartLimits(1_024, 512, 700)` remains valid with the default field ceilings. Every actual request must fit the raw request limit and its normalized field-name/value plus reported file bytes must fit its declared size. The configured field/file maxima need not add up to the request maximum. Values are not silently clamped.
+
+Configure the actual web SAPI with `enable_post_data_reading=Off` and `file_uploads=On`; otherwise enabled multipart fails operationally before parsing. No earlier reader may consume the request body. See [deployment](deployment.md), the [Contract 21 handoff migration](../consumer-contract-upgrades.md#contract-version-21) and [Contract 23 field-limit adoption](../consumer-contract-upgrades.md#contract-version-23).
 
 Multipart requires POST, one canonical non-negative Content-Length within the configured request limit, no Transfer-Encoding, and one boundary parameter of 1–70 accepted bytes. The unquoted boundary permits ASCII letters, digits, apostrophe, plus, underscore, period and hyphen. The quoted form permits the wider existing MIME set and forbids a trailing space. Other parameters and duplicate boundaries fail. Framing and declared size are checked before native parsing, session begin and dispatch.
 
@@ -30,14 +46,14 @@ All bounds below are inclusive and apply to PHP-normalized values:
 | --- | --- |
 | Fields / uploads | 32 fields; 8 upload entries, including `NoFile` |
 | Names | Case-sensitive ASCII `[A-Za-z_][A-Za-z0-9_-]{0,63}`; no field/file name collision |
-| Field values | Flat strings, at most 8,192 bytes each; total name/value bytes at most 65,536 |
+| Field values | Flat strings; configured `maximumFieldBytes` per value (default 8,192); `maximumTotalFieldBytes` for all names plus values (default 65,536), including names of empty values; aggregate accounting cannot overflow |
 | File bytes | Configured per-file and aggregate reported-byte limits; aggregate addition cannot overflow |
 | Client filename / media type | 255 bytes each; untrusted |
 | Client full_path / temporary path | 4,096 bytes each; validate then discard full_path |
 
 File metadata retains the exact flat keys and scalar types: `name`, optional `full_path`, `type`, `tmp_name`, `error`, `size`. Reject controls, unknown keys, negative or request-exceeding sizes, incomplete success metadata and contradictory `NoFile` metadata. Normalized field-name/value bytes plus reported file bytes cannot exceed the declared request. Exposed nested fields and file arrays fail.
 
-Preserve field bytes, including empty strings and line breaks. Absence differs from `''`. Do not trim, cast or infer numbers/booleans; the operation's private-constructor value factory defines required/unknown fields, UTF-8 and domain representations. Successful zero-byte uploads remain representable. Validate the complete permitted field/file set and every upload error before storage or other operation work. [Upload values](upload-value.md) retain provenance and actual-size requirements.
+Preserve field bytes, including empty strings and line breaks. Absence differs from `''`. Limits count bytes, not characters. Do not trim, cast, decode JSON or infer numbers/booleans; the operation's private-constructor value factory defines required/unknown fields, UTF-8 and domain representations. Successful zero-byte uploads remain representable. Validate the complete permitted field/file set and every upload error before storage or other operation work. [Upload values](upload-value.md) retain provenance and actual-size requirements.
 
 ## Native parsing and incomplete input
 

@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 248) {
-            $failures[] = 'The current framework package inventory must contain exactly 248 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 249) {
+            $failures[] = 'The current framework package inventory must contain exactly 249 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {
@@ -408,13 +408,13 @@ function distributionGuardrailFailures(
     } else {
         $behaviorNames = explode("\n", substr($behaviorInventory, 0, -1));
 
-        if (count($behaviorNames) !== 211 || count(array_unique($behaviorNames)) !== 211) {
-            $failures[] = 'The framework suite must preserve exactly 211 unique named framework behaviors.';
+        if (count($behaviorNames) !== 216 || count(array_unique($behaviorNames)) !== 216) {
+            $failures[] = 'The framework suite must preserve exactly 216 unique named framework behaviors.';
         }
 
         if (
             hash('sha256', $behaviorInventory)
-            !== '09779be0f8b87b57c92962f563be35241f940baec8211cc04bf34a5db4c60194'
+            !== '756278e4144fc2295030f56ec647f0f158fd77454b4b167dd82004337aaed9e8'
         ) {
             $failures[] = 'The ordered framework behavior-name inventory changed without an explicit parity decision.';
         }
@@ -449,7 +449,7 @@ function distributionGuardrailFailures(
             'function frameworkBehaviorNamesForGroup(string $group): array',
             'function frameworkBehaviorInventory(): array',
             'array_key_exists($name, $registered)',
-            '09779be0f8b87b57c92962f563be35241f940baec8211cc04bf34a5db4c60194',
+            '756278e4144fc2295030f56ec647f0f158fd77454b4b167dd82004337aaed9e8',
         ],
         'tests/composition.php' => [
             'function compositionBehaviorTests(): Generator',
@@ -1185,7 +1185,7 @@ function distributionGuardrailFailures(
             'Do not introduce an ORM',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 22',
+            'Contract version: 23',
             '## Optional bounded file transfers',
             'Raw `$_FILES` never enters a handler.',
             'Contract version 10 carries contract version 9 forward and adopts Strict Profile version 3.',
@@ -1206,7 +1206,7 @@ function distributionGuardrailFailures(
         ],
         'docs/file-transfers/README.md' => [
             'This knowledge set routes an AI through PHPThis\'s accepted application-owned file-transfer profiles.',
-            'Consumer Contract version 22 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 23 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The installed example uses a 2 MiB multipart transport ceiling and separately accepts 0 through 1,048,576 document bytes inclusive.',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
@@ -1263,7 +1263,7 @@ function distributionGuardrailFailures(
             "\$installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md'",
             "\$installedFramework . '/docs/file-transfers/emission.md'",
             "\$installedFramework . '/src/Http/ResponseEmitter.php'",
-            "'Contract version: 22'",
+            "'Contract version: 23'",
             'ADOPTED(FILE_TRANSFER:protected_document_upload,protected_document_download)',
             'final readonly class InstalledUploadDocumentHandler implements RequestHandler',
             'final readonly class InstalledDownloadDocumentHandler implements RequestHandler',
@@ -1342,8 +1342,8 @@ function distributionGuardrailFailures(
         if (!is_string($consumerContract)) {
             $failures[] = 'Cannot read docs/consumer-contract.md.';
         } else {
-            if (preg_match('/^Contract version: 22$/m', $consumerContract) !== 1) {
-                $failures[] = 'docs/consumer-contract.md must declare contract version 18.';
+            if (preg_match('/^Contract version: 23$/m', $consumerContract) !== 1) {
+                $failures[] = 'docs/consumer-contract.md must declare contract version 23.';
             }
 
             if (!str_contains($consumerContract, '## AI authoring and human accountability')) {

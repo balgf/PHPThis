@@ -152,8 +152,13 @@ multipart fields enforce flat names exact byte limits and collision rejection
 multipart uploads bound counts metadata and every exposed native shape
 multipart preserves every native upload error without treating partial files as success
 expanded multipart ingress does not expand the single-document storage operation
+multipart field configuration preserves defaults and validates finite ordered limits
+multipart configured field bytes accept larger JSON and enforce smaller inclusive limits
+multipart configured aggregate field bytes count names and preserve file budgets
+multipart field and file accounting stays bounded at integer limits
 native multipart parsing proves real fields files limits and normalized-input limitations
 multipart configuration and parsing failures precede sessions and handler work
+configured multipart field limits prove larger input and rejection before session or body work
 router rejects duplicate method and path pairs
 route accepts at most two full-segment typed parameter declarations
 router matches bounded canonical positive integer path parameters

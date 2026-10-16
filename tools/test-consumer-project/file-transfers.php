@@ -13,6 +13,10 @@ function proveInstalledProtectedFileTransferReference(
 ): string {
     /** @var array<string, list<string>> $artifactMarkers */
     $artifactMarkers = [
+        $installedFramework . '/docs/decisions/069-configurable-multipart-field-limits.md' => [
+            'Status: accepted',
+            'Consumer Contract 23',
+        ],
         $installedFramework . '/docs/file-transfers/generated-exports.md' => [
             '# Generated inventory exports in Amazon S3',
             'REFERENCE_ONLY',
@@ -23,9 +27,9 @@ function proveInstalledProtectedFileTransferReference(
             'Consumer Contract 22',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 22',
+            'Contract version: 23',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
-            'Contract version 22 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 23 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         $installedFramework . '/docs/decisions/060-reject-pending-output-before-response-emission.md' => [
             '# ADR 060: Reject pending output before response emission',
@@ -40,7 +44,7 @@ function proveInstalledProtectedFileTransferReference(
             'Pending bytes at any level fail as `ResponseEmissionFailed(true)` before file access, status, headers, cookies, or body output.',
         ],
         $installedFramework . '/docs/file-transfers/README.md' => [
-            'Consumer Contract version 22 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
+            'Consumer Contract version 23 carries version 19 and version 13\'s requirement for exactly one deliberate selection',
             'ADR 060\'s pending-output preflight',
             'The executable example is a public non-production `LOCAL_ADR026` transport and filesystem proof, not a protected-upload or S3 recommendation.',
         ],
@@ -1179,6 +1183,29 @@ function installedFileAssertPrivateFailure(Response $response): void
 }
 
 $multipartLimits = new MultipartLimits(1_024, 512, 700);
+if ($multipartLimits->maximumFieldBytes !== 8_192 || $multipartLimits->maximumTotalFieldBytes !== 65_536) {
+    throw new RuntimeException('Installed multipart defaults changed.');
+}
+$customLimits = new MultipartLimits(131_072, 512, 700, maximumFieldBytes: 16_384, maximumTotalFieldBytes: 32_768);
+$largeField = str_repeat('x', 16_384);
+$customForm = MultipartForm::fromPhp(['metadata' => $largeField], [], 131_072, $customLimits);
+if ($customForm->fields !== ['metadata' => $largeField]) {
+    throw new RuntimeException('Installed configurable field limits changed exact bytes.');
+}
+installedFileExpectFailure(
+    static fn() => MultipartForm::fromPhp(['metadata' => $largeField . 'x'], [], 131_072, $customLimits),
+    PHPThis\Http\RequestBodyTooLarge::class,
+);
+$aggregateFields = ['a' => str_repeat('x', 16_383), 'b' => str_repeat('x', 16_383)];
+MultipartForm::fromPhp($aggregateFields, [], 32_768, $customLimits);
+installedFileExpectFailure(
+    static fn() => MultipartForm::fromPhp($aggregateFields + ['c' => ''], [], 131_072, $customLimits),
+    PHPThis\Http\RequestBodyTooLarge::class,
+);
+installedFileExpectFailure(
+    static fn() => new MultipartLimits(1_024, 512, 700, maximumFieldBytes: 2, maximumTotalFieldBytes: 1),
+    InvalidArgumentException::class,
+);
 $nativeFile = ['name' => 'hostile-client.php', 'type' => 'text/x-php', 'tmp_name' => '/private/upload/tmp-secret', 'error' => 0, 'size' => 6];
 $expandedForm = MultipartForm::fromPhp(['empty' => '', 'enabled' => 'false'], ['first' => $nativeFile, 'second' => $nativeFile], 1_024, $multipartLimits);
 $expandedRequest = new Request('POST', '/inspect', multipart: $expandedForm);
