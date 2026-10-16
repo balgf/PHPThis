@@ -38,7 +38,7 @@
   "disk_staging": false,
   "requests_observed": 24,
   "automatic_retries_or_redirects": 0,
-  "verified_at": "2026-10-16T22:28:31.279802+00:00",
+  "verified_at": "2026-10-16T22:34:35.745608+00:00",
   "source_sha256": {
     "bootstrap.php": "bb9a2584f06bc32d107401a610eb65f229cbe5684a04819b6ef22e88f8d72010",
     "composer.json": "cbf20fd41250b5a84179018d637383f2c466a8b4cedc07c8186004360ead22c0",
@@ -59,7 +59,7 @@
     "tests/Fixture.php": "54099e7f9a8268b559478a437a4fe0431f0e51bacdbcf0d9896353d2271376f6",
     "tests/contracts.php": "a1facc469db8e09eda6f9048567553dd9b5e0918434f347fb168ee151d65855b",
     "tests/lifecycle.php": "152d9220cdc7f15eae8c7ea9848dd8a52777fb294bedceee0c74516285f75180",
-    "tests/tone-process.py": "fb40926d561ba2dd12392aed9d93b0d1e1e7973dfbca37d4862f153468bc74c7",
+    "tests/tone-process.py": "b18588a414f190f46ca4b28fe8c4bea216e7d3ed13873e5a4156ea92f7981a4d",
     "tests/tone.php": "0afe072f49b751e2022c8a0b3367c9fa250a4a94200fed932b070924e812f9c7",
     "tests/transport.php": "c8fc663f6315be9a831a5fbd0a960ce62b634c7d5f9c20919347d375ced355ec",
     "tests/transport.py": "760abf1a81a6f3b8e61415323af8fb4db72b3df65396b120d55dde9215bd0cc7",
@@ -67,117 +67,117 @@
   },
   "producer_process": {
     "scope": "REFERENCE_ONLY",
-    "verified_at": "2026-10-16T22:28:29.971233+00:00",
+    "verified_at": "2026-10-16T22:34:34.425943+00:00",
     "cases": [
       {
         "case": "independent_wave_samples",
-        "elapsed_seconds": 0.136
+        "elapsed_seconds": 0.162
       },
       {
         "case": "real_console_tone",
-        "elapsed_seconds": 0.158
+        "elapsed_seconds": 0.177
       },
       {
         "case": "retained_csv_compatibility",
-        "elapsed_seconds": 0.128
+        "elapsed_seconds": 0.142
       },
       {
         "case": "empty",
-        "elapsed_seconds": 0.119,
+        "elapsed_seconds": 0.122,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "partial",
-        "elapsed_seconds": 0.121,
+        "elapsed_seconds": 0.137,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "malformed_header",
-        "elapsed_seconds": 0.147,
+        "elapsed_seconds": 0.154,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "altered_samples",
-        "elapsed_seconds": 0.139,
+        "elapsed_seconds": 0.151,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "extra_byte",
-        "elapsed_seconds": 0.133,
+        "elapsed_seconds": 0.143,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "stdout_flood",
-        "elapsed_seconds": 0.14,
+        "elapsed_seconds": 0.153,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "stderr_flood",
-        "elapsed_seconds": 0.12,
-        "worker_stopped": true,
-        "no_s3_composition_or_metadata_change": true
-      },
-      {
-        "case": "diagnostic",
-        "elapsed_seconds": 0.14,
-        "worker_stopped": true,
-        "no_s3_composition_or_metadata_change": true
-      },
-      {
-        "case": "nonzero_complete",
         "elapsed_seconds": 0.138,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
+        "case": "diagnostic",
+        "elapsed_seconds": 0.149,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "nonzero_complete",
+        "elapsed_seconds": 0.154,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
         "case": "failure",
-        "elapsed_seconds": 0.115,
+        "elapsed_seconds": 0.129,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "exception",
-        "elapsed_seconds": 0.121,
+        "elapsed_seconds": 0.13,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "deadline_before_output",
-        "elapsed_seconds": 3.143,
+        "elapsed_seconds": 3.128,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "deadline_after_output",
-        "elapsed_seconds": 3.148,
+        "elapsed_seconds": 3.126,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "cpu_limit",
-        "elapsed_seconds": 2.125,
+        "elapsed_seconds": 2.128,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "memory_limit",
-        "elapsed_seconds": 0.114,
+        "elapsed_seconds": 0.123,
         "worker_stopped": true,
         "no_s3_composition_or_metadata_change": true
       },
       {
         "case": "closed_stdin",
-        "elapsed_seconds": 0.137
+        "elapsed_seconds": 0.141
       },
       {
         "case": "environment_exclusion",
-        "elapsed_seconds": 0.15
+        "elapsed_seconds": 0.142
       },
       {
         "case": "fixed_cwd",
@@ -185,23 +185,23 @@
       },
       {
         "case": "no_descendants",
-        "elapsed_seconds": 0.142
+        "elapsed_seconds": 0.146
       },
       {
         "case": "symlink",
-        "elapsed_seconds": 0.111
+        "elapsed_seconds": 0.113
       },
       {
         "case": "hardlink",
-        "elapsed_seconds": 0.111
+        "elapsed_seconds": 0.112
       },
       {
         "case": "directory",
-        "elapsed_seconds": 0.112
+        "elapsed_seconds": 0.111
       },
       {
         "case": "missing",
-        "elapsed_seconds": 0.112
+        "elapsed_seconds": 0.115
       },
       {
         "case": "unsupported_inputs_before_composition"
@@ -229,7 +229,7 @@
       "src/TestToneProducer.php": "f7fd45665638a76f33388529a69162c4f9d749d1303cfcddf9263973699b77c1",
       "src/Values.php": "d3fda5b4a96d7cb3ff516ee3097d74c1fa0aea6279684fb16b1f32af7861447b",
       "tests/Fixture.php": "54099e7f9a8268b559478a437a4fe0431f0e51bacdbcf0d9896353d2271376f6",
-      "tests/tone-process.py": "fb40926d561ba2dd12392aed9d93b0d1e1e7973dfbca37d4862f153468bc74c7",
+      "tests/tone-process.py": "b18588a414f190f46ca4b28fe8c4bea216e7d3ed13873e5a4156ea92f7981a4d",
       "worker/test-tone.php": "f49ffe0591d4d46f5f72cbf53bded18269320463590d5fdb1a887f2038725a98"
     }
   }

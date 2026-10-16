@@ -151,7 +151,8 @@ catch (Throwable) { fwrite(STDERR, "unavailable\\n"); exit(1); }
         'deadline_before_output': 'set_time_limit(0); usleep(6_000_000);',
         'deadline_after_output': body + 'set_time_limit(0); usleep(6_000_000);',
         'cpu_limit': 'while (true) {}',
-        'memory_limit': '$x = str_repeat("x", 32 * 1024 * 1024);',
+        # Without the allocation bound this would emit a valid tone, so empty output alone cannot pass the control.
+        'memory_limit': '$x = str_repeat("x", 32 * 1024 * 1024);' + body,
     }
     for name, source in cases.items():
         marker.unlink(missing_ok=True)
