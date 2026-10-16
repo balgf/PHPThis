@@ -73,19 +73,19 @@ function verifyCatalogFormatMigration(): void
     requireCatalogProof($jpeg !== null && ImageRecord::fromDatabaseRow($jpeg)->format === CatalogImageFormat::Jpeg);
 }
 
-function verifyJpegPromotionFailure(): void
+function verifyCatalogPromotionFailure(CatalogImageFormat $format): void
 {
-    $fixture = new Fixture(dirname(__DIR__, 3) . '/tmp/png-proof-' . bin2hex(random_bytes(8)), format: CatalogImageFormat::Jpeg);
+    $fixture = new Fixture(dirname(__DIR__, 3) . '/tmp/png-proof-' . bin2hex(random_bytes(8)), format: $format);
     $inspector = new FixtureInspector();
     try {
-        $id = $fixture->seed(str_repeat('1', 32), catalogJpegSeeds()['sampling420']);
+        $id = $fixture->seed(str_repeat('1', 32), match ($format) { CatalogImageFormat::Png => catalogPng(), CatalogImageFormat::Jpeg => catalogJpegSeeds()['sampling420'], CatalogImageFormat::Mp4 => catalogMp4Seeds()['valid-320x240'] });
         $fixture->lock->acquire(true);
         $fixture->database->executeStatement('CREATE TRIGGER fail_promotion BEFORE UPDATE ON catalog_images WHEN NEW.state = \'accepted\' BEGIN SELECT RAISE(ABORT, \'fixture\'); END');
         try { $fixture->images->inspectOne($fixture->definition, $inspector); throw new LogicException('Failed promotion succeeded.'); }
         catch (PDOException) {}
         $record = $fixture->record($id);
         requireCatalogProof($record !== null && $record->state === 'inspecting' && $record->token !== null);
-        try { $fixture->images->read($id, new CatalogPrincipal(1), CatalogImageFormat::Jpeg); throw new LogicException('Failed promotion served.'); }
+        try { $fixture->images->read($id, new CatalogPrincipal(1), $format); throw new LogicException('Failed promotion served.'); }
         catch (CatalogNotFound) {}
         $fixture->database->executeStatement('DROP TRIGGER fail_promotion');
         requireCatalogProof($fixture->images->reconcileOne($inspector) === 'inspection_quarantined');

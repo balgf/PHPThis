@@ -1,4 +1,4 @@
-"""Real PNG/JPEG tools, HTTP provenance, quarantine and resource-failure proof. No paid service."""
+"""Real PNG/JPEG/MP4 tools, HTTP provenance, quarantine and resource-failure proof. No paid service."""
 import base64
 import datetime
 import hashlib
@@ -54,8 +54,10 @@ def checked_parser_result(code, out, err):
             rb'|entropy_marker|empty_entropy|zero_quantization|wide_quantization|missing_quantization|duplicate_quantization'
             rb'|quantization_after_frame|duplicate_huffman|huffman_before_frame|invalid_huffman_selector|huffman_symbol_overflow'
             rb'|missing_huffman|no_sos|byte_limit|png|empty|truncated_entropy|corrupt_entropy)_(?:inspect|cleanup)'
-            rb'|(?:jpeg_)?resource_(?:exit|output|cpu|memory|memory_small|memory_kill|timeout)_(?:inspect|container_state|termination|cleanup)'
-            rb'|(?:jpeg_)?resource_timeout_elapsed) cleanup=(not_started|passed|failed)\n', err)
+            rb'|mp4_(?:valid_320x240|minimum_frame|max_dimensions_duration_frames|24fps_single_frame|25fps|duration_excess|frame_rate_excess|width_excess|height_excess|high_profile|fragmented|title_metadata|b_frames|seed|empty|oversized|truncated|trailing|zero_box|large_box|wrong_brand|unknown_box|external_reference|audio_track|high_profile_declaration|second_sps|second_description|duration_mismatch|extra_timing_entry|zero_delta|sample_count_excess|outside_offset|size_count_mismatch|sample_size_excess|rotation|non_square_pixels|container_crop|hidden_sps_width|hidden_sps_height|sps_range|png|jpeg|corrupt_frame)_(?:inspect|cleanup)'
+            rb'|mp4_probe_(?:stdout|stderr|timeout|exit)_(?:inspect|cleanup)'
+            rb'|(?:(?:jpeg|mp4)_)?resource_(?:exit|output|cpu|memory|memory_small|memory_kill|timeout)_(?:inspect|container_state|termination|cleanup)'
+            rb'|(?:(?:jpeg|mp4)_)?resource_timeout_elapsed) cleanup=(not_started|passed|failed)\n', err)
         if code == 1 and out == b'' and failure is not None:
             raise RuntimeError('real_parser_' + failure[1].decode() + '_cleanup_' + failure[2].decode())
         raise RuntimeError('real_parser_failed')
@@ -134,8 +136,11 @@ def main():
     faults = image_id('phpthis-inspected-media:issue108-faults')
     update = image_id('phpthis-inspected-media:issue108-update')
     recovery = image_id('phpthis-inspected-media:issue108-recovery')
-    code, out, err = php('tests/real-parser.php', image, faults, timeout=180)
+    code, out, err = php('tests/real-parser.php', image, faults, timeout=240)
     parser_evidence = checked_parser_result(code, out, err)
+    probe_faults = [image_id('phpthis-inspected-media:issue141-probe-' + mode) for mode in ('stdout', 'stderr', 'timeout', 'exit')]
+    code, out, err = php('tests/probe-failures.php', *probe_faults, timeout=60)
+    parser_evidence.update(checked_parser_result(code, out, err))
     root = ROOT / 'tmp' / ('png-proof-' + uuid.uuid4().hex)
     children = []
     worker_env = ENV | {'PHPTHIS_PNG_WORKER_ROOT': str(root), 'PHPTHIS_PNG_WORKER_IMAGE': image}
@@ -174,6 +179,8 @@ def main():
             return json.loads(out)
 
         def upload(data, *, route='/catalog-images', **kwargs):
+            if route == '/catalog-video-clips':
+                kwargs.setdefault('name', 'clip')
             body, media = multipart(data, **kwargs)
             status, headers, response = request(port, 'POST', route, body, media)
             require(status == 202, 'upload_acceptance')
@@ -199,6 +206,16 @@ def main():
         require(request(port, 'POST', '/catalog-jpeg-images', data, media, credential='fixture-outage')[0] == 500, 'jpeg_policy_outage')
         require(list((root / 'objects').iterdir()) == [], 'jpeg_denial_has_no_storage')
         passed.append('jpeg_default_deny_authentication_authorization_outage_no_storage')
+
+        mp4_seed = json.loads((HERE / 'tests/mp4-fixtures.json').read_text())['valid-320x240']
+        mp4 = base64.b64decode(mp4_seed['base64'], validate=True)
+        require(hashlib.sha256(mp4).hexdigest() == mp4_seed['sha256'], 'mp4_seed_digest')
+        data, media = multipart(mp4, name='clip')
+        require(request(deny_port, 'POST', '/catalog-video-clips', data, media)[0] == 401, 'mp4_default_deny')
+        for credential, expected in [(None, 401), ('fixture-forbidden', 403), ('fixture-outage', 500)]:
+            require(request(port, 'POST', '/catalog-video-clips', data, media, credential=credential)[0] == expected, 'mp4_authority')
+        require(list((root / 'objects').iterdir()) == [], 'mp4_denial_has_no_storage')
+        passed.append('mp4_denial_and_policy_failure_have_no_storage')
 
         first = upload(png(), filename='../misleading.php', media='text/html')
         path = '/catalog-images/' + first
@@ -232,13 +249,34 @@ def main():
         require((root / 'objects' / jpeg_id / 'content').stat().st_mode & 0o777 == 0o600, 'jpeg_private_mode')
         passed.append('jpeg_native_upload_misleading_labels_fixed_attachment_owner_and_format_binding')
 
+        mp4_id = upload(mp4, route='/catalog-video-clips', filename='../fake.php', media='text/html')
+        mp4_path = '/catalog-video-clips/' + mp4_id
+        require(state(mp4_id)['format'] == 'mp4' and request(port, 'GET', mp4_path)[0] == 404, 'mp4_pending_format')
+        inspect('accepted')
+        status, headers, body = request(port, 'GET', mp4_path, extra={'Range': 'bytes=0-1'})
+        require(status == 200 and body == mp4, 'mp4_exact_original_bytes')
+        require(headers['content-type'] == 'video/mp4' and headers['content-disposition'] == 'attachment; filename="catalog-clip.mp4"'
+                and headers['x-content-type-options'] == 'nosniff' and headers['cache-control'] == 'private, no-store'
+                and headers['accept-ranges'] == 'none' and int(headers['content-length']) == len(mp4), 'mp4_download_headers')
+        require(request(port, 'GET', mp4_path, credential='fixture-owner-two')[0] == 404
+                and request(deny_port, 'GET', mp4_path)[0] == 401, 'mp4_read_authority')
+        require(request(port, 'GET', '/catalog-images/' + mp4_id)[0] == 404
+                and request(port, 'GET', '/catalog-jpeg-images/' + mp4_id)[0] == 404
+                and request(port, 'GET', '/catalog-video-clips/' + first)[0] == 404
+                and request(port, 'GET', '/catalog-video-clips/' + jpeg_id)[0] == 404, 'mp4_cross_format_reads')
+        require((root / 'objects' / mp4_id / 'content').stat().st_mode & 0o777 == 0o600, 'mp4_private_mode')
+        passed.append('mp4_native_upload_quarantine_original_attachment_and_owner_format_binding')
+
         worker_env['PHPTHIS_PNG_WORKER_IMAGE'] = update
         command('images:activate-definition', expected='activated')
         require(request(port, 'GET', path)[0] == 404, 'old_definition_not_served')
         require(request(port, 'GET', jpeg_path)[0] == 404, 'old_jpeg_definition_not_served')
+        require(request(port, 'GET', mp4_path)[0] == 404, 'old_mp4_definition_not_served')
+        inspect('accepted')
         inspect('accepted')
         inspect('accepted')
         require(request(port, 'GET', path)[2] == png() and request(port, 'GET', jpeg_path)[2] == jpeg, 'reinspection_promotion')
+        require(request(port, 'GET', mp4_path)[2] == mp4, 'mp4_reinspection_promotion')
         passed.append('definition_switch_immediately_blocks_old_acceptance_and_reinspects')
 
         # Missing immutable tool image is operational uncertainty, not a content rejection.
@@ -257,7 +295,9 @@ def main():
         command('images:activate-definition', expected='activated')
         inspect('accepted')
         inspect('accepted')
+        inspect('accepted')
         require(request(port, 'GET', jpeg_path)[2] == jpeg, 'jpeg_definition_recovery')
+        require(request(port, 'GET', mp4_path)[2] == mp4, 'mp4_definition_recovery')
         passed.append('parser_outage_quarantine_explicit_retry_bound_definition_recovery')
 
         bad = upload(b'<svg/>', filename='looks-valid.png', media='image/png')
@@ -276,19 +316,38 @@ def main():
         require(state(corrupt)['state'] == 'scanner_error' and request(port, 'GET', '/catalog-jpeg-images/' + corrupt)[0] == 404, 'jpeg_decoder_failure_nonserving')
         passed.append('cross_format_bytes_rejected_and_strict_decoder_failure_quarantined')
 
+        mislabeled_clip = upload(png(), route='/catalog-video-clips')
+        inspect('rejected')
+        require(state(mislabeled_clip)['state'] == 'rejected', 'mp4_wrong_format_bytes')
+        start = mp4.index(b'mdat') + 4
+        length = struct.unpack_from('>I', mp4, start)[0]
+        broken = mp4[:start + 5] + b'\0' * (length - 1) + mp4[start + 4 + length:]
+        broken_id = upload(broken, route='/catalog-video-clips')
+        inspect(failed=True)
+        require(state(broken_id)['state'] == 'scanner_error' and request(port, 'GET', '/catalog-video-clips/' + broken_id)[0] == 404, 'mp4_decoder_error_nonserving')
+        passed.append('mp4_route_controls_classification_and_decoder_errors_stay_quarantined')
+
         for payload, expected in [(b'', 400), (b'x' * 1_048_577, 413)]:
             body, media = multipart(payload)
             require(request(port, 'POST', '/catalog-images', body, media)[0] == expected, 'file_byte_boundary')
             require(request(port, 'POST', '/catalog-jpeg-images', body, media)[0] == expected, 'jpeg_file_byte_boundary')
+            clip_body, clip_media = multipart(payload, name='clip')
+            require(request(port, 'POST', '/catalog-video-clips', clip_body, clip_media)[0] == expected, 'mp4_file_byte_boundary')
         maximum = upload(b'x' * 1_048_576)
         require(state(maximum)['bytes'] == 1_048_576 and request(port, 'GET', '/catalog-images/' + maximum)[0] == 404, 'inclusive_file_limit')
+        mp4_maximum = upload(b'x' * 1_048_576, route='/catalog-video-clips')
+        require(state(mp4_maximum)['bytes'] == 1_048_576 and request(port, 'GET', '/catalog-video-clips/' + mp4_maximum)[0] == 404, 'mp4_inclusive_file_limit')
         body, media = multipart(png(), name='other')
         require(request(port, 'POST', '/catalog-images', body, media)[0] == 400, 'field_boundary')
         extra = b'--phpthis-catalog-proof\r\nContent-Disposition: form-data; name="caption"\r\n\r\nno\r\n'
         body, media = multipart(png(), extra=extra)
         require(request(port, 'POST', '/catalog-images', body, media)[0] == 400, 'text_field_boundary')
         require(request(port, 'POST', '/catalog-jpeg-images', body, media)[0] == 400, 'jpeg_text_field_boundary')
-        require(len(list((root / 'objects').iterdir())) == 7, 'input_failure_no_storage')
+        body, media = multipart(mp4, name='clip', extra=extra)
+        require(request(port, 'POST', '/catalog-video-clips', body, media)[0] == 400, 'mp4_text_field_boundary')
+        body, media = multipart(mp4)
+        require(request(port, 'POST', '/catalog-video-clips', body, media)[0] == 400, 'mp4_wrong_field_boundary')
+        require(len(list((root / 'objects').iterdir())) == 11, 'input_failure_no_storage')
         passed.append('native_byte_limits_zero_unknown_and_extra_fields_no_storage')
 
         # Expiry is checked on reads, independently of whether the cleanup pass has run.
@@ -306,18 +365,29 @@ def main():
         require(state(jpeg_id) is None and not (root / 'objects' / jpeg_id).exists(), 'jpeg_expiry_cleanup')
         passed.append('jpeg_expiry_and_exact_cleanup_share_the_existing_lifecycle')
 
-        # Both routes share all retained reservations, including rejection/error states.
-        require(len(list((root / 'objects').iterdir())) == 5, 'mixed_quota_baseline')
-        for index in range(27):
-            if index % 2 == 0:
+        code, out, err = php('tests/control.php', str(root), 'expire', mp4_id)
+        require((code, out, err) == (0, b'EXPIRED\n', b''), 'mp4_expiry_control')
+        require(request(port, 'GET', mp4_path)[0] == 404, 'mp4_expired_not_served')
+        command('images:expire-one', expected='expired')
+        require(state(mp4_id) is None and not (root / 'objects' / mp4_id).exists(), 'mp4_expiry_cleanup')
+        passed.append('mp4_expiry_and_exact_cleanup')
+
+        # All three routes count every retained reservation, including rejection/error states.
+        require(len(list((root / 'objects').iterdir())) == 8, 'mixed_quota_baseline')
+        for index in range(24):
+            if index % 3 == 0:
                 upload(png())
-            else:
+            elif index % 3 == 1:
                 upload(jpeg, route='/catalog-jpeg-images')
+            else:
+                upload(mp4, route='/catalog-video-clips')
         body, media = multipart(png())
         require(request(port, 'POST', '/catalog-images', body, media)[0] == 503, 'aggregate_quota')
         require(request(port, 'POST', '/catalog-jpeg-images', body, media)[0] == 503, 'jpeg_aggregate_quota')
+        body, media = multipart(mp4, name='clip')
+        require(request(port, 'POST', '/catalog-video-clips', body, media)[0] == 503, 'mp4_aggregate_quota')
         require(len(list((root / 'objects').iterdir())) == 32, 'quota_reservation_bound')
-        passed.append('mixed_formats_and_errors_share_quota_and_both_routes_deny_33rd_upload')
+        passed.append('mixed_formats_and_errors_share_quota_and_all_routes_deny_33rd_upload')
         require(list((root / 'php-uploads').iterdir()) == [], 'final_php_temp_cleanup')
     finally:
         for child in children:
@@ -336,12 +406,12 @@ def main():
             sources[str(path.relative_to(ROOT))] = hashlib.sha256(path.read_bytes()).hexdigest()
     evidence = {'schema_version': 1, 'verified_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'scope': 'disposable single-host reference; no production adoption or malware-safety claim',
-                'host_php': version.decode(), 'inspector_php': '8.4.26', 'pngcheck': '4.0.1', 'zlib': '1.3.2', 'libjpeg_turbo': '3.2.0',
+                'host_php': version.decode(), 'inspector_php': '8.4.26', 'pngcheck': '4.0.1', 'zlib': '1.3.2', 'libjpeg_turbo': '3.2.0', 'ffmpeg': '9.0.2',
                 'image_id': image, 'update_image_id': update, 'recovery_image_id': recovery, 'fault_image_id': faults,
-                'parser': parser_evidence, 'http_and_lifecycle': passed,
+                'probe_fault_image_ids': probe_faults, 'parser': parser_evidence, 'http_and_lifecycle': passed,
                 'cleanup': 'owned processes, containers, upload temporaries and retained fixture removed', 'source_sha256': sources}
     (ROOT / 'tmp' / 'inspected-media-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
-    print('PASS real PNG/JPEG inspection, HTTP quarantine and resource-failure reference')
+    print('PASS real PNG/JPEG/MP4 inspection, HTTP quarantine and resource-failure reference')
 
 
 if __name__ == '__main__':

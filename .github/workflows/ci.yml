@@ -177,7 +177,7 @@ jobs:
           if-no-files-found: error
 
   inspected-png:
-    # Required branch-protection context; keep this name as the proof expands to JPEG.
+    # Required branch-protection context; keep this name as the proof expands to JPEG and MP4.
     name: Inspected PNG quarantine and resource bounds
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -195,13 +195,16 @@ jobs:
           tools: composer:v2
       - name: Install locked dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
-      - name: Build the pinned PNG and JPEG inspector
+      - name: Build the pinned PNG, JPEG and MP4 inspector
         run: docker build -t phpthis-inspected-media:issue108 tools/inspected-media
       - name: Build deliberate resource-failure and update controls
         run: |
           docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 -f tools/inspected-media/tests/fault.Dockerfile -t phpthis-inspected-media:issue108-faults tools/inspected-media
           docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 -f tools/inspected-media/tests/update.Dockerfile -t phpthis-inspected-media:issue108-update tools/inspected-media
           docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 --label phpthis.fixture-recovery=third -f tools/inspected-media/tests/update.Dockerfile -t phpthis-inspected-media:issue108-recovery tools/inspected-media
+          for mode in stdout stderr timeout exit; do
+            docker build --build-arg INSPECTOR_IMAGE=phpthis-inspected-media:issue108 --build-arg PROBE_MODE="$mode" -f tools/inspected-media/tests/probe-fault.Dockerfile -t "phpthis-inspected-media:issue141-probe-$mode" tools/inspected-media
+          done
       - name: Verify parser, upload lifecycle and real resource failures
         run: python3 tools/inspected-media/run.py
       - name: Upload redacted inspection evidence

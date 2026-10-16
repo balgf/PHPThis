@@ -27,7 +27,7 @@ final readonly class UploadCatalogImage implements RequestHandler
         // Tenant and cookie/CSRF authority are deliberately absent in this machine reference.
         if ($request->query !== []) { throw new InvalidRequest('Unexpected query.'); }
         $this->lock->acquire(true);
-        $pending = PendingImageUpload::fromRequest($request);
+        $pending = PendingImageUpload::fromRequest($request, $this->format);
         $database = Connection::connect('sqlite:' . $this->root->path . '/catalog.sqlite', new QueryBudget(8), new QueryTrace(8), options: [\PDO::ATTR_TIMEOUT => 1]);
         $id = (new CatalogImages($database, $this->root, $this->lock, $this->clock))->retain($pending, $principal, $this->format);
         return new Response(202, ['Content-Type' => 'application/json', 'Cache-Control' => 'private, no-store'],

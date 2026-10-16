@@ -10,6 +10,7 @@ use CatalogImageRecipe\InspectionOutcome;
 require dirname(__DIR__) . '/bootstrap.php';
 require __DIR__ . '/parser.php';
 require __DIR__ . '/jpeg-parser.php';
+require __DIR__ . '/mp4-parser.php';
 require dirname(__DIR__, 2) . '/process-support.php';
 
 $failure = 'setup_arguments';
@@ -83,12 +84,29 @@ try {
         $jpegPassed[] = $name;
     }
     $failure = 'setup_fault_definition';
+    $mp4Passed = [];
+    foreach (catalogMp4Cases() as [$name, $bytes, $expected]) {
+        $label = str_replace('-', '_', $name);
+        $failure = 'mp4_' . $label . '_inspect';
+        $cleanup = 'not_started';
+        $token = bin2hex(random_bytes(16));
+        try {
+            requireCatalogProof($inspector->inspect($bytes, $token, CatalogImageFormat::Mp4) === $expected);
+            $failure = 'mp4_' . $label . '_cleanup';
+        } finally {
+            $cleanup = 'failed';
+            requireCatalogProof($inspector->discard($token));
+            $cleanup = 'passed';
+        }
+        $mp4Passed[] = $name;
+    }
     $cleanup = 'not_started';
     $faults = new DockerCatalogInspector(InspectionDefinition::fromImageId($argv[2], dirname(__DIR__)));
     $resources = [];
     $jpegResources = [];
-    foreach ([CatalogImageFormat::Png, CatalogImageFormat::Jpeg] as $resourceFormat) {
-        $resourcePrefix = $resourceFormat === CatalogImageFormat::Png ? 'resource_' : 'jpeg_resource_';
+    $mp4Resources = [];
+    foreach ([CatalogImageFormat::Png, CatalogImageFormat::Jpeg, CatalogImageFormat::Mp4] as $resourceFormat) {
+        $resourcePrefix = match ($resourceFormat) { CatalogImageFormat::Png => 'resource_', CatalogImageFormat::Jpeg => 'jpeg_resource_', CatalogImageFormat::Mp4 => 'mp4_resource_' };
         foreach (['exit', 'output', 'cpu', 'memory', 'memory_small', 'memory_kill', 'timeout'] as $mode) {
             $failure = $resourcePrefix . $mode . '_inspect';
             $cleanup = 'not_started';
@@ -130,12 +148,13 @@ try {
                 $cleanup = 'passed';
             }
             if ($resourceFormat === CatalogImageFormat::Png) { $resources[] = $mode; }
-            else { $jpegResources[] = $mode; }
+            elseif ($resourceFormat === CatalogImageFormat::Jpeg) { $jpegResources[] = $mode; }
+            else { $mp4Resources[] = $mode; }
         }
     }
     $failure = 'setup_report';
     $cleanup = 'not_started';
-    echo json_encode(['format_cases' => $passed, 'jpeg_cases' => $jpegPassed, 'resource_cases' => $resources, 'jpeg_resource_cases' => $jpegResources], JSON_THROW_ON_ERROR), "\n";
+    echo json_encode(['format_cases' => $passed, 'jpeg_cases' => $jpegPassed, 'mp4_cases' => $mp4Passed, 'resource_cases' => $resources, 'jpeg_resource_cases' => $jpegResources, 'mp4_resource_cases' => $mp4Resources], JSON_THROW_ON_ERROR), "\n";
 } catch (Throwable) {
     fwrite(STDERR, 'REAL_PARSER_FAIL ' . $failure . ' cleanup=' . $cleanup . "\n");
     exit(1);

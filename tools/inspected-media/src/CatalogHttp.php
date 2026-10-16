@@ -32,6 +32,8 @@ final readonly class CatalogHttp
             new Route('GET', '/catalog-images/{image_id:token}', new DownloadCatalogImage($this->configuration->root, $this->lock, $clock, $this->authentication, $this->download, CatalogImageFormat::Png)),
             new Route('POST', '/catalog-jpeg-images', new UploadCatalogImage($this->configuration->root, $this->lock, $clock, $this->authentication, $this->upload, CatalogImageFormat::Jpeg)),
             new Route('GET', '/catalog-jpeg-images/{image_id:token}', new DownloadCatalogImage($this->configuration->root, $this->lock, $clock, $this->authentication, $this->download, CatalogImageFormat::Jpeg)),
+            new Route('POST', '/catalog-video-clips', new UploadCatalogImage($this->configuration->root, $this->lock, $clock, $this->authentication, $this->upload, CatalogImageFormat::Mp4)),
+            new Route('GET', '/catalog-video-clips/{image_id:token}', new DownloadCatalogImage($this->configuration->root, $this->lock, $clock, $this->authentication, $this->download, CatalogImageFormat::Mp4)),
         ]));
         $errors = new ErrorResponseRegistry([
             CatalogUnauthenticated::class => new Response(401, ['WWW-Authenticate' => 'Bearer', 'Cache-Control' => 'private, no-store'], "Unauthorized\n"),
