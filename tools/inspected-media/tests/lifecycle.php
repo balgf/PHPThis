@@ -17,7 +17,7 @@ require __DIR__ . '/Fixture.php';
 
 function verifyCatalogLifecycle(CatalogImageFormat $format = CatalogImageFormat::Png): void
 {
-    $bytes = match ($format) { CatalogImageFormat::Png => catalogPng(), CatalogImageFormat::Jpeg => catalogJpegSeeds()['sampling420'], CatalogImageFormat::Mp4 => catalogMp4Seeds()['valid-320x240'] };
+    $bytes = match ($format) { CatalogImageFormat::Png => catalogPng(), CatalogImageFormat::Jpeg => catalogJpegSeeds()['sampling420'], CatalogImageFormat::Mp4 => catalogMp4Seeds()['valid-320x240'], CatalogImageFormat::Wav => catalogWav() };
     $fixture = new Fixture(dirname(__DIR__, 3) . '/tmp/png-proof-' . bin2hex(random_bytes(8)), format: $format);
     $inspector = new FixtureInspector();
     $owner = new CatalogPrincipal(1);

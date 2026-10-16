@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use CatalogImageRecipe\CatalogForbidden;
+use CatalogImageRecipe\CatalogImageFormat;
 use CatalogImageRecipe\CatalogLock;
 use CatalogImageRecipe\CatalogRoot;
 use CatalogImageRecipe\CatalogUnauthenticated;
@@ -81,6 +82,10 @@ function verifyCatalogContracts(): void
         'tmp_name' => __FILE__, 'error' => 0, 'size' => 1]], 1000, new MultipartLimits(2_097_152, 1_048_576, 1_048_576));
     try { PendingImageUpload::fromRequest(new Request('POST', '/catalog-images', multipart: $form)); throw new LogicException('Forged upload provenance accepted.'); }
     catch (CatalogUnavailable) {}
+    $audioForm = MultipartForm::fromPhp([], ['clip' => ['name' => 'fake.wav', 'type' => 'audio/vnd.wave; codec=1',
+        'tmp_name' => __FILE__, 'error' => 0, 'size' => 46]], 1000, new MultipartLimits(2_097_152, 1_048_576, 1_048_576));
+    try { PendingImageUpload::fromRequest(new Request('POST', '/catalog-audio-clips', multipart: $audioForm), CatalogImageFormat::Wav); throw new LogicException('Forged WAV provenance accepted.'); }
+    catch (CatalogUnavailable) {}
 
     $fixture = new Fixture(dirname(__DIR__, 3) . '/tmp/png-proof-' . bin2hex(random_bytes(8)));
     try {
@@ -101,7 +106,13 @@ function verifyCatalogContracts(): void
             requireCatalogProof(InspectionDefinition::fromImageId($baseline->image, $copy)->value !== $baseline->value);
         }
         file_put_contents($copy . '/inspection-policy.json', $policyBytes);
-        file_put_contents($copy . '/src/PngHeader.php', "\n", FILE_APPEND);
-        requireCatalogProof(InspectionDefinition::fromImageId($baseline->image, $copy)->value !== $baseline->value);
+        foreach (['src/PngHeader.php', 'src/BoundedWav.php'] as $parserSource) {
+            $original = file_get_contents($copy . '/' . $parserSource);
+            if (!is_string($original)) { throw new RuntimeException('Parser source unavailable.'); }
+            file_put_contents($copy . '/' . $parserSource, "\n", FILE_APPEND);
+            requireCatalogProof(InspectionDefinition::fromImageId($baseline->image, $copy)->value !== $baseline->value);
+            file_put_contents($copy . '/' . $parserSource, $original);
+            requireCatalogProof(InspectionDefinition::fromImageId($baseline->image, $copy)->value === $baseline->value);
+        }
     } finally { $fixture->cleanup(); }
 }

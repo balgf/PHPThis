@@ -67,3 +67,5 @@ Run `composer test:inspected-media`, the reference README's Docker builds and `p
 Production adoption still requires authentication and applicable CSRF, ingress/TLS/rate controls, private durable volumes, separate HTTP/supervisor identities, capacity/inode monitoring, deployment resource enforcement, retained-data migration, supervised cleanup and incident recovery. Complete the existing [deployment](deployment.md), [storage](storage-ownership.md) and [testing](testing.md) obligations. Consumer Contract 26 and Strict Profile 4 remain unchanged; existing opaque-byte applications and the starter do not opt in automatically.
 
 The same catalog also has a separately bounded [silent MP4 operation](inspected-mp4.md). Adopting that extension requires its format-constraint migration and reinspection; still-image inspection alone supplies no video-decoding evidence.
+
+The optional [WAV operation](inspected-wav.md) shares this catalog with its own PCM policy. Its retained-format migration preserves existing identities and requires a new definition and reinspection of all adopted formats.

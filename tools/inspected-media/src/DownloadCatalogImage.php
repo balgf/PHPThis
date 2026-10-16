@@ -30,11 +30,12 @@ final readonly class DownloadCatalogImage implements RequestHandler
         $database = Connection::connect('sqlite:' . $this->root->path . '/catalog.sqlite', new QueryBudget(8), new QueryTrace(8), options: [\PDO::ATTR_TIMEOUT => 1]);
         $body = (new CatalogImages($database, $this->root, $this->lock, $this->clock))->read($id, $principal, $this->format);
         return new Response(200, [
-            'Content-Type' => match ($this->format) { CatalogImageFormat::Png => 'image/png', CatalogImageFormat::Jpeg => 'image/jpeg', CatalogImageFormat::Mp4 => 'video/mp4' },
+            'Content-Type' => match ($this->format) { CatalogImageFormat::Png => 'image/png', CatalogImageFormat::Jpeg => 'image/jpeg', CatalogImageFormat::Mp4 => 'video/mp4', CatalogImageFormat::Wav => 'audio/vnd.wave; codec=1' },
             'Content-Disposition' => match ($this->format) {
                 CatalogImageFormat::Png => 'attachment; filename="catalog-image.png"',
                 CatalogImageFormat::Jpeg => 'attachment; filename="catalog-image.jpg"',
                 CatalogImageFormat::Mp4 => 'attachment; filename="catalog-clip.mp4"',
+                CatalogImageFormat::Wav => 'attachment; filename="catalog-clip.wav"',
             },
             'Content-Length' => (string) $body->bytes, 'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff', 'Accept-Ranges' => 'none',
