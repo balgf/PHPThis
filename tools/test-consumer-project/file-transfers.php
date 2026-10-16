@@ -40,7 +40,7 @@ function proveInstalledProtectedFileTransferReference(
             'Consumer Contract 23',
         ],
         $installedFramework . '/docs/file-transfers/generated-exports.md' => [
-            '# Generated inventory exports in Amazon S3',
+            '# Generated inventory and audio exports in Amazon S3',
             'REFERENCE_ONLY',
             'file-transfers:s3:verify',
         ],

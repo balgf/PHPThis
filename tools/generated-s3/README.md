@@ -1,6 +1,6 @@
-# Generated S3 inventory reference
+# Generated S3 inventory and audio reference
 
-This optional application recipe is **REFERENCE_ONLY**. Its offline tests and the complete framework `composer check` are sufficient for reference completion, including issue #109. Real S3 and deployment verification are deferred until application adoption, when they remain required. [Current guidance](../../docs/file-transfers/generated-exports.md) and [the application policy](.ai/file-transfers.md) define its scope.
+This optional application recipe is **REFERENCE_ONLY**. Its offline tests and the complete framework `composer check` are sufficient for reference completion, including issues #109 and #143. Real S3 and deployment verification are deferred until application adoption, when they remain required. [Current guidance](../../docs/file-transfers/generated-exports.md) and [the application policy](.ai/file-transfers.md) define its scope.
 
 From the framework checkout:
 
@@ -16,7 +16,11 @@ The [supply-chain checks](../../SECURITY.md#framework-supply-chain-checks) audit
 
 The SDK's transitive `symfony/filesystem` dependency stays on version 8.1 or newer; the recipe's Composer conflict prevents an SDK update from restoring the unsupported 8.0 line. The locked 8.1.9 release requires PHP 8.4.1, which is also this recipe's declared minimum. Review [Symfony's release support](https://symfony.com/releases) when updating the lock; a passing advisory audit does not establish that a release line is maintained.
 
-`tests/lifecycle.php` covers exact generation/reads, uncertain Put outcomes, collision refusal, bounded reconciliation, metadata promotion failure, expiry, quota/history bounds and deletion accounting across fresh operations. `tests/contracts.php` checks source/configuration, subprocess redaction, role separation and locking. `tests/transport.py` sends actual SDK/Guzzle requests to a disposable synthetic HTTP server; its receipt is `tmp/generated-s3-transport.json`. HTTP loopback and shorter timeouts are test composition only. Production composition uses regional HTTPS, the reviewed CA and the accepted two/ten-second bounds.
+`tests/lifecycle.php` covers exact generation/reads, uncertain Put outcomes, collision refusal, bounded reconciliation, metadata promotion failure, expiry, quota/history bounds and deletion accounting across fresh operations. `tests/tone.php` repeats the relevant lifecycle failures and shared-capacity checks for the generated WAV. `tests/contracts.php` checks source/configuration, subprocess redaction, role separation and locking. `tests/tone-process.py` independently reproduces every WAV sample, executes the real producer and console in isolated test copies, and checks resource/output/path failures, cleanup and supervised interruption. Only the copied console's S3 composition is replaced with the synthetic SDK handler; no cloud request is possible. Its receipt is `tmp/generated-tone-process.json`.
+
+`tests/transport.py` sends actual SDK/Guzzle requests to a disposable synthetic HTTP server, including the independently reproduced WAV through Put/Head/Get and corrupt/excess reads. Its source-bound receipt is `tmp/generated-s3-transport.json` and includes the producer evidence. HTTP loopback and shorter timeouts are test composition only. Production composition uses regional HTTPS, the reviewed CA and the accepted two/ten-second bounds.
+
+The sole application console adds `generate-test-tone` with no arguments alongside CSV `generate`. After explicit adoption/configuration, it creates one fixed one-second 1 kHz PCM WAV in memory and retains it through the same storage path. Existing `verify <id>`, `reconcile-one <id>` and `expire-one <id>` apply to both opaque outputs. `worker/test-tone.php` is a private child of this operation, not a second application console. No schema migration, new dependencies, HTTP route or media playback is added. See the policy for exact process bounds and operator responsibilities; the tests neither play audio nor require an audio device.
 
 After focused checks, run the complete framework `composer check`. Reference development and CI require no live AWS environment. The separate application-adoption command deliberately fails while adoption evidence is absent:
 

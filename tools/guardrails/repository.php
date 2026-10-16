@@ -2079,7 +2079,7 @@ function consumerProjectHarnessStructureFailures(string $root): array
 
     if (
         $protectedFileTransferModuleFingerprint
-            !== 'd0877566eb3fd075b70d588d295a08830567d56b7ef30a63200aa1d6a9dae17a'
+            !== '5ed16297f2fc144105494c03b3f79c2d1c59ef006a779f44f03a9f56b7264f0f'
         || $mutatedProtectedFileTransferModule === $protectedFileTransferModule
         || consumerProjectHarnessTokenNormalizedFingerprint(
             $mutatedProtectedFileTransferModule,

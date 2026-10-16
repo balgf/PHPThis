@@ -18,39 +18,219 @@
     "metadata",
     "storage",
     "encoded",
-    "oversized_control"
+    "oversized_control",
+    "generated_tone_put",
+    "generated_tone_head",
+    "tone_valid",
+    "tone_oversized",
+    "tone_chunked_oversized",
+    "tone_corrupted"
   ],
   "php": "8.4.19",
   "curl": "8.18.0",
   "tls": "OpenSSL/3.6.1",
-  "sdk": "3.392.1",
+  "sdk": "3.400.0",
   "guzzle": "8.0.2",
   "psr7": "3.1.0",
   "php_peak_allocated_bytes": 25165824,
   "object_sink_cap": 65536,
   "control_sink_cap": 16384,
   "disk_staging": false,
-  "requests_observed": 18,
+  "requests_observed": 24,
   "automatic_retries_or_redirects": 0,
-  "verified_at": "2026-10-15T03:54:57.221157+00:00",
+  "verified_at": "2026-10-16T22:34:35.745608+00:00",
   "source_sha256": {
-    "bootstrap.php": "1b2278e9de3e45aa870b4927cc629d166851deb0a1339553b1ade78f712ae1ab",
-    "composer.json": "28d6bc756ccdc594c3863fa33fe5ea9663fa5516a63da521a7cb5dceb504b7c7",
-    "composer.lock": "467e03193f0e7befc8ad4066ba91909bea7dc39e0a266453014684443668ffe8",
-    "console.php": "4d7825419de1d30f594ba1138ea8f7c398e82219d022fd4d64f519b70c159e7f",
+    "bootstrap.php": "bb9a2584f06bc32d107401a610eb65f229cbe5684a04819b6ef22e88f8d72010",
+    "composer.json": "cbf20fd41250b5a84179018d637383f2c466a8b4cedc07c8186004360ead22c0",
+    "composer.lock": "5ccd5293a42b845387cc7ab57c72eded1b19fc0e7244c158f91d8d7cf059e78e",
+    "console.php": "fca10d16f6c2f331da10d1aced1cdd60bc3d0e5de64e6955cf4c642d0501d6c6",
+    "schema.sql.fixture": "6c6ff4d6d39dc2efaaf9da35a80f71f03d5d6191a9eb2451a1d9decbd21134cb",
     "src/Composition.php": "c4f687fa1a4eb7dd83b43bb01bf6ced139b9bdaaf8e6285bdf0cc272b49ef9fa",
     "src/CredentialProvider.php": "2920077100d24df4c798cdafa64ca11a51d8e25d31417fab2fce14816f43796e",
-    "src/ExportInvocation.php": "d355649abc1e92e60252240790099948bdcc8b14617caeced4eca509f5f999cb",
+    "src/ExportInvocation.php": "ac5a7776eefb9c60e921738bc38de8f89a4e1af91b29c8cb972b37b0b86013b1",
     "src/ExportLock.php": "f940b706e189e85ec94772bc437fbff656ca56b491b5526d5e37f1d0ad8f0190",
-    "src/InventoryExports.php": "6586c25ab908c1908ef9573fd64281c619a984118b4082b3eb6cb5b66724d419",
-    "src/InventoryS3.php": "390ba9156545c873e6222e8cc68736d63d0f0de87ec9e5fd04c6de521fcffbff",
+    "src/InventoryExports.php": "1cb230fd00b07183e9173c7460ca5fa8889d4d4239cc8ff8a5d37d5f09adec4f",
+    "src/InventoryS3.php": "e70e7050a86e10f04cf693264f42f2e1f8e783001c7d5c1444afba01af64b63a",
     "src/ReferenceEnvironment.php": "5a8f78494b500e848d5eea9d4ab74d87b41beae956769865aaf0c2b021a6d95e",
     "src/S3Settings.php": "ebc3413c6dd2659402e379b047bbe7e63532bd719dc58d6f88941e5e3a5d52ef",
+    "src/TestToneBytes.php": "2abc7e18e3871fb733a1a67836cc5a5e933ad20f554aa0211e27b71f9d510b3f",
+    "src/TestToneProducer.php": "f7fd45665638a76f33388529a69162c4f9d749d1303cfcddf9263973699b77c1",
     "src/Values.php": "d3fda5b4a96d7cb3ff516ee3097d74c1fa0aea6279684fb16b1f32af7861447b",
     "tests/Fixture.php": "54099e7f9a8268b559478a437a4fe0431f0e51bacdbcf0d9896353d2271376f6",
-    "tests/contracts.php": "5efa140f1a279c4dcc7f4a2e6aa943f8bd763019b93ac0c804887886bdea07df",
+    "tests/contracts.php": "a1facc469db8e09eda6f9048567553dd9b5e0918434f347fb168ee151d65855b",
     "tests/lifecycle.php": "152d9220cdc7f15eae8c7ea9848dd8a52777fb294bedceee0c74516285f75180",
-    "tests/transport.php": "33d8765b3cda25b0e63999e4f224cb6031610d688aaebec9ce45e5448714408d",
-    "tests/transport.py": "c99febacf92c7244e33689621559c36dfd83315f1e8c04341e580396f47081bf"
+    "tests/tone-process.py": "b18588a414f190f46ca4b28fe8c4bea216e7d3ed13873e5a4156ea92f7981a4d",
+    "tests/tone.php": "0afe072f49b751e2022c8a0b3367c9fa250a4a94200fed932b070924e812f9c7",
+    "tests/transport.php": "c8fc663f6315be9a831a5fbd0a960ce62b634c7d5f9c20919347d375ced355ec",
+    "tests/transport.py": "760abf1a81a6f3b8e61415323af8fb4db72b3df65396b120d55dde9215bd0cc7",
+    "worker/test-tone.php": "f49ffe0591d4d46f5f72cbf53bded18269320463590d5fdb1a887f2038725a98"
+  },
+  "producer_process": {
+    "scope": "REFERENCE_ONLY",
+    "verified_at": "2026-10-16T22:34:34.425943+00:00",
+    "cases": [
+      {
+        "case": "independent_wave_samples",
+        "elapsed_seconds": 0.162
+      },
+      {
+        "case": "real_console_tone",
+        "elapsed_seconds": 0.177
+      },
+      {
+        "case": "retained_csv_compatibility",
+        "elapsed_seconds": 0.142
+      },
+      {
+        "case": "empty",
+        "elapsed_seconds": 0.122,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "partial",
+        "elapsed_seconds": 0.137,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "malformed_header",
+        "elapsed_seconds": 0.154,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "altered_samples",
+        "elapsed_seconds": 0.151,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "extra_byte",
+        "elapsed_seconds": 0.143,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "stdout_flood",
+        "elapsed_seconds": 0.153,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "stderr_flood",
+        "elapsed_seconds": 0.138,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "diagnostic",
+        "elapsed_seconds": 0.149,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "nonzero_complete",
+        "elapsed_seconds": 0.154,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "failure",
+        "elapsed_seconds": 0.129,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "exception",
+        "elapsed_seconds": 0.13,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "deadline_before_output",
+        "elapsed_seconds": 3.128,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "deadline_after_output",
+        "elapsed_seconds": 3.126,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "cpu_limit",
+        "elapsed_seconds": 2.128,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "memory_limit",
+        "elapsed_seconds": 0.123,
+        "worker_stopped": true,
+        "no_s3_composition_or_metadata_change": true
+      },
+      {
+        "case": "closed_stdin",
+        "elapsed_seconds": 0.141
+      },
+      {
+        "case": "environment_exclusion",
+        "elapsed_seconds": 0.142
+      },
+      {
+        "case": "fixed_cwd",
+        "elapsed_seconds": 0.148
+      },
+      {
+        "case": "no_descendants",
+        "elapsed_seconds": 0.146
+      },
+      {
+        "case": "symlink",
+        "elapsed_seconds": 0.113
+      },
+      {
+        "case": "hardlink",
+        "elapsed_seconds": 0.112
+      },
+      {
+        "case": "directory",
+        "elapsed_seconds": 0.111
+      },
+      {
+        "case": "missing",
+        "elapsed_seconds": 0.115
+      },
+      {
+        "case": "unsupported_inputs_before_composition"
+      },
+      {
+        "case": "supervised_parent_interruption_before_storage"
+      }
+    ],
+    "bytes": 32044,
+    "independent_wave_frames": 16000,
+    "aws_calls": 0,
+    "temporary_storage_removed": true,
+    "source_sha256": {
+      "bootstrap.php": "bb9a2584f06bc32d107401a610eb65f229cbe5684a04819b6ef22e88f8d72010",
+      "console.php": "fca10d16f6c2f331da10d1aced1cdd60bc3d0e5de64e6955cf4c642d0501d6c6",
+      "schema.sql.fixture": "6c6ff4d6d39dc2efaaf9da35a80f71f03d5d6191a9eb2451a1d9decbd21134cb",
+      "src/CredentialProvider.php": "2920077100d24df4c798cdafa64ca11a51d8e25d31417fab2fce14816f43796e",
+      "src/ExportInvocation.php": "ac5a7776eefb9c60e921738bc38de8f89a4e1af91b29c8cb972b37b0b86013b1",
+      "src/ExportLock.php": "f940b706e189e85ec94772bc437fbff656ca56b491b5526d5e37f1d0ad8f0190",
+      "src/InventoryExports.php": "1cb230fd00b07183e9173c7460ca5fa8889d4d4239cc8ff8a5d37d5f09adec4f",
+      "src/InventoryS3.php": "e70e7050a86e10f04cf693264f42f2e1f8e783001c7d5c1444afba01af64b63a",
+      "src/ReferenceEnvironment.php": "5a8f78494b500e848d5eea9d4ab74d87b41beae956769865aaf0c2b021a6d95e",
+      "src/S3Settings.php": "ebc3413c6dd2659402e379b047bbe7e63532bd719dc58d6f88941e5e3a5d52ef",
+      "src/TestToneBytes.php": "2abc7e18e3871fb733a1a67836cc5a5e933ad20f554aa0211e27b71f9d510b3f",
+      "src/TestToneProducer.php": "f7fd45665638a76f33388529a69162c4f9d749d1303cfcddf9263973699b77c1",
+      "src/Values.php": "d3fda5b4a96d7cb3ff516ee3097d74c1fa0aea6279684fb16b1f32af7861447b",
+      "tests/Fixture.php": "54099e7f9a8268b559478a437a4fe0431f0e51bacdbcf0d9896353d2271376f6",
+      "tests/tone-process.py": "b18588a414f190f46ca4b28fe8c4bea216e7d3ed13873e5a4156ea92f7981a4d",
+      "worker/test-tone.php": "f49ffe0591d4d46f5f72cbf53bded18269320463590d5fdb1a887f2038725a98"
+    }
   }
 }

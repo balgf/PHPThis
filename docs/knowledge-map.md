@@ -40,7 +40,7 @@ For a simple endpoint, `docs/request-handling.md` owns the complete definition, 
 | Adopt, secure, store, or return a file, including Amazon S3 | `docs/file-transfers/README.md` | `docs/security.md` and `docs/performance.md`; the selected profile's guide and decision only for adoption or decision review. Select exactly one profile and infer no generic storage or lifecycle API. |
 | Store a two-file S3 packet | `docs/file-transfers/document-packets.md` | Fixed roles, all-or-nothing visibility, owner-scoped retries and exact-version cleanup. |
 | Store one S3 upload with descriptive fields | `docs/file-transfers/metadata-uploads.md` | One opaque document, typed label/note and private ownership; explicit adoption. |
-| Generate an inventory export or consume an S3 object internally | `docs/file-transfers/generated-exports.md` | Explicit optional generated mode, bounded bytes and the shared S3 lifecycle; real AWS/deployment evidence is required for adoption. |
+| Generate inventory CSV or a fixed WAV test tone; consume an S3 object internally | `docs/file-transfers/generated-exports.md` | Explicit optional producers, bounded bytes and the shared S3 lifecycle; real AWS/deployment evidence is required for adoption. |
 | Inspect and quarantine a bounded baseline JPEG | `docs/file-transfers/inspected-jpeg.md` | Explicit JPEG profile, pinned decoder, shared catalog lifecycle and format-column migration. |
 | Short silent MP4 inspection | [Checked MP4 recipe](file-transfers/inspected-mp4.md) | Optional local catalog, finite AVC profile, full decode and migration evidence |
 | Bounded PCM WAV inspection | [Checked WAV recipe](file-transfers/inspected-wav.md) | Optional local catalog, exact PCM representation, structural inspection and migration evidence |
