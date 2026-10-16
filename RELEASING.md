@@ -10,6 +10,8 @@ Historical authority is the exact approved tag. Read its matching notes under `d
 
 ## Candidate and authorization
 
+[Issue #124](https://github.com/balgf/PHPThis/issues/124) prepares Alpha 9 from the post-Alpha 8 changes. The [proposed notes and migration](docs/releases/0.1.0-alpha.9.md) describe Consumer Contract 22, unchanged Strict Profile 4/PHT001–PHT008, bounded HTTP additions and optional application recipes. Proposed identities are Composer `0.1.0-alpha.9` and framework/skeleton tags `v0.1.0-alpha.9`, with a proposed date of 2026-10-16 (Asia/Manila). The work item owns the exact framework candidate, announcement draft, proof and skeleton sequence. A preparation commit or PR approval is distinct from acceptance of the final merged release candidate and its exact operations.
+
 Commits after the latest tag are unreleased development. Assess that exact delta before proposing the next version, scope, notes and planned date. A proposed scope may precede an exact candidate; only an explicit human record accepts it.
 
 Candidate approval names the version, both tag names, exact framework commit, planned date, scope, notes, announcement text and permitted operations. The skeleton commit may be `PENDING` during framework preparation; record and approve its exact commit before any skeleton tag or package write. Keep approvals and evolving proof in the external work item so recording evidence does not change candidate bytes. Source changes create a new candidate requiring fresh proof and approval.

@@ -921,7 +921,6 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             '| Latest framework tag | Alpha 8, [`v0.1.0-alpha.8`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.8), Consumer Contract version 18, Strict Profile version 4, and diagnostics `PHT001` through `PHT008` |',
             '| Latest proved application starter | Alpha 8 is the matching public framework/skeleton pair with complete clean Packagist-only installation evidence in [Issue #81](https://github.com/balgf/PHPThis/issues/81) |',
             '| Coordinated release evidence | [Issue #81](https://github.com/balgf/PHPThis/issues/81) records Alpha 8 exact candidates, approvals, signed tags, packages, public proof and continuing GitHub prerelease/announcement state; closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) preserves the completed Alpha 7 predecessor |',
-            '| Current post-tag `main` | Mutable availability/evidence follow-ups do not change the immutable Alpha 8 tag, artifacts or accepted scope',
             'Package availability and current release state are external facts: verify the exact [framework](https://packagist.org/packages/phpthis/framework) and [skeleton](https://packagist.org/packages/phpthis/skeleton) versions before installation.',
             "composer create-project --stability=alpha --prefer-dist phpthis/skeleton my-app '0.1.0-alpha.8'",
             'Framework and skeleton Alpha 8 tags preserve the exact approved source.',
@@ -960,7 +959,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'records both exact signed tags/distributions and the clean public command above.',
             'Its `PENDING` notes remain acceptance-time history.',
             'ADRs 055 through 061, Consumer Contract 18, Strict Profile 4, PHT001–PHT008',
-            '[ADR 062](decisions/062-bounded-alpha-8-release-scope.md) and `v0.1.0-alpha.8` preserve the current public boundary',
+            '[ADR 062](decisions/062-bounded-alpha-8-release-scope.md) and `v0.1.0-alpha.8` preserve the published Alpha 8 boundary',
             'These are package upgrade requirements, not production readiness or permission for an external release operation.',
             'Prerelease publication follows the complete version-neutral maintainer gate in [the release process](../RELEASING.md).',
             'A framework-only or skeleton-only publication is recorded as partial and is not announced as a complete release.',
@@ -983,8 +982,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
             'ADR 054, the tagged Alpha 7 notes, and the approved Alpha 7 source-preparation subsection retain their acceptance-time `PENDING` and non-authority statements as historical evidence.',
             '`RELEASING.md` is the detailed current mutable release-state owner',
             'Current guidance records Issue #81\'s exact Alpha 8 signed tags, public packages, clean installation and retained-consumer repetition',
-            'accepted ADRs 055 through 062 and current Contract 18/Profile 4/PHT008',
-            'immutable source authority separate from mutable availability/evidence follow-ups',
+            'accepted ADRs 055 through 062 and the published Alpha 8 Contract 18/Profile 4/PHT008 boundary',
             'Concern-specific capability and evidence contracts remain in their routed guides rather than being repeated in the README.',
             'ordered local-proof-before-push, exact-CI, tag-creation-and-push',
             'rejects explicit versioned present-tense `partial`, `pending`, or `unannounced` claims',
@@ -1107,7 +1105,7 @@ function proveInstalledReleaseGuidanceDistribution(string $installedFramework): 
                 'the current unreleased ADR 056/ADR 057/ADR 059 and Contract 16/Profile 4/PHT008 source boundary',
             ],
         ],
-        'current Contract 18 unreleased-source boundary',
+        'historical Contract 16 source-state cleanup',
     );
 
     forbidInstalledArtifactMarkers(
