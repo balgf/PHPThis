@@ -25,7 +25,7 @@ A consumer may record and prove a different finite public status contract, and a
 
 ## Framework error representations
 
-Consumer Contract 20 permits explicit, code-owned formats for routing failures and coordinator-selected unknown failures. Construct `ErrorRepresentation(contentType: ..., body: ...)` in protected composition and pass it to the existing owner:
+Consumer Contract 22 retains the Contract 19 option of explicit, code-owned formats for routing failures and coordinator-selected unknown failures. Construct `ErrorRepresentation(contentType: ..., body: ...)` in protected composition and pass it to the existing owner:
 
 ```php
 $application = new Application(

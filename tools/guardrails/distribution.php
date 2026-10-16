@@ -98,8 +98,8 @@ function distributionGuardrailFailures(
 
         $packagePaths = preg_split('/\R/', trim($packageInventory));
 
-        if (!is_array($packagePaths) || count($packagePaths) !== 247) {
-            $failures[] = 'The current framework package inventory must contain exactly 247 reviewed files; compare archive contents with tools/package-files.txt.';
+        if (!is_array($packagePaths) || count($packagePaths) !== 248) {
+            $failures[] = 'The current framework package inventory must contain exactly 248 reviewed files; compare archive contents with tools/package-files.txt.';
         }
 
         foreach (is_array($packagePaths) ? $packagePaths : [] as $packagePath) {

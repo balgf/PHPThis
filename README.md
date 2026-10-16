@@ -27,10 +27,10 @@ The framework supplies a small execution foundation and strict verification boun
 | Boundary | Recorded state |
 | --- | --- |
 | Latest framework tag | Alpha 8, [`v0.1.0-alpha.8`](https://github.com/balgf/PHPThis/tree/v0.1.0-alpha.8), Consumer Contract version 18, Strict Profile version 4, and diagnostics `PHT001` through `PHT008` |
-| Unreleased source | Consumer Contract 20 permits optional bounded framework error representations; Alpha 8 remains Contract 18. |
+| Unreleased source | Consumer Contract 22, Strict Profile 4 and PHT001–PHT008; the [proposed Alpha 9 notes](docs/releases/0.1.0-alpha.9.md) cover HTTP changes, optional recipes and migration from Alpha 8's Contract 18. |
 | Latest proved application starter | Alpha 8 is the matching public framework/skeleton pair with complete clean Packagist-only installation evidence in [Issue #81](https://github.com/balgf/PHPThis/issues/81) |
 | Coordinated release evidence | [Issue #81](https://github.com/balgf/PHPThis/issues/81) records Alpha 8 exact candidates, approvals, signed tags, packages, public proof and continuing GitHub prerelease/announcement state; closed [Issue #53](https://github.com/balgf/PHPThis/issues/53) preserves the completed Alpha 7 predecessor |
-| Current post-tag `main` | Mutable availability/evidence follow-ups do not change the immutable Alpha 8 tag, artifacts or accepted scope; inspect the requested tag for historical authority |
+| Current post-tag `main` | Alpha 9 source preparation is tracked in [Issue #124](https://github.com/balgf/PHPThis/issues/124); inspect the requested tag for historical authority. |
 
 Alpha 8 package/public-install evidence is tracked in [Issue #81](https://github.com/balgf/PHPThis/issues/81), with [accepted scope](docs/decisions/062-bounded-alpha-8-release-scope.md) and [upgrade notes](docs/releases/0.1.0-alpha.8.md). The tagged notes retain source-preparation facts; the external issue owns later candidate approvals and observed publication results.
 
@@ -78,6 +78,7 @@ The AI may author code and draft decisions. A human still supplies intent, appro
 - [Reviewer walkthrough](docs/reviewer-walkthrough.md) — an optional human companion tracing one request, its evidence, and a diagnostic repair at a pinned source revision.
 - [Request handling](docs/request-handling.md) and [database boundaries](docs/database.md) — the core HTTP and PDO patterns.
 - [Alpha 8 release notes](docs/releases/0.1.0-alpha.8.md) — compatibility changes and the carried-forward boundary.
+- [Proposed Alpha 9 notes](docs/releases/0.1.0-alpha.9.md#upgrade-from-alpha-8) — Contract 22 migration and bounded source-preparation scope.
 - [Architecture decisions](docs/decisions/README.md) — accepted rationale and reconsideration triggers.
 - [Security policy](SECURITY.md) and [release process](RELEASING.md) — experimental support limits and publication gates.
 

@@ -2,18 +2,20 @@
 
 ## Current priorities
 
-PHPThis's current boundary is Consumer Contract 20, Strict Profile 4 and PHT001–PHT008. Alpha 8 is the latest recorded source tag; [RELEASING.md](RELEASING.md) owns release state, exact approval rules and the route to publication receipts. Changes after that tag are unreleased.
+PHPThis's current source boundary is Consumer Contract 22, Strict Profile 4 and PHT001–PHT008. Alpha 8 is the latest recorded source tag at Contract 18; [RELEASING.md](RELEASING.md) owns release state, exact approval rules and the route to publication receipts. Changes after that tag are unreleased.
 
 - Keep the retained consumer useful through real feature changes and upgrades. [The lifecycle report](https://github.com/balgf/PHPThis/tree/main/tools/consumer-lifecycle) owns its public Alpha 8 repetition, failures, repairs and optional RAG exercise. Its next maintenance trigger is the next matching public release.
 - Review maintainability through behavior, documentation ownership and executable evidence. [ADR 063](docs/decisions/063-maintainability-review-over-size-proxies.md) makes file and line counts informational. [ADR 064](docs/decisions/064-one-entrypoint-per-audience.md) makes `AGENTS.md` the universal entrypoint and routes detail by task.
 - Use consumer evidence to prioritize changes. Outside a demonstrated release blocker, correctness defect or security defect in the accepted surface, runtime/checker expansion needs a reproducible consumer problem.
-- Continue the bounded work tracked in [open issues](https://github.com/balgf/PHPThis/issues): evaluate dynamic SQL guidance, security-sensitive ownership and comparative evidence within each issue's accepted scope. A backlog item authorizes neither a new framework mechanism nor a paid run.
+- Prepare the coordinated Alpha 9 candidate under [Issue #124](https://github.com/balgf/PHPThis/issues/124), using the [scope and Alpha 8 migration](docs/releases/0.1.0-alpha.9.md). Candidate acceptance and publication follow their own gates. External-service file-URL consumption in [#110](https://github.com/balgf/PHPThis/issues/110) remains deferred; the selected scope is S3 storage and downloads.
 
 ## Evidence and open claims
 
-The framework gate checks runtime behavior, profile diagnostics, source/distribution contracts, installed consumers and query scaling. [Evaluation](docs/evaluation.md) maps each claim to its evidence and limits. The recorded #69 campaigns do not establish comparative success rates. #70 has individual accepted code-change and explanation observations, not general model reliability or a measured advantage over ordinary PHP. The fixed comparison protocol remains available for a separately approved campaign.
+The framework gate checks runtime behavior, profile diagnostics, source/distribution contracts, installed consumers and query scaling. [Evaluation](docs/evaluation.md) maps each claim to its evidence and limits. The recorded #69 campaigns do not establish comparative success rates. #70 has individual accepted code-change and explanation observations. #96's two-start pilot has accepted bounded feasibility findings with its guide-reading limitation; it does not measure an advantage over ordinary PHP or general model reliability. Further study remains deferred.
 
 The checked CRUD reference implements bounded List, Create and item Get at `/users/{user_id:positive-int}`. Update and Delete are absent; [the canonical tree](docs/crud.md#reference-placement) is the source inventory. Item Get has no application authorization or tenant policy. The retained WebSocket, Redis, SQLite-job and RAG recipes prove only their recorded application scope.
+
+[MySQL durable work](docs/jobs/mysql.md) and [inspected PNG quarantine](docs/file-transfers/inspected-png.md) have required recipe CI. [Generated S3 exports](docs/file-transfers/generated-exports.md) have offline reference evidence; real AWS/KMS and deployment verification remain application-adoption requirements. [Swoole](docs/performance.md#swoole-experiment) remains experimental.
 
 ## Deferred by design
 

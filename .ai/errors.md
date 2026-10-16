@@ -2,7 +2,7 @@
 
 Failures must cross named boundaries as exceptions or explicit response values.
 
-For framework-generated 404/405 or coordinator-selected 500 formatting, follow `docs/errors.md#framework-error-representations`. Contract 21 permits a code-owned `ErrorRepresentation` body/content-type value constructed inside protected composition and injected through `Application` or `UnknownFailureBoundary`. Keep the unconfigured built-in 500 before bootstrap. Status, control headers, correlation and early fallback retain their owners; the value receives no request, exception or internal state. Defaults and exact known-failure mappings remain unchanged.
+For framework-generated 404/405 or coordinator-selected 500 formatting, follow `docs/errors.md#framework-error-representations`. Contract 22 retains the Contract 19 option of a code-owned `ErrorRepresentation` body/content-type value constructed inside protected composition and injected through `Application` or `UnknownFailureBoundary`. Keep the unconfigured built-in 500 before bootstrap. Status, control headers, correlation and early fallback retain their owners; the value receives no request, exception or internal state. Defaults and exact known-failure mappings remain unchanged.
 
 - Do not catch `Throwable` in handlers unless the handler can fully recover.
 - Do not convert database failures to empty arrays, `null`, or success responses.

@@ -6,6 +6,8 @@ PHPThis is experimental prerelease software and is not intended for production u
 
 Any approved prerelease candidate may be announced only after its complete public-artifact gate in [the release process](RELEASING.md) passes and both GitHub prereleases receive their exact separate authorizations. A partially published framework or skeleton remains unannounced until both packages, the clean public installation path, and the required GitHub prereleases are proved. This tracked policy does not prove continuing live publication state; verify that state from the exact tagged release, GitHub, and Packagist. Release preparation must confirm that GitHub private vulnerability reporting is enabled before a prerelease is announced.
 
+The Alpha 9 source-preparation proposal in [#124](https://github.com/balgf/PHPThis/issues/124) retains this experimental support policy. Its [notes](docs/releases/0.1.0-alpha.9.md) describe scope and adoption limits; preparation does not establish a supported deployment.
+
 ## Reporting a vulnerability
 
 Do not disclose a suspected vulnerability in a public issue or discussion.

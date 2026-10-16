@@ -70,6 +70,8 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
     // These are distribution expectations, shared by source and installed proofs.
     // They neither discover policy nor certify the meaning of a task label.
     $documents = [
+        'README.md' => ['docs/releases/0.1.0-alpha.9.md'],
+        'SECURITY.md' => ['docs/releases/0.1.0-alpha.9.md'],
         'VISION.md' => ['docs/design-goals.md'],
         'docs/design-goals.md' => [],
         'docs/knowledge-map.md' => [
@@ -83,6 +85,7 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
             'docs/observability/README.md', 'docs/logging.md', 'docs/date-time.md',
             'docs/request-policy.md', 'docs/stateless-authentication.md', 'docs/crud.md',
             'docs/database.md', 'docs/performance.md', 'RELEASING.md',
+            'docs/releases/0.1.0-alpha.9.md',
         ],
         'docs/consumer-contract.md' => [
             'docs/knowledge-map.md', 'docs/request-handling.md', 'docs/configuration.md',
@@ -92,8 +95,8 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
         'docs/consumer-contract-upgrades.md' => [],
         'docs/getting-started.md' => [],
         'docs/evaluation.md' => ['docs/knowledge-map.md'],
-        'RELEASING.md' => ['docs/decisions/README.md', 'docs/decisions/062-bounded-alpha-8-release-scope.md', 'docs/releases/0.1.0-alpha.8.md'],
-        'ROADMAP.md' => ['RELEASING.md', 'docs/evaluation.md', 'docs/knowledge-map.md'],
+        'RELEASING.md' => ['docs/decisions/README.md', 'docs/decisions/062-bounded-alpha-8-release-scope.md', 'docs/releases/0.1.0-alpha.8.md', 'docs/releases/0.1.0-alpha.9.md'],
+        'ROADMAP.md' => ['RELEASING.md', 'docs/evaluation.md', 'docs/knowledge-map.md', 'docs/releases/0.1.0-alpha.9.md'],
         'docs/strict-profile.md' => [],
         'docs/type-safety.md' => [],
         'docs/crud.md' => [],
@@ -112,6 +115,27 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
 
     $failures = [...$failures, ...guidanceDocumentFailures($framework . '/docs/evaluation.md', [
         'ai-context-routing-review.md' => $framework . '/docs/ai-context-routing-review.md',
+    ])];
+    $failures = [...$failures, ...guidanceDocumentFailures($framework . '/docs/getting-started.md', [
+        'releases/0.1.0-alpha.9.md#upgrade-from-alpha-8' => $framework . '/docs/releases/0.1.0-alpha.9.md',
+    ])];
+    $failures = [...$failures, ...guidanceDocumentFailures($framework . '/docs/releases/0.1.0-alpha.9.md', [
+        '../../RELEASING.md' => $framework . '/RELEASING.md',
+        '../consumer-contract-upgrades.md#contract-version-22' => $framework . '/docs/consumer-contract-upgrades.md',
+        '../database.md' => $framework . '/docs/database.md',
+        '../stateless-authentication.md' => $framework . '/docs/stateless-authentication.md',
+        '../jobs/mysql.md' => $framework . '/docs/jobs/mysql.md',
+        '../file-transfers/inspected-png.md' => $framework . '/docs/file-transfers/inspected-png.md',
+        '../file-transfers/generated-exports.md' => $framework . '/docs/file-transfers/generated-exports.md',
+        '../file-transfers/generated-exports.md#application-adoption-and-deferred-aws-proof' => $framework . '/docs/file-transfers/generated-exports.md',
+        '../file-transfers/request-ingestion.md' => $framework . '/docs/file-transfers/request-ingestion.md',
+        '../file-transfers/deployment.md' => $framework . '/docs/file-transfers/deployment.md',
+        '../request-handling.md#server-reported-peer-address' => $framework . '/docs/request-handling.md',
+        '../errors.md#framework-error-representations' => $framework . '/docs/errors.md',
+        '../performance.md#swoole-experiment' => $framework . '/docs/performance.md',
+        '../evaluation.md#observed-two-start-pilot-96' => $framework . '/docs/evaluation.md',
+        '../decisions/063-maintainability-review-over-size-proxies.md' => $framework . '/docs/decisions/063-maintainability-review-over-size-proxies.md',
+        '../decisions/064-one-entrypoint-per-audience.md' => $framework . '/docs/decisions/064-one-entrypoint-per-audience.md',
     ])];
 
     foreach ([$application, $framework . '/templates/application'] as $context) {

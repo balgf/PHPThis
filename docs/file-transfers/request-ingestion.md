@@ -1,6 +1,6 @@
 # Multipart request ingestion
 
-Under Consumer Contract 21, the sole front controller passes `$_SERVER` and `$_GET` unchanged through the terminal coordinator and `RequestBoundary`. `RequestReader` owns the body read. It calls PHP 8.4's native `request_parse_body()` once for enabled multipart POST, validates the result into immutable `MultipartForm`, and leaves `Request::$body` empty. Ordinary input still uses the configured URI and ordinary-body limit. Handlers never read superglobals or the input stream.
+Under Consumer Contract 22, carrying forward the Contract 21 handoff, the sole front controller passes `$_SERVER` and `$_GET` unchanged through the terminal coordinator and `RequestBoundary`. `RequestReader` owns the body read. It calls PHP 8.4's native `request_parse_body()` once for enabled multipart POST, validates the result into immutable `MultipartForm`, and leaves `Request::$body` empty. Ordinary input still uses the configured URI and ordinary-body limit. Handlers never read superglobals or the input stream.
 
 ## Explicit configuration
 
@@ -16,7 +16,7 @@ new RequestReader(
 );
 ```
 
-`null` leaves multipart disabled. These numbers retain the document example's policy, not universal storage defaults. All three limits must be positive and below `PHP_INT_MAX`, with file <= aggregate file <= request. Configure the actual web SAPI with `enable_post_data_reading=Off` and `file_uploads=On`; otherwise enabled multipart fails operationally before parsing. No earlier reader may consume the request body. See [deployment](deployment.md) and the [Contract 21 migration](../consumer-contract-upgrades.md#contract-version-22).
+`null` leaves multipart disabled. These numbers retain the document example's policy, not universal storage defaults. All three limits must be positive and below `PHP_INT_MAX`, with file <= aggregate file <= request. Configure the actual web SAPI with `enable_post_data_reading=Off` and `file_uploads=On`; otherwise enabled multipart fails operationally before parsing. No earlier reader may consume the request body. See [deployment](deployment.md) and the [Contract 21 migration](../consumer-contract-upgrades.md#contract-version-21).
 
 Multipart requires POST, one canonical non-negative Content-Length within the configured request limit, no Transfer-Encoding, and one boundary parameter of 1–70 accepted bytes. The unquoted boundary permits ASCII letters, digits, apostrophe, plus, underscore, period and hyphen. The quoted form permits the wider existing MIME set and forbids a trailing space. Other parameters and duplicate boundaries fail. Framing and declared size are checked before native parsing, session begin and dispatch.
 
