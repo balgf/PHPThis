@@ -40,7 +40,7 @@ If existing identifier classes establish a coherent convention, record and prese
 
 ## Outer HTTP failure boundary
 
-Keep default framework errors unless the application deliberately adopts installed `vendor/phpthis/framework/docs/errors.md#framework-error-representations`. Record the public format and compatibility decision, construct bounded literal body/content-type values inside protected composition, and retain the unconfigured built-in outer fallback. This introduces no external configuration input.
+Keep default framework errors unless the application deliberately adopts installed `vendor/phpthis/framework/docs/errors.md#framework-error-representations`. Record the public format and compatibility decision, construct bounded literal body/content-type values inside the protected boundary, and preserve the initial built-in fallback. Optional early selection follows installed `docs/errors.md#outer-http-failures` before configuration/bootstrap; failed selection stops startup with the built-in response. This introduces no external configuration input.
 
 - Detailed renderer and exact finite safe-message class allowlist, or `NOT_APPLICABLE(DEVELOPMENT_DETAILS)`: {{OUTER_HTTP_DETAILED_RENDERER_AND_SAFE_MESSAGE_ALLOWLIST_OR_NOT_APPLICABLE}}
 

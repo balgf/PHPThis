@@ -103,7 +103,7 @@ function contextGuardrailFailures(string $root): array
         'docs/decisions/044-bounded-task-routed-ai-context.md' => ['Status: accepted'],
         'docs/decisions/058-concern-local-ai-context-routing.md' => ['Status: accepted'],
         'docs/decisions/064-one-entrypoint-per-audience.md' => ['Status: accepted'],
-        'docs/consumer-contract.md' => ['Contract version: 23'],
+        'docs/consumer-contract.md' => ['Contract version: 24'],
         'docs/decisions/README.md' => [
             '`044-bounded-task-routed-ai-context.md`',
             '`058-concern-local-ai-context-routing.md`',
@@ -175,7 +175,7 @@ function contextGuardrailFailures(string $root): array
             '`045-bounded-session-cleanup-and-response-framing.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 23',
+            'Contract version: 24',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`, and one explicit ordinary body.',
             '`HEAD` remains an explicit application route with its own empty response body and no inferred representation length under this safe subset.',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
@@ -196,7 +196,7 @@ function contextGuardrailFailures(string $root): array
             'do not log, retry, suppress, or map it inside session code.',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 23 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            'Consumer Contract version 24 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
             'Runtime and deployment obligations remain in the [current Consumer Contract](../docs/consumer-contract.md) and routed guides; they are not additional PHT rules.',
         ],
         'docs/request-handling.md' => [
@@ -414,10 +414,10 @@ function contextGuardrailFailures(string $root): array
             'Accepted [ADR 060](060-reject-pending-output-before-response-emission.md) coordinates Consumer Contract version 17 while retaining Strict Profile version 4',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 23',
+            'Contract version: 24',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
             'empty active buffers remain valid, and application code fixes early output at its owner rather than cleaning or incorporating it',
-            'Contract version 23 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
+            'Contract version 24 and Strict Profile version 4 remain current with permanent diagnostics `PHT001` through `PHT008`.',
         ],
         'docs/consumer-contract-upgrades.md' => [
             '### Contract version 17',
@@ -433,7 +433,7 @@ function contextGuardrailFailures(string $root): array
             'fail before status, headers, cookies, body, or file access.',
             'Only `ResponseEmissionFailed(false)` may receive one generic fallback',
             'ADR 060 adds the pending-output preflight; ADR 061 adds the generic-first outer HTTP failure boundary and optional controlled detail response.',
-            'Current Consumer Contract v23 carries version 19 and Strict Profile v4 forward.',
+            'Current Consumer Contract v24 carries version 19 and Strict Profile v4 forward.',
         ],
         '.ai/file-transfers.md' => [
             'Before file access, `ResponseEmitter` applies the common response-output guard',
@@ -441,7 +441,7 @@ function contextGuardrailFailures(string $root): array
             'It inspects without cleaning, flushing, rewriting, or incorporating prior bytes.',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 23 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            'Consumer Contract version 24 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
             'Runtime and deployment obligations remain in the [current Consumer Contract](../docs/consumer-contract.md) and routed guides; they are not additional PHT rules.',
         ],
         'docs/request-handling.md' => [
@@ -1195,8 +1195,8 @@ function contextGuardrailFailures(string $root): array
     );
 
     $currentConsumerContractVersionMarkers = [
-        'docs/consumer-contract.md' => 'Contract version: 23',
-        'docs/getting-started.md' => 'contract-version-23 Composer scripts',
+        'docs/consumer-contract.md' => 'Contract version: 24',
+        'docs/getting-started.md' => 'contract-version-24 Composer scripts',
     ];
 
     foreach ($currentConsumerContractVersionMarkers as $relativePath => $marker) {
@@ -1223,7 +1223,7 @@ function contextGuardrailFailures(string $root): array
             '`057-distinct-named-sql-placeholder-occurrences.md`',
         ],
         'docs/consumer-contract.md' => [
-            'Contract version: 23',
+            'Contract version: 24',
             '### Contract version 15',
             '`PHT008` rejects a repeated name and requires each occurrence to have its own explicit binding',
             'Version 15 adds no runtime SQL parser, binding-array comparison, positional-placeholder support, SQL rewrite, placeholder helper, query builder, dialect abstraction',
@@ -1236,7 +1236,7 @@ function contextGuardrailFailures(string $root): array
             'PostgreSQL dollar-quote-looking text',
         ],
         '.ai/strict-profile.md' => [
-            'Consumer Contract version 23 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
+            'Consumer Contract version 24 carries version 19 and Strict Profile version 4 forward with permanent diagnostics `PHT001` through `PHT008`.',
             '`PHT008`:',
             'PHT006 retains finite SQL-shape ownership; PHT008 alone owns distinct named-placeholder occurrences',
         ],

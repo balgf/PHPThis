@@ -153,7 +153,7 @@ function taskRoutedGuidanceFailures(string $framework, string $application): arr
             'AGENTS.md' => $context . '/AGENTS.md',
             '.ai/rules.md' => $context . '/.ai/rules.md',
             '.ai/change-workflow.md' => $context . '/.ai/change-workflow.md',
-            'vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-23' => $framework . '/docs/consumer-contract-upgrades.md',
+            'vendor/phpthis/framework/docs/consumer-contract-upgrades.md#contract-version-24' => $framework . '/docs/consumer-contract-upgrades.md',
         ];
         $failures = [...$failures, ...guidanceDocumentFailures($context . '/.ai/README.md', $compatibilityReferences)];
         foreach (['rules', 'change-workflow'] as $guide) {

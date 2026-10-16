@@ -1657,13 +1657,13 @@ function proveInstalledSessionCleanupAndResponseFramingDistribution(
             'Strict Profile version 3 remains unchanged',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 23',
+            'Contract version: 24',
             'A final `Response` uses a status from `200` through `599`, never `Transfer-Encoding`',
             'begin every ordinary or local-file response emission with headers unsent and no pending bytes in any active PHP-managed output-buffer level',
             'a second cleanup failure becomes the narrow redacted `SessionCleanupFailed` retaining both failures',
             'Contract version 11 carries contract version 10 forward and retains Strict Profile version 3.',
             '## Outer HTTP failure boundary',
-            'Contract version 23 supports one deployed HTTP entrypoint.',
+            'Contract version 24 supports one deployed HTTP entrypoint.',
             'Any HTTP application may deliberately remain code-owned `GENERIC` without inventing external disclosure or runtime-profile selection inputs',
             'Every HTTP profile configures the effective web SAPI with all `E_ALL` bits reported',
         ],
@@ -2035,6 +2035,9 @@ PHP);
 /** @param array<string, string> $environment */
 function proveInstalledErrorRepresentations(string $project, string $installedFramework, array $environment): void
 {
+    requireInstalledArtifactMarkers([
+        $installedFramework . '/docs/decisions/070-fixed-early-http-error-representations.md' => ['Status: accepted'],
+    ], 'fixed early error representation decision');
     $proofPath = $project . '/installed-error-representation-proof.php';
     writeFile($proofPath, <<<'PHP'
 <?php
@@ -2093,6 +2096,74 @@ PHP);
         requireSuccess($result, 'Installed error representation runtime proof failed.');
         if ($result['stdout'] !== "PASS installed error representations\n") {
             throw new RuntimeException('Installed error representation proof did not complete.');
+        }
+
+        $frontPath = $project . '/public/index.php';
+        $bootstrapPath = $project . '/bootstrap.php';
+        $front = file_get_contents($frontPath);
+        $bootstrap = file_get_contents($bootstrapPath);
+        if (!is_string($front) || !is_string($bootstrap)) {
+            throw new RuntimeException('Cannot read the installed early-failure entrypoint.');
+        }
+        $selection = <<<'PHP'
+try {
+    $genericFailureResponse = (new UnknownFailureBoundary(
+        new \PHPThis\Http\ErrorRepresentation('text/plain', 'Service unavailable.'),
+    ))->respond();
+    /** @var TerminalRequestCoordinator
+PHP;
+        $selectedFront = str_replace("try {\n    /** @var TerminalRequestCoordinator", $selection, $front, $selectionCount);
+        if ($selectionCount !== 1) {
+            throw new RuntimeException('The installed early selection must enter the existing protected block.');
+        }
+        $failedBootstrap = <<<'PHP'
+<?php
+declare(strict_types=1);
+error_log('phpthis_test.bootstrap_entered');
+throw new RuntimeException('private-sentinel-bootstrap');
+PHP;
+        $failedEmission = <<<'PHP'
+<?php
+declare(strict_types=1);
+error_log('phpthis_test.bootstrap_entered');
+final readonly class EarlyEmissionFixture
+{
+    /** @param array<string, mixed> $server @param array<string, mixed> $query */
+    public function handle(array $server, array $query): \PHPThis\Http\Response
+    {
+        return new \PHPThis\Http\Response(200, ['Content-Length' => '4'], '', [],
+            new \PHPThis\Http\LocalFileBody(__DIR__ . '/absent-early-body.bin', 4));
+    }
+}
+return new EarlyEmissionFixture();
+PHP;
+        $builtIn = "{\"error\":{\"code\":\"internal_server_error\",\"message\":\"Internal server error.\"}}\n";
+        try {
+            foreach ([
+                [$selectedFront, $failedBootstrap, 'Service unavailable.', 1, 1, 0],
+                [$selectedFront, $failedEmission, 'Service unavailable.', 1, 0, 1],
+                [str_replace("'text/plain'", "''", $selectedFront), $failedBootstrap, $builtIn, 0, 1, 0],
+                [$front, $failedBootstrap, $builtIn, 1, 1, 0],
+                [$front, $failedEmission, $builtIn, 1, 0, 1],
+            ] as [$caseFront, $caseBootstrap, $body, $startupCount, $outerCount, $emissionCount]) {
+                writeFile($frontPath, $caseFront);
+                writeFile($bootstrapPath, $caseBootstrap);
+                $early = runProcess([PHP_BINARY, $frontPath], $project, $environment);
+                requireSuccess($early, 'Installed front-controller early error proof failed.');
+                if (
+                    $early['stdout'] !== $body
+                    || substr_count($early['stderr'], 'phpthis_test.bootstrap_entered') !== $startupCount
+                    || substr_count($early['stderr'], 'application.http_outer_failure') !== $outerCount
+                    || substr_count($early['stderr'], 'application.response_emission_failed') !== $emissionCount
+                    || str_contains($early['stdout'] . $early['stderr'], 'private-sentinel')
+                    || str_contains($early['stderr'], 'application.request_summary')
+                ) {
+                    throw new RuntimeException('Installed early response selection, startup order or emission changed.');
+                }
+            }
+        } finally {
+            writeFile($frontPath, $front);
+            writeFile($bootstrapPath, $bootstrap);
         }
     } finally {
         if (is_file($proofPath) && !unlink($proofPath)) {
@@ -2430,7 +2501,7 @@ PHP,
             'The final readable implementation occupies 2,618 lines',
         ],
         $installedFramework . '/docs/consumer-contract.md' => [
-            'Contract version: 23',
+            'Contract version: 24',
             '### Contract version 12',
             'Contract version 12 carries Contract version 11 forward and retains Strict Profile version 3',
             'one response contains at most 50 cookies, has no repeated case-sensitive cookie name regardless of path',

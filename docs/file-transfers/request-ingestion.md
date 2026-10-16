@@ -1,6 +1,6 @@
 # Multipart request ingestion
 
-Under Consumer Contract 23, carrying forward the Contract 21 handoff, the sole front controller passes `$_SERVER` and `$_GET` unchanged through the terminal coordinator and `RequestBoundary`. `RequestReader` owns the body read. It calls PHP 8.4's native `request_parse_body()` once for enabled multipart POST, validates the result into immutable `MultipartForm`, and leaves `Request::$body` empty. Ordinary input still uses the configured URI and ordinary-body limit. Handlers never read superglobals or the input stream.
+Under Consumer Contract 24, carrying forward the Contract 21 handoff, the sole front controller passes `$_SERVER` and `$_GET` unchanged through the terminal coordinator and `RequestBoundary`. `RequestReader` owns the body read. It calls PHP 8.4's native `request_parse_body()` once for enabled multipart POST, validates the result into immutable `MultipartForm`, and leaves `Request::$body` empty. Ordinary input still uses the configured URI and ordinary-body limit. Handlers never read superglobals or the input stream.
 
 ## Explicit configuration
 

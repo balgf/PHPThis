@@ -18,7 +18,7 @@ Do not treat attribute syntax as an application performance optimization. PHPThi
 
 ## Swoole experiment
 
-Swoole is experimental: Consumer Contract 23 still requires the conventional PHP front controller. The [stateless HTTP proof](https://github.com/balgf/PHPThis/tree/main/tools/runtime-proof/issue-100) retains an explicit application-owned adapter, repeatable checks and matched PHP-FPM measurements. It adds no framework API or dependency.
+Swoole is experimental: Consumer Contract 24 still requires the conventional PHP front controller. The [stateless HTTP proof](https://github.com/balgf/PHPThis/tree/main/tools/runtime-proof/issue-100) retains an explicit application-owned adapter, repeatable checks and matched PHP-FPM measurements. It adds no framework API or dependency.
 
 In the recorded local SQLite workload, Swoole's median throughput was approximately 9–20% higher. At concurrency 16 its pooled p99 latency was worse: 35–36 ms against 11–14 ms for FPM. These short closed-loop samples support investigation, not a production speedup claim. Inspect the workload, resource limits, raw samples and uncovered boundaries before making an adoption decision. Supported adoption needs a separately accepted contract decision and deployment evidence.
 

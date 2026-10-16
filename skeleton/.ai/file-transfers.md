@@ -8,7 +8,7 @@ The starter accepts no upload and returns no file download. It owns no file-tran
 
 `public/index.php` forwards only `$_SERVER` and `$_GET` through the terminal coordinator. The reader owns body parsing. This does not opt into file transfers: `bootstrap.php` supplies no `MultipartLimits`, so multipart input remains disabled. Adoption requires the installed multipart and deployment guides, explicit PHP-normalization suitability, and a complete selected storage policy.
 
-Record per-field value bytes and aggregate field-name/value bytes alongside request/file caps when adopting multipart. Contract 23 permits explicit field ceilings while preserving the 8,192/65,536 defaults; verify any changed limits through the target SAPI under the installed request-ingestion guide.
+Record per-field value bytes and aggregate field-name/value bytes alongside request/file caps when adopting multipart. Contract 24 permits explicit field ceilings while preserving the 8,192/65,536 defaults; verify any changed limits through the target SAPI under the installed request-ingestion guide.
 
 The front controller already owns one redacted response-emission failure event. It emits a generic no-store `500` only when output has not started; after partial output it records the event and ends without attempting a second response. This generic outer behavior does not adopt local-file emission or prove file delivery.
 

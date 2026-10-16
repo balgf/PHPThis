@@ -14,7 +14,7 @@ Alpha 9 uses Composer `0.1.0-alpha.9` and framework/skeleton tags `v0.1.0-alpha.
 
 Commits after the latest tag are unreleased development. Assess that exact delta before proposing the next version, scope, notes and planned date. A proposed scope may precede an exact candidate; only an explicit human record accepts it.
 
-Current source adds Consumer Contract 23's optional multipart field-byte limits under [ADR 069](docs/decisions/069-configurable-multipart-field-limits.md), with defaults and existing calls preserved. Alpha 9's published Contract 22 identity remains unchanged. No next release version or publication operation is selected by this source change.
+Current source carries Contract 23's optional multipart field-byte limits under [ADR 069](docs/decisions/069-configurable-multipart-field-limits.md) and adds Contract 24's fixed early HTTP representations under [ADR 070](docs/decisions/070-fixed-early-http-error-representations.md). Existing default formats and calls remain valid. Alpha 9's published Contract 22 identity remains unchanged. No next release version or publication operation is selected by this source change.
 
 Candidate approval names the version, both tag names, exact framework commit, planned date, scope, notes, announcement text and permitted operations. The skeleton commit may be `PENDING` during framework preparation; record and approve its exact commit before any skeleton tag or package write. Keep approvals and evolving proof in the external work item so recording evidence does not change candidate bytes. Source changes create a new candidate requiring fresh proof and approval.
 

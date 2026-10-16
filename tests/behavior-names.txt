@@ -140,6 +140,7 @@ example outer HTTP boundary catches bootstrap failures under safe SAPI settings
 error representations preserve defaults and independently customize routing failures
 error representations enforce byte bounds and reject control header injection
 configured errors retain correlation known mappings and unknown failure redaction
+fixed early representations preserve fallback disclosure and emission boundaries
 real front controller emits configured errors and retains the built-in early fallback
 peer addresses retain valid IPv4 and IPv6 bytes without trusting forwarding headers
 malformed peer metadata fails redacted before body session and handler work

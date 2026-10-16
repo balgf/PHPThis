@@ -436,6 +436,8 @@ if (
     || !str_contains($frontControllerSource, 'catch (ResponseEmissionFailed $failure)')
     || !str_contains($frontControllerSource, 'if (!$failure->responseStarted)')
     || !str_contains($frontControllerSource, "'Cache-Control' => 'no-store'")
+    || !str_contains($frontControllerSource, "'Content-Type' => \$genericFailureResponse->headers['Content-Type']")
+    || !str_contains($frontControllerSource, '$genericFailureResponse->body,')
 ) {
     throw new RuntimeException(
         'The front controller must retain one redacted, response-start-aware emission fallback.',
