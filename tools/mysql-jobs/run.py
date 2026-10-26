@@ -109,6 +109,7 @@ client_versions = json.loads(php.stdout)
 if client_versions not in (
     {'php': '8.4.19', 'pdo_mysql': '8.4.19', 'mysqlnd': 'mysqlnd 8.4.19'},
     {'php': '8.4.26', 'pdo_mysql': '8.4.26', 'mysqlnd': 'mysqlnd 8.4.26'},
+    {'php': '8.4.27', 'pdo_mysql': '8.4.27', 'mysqlnd': 'mysqlnd 8.4.27'},
 ):
     raise RuntimeError('unreviewed_client_version')
 print('MYSQL JOBS CLIENT ' + json.dumps(client_versions, sort_keys=True), flush=True)

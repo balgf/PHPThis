@@ -3248,6 +3248,7 @@ check($statement->execute(['id' => 1, 'value' => 'duplicate']) === false, 'Silen
 check($connection->exec('UPDATE missing_table SET value = 1') === false, 'Silent exec failure must remain false.');
 check($connection->query($failedSql) === false, 'Silent query failure must remain false.');
 check($connection->exec("UPDATE entries SET value = 'unused' WHERE id = 999") === 0, 'Zero affected rows must remain success.');
+$statement->closeCursor();
 check($statement->execute(['id' => 3, 'value' => 'third']), 'Successful reuse after failure must remain observable.');
 $snapshot = $trace->snapshot();
 check($snapshot['statements'] === 17 && $snapshot['failures'] === 8 && $snapshot['truncated'] === false,

@@ -18,7 +18,7 @@ The handler verifies the previously committed request before writing. The receip
 
 | Property | Reference policy |
 | --- | --- |
-| Service/client | MySQL **8.4.11**; PHP/PDO MySQL/mysqlnd **8.4.19** locally and **8.4.26** in Linux CI; pinned MySQL digest and an exact client-version allowlist in the runner |
+| Service/client | MySQL **8.4.11**; PHP/PDO MySQL/mysqlnd **8.4.19** locally and **8.4.26**/**8.4.27** in Linux CI; pinned MySQL digest and an exact client-version allowlist in the runner |
 | Storage/isolation | InnoDB, READ COMMITTED, binary logging enabled with ROW format, `innodb_flush_log_at_trx_commit=1`, `sync_binlog=1`, doublewrite ON; fail closed on drift at composition |
 | Claim index | Stored `next_action_at` (availability or lease expiry; NULL for terminal rows), index `(next_action_at, job_id)`; primary key on job ID |
 | Envelope | Existing explicit `user.welcome` v1 parser: 2–2,048 JSON bytes, exact fields, email at most 254 bytes, bounded JSON depth; unsupported/malformed input is terminal |
