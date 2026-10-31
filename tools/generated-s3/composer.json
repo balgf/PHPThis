@@ -5,7 +5,7 @@
   "license": "MIT",
   "require": {
     "php": "~8.4.1",
-    "aws/aws-sdk-php": "3.401.2",
+    "aws/aws-sdk-php": "3.402.0",
     "guzzlehttp/guzzle": "8.2.0",
     "ext-curl": "*",
     "ext-json": "*",
