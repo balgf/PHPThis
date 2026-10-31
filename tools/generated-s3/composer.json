@@ -6,7 +6,7 @@
   "require": {
     "php": "~8.4.1",
     "aws/aws-sdk-php": "3.401.2",
-    "guzzlehttp/guzzle": "8.2.0",
+    "guzzlehttp/guzzle": "8.3.0",
     "ext-curl": "*",
     "ext-json": "*",
     "ext-pcre": "*",
