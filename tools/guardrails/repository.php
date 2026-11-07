@@ -404,13 +404,11 @@ function canonicalCrudTreeFailures(string $root): array
         $documentation,
         $matches,
     );
-    $tree = $matches['tree'][0] ?? null;
-
-    if ($matched !== 1 || !is_string($tree)) {
+    if ($matched !== 1) {
         return ['docs/crud.md must contain one parseable canonical current example/src/Users tree.'];
     }
 
-    $treeLines = preg_split('/\R/', $tree);
+    $treeLines = preg_split('/\R/', $matches['tree'][0]);
 
     if (!is_array($treeLines)) {
         return ['Cannot split the canonical current CRUD tree in docs/crud.md.'];

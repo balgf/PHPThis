@@ -1298,7 +1298,7 @@ function agentEvaluationExplanationEventEvidence(string $events, string $respons
         }
     }
 
-    if (!$threadStarted || !$turnStarted || !$terminalSeen || $usage === null) {
+    if ($usage === null) {
         throw new RuntimeException('Explanation events artifact does not contain one completed Codex lifecycle.');
     }
 

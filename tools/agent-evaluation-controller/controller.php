@@ -1858,9 +1858,6 @@ function agentEvaluationControllerExecuteControlled(
         }
         }
         if (!$explanation) {
-            if ($scoringWorkspace === null) {
-                throw new RuntimeException('Implementation scoring workspace is unavailable.');
-            }
             agentEvaluationControllerValidateReadOnlyScoringCandidate(
                 $scoringWorkspace['candidate_root'], $freeze['candidate_manifest'], $freeze['candidate_sha256'],
             );
@@ -1901,7 +1898,7 @@ function agentEvaluationControllerExecuteControlled(
             agentEvaluationControllerEnterPhase($observedPhases, 'retain');
             $success = ['run_id' => $validatedRequest['run_id']];
         } else {
-        if ($smokeTask === null || $score === null) {
+        if ($smokeTask === null) {
             throw new RuntimeException('Implementation run validation inputs are unavailable.');
         }
         $runRecord = agentEvaluationControllerRunRecord(
