@@ -511,7 +511,7 @@ final class RedisScheduleRunLeaseTestRedis extends Redis
     /** @var list<array{script: string, arguments: array<mixed>, key_count: int}> */
     public array $evalCalls = [];
 
-    /** @param array<array-key, mixed> $options */
+    /** @param array<array-key, mixed>|int|null $options */
     public function set(string $key, mixed $value, mixed $options = null): bool
     {
         if (!is_string($value)) {

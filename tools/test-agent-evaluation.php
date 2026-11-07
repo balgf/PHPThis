@@ -1270,13 +1270,51 @@ function agentEvaluationExplanationContractControls(string $kit): void
         'Explanation workspace policy must prohibit every candidate mutation.',
     );
 
-    $preparedLockBytes = file_get_contents(dirname($kit, 2) . '/composer.lock');
-    $preparedInstalledMetadataBytes = file_get_contents(
-        dirname($kit, 2) . '/vendor/composer/installed.json',
+    $preparedLockProcess = runBoundedMaintainerProcess(
+        ['/usr/bin/git', 'show', AGENT_EVALUATION_EXPLANATION_SOURCE_REVISION . ':composer.lock'],
+        dirname($kit, 2),
+        null,
+        5_000,
+        AGENT_EVALUATION_MAX_JSON_BYTES,
+        4_096,
     );
-    if (!is_string($preparedLockBytes) || !is_string($preparedInstalledMetadataBytes)) {
+    if ($preparedLockProcess['exit_code'] !== 0 || $preparedLockProcess['stderr'] !== '') {
         throw new RuntimeException('Unable to read the pinned explanation Composer provenance.');
     }
+    $preparedLockBytes = $preparedLockProcess['stdout'];
+    $pinnedLockedPackages = agentEvaluationExplanationComposerLockPackages(
+        agentEvaluationValueObject(
+            agentEvaluationJsonValue(
+                $preparedLockBytes,
+                'pinned explanation composer.lock',
+            ),
+            'pinned explanation composer.lock',
+        ),
+    );
+    $pinnedInstalledPackageEntries = [];
+    $pinnedDevPackageNames = [];
+    foreach ($pinnedLockedPackages as $packageName => $packageMetadata) {
+        $installedEntry = [
+            'name' => $packageName,
+            'version' => $packageMetadata['version'],
+            'install-path' => '../' . $packageName,
+        ];
+        if ($packageMetadata['source_reference'] !== null) {
+            $installedEntry['source'] = ['reference' => $packageMetadata['source_reference']];
+        }
+        if ($packageMetadata['dist_reference'] !== null) {
+            $installedEntry['dist'] = ['reference' => $packageMetadata['dist_reference']];
+        }
+        $pinnedInstalledPackageEntries[] = $installedEntry;
+        if ($packageMetadata['dev']) {
+            $pinnedDevPackageNames[] = $packageName;
+        }
+    }
+    $preparedInstalledMetadataBytes = agentEvaluationJson([
+        'packages' => $pinnedInstalledPackageEntries,
+        'dev' => $pinnedDevPackageNames !== [],
+        'dev-package-names' => $pinnedDevPackageNames,
+    ]);
     $preparedInstalledPackages = agentEvaluationExplanationInstalledComposerPackages(
         agentEvaluationValueObject(
             agentEvaluationJsonValue(

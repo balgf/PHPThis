@@ -901,16 +901,12 @@ function proveDependencyDirectoryIsExcluded(string $project, array $profileComma
 
         $vendorStatus = @stat($project . '/vendor');
         $caseVariantStatus = @stat($project . '/VENDOR');
-        $vendorDevice = is_array($vendorStatus) ? $vendorStatus['dev'] : null;
-        $vendorInode = is_array($vendorStatus) ? $vendorStatus['ino'] : null;
-        $caseVariantDevice = is_array($caseVariantStatus) ? $caseVariantStatus['dev'] : null;
-        $caseVariantInode = is_array($caseVariantStatus) ? $caseVariantStatus['ino'] : null;
 
         if (
-            is_int($vendorDevice)
-            && is_int($vendorInode)
-            && $vendorDevice === $caseVariantDevice
-            && $vendorInode === $caseVariantInode
+            is_array($vendorStatus)
+            && is_array($caseVariantStatus)
+            && $vendorStatus['dev'] === $caseVariantStatus['dev']
+            && $vendorStatus['ino'] === $caseVariantStatus['ino']
         ) {
             $caseVariantComposer = $composer;
             $caseVariantConfig = $config;
